@@ -1,97 +1,106 @@
 <?php
 namespace App\Controllers;
 
-use App\Services\AccountingService;
-use App\Repositories\FacturaRepository; // Necesario para acceder directo
+use App\Services\FacturaService;
 use Exception;
 
-class FacturaController {
-    private $service;
-    private $repository;
+class FacturaController 
+{
+    private $servicio;
 
-    public function __construct() {
-        $this->service = new AccountingService();
-        $this->repository = new FacturaRepository();
+    public function __construct() 
+    {
+        $this->servicio = new FacturaService();
     }
-    
-    public function create() {
+
+    private function responderJson($datos, $codigoEstado = 200) 
+    {
+        http_response_code($codigoEstado);
+        header('Content-Type: application/json');
+        echo json_encode($datos);
+        exit;
+    }
+
+    // POST: Registrar una nueva factura
+    public function registrarCompra() 
+    {
         $input = file_get_contents("php://input");
-        $data = json_decode($input, true);
+        $datos = json_decode($input, true);
         
-        if (!$data) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'JSON inválido']);
-            return;
+        if (json_last_error() !== JSON_ERROR_NONE || empty($datos)) {
+            return $this->responderJson(['exito' => false, 'mensaje' => 'JSON inválido'], 400);
         }
 
         try {
-            $resultado = $this->service->registrarFacturaCompra($data);
+            $requeridos = ['proveedorId', 'numeroFactura', 'montoBruto', 'fechaEmision'];
+            foreach ($requeridos as $campo) {
+                if (!isset($datos[$campo])) throw new Exception("Falta el campo: $campo");
+            }
 
-            http_response_code(201);
-            echo json_encode([
-                'success' => true, 
-                'id' => $resultado['id'],
-                'codigo_sistema' => $resultado['codigo'],
-                'message' => 'Documento contabilizado correctamente'
-            ]);
+            $resultado = $this->servicio->registrarCompra($datos);
+
+            return $this->responderJson([
+                'exito' => true,
+                'mensaje' => 'Factura registrada y contabilizada correctamente',
+                'datos' => $resultado
+            ], 201);
 
         } catch (Exception $e) {
-            if ($e->getMessage() === "DUPLICATE_INVOICE") {
-                http_response_code(409);
-                echo json_encode([
-                    'success' => false, 
-                    'error_code' => 'DUPLICATE',
-                    'message' => 'El número de factura ya existe.'
-                ]);
+            $status = 400;
+            $error = 'ERROR_GENERAL';
+            
+            if ($e->getMessage() === "FACTURA_DUPLICADA") {
+                $status = 409;
+                $error = 'DUPLICADO';
+                $msg = 'Esta factura ya existe en el sistema.';
             } else {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                $msg = $e->getMessage();
             }
+
+            return $this->responderJson([
+                'exito' => false, 
+                'codigo_error' => $error,
+                'mensaje' => $msg
+            ], $status);
         }
     }
 
-    // NUEVO: Endpoint ligero para validar existencia antes de guardar
-    public function checkExistence() {
-        // Obtenemos parámetros de la URL (GET)
-        $proveedorId = $_GET['proveedor_id'] ?? null;
-        $numeroFactura = $_GET['numero_factura'] ?? null;
+    // GET: Verificar si ya existe
+    public function verificarExistencia() 
+    {
+        $provId = $_GET['proveedor_id'] ?? null;
+        $numFac = $_GET['numero_factura'] ?? null;
 
-        if (!$proveedorId || !$numeroFactura) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Faltan parámetros']);
-            return;
+        if (!$provId || !$numFac) {
+            return $this->responderJson(['exito' => false, 'mensaje' => 'Faltan parámetros'], 400);
         }
 
-        // Usamos el repositorio directamente para una consulta rápida de lectura
-        $existe = $this->repository->existeFactura($proveedorId, $numeroFactura);
-
-        echo json_encode([
-            'success' => true,
-            'exists' => (bool)$existe
-        ]);
+        try {
+            $existe = $this->servicio->verificarDuplicidad($provId, $numFac);
+            return $this->responderJson(['exito' => true, 'existe' => $existe]);
+        } catch (Exception $e) {
+            return $this->responderJson(['exito' => false, 'mensaje' => $e->getMessage()], 500);
+        }
     }
 
-    public function anular() {
+    // POST: Anular factura
+    public function anular() 
+    {
         $input = json_decode(file_get_contents("php://input"), true);
         
         if (empty($input['codigo']) || empty($input['motivo'])) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Falta código o motivo']);
-            return;
+            return $this->responderJson(['exito' => false, 'mensaje' => 'Falta codigo o motivo'], 400);
         }
 
         try {
-            $resultado = $this->service->anularDocumento($input['codigo'], $input['motivo']);
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Documento reversado correctamente',
-                'nuevo_codigo_reverso' => $resultado['codigo']
+            $res = $this->servicio->anularDocumento($input['codigo'], $input['motivo']);
+            return $this->responderJson([
+                'exito' => true, 
+                'mensaje' => 'Anulación exitosa',
+                'datos' => $res
             ]);
-
         } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            return $this->responderJson(['exito' => false, 'mensaje' => $e->getMessage()], 400);
         }
     }
 }

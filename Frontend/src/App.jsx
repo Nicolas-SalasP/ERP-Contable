@@ -1,37 +1,29 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import InvoiceWizard from './Modules/Accounting/Components/InvoiceWizard';
 
-const DashboardLayout = ({ children }) => {
-  return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      <aside style={{ width: '250px', background: '#2c3e50', color: 'white', padding: '20px' }}>
-        <h3>Contabilidad</h3>
-        <nav>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            <li style={{ margin: '10px 0' }}>Inicio</li>
-            <li style={{ margin: '10px 0' }}>Ingresar Factura</li>
-            <li style={{ margin: '10px 0' }}>Bancos</li>
-          </ul>
-        </nav>
-      </aside>
-      <main style={{ flex: 1, padding: '20px', background: '#f4f6f8', overflowY: 'auto' }}>
-        {children}
-      </main>
-    </div>
-  );
-};
+import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
+import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
+import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
+import LibroMayor from './Modulos/Contabilidad/Vistas/LibroMayor';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={
-          <DashboardLayout>
-            <InvoiceWizard />
-          </DashboardLayout>
-        } />
-      </Routes>
+      <LayoutPrincipal>
+        <Routes>
+          <Route path="/" element={
+            <div className="flex flex-col items-center justify-center h-full text-slate-400">
+              <h1 className="text-2xl font-bold">Bienvenido al ERP Contable</h1>
+            </div>
+          } />
+
+          <Route path="/facturas/nueva" element={<RegistroFactura />} />
+          <Route path="/proveedores" element={<GestionProveedores />} />
+          <Route path="/contabilidad/libro-mayor" element={<LibroMayor />} />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </LayoutPrincipal>
     </BrowserRouter>
   );
 }
