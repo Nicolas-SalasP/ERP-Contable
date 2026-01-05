@@ -4,12 +4,13 @@ import { Link, useLocation } from 'react-router-dom';
 const BarraLateral = ({ isOpen, toggleSidebar }) => {
     const location = useLocation();
     
-    // Menú de navegación (RUTAS CORREGIDAS AL ESPAÑOL)
+    // Menú de navegación
     const menuItems = [
         { path: '/', label: 'Dashboard', icon: '📊' },
-        { path: '/facturas/nueva', label: 'Ingresar Factura', icon: '📝' }, // Antes: /invoices/new
-        { path: '/proveedores', label: 'Proveedores', icon: 'users' },      // Antes: /suppliers
-        { path: '/contabilidad/libro-mayor', label: 'Libro Mayor', icon: '📚' }, // Antes: /accounting
+        { path: '/facturas/nueva', label: 'Ingresar Factura', icon: '📝' },
+        { path: '/facturas/historial', label: 'Historial Compras', icon: '📁' }, // <--- NUEVA OPCIÓN
+        { path: '/proveedores', label: 'Proveedores', icon: 'users' },
+        { path: '/contabilidad/libro-mayor', label: 'Libro Mayor', icon: '📚' },
     ];
 
     const isActive = (path) => location.pathname === path;

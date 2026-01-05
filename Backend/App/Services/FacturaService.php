@@ -2,166 +2,109 @@
 namespace App\Services;
 
 use App\Repositories\FacturaRepository;
-use App\Services\ContabilidadService;
 use Exception;
 
 class FacturaService
 {
-    private $repositorio;
-    private $contabilidad;
+    private $repository;
+    const COD_PROVEEDORES = '210101';
+    const COD_IVA_CREDITO = '110001';
+    const COD_GASTO_GEN = '500001';
 
-    const CUENTA_PROVEEDORES = '352130'; 
-    const CUENTA_IVA_CREDITO = '110001';
-    const CUENTA_GASTO_NETO = '500001'; 
-
-    const TIPO_DOC_FACTURA = "26";
+    const TIPO_DOC_FACTURA = '26';
 
     public function __construct()
     {
-        $this->repositorio = new FacturaRepository();
-        $this->contabilidad = new ContabilidadService();
+        $this->repository = new FacturaRepository();
     }
 
-    public function registrarCompra(array $datos)
+    public function registrarCompra($datos)
     {
-        if ($this->verificarDuplicidad($datos['proveedorId'], $datos['numeroFactura'])) {
+        if ($this->repository->existeFactura($datos['proveedorId'], $datos['numeroFactura'])) {
             throw new Exception("FACTURA_DUPLICADA");
         }
 
-        if (strtotime($datos['fechaVencimiento']) < strtotime($datos['fechaEmision'])) {
-            throw new Exception("La fecha de vencimiento no puede ser anterior a la fecha de emisión.");
-        }
-
-        $bruto = floatval($datos['montoBruto']);
-        $iva = floatval($datos['montoIva']);
-        $neto = floatval($datos['montoNeto']);
-
-        if (abs(($neto + $iva) - $bruto) > 1) {
-            throw new Exception("Error: El Neto + IVA no cuadra con el Bruto informado.");
-        }
-
-        if ($datos['tieneIva'] && $iva >= $bruto) {
-            throw new Exception("El IVA no puede ser mayor o igual al total.");
-        }
         $anioFiscal = date('y', strtotime($datos['fechaEmision']));
         $prefijo = $anioFiscal . self::TIPO_DOC_FACTURA;
 
-        $ultimoCodigo = $this->repositorio->getLastCodigoByPrefix($prefijo);
-        $nuevoCodigo = $ultimoCodigo ? $ultimoCodigo + 1 : intval($prefijo . '0000');
-
+        $nuevoCodigo = $this->repository->generarCodigoSistema($prefijo);
         $datos['codigoUnico'] = $nuevoCodigo;
 
+        $montoBruto = (float) $datos['montoBruto'];
+        $tieneIva = filter_var($datos['tieneIva'], FILTER_VALIDATE_BOOLEAN);
+
+        if ($tieneIva) {
+            $montoIva = (float) ($datos['montoIva'] ?? 0);
+            $montoNeto = (float) $datos['montoNeto'];
+        } else {
+            $montoIva = 0;
+            $montoNeto = $montoBruto;
+        }
+
+        $this->repository->beginTransaction();
+
         try {
-            $this->repositorio->beginTransaction();
+            $facturaId = $this->repository->create($datos);
+            $asientoId = $this->repository->crearAsiento([
+                'fecha' => $datos['fechaEmision'],
+                'glosa' => "Compra Fac. {$datos['numeroFactura']} - {$datos['proveedorNombre']}",
+                'origen_id' => $facturaId
+            ]);
+            $this->repository->crearDetalleAsiento($asientoId, self::COD_PROVEEDORES, 0, $montoBruto); // Haber
 
-            $facturaId = $this->repositorio->create($datos);
-
-            $this->contabilidad->registrarAsiento(
-                $facturaId,
-                self::CUENTA_PROVEEDORES,
-                0,
-                $bruto
-            );
-
-            if ($datos['tieneIva'] && $iva > 0) {
-                $this->contabilidad->registrarAsiento(
-                    $facturaId,
-                    self::CUENTA_IVA_CREDITO,
-                    $iva,
-                    0
-                );
+            if ($tieneIva && $montoIva > 0) {
+                $this->repository->crearDetalleAsiento($asientoId, self::COD_IVA_CREDITO, $montoIva, 0); // Debe
             }
 
-            $this->contabilidad->registrarAsiento(
-                $facturaId,
-                self::CUENTA_GASTO_NETO,
-                $neto,
-                0
-            );
+            $this->repository->crearDetalleAsiento($asientoId, self::COD_GASTO_GEN, $montoNeto, 0); // Debe
 
-            $this->repositorio->commit();
+            $this->repository->commit();
 
             return [
                 'id' => $facturaId,
-                'codigo' => $nuevoCodigo
+                'codigo' => $nuevoCodigo,
+                'asiento_id' => $asientoId
             ];
 
         } catch (Exception $e) {
-            $this->repositorio->rollBack();
-            throw $e;
-        }
-    }
-
-    public function anularDocumento($codigo, $motivo)
-    {
-        $original = $this->repositorio->getByCodigoUnico($codigo);
-
-        if (!$original)
-            throw new Exception("El documento no existe.");
-        if ($original['estado'] === 'ANULADA')
-            throw new Exception("Ya está anulada.");
-
-        $anio = date('y');
-        $prefijo = $anio . self::TIPO_DOC_FACTURA;
-        $ultimo = $this->repositorio->getLastCodigoByPrefix($prefijo);
-        $nuevoCodigo = $ultimo ? $ultimo + 1 : intval($prefijo . '0000');
-
-        try {
-            $this->repositorio->beginTransaction();
-
-            $datosReverso = [
-                'codigoUnico' => $nuevoCodigo,
-                'proveedorId' => $original['proveedor_id'],
-                'cuentaBancariaId' => $original['cuenta_bancaria_id'],
-                'numeroFactura' => $original['numero_factura'] . " (NULA)",
-                'fechaEmision' => date('Y-m-d'),
-                'fechaVencimiento' => date('Y-m-d'),
-                'montoBruto' => -1 * abs($original['monto_bruto']),
-                'montoNeto' => -1 * abs($original['monto_neto']),
-                'montoIva' => -1 * abs($original['monto_iva']),
-                'motivoCorreccion' => "ANULACIÓN REF: $codigo. " . $motivo,
-                'tieneIva' => ($original['monto_iva'] > 0)
-            ];
-
-            $facturaId = $this->repositorio->create($datosReverso);
-
-            $this->contabilidad->registrarAsiento(
-                $facturaId,
-                self::CUENTA_PROVEEDORES,
-                0,
-                $datosReverso['montoBruto']
-            );
-
-            if ($datosReverso['tieneIva']) {
-                $this->contabilidad->registrarAsiento(
-                    $facturaId,
-                    self::CUENTA_IVA_CREDITO,
-                    $datosReverso['montoIva'],
-                    0
-                );
-            }
-
-            $this->contabilidad->registrarAsiento(
-                $facturaId,
-                self::CUENTA_GASTO_NETO,
-                $datosReverso['montoNeto'],
-                0
-            );
-
-            $this->repositorio->marcarComoAnulada($original['id']);
-
-            $this->repositorio->commit();
-
-            return ['id' => $facturaId, 'codigo' => $nuevoCodigo];
-
-        } catch (Exception $e) {
-            $this->repositorio->rollBack();
+            $this->repository->rollBack();
             throw $e;
         }
     }
 
     public function verificarDuplicidad($proveedorId, $numeroFactura)
     {
-        return (bool) $this->repositorio->existeFactura($proveedorId, $numeroFactura);
+        return (bool) $this->repository->existeFactura($proveedorId, $numeroFactura);
+    }
+
+    public function buscarHistorial($termino, $numFactura = '', $estado = '')
+    {
+        return $this->repository->buscarHistorial($termino, $numFactura, $estado);
+    }
+
+    public function obtenerAsientoPorFactura($facturaId)
+    {
+        $cabecera = $this->repository->obtenerCabeceraAsientoPorFactura($facturaId);
+
+        if (!$cabecera) {
+            throw new Exception("Esta factura no tiene un asiento contable asociado.");
+        }
+
+        $detalles = $this->repository->obtenerDetallesAsiento($cabecera['id']);
+
+        return [
+            'cabecera' => $cabecera,
+            'detalles' => $detalles
+        ];
+    }
+
+    public function anularDocumento($codigo, $motivo)
+    {
+        $factura = $this->repository->getByCodigoUnico($codigo);
+        if (!$factura)
+            throw new Exception("Factura no encontrada");
+
+        $this->repository->marcarComoAnulada($factura['id']);
+        return true;
     }
 }

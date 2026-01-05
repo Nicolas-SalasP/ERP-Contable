@@ -1,61 +1,93 @@
 <?php
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Config\Database;
+use App\Middlewares\AuthMiddleware; // Para obtener el empresa_id actual
 use PDO;
 use Exception;
 
-class ContabilidadRepository 
+class ContabilidadRepository
 {
-    private $db;
 
-    public function __construct() 
+    private PDO $db;
+    private int $empresaId;
+
+    public function __construct()
     {
         $this->db = Database::getConnection();
+        $user = AuthMiddleware::authenticate();
+        $this->empresaId = (int) $user->empresa_id;
     }
 
-    public function createAsiento($referenciaId, $codigoCuenta, $debe, $haber, $tipoReferencia = 'FACTURA') 
+    public function buscarCuentaIdPorCodigo(string $codigo): ?int
     {
-        $stmt = $this->db->prepare("SELECT id FROM plan_cuentas WHERE codigo = ? LIMIT 1");
-        $stmt->execute([$codigoCuenta]);
-        $cuenta = $stmt->fetch();
+        $sql = "SELECT id FROM plan_cuentas WHERE codigo = ? AND empresa_id = ? LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$codigo, $this->empresaId]);
 
-        if (!$cuenta) {
-            throw new Exception("Error Crítico: La cuenta contable $codigoCuenta no existe en el sistema.");
-        }
-        
-        $sql = "INSERT INTO asientos_contables (factura_id, plan_cuenta_id, glosa, debe, haber) 
-                VALUES (?, ?, ?, ?, ?)";
-        
-        $glosa = "Registro Automático - " . $tipoReferencia;
-
-        $this->db->prepare($sql)->execute([
-            $referenciaId, 
-            $cuenta['id'], 
-            $glosa, 
-            $debe, 
-            $haber
-        ]);
+        $columna = $stmt->fetchColumn();
+        return $columna ? (int) $columna : null;
     }
 
-    public function getSaldosAgrupados($fechaInicio, $fechaFin) 
+    public function crearAsiento(array $datos): int
+    {
+        try {
+            $cuentaId = $this->buscarCuentaIdPorCodigo((string) $datos['cuenta_codigo']);
+
+            if (!$cuentaId) {
+                throw new Exception("Error Crítico: La cuenta contable '{$datos['cuenta_codigo']}' no existe en su Plan de Cuentas.");
+            }
+
+            $sqlCabecera = "INSERT INTO asientos_contables 
+                            (empresa_id, fecha, glosa, tipo_asiento, origen_modulo, origen_id, created_at) 
+                            VALUES (?, NOW(), ?, 'traspaso', 'FACTURACION', ?, NOW())";
+
+            $stmt = $this->db->prepare($sqlCabecera);
+            $stmt->execute([
+                $this->empresaId,
+                $datos['glosa'],
+                $datos['origen_id']
+            ]);
+
+            $asientoId = (int) $this->db->lastInsertId();
+
+            $sqlDetalle = "INSERT INTO detalles_asiento 
+                           (asiento_id, cuenta_contable, debe, haber) 
+                           VALUES (?, ?, ?, ?)";
+
+            $stmtDetalle = $this->db->prepare($sqlDetalle);
+            $stmtDetalle->execute([
+                $asientoId,
+                $datos['cuenta_codigo'],
+                $datos['debe'],
+                $datos['haber']
+            ]);
+
+            return $asientoId;
+
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    public function getSaldosAgrupados(string $fechaInicio, string $fechaFin): array
     {
         $sql = "SELECT 
-                    pc.codigo, 
-                    pc.nombre as cuenta,
-                    SUM(ac.debe) as total_debe,
-                    SUM(ac.haber) as total_haber
-                FROM asientos_contables ac
-                INNER JOIN plan_cuentas pc ON ac.plan_cuenta_id = pc.id
-                INNER JOIN facturas f ON ac.factura_id = f.id
-                WHERE f.fecha_emision BETWEEN ? AND ?
-                  AND f.estado != 'ANULADA'
-                GROUP BY pc.codigo, pc.nombre
-                ORDER BY pc.codigo ASC";
+                    d.cuenta_contable as codigo,
+                    p.nombre as nombre_cuenta,
+                    SUM(d.debe) as total_debe,
+                    SUM(d.haber) as total_haber
+                FROM detalles_asiento d
+                JOIN asientos_contables a ON d.asiento_id = a.id
+                LEFT JOIN plan_cuentas p ON (d.cuenta_contable = p.codigo AND p.empresa_id = a.empresa_id)
+                WHERE a.empresa_id = ? 
+                  AND a.fecha BETWEEN ? AND ?
+                GROUP BY d.cuenta_contable";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$fechaInicio, $fechaFin]);
-        
+        $stmt->execute([$this->empresaId, $fechaInicio, $fechaFin]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

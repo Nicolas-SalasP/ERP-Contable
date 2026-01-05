@@ -1,21 +1,26 @@
 <?php
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Repositories\LibroMayorRepository;
-use Exception;
+use App\Services\AuditoriaService;
 
 class LibroMayorService {
-    private $repository;
+    
+    private LibroMayorRepository $repository;
 
     public function __construct() {
         $this->repository = new LibroMayorRepository();
     }
 
-    public function obtenerLibroDiario() {
+    public function obtenerLibroDiario(): array {
+        AuditoriaService::registrar('GENERAR_LIBRO_DIARIO');
+
         return $this->repository->getLibroDiario();
     }
 
-    public function obtenerPlanCuentas() {
+    public function obtenerPlanCuentas(): array {
         return $this->repository->getPlanCuentas();
     }
 }

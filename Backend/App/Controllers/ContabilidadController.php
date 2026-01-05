@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use App\Services\ContabilidadService;
@@ -6,69 +8,77 @@ use Exception;
 
 class ContabilidadController 
 {
-    private $servicio;
+    private ContabilidadService $servicio;
 
     public function __construct() 
     {
         $this->servicio = new ContabilidadService();
     }
 
-    private function responderJson($datos, $codigoEstado = 200) 
-    {
-        http_response_code($codigoEstado);
-        header('Content-Type: application/json');
-        echo json_encode($datos);
-        exit;
-    }
-
-    public function registrarAsientoManual() 
+    public function registrarAsientoManual(): void 
     {
         $input = file_get_contents("php://input");
         $datos = json_decode($input, true);
         
         if (json_last_error() !== JSON_ERROR_NONE || empty($datos)) {
-            return $this->responderJson(['exito' => false, 'mensaje' => 'JSON inválido'], 400);
+            $this->responderJson(['exito' => false, 'mensaje' => 'JSON inválido o vacío'], 400);
         }
 
         try {
             if (empty($datos['cuenta']) || !isset($datos['debe']) || !isset($datos['haber'])) {
-                throw new Exception("Faltan datos: cuenta, debe o haber");
+                throw new Exception("Faltan datos obligatorios: cuenta, debe o haber.");
             }
-
-            $referenciaId = $datos['referencia_id'] ?? 0; 
+            $referenciaId = isset($datos['referencia_id']) ? (int)$datos['referencia_id'] : 0; 
+            $glosa = $datos['glosa'] ?? 'Asiento Manual';
 
             $this->servicio->registrarAsiento(
                 $referenciaId, 
-                $datos['cuenta'], 
-                floatval($datos['debe']), 
-                floatval($datos['haber'])
+                (string)$datos['cuenta'], 
+                (float)$datos['debe'], 
+                (float)$datos['haber'],
+                (string)$glosa
             );
 
-            return $this->responderJson([
+            $this->responderJson([
                 'exito' => true,
-                'mensaje' => 'Asiento manual registrado correctamente'
+                'mensaje' => 'Asiento registrado correctamente en el Libro Diario.'
             ], 201);
 
         } catch (Exception $e) {
-            return $this->responderJson([
+            $codigo = $e->getMessage() === 'CUENTA_SUSPENDIDA' ? 403 : 400;
+            
+            $this->responderJson([
                 'exito' => false, 
+                'error_code' => 'ERROR_CONTABLE',
                 'mensaje' => $e->getMessage()
-            ], 400);
+            ], $codigo);
         }
     }
 
-    public function verLibroDiario()
+    public function verSaldosMayor(): void
     {
         try {
-            // $asientos = $this->servicio->obtenerLibroDiario();
-            $asientos = [];
+            $fechaInicio = $_GET['desde'] ?? date('Y-m-01');
+            $fechaFin = $_GET['hasta'] ?? date('Y-m-t');
+
+            $saldos = $this->servicio->obtenerSaldosLibroMayor($fechaInicio, $fechaFin);
             
-            return $this->responderJson([
+            $this->responderJson([
                 'exito' => true, 
-                'datos' => $asientos
+                'rango' => ['desde' => $fechaInicio, 'hasta' => $fechaFin],
+                'datos' => $saldos
             ]);
+
         } catch (Exception $e) {
-            return $this->responderJson(['exito' => false, 'mensaje' => $e->getMessage()], 500);
+            $this->responderJson(['exito' => false, 'mensaje' => $e->getMessage()], 500);
         }
+    }
+
+    private function responderJson(array $datos, int $codigoEstado = 200): void 
+    {
+        http_response_code($codigoEstado);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($datos);
+        exit;
     }
 }
