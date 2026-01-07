@@ -55,6 +55,7 @@ $files = [
     '/Services/ContabilidadService.php',
     '/Services/LibroMayorService.php',
     '/Services/PaisService.php',
+    '/Services/AnulacionService.php',
 
     // Controladores
     '/Controllers/AutenticacionController.php',
@@ -63,7 +64,8 @@ $files = [
     '/Controllers/FacturaController.php',
     '/Controllers/ContabilidadController.php',
     '/Controllers/LibroMayorController.php',
-    '/Controllers/PaisController.php'
+    '/Controllers/PaisController.php',
+    '/Controllers/AnulacionController.php'
 ];
 
 foreach ($files as $file) {
@@ -84,6 +86,7 @@ use App\Controllers\CuentaBancariaController;
 use App\Controllers\FacturaController;
 use App\Controllers\ContabilidadController;
 use App\Controllers\PaisController;
+use App\Controllers\AnulacionController;
 
 // -----------------------------------------------------------------------------
 // 3. Definición de Rutas del Sistema
@@ -110,14 +113,16 @@ $router->get('/api/cuentas-bancarias/proveedor/{id}', [CuentaBancariaController:
 // --- FACTURAS (Módulo Completo) ---
 $router->post('/api/facturas', [FacturaController::class, 'registrarCompra'], true);
 $router->get('/api/facturas/check', [FacturaController::class, 'checkDuplicada'], true);
-$router->get('/api/facturas/historial', [FacturaController::class, 'historialProveedor'], true);
+$router->get('/api/facturas/historial', [FacturaController::class, 'historial'], true);
 $router->get('/api/facturas/{id}/asiento', [FacturaController::class, 'obtenerAsiento'], true);
 $router->post('/api/facturas/anular', [FacturaController::class, 'anular'], true);
-
+$router->post('/api/anulacion/buscar', [AnulacionController::class, 'buscar'], true);
+$router->post('/api/anulacion/ejecutar', [AnulacionController::class, 'ejecutar'], true);
 
 // --- Contabilidad ---
 $router->post('/api/contabilidad/asiento-manual', [ContabilidadController::class, 'registrarAsientoManual'], true);
 $router->get('/api/contabilidad/saldos-mayor', [ContabilidadController::class, 'verSaldosMayor'], true);
+$router->post('/api/contabilidad/anular', [ContabilidadController::class, 'anularAsiento'], true);
 
 // -----------------------------------------------------------------------------
 // 4. Despacho de la Petición
