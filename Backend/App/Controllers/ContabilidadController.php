@@ -28,10 +28,10 @@ class ContabilidadController
             if (empty($datos['cuenta']) || !isset($datos['debe']) || !isset($datos['haber'])) {
                 throw new Exception("Faltan datos obligatorios: cuenta, debe o haber.");
             }
+
             $referenciaId = isset($datos['referencia_id']) ? (int)$datos['referencia_id'] : 0; 
             $glosa = $datos['glosa'] ?? 'Asiento Manual';
-
-            $this->servicio->registrarAsiento(
+            $resultado = $this->servicio->registrarAsiento(
                 $referenciaId, 
                 (string)$datos['cuenta'], 
                 (float)$datos['debe'], 
@@ -41,7 +41,9 @@ class ContabilidadController
 
             $this->responderJson([
                 'exito' => true,
-                'mensaje' => 'Asiento registrado correctamente en el Libro Diario.'
+                'mensaje' => 'Asiento registrado correctamente en el Libro Diario.',
+                'id' => $resultado['id'],
+                'codigo' => $resultado['codigo']
             ], 201);
 
         } catch (Exception $e) {
@@ -52,6 +54,31 @@ class ContabilidadController
                 'error_code' => 'ERROR_CONTABLE',
                 'mensaje' => $e->getMessage()
             ], $codigo);
+        }
+    }
+
+    public function anularAsiento(): void
+    {
+        $input = file_get_contents("php://input");
+        $datos = json_decode($input, true);
+
+        if (empty($datos['codigo']) || empty($datos['motivo'])) {
+            $this->responderJson(['exito' => false, 'mensaje' => 'Faltan parámetros obligatorios: codigo del asiento o motivo.'], 400);
+        }
+
+        try {
+            $codigoAsiento = (int) $datos['codigo'];
+            $motivo = (string) $datos['motivo'];
+
+            $resultado = $this->servicio->anularAsiento($codigoAsiento, $motivo);
+
+            $this->responderJson($resultado);
+
+        } catch (Exception $e) {
+            $this->responderJson([
+                'exito' => false, 
+                'mensaje' => $e->getMessage()
+            ], 400);
         }
     }
 
