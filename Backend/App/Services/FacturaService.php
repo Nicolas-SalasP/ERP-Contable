@@ -2,11 +2,14 @@
 namespace App\Services;
 
 use App\Repositories\FacturaRepository;
+use App\Repositories\ContabilidadRepository;
 use Exception;
 
 class FacturaService
 {
-    private $repository;
+    private $repoFactura;
+    private $repoContabilidad;
+
     const COD_PROVEEDORES = '210101';
     const COD_IVA_CREDITO = '110001';
     const COD_GASTO_GEN = '500001';
@@ -15,19 +18,30 @@ class FacturaService
 
     public function __construct()
     {
-        $this->repository = new FacturaRepository();
+        $this->repoFactura = new FacturaRepository();
+        $this->repoContabilidad = new ContabilidadRepository();
+    }
+
+    public function obtenerHistorialPaginado($filtroProveedor, $filtroNumero, $filtroEstado, $limit, $offset)
+    {
+        $data = $this->repoFactura->buscarHistorial($filtroProveedor, $filtroNumero, $filtroEstado, $limit, $offset);
+        $total = $this->repoFactura->contarHistorial($filtroProveedor, $filtroNumero, $filtroEstado);
+
+        return [
+            'data' => $data,
+            'total' => $total
+        ];
     }
 
     public function registrarCompra($datos)
     {
-        if ($this->repository->existeFactura($datos['proveedorId'], $datos['numeroFactura'])) {
+        if ($this->repoFactura->existeFactura($datos['proveedorId'], $datos['numeroFactura'])) {
             throw new Exception("FACTURA_DUPLICADA");
         }
-
         $anioFiscal = date('y', strtotime($datos['fechaEmision']));
         $prefijo = $anioFiscal . self::TIPO_DOC_FACTURA;
 
-        $nuevoCodigo = $this->repository->generarCodigoSistema($prefijo);
+        $nuevoCodigo = $this->repoFactura->generarCodigoSistema($prefijo);
         $datos['codigoUnico'] = $nuevoCodigo;
 
         $montoBruto = (float) $datos['montoBruto'];
@@ -41,24 +55,29 @@ class FacturaService
             $montoNeto = $montoBruto;
         }
 
-        $this->repository->beginTransaction();
+        $this->repoFactura->beginTransaction();
 
         try {
-            $facturaId = $this->repository->create($datos);
-            $asientoId = $this->repository->crearAsiento([
+            $facturaId = $this->repoFactura->create($datos);
+
+            $asientoId = $this->repoContabilidad->crearAsiento([
+                'codigo_unico' => $nuevoCodigo,
                 'fecha' => $datos['fechaEmision'],
                 'glosa' => "Compra Fac. {$datos['numeroFactura']} - {$datos['proveedorNombre']}",
+                'tipo_asiento' => 'egreso',
+                'origen_modulo' => 'COMPRA',
                 'origen_id' => $facturaId
             ]);
-            $this->repository->crearDetalleAsiento($asientoId, self::COD_PROVEEDORES, 0, $montoBruto); // Haber
+
+            $this->repoContabilidad->crearDetalle($asientoId, self::COD_PROVEEDORES, 0, $montoBruto);
 
             if ($tieneIva && $montoIva > 0) {
-                $this->repository->crearDetalleAsiento($asientoId, self::COD_IVA_CREDITO, $montoIva, 0); // Debe
+                $this->repoContabilidad->crearDetalle($asientoId, self::COD_IVA_CREDITO, $montoIva, 0);
             }
 
-            $this->repository->crearDetalleAsiento($asientoId, self::COD_GASTO_GEN, $montoNeto, 0); // Debe
+            $this->repoContabilidad->crearDetalle($asientoId, self::COD_GASTO_GEN, $montoNeto, 0);
 
-            $this->repository->commit();
+            $this->repoFactura->commit();
 
             return [
                 'id' => $facturaId,
@@ -67,44 +86,24 @@ class FacturaService
             ];
 
         } catch (Exception $e) {
-            $this->repository->rollBack();
+            $this->repoFactura->rollBack();
             throw $e;
         }
     }
 
     public function verificarDuplicidad($proveedorId, $numeroFactura)
     {
-        return (bool) $this->repository->existeFactura($proveedorId, $numeroFactura);
-    }
-
-    public function buscarHistorial($termino, $numFactura = '', $estado = '')
-    {
-        return $this->repository->buscarHistorial($termino, $numFactura, $estado);
+        return (bool) $this->repoFactura->existeFactura($proveedorId, $numeroFactura);
     }
 
     public function obtenerAsientoPorFactura($facturaId)
     {
-        $cabecera = $this->repository->obtenerCabeceraAsientoPorFactura($facturaId);
+        $resultado = $this->repoContabilidad->obtenerAsientoPorOrigen('COMPRA', $facturaId);
 
-        if (!$cabecera) {
+        if (empty($resultado)) {
             throw new Exception("Esta factura no tiene un asiento contable asociado.");
         }
 
-        $detalles = $this->repository->obtenerDetallesAsiento($cabecera['id']);
-
-        return [
-            'cabecera' => $cabecera,
-            'detalles' => $detalles
-        ];
-    }
-
-    public function anularDocumento($codigo, $motivo)
-    {
-        $factura = $this->repository->getByCodigoUnico($codigo);
-        if (!$factura)
-            throw new Exception("Factura no encontrada");
-
-        $this->repository->marcarComoAnulada($factura['id']);
-        return true;
+        return $resultado;
     }
 }
