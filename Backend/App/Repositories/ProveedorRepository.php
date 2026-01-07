@@ -26,6 +26,14 @@ class ProveedorRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getById($id)
+    {
+        $sql = "SELECT * FROM proveedores WHERE id = ? AND empresa_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$id, $this->empresaId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function getByCodigo($codigo)
     {
         $sql = "SELECT * FROM proveedores WHERE codigo_interno = ? AND empresa_id = ? LIMIT 1";

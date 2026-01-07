@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 use App\Services\FacturaService;
+use App\Services\AnulacionService; // <--- AGREGADO IMPORTANTE
 use Exception;
 
 class FacturaController
@@ -19,6 +20,34 @@ class FacturaController
         header('Content-Type: application/json');
         echo json_encode($datos);
         exit;
+    }
+
+    // --- HISTORIAL PAGINADO (Para la tabla principal) ---
+    public function historial()
+    {
+        $proveedor = $_GET['search'] ?? '';
+        $numero = $_GET['num'] ?? '';
+        $estado = $_GET['estado'] ?? '';
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        $offset = ($page - 1) * $limit;
+
+        try {
+            $resultado = $this->servicio->obtenerHistorialPaginado($proveedor, $numero, $estado, $limit, $offset);
+
+            return $this->responderJson([
+                'success' => true,
+                'data' => $resultado['data'],
+                'pagination' => [
+                    'total' => $resultado['total'],
+                    'page' => $page,
+                    'limit' => $limit,
+                    'totalPages' => ceil($resultado['total'] / $limit)
+                ]
+            ]);
+        } catch (Exception $e) {
+            return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
     }
 
     public function registrarCompra()
@@ -49,44 +78,12 @@ class FacturaController
             ], 201);
 
         } catch (Exception $e) {
-            $status = 400;
-            $error = 'ERROR_GENERAL';
-
-            if ($e->getMessage() === "FACTURA_DUPLICADA") {
-                $status = 409;
-                $error = 'DUPLICADO';
-                $msg = 'Esta factura ya existe en el sistema.';
-            } else {
-                $msg = $e->getMessage();
-            }
-
+            $status = ($e->getMessage() === "FACTURA_DUPLICADA") ? 409 : 400;
             return $this->responderJson([
                 'success' => false,
-                'exito' => false,
-                'codigo_error' => $error,
-                'mensaje' => $msg
+                'codigo_error' => ($status === 409) ? 'DUPLICADO' : 'ERROR_GENERAL',
+                'mensaje' => ($status === 409) ? 'Esta factura ya existe en el sistema.' : $e->getMessage()
             ], $status);
-        }
-    }
-
-    public function checkDuplicada()
-    {
-        $provId = $_GET['proveedor_id'] ?? null;
-        $numFac = $_GET['numero_factura'] ?? null;
-
-        if (!$provId || !$numFac) {
-            return $this->responderJson(['success' => false, 'mensaje' => 'Faltan parámetros'], 400);
-        }
-
-        try {
-            $existe = $this->servicio->verificarDuplicidad($provId, $numFac);
-            return $this->responderJson([
-                'success' => true,
-                'exists' => $existe
-            ]);
-
-        } catch (Exception $e) {
-            return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
     }
 
@@ -99,7 +96,9 @@ class FacturaController
         }
 
         try {
-            $res = $this->servicio->anularDocumento($input['codigo'], $input['motivo']);
+            $anulacionService = new AnulacionService();
+            $res = $anulacionService->anularDocumento($input); 
+
             return $this->responderJson([
                 'success' => true,
                 'mensaje' => 'Anulación exitosa',
@@ -110,50 +109,25 @@ class FacturaController
         }
     }
 
-    public function historialProveedor() 
+    // Métodos auxiliares simples
+    public function checkDuplicada()
     {
-        $busqueda = $_GET['q'] ?? '';
-        $numFactura = $_GET['num'] ?? '';
-        $estado = $_GET['estado'] ?? '';
-        
         try {
-            $resultados = $this->servicio->buscarHistorial($busqueda, $numFactura, $estado);
-            
-            return $this->responderJson([
-                'success' => true, 
-                'data' => $resultados
-            ]);
+            $existe = $this->servicio->verificarDuplicidad($_GET['proveedor_id'] ?? null, $_GET['numero_factura'] ?? null);
+            return $this->responderJson(['success' => true, 'exists' => $existe]);
         } catch (Exception $e) {
-            return $this->responderJson(['success' => false, 'mensaje' => 'Error al buscar historial: ' . $e->getMessage()], 500);
+            return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
     }
 
     public function obtenerAsiento()
     {
-        $facturaId = null;
-        if (isset($_GET['id'])) {
-            $facturaId = (int) $_GET['id'];
-        } else {
-            $urlParts = explode('/', strtok($_SERVER['REQUEST_URI'], '?'));
-            foreach ($urlParts as $index => $part) {
-                if ($part === 'facturas' && isset($urlParts[$index + 1]) && is_numeric($urlParts[$index + 1])) {
-                    $facturaId = (int) $urlParts[$index + 1];
-                    break;
-                }
-            }
-        }
-
-        if (!$facturaId) {
-            return $this->responderJson(['success' => false, 'mensaje' => 'ID de factura no proporcionado'], 400);
-        }
+        $facturaId = $_GET['id'] ?? null;
+        if (!$facturaId) return $this->responderJson(['success' => false, 'mensaje' => 'ID faltante'], 400);
 
         try {
-            $asientoData = $this->servicio->obtenerAsientoPorFactura($facturaId);
-
-            return $this->responderJson([
-                'success' => true,
-                'data' => $asientoData
-            ]);
+            $data = $this->servicio->obtenerAsientoPorFactura((int)$facturaId);
+            return $this->responderJson(['success' => true, 'data' => $data]);
         } catch (Exception $e) {
             return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }

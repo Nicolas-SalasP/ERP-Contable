@@ -92,7 +92,6 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
 };
 
 const HistorialFacturas = () => {
-    // Filtros
     const [busqueda, setBusqueda] = useState('');
     const [filtroNumero, setFiltroNumero] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('');
@@ -101,13 +100,13 @@ const HistorialFacturas = () => {
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
 
-    // Autocompletado
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
+
     const [listaProveedores, setListaProveedores] = useState([]);
     const [sugerencias, setSugerencias] = useState([]);
     const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
     const searchRef = useRef(null);
 
-    // Modal
     const [modalOpen, setModalOpen] = useState(false);
     const [asientoData, setAsientoData] = useState(null);
     const [loadingAsiento, setLoadingAsiento] = useState(false);
@@ -115,7 +114,7 @@ const HistorialFacturas = () => {
     useEffect(() => {
         api.get('/proveedores')
             .then(res => { if (res.success) setListaProveedores(res.data); })
-            .catch(err => console.error("Error cargando lista proveedores:", err));
+            .catch(err => console.error("Error", err));
 
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) setMostrarSugerencias(false);
@@ -123,6 +122,10 @@ const HistorialFacturas = () => {
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        ejecutarBusqueda();
+    }, [pagination.page]); 
 
     const handleBusquedaChange = (e) => {
         const termino = e.target.value;
@@ -141,27 +144,38 @@ const HistorialFacturas = () => {
         }
     };
 
-    const ejecutarBusqueda = async () => {
+    const ejecutarBusqueda = async (resetPage = false) => {
         setLoading(true);
         setSearched(true);
         setMostrarSugerencias(false);
 
-        // Construir Query Params dinámicamente
+        if (resetPage) {
+            setPagination(prev => ({ ...prev, page: 1 }));
+        }
+
         const params = new URLSearchParams();
-        if(busqueda) params.append('q', busqueda);
+        if(busqueda) params.append('search', busqueda); 
+        
         if(filtroNumero) params.append('num', filtroNumero);
         if(filtroEstado) params.append('estado', filtroEstado);
+
+        params.append('page', resetPage ? 1 : pagination.page);
+        params.append('limit', pagination.limit);
 
         try {
             const res = await api.get(`/facturas/historial?${params.toString()}`);
             if(res.success) {
                 setFacturas(res.data);
+                setPagination(prev => ({
+                    ...prev,
+                    total: res.pagination.total,
+                    totalPages: res.pagination.totalPages
+                }));
             } else {
                 setFacturas([]);
             }
         } catch (error) {
             console.error(error);
-            alert('Error al conectar con el servidor: ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -170,7 +184,6 @@ const HistorialFacturas = () => {
     const seleccionarProveedor = (prov) => {
         setBusqueda(prov.razon_social);
         setMostrarSugerencias(false);
-        // Opcional: ejecutar búsqueda automática al seleccionar
     };
 
     const verAsientoContable = async (facturaId) => {
@@ -201,11 +214,9 @@ const HistorialFacturas = () => {
                 </div>
             </div>
 
-            {/* Barra de Filtros */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8" ref={searchRef}>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     
-                    {/* Filtro Proveedor */}
                     <div className="relative md:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Proveedor</label>
                         <input 
@@ -215,9 +226,8 @@ const HistorialFacturas = () => {
                             value={busqueda}
                             onChange={handleBusquedaChange}
                             onFocus={() => { if(busqueda) setMostrarSugerencias(true); }}
-                            onKeyDown={(e) => e.key === 'Enter' && ejecutarBusqueda()}
+                            onKeyDown={(e) => e.key === 'Enter' && ejecutarBusqueda(true)}
                         />
-                        {/* Dropdown Sugerencias */}
                         {mostrarSugerencias && sugerencias.length > 0 && (
                             <div className="absolute top-full left-0 w-full bg-white border border-slate-200 mt-2 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50">
                                 {sugerencias.map(p => (
@@ -232,7 +242,6 @@ const HistorialFacturas = () => {
                         )}
                     </div>
 
-                    {/* Filtro N° Factura */}
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">N° Documento</label>
                         <input 
@@ -241,11 +250,10 @@ const HistorialFacturas = () => {
                             placeholder="Ej: 12345"
                             value={filtroNumero}
                             onChange={(e) => setFiltroNumero(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && ejecutarBusqueda()}
+                            onKeyDown={(e) => e.key === 'Enter' && ejecutarBusqueda(true)}
                         />
                     </div>
 
-                    {/* Filtro Estado y Botón */}
                     <div className="flex gap-2">
                         <div className="flex-1">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Estado</label>
@@ -261,7 +269,7 @@ const HistorialFacturas = () => {
                             </select>
                         </div>
                         <button 
-                            onClick={() => ejecutarBusqueda()}
+                            onClick={() => ejecutarBusqueda(true)}
                             disabled={loading}
                             className="px-6 py-3 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 shadow-lg disabled:opacity-70 transition-all flex items-center justify-center mb-[1px]"
                         >
@@ -271,67 +279,104 @@ const HistorialFacturas = () => {
                 </div>
             </div>
 
-            {/* Tabla de Resultados */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
-                {!searched ? (
-                    <div className="flex flex-col items-center justify-center h-[400px] text-slate-400">
-                        <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <p className="text-lg font-medium">Usa los filtros para buscar facturas.</p>
-                    </div>
-                ) : facturas.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-[400px] text-slate-400">
-                        <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <p className="text-lg font-medium">No se encontraron documentos con esos criterios.</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-100">
-                            <thead className="bg-slate-50">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Monto Total</th>
-                                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
-                                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-slate-50 text-sm">
-                                {facturas.map((fac) => (
-                                    <tr key={fac.id} className="hover:bg-blue-50/30 transition-colors group">
-                                        <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-mono text-xs">{formatDate(fac.fecha_emision)}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-bold text-slate-800">{fac.razon_social}</div>
-                                            <div className="text-xs text-slate-400 mt-0.5">{fac.rut}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 font-bold">N° {fac.numero_factura}</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-slate-800 text-base">{formatCurrency(fac.monto_total)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            {fac.estado_pago === 'PAGADO' ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Pagado
-                                                </span>
-                                            ) : fac.estado_pago === 'ANULADA' ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span> Anulada
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span> Pendiente
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <button onClick={() => verAsientoContable(fac.id)} className="text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-all group-hover:scale-110" title="Ver Asiento Contable">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                                            </button>
-                                        </td>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px] flex flex-col justify-between">
+                <div>
+                    {!searched && facturas.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-[300px] text-slate-400">
+                            <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <p className="text-lg font-medium">Usa los filtros para buscar facturas.</p>
+                        </div>
+                    ) : facturas.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-[300px] text-slate-400">
+                            <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <p className="text-lg font-medium">No se encontraron documentos.</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-slate-100">
+                                <thead className="bg-slate-50">
+                                    <tr>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</th>
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Asiento</th>
+                                        <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Monto Bruto</th>
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-slate-50 text-sm">
+                                    {facturas.map((fac) => (
+                                        <tr key={fac.id} className="hover:bg-blue-50/30 transition-colors group">
+                                            <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-mono text-xs">{formatDate(fac.fecha_emision)}</td>
+                                            
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold text-slate-800">{fac.nombre_proveedor}</div>
+                                                <div className="text-xs text-slate-400 mt-0.5">{fac.rut_proveedor}</div>
+                                            </td>
+
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 font-bold">N° {fac.numero_factura}</span>
+                                            </td>
+                                            
+                                            <td className="px-6 py-4 text-center whitespace-nowrap">
+                                                {fac.codigo_asiento ? (
+                                                    <span className="text-blue-600 font-mono font-bold text-xs">{fac.codigo_asiento}</span>
+                                                ) : (
+                                                    <span className="text-slate-300 text-xs">-</span>
+                                                )}
+                                            </td>
+
+                                            <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-slate-800 text-base">
+                                                {formatCurrency(fac.monto_bruto)}
+                                            </td>
+
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                {fac.estado === 'REGISTRADA' ? (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                        Vigente
+                                                    </span>
+                                                ) : fac.estado === 'ANULADA' ? (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+                                                        Anulada
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-800 border border-gray-200">
+                                                        {fac.estado}
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                <button onClick={() => verAsientoContable(fac.id)} className="text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-all group-hover:scale-110" title="Ver Asiento Contable">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+                
+                {pagination.totalPages > 1 && (
+                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex items-center justify-between">
+                        <button 
+                            disabled={pagination.page === 1}
+                            onClick={() => setPagination(prev => ({...prev, page: prev.page - 1}))}
+                            className="px-3 py-1 bg-white border border-slate-300 rounded text-sm disabled:opacity-50"
+                        >
+                            Anterior
+                        </button>
+                        <span className="text-sm text-slate-600">Página {pagination.page} de {pagination.totalPages}</span>
+                        <button 
+                            disabled={pagination.page === pagination.totalPages}
+                            onClick={() => setPagination(prev => ({...prev, page: prev.page + 1}))}
+                            className="px-3 py-1 bg-white border border-slate-300 rounded text-sm disabled:opacity-50"
+                        >
+                            Siguiente
+                        </button>
                     </div>
                 )}
             </div>

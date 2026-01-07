@@ -8,9 +8,10 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
     const menuItems = [
         { path: '/', label: 'Dashboard', icon: '📊' },
         { path: '/facturas/nueva', label: 'Ingresar Factura', icon: '📝' },
-        { path: '/facturas/historial', label: 'Historial Compras', icon: '📁' }, // <--- NUEVA OPCIÓN
+        { path: '/facturas/historial', label: 'Historial Compras', icon: '📁' },
         { path: '/proveedores', label: 'Proveedores', icon: 'users' },
         { path: '/contabilidad/libro-mayor', label: 'Libro Mayor', icon: '📚' },
+        { path: '/contabilidad/anulacion', label: 'Anulaciones', icon: '📚' },
     ];
 
     const isActive = (path) => location.pathname === path;

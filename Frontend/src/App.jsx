@@ -7,6 +7,7 @@ import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
 import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
 import LibroMayor from './Modulos/Contabilidad/Vistas/LibroMayor';
 import Login from './Modulos/Autenticacion/Login';
+import AnulacionGeneral from './Modulos/Contabilidad/Vistas/AnulacionGeneral';
 
 const RutaPrivada = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -63,6 +64,8 @@ function App() {
               </LayoutPrincipal>
             </RutaPrivada>
           } />
+
+          <Route path="/contabilidad/anulacion" element={<AnulacionGeneral />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
