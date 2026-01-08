@@ -120,10 +120,13 @@ class FacturaController
         }
     }
 
-    public function obtenerAsiento()
+    public function obtenerAsiento($id = null)
     {
-        $facturaId = $_GET['id'] ?? null;
-        if (!$facturaId) return $this->responderJson(['success' => false, 'mensaje' => 'ID faltante'], 400);
+        $facturaId = $id ?? $_GET['id'] ?? null;
+
+        if (!$facturaId) {
+            return $this->responderJson(['success' => false, 'mensaje' => 'ID faltante'], 400);
+        }
 
         try {
             $data = $this->servicio->obtenerAsientoPorFactura((int)$facturaId);
