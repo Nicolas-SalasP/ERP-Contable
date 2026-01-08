@@ -1,7 +1,8 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost/ERP-Contable/Backend/Public/api';
 
 const getAuthHeaders = () => {
-    const token = localStorage.getItem('erp_token');
+    // Busca el token en cualquiera de los dos lugares
+    const token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
     return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
@@ -11,8 +12,12 @@ const handleResponse = async (response) => {
 
     if (!response.ok) {
         if (response.status === 401) {
+            // Si el token venció, limpiamos todo
             localStorage.removeItem('erp_token');
             localStorage.removeItem('erp_user');
+            sessionStorage.removeItem('erp_token');
+            sessionStorage.removeItem('erp_user');
+            
             if (!window.location.pathname.includes('/login')) {
                 window.location.href = '/login';
             }
@@ -36,7 +41,7 @@ const request = async (endpoint, method, body = null, customHeaders = {}) => {
         method,
         headers: {
             'Content-Type': 'application/json',
-            ...getAuthHeaders(),
+            ...getAuthHeaders(), // Inyecta el token automáticamente
             ...customHeaders,
         },
     };
@@ -69,17 +74,15 @@ export const api = {
 
     auth: {
         login: async (credentials) => {
-            const data = await request('/auth/login', 'POST', credentials);
-            if (data.success && data.token) {
-                localStorage.setItem('erp_token', data.token);
-                localStorage.setItem('erp_user', JSON.stringify(data.user));
-            }
-            return data;
+            // IMPORTANTE: Ya no guardamos nada aquí. Retornamos los datos al Context.
+            return await request('/auth/login', 'POST', credentials);
         },
         register: (data) => request('/auth/register', 'POST', data),
         logout: () => {
             localStorage.removeItem('erp_token');
             localStorage.removeItem('erp_user');
+            sessionStorage.removeItem('erp_token');
+            sessionStorage.removeItem('erp_user');
             window.location.href = '/login';
         }
     }
