@@ -4,29 +4,27 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\AutenticacionService;
-use App\Services\EmpresaService;
 use Exception;
 
 class AutenticacionController {
 
     private AutenticacionService $servicioAutenticacion;
-    private EmpresaService $servicioEmpresa;
 
     public function __construct() {
         $this->servicioAutenticacion = new AutenticacionService();
-        $this->servicioEmpresa = new EmpresaService();
     }
 
     public function login(): void {
         $entradaCruda = file_get_contents("php://input");
         $datos = json_decode($entradaCruda, true);
 
-        if (empty($datos['email']) || empty($datos['password'])) {
+        if (!is_array($datos) || empty($datos['email']) || empty($datos['password'])) {
             $this->responderConError(400, 'DATOS_INCOMPLETOS', 'El correo y la contraseña son obligatorios.');
         }
 
         try {
             $resultado = $this->servicioAutenticacion->iniciarSesion($datos['email'], $datos['password']);
+            header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
                 'token' => $resultado['token'],
@@ -34,55 +32,70 @@ class AutenticacionController {
             ]);
 
         } catch (Exception $e) {
-            $codigoHttp = 401;
+            $codigoHttp = 401; 
             $mensaje = 'Credenciales incorrectas.';
             $codigoError = $e->getMessage();
 
-            if ($codigoError === 'CUENTA_SUSPENDIDA') {
-                $codigoHttp = 403;
-                $mensaje = 'Su cuenta está inactiva. Contacte a soporte.';
-            } elseif ($codigoError === 'PLAN_VENCIDO') {
-                $codigoHttp = 403;
-                $mensaje = 'Su suscripción ha vencido. Por favor realice el pago.';
-            } elseif ($codigoError === 'CREDENCIALES_INCORRECTAS') {
-                $mensaje = 'Correo o contraseña incorrectos.';
+            switch ($codigoError) {
+                case 'CUENTA_SUSPENDIDA':
+                    $codigoHttp = 403; 
+                    $mensaje = 'Su cuenta está inactiva. Contacte a soporte.';
+                    break;
+                case 'PLAN_VENCIDO':
+                    $codigoHttp = 403;
+                    $mensaje = 'Su suscripción ha vencido. Por favor realice el pago.';
+                    break;
+                case 'CREDENCIALES_INCORRECTAS':
+                case 'USUARIO_NO_ENCONTRADO':
+                    $codigoHttp = 401;
+                    $mensaje = 'Correo o contraseña incorrectos.';
+                    break;
             }
 
             $this->responderConError($codigoHttp, $codigoError, $mensaje);
         }
     }
 
-    public function registro(): void {
-        $entradaCruda = file_get_contents("php://input");
-        $datos = json_decode($entradaCruda, true);
-        $camposRequeridos = ['empresa_rut', 'empresa_razon_social', 'admin_nombre', 'admin_email', 'admin_password'];
-        foreach ($camposRequeridos as $campo) {
-            if (empty($datos[$campo])) {
-                $this->responderConError(400, 'ERROR_VALIDACION', "El campo '$campo' es obligatorio.");
-            }
-        }
-
-        try {
-            $resultado = $this->servicioEmpresa->registrarEmpresaCompleta($datos);
-            
-            http_response_code(201);
-            echo json_encode($resultado);
-
-        } catch (Exception $e) {
-            $esConflicto = stripos($e->getMessage(), 'ya existe') !== false || stripos($e->getMessage(), 'duplicado') !== false;
-            $codigoHttp = $esConflicto ? 409 : 400;
-            
-            $this->responderConError($codigoHttp, 'REGISTRO_FALLIDO', $e->getMessage());
-        }
-    }
-
     private function responderConError(int $codigoHttp, string $codigoErrorInterno, string $mensajeLegible): void {
         http_response_code($codigoHttp);
+        header('Content-Type: application/json');
         echo json_encode([
             'success' => false,
             'error_code' => $codigoErrorInterno,
             'message' => $mensajeLegible
         ]);
         exit;
+    }
+
+    public function solicitarRecuperacion(): void 
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!empty($data['email'])) {
+            try {
+                $this->servicioAutenticacion->iniciarRecuperacion($data['email']);
+            } catch (Exception $e) {
+            }
+        }
+        echo json_encode(['success' => true, 'message' => 'Si el correo existe, se ha enviado un código.']);
+    }
+
+    public function restablecerPassword(): void 
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        try {
+            if (empty($data['email']) || empty($data['codigo']) || empty($data['password'])) {
+                throw new Exception("Faltan datos.");
+            }
+
+            $this->servicioAutenticacion->cambiarPasswordConToken($data['email'], $data['codigo'], $data['password']);
+            
+            echo json_encode(['success' => true, 'message' => 'Contraseña actualizada correctamente.']);
+
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 }

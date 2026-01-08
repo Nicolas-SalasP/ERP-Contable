@@ -36,4 +36,26 @@ class AutenticacionRepository {
         
         return $resultado ?: null;
     }
+
+    public function guardarTokenRecuperacion(string $email, string $token): void 
+    {
+        $sql = "UPDATE usuarios SET reset_token = ?, reset_expires_at = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE email = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$token, $email]);
+    }
+
+    public function verificarTokenValido(string $email, string $token): bool 
+    {
+        $sql = "SELECT id FROM usuarios WHERE email = ? AND reset_token = ? AND reset_expires_at > NOW()";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$email, $token]);
+        return (bool)$stmt->fetch();
+    }
+
+    public function actualizarPasswordYLimpiarToken(string $email, string $nuevoHash): void 
+    {
+        $sql = "UPDATE usuarios SET password = ?, reset_token = NULL, reset_expires_at = NULL WHERE email = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$nuevoHash, $email]);
+    }
 }
