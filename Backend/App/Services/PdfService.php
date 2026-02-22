@@ -136,11 +136,36 @@ class PdfService extends FPDF
         $this->SetTextColor(30, 41, 59);
         $this->SetFont('Arial', '', 9);
 
+        // --- TABLA DE PRODUCTOS (INTERLINEADO AJUSTADO) ---
         foreach ($cotizacion['detalles'] as $item) {
-            $this->Cell(105, 8, " " . $this->encode($item['producto_nombre']), 'B', 0, 'L');
-            $this->Cell(20, 8, $item['cantidad'], 'B', 0, 'C');
-            $this->Cell(30, 8, "$" . number_format((float) $item['precio_unitario'], 0, ',', '.'), 'B', 0, 'R');
-            $this->Cell(35, 8, "$" . number_format((float) $item['subtotal'], 0, ',', '.'), 'B', 1, 'R');
+            $yAntes = $this->GetY();
+            $xAntes = $this->GetX();
+            
+            // Definimos un alto de línea más pequeño para el texto (ej: 4 o 5)
+            // pero mantenemos el relleno para que no quede pegado a los bordes
+            $altoTexto = 4.5; 
+            
+            $this->SetY($yAntes + 2); // Pequeño margen superior interno
+            $this->MultiCell(105, $altoTexto, " " . $this->encode($item['producto_nombre']), 0, 'L');
+            
+            $yDespues = $this->GetY() + 2; // Margen inferior interno
+            $altoFila = $yDespues - $yAntes;
+            
+            // Dibujamos el borde inferior manualmente para toda la fila
+            $this->Line($xAntes, $yDespues, $xAntes + 190, $yDespues);
+
+            // Posicionamos las celdas laterales centradas verticalmente en el alto de la fila
+            $this->SetXY($xAntes + 105, $yAntes);
+            $this->Cell(20, $altoFila, $item['cantidad'], 0, 0, 'C');
+            $this->Cell(30, $altoFila, "$" . number_format((float) $item['precio_unitario'], 0, ',', '.'), 0, 0, 'R');
+            $this->Cell(35, $altoFila, "$" . number_format((float) $item['subtotal'], 0, ',', '.'), 0, 0, 'R');
+            
+            $this->SetY($yDespues);
+            
+            // Verificación para no salirse de la página (Salto de página manual si es necesario)
+            if($this->GetY() > 260) {
+                $this->AddPage();
+            }
         }
 
         // --- POSICIONAMIENTO INFERIOR ---

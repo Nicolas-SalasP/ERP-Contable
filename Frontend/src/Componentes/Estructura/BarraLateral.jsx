@@ -1,25 +1,27 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../Contextos/AuthContext'; // <--- Importamos el contexto
+import { useAuth } from '../../Contextos/AuthContext';
 
 const BarraLateral = ({ isOpen, toggleSidebar }) => {
     const location = useLocation();
-    const { user, logout } = useAuth(); // <--- Obtenemos usuario y logout
+    const { user, logout } = useAuth();
     
     const menuItems = [
-        { path: '/', label: 'Dashboard', icon: '📊' },
-        { path: '/facturas/nueva', label: 'Ingresar Factura', icon: '📝' },
-        { path: '/facturas/historial', label: 'Historial Compras', icon: '📁' },
-        { path: '/cotizaciones', label: 'Gestión Cotizaciones', icon: '💼' },
-        { path: '/cotizaciones/nueva', label: 'Nueva Cotización', icon: '➕' },
-        { path: '/clientes', label: 'Clientes', icon: 'users' },
-        { path: '/proveedores', label: 'Proveedores', icon: 'users' },
-        { path: '/contabilidad/libro-mayor', label: 'Libro Mayor', icon: '📚' },
+        { path: '/activos', label: 'Activos Fijos', icon: '🏢' },
         { 
             path: '/contabilidad/anulacion', 
             label: 'Anulaciones', 
             icon: 'anulacion'
         },
+        { path: '/clientes', label: 'Clientes', icon: 'users' },
+        { path: '/', label: 'Dashboard', icon: '📊' },
+        { path: '/cotizaciones', label: 'Gestión Cotizaciones', icon: '💼' },
+        { path: '/facturas/historial', label: 'Historial Compras', icon: '📁' },
+        { path: '/facturas/nueva', label: 'Ingresar Factura', icon: '📝' },
+        { path: '/contabilidad/libro-mayor', label: 'Libro Mayor', icon: '📚' },
+        { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas', icon: '⚙️' },
+        { path: '/cotizaciones/nueva', label: 'Nueva Cotización', icon: '➕' },
+        { path: '/proveedores', label: 'Proveedores', icon: 'users' },
     ];
 
     const isActive = (path) => location.pathname === path;
@@ -41,7 +43,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     <h1 className="text-xl font-bold tracking-widest text-emerald-400">ERP<span className="text-white">CONTABLE</span></h1>
                 </div>
 
-                <nav className="mt-6 px-4 space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+                <nav className="mt-6 px-4 space-y-2 overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
                     {menuItems.map((item) => (
                         <Link
                             key={item.path}

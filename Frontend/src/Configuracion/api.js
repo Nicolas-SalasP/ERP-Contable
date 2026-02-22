@@ -1,18 +1,32 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost/ERP-Contable/Backend/Public/api';
+// Detección dinámica del entorno
+const hostname = window.location.hostname;
+const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 
+    (isLocal 
+        ? 'http://localhost/ERP-Contable/Backend/Public/api' 
+        : 'https://api.tudominio.com/api'); // <--- Ajustar cuando tenga IP de Hosting o dominio
+
+// Función para obtener headers con limpieza de token
 const getAuthHeaders = () => {
-    // Busca el token en cualquiera de los dos lugares
-    const token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
-    return token ? { 'Authorization': `Bearer ${token}` } : {};
+    let token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
+    
+    if (token) {
+        if (token.startsWith('"') && token.endsWith('"')) {
+            token = token.slice(1, -1);
+        }
+        return { 'Authorization': `Bearer ${token}` };
+    }
+    return {};
 };
 
+// Manejador de respuestas unificado
 const handleResponse = async (response) => {
     const isJson = response.headers.get('content-type')?.includes('application/json');
     const data = isJson ? await response.json() : null;
 
     if (!response.ok) {
         if (response.status === 401) {
-            // Si el token venció, limpiamos todo
             localStorage.removeItem('erp_token');
             localStorage.removeItem('erp_user');
             sessionStorage.removeItem('erp_token');
@@ -36,12 +50,13 @@ const handleResponse = async (response) => {
     return data;
 };
 
+// Función base para realizar peticiones (Wrapper de Fetch)
 const request = async (endpoint, method, body = null, customHeaders = {}) => {
     const config = {
         method,
         headers: {
             'Content-Type': 'application/json',
-            ...getAuthHeaders(), // Inyecta el token automáticamente
+            ...getAuthHeaders(),
             ...customHeaders,
         },
     };
@@ -51,7 +66,7 @@ const request = async (endpoint, method, body = null, customHeaders = {}) => {
     }
 
     try {
-        const response = await fetch(`${BASE_URL}${endpoint}`, config);
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
         return await handleResponse(response);
     } catch (error) {
         if (!error.status) {
@@ -66,7 +81,12 @@ const request = async (endpoint, method, body = null, customHeaders = {}) => {
     }
 };
 
+// Objeto API exportado para usar en los componentes
 export const api = {
+    defaults: {
+        baseURL: API_BASE_URL
+    },
+
     get: (endpoint) => request(endpoint, 'GET'),
     post: (endpoint, body) => request(endpoint, 'POST', body),
     put: (endpoint, body) => request(endpoint, 'PUT', body),
@@ -74,7 +94,6 @@ export const api = {
 
     auth: {
         login: async (credentials) => {
-            // IMPORTANTE: Ya no guardamos nada aquí. Retornamos los datos al Context.
             return await request('/auth/login', 'POST', credentials);
         },
         register: (data) => request('/auth/register', 'POST', data),

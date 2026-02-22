@@ -108,4 +108,66 @@ class ContabilidadController
         echo json_encode($datos);
         exit;
     }
+
+    public function listarLibroDiario(): void
+    {
+        try {
+            $filtros = [
+                'desde'  => $_GET['desde'] ?? date('Y-m-01'),
+                'hasta'  => $_GET['hasta'] ?? date('Y-m-t'),
+                'cuenta' => $_GET['cuenta'] ?? null
+            ];
+
+            $data = $this->servicio->obtenerLibroDiario($filtros);
+            
+            $this->responderJson([
+                'success' => true,
+                'exito' => true,
+                'data' => $data
+            ]);
+
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
+
+    public function listarPlanCuentas(): void
+    {
+        try {
+            $data = $this->servicio->obtenerPlanCuentas();
+            
+            $this->responderJson([
+                'success' => true,
+                'exito' => true,
+                'data' => $data
+            ]);
+
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
+
+    public function verAsientoCompleto(int $id): void
+    {
+        try {
+            $data = $this->servicio->obtenerAsientoPorId($id);
+            if (empty($data)) {
+                $this->responderJson(['success' => false, 'mensaje' => 'Asiento no encontrado'], 404);
+            }
+            $this->responderJson(['success' => true, 'data' => $data]);
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
+
+    public function actualizarCuenta($id)
+    {
+        $input = json_decode(file_get_contents("php://input"), true);
+        try {
+            $resultado = $this->servicio->actualizarCuenta((int)$id, $input);
+            return $this->responderJson($resultado);
+        } catch (Exception $e) {
+            return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
 }

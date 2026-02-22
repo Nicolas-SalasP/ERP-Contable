@@ -16,6 +16,9 @@ import GestionCotizaciones from './Modulos/Cotizaciones/GestionCotizaciones';
 import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
 import GestionClientes from './Modulos/Clientes/GestionClientes';
 import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
+import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
+import VisorAuditoriaFactura from './Modulos/Contabilidad/Vistas/VisorAuditoriaFactura';
+import AdministradorCuentas from './Modulos/Contabilidad/Vistas/AdministradorCuentas';
 
 const RutaPrivada = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -30,12 +33,10 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* RUTAS PÚBLICAS */}
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<RegistroEmpresa />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
 
-          {/* RUTA DE BIENVENIDA / DASHBOARD */}
           <Route path="/" element={
             <RutaPrivada>
               <LayoutPrincipal>
@@ -47,7 +48,6 @@ function App() {
             </RutaPrivada>
           } />
 
-          {/* RESTO DE RUTAS PRIVADAS (Sin cambios) */}
           <Route path="/facturas/nueva" element={
             <RutaPrivada>
               <LayoutPrincipal><RegistroFactura /></LayoutPrincipal>
@@ -92,8 +92,16 @@ function App() {
 
           <Route path="/contabilidad/anulacion" element={
             <RutaPrivada>
-              <LayoutPrincipal> 
+              <LayoutPrincipal>
                 <AnulacionGeneral />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/plan-cuentas" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <AdministradorCuentas />
               </LayoutPrincipal>
             </RutaPrivada>
           } />
@@ -102,6 +110,22 @@ function App() {
             <RutaPrivada>
               <LayoutPrincipal>
                 <PerfilEmpresa />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/activos" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <GestionActivos />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/facturas/:id/auditoria" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <VisorAuditoriaFactura />
               </LayoutPrincipal>
             </RutaPrivada>
           } />
