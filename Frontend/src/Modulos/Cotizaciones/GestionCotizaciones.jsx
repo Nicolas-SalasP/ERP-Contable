@@ -73,15 +73,20 @@ const GestionCotizaciones = () => {
 
     const descargarPDF = async (id, nombreCliente) => {
         try {
-            let token = localStorage.getItem('erp_token');
+            let tokenRaw = localStorage.getItem('token') ||
+                localStorage.getItem('erp_token') ||
+                sessionStorage.getItem('erp_token');
 
-            if (!token) {
-                throw new Error('No se encontró una sesión activa.');
+            if (!tokenRaw) {
+                throw new Error('No se encontró una sesión activa. Por favor, reingrese al sistema.');
             }
 
-            token = token.replace(/^"(.*)"$/, '$1');
+            const token = tokenRaw.startsWith('"')
+                ? JSON.parse(tokenRaw)
+                : tokenRaw;
 
             const baseURL = api.defaults?.baseURL || 'http://localhost/ERP-Contable/Backend/Public/api';
+
             const response = await fetch(`${baseURL}/cotizaciones/pdf/${id}`, {
                 method: 'GET',
                 headers: {
@@ -90,9 +95,14 @@ const GestionCotizaciones = () => {
                 }
             });
 
+            if (response.status === 401) {
+                throw new Error('Tu sesión ha expirado o el token es inválido.');
+            }
+
             if (!response.ok) {
                 throw new Error('El servidor no pudo generar el archivo.');
             }
+
             const clienteSeguro = nombreCliente ? nombreCliente.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim() : 'Cliente';
             const nombreArchivo = `Cotizacion_${id} - ${clienteSeguro}.pdf`;
 
@@ -101,7 +111,6 @@ const GestionCotizaciones = () => {
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', nombreArchivo);
-            
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

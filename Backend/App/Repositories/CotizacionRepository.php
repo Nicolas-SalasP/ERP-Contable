@@ -127,20 +127,20 @@ class CotizacionRepository
     public function obtenerPorId(int $id)
     {
         $sql = "SELECT c.*, 
-                c.es_afecta, 
-                c.validez,
-                e.nombre as estado_nombre, 
-                cl.contacto_email as cliente_email, 
-                cl.contacto_telefono as cliente_telefono,
-                cl.rut as cliente_rut,
-                cl.direccion as cliente_direccion
-                FROM cotizaciones c
-                JOIN estado_cotizaciones e ON c.estado_id = e.id
-                JOIN clientes cl ON c.cliente_id = cl.id
-                WHERE c.id = ?";
+        c.es_afecta, 
+        c.validez,
+        e.nombre as estado_nombre, 
+        cl.contacto_email as cliente_email, 
+        cl.contacto_telefono as cliente_telefono,
+        cl.rut as cliente_rut,
+        cl.direccion as cliente_direccion
+        FROM cotizaciones c
+        JOIN estado_cotizaciones e ON c.estado_id = e.id
+        JOIN clientes cl ON c.cliente_id = cl.id
+        WHERE c.id = ? AND c.empresa_id = ?";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$id]);
+        $stmt->execute([$id, $this->empresaId]);
         $cotizacion = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($cotizacion) {
