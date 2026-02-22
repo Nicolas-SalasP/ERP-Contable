@@ -57,12 +57,17 @@ class AnulacionService
 
     public function anularDocumento(array $datos): array
     {
-        $codigo = $datos['codigo'];
+        $codigo = (string) $datos['codigo']; 
         $motivo = $datos['motivo'];
+        $fechaReverso = !empty($datos['fecha_anulacion']) ? $datos['fecha_anulacion'] : date('Y-m-d');
         
         $documento = $this->buscarDocumentoPorCodigo($codigo);
         if (!$documento) {
             throw new Exception("Documento no encontrado.");
+        }
+
+        if ($fechaReverso < $documento['fecha']) {
+            throw new Exception("Inconsistencia contable: La fecha de anulación ({$fechaReverso}) no puede ser anterior a la emisión ({$documento['fecha']}).");
         }
 
         if ($documento['estado'] === 'ANULADA') {
@@ -79,11 +84,17 @@ class AnulacionService
                 $asientoOriginal = $this->contabilidadRepo->obtenerAsientoPorOrigen('COMPRA', (int)$documento['id']);
                 
                 if (!empty($asientoOriginal['detalles'])) {
+                    
+                    $prefijo = substr($codigo, 0, 4);
+                    $nuevoCodigo = $this->facturaRepo->generarCodigoSistema($prefijo); 
+
                     $datosCabecera = [
-                        'glosa' => "REVERSO NULO: " . $documento['descripcion'] . ". Motivo: " . $motivo,
-                        'tipo_asiento' => 'anulacion',
+                        'codigo_unico'  => $nuevoCodigo, 
+                        'glosa'         => "REVERSO NULO: " . $documento['descripcion'] . ". Motivo: " . $motivo,
+                        'tipo_asiento'  => 'anulacion',
                         'origen_modulo' => 'COMPRA', 
-                        'origen_id' => $documento['id']
+                        'origen_id'     => $documento['id'],
+                        'fecha'         => $fechaReverso
                     ];
                     $nuevoAsientoId = $this->contabilidadRepo->crearAsiento($datosCabecera);
 
@@ -99,11 +110,17 @@ class AnulacionService
 
             } else {
                 $this->contabilidadRepo->anularAsientoManual((int)$documento['id']);
+                
+                $prefijo = substr($codigo, 0, 4); 
+                $nuevoCodigo = $this->facturaRepo->generarCodigoSistema($prefijo); 
+
                 $datosCabecera = [
-                    'glosa' => "REVERSO MANUAL: " . $documento['descripcion'] . ". Motivo: " . $motivo,
-                    'tipo_asiento' => 'anulacion',
+                    'codigo_unico'  => $nuevoCodigo, 
+                    'glosa'         => "REVERSO MANUAL: " . $documento['descripcion'] . ". Motivo: " . $motivo,
+                    'tipo_asiento'  => 'anulacion',
                     'origen_modulo' => 'MANUAL',
-                    'origen_id' => $documento['id']
+                    'origen_id'     => $documento['id'],
+                    'fecha'         => $fechaReverso
                 ];
                 $nuevoAsientoId = $this->contabilidadRepo->crearAsiento($datosCabecera);
 
@@ -121,7 +138,7 @@ class AnulacionService
 
             return [
                 'success' => true,
-                'nuevo_asiento_id' => $nuevoAsientoId
+                'nuevo_asiento_id' => $nuevoCodigo 
             ];
 
         } catch (Exception $e) {

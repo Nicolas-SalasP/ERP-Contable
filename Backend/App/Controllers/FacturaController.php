@@ -109,7 +109,44 @@ class FacturaController
         }
     }
 
-    // Métodos auxiliares simples
+    public function reclasificar($idFactura)
+    {
+        $input = json_decode(file_get_contents("php://input"), true);
+
+        if (empty($input['nuevaCuenta']) || empty($input['fechaContableCambio'])) {
+            return $this->responderJson(['success' => false, 'mensaje' => 'Faltan datos obligatorios (Cuenta o Fecha)'], 400);
+        }
+
+        try {
+            $asientoActualizado = $this->servicio->reclasificarDentroDelMismoAsiento($idFactura, $input);
+            $totalDebe = 0;
+            $totalHaber = 0;
+            foreach ($asientoActualizado['detalles'] as $detalle) {
+                $totalDebe += (float)$detalle['debe'];
+                $totalHaber += (float)$detalle['haber'];
+            }
+
+            if (round($totalDebe, 2) !== round($totalHaber, 2)) {
+                throw new Exception("ALERTA CRÍTICA: Descuadre de partida doble detectado. Debe: {$totalDebe} | Haber: {$totalHaber}");
+            }
+
+            return $this->responderJson([
+                'success' => true,
+                'mensaje' => 'Asiento actualizado exitosamente. No se generaron nuevos registros de asiento.',
+                'validacion_equilibrio' => [
+                    'estado' => 'CUADRADO',
+                    'total_debe' => $totalDebe,
+                    'total_haber' => $totalHaber
+                ],
+                'asiento_id' => $asientoActualizado['id'],
+                'detalles_historicos' => $asientoActualizado['detalles']
+            ]);
+
+        } catch (Exception $e) {
+            return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
+
     public function checkDuplicada()
     {
         try {
@@ -131,6 +168,21 @@ class FacturaController
         try {
             $data = $this->servicio->obtenerAsientoPorFactura((int)$facturaId);
             return $this->responderJson(['success' => true, 'data' => $data]);
+        } catch (Exception $e) {
+            return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
+
+    public function pagar($id)
+    {
+        $input = json_decode(file_get_contents("php://input"), true);
+        if (empty($input['monto_pagado']) || empty($input['cuenta_bancaria_empresa_id'])) {
+            return $this->responderJson(['success' => false, 'mensaje' => 'Faltan datos obligatorios para registrar el pago.'], 400);
+        }
+
+        try {
+            $resultado = $this->servicio->procesarPagoFactura((int)$id, $input);
+            return $this->responderJson($resultado);
         } catch (Exception $e) {
             return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }

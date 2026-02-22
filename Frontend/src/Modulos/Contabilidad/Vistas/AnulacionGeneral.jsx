@@ -9,11 +9,13 @@ const formatDate = (dateString) => {
 };
 
 const AnulacionGeneral = () => {
+    // ESTADOS (Todos deben ir dentro del componente)
     const [codigo, setCodigo] = useState('');
     const [documento, setDocumento] = useState(null);
     const [loading, setLoading] = useState(false);
     const [procesando, setProcesando] = useState(false);
     const [motivo, setMotivo] = useState('');
+    const [fechaAnulacion, setFechaAnulacion] = useState(new Date().toISOString().split('T')[0]); // <-- Movido aquí adentro
     const [error, setError] = useState(null);
     const [exito, setExito] = useState(null);
 
@@ -43,15 +45,25 @@ const AnulacionGeneral = () => {
     };
 
     const confirmarAnulacion = async () => {
-        if (!motivo.trim()) {
+        if (!motivo.trim() || !fechaAnulacion) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Falta información',
-                text: 'Por favor, ingrese un motivo para justificar la anulación.',
+                text: 'Por favor, ingrese un motivo y verifique la fecha para justificar la anulación.',
                 buttonsStyling: false,
                 customClass: {
                     confirmButton: 'bg-slate-900 text-white px-6 py-2 rounded-lg hover:bg-slate-800 transition-colors'
                 }
+            });
+            
+            return;
+        }
+        if (fechaAnulacion < documento.fecha) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Fecha Inválida',
+                text: `La fecha de reverso no puede ser anterior a la fecha de emisión del documento (${formatDate(documento.fecha)}).`,
+                confirmButtonColor: '#0f172a'
             });
             return;
         }
@@ -83,10 +95,12 @@ const AnulacionGeneral = () => {
         });
 
         try {
+            // AQUÍ ENVIAMOS LA FECHA AL BACKEND
             const res = await api.post('/anulacion/ejecutar', { 
                 codigo: documento.codigo, 
                 tipo: documento.tipo_origen, 
-                motivo 
+                motivo,
+                fecha_anulacion: fechaAnulacion 
             });
 
             if (res.success) {
@@ -297,6 +311,23 @@ const AnulacionGeneral = () => {
                                     <>
                                         <div className="mb-4">
                                             <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+                                                Fecha Contable del Reverso <span className="text-red-500">*</span>
+                                            </label>
+                                            <input 
+                                                type="date" 
+                                                className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm bg-slate-50 focus:bg-white transition-colors"
+                                                value={fechaAnulacion}
+                                                min={documento.fecha}
+                                                onChange={(e) => setFechaAnulacion(e.target.value)}
+                                                required
+                                            />
+                                            <p className="text-[10px] text-slate-500 mt-1">
+                                                Si el mes del documento ya está cerrado, selecciona una fecha del mes actual.
+                                            </p>
+                                        </div>
+
+                                        <div className="mb-4">
+                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
                                                 Motivo de la Anulación <span className="text-red-500">*</span>
                                             </label>
                                             <textarea 
@@ -315,7 +346,7 @@ const AnulacionGeneral = () => {
 
                                         <button 
                                             onClick={confirmarAnulacion}
-                                            disabled={procesando || !motivo}
+                                            disabled={procesando || !motivo || !fechaAnulacion}
                                             className="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all"
                                         >
                                             {procesando ? 'Procesando...' : 'Confirmar Anulación'}

@@ -4,16 +4,16 @@ namespace App\Controllers;
 use App\Services\AnulacionService;
 use Exception;
 
-class AnulacionController 
+class AnulacionController
 {
     private $servicio;
 
-    public function __construct() 
+    public function __construct()
     {
         $this->servicio = new AnulacionService();
     }
 
-    private function responderJson($datos, $codigoEstado = 200) 
+    private function responderJson($datos, $codigoEstado = 200)
     {
         http_response_code($codigoEstado);
         header('Content-Type: application/json');
@@ -21,7 +21,7 @@ class AnulacionController
         exit;
     }
 
-    public function buscar() 
+    public function buscar()
     {
         $input = json_decode(file_get_contents("php://input"), true);
         $codigo = $input['codigo'] ?? '';
@@ -42,16 +42,26 @@ class AnulacionController
         }
     }
 
-    public function ejecutar() 
+    public function ejecutar()
     {
         $input = json_decode(file_get_contents("php://input"), true);
+
         if (empty($input['codigo']) || empty($input['motivo'])) {
             return $this->responderJson(['success' => false, 'mensaje' => 'Faltan datos requeridos (código o motivo).'], 400);
         }
 
         try {
-            $resultado = $this->servicio->anularDocumento($input['codigo'], $input['tipo'], $input['motivo']);
-            return $this->responderJson(['success' => true, 'mensaje' => 'Anulación exitosa', 'nuevo_asiento_id' => $resultado]);
+            $input['codigo'] = (string) $input['codigo'];
+            $resultado = $this->servicio->anularDocumento($input);
+            $idAsiento = is_array($resultado) && isset($resultado['nuevo_asiento_id'])
+                ? $resultado['nuevo_asiento_id']
+                : $resultado;
+
+            return $this->responderJson([
+                'success' => true,
+                'mensaje' => 'Anulación exitosa',
+                'nuevo_asiento_id' => $idAsiento
+            ]);
         } catch (Exception $e) {
             return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
