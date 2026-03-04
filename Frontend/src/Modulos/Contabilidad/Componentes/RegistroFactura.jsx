@@ -12,6 +12,16 @@ const cleanNumber = (value) => {
     return parseInt(value.toString().replace(/\D/g, '')) || 0;
 };
 
+// --- Cuentas rápidas comunes para compras ---
+const opcionesCuentas = [
+    { codigo: '690199', nombre: 'Compras por Clasificar (Cuenta Puente)' },
+    { codigo: '110301', nombre: 'Mercaderías para Reventa (Inventario)' },
+    { codigo: '120106', nombre: 'Equipos Computacionales (Activo Fijo)' },
+    { codigo: '620109', nombre: 'Artículos de Librería y Oficina (Gasto)' },
+    { codigo: '690101', nombre: 'Gastos Menores (Gasto)' },
+    { codigo: '660104', nombre: 'Consultorías Varias (Servicios)' }
+];
+
 const IvaWarningModal = ({ isOpen, onClose, onConfirm, calculado, ingresado }) => {
     const [motivo, setMotivo] = useState('');
     if (!isOpen) return null;
@@ -66,6 +76,8 @@ const RegistroFactura = () => {
         moneda: 'CLP',
         numeroFactura: '',
         fechaEmision: new Date().toISOString().split('T')[0],
+        fechaContable: new Date().toISOString().split('T')[0],
+        cuentaDestino: '690199',
         montoBruto: '',
         montoVisual: '',
         fechaVencimiento: '',
@@ -186,8 +198,8 @@ const RegistroFactura = () => {
 
     const handleNextStep = async () => {
         if (currentStep === 1) {
-            if (!formData.proveedorId || !formData.numeroFactura || !formData.montoBruto) {
-                alert("Por favor complete los campos obligatorios.");
+            if (!formData.proveedorId || !formData.numeroFactura || !formData.montoBruto || !formData.fechaContable) {
+                alert("Por favor complete todos los campos obligatorios.");
                 return;
             }
 
@@ -374,7 +386,9 @@ const RegistroFactura = () => {
                         </div>
 
                         <div className="flex flex-col gap-6">
-                            <div className="grid grid-cols-2 gap-6">
+                            
+                            {/* --- AJUSTE: AHORA SON 3 COLUMNAS PARA INCLUIR LA FECHA CONTABLE --- */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">N° Factura</label>
                                     <input
@@ -383,17 +397,27 @@ const RegistroFactura = () => {
                                         value={formData.numeroFactura}
                                         onChange={handleChange}
                                         placeholder="Ej: 123456"
-                                        className="w-full border border-slate-300 rounded-lg py-3 px-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700"
+                                        className="w-full border border-slate-300 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Fecha Emisión</label>
+                                    <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide" title="Fecha que aparece en el PDF">Emisión (Doc)</label>
                                     <input
                                         type="date"
                                         name="fechaEmision"
                                         value={formData.fechaEmision}
                                         onChange={handleChange}
-                                        className="w-full border border-slate-300 rounded-lg py-3 px-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-600 font-medium"
+                                        className="w-full border border-slate-300 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-600 font-medium"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-blue-700 mb-2 uppercase tracking-wide" title="Fecha que irá al Libro Diario">Contable (Libro)</label>
+                                    <input
+                                        type="date"
+                                        name="fechaContable"
+                                        value={formData.fechaContable}
+                                        onChange={handleChange}
+                                        className="w-full border border-blue-300 bg-blue-50 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-600 font-medium"
                                     />
                                 </div>
                             </div>
@@ -531,10 +555,21 @@ const RegistroFactura = () => {
                                     </div>
                                 )}
 
-                                <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center hover:bg-slate-50 transition">
-                                    <div className="w-full md:w-1/2">
-                                        <span className="font-bold text-slate-800 block text-base">Gasto / Activo (Neto)</span>
-                                        <span className="text-xs text-slate-400">Resultado / Inventario</span>
+                                <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-yellow-50/30 transition">
+                                    <div className="w-full md:w-1/2 pr-4">
+                                        
+                                        {/* --- NUEVO SELECTOR DE CUENTAS --- */}
+                                        <select 
+                                            name="cuentaDestino"
+                                            value={formData.cuentaDestino}
+                                            onChange={handleChange}
+                                            className="w-full border border-slate-300 rounded-lg p-2 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
+                                        >
+                                            {opcionesCuentas.map(c => (
+                                                <option key={c.codigo} value={c.codigo}>{c.codigo} - {c.nombre}</option>
+                                            ))}
+                                        </select>
+                                        <span className="text-[10px] text-slate-400 mt-1 block">Seleccione dónde clasificar este monto neto.</span>
                                     </div>
                                     <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0">
                                         <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
@@ -568,6 +603,7 @@ const RegistroFactura = () => {
                         disabled={
                             !formData.montoBruto ||
                             !formData.proveedorId ||
+                            !formData.fechaContable || 
                             (currentStep === 2 && (!formData.fechaVencimiento || fechaInvalida)) ||
                             checkingDuplicate
                         }

@@ -70,11 +70,12 @@ class ContabilidadRepository
     {
         $modulo = $datos['origen_modulo'] ?? 'MANUAL';
         $codigoUnico = $datos['codigo_unico'] ?? $this->generarCodigoAsiento($modulo);
+        $fechaContable = !empty($datos['fecha']) ? $datos['fecha'] : date('Y-m-d');
 
         try {
             $sqlCabecera = "INSERT INTO asientos_contables 
                             (empresa_id, codigo_unico, fecha, glosa, tipo_asiento, origen_modulo, origen_id, created_at) 
-                            VALUES (?, ?, NOW(), ?, ?, ?, ?, NOW())";
+                            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
 
             $tipo = $datos['tipo_asiento'] ?? 'traspaso';
             $origenId = $datos['origen_id'] ?? null;
@@ -83,6 +84,7 @@ class ContabilidadRepository
             $stmt->execute([
                 $this->empresaId,
                 $codigoUnico,
+                $fechaContable,
                 $datos['glosa'],
                 $tipo,
                 $modulo,
@@ -90,6 +92,7 @@ class ContabilidadRepository
             ]);
 
             $asientoId = (int) $this->db->lastInsertId();
+            
             if (isset($datos['cuenta_codigo']) && !empty($datos['cuenta_codigo'])) {
                 $debe = $datos['debe'] ?? 0;
                 $haber = $datos['haber'] ?? 0;
@@ -168,6 +171,136 @@ class ContabilidadRepository
         $stmt->execute([$id]);
     }
 
+    public function obtenerMovimientosDiario(string $fechaInicio, string $fechaFin, ?string $codigoCuenta = null): array
+    {
+        $sql = "SELECT 
+                    a.id as asiento_id,
+                    a.codigo_unico,
+                    a.fecha,
+                    a.glosa,
+                    a.tipo_asiento,
+                    d.cuenta_contable as cuenta_codigo,
+                    COALESCE(p.nombre, 'Cuenta No Encontrada') as cuenta_nombre,
+                    d.debe,
+                    d.haber,
+                    a.origen_modulo,
+                    CASE 
+                        WHEN a.origen_modulo IN ('COMPRA', 'VENTA') THEN f.numero_factura
+                        ELSE '' 
+                    END as numero_documento
+                FROM asientos_contables a
+                INNER JOIN detalles_asiento d ON a.id = d.asiento_id
+                LEFT JOIN plan_cuentas p ON (d.cuenta_contable = p.codigo AND p.empresa_id = a.empresa_id)
+                LEFT JOIN facturas f ON (a.origen_id = f.id AND a.origen_modulo IN ('COMPRA', 'VENTA'))
+                WHERE a.empresa_id = ? 
+                AND a.fecha BETWEEN ? AND ?";
+
+        $params = [$this->empresaId, $fechaInicio, $fechaFin];
+
+        if (!empty($codigoCuenta)) {
+            $sql .= " AND d.cuenta_contable LIKE ?";
+            $params[] = $codigoCuenta . "%"; 
+        }
+
+        $sql .= " ORDER BY a.fecha DESC, a.id DESC, d.haber ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerTodasLasCuentas(): array
+    {
+        $sql = "SELECT * FROM plan_cuentas 
+                WHERE empresa_id = ? 
+                ORDER BY codigo ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$this->empresaId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerAsientoCompleto(int $id): array
+    {
+        $sql = "SELECT * FROM asientos_contables WHERE id = ? AND empresa_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$id, $this->empresaId]);
+        $cabecera = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$cabecera) return [];
+
+        $sqlDet = "SELECT d.*, p.nombre as cuenta_nombre 
+                FROM detalles_asiento d 
+                LEFT JOIN plan_cuentas p ON (d.cuenta_contable = p.codigo AND p.empresa_id = ?)
+                WHERE d.asiento_id = ?
+                ORDER BY d.debe DESC, d.haber DESC";
+        
+        $stmtDet = $this->db->prepare($sqlDet);
+        $stmtDet->execute([$this->empresaId, $id]);
+        $detalles = $stmtDet->fetchAll(PDO::FETCH_ASSOC);
+
+        return ['cabecera' => $cabecera, 'detalles' => $detalles];
+    }
+
+    public function agregarDetalleReclasificacion($asientoId, $cuenta, $fecha, $tipoOperacion, $debe, $haber)
+    {
+        $sql = "INSERT INTO detalles_asiento (asiento_id, cuenta_contable, fecha, tipo_operacion, debe, haber) 
+                VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$asientoId, $cuenta, $fecha, $tipoOperacion, $debe, $haber]);
+    }
+
+    public function actualizarGlosaCabecera($asientoId, $nuevaGlosa)
+    {
+        $sql = "UPDATE asientos_contables SET glosa = ? WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$nuevaGlosa, $asientoId]);
+    }
+
+    public function generarCodigoPersonalizado(string $prefijo): string
+    {
+        $sql = "SELECT MAX(codigo_unico) as max_cod FROM asientos_contables WHERE codigo_unico LIKE ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$prefijo . '%']);
+        $res = $stmt->fetch();
+        
+        if ($res && !empty($res['max_cod'])) {
+            $correlativoActual = (int)substr((string)$res['max_cod'], strlen($prefijo));
+            $nuevoCorrelativo = str_pad((string)($correlativoActual + 1), 7, "0", STR_PAD_LEFT);
+            return $prefijo . $nuevoCorrelativo;
+        }
+        return $prefijo . "0000001"; 
+    }
+
+    public function registrarPartidaDobleReal(string $codigoUnico, string $fecha, string $glosa, string $modulo, int $referenciaId, string $cuentaDebe, string $cuentaHaber, float $monto): int
+    {
+        $sqlCabecera = "INSERT INTO asientos_contables (empresa_id, codigo_unico, fecha, glosa, tipo_asiento, origen_modulo, origen_id, created_at) 
+                        VALUES (?, ?, ?, ?, 'traspaso', ?, ?, NOW())";
+        $stmtCabecera = $this->db->prepare($sqlCabecera);
+        $stmtCabecera->execute([$this->empresaId, $codigoUnico, $fecha, $glosa, $modulo, $referenciaId]);
+        $asientoId = (int)$this->db->lastInsertId();
+
+        $sqlDet = "INSERT INTO detalles_asiento (asiento_id, cuenta_contable, debe, haber) VALUES (?, ?, ?, ?)";
+        $stmtDet = $this->db->prepare($sqlDet);
+        $stmtDet->execute([$asientoId, $cuentaDebe, $monto, 0]);
+        $stmtDet->execute([$asientoId, $cuentaHaber, 0, $monto]);
+
+        return $asientoId;
+    }
+
+    public function actualizarCuenta(int $id, array $datos): bool
+    {
+        $sql = "UPDATE plan_cuentas SET nombre = ?, imputable = ?, activo = ? WHERE id = ? AND empresa_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            $datos['nombre'],
+            (int) $datos['imputable'],
+            (int) $datos['activo'],
+            $id,
+            $this->empresaId
+        ]);
+    }
+    
     // --- CONTROL DE TRANSACCIONES ---
     public function beginTransaction(): void
     {

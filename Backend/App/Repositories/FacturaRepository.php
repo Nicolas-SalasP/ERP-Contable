@@ -143,14 +143,17 @@ class FacturaRepository
     public function buscarHistorial($proveedor = '', $numero = '', $estado = '', $limit = 10, $offset = 0)
     {
         $params = [':empresaId' => $this->empresaId];
-        
+
         $sql = "SELECT f.*, 
-                       p.razon_social as nombre_proveedor, 
-                       p.rut as rut_proveedor,
-                       ac.codigo_unico as codigo_asiento 
+                    p.razon_social as nombre_proveedor, 
+                    p.rut as rut_proveedor,
+                    (SELECT codigo_unico FROM asientos_contables 
+                        WHERE origen_id = f.id 
+                        AND origen_modulo = 'COMPRA' 
+                        AND tipo_asiento != 'anulacion' 
+                        ORDER BY id ASC LIMIT 1) as codigo_asiento 
                 FROM facturas f
                 LEFT JOIN proveedores p ON f.proveedor_id = p.id
-                LEFT JOIN asientos_contables ac ON (ac.origen_id = f.id AND ac.origen_modulo = 'COMPRA')
                 WHERE f.empresa_id = :empresaId";
 
         if (!empty($proveedor)) {
@@ -205,6 +208,41 @@ class FacturaRepository
         $stmt->execute($params);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $result ? (int)$result['total'] : 0;
+        return $result ? (int) $result['total'] : 0;
+    }
+
+    public function registrarPago(array $datos, int $asientoId): int
+    {
+        $sql = "INSERT INTO pagos_facturas (
+                    factura_id, cuenta_bancaria_empresa_id, asiento_id, 
+                    fecha_pago, monto_pagado, metodo_pago, numero_operacion
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            $datos['factura_id'],
+            $datos['cuenta_bancaria_empresa_id'],
+            $asientoId,
+            $datos['fecha_pago'],
+            $datos['monto_pagado'],
+            $datos['metodo_pago'] ?? 'Transferencia',
+            $datos['numero_operacion'] ?? null
+        ]);
+
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function marcarComoPagada(int $facturaId): void
+    {
+        $sql = "UPDATE facturas SET estado = 'PAGADA' WHERE id = ?";
+        $this->db->prepare($sql)->execute([$facturaId]);
+    }
+
+    public function obtenerFacturaPorId(int $id)
+    {
+        $sql = "SELECT * FROM facturas WHERE id = ? AND empresa_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$id, $this->empresaId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }

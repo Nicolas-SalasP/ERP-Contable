@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../Contextos/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    
+    // 1. ESTADO PARA EL CHECKBOX (Es crucial tener esto)
+    const [rememberMe, setRememberMe] = useState(false); 
+
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
@@ -16,15 +20,12 @@ const Login = () => {
         setError('');
         setIsSubmitting(true);
         
-        // Pequeña pausa artificial para que la animación de carga se vea fluida (opcional)
-        // await new Promise(r => setTimeout(r, 500)); 
-
-        const result = await login(email, password);
+        // 2. ENVIAR 'rememberMe' COMO TERCER PARÁMETRO
+        const result = await login(email, password, rememberMe);
         
         if (result.success) {
             navigate('/'); 
         } else {
-            // Mapeo de errores amigables
             const errorMap = {
                 'PLAN_VENCIDO': '⏳ Su suscripción ha vencido. Contacte a administración.',
                 'CUENTA_SUSPENDIDA': '⛔ Cuenta suspendida por seguridad.',
@@ -43,7 +44,6 @@ const Login = () => {
                 
                 {/* SECCIÓN IZQUIERDA: IMAGEN / BRANDING */}
                 <div className="w-full md:w-1/2 bg-blue-600 p-12 flex flex-col justify-between text-white relative overflow-hidden">
-                    {/* Elementos decorativos de fondo */}
                     <div className="absolute top-0 left-0 w-40 h-40 bg-white opacity-10 rounded-full -translate-x-10 -translate-y-10"></div>
                     <div className="absolute bottom-0 right-0 w-60 h-60 bg-white opacity-10 rounded-full translate-x-20 translate-y-20"></div>
 
@@ -113,11 +113,20 @@ const Login = () => {
                         </div>
 
                         <div className="flex items-center justify-between text-sm">
-                            <label className="flex items-center text-slate-600 cursor-pointer">
-                                <input type="checkbox" className="mr-2 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                            {/* 3. CHECKBOX CONECTADO AL ESTADO */}
+                            <label className="flex items-center text-slate-600 cursor-pointer select-none">
+                                <input 
+                                    type="checkbox" 
+                                    className="mr-2 rounded border-slate-300 text-blue-600 focus:ring-blue-500" 
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                />
                                 Recordarme
                             </label>
-                            <a href="#" className="text-blue-600 hover:text-blue-800 font-bold hover:underline">¿Olvidaste tu contraseña?</a>
+                            
+                            <Link to="/recuperar" className="text-blue-600 hover:text-blue-800 font-bold hover:underline">
+                                ¿Olvidaste tu contraseña?
+                            </Link>
                         </div>
 
                         <button
@@ -139,7 +148,10 @@ const Login = () => {
                     </form>
 
                     <div className="mt-8 text-center text-sm text-slate-500">
-                        ¿No tienes una cuenta? <span className="text-blue-600 font-bold cursor-pointer hover:underline">Solicita una demo</span>
+                        ¿No tienes una cuenta?{' '}
+                        <Link to="/registro" className="text-blue-600 font-bold cursor-pointer hover:underline">
+                            Regístrate aquí
+                        </Link>
                     </div>
                 </div>
             </div>

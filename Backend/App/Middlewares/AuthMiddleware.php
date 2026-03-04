@@ -13,16 +13,18 @@ class AuthMiddleware
     public static function authenticate(): object
     {
         $authHeader = self::getAuthorizationHeader();
+        $token = null;
 
-        if ($authHeader === null) {
-            self::denyAccess(401, 'AUTH_MISSING', 'Authorization header missing.');
+        if ($authHeader !== null && preg_match('/^Bearer\s(\S+)$/', $authHeader, $matches)) {
+            $token = $matches[1];
         }
-
-        if (!preg_match('/^Bearer\s(\S+)$/', $authHeader, $matches)) {
-            self::denyAccess(401, 'AUTH_INVALID_FORMAT', 'Invalid authorization format.');
+        else if (isset($_GET['token'])) {
+            $token = trim((string)$_GET['token']);
         }
-
-        $token = $matches[1];
+        if ($token === null || empty($token)) {
+            self::denyAccess(401, 'AUTH_MISSING', 'Authorization token missing.');
+        }
+        
         $payload = JwtHelper::validate($token);
 
         if (!$payload || !isset($payload->id)) {
@@ -31,23 +33,23 @@ class AuthMiddleware
 
         try {
             $db = Database::getConnection();
-            $stmt = $db->prepare("SELECT id, email, rol_id, estado_suscripcion_id, fecha_fin_suscripcion FROM usuarios WHERE id = ? LIMIT 1");
+            $stmt = $db->prepare("
+                SELECT id, email, rol_id, estado_suscripcion_id, fecha_fin_suscripcion 
+                FROM usuarios 
+                WHERE id = ? LIMIT 1
+            ");
             $stmt->execute([$payload->id]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
             if (!$user) {
                 self::denyAccess(401, 'USER_NOT_FOUND', 'User identity no longer exists.');
             }
-
             if ((int) $user['estado_suscripcion_id'] !== 1) {
                 self::denyAccess(403, 'ACCOUNT_INACTIVE', 'Account is suspended or inactive.');
             }
-
             $expiryDate = $user['fecha_fin_suscripcion'];
             if ($expiryDate && $expiryDate < date('Y-m-d')) {
                 self::denyAccess(403, 'SUBSCRIPTION_EXPIRED', 'Subscription plan has expired.');
             }
-
             $payload->rol_id = (int) $user['rol_id'];
             $payload->email = $user['email'];
 
@@ -82,7 +84,11 @@ class AuthMiddleware
         header('Content-Type: application/json; charset=utf-8');
         header('X-Content-Type-Options: nosniff');
         header('X-Frame-Options: DENY');
-        echo json_encode(['success' => false, 'error_code' => $code, 'message' => $message]);
+        echo json_encode([
+            'success' => false, 
+            'error_code' => $code, 
+            'message' => $message
+        ]);
         exit;
     }
 }

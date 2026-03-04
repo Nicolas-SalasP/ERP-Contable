@@ -23,6 +23,7 @@ $baseDir = dirname(__DIR__) . '/App';
 // Helpers y Configuración Base
 require_once $baseDir . '/Config/Database.php';
 require_once $baseDir . '/Helpers/JwtHelper.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 // Servicio de Auditoría (Crítico para el sistema)
 $archivoAuditoria = $baseDir . '/Services/AuditoriaService.php';
@@ -39,12 +40,16 @@ require_once $baseDir . '/Config/Router.php';
 $files = [
     // Repositorios
     '/Repositories/AutenticacionRepository.php',
+    '/Repositories/EmpresaRepository.php',
     '/Repositories/FacturaRepository.php',
     '/Repositories/ProveedorRepository.php',
     '/Repositories/CuentaBancariaRepository.php',
     '/Repositories/ContabilidadRepository.php',
     '/Repositories/LibroMayorRepository.php',
     '/Repositories/PaisRepository.php',
+    '/Repositories/CotizacionRepository.php',
+    '/Repositories/ClienteRepository.php',
+    '/Repositories/ActivoRepository.php',
 
     // Servicios
     '/Services/EmpresaService.php',
@@ -56,16 +61,23 @@ $files = [
     '/Services/LibroMayorService.php',
     '/Services/PaisService.php',
     '/Services/AnulacionService.php',
+    '/Services/CotizacionService.php',
+    '/Services/ClienteService.php',
+    '/Services/ActivoService.php',
 
     // Controladores
     '/Controllers/AutenticacionController.php',
+    '/Controllers/EmpresaController.php',
     '/Controllers/ProveedorController.php',
     '/Controllers/CuentaBancariaController.php',
     '/Controllers/FacturaController.php',
     '/Controllers/ContabilidadController.php',
     '/Controllers/LibroMayorController.php',
     '/Controllers/PaisController.php',
-    '/Controllers/AnulacionController.php'
+    '/Controllers/AnulacionController.php',
+    '/Controllers/CotizacionController.php',
+    '/Controllers/ClienteController.php',
+    '/Controllers/ActivoController.php'
 ];
 
 foreach ($files as $file) {
@@ -73,20 +85,22 @@ foreach ($files as $file) {
     if (file_exists($path)) {
         require_once $path;
     } else {
-        // Descomentar para depuración si es necesario
-        // error_log("Advertencia: No se pudo cargar " . $path);
     }
 }
 
 // Importación de Namespaces para el Router
 use App\Config\Router;
 use App\Controllers\AutenticacionController;
+use App\Controllers\EmpresaController;
 use App\Controllers\ProveedorController;
 use App\Controllers\CuentaBancariaController;
 use App\Controllers\FacturaController;
 use App\Controllers\ContabilidadController;
 use App\Controllers\PaisController;
 use App\Controllers\AnulacionController;
+use App\Controllers\ClienteController;
+use App\Controllers\CotizacionController;
+use App\Controllers\ActivoController;
 
 // -----------------------------------------------------------------------------
 // 3. Definición de Rutas del Sistema
@@ -95,7 +109,8 @@ $router = new Router();
 
 // --- Autenticación ---
 $router->post('/api/auth/login', [AutenticacionController::class, 'login'], false);
-$router->post('/api/auth/register', [AutenticacionController::class, 'registro'], false);
+$router->post('/api/auth/recuperar', [AutenticacionController::class, 'solicitarRecuperacion'], false);
+$router->post('/api/auth/resetear', [AutenticacionController::class, 'restablecerPassword'], false);
 
 // --- Proveedores ---
 $router->get('/api/proveedores', [ProveedorController::class, 'getAll'], true);
@@ -123,6 +138,40 @@ $router->post('/api/anulacion/ejecutar', [AnulacionController::class, 'ejecutar'
 $router->post('/api/contabilidad/asiento-manual', [ContabilidadController::class, 'registrarAsientoManual'], true);
 $router->get('/api/contabilidad/saldos-mayor', [ContabilidadController::class, 'verSaldosMayor'], true);
 $router->post('/api/contabilidad/anular', [ContabilidadController::class, 'anularAsiento'], true);
+$router->get('/api/contabilidad/libro-diario', [ContabilidadController::class, 'listarLibroDiario'], true);
+$router->get('/api/contabilidad/plan-cuentas', [ContabilidadController::class, 'listarPlanCuentas'], true);
+$router->get('/api/contabilidad/asientos/{id}', [ContabilidadController::class, 'verAsientoCompleto'], true);
+$router->post('/api/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificar'], true);
+$router->put('/api/contabilidad/plan-cuentas/{id}', [ContabilidadController::class, 'actualizarCuenta'], true);
+$router->post('/api/facturas/{id}/pagar', [FacturaController::class, 'pagar'], true);
+
+// --- Cotizaciones ---
+$router->post('/api/cotizaciones', [CotizacionController::class, 'crear'], true);
+$router->get('/api/cotizaciones', [CotizacionController::class, 'listar'], true);
+$router->put('/api/cotizaciones/{id}/estado', [CotizacionController::class, 'cambiarEstado'], true);
+$router->get('/api/cotizaciones/pdf/{id}', [CotizacionController::class, 'descargarPdf'], true);
+
+// --- Clientes ---
+$router->get('/api/clientes', [ClienteController::class, 'index'], true);
+$router->post('/api/clientes', [ClienteController::class, 'store'], true);
+$router->put('/api/clientes/{id}', [ClienteController::class, 'update'], true);
+$router->delete('/api/clientes/{id}', [ClienteController::class, 'delete'], true);
+
+// --- Empresas ---
+$router->post('/api/empresas/registro', [EmpresaController::class, 'registrar'], false);
+$router->get('/api/empresas/perfil', [EmpresaController::class, 'verPerfil'], true);
+$router->put('/api/empresas/perfil', [EmpresaController::class, 'actualizarPerfil'], true);
+$router->post('/api/empresas/logo', [EmpresaController::class, 'subirLogo'], true);
+$router->post('/api/empresas/bancos', [EmpresaController::class, 'guardarBanco'], true);
+$router->delete('/api/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco'], true);
+$router->get('/api/empresas/catalogo-bancos', [EmpresaController::class, 'listarBancosDisponibles'], true);
+
+// --- Activos Fijos ---
+$router->get('/api/activos', [ActivoController::class, 'listar'], true);
+$router->post('/api/activos', [ActivoController::class, 'crear'], true);
+$router->get('/api/activos/pendientes', [ActivoController::class, 'listarPendientes'], true);
+$router->post('/api/activos/depreciar-mes', [ActivoController::class, 'procesarDepreciacion'], true);
+$router->post('/api/activos/{id}/activar', [ActivoController::class, 'activar'], true);
 
 // -----------------------------------------------------------------------------
 // 4. Despacho de la Petición

@@ -1,0 +1,11 @@
+{
+    "autoload": {
+        "psr-4": {
+            "App\\": "App/"
+        }
+    },
+    "require": {
+        "setasign/fpdf": "^1.8",
+        "phpmailer/phpmailer": "^7.0"
+    }
+}

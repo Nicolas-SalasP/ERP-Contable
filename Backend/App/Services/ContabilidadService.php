@@ -39,6 +39,28 @@ class ContabilidadService
         return ['id' => $asientoId, 'codigo' => $codigoUnico];
     }
 
+    public function registrarAsientoDoble(string $modulo, int $referenciaId, string $cuentaDebe, string $cuentaHaber, float $monto, string $glosa, string $fechaCierre): array
+    {
+        $prefijo = date('y', strtotime($fechaCierre)) . "12";
+
+        $codigoUnico = $this->repositorio->generarCodigoPersonalizado($prefijo);
+
+        $asientoId = $this->repositorio->registrarPartidaDobleReal(
+            $codigoUnico,
+            $fechaCierre,
+            $glosa,
+            $modulo,
+            $referenciaId,
+            $cuentaDebe,
+            $cuentaHaber,
+            $monto
+        );
+
+        AuditoriaService::registrar('REGISTRAR_ASIENTO_DOBLE', 'asientos_contables', $asientoId, null, ['codigo' => $codigoUnico, 'modulo' => $modulo]);
+
+        return ['id' => $asientoId, 'codigo' => $codigoUnico];
+    }
+
     public function anularAsiento(int $codigoUnico, string $motivo): array
     {
         $asiento = $this->repositorio->getByCodigoUnico($codigoUnico);
@@ -92,5 +114,30 @@ class ContabilidadService
             $cuenta['tipo_saldo'] = $saldo >= 0 ? 'DEUDOR' : 'ACREEDOR';
         }
         return $datos;
+    }
+
+    public function obtenerLibroDiario(array $filtros): array
+    {
+        $fechaInicio = $filtros['desde'] ?? date('Y-m-01');
+        $fechaFin = $filtros['hasta'] ?? date('Y-m-t');
+        $cuenta = $filtros['cuenta'] ?? null;
+
+        return $this->repositorio->obtenerMovimientosDiario($fechaInicio, $fechaFin, $cuenta);
+    }
+
+    public function obtenerPlanCuentas(): array
+    {
+        return $this->repositorio->obtenerTodasLasCuentas();
+    }
+
+    public function obtenerAsientoPorId(int $id): array
+    {
+        return $this->repositorio->obtenerAsientoCompleto($id);
+    }
+
+    public function actualizarCuenta(int $id, array $datos): array
+    {
+        $this->repositorio->actualizarCuenta($id, $datos);
+        return ['success' => true, 'mensaje' => 'Cuenta actualizada correctamente.'];
     }
 }
