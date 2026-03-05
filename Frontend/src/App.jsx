@@ -7,6 +7,7 @@ import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 import Login from './Modulos/Autenticacion/Login';
 import RegistroEmpresa from './Modulos/Autenticacion/RegistroEmpresa';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
+import Dashboard from './Modulos/Dashboard/Dashboard'; // <-- NUEVA IMPORTACIÓN
 import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
 import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
 import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
@@ -38,13 +39,11 @@ function App() {
           <Route path="/registro" element={<RegistroEmpresa />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
 
+          {/* RUTA RAÍZ ACTUALIZADA */}
           <Route path="/" element={
             <RutaPrivada>
               <LayoutPrincipal>
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                  <h1 className="text-2xl font-bold">Bienvenido al ERP Contable</h1>
-                  <p>Selecciona una opción del menú lateral.</p>
-                </div>
+                <Dashboard /> 
               </LayoutPrincipal>
             </RutaPrivada>
           } />
@@ -146,4 +145,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; 
