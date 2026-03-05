@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
-import ModalGenerico from '../../../Componentes/ModalGenerico';
 import VisorProyectoActivo from './VisorProyectoActivo';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const GestionProyectosActivos = ({ onNotificar }) => {
     const [proyectos, setProyectos] = useState([]);
-    const [tiposActivos, setTiposActivos] = useState([]); // <--- ¡AQUÍ ESTÁ LA MAGIA, YA NO ES QUEMADO!
+    const [tiposActivos, setTiposActivos] = useState([]);
     const [loading, setLoading] = useState(true);
     
     const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
@@ -24,6 +23,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                 api.get('/activos/proyectos'),
                 api.get('/activos/parametros') 
             ]);
+            
             if (resProyectos.success) setProyectos(resProyectos.data);
             if (resParams.success) setTiposActivos(resParams.data.cuentas);
         } catch (error) {
@@ -83,12 +83,9 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                     <i className="fas fa-plus mr-2"></i> Nuevo Proyecto
                 </button>
             </div>
-
             {proyectos.length === 0 ? (
                 <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
-                    <div className="h-16 w-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
-                        <i className="fas fa-folder-open"></i>
-                    </div>
+                    <div className="h-16 w-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-4"><i className="fas fa-folder-open"></i></div>
                     <h3 className="text-lg font-bold text-slate-700">No hay proyectos activos</h3>
                     <p className="text-slate-500 mt-1">Comienza creando un nuevo proyecto para acumular facturas y capitalizar activos.</p>
                 </div>
@@ -116,30 +113,65 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                     ))}
                 </div>
             )}
-
             {modalAbierto && (
-                <ModalGenerico isOpen={modalAbierto} onClose={() => setModalAbierto(false)} title="Crear Proyecto" icon="fa-hard-hat">
-                    <form onSubmit={handleCrearProyecto} className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre del Proyecto</label>
-                            <input type="text" required value={nuevoProyecto.nombre} onChange={(e) => setNuevoProyecto({...nuevoProyecto, nombre: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-fade-in-up">
+                        <div className="flex justify-between items-center p-5 border-b border-slate-100">
+                            <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                                    <i className="fas fa-hard-hat"></i>
+                                </div>
+                                Crear Proyecto
+                            </h3>
+                            <button onClick={() => setModalAbierto(false)} className="text-slate-400 hover:text-rose-500 transition-colors text-xl">
+                                <i className="fas fa-times"></i>
+                            </button>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Cuenta de Activo</label>
-                            <select required value={nuevoProyecto.tipo_activo_id} onChange={(e) => setNuevoProyecto({...nuevoProyecto, tipo_activo_id: e.target.value})} className="w-full px-4 py-2 border rounded-lg text-sm">
-                                <option value="">Seleccione Cuenta...</option>
-                                {tiposActivos.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
-                            </select>
+                        <div className="p-6 bg-slate-50">
+                            <form onSubmit={handleCrearProyecto} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre del Proyecto</label>
+                                    <input 
+                                        type="text" required 
+                                        value={nuevoProyecto.nombre} 
+                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, nombre: e.target.value})} 
+                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium" 
+                                        placeholder="Ej: Maquinaria Industrial"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Cuenta de Activo</label>
+                                    <select 
+                                        required 
+                                        value={nuevoProyecto.tipo_activo_id} 
+                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, tipo_activo_id: e.target.value})} 
+                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium bg-white"
+                                    >
+                                        <option value="">Seleccione Cuenta...</option>
+                                        {tiposActivos.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Vida Útil (Meses)</label>
+                                    <input 
+                                        type="number" required min="1"
+                                        value={nuevoProyecto.vida_util_meses} 
+                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, vida_util_meses: e.target.value})} 
+                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium" 
+                                    />
+                                </div>
+                                <div className="flex gap-3 pt-4 border-t border-slate-200 mt-6">
+                                    <button type="button" onClick={() => setModalAbierto(false)} className="w-1/2 py-2.5 text-slate-600 font-bold bg-white border border-slate-300 hover:bg-slate-100 rounded-lg transition-colors shadow-sm">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" className="w-1/2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-colors">
+                                        Guardar Proyecto
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Vida Útil (Meses)</label>
-                            <input type="number" required value={nuevoProyecto.vida_util_meses} onChange={(e) => setNuevoProyecto({...nuevoProyecto, vida_util_meses: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
-                        </div>
-                        <button type="submit" className="w-full py-2.5 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
-                            Guardar Proyecto
-                        </button>
-                    </form>
-                </ModalGenerico>
+                    </div>
+                </div>
             )}
         </div>
     );

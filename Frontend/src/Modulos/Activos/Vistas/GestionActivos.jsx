@@ -94,7 +94,6 @@ const GestionActivos = () => {
                     onClick={() => setTabActiva('REGISTRADOS')}
                     className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors relative ${tabActiva === 'REGISTRADOS' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    {/* AQUI SE REFLEJARÁ EL DATO REAL DEL ARREGLO */}
                     <i className="fas fa-cubes mr-2"></i> Activos Registrados ({activosRegistrados.length})
                     {tabActiva === 'REGISTRADOS' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>}
                 </button>
@@ -148,7 +147,7 @@ const GestionActivos = () => {
                     {tabActiva === 'REGISTRADOS' && (
                         <div className="space-y-4">
                             <div className="flex justify-end">
-                                <button
+                                <button 
                                     onClick={handleEjecutarDepreciacion}
                                     disabled={depreciando}
                                     className="px-4 py-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-sm font-bold rounded-lg shadow-sm transition-all flex items-center gap-2"
@@ -165,22 +164,27 @@ const GestionActivos = () => {
                                             <th className="px-6 py-4 font-bold">Categoría SII</th>
                                             <th className="px-6 py-4 font-bold">Vida Útil</th>
                                             <th className="px-6 py-4 font-bold text-right">Costo Original</th>
+                                            <th className="px-6 py-4 font-bold text-right text-emerald-600">Valor Actual</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-sm">
-                                        {/* AQUI SE ITERA EL ARREGLO QUE ESTABA BLOQUEADO */}
-                                        {activosRegistrados.map((activo) => (
-                                            <tr key={activo.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <p className="font-bold text-slate-800">{activo.nombre_activo}</p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">{activo.cuenta_nombre}</p>
-                                                </td>
-                                                <td className="px-6 py-4 text-slate-600">{activo.categoria_sii}</td>
-                                                <td className="px-6 py-4 text-slate-600">{activo.vida_util_meses} meses</td>
-                                                <td className="px-6 py-4 font-black text-slate-800 text-right">{formatCurrency(activo.monto_adquisicion)}</td>
-                                            </tr>
-                                        ))}
-                                        {activosRegistrados.length === 0 && <tr><td colSpan="4" className="px-6 py-8 text-center text-slate-500">No hay activos operativos.</td></tr>}
+                                        {activosRegistrados.map((activo) => {
+                                            const valorActual = activo.monto_adquisicion - (activo.depreciacion_acumulada || 0);
+
+                                            return (
+                                                <tr key={activo.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-bold text-slate-800">{activo.nombre_activo}</p>
+                                                        <p className="text-xs text-slate-500 mt-0.5">{activo.cuenta_nombre}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-600">{activo.categoria_sii}</td>
+                                                    <td className="px-6 py-4 text-slate-600">{activo.vida_util_meses} meses</td>
+                                                    <td className="px-6 py-4 font-black text-slate-500 text-right">{formatCurrency(activo.monto_adquisicion)}</td>
+                                                    <td className="px-6 py-4 font-black text-emerald-600 text-right">{formatCurrency(valorActual)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {activosRegistrados.length === 0 && <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No hay activos operativos.</td></tr>}
                                     </tbody>
                                 </table>
                             </div>

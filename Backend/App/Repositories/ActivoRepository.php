@@ -129,12 +129,20 @@ class ActivoRepository
 
     public function obtenerActivosDepreciables()
     {
-        $sql = "SELECT id, nombre_activo, monto_adquisicion, vida_util_meses 
-                FROM activos_fijos 
-                WHERE estado = 'ACTIVO' AND vida_util_meses > 0 AND empresa_id = ?";
+        $sql = "SELECT a.id, a.nombre_activo, a.monto_adquisicion, a.vida_util_meses, 
+                    a.depreciacion_acumulada, pc.codigo as cuenta_activo
+                FROM activos_fijos a
+                JOIN plan_cuentas pc ON a.plan_cuenta_id = pc.id
+                WHERE a.estado = 'ACTIVO' AND a.vida_util_meses > 0 AND a.empresa_id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$this->empresaId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function registrarDepreciacionActivo(int $activoId, float $monto)
+    {
+        $stmt = $this->db->prepare("UPDATE activos_fijos SET depreciacion_acumulada = depreciacion_acumulada + ?, meses_depreciados = meses_depreciados + 1 WHERE id = ?");
+        $stmt->execute([$monto, $activoId]);
     }
 
     // ======================================================================
