@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
-// Importamos las utilidades de validación y formateo existentes
 import { formatearIdentificador, validarIdentificador } from '../../../Utilidades/identificadores';
 
 const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
@@ -12,7 +11,7 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
         contacto_telefono: '',
         direccion: '',
         email: '',
-        pais_iso: 'CL' // Valor por defecto
+        pais_iso: 'CL'
     });
     const [idError, setIdError] = useState(false);
 
@@ -25,16 +24,12 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
         }
     }, [clienteInicial]);
 
-    // Maneja el formateo y validación del RUT/Identificador
     const handleIdChange = (e) => {
         const val = e.target.value;
         const pais = formData.pais_iso;
-        
-        // Aplica el formateo (ej: puntos y guion en Chile)
         const formatted = formatearIdentificador(val, pais);
         setFormData(prev => ({ ...prev, rut: formatted }));
 
-        // Valida el dígito verificador y formato si hay longitud suficiente
         const cleanVal = formatted.replace(/[^0-9kK]/g, '');
         if (cleanVal.length > 4) {
             const isValid = validarIdentificador(formatted, pais);
