@@ -1,25 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom'; 
-import { api } from '../../../Configuracion/api'; 
+import { useNavigate } from 'react-router-dom';
+import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import ModalPagoFactura from '../Componentes/ModalPagoFactura';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 const formatDate = (dateString) => {
     if (!dateString) return '-';
-    const date = new Date(dateString); 
+    const date = new Date(dateString);
     return date.toLocaleDateString('es-CL', { timeZone: 'UTC' });
 };
 
-const [modalPagoOpen, setModalPagoOpen] = useState(false);
-const [facturaSeleccionada, setFacturaSeleccionada] = useState(null);
-
-const abrirModalPago = (factura) => {
-    setFacturaSeleccionada(factura);
-    setModalPagoOpen(true);
-};
-
-// --- COMPONENTE: BUSCADOR INTELIGENTE DE CUENTAS ---
 const BuscadorCuentas = ({ cuentas, valor, onChange }) => {
     const [busqueda, setBusqueda] = useState('');
     const [abierto, setAbierto] = useState(false);
@@ -40,15 +31,15 @@ const BuscadorCuentas = ({ cuentas, valor, onChange }) => {
         }
     }, [valor, cuentas, abierto]);
 
-    const filtradas = cuentas.filter(c => 
-        c.codigo.includes(busqueda) || 
+    const filtradas = cuentas.filter(c =>
+        c.codigo.includes(busqueda) ||
         c.nombre.toLowerCase().includes(busqueda.toLowerCase())
     );
 
     return (
         <div className="relative w-full" ref={ref}>
             <div className="relative">
-                <input 
+                <input
                     type="text"
                     className={`w-full border p-2.5 rounded-lg text-sm outline-none transition-all font-bold pr-8 ${valor ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-slate-700'}`}
                     placeholder="Escriba código o nombre de la cuenta..."
@@ -56,11 +47,11 @@ const BuscadorCuentas = ({ cuentas, valor, onChange }) => {
                     onChange={(e) => {
                         setBusqueda(e.target.value);
                         setAbierto(true);
-                        if (valor) onChange(''); 
+                        if (valor) onChange('');
                     }}
                     onFocus={() => {
                         setAbierto(true);
-                        setBusqueda(''); 
+                        setBusqueda('');
                     }}
                 />
                 <div className="absolute right-3 top-3 text-slate-400 pointer-events-none">
@@ -71,7 +62,7 @@ const BuscadorCuentas = ({ cuentas, valor, onChange }) => {
             {abierto && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 shadow-2xl max-h-56 overflow-y-auto rounded-lg rounded-tl-none animate-fade-in">
                     {filtradas.length > 0 ? filtradas.map(c => (
-                        <div 
+                        <div
                             key={c.codigo}
                             className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-50 last:border-0 transition-colors flex flex-col"
                             onClick={() => {
@@ -94,7 +85,6 @@ const BuscadorCuentas = ({ cuentas, valor, onChange }) => {
     );
 };
 
-// --- MODAL PARA "VER ASIENTO" ---
 const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
     if (!isOpen) return null;
     return (
@@ -103,8 +93,8 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
                 <div className="bg-slate-900 text-white px-4 md:px-8 py-5 flex justify-between items-center">
                     <div>
                         <div className="flex items-center gap-3">
-                             <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Contabilidad</span>
-                             {loading && <span className="text-xs text-blue-300 animate-pulse"><i className="fas fa-circle-notch fa-spin mr-1"></i> Cargando...</span>}
+                            <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Contabilidad</span>
+                            {loading && <span className="text-xs text-blue-300 animate-pulse"><i className="fas fa-circle-notch fa-spin mr-1"></i> Cargando...</span>}
                         </div>
                         <h3 className="text-lg md:text-xl font-bold mt-1">
                             {loading ? 'Cargando Asiento...' : `Asiento Contable N° ${data?.cabecera?.numero_asiento || '---'}`}
@@ -180,8 +170,15 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
 
 const HistorialFacturas = () => {
     const navigate = useNavigate();
+    const [modalPagoOpen, setModalPagoOpen] = useState(false);
+    const [facturaSeleccionada, setFacturaSeleccionada] = useState(null);
 
-    // --- ESTADOS DE BÚSQUEDA Y DATOS ---
+    const abrirModalPago = (factura) => {
+        setMenuAbiertoId(null);
+        setFacturaSeleccionada(factura);
+        setModalPagoOpen(true);
+    };
+
     const [busqueda, setBusqueda] = useState('');
     const [filtroNumero, setFiltroNumero] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('');
@@ -193,24 +190,22 @@ const HistorialFacturas = () => {
     const [sugerencias, setSugerencias] = useState([]);
     const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
     const searchRef = useRef(null);
-    
+
     const [modalOpen, setModalOpen] = useState(false);
     const [asientoData, setAsientoData] = useState(null);
     const [loadingAsiento, setLoadingAsiento] = useState(false);
 
-    // --- NUEVOS ESTADOS ---
     const [menuAbiertoId, setMenuAbiertoId] = useState(null);
-    const [vistaActual, setVistaActual] = useState(1); 
-    
-    // --- ESTADOS DE VISTA 3 (RECLASIFICACIÓN) ---
+    const [vistaActual, setVistaActual] = useState(1);
+
     const [facturaActiva, setFacturaActiva] = useState(null);
     const [asientoReclasificacion, setAsientoReclasificacion] = useState(null);
     const [loadingReclasificacion, setLoadingReclasificacion] = useState(false);
-    
+
     const [formCambio, setFormCambio] = useState({
         fechaContableCambio: new Date().toISOString().split('T')[0],
         nuevaGlosa: '',
-        nuevaCuenta: '' 
+        nuevaCuenta: ''
     });
 
     const [cuentasPlan, setCuentasPlan] = useState([]);
@@ -219,14 +214,14 @@ const HistorialFacturas = () => {
         api.get('/proveedores')
             .then(res => { if (res.success) setListaProveedores(res.data); })
             .catch(err => console.error("Error", err));
-        api.get('/contabilidad/plan-cuentas') 
-            .then(res => { 
+        api.get('/contabilidad/plan-cuentas')
+            .then(res => {
                 if (res.success && res.data) {
                     const cuentasImputables = res.data.filter(c => c.imputable == 1 || c.imputable === true);
-                    if(cuentasImputables.length > 0) {
+                    if (cuentasImputables.length > 0) {
                         setCuentasPlan(cuentasImputables);
                     }
-                } 
+                }
             }).catch(err => console.log("Usando cuentas fallback", err));
 
         const handleClickOutside = (event) => {
@@ -239,13 +234,13 @@ const HistorialFacturas = () => {
 
     useEffect(() => {
         if (vistaActual !== 3) ejecutarBusqueda();
-    }, [pagination.page, vistaActual]); 
+    }, [pagination.page, vistaActual]);
 
     const handleBusquedaChange = (e) => {
         const termino = e.target.value;
         setBusqueda(termino);
         if (termino.length > 0) {
-            const matches = listaProveedores.filter(p => 
+            const matches = listaProveedores.filter(p =>
                 p.razon_social.toLowerCase().includes(termino.toLowerCase()) ||
                 (p.rut && p.rut.toLowerCase().includes(termino.toLowerCase())) ||
                 p.codigo_interno.toString().includes(termino)
@@ -266,21 +261,21 @@ const HistorialFacturas = () => {
         if (resetPage) setPagination(prev => ({ ...prev, page: 1 }));
 
         const params = new URLSearchParams();
-        if(busqueda) params.append('search', busqueda); 
-        if(filtroNumero) params.append('num', filtroNumero);
-        if(filtroEstado) params.append('estado', filtroEstado);
+        if (busqueda) params.append('search', busqueda);
+        if (filtroNumero) params.append('num', filtroNumero);
+        if (filtroEstado) params.append('estado', filtroEstado);
         params.append('page', resetPage ? 1 : pagination.page);
         params.append('limit', pagination.limit);
 
         try {
             const res = await api.get(`/facturas/historial?${params.toString()}`);
-            if(res.success) {
+            if (res.success) {
                 setFacturas(res.data);
                 setPagination(prev => ({ ...prev, total: res.pagination.total, totalPages: res.pagination.totalPages }));
             } else {
                 setFacturas([]);
             }
-        } catch (error) { console.error(error); } 
+        } catch (error) { console.error(error); }
         finally { setLoading(false); }
     };
 
@@ -293,10 +288,10 @@ const HistorialFacturas = () => {
         setMenuAbiertoId(null);
         setModalOpen(true);
         setLoadingAsiento(true);
-        setAsientoData(null); 
+        setAsientoData(null);
         try {
             const res = await api.get(`/facturas/${facturaId}/asiento`);
-            if(res.success) setAsientoData(res.data);
+            if (res.success) setAsientoData(res.data);
             else { alert('No se pudo cargar la información del asiento.'); setModalOpen(false); }
         } catch (error) {
             alert('Error al obtener el asiento contable.');
@@ -306,7 +301,6 @@ const HistorialFacturas = () => {
         }
     };
 
-    // --- ACCIÓN: RECLASIFICACIÓN (VISTA 3) ---
     const iniciarCambio = async (factura) => {
         setMenuAbiertoId(null);
         setFacturaActiva(factura);
@@ -315,14 +309,14 @@ const HistorialFacturas = () => {
             nuevaGlosa: `Ajuste Imputación Fac. N° ${factura.numero_factura}`,
             nuevaCuenta: ''
         });
-        
-        setVistaActual(3); 
+
+        setVistaActual(3);
         setLoadingReclasificacion(true);
         setAsientoReclasificacion(null);
-        
+
         try {
             const res = await api.get(`/facturas/${factura.id}/asiento`);
-            if(res.success) setAsientoReclasificacion(res.data);
+            if (res.success) setAsientoReclasificacion(res.data);
         } catch (error) {
             Swal.fire({
                 icon: 'error',
@@ -357,7 +351,7 @@ const HistorialFacturas = () => {
                 buttonsStyling: false
             });
         }
-        
+
         if (formCambio.fechaContableCambio < facturaActiva.fecha_emision) {
             return Swal.fire({
                 icon: 'error',
@@ -375,12 +369,12 @@ const HistorialFacturas = () => {
             showCancelButton: true,
             confirmButtonText: 'Sí, aplicar ajuste',
             cancelButtonText: 'Cancelar',
-            reverseButtons: true, // Pone el botón confirmar a la derecha
+            reverseButtons: true,
             customClass: {
                 confirmButton: 'bg-emerald-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-emerald-700 ml-3',
                 cancelButton: 'bg-slate-100 text-slate-700 border border-slate-300 px-6 py-2.5 rounded-lg font-bold hover:bg-slate-200'
             },
-            buttonsStyling: false // Desactiva estilos por defecto para que Tailwind funcione
+            buttonsStyling: false
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
@@ -392,7 +386,7 @@ const HistorialFacturas = () => {
                         customClass: { confirmButton: 'bg-emerald-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-emerald-700' },
                         buttonsStyling: false
                     });
-                    setVistaActual(1); 
+                    setVistaActual(1);
                 } catch (error) {
                     let msg = error.response?.data?.mensaje || 'Hubo un error al actualizar el asiento.';
                     Swal.fire({
@@ -411,7 +405,6 @@ const HistorialFacturas = () => {
         <div className="max-w-7xl mx-auto font-sans text-slate-800 pb-10">
             <ModalAsiento isOpen={modalOpen} onClose={() => setModalOpen(false)} data={asientoData} loading={loadingAsiento} />
 
-            {/* ENCABEZADO GLOBAL */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900">
@@ -421,16 +414,16 @@ const HistorialFacturas = () => {
                         {vistaActual === 3 ? `Ajuste intra-asiento Fac. ${facturaActiva?.numero_factura}` : 'Cuenta Corriente y Auditoría Contable'}
                     </p>
                 </div>
-                
+
                 {vistaActual !== 3 && (
                     <div className="flex items-center bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm">
-                        <button 
+                        <button
                             onClick={() => setVistaActual(1)}
                             className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${vistaActual === 1 ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
                         >
                             <i className="fas fa-list mr-2"></i> Detallada
                         </button>
-                        <button 
+                        <button
                             onClick={() => setVistaActual(2)}
                             className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${vistaActual === 2 ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
                         >
@@ -446,13 +439,13 @@ const HistorialFacturas = () => {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                             <div className="relative md:col-span-2">
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Proveedor</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
                                     placeholder="RUT o Razón Social..."
                                     value={busqueda}
                                     onChange={handleBusquedaChange}
-                                    onFocus={() => { if(busqueda) setMostrarSugerencias(true); }}
+                                    onFocus={() => { if (busqueda) setMostrarSugerencias(true); }}
                                     onKeyDown={(e) => e.key === 'Enter' && ejecutarBusqueda(true)}
                                 />
                                 {mostrarSugerencias && sugerencias.length > 0 && (
@@ -471,8 +464,8 @@ const HistorialFacturas = () => {
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">N° Documento</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
                                     placeholder="Ej: 12345"
                                     value={filtroNumero}
@@ -484,18 +477,18 @@ const HistorialFacturas = () => {
                             <div className="flex gap-2">
                                 <div className="flex-1">
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Estado</label>
-                                    <select 
+                                    <select
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
                                         value={filtroEstado}
                                         onChange={(e) => setFiltroEstado(e.target.value)}
                                     >
                                         <option value="">Todos</option>
                                         <option value="REGISTRADA">Pendientes</option>
-                                        <option value="PAGADO">Pagadas</option>
+                                        <option value="PAGADA">Pagadas</option>
                                         <option value="ANULADA">Anuladas</option>
                                     </select>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => ejecutarBusqueda(true)}
                                     disabled={loading}
                                     className="px-6 py-3 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 shadow-lg disabled:opacity-70 transition-all flex items-center justify-center mb-[1px]"
@@ -545,7 +538,7 @@ const HistorialFacturas = () => {
                                         <tbody className="bg-white divide-y divide-slate-50 text-sm">
                                             {facturas.map((fac) => (
                                                 <tr key={fac.id} className="hover:bg-blue-50/30 transition-colors group">
-                                                    
+
                                                     {vistaActual === 1 ? (
                                                         <>
                                                             <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-mono text-xs">{formatDate(fac.fecha_emision)}</td>
@@ -561,7 +554,9 @@ const HistorialFacturas = () => {
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                                 {fac.estado === 'REGISTRADA' ? (
-                                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Vigente</span>
+                                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">Pendiente</span>
+                                                                ) : fac.estado === 'PAGADA' ? (
+                                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Pagada</span>
                                                                 ) : fac.estado === 'ANULADA' ? (
                                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">Anulada</span>
                                                                 ) : (
@@ -593,21 +588,31 @@ const HistorialFacturas = () => {
                                                         </>
                                                     )}
 
-                                                    {/* MENÚ TRES PUNTOS (Acciones contextuales) */}
                                                     <td className="px-6 py-4 whitespace-nowrap text-right relative menu-acciones-container">
-                                                        <button 
+                                                        <button
                                                             onClick={() => setMenuAbiertoId(menuAbiertoId === fac.id ? null : fac.id)}
                                                             className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
                                                             title="Opciones"
                                                         >
-                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" opacity=".3"/><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" opacity=".3" /><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" /></svg>
                                                         </button>
 
                                                         {menuAbiertoId === fac.id && (
                                                             <div className="absolute right-8 top-10 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-fade-in text-left">
                                                                 <ul className="text-sm font-medium text-slate-700 py-1">
+                                                                    {fac.estado === 'REGISTRADA' && (
+                                                                        <li>
+                                                                            <button
+                                                                                onClick={() => abrirModalPago(fac)}
+                                                                                className="w-full text-left px-4 py-2.5 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-3 font-bold text-emerald-600 border-b border-slate-100"
+                                                                            >
+                                                                                <i className="fas fa-money-bill-wave w-4 text-center"></i> Pagar Factura
+                                                                            </button>
+                                                                        </li>
+                                                                    )}
+
                                                                     <li>
-                                                                        <button 
+                                                                        <button
                                                                             onClick={() => verAsientoContable(fac.id)}
                                                                             className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-3"
                                                                         >
@@ -616,7 +621,7 @@ const HistorialFacturas = () => {
                                                                     </li>
                                                                     {fac.estado !== 'ANULADA' && (
                                                                         <li>
-                                                                            <button 
+                                                                            <button
                                                                                 onClick={() => iniciarCambio(fac)}
                                                                                 className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-amber-600 transition-colors flex items-center gap-3"
                                                                             >
@@ -625,10 +630,10 @@ const HistorialFacturas = () => {
                                                                         </li>
                                                                     )}
                                                                     <li>
-                                                                        <button 
-                                                                            onClick={() => { 
-                                                                                setMenuAbiertoId(null); 
-                                                                                navigate(`/facturas/${fac.id}/auditoria`); 
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setMenuAbiertoId(null);
+                                                                                navigate(`/facturas/${fac.id}/auditoria`);
                                                                             }}
                                                                             className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-emerald-600 transition-colors flex items-center gap-3 border-t border-slate-100"
                                                                         >
@@ -646,20 +651,20 @@ const HistorialFacturas = () => {
                                 </div>
                             )}
                         </div>
-                        
+
                         {pagination.totalPages > 1 && (
                             <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex items-center justify-between">
-                                <button 
+                                <button
                                     disabled={pagination.page === 1}
-                                    onClick={() => setPagination(prev => ({...prev, page: prev.page - 1}))}
+                                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                                     className="px-3 py-1 bg-white border border-slate-300 rounded text-sm disabled:opacity-50"
                                 >
                                     Anterior
                                 </button>
                                 <span className="text-sm text-slate-600">Página {pagination.page} de {pagination.totalPages}</span>
-                                <button 
+                                <button
                                     disabled={pagination.page === pagination.totalPages}
-                                    onClick={() => setPagination(prev => ({...prev, page: prev.page + 1}))}
+                                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                                     className="px-3 py-1 bg-white border border-slate-300 rounded text-sm disabled:opacity-50"
                                 >
                                     Siguiente
@@ -669,9 +674,6 @@ const HistorialFacturas = () => {
                     </div>
                 </>
             ) : (
-                /* ========================================================
-                   VISTA 3: HOJA DE TRABAJO (WORKBENCH) DE RECLASIFICACIÓN 
-                   ======================================================== */
                 <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-visible animate-fade-in flex flex-col min-h-[600px]">
                     <div className="bg-slate-50 p-6 md:p-8 border-b border-slate-200 rounded-t-2xl">
                         <div className="flex justify-between items-start mb-6">
@@ -687,22 +689,22 @@ const HistorialFacturas = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Fecha del Ajuste (Contable)</label>
-                                <input 
-                                    type="date" 
+                                <input
+                                    type="date"
                                     className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 transition-all"
                                     value={formCambio.fechaContableCambio}
                                     min={facturaActiva?.fecha_emision}
-                                    onChange={e => setFormCambio({...formCambio, fechaContableCambio: e.target.value})}
+                                    onChange={e => setFormCambio({ ...formCambio, fechaContableCambio: e.target.value })}
                                 />
                                 <span className="text-[10px] text-slate-400 mt-1 block">El reverso y el nuevo cargo quedarán registrados en esta fecha dentro del mismo asiento.</span>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Glosa de Auditoría</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 transition-all"
                                     value={formCambio.nuevaGlosa}
-                                    onChange={e => setFormCambio({...formCambio, nuevaGlosa: e.target.value})}
+                                    onChange={e => setFormCambio({ ...formCambio, nuevaGlosa: e.target.value })}
                                     placeholder="Motivo del cambio..."
                                 />
                                 <span className="text-[10px] text-slate-400 mt-1 block">Justificación obligatoria que quedará guardada en el historial.</span>
@@ -712,7 +714,7 @@ const HistorialFacturas = () => {
 
                     <div className="p-6 md:p-8 flex-1 overflow-visible bg-white">
                         <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4">Líneas del Asiento Original</h3>
-                        
+
                         {loadingReclasificacion ? (
                             <div className="text-center p-10 text-slate-400"><i className="fas fa-circle-notch fa-spin text-2xl mb-2"></i><p>Cargando detalles del asiento...</p></div>
                         ) : (
@@ -729,7 +731,7 @@ const HistorialFacturas = () => {
                                     <tbody className="divide-y divide-slate-100 text-sm font-medium">
                                         {asientoReclasificacion?.detalles?.map((linea, index) => {
                                             const isBloqueada = linea.cuenta_contable === '110001' || linea.cuenta_contable === '210101' || parseFloat(linea.haber) > 0;
-                                            
+
                                             return (
                                                 <tr key={index} className={isBloqueada ? 'bg-slate-50 opacity-80' : 'bg-white hover:bg-blue-50/20'}>
                                                     <td className="p-4">
@@ -738,21 +740,20 @@ const HistorialFacturas = () => {
                                                     </td>
                                                     <td className="p-4 text-right font-mono text-emerald-600">{parseFloat(linea.debe) > 0 ? formatCurrency(linea.debe) : '-'}</td>
                                                     <td className="p-4 text-right font-mono text-red-600 border-r border-slate-100">{parseFloat(linea.haber) > 0 ? formatCurrency(linea.haber) : '-'}</td>
-                                                    
+
                                                     <td className="p-4 overflow-visible">
                                                         {isBloqueada ? (
-                                                            <div 
+                                                            <div
                                                                 onClick={intentarCambioProhibido}
                                                                 className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer hover:text-red-500 transition-colors bg-slate-100 border border-slate-200 w-fit px-3 py-2 rounded-lg"
                                                             >
                                                                 <i className="fas fa-lock"></i> Cuenta Restringida
                                                             </div>
                                                         ) : (
-                                                            /* --- BUSCADOR INTELIGENTE INTEGRADO AQUÍ --- */
-                                                            <BuscadorCuentas 
-                                                                cuentas={cuentasPlan} 
-                                                                valor={formCambio.nuevaCuenta} 
-                                                                onChange={(val) => setFormCambio({...formCambio, nuevaCuenta: val})}
+                                                            <BuscadorCuentas
+                                                                cuentas={cuentasPlan}
+                                                                valor={formCambio.nuevaCuenta}
+                                                                onChange={(val) => setFormCambio({ ...formCambio, nuevaCuenta: val })}
                                                             />
                                                         )}
                                                     </td>
@@ -766,7 +767,7 @@ const HistorialFacturas = () => {
                     </div>
 
                     <div className="bg-slate-50 p-6 border-t border-slate-200 flex justify-end gap-4 rounded-b-2xl">
-                        <button 
+                        <button
                             onClick={ejecutarReclasificacion}
                             disabled={!formCambio.nuevaCuenta}
                             className="px-10 py-3.5 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 hover:shadow-emerald-600/40 disabled:opacity-50 disabled:shadow-none transition-all flex items-center gap-2"
@@ -776,6 +777,14 @@ const HistorialFacturas = () => {
                     </div>
                 </div>
             )}
+
+            <ModalPagoFactura
+                isOpen={modalPagoOpen}
+                onClose={() => setModalPagoOpen(false)}
+                factura={facturaSeleccionada}
+                onPagoExitoso={() => ejecutarBusqueda(false)}
+            />
+
         </div>
     );
 };
