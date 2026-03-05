@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 04-03-2026 a las 23:04:44
+-- Tiempo de generación: 05-03-2026 a las 16:36:55
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -49,7 +49,7 @@ CREATE TABLE `activos_fijos` (
 --
 
 INSERT INTO `activos_fijos` (`id`, `empresa_id`, `factura_id`, `plan_cuenta_id`, `nombre_activo`, `monto_adquisicion`, `fecha_adquisicion`, `estado`, `categoria_sii_id`, `tipo_depreciacion`, `vida_util_meses`, `fecha_activacion`, `meses_depreciados`, `depreciacion_acumulada`) VALUES
-(1, 1, 6, 35, 'Equipo Fac. N° 494150', 664697.00, '2026-02-20', 'ACTIVO', 7, 'NORMAL', 72, NULL, 0, 0.00);
+(1, 1, 6, 35, 'Equipo Fac. N° 494150', 664697.00, '2026-02-20', 'ACTIVO', 7, 'NORMAL', 72, NULL, 1, 9232.00);
 
 -- --------------------------------------------------------
 
@@ -478,6 +478,20 @@ INSERT INTO `cuentas_bancarias_proveedores` (`id`, `proveedor_id`, `banco`, `num
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `depreciaciones_mensuales`
+--
+
+CREATE TABLE `depreciaciones_mensuales` (
+  `id` int(11) NOT NULL,
+  `proyecto_id` int(11) NOT NULL,
+  `fecha_proceso` date NOT NULL,
+  `monto` decimal(15,2) NOT NULL,
+  `asiento_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `detalles_asiento`
 --
 
@@ -546,15 +560,17 @@ CREATE TABLE `empresas` (
   `email` varchar(100) DEFAULT NULL,
   `telefono` varchar(50) DEFAULT NULL,
   `logo_path` varchar(255) DEFAULT NULL,
-  `color_primario` varchar(7) DEFAULT '#10b981'
+  `color_primario` varchar(7) DEFAULT '#10b981',
+  `regimen_tributario` enum('14_D3','14_D8','14_A') DEFAULT '14_D3',
+  `tasa_impuesto` decimal(5,2) DEFAULT 25.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `empresas`
 --
 
-INSERT INTO `empresas` (`id`, `rut`, `razon_social`, `direccion`, `created_at`, `email`, `telefono`, `logo_path`, `color_primario`) VALUES
-(1, '78.149.179-9', 'Tecnologías Nicolas Salas E.I.R.L', 'Antonio Bellet 193', '2026-01-04 19:04:33', 'nicolas.salas.contacto@gmail.com', '+56 9 3709 4271', 'uploads/logos/logo_695f098840c13.png', '#2492f9');
+INSERT INTO `empresas` (`id`, `rut`, `razon_social`, `direccion`, `created_at`, `email`, `telefono`, `logo_path`, `color_primario`, `regimen_tributario`, `tasa_impuesto`) VALUES
+(1, '78.149.179-9', 'Tecnologías Nicolas Salas E.I.R.L', 'Antonio Bellet 193', '2026-01-04 19:04:33', 'nicolas.salas.contacto@gmail.com', '+56 9 3709 4271', 'uploads/logos/logo_695f098840c13.png', '#2492f9', '14_D3', 25.00);
 
 -- --------------------------------------------------------
 
@@ -912,6 +928,50 @@ INSERT INTO `proveedores` (`id`, `empresa_id`, `codigo_interno`, `rut`, `razon_s
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `proyectos_activos`
+--
+
+CREATE TABLE `proyectos_activos` (
+  `id_proyecto` int(11) NOT NULL,
+  `empresa_id` int(11) NOT NULL,
+  `nombre` varchar(150) NOT NULL,
+  `tipo_activo_id` int(11) NOT NULL,
+  `anio_fabricacion` int(11) DEFAULT NULL,
+  `vida_util_meses` int(11) NOT NULL,
+  `metodo_depreciacion` enum('LINEAL','ACELERADA') DEFAULT 'LINEAL',
+  `centro_costo_id` int(11) NOT NULL,
+  `empleado_id` int(11) NOT NULL,
+  `estado` enum('EN_CONSTRUCCION','ACTIVO_OPERATIVO','VENDIDO','DADO_DE_BAJA') DEFAULT 'EN_CONSTRUCCION',
+  `valor_total_original` decimal(15,2) DEFAULT 0.00,
+  `depreciacion_acumulada` decimal(15,2) DEFAULT 0.00,
+  `fecha_activacion` date DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `proyectos_activos`
+--
+
+INSERT INTO `proyectos_activos` (`id_proyecto`, `empresa_id`, `nombre`, `tipo_activo_id`, `anio_fabricacion`, `vida_util_meses`, `metodo_depreciacion`, `centro_costo_id`, `empleado_id`, `estado`, `valor_total_original`, `depreciacion_acumulada`, `fecha_activacion`, `created_at`) VALUES
+(1, 1, 'Prueba Compra', 33, 2026, 120, 'LINEAL', 1, 1, 'EN_CONSTRUCCION', 0.00, 0.00, NULL, '2026-03-05 12:36:40');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `proyectos_facturas`
+--
+
+CREATE TABLE `proyectos_facturas` (
+  `id` int(11) NOT NULL,
+  `proyecto_id` int(11) NOT NULL,
+  `factura_id` int(11) NOT NULL,
+  `monto_imputado` decimal(15,2) NOT NULL,
+  `fecha_vinculacion` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `roles`
 --
 
@@ -955,6 +1015,36 @@ INSERT INTO `sii_categorias_activos` (`id`, `nombre`, `vida_util_normal`, `vida_
 (6, 'Muebles y enseres', 7, 2),
 (7, 'Sistemas computacionales y periféricos', 6, 2),
 (8, 'Herramientas livianas', 3, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `sii_mapeo_cuentas`
+--
+
+CREATE TABLE `sii_mapeo_cuentas` (
+  `id` int(11) NOT NULL,
+  `empresa_id` int(11) NOT NULL,
+  `codigo_cuenta` varchar(20) NOT NULL,
+  `concepto_sii` enum('INGRESOS_DEL_GIRO','OTROS_INGRESOS','REMUNERACIONES_PAGADAS','HONORARIOS_PAGADOS','ARRIENDOS_PAGADOS','GASTOS_GENERALES') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `sii_mapeo_cuentas`
+--
+
+INSERT INTO `sii_mapeo_cuentas` (`id`, `empresa_id`, `codigo_cuenta`, `concepto_sii`) VALUES
+(1, 1, '410101', 'INGRESOS_DEL_GIRO'),
+(2, 1, '410102', 'INGRESOS_DEL_GIRO'),
+(3, 1, '410103', 'INGRESOS_DEL_GIRO'),
+(4, 1, '420101', 'OTROS_INGRESOS'),
+(5, 1, '610101', 'REMUNERACIONES_PAGADAS'),
+(6, 1, '610105', 'REMUNERACIONES_PAGADAS'),
+(7, 1, '660101', 'HONORARIOS_PAGADOS'),
+(8, 1, '660102', 'HONORARIOS_PAGADOS'),
+(9, 1, '620101', 'ARRIENDOS_PAGADOS'),
+(10, 1, '620103', 'GASTOS_GENERALES'),
+(11, 1, '620106', 'GASTOS_GENERALES');
 
 -- --------------------------------------------------------
 
@@ -1068,6 +1158,14 @@ ALTER TABLE `cuentas_bancarias_proveedores`
   ADD KEY `proveedor_id` (`proveedor_id`);
 
 --
+-- Indices de la tabla `depreciaciones_mensuales`
+--
+ALTER TABLE `depreciaciones_mensuales`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_deprec_proyecto` (`proyecto_id`),
+  ADD KEY `fk_deprec_asiento` (`asiento_id`);
+
+--
 -- Indices de la tabla `detalles_asiento`
 --
 ALTER TABLE `detalles_asiento`
@@ -1135,6 +1233,21 @@ ALTER TABLE `proveedores`
   ADD KEY `fk_prov_empresa` (`empresa_id`);
 
 --
+-- Indices de la tabla `proyectos_activos`
+--
+ALTER TABLE `proyectos_activos`
+  ADD PRIMARY KEY (`id_proyecto`),
+  ADD KEY `fk_proyecto_empresa` (`empresa_id`);
+
+--
+-- Indices de la tabla `proyectos_facturas`
+--
+ALTER TABLE `proyectos_facturas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_pf_proyecto` (`proyecto_id`),
+  ADD KEY `fk_pf_factura` (`factura_id`);
+
+--
 -- Indices de la tabla `roles`
 --
 ALTER TABLE `roles`
@@ -1145,6 +1258,14 @@ ALTER TABLE `roles`
 --
 ALTER TABLE `sii_categorias_activos`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `sii_mapeo_cuentas`
+--
+ALTER TABLE `sii_mapeo_cuentas`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_mapeo` (`empresa_id`,`codigo_cuenta`),
+  ADD KEY `fk_mapeo_cuenta` (`codigo_cuenta`);
 
 --
 -- Indices de la tabla `usuarios`
@@ -1221,6 +1342,12 @@ ALTER TABLE `cuentas_bancarias_proveedores`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `depreciaciones_mensuales`
+--
+ALTER TABLE `depreciaciones_mensuales`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `detalles_asiento`
 --
 ALTER TABLE `detalles_asiento`
@@ -1269,6 +1396,18 @@ ALTER TABLE `proveedores`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT de la tabla `proyectos_activos`
+--
+ALTER TABLE `proyectos_activos`
+  MODIFY `id_proyecto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `proyectos_facturas`
+--
+ALTER TABLE `proyectos_facturas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `roles`
 --
 ALTER TABLE `roles`
@@ -1279,6 +1418,12 @@ ALTER TABLE `roles`
 --
 ALTER TABLE `sii_categorias_activos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT de la tabla `sii_mapeo_cuentas`
+--
+ALTER TABLE `sii_mapeo_cuentas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
@@ -1348,6 +1493,13 @@ ALTER TABLE `cuentas_bancarias_proveedores`
   ADD CONSTRAINT `cuentas_bancarias_proveedores_ibfk_1` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`) ON DELETE CASCADE;
 
 --
+-- Filtros para la tabla `depreciaciones_mensuales`
+--
+ALTER TABLE `depreciaciones_mensuales`
+  ADD CONSTRAINT `fk_deprec_asiento` FOREIGN KEY (`asiento_id`) REFERENCES `asientos_contables` (`id`),
+  ADD CONSTRAINT `fk_deprec_proyecto` FOREIGN KEY (`proyecto_id`) REFERENCES `proyectos_activos` (`id_proyecto`);
+
+--
 -- Filtros para la tabla `detalles_asiento`
 --
 ALTER TABLE `detalles_asiento`
@@ -1380,6 +1532,26 @@ ALTER TABLE `plan_cuentas`
 --
 ALTER TABLE `proveedores`
   ADD CONSTRAINT `fk_prov_empresa` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `proyectos_activos`
+--
+ALTER TABLE `proyectos_activos`
+  ADD CONSTRAINT `fk_proyecto_empresa` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`);
+
+--
+-- Filtros para la tabla `proyectos_facturas`
+--
+ALTER TABLE `proyectos_facturas`
+  ADD CONSTRAINT `fk_pf_factura` FOREIGN KEY (`factura_id`) REFERENCES `facturas` (`id`),
+  ADD CONSTRAINT `fk_pf_proyecto` FOREIGN KEY (`proyecto_id`) REFERENCES `proyectos_activos` (`id_proyecto`);
+
+--
+-- Filtros para la tabla `sii_mapeo_cuentas`
+--
+ALTER TABLE `sii_mapeo_cuentas`
+  ADD CONSTRAINT `fk_mapeo_cuenta` FOREIGN KEY (`codigo_cuenta`) REFERENCES `plan_cuentas` (`codigo`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_mapeo_empresa` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `usuarios`
