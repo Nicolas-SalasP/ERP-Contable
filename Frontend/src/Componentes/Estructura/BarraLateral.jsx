@@ -19,6 +19,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
         { path: '/facturas/historial', label: 'Historial Compras', icon: '📁' },
         { path: '/facturas/nueva', label: 'Ingresar Factura', icon: '📝' },
         { path: '/contabilidad/libro-mayor', label: 'Libro Mayor', icon: '📚' },
+        { path: '/tributario/renta', label: 'Operación Renta', icon: 'renta' },
         { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas', icon: '⚙️' },
         { path: '/cotizaciones/nueva', label: 'Nueva Cotización', icon: '➕' },
         { path: '/proveedores', label: 'Proveedores', icon: 'users' },
@@ -55,12 +56,16 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                                 : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                             }`}
                         >
-                            <span className="mr-3 text-xl">
+                            <span className="mr-3 text-xl flex items-center justify-center w-6">
                                 {item.icon === 'users' ? (
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                 ) : item.icon === 'anulacion' ? (
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2zM10 9l4 4m0-4l-4 4" />
+                                    </svg>
+                                ) : item.icon === 'renta' ? (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                                     </svg>
                                 ) : item.icon}
                             </span>

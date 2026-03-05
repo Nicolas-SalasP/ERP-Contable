@@ -19,6 +19,7 @@ import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
 import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
 import VisorAuditoriaFactura from './Modulos/Contabilidad/Vistas/VisorAuditoriaFactura';
 import AdministradorCuentas from './Modulos/Contabilidad/Vistas/AdministradorCuentas';
+import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
 
 const RutaPrivada = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -118,6 +119,14 @@ function App() {
             <RutaPrivada>
               <LayoutPrincipal>
                 <GestionActivos />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/renta" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <DashboardRenta />
               </LayoutPrincipal>
             </RutaPrivada>
           } />

@@ -7,7 +7,7 @@ const PerfilEmpresa = () => {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('general'); 
     
-    // Estado Datos Generales (Unificado)
+    // Estado Datos Generales (Unificado con regimen)
     const [formData, setFormData] = useState({
         rut: '', 
         razon_social: '', 
@@ -15,7 +15,8 @@ const PerfilEmpresa = () => {
         email: '', 
         telefono: '', 
         logo_path: '',
-        color_primario: '#10b981' // Color por defecto
+        color_primario: '#10b981',
+        regimen_tributario: '14_D3' // Valor por defecto
     });
 
     // Estado Bancos
@@ -45,7 +46,8 @@ const PerfilEmpresa = () => {
                     email: res.data.email || '',
                     telefono: res.data.telefono || '',
                     logo_path: res.data.logo_path || '',
-                    color_primario: res.data.color_primario || '#10b981'
+                    color_primario: res.data.color_primario || '#10b981',
+                    regimen_tributario: res.data.regimen_tributario || '14_D3' // Carga el regimen de la BD
                 });
                 setBancos(res.data.bancos || []);
                 
@@ -163,7 +165,7 @@ const PerfilEmpresa = () => {
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900">Mi Empresa</h1>
-                    <p className="text-slate-500 text-sm">Configuración para documentos PDF (Cotizaciones/Facturas)</p>
+                    <p className="text-slate-500 text-sm">Configuración general y tributaria</p>
                 </div>
             </div>
 
@@ -216,6 +218,27 @@ const PerfilEmpresa = () => {
                                     <input name="razon_social" value={formData.razon_social} onChange={handleChange} className="w-full border rounded p-2 font-bold" />
                                 </div>
                             </div>
+
+                            {/* --- SECCIÓN NUEVA: RÉGIMEN TRIBUTARIO --- */}
+                            <div className="bg-blue-50/50 p-4 border border-blue-100 rounded-lg">
+                                <label className="block text-xs font-bold text-blue-800 uppercase mb-2">
+                                    <i className="fas fa-landmark mr-1"></i> Régimen Tributario (SII)
+                                </label>
+                                <select 
+                                    name="regimen_tributario" 
+                                    value={formData.regimen_tributario} 
+                                    onChange={handleChange}
+                                    className="w-full border border-blue-200 rounded p-2 bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-slate-700"
+                                >
+                                    <option value="14_D3">Régimen Pro Pyme General (14 D N° 3)</option>
+                                    <option value="14_D8">Régimen Pro Pyme Transparente (14 D N° 8)</option>
+                                    <option value="14_A">Régimen General Semi Integrado (14 A)</option>
+                                </select>
+                                <p className="text-xs text-blue-600 mt-2">
+                                    Este ajuste modificará la forma en que el ERP calcula la Operación Renta (Flujo de Caja vs Devengado).
+                                </p>
+                            </div>
+
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Dirección Comercial</label>
                                 <input name="direccion" value={formData.direccion} onChange={handleChange} className="w-full border rounded p-2" placeholder="Calle, Número, Comuna..." />
@@ -231,11 +254,9 @@ const PerfilEmpresa = () => {
                                 </div>
                             </div>
 
-                            {/* --- SECCIÓN COLOR DOCUMENTOS (ACTUALIZADO) --- */}
                             <div className="mt-4 border-t pt-4">
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Color de Documentos</label>
                                 <div className="flex items-center gap-3">
-                                    {/* Selector Visual */}
                                     <input 
                                         type="color" 
                                         name="color_primario" 
@@ -243,8 +264,6 @@ const PerfilEmpresa = () => {
                                         onChange={handleChange}
                                         className="w-12 h-10 rounded cursor-pointer border-0 p-0 shadow-sm"
                                     />
-                                    
-                                    {/* Input de Texto para escribir HEX directo */}
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-slate-500 mb-1">Código HEX</span>
                                         <input
@@ -258,14 +277,11 @@ const PerfilEmpresa = () => {
                                         />
                                     </div>
                                 </div>
-                                <p className="text-xs text-slate-400 mt-2">
-                                    Puedes seleccionar un color o escribir el código exacto (Ej: #1E40AF).
-                                </p>
                             </div>
 
                             <div className="pt-4 text-right">
-                                <button type="submit" disabled={saving} className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-slate-800 transition-colors disabled:opacity-50">
-                                    {saving ? 'Guardando...' : 'Guardar Cambios'}
+                                <button type="submit" disabled={saving} className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center justify-end ml-auto">
+                                    {saving ? <><i className="fas fa-spinner fa-spin mr-2"></i> Guardando...</> : 'Guardar Cambios'}
                                 </button>
                             </div>
                         </form>
@@ -275,7 +291,6 @@ const PerfilEmpresa = () => {
                 {/* --- PESTAÑA BANCOS (SIN CAMBIOS) --- */}
                 {activeTab === 'bancos' && (
                     <div className="p-8">
-                        {/* Formulario Agregar */}
                         <form onSubmit={handleAgregarBanco} className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                             <div className="md:col-span-1">
                                 <label className="block text-xs font-bold text-slate-500 mb-1">Banco</label>
@@ -286,9 +301,7 @@ const PerfilEmpresa = () => {
                                 >
                                     <option value="">Seleccione Banco...</option>
                                     {listaBancos.map((banco) => (
-                                        <option key={banco.id} value={banco.nombre}>
-                                            {banco.nombre}
-                                        </option>
+                                        <option key={banco.id} value={banco.nombre}>{banco.nombre}</option>
                                     ))}
                                 </select>
                             </div>
@@ -320,7 +333,6 @@ const PerfilEmpresa = () => {
                             </div>
                         </form>
 
-                        {/* Lista de Bancos */}
                         <div className="space-y-3">
                             {bancos.length === 0 ? (
                                 <p className="text-center text-slate-400 italic py-8">No hay cuentas registradas. Agrega una para que aparezca en tus cotizaciones.</p>

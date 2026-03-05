@@ -46,8 +46,15 @@ class EmpresaRepository
     public function actualizarDatos(array $data)
     {
         if (!$this->empresaId) return false;
+        
         $sql = "UPDATE empresas SET 
-                razon_social = ?, rut = ?, direccion = ?, email = ?, telefono = ?, color_primario = ?
+                razon_social = ?, 
+                rut = ?, 
+                direccion = ?, 
+                email = ?, 
+                telefono = ?, 
+                color_primario = ?,
+                regimen_tributario = ? 
                 WHERE id = ?";
         
         $stmt = $this->db->prepare($sql);
@@ -58,6 +65,7 @@ class EmpresaRepository
             $data['email'], 
             $data['telefono'],
             $data['color_primario'],
+            $data['regimen_tributario'] ?? '14_D3',
             $this->empresaId
         ]);
     }

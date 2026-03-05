@@ -45,6 +45,7 @@ $files = [
     '/Repositories/CotizacionRepository.php',
     '/Repositories/ClienteRepository.php',
     '/Repositories/ActivoRepository.php',
+    '/Repositories/RentaRepository.php',
 
     // Servicios
     '/Services/EmpresaService.php',
@@ -59,6 +60,7 @@ $files = [
     '/Services/CotizacionService.php',
     '/Services/ClienteService.php',
     '/Services/ActivoService.php',
+    '/Services/RentaService.php',
 
     // Controladores
     '/Controllers/AutenticacionController.php',
@@ -72,7 +74,8 @@ $files = [
     '/Controllers/AnulacionController.php',
     '/Controllers/CotizacionController.php',
     '/Controllers/ClienteController.php',
-    '/Controllers/ActivoController.php'
+    '/Controllers/ActivoController.php',
+    '/Controllers/RentaController.php'
 ];
 
 foreach ($files as $file) {
@@ -95,6 +98,7 @@ use App\Controllers\AnulacionController;
 use App\Controllers\ClienteController;
 use App\Controllers\CotizacionController;
 use App\Controllers\ActivoController;
+use App\Controllers\RentaController;
 
 // -----------------------------------------------------------------------------
 // 3. Definición de Rutas del Sistema
@@ -177,6 +181,12 @@ $router->post('/api/activos/proyectos/{id}/facturas', [ActivoController::class, 
 $router->put('/api/activos/proyectos/{id}/activar', [ActivoController::class, 'activarProyecto'], true);
 $router->post('/api/activos/proyectos/depreciar-mes', [ActivoController::class, 'procesarDepreciacionProyectos'], true);
 $router->post('/api/activos/proyectos/{id}/baja', [ActivoController::class, 'bajaProyecto'], true);
+
+// --- Operación Renta (Tributario) ---
+$router->get('/api/renta/pre-calculo/{anio}', [RentaController::class, 'obtenerPreRenta'], true);
+$router->get('/api/renta/mapeo', [RentaController::class, 'obtenerMapeo'], true);
+$router->post('/api/renta/mapeo', [RentaController::class, 'guardarMapeo'], true);
+$router->delete('/api/renta/mapeo/{id}', [RentaController::class, 'eliminarMapeo'], true);
 
 // -----------------------------------------------------------------------------
 // 4. Despacho de la Petición
