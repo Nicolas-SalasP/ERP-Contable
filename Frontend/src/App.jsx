@@ -7,7 +7,7 @@ import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 import Login from './Modulos/Autenticacion/Login';
 import RegistroEmpresa from './Modulos/Autenticacion/RegistroEmpresa';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
-import Dashboard from './Modulos/Dashboard/Dashboard'; // <-- NUEVA IMPORTACIÓN
+import Dashboard from './Modulos/Dashboard/Dashboard';
 import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
 import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
 import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
@@ -21,6 +21,9 @@ import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
 import VisorAuditoriaFactura from './Modulos/Contabilidad/Vistas/VisorAuditoriaFactura';
 import AdministradorCuentas from './Modulos/Contabilidad/Vistas/AdministradorCuentas';
 import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
+import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
+import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
+import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
 
 const RutaPrivada = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -39,11 +42,10 @@ function App() {
           <Route path="/registro" element={<RegistroEmpresa />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
 
-          {/* RUTA RAÍZ ACTUALIZADA */}
           <Route path="/" element={
             <RutaPrivada>
               <LayoutPrincipal>
-                <Dashboard /> 
+                <Dashboard />
               </LayoutPrincipal>
             </RutaPrivada>
           } />
@@ -134,6 +136,30 @@ function App() {
             <RutaPrivada>
               <LayoutPrincipal>
                 <VisorAuditoriaFactura />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/banco/nomina-pagos" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <NominaPagos />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/banco/cartola" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <CartolaBancaria />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/banco/conciliacion" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <MesaConciliacion />
               </LayoutPrincipal>
             </RutaPrivada>
           } />

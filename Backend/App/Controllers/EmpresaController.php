@@ -158,4 +158,32 @@ class EmpresaController
             $this->jsonResponse(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function listarCentrosCosto() {
+        try {
+            $centros = $this->service->listarCentrosCosto();
+            $this->jsonResponse(['success' => true, 'data' => $centros]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function guardarCentroCosto() {
+        try {
+            $data = $this->getJsonInput();
+            $this->service->agregarCentroCosto($data);
+            $this->jsonResponse(['success' => true, 'mensaje' => 'Centro de costo agregado.']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function eliminarCentroCosto($id) {
+        try {
+            $this->service->eliminarCentroCosto($id);
+            $this->jsonResponse(['success' => true, 'mensaje' => 'Centro de costo eliminado.']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['error' => $e->getMessage()], 400);
+        }
+    }
 }

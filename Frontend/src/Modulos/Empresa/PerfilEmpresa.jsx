@@ -7,7 +7,6 @@ const PerfilEmpresa = () => {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('general'); 
     
-    // Estado Datos Generales (Unificado con regimen)
     const [formData, setFormData] = useState({
         rut: '', 
         razon_social: '', 
@@ -16,17 +15,18 @@ const PerfilEmpresa = () => {
         telefono: '', 
         logo_path: '',
         color_primario: '#10b981',
-        regimen_tributario: '14_D3' // Valor por defecto
+        regimen_tributario: '14_D3'
     });
 
-    // Estado Bancos
     const [bancos, setBancos] = useState([]);
     const [nuevoBanco, setNuevoBanco] = useState({
         banco: '', tipo_cuenta: 'Corriente', numero_cuenta: '', titular: '', rut_titular: '', email_notificacion: ''
     });
     const [listaBancos, setListaBancos] = useState([]); 
 
-    // URL base para imágenes
+    const [centros, setCentros] = useState([]);
+    const [formCentro, setFormCentro] = useState({ codigo: '', nombre: '' });
+
     const BASE_URL_IMG = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '/') : 'http://localhost/ERP-Contable/Backend/Public/';
 
     useEffect(() => {
@@ -47,9 +47,10 @@ const PerfilEmpresa = () => {
                     telefono: res.data.telefono || '',
                     logo_path: res.data.logo_path || '',
                     color_primario: res.data.color_primario || '#10b981',
-                    regimen_tributario: res.data.regimen_tributario || '14_D3' // Carga el regimen de la BD
+                    regimen_tributario: res.data.regimen_tributario || '14_D3'
                 });
                 setBancos(res.data.bancos || []);
+                setCentros(res.data.centros_costo || []);
                 
                 setNuevoBanco(prev => ({
                     ...prev, 
@@ -58,8 +59,13 @@ const PerfilEmpresa = () => {
                 }));
             }
         } catch (error) {
-            console.error(error);
-            Swal.fire('Error', 'No se pudo cargar la información.', 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo cargar la información.',
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
+            });
         } finally {
             setLoading(false);
         }
@@ -72,11 +78,10 @@ const PerfilEmpresa = () => {
                 setListaBancos(res.data);
             }
         } catch (error) {
-            console.error("Error cargando bancos", error);
+            console.error(error);
         }
     };
     
-    // --- LOGICA GENERAL ---
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleGuardarDatos = async (e) => {
@@ -84,15 +89,28 @@ const PerfilEmpresa = () => {
         setSaving(true);
         try {
             const res = await api.put('/empresas/perfil', formData);
-            if (res.success) Swal.fire('Guardado', 'Información actualizada.', 'success');
+            if (res.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Guardado',
+                    text: 'Información actualizada.',
+                    buttonsStyling: false,
+                    customClass: { confirmButton: 'bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg' }
+                });
+            }
         } catch (error) {
-            Swal.fire('Error', error.message, 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message,
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
+            });
         } finally {
             setSaving(false);
         }
     };
 
-    // --- LOGICA LOGO ---
     const handleSubirLogo = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -101,214 +119,342 @@ const PerfilEmpresa = () => {
         formDataLogo.append('logo', file);
 
         try {
-            const token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
+            const token = localStorage.getItem('token') || sessionStorage.getItem('erp_token');
+            let parsedToken = token;
+            if (token && token.startsWith('"')) parsedToken = JSON.parse(token);
+
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost/ERP-Contable/Backend/Public/api';
             
             const response = await fetch(`${apiUrl}/empresas/logo`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${parsedToken}` },
                 body: formDataLogo
             });
             const data = await response.json();
 
             if (data.success) {
                 setFormData(prev => ({ ...prev, logo_path: data.logo_url || '' }));
-                Swal.fire('Logo Actualizado', 'La imagen se ha subido correctamente.', 'success');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Logo Actualizado',
+                    text: 'La imagen se ha subido correctamente.',
+                    buttonsStyling: false,
+                    customClass: { confirmButton: 'bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg' }
+                });
                 cargarPerfil(); 
             } else {
                 throw new Error(data.error || 'Error al subir');
             }
         } catch (error) {
-            Swal.fire('Error', 'No se pudo subir el logo.', 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo subir el logo.',
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
+            });
         }
     };
 
-    // --- LOGICA BANCOS ---
     const handleAgregarBanco = async (e) => {
         e.preventDefault();
         if(!nuevoBanco.banco || !nuevoBanco.numero_cuenta) {
-            Swal.fire('Atención', 'Selecciona un banco y escribe el número de cuenta.', 'warning');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Selecciona un banco y escribe el número de cuenta.',
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg' }
+            });
             return;
         }
 
         try {
             const res = await api.post('/empresas/bancos', nuevoBanco);
             if (res.success) {
-                Swal.fire({ icon: 'success', title: 'Cuenta Agregada', timer: 1500, showConfirmButton: false });
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Cuenta Agregada', 
+                    timer: 1500, 
+                    showConfirmButton: false 
+                });
                 cargarPerfil(); 
                 setNuevoBanco(prev => ({ ...prev, banco: '', numero_cuenta: '' })); 
             }
         } catch (error) {
-            Swal.fire('Error', error.message, 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message,
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
+            });
         }
     };
 
     const handleEliminarBanco = async (id) => {
         const confirm = await Swal.fire({
-            title: '¿Eliminar cuenta?', text: "No podrás deshacer esto.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, eliminar'
+            title: '¿Eliminar cuenta?', 
+            text: "No podrás deshacer esto.", 
+            icon: 'warning', 
+            showCancelButton: true, 
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: 'bg-rose-600 text-white font-bold py-2 px-6 rounded-lg mx-2 hover:bg-rose-700',
+                cancelButton: 'bg-slate-200 text-slate-800 font-bold py-2 px-6 rounded-lg mx-2 hover:bg-slate-300'
+            }
         });
         if (confirm.isConfirmed) {
             try {
                 await api.delete(`/empresas/bancos/${id}`);
                 cargarPerfil();
-                Swal.fire('Eliminado', '', 'success');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Eliminado',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
             } catch (error) {
-                Swal.fire('Error', error.message, 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message,
+                    buttonsStyling: false,
+                    customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
+                });
             }
         }
     };
 
-    if (loading) return <div className="p-10 text-center text-slate-400">Cargando perfil...</div>;
+    const agregarCentro = async (e) => {
+        e.preventDefault();
+        if (!formCentro.codigo || !formCentro.nombre) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Completa el código y el nombre del centro.',
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg' }
+            });
+            return;
+        }
+        try {
+            const res = await api.post('/empresas/centros-costo', formCentro);
+            if (res.success) {
+                Swal.fire({ icon: 'success', title: 'Centro Agregado', timer: 1500, showConfirmButton: false });
+                setFormCentro({ codigo: '', nombre: '' });
+                cargarPerfil();
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.error || 'No se guardó el centro',
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
+            });
+        }
+    };
+
+    const eliminarCentro = async (id) => {
+        const confirm = await Swal.fire({
+            title: '¿Eliminar Centro de Costo?', 
+            text: "No podrás deshacer esto.", 
+            icon: 'warning', 
+            showCancelButton: true, 
+            confirmButtonText: 'Sí, eliminar', 
+            cancelButtonText: 'Cancelar',
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: 'bg-rose-600 text-white font-bold py-2 px-6 rounded-lg mx-2 hover:bg-rose-700',
+                cancelButton: 'bg-slate-200 text-slate-800 font-bold py-2 px-6 rounded-lg mx-2 hover:bg-slate-300'
+            }
+        });
+        if (confirm.isConfirmed) {
+            try {
+                await api.delete(`/empresas/centros-costo/${id}`);
+                cargarPerfil();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Eliminado',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message,
+                    buttonsStyling: false,
+                    customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
+                });
+            }
+        }
+    };
+
+    if (loading) return <div className="p-10 text-center text-slate-400 font-bold">Cargando perfil...</div>;
 
     return (
-        <div className="max-w-5xl mx-auto p-6 font-sans text-slate-800">
+        <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 pb-10">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Mi Empresa</h1>
-                    <p className="text-slate-500 text-sm">Configuración general y tributaria</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Mi Empresa</h1>
+                    <p className="text-slate-500 font-medium mt-1">Configuración general, tributaria y contable</p>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                {/* TABS */}
-                <div className="flex border-b border-slate-100">
-                    <button onClick={() => setActiveTab('general')} className={`flex-1 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'general' ? 'border-emerald-500 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}>
-                        <i className="fas fa-building mr-2"></i> Información & Logo
-                    </button>
-                    <button onClick={() => setActiveTab('bancos')} className={`flex-1 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'bancos' ? 'border-emerald-500 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}>
-                        <i className="fas fa-university mr-2"></i> Cuentas Bancarias
-                    </button>
-                </div>
+            <div className="flex flex-wrap gap-2 bg-slate-100 p-1.5 rounded-xl w-fit mb-6">
+                <button onClick={() => setActiveTab('general')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'general' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <svg className="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    Información & Logo
+                </button>
+                <button onClick={() => setActiveTab('bancos')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'bancos' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <svg className="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    Cuentas Bancarias
+                </button>
+                <button onClick={() => setActiveTab('centros')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'centros' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <svg className="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    Centros de Costo
+                </button>
+            </div>
 
-                {/* --- PESTAÑA GENERAL --- */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 {activeTab === 'general' && (
-                    <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* COLUMNA LOGO */}
-                        <div className="md:col-span-1 flex flex-col items-center space-y-4">
-                            <div className="w-48 h-48 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center bg-slate-50 overflow-hidden relative group">
+                    <div className="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+                        <div className="lg:col-span-1 flex flex-col items-center space-y-4">
+                            <div className="w-56 h-56 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center bg-slate-50 overflow-hidden relative group transition-colors hover:border-blue-400">
                                 {formData.logo_path ? (
                                     <img 
                                         src={formData.logo_path.startsWith('http') ? formData.logo_path : `${BASE_URL_IMG}${formData.logo_path}`} 
                                         alt="Logo Empresa" 
-                                        className="w-full h-full object-contain p-2" 
+                                        className="w-full h-full object-contain p-4" 
                                     />
                                 ) : (
                                     <div className="text-center text-slate-400">
-                                        <i className="fas fa-image text-3xl mb-2"></i>
-                                        <p className="text-xs">Sin Logo</p>
+                                        <svg className="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        <p className="text-sm font-bold">Sin Logo</p>
                                     </div>
                                 )}
-                                <label className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                    <span className="text-sm font-bold"><i className="fas fa-camera mr-1"></i> Cambiar</span>
+                                <label className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                                    <span className="text-sm font-bold flex items-center gap-2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                        Cambiar Imagen
+                                    </span>
                                     <input type="file" className="hidden" accept="image/*" onChange={handleSubirLogo} />
                                 </label>
                             </div>
-                            <p className="text-xs text-slate-400 text-center">Formato: PNG o JPG. <br/>Se usará en la cabecera de tus PDF.</p>
+                            <p className="text-xs text-slate-400 text-center font-medium">Formato: PNG o JPG. <br/>Se utilizará en tus cotizaciones y documentos.</p>
                         </div>
 
-                        {/* COLUMNA FORMULARIO */}
-                        <form onSubmit={handleGuardarDatos} className="md:col-span-2 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                        <form onSubmit={handleGuardarDatos} className="lg:col-span-2 space-y-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">RUT Empresa</label>
-                                    <input name="rut" value={formData.rut} onChange={handleChange} className="w-full border rounded p-2 bg-slate-50 font-mono" />
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">RUT Empresa</label>
+                                    <input name="rut" value={formData.rut} onChange={handleChange} className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 font-mono text-sm outline-none focus:ring-2 focus:ring-blue-500" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Razón Social</label>
-                                    <input name="razon_social" value={formData.razon_social} onChange={handleChange} className="w-full border rounded p-2 font-bold" />
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Razón Social</label>
+                                    <input name="razon_social" value={formData.razon_social} onChange={handleChange} className="w-full border border-slate-200 rounded-lg p-2.5 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500" />
                                 </div>
                             </div>
 
-                            {/* --- SECCIÓN NUEVA: RÉGIMEN TRIBUTARIO --- */}
-                            <div className="bg-blue-50/50 p-4 border border-blue-100 rounded-lg">
-                                <label className="block text-xs font-bold text-blue-800 uppercase mb-2">
-                                    <i className="fas fa-landmark mr-1"></i> Régimen Tributario (SII)
+                            <div className="bg-blue-50 p-5 border border-blue-100 rounded-xl">
+                                <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path></svg>
+                                    Régimen Tributario (SII)
                                 </label>
                                 <select 
                                     name="regimen_tributario" 
                                     value={formData.regimen_tributario} 
                                     onChange={handleChange}
-                                    className="w-full border border-blue-200 rounded p-2 bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-slate-700"
+                                    className="w-full border border-blue-200 rounded-lg p-2.5 bg-white text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                                 >
                                     <option value="14_D3">Régimen Pro Pyme General (14 D N° 3)</option>
                                     <option value="14_D8">Régimen Pro Pyme Transparente (14 D N° 8)</option>
                                     <option value="14_A">Régimen General Semi Integrado (14 A)</option>
                                 </select>
-                                <p className="text-xs text-blue-600 mt-2">
-                                    Este ajuste modificará la forma en que el ERP calcula la Operación Renta (Flujo de Caja vs Devengado).
+                                <p className="text-[11px] text-blue-500 font-medium mt-2">
+                                    Define si el ERP calculará la Operación Renta mediante Flujo de Caja o Devengado.
                                 </p>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Dirección Comercial</label>
-                                <input name="direccion" value={formData.direccion} onChange={handleChange} className="w-full border rounded p-2" placeholder="Calle, Número, Comuna..." />
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Dirección Comercial</label>
+                                <input name="direccion" value={formData.direccion} onChange={handleChange} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Calle, Número, Comuna..." />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Contacto</label>
-                                    <input name="email" value={formData.email} onChange={handleChange} className="w-full border rounded p-2" />
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Email Contacto</label>
+                                    <input name="email" type="email" value={formData.email} onChange={handleChange} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono</label>
-                                    <input name="telefono" value={formData.telefono} onChange={handleChange} className="w-full border rounded p-2" />
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Teléfono</label>
+                                    <input name="telefono" value={formData.telefono} onChange={handleChange} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
                                 </div>
                             </div>
 
-                            <div className="mt-4 border-t pt-4">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Color de Documentos</label>
+                            <div className="pt-2">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Color Corporativo (Cotizaciones)</label>
                                 <div className="flex items-center gap-3">
                                     <input 
                                         type="color" 
                                         name="color_primario" 
                                         value={formData.color_primario} 
                                         onChange={handleChange}
-                                        className="w-12 h-10 rounded cursor-pointer border-0 p-0 shadow-sm"
+                                        className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0 shadow-sm"
                                     />
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-slate-500 mb-1">Código HEX</span>
-                                        <input
-                                            type="text"
-                                            name="color_primario"
-                                            value={formData.color_primario}
-                                            onChange={handleChange}
-                                            className="border rounded px-2 py-1 text-sm font-mono uppercase w-28 focus:ring-2 focus:ring-blue-500 outline-none"
-                                            placeholder="#000000"
-                                            maxLength={7}
-                                        />
-                                    </div>
+                                    <input
+                                        type="text"
+                                        name="color_primario"
+                                        value={formData.color_primario}
+                                        onChange={handleChange}
+                                        className="border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono uppercase w-28 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        maxLength={7}
+                                    />
                                 </div>
                             </div>
 
-                            <div className="pt-4 text-right">
-                                <button type="submit" disabled={saving} className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center justify-end ml-auto">
-                                    {saving ? <><i className="fas fa-spinner fa-spin mr-2"></i> Guardando...</> : 'Guardar Cambios'}
+                            <div className="pt-4 border-t border-slate-100 flex justify-end">
+                                <button type="submit" disabled={saving} className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all disabled:opacity-50 flex items-center gap-2 text-sm">
+                                    {saving ? (
+                                        <><svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</>
+                                    ) : (
+                                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg> Guardar Cambios</>
+                                    )}
                                 </button>
                             </div>
                         </form>
                     </div>
                 )}
 
-                {/* --- PESTAÑA BANCOS (SIN CAMBIOS) --- */}
                 {activeTab === 'bancos' && (
-                    <div className="p-8">
-                        <form onSubmit={handleAgregarBanco} className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                            <div className="md:col-span-1">
-                                <label className="block text-xs font-bold text-slate-500 mb-1">Banco</label>
+                    <div className="p-6 md:p-8 animate-fade-in">
+                        <div className="mb-6">
+                            <h3 className="text-xl font-black text-slate-800">Cuentas Bancarias</h3>
+                            <p className="text-sm text-slate-500">Administra las cuentas utilizadas para pagos y conciliación.</p>
+                        </div>
+                        
+                        <form onSubmit={handleAgregarBanco} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
+                            <div className="flex-1 w-full">
+                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Institución</label>
                                 <select 
-                                    className="w-full border rounded p-2 text-sm bg-white cursor-pointer"
+                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white cursor-pointer outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                                     value={nuevoBanco.banco}
                                     onChange={e => setNuevoBanco({...nuevoBanco, banco: e.target.value})}
                                 >
-                                    <option value="">Seleccione Banco...</option>
+                                    <option value="">Seleccione banco...</option>
                                     {listaBancos.map((banco) => (
                                         <option key={banco.id} value={banco.nombre}>{banco.nombre}</option>
                                     ))}
                                 </select>
                             </div>
-                            <div className="md:col-span-1">
-                                <label className="block text-xs font-bold text-slate-500 mb-1">Tipo Cuenta</label>
+                            <div className="w-full md:w-48">
+                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tipo</label>
                                 <select 
-                                    className="w-full border rounded p-2 text-sm bg-white cursor-pointer"
+                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white cursor-pointer outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                                     value={nuevoBanco.tipo_cuenta}
                                     onChange={e => setNuevoBanco({...nuevoBanco, tipo_cuenta: e.target.value})}
                                 >
@@ -317,47 +463,113 @@ const PerfilEmpresa = () => {
                                     <option value="Ahorro">Cta. Ahorro</option>
                                 </select>
                             </div>
-                            <div className="md:col-span-1">
-                                <label className="block text-xs font-bold text-slate-500 mb-1">N° Cuenta</label>
+                            <div className="flex-1 w-full">
+                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">N° Cuenta</label>
                                 <input 
                                     placeholder="123456789" 
-                                    className="w-full border rounded p-2 text-sm font-mono"
+                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500"
                                     value={nuevoBanco.numero_cuenta}
                                     onChange={e => setNuevoBanco({...nuevoBanco, numero_cuenta: e.target.value})}
                                 />
                             </div>
-                            <div className="md:col-span-1">
-                                <button type="submit" className="w-full bg-emerald-600 text-white font-bold p-2 rounded hover:bg-emerald-700 transition-colors text-sm shadow-sm">
-                                    + Agregar
-                                </button>
-                            </div>
+                            <button type="submit" className="w-full md:w-auto bg-emerald-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-emerald-500 transition-colors text-sm shadow-lg shadow-emerald-600/30 whitespace-nowrap">
+                                Agregar Cuenta
+                            </button>
                         </form>
 
-                        <div className="space-y-3">
-                            {bancos.length === 0 ? (
-                                <p className="text-center text-slate-400 italic py-8">No hay cuentas registradas. Agrega una para que aparezca en tus cotizaciones.</p>
-                            ) : (
-                                bancos.map(b => (
-                                    <div key={b.id} className="flex justify-between items-center p-4 border rounded-lg hover:shadow-sm transition-shadow bg-white">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                                                <i className="fas fa-university"></i>
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-slate-800">{b.banco}</p>
-                                                <p className="text-sm text-slate-500 font-mono">{b.tipo_cuenta} • {b.numero_cuenta}</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleEliminarBanco(b.id)} 
-                                            className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors"
-                                            title="Eliminar cuenta"
-                                        >
-                                            <i className="fas fa-trash-alt"></i>
-                                        </button>
-                                    </div>
-                                ))
-                            )}
+                        <div className="overflow-hidden border border-slate-200 rounded-2xl">
+                            <table className="min-w-full text-left bg-white">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Banco</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">N° Cuenta</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {bancos.length === 0 ? (
+                                        <tr><td colSpan="3" className="p-8 text-center text-slate-400 font-medium">No hay cuentas registradas.</td></tr>
+                                    ) : (
+                                        bancos.map(b => (
+                                            <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4 font-bold text-slate-800">{b.banco}</td>
+                                                <td className="px-6 py-4 text-slate-600 font-mono text-sm">{b.tipo_cuenta} • {b.numero_cuenta}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <button onClick={() => handleEliminarBanco(b.id)} className="text-rose-500 bg-rose-50 hover:bg-rose-600 hover:text-white p-2 rounded-lg transition-colors">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'centros' && (
+                    <div className="p-6 md:p-8 animate-fade-in">
+                        <div className="mb-6">
+                            <h3 className="text-xl font-black text-slate-800">Centros de Costo</h3>
+                            <p className="text-sm text-slate-500">Clasifica tus ingresos y gastos para mejorar la analítica contable.</p>
+                        </div>
+
+                        <form onSubmit={agregarCentro} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
+                            <div className="w-full md:w-32">
+                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Código</label>
+                                <input 
+                                    type="text" 
+                                    value={formCentro.codigo} 
+                                    onChange={e => setFormCentro({...formCentro, codigo: e.target.value.toUpperCase()})} 
+                                    placeholder="ADM01" 
+                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm font-mono uppercase outline-none focus:ring-2 focus:ring-indigo-500" 
+                                />
+                            </div>
+                            <div className="flex-1 w-full">
+                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Nombre del Departamento / Proyecto</label>
+                                <input 
+                                    type="text" 
+                                    value={formCentro.nombre} 
+                                    onChange={e => setFormCentro({...formCentro, nombre: e.target.value})} 
+                                    placeholder="Ej: Administración Central" 
+                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500" 
+                                />
+                            </div>
+                            <button type="submit" className="w-full md:w-auto bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 transition-colors text-sm shadow-lg shadow-indigo-600/30 whitespace-nowrap">
+                                Crear Centro
+                            </button>
+                        </form>
+
+                        <div className="overflow-hidden border border-slate-200 rounded-2xl">
+                            <table className="min-w-full text-left bg-white">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Código</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-24">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {centros.length === 0 ? (
+                                        <tr><td colSpan="3" className="p-8 text-center text-slate-400 font-medium">No hay centros de costo registrados.</td></tr>
+                                    ) : (
+                                        centros.map(cc => (
+                                            <tr key={cc.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <span className="bg-slate-200 text-slate-700 font-mono text-xs px-2.5 py-1 rounded-md font-bold">{cc.codigo}</span>
+                                                </td>
+                                                <td className="px-6 py-4 font-bold text-slate-800">{cc.nombre}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <button onClick={() => eliminarCentro(cc.id)} className="text-rose-500 bg-rose-50 hover:bg-rose-600 hover:text-white p-2 rounded-lg transition-colors">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 )}

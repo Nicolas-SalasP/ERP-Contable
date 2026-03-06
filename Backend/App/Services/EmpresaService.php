@@ -8,41 +8,51 @@ use App\Repositories\EmpresaRepository;
 use PDO;
 use Exception;
 
-class EmpresaService {
+class EmpresaService
+{
 
     private PDO $db;
     private EmpresaRepository $repository;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::getConnection();
-        $this->repository = new EmpresaRepository(); 
+        $this->repository = new EmpresaRepository();
     }
 
 
-    public function obtenerPerfil() {
+    public function obtenerPerfil()
+    {
         $perfil = $this->repository->obtenerPerfil();
-        if (!$perfil) throw new Exception("No se encontró el perfil.");
+        if (!$perfil)
+            throw new Exception("No se encontró el perfil.");
         return $perfil;
     }
 
-    public function actualizarDatos(array $data) {
-        if (empty($data['razon_social']) || empty($data['rut'])) throw new Exception("Datos obligatorios.");
+    public function actualizarDatos(array $data)
+    {
+        if (empty($data['razon_social']) || empty($data['rut']))
+            throw new Exception("Datos obligatorios.");
         return $this->repository->actualizarDatos($data);
     }
 
-    public function actualizarLogo($path) {
+    public function actualizarLogo($path)
+    {
         return $this->repository->actualizarLogo($path);
     }
 
-    public function agregarBanco(array $data) {
+    public function agregarBanco(array $data)
+    {
         return $this->repository->agregarCuenta($data);
     }
 
-    public function eliminarCuenta($id) {
-        return $this->repository->eliminarCuenta((int)$id);
+    public function eliminarCuenta($id)
+    {
+        return $this->repository->eliminarCuenta((int) $id);
     }
 
-    public function registrarEmpresaCompleta(array $data): array {
+    public function registrarEmpresaCompleta(array $data): array
+    {
         try {
             $this->db->beginTransaction();
 
@@ -54,12 +64,12 @@ class EmpresaService {
             }
 
             $empresaId = $this->repository->crearEmpresa(
-                $data['empresa_rut'], 
+                $data['empresa_rut'],
                 $data['empresa_razon_social']
             );
 
             $passwordHash = password_hash($data['admin_password'], PASSWORD_BCRYPT);
-            
+
             $this->repository->crearUsuarioAdmin(
                 $empresaId,
                 $data['admin_nombre'],
@@ -74,7 +84,10 @@ class EmpresaService {
 
             if (class_exists('App\Services\AuditoriaService')) {
                 \App\Services\AuditoriaService::registrar(
-                    'REGISTRO_NUEVA_EMPRESA', 'empresas', $empresaId, null, 
+                    'REGISTRO_NUEVA_EMPRESA',
+                    'empresas',
+                    $empresaId,
+                    null,
                     ['rut' => $data['empresa_rut']]
                 );
             }
@@ -89,8 +102,26 @@ class EmpresaService {
         }
     }
 
-    public function getListaBancos(): array 
+    public function getListaBancos(): array
     {
         return $this->repository->obtenerCatalogoBancos();
+    }
+
+    public function listarCentrosCosto()
+    {
+        return $this->repository->listarCentrosCostoFormat();
+    }
+
+    public function agregarCentroCosto(array $data)
+    {
+        if (empty($data['codigo']) || empty($data['nombre'])) {
+            throw new Exception("El código y nombre del Centro de Costo son obligatorios.");
+        }
+        return $this->repository->agregarCentroCosto($data['codigo'], $data['nombre']);
+    }
+
+    public function eliminarCentroCosto($id)
+    {
+        return $this->repository->eliminarCentroCosto((int) $id);
     }
 }

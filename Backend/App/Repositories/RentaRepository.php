@@ -80,10 +80,12 @@ class RentaRepository
         $sql = "SELECT SUM(pf.monto_pagado) as total_pagado 
                 FROM pagos_facturas pf
                 JOIN facturas f ON pf.factura_id = f.id
-                WHERE f.empresa_id = ? AND YEAR(pf.fecha_pago) = ?";
+                WHERE f.empresa_id = ? 
+                AND YEAR(pf.fecha_pago) = ?
+                AND f.id NOT IN (SELECT factura_id FROM activos_fijos WHERE empresa_id = ? AND factura_id IS NOT NULL)";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$this->empresaId, $anio]);
+        $stmt->execute([$this->empresaId, $anio, $this->empresaId]);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res['total_pagado'] ?? 0;
     }
@@ -104,10 +106,13 @@ class RentaRepository
     {
         $sql = "SELECT SUM(monto_neto) as total_compras 
                 FROM facturas 
-                WHERE empresa_id = ? AND YEAR(fecha_emision) = ? AND estado != 'ANULADA'";
+                WHERE empresa_id = ? 
+                AND YEAR(fecha_emision) = ? 
+                AND estado != 'ANULADA'
+                AND id NOT IN (SELECT factura_id FROM activos_fijos WHERE empresa_id = ? AND factura_id IS NOT NULL)";
                 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$this->empresaId, $anio]);
+        $stmt->execute([$this->empresaId, $anio, $this->empresaId]);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         
         return $res['total_compras'] ?? 0;

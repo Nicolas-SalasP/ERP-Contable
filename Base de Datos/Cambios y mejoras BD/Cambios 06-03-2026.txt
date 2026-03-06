@@ -1,0 +1,50 @@
+-- Cambios 06-03-2026
+
+ALTER TABLE `cuentas_bancarias_empresa`
+  ADD `cuenta_contable` varchar(20) DEFAULT NULL AFTER `numero_cuenta`,
+  ADD `saldo_actual` decimal(15,2) NOT NULL DEFAULT '0.00' AFTER `cuenta_contable`;
+
+UPDATE `cuentas_bancarias_empresa` SET `cuenta_contable` = '110107' WHERE `id` = 1;
+
+CREATE TABLE `movimientos_bancarios` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `cuenta_bancaria_id` int(11) NOT NULL,
+  `fecha` date NOT NULL,
+  `descripcion` varchar(255) NOT NULL,
+  `nro_documento` varchar(50) DEFAULT NULL,
+  `cargo` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `abono` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `saldo_historico` decimal(15,2) NOT NULL,
+  `estado` enum('PENDIENTE','CONCILIADO','IGNORADO') DEFAULT 'PENDIENTE',
+  `asiento_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_mov_cuenta` (`cuenta_bancaria_id`),
+  KEY `fk_mov_asiento` (`asiento_id`),
+  CONSTRAINT `fk_mov_cuenta` FOREIGN KEY (`cuenta_bancaria_id`) REFERENCES `cuentas_bancarias_empresa` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_mov_asiento` FOREIGN KEY (`asiento_id`) REFERENCES `asientos_contables` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE `movimientos_bancarios` 
+ADD `hora` TIME NULL AFTER `fecha`;
+
+ALTER TABLE `asientos_contables` 
+ADD `centro_costo_id` INT NULL AFTER `empresa_id`,
+ADD `empleado_id` INT NULL AFTER `centro_costo_id`;
+
+CREATE TABLE `centros_costo` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `empresa_id` int(11) NOT NULL,
+  `codigo` varchar(50) NOT NULL,
+  `nombre` varchar(150) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE `asientos_contables`
+DROP COLUMN `empleado_id`,
+ADD `empleado_nombre` varchar(150) NULL AFTER `centro_costo_id`;
+
+INSERT INTO plan_cuentas (empresa_id, codigo, nombre, tipo, nivel, imputable, activo) 
+VALUES (1, '210301', 'IVA por Pagar (F29)', 'PASIVO', 4, 1, 1);

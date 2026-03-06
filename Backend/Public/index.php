@@ -46,6 +46,7 @@ $files = [
     '/Repositories/ClienteRepository.php',
     '/Repositories/ActivoRepository.php',
     '/Repositories/RentaRepository.php',
+    '/Repositories/BancoRepository.php',
 
     // Servicios
     '/Services/EmpresaService.php',
@@ -61,6 +62,7 @@ $files = [
     '/Services/ClienteService.php',
     '/Services/ActivoService.php',
     '/Services/RentaService.php',
+    '/Services/BancoService.php',
 
     // Controladores
     '/Controllers/AutenticacionController.php',
@@ -75,7 +77,8 @@ $files = [
     '/Controllers/CotizacionController.php',
     '/Controllers/ClienteController.php',
     '/Controllers/ActivoController.php',
-    '/Controllers/RentaController.php'
+    '/Controllers/RentaController.php',
+    '/Controllers/BancoController.php'
 ];
 
 foreach ($files as $file) {
@@ -99,6 +102,7 @@ use App\Controllers\ClienteController;
 use App\Controllers\CotizacionController;
 use App\Controllers\ActivoController;
 use App\Controllers\RentaController;
+use App\Controllers\BancoController;
 
 // -----------------------------------------------------------------------------
 // 3. Definición de Rutas del Sistema
@@ -163,6 +167,9 @@ $router->post('/api/empresas/logo', [EmpresaController::class, 'subirLogo'], tru
 $router->post('/api/empresas/bancos', [EmpresaController::class, 'guardarBanco'], true);
 $router->delete('/api/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco'], true);
 $router->get('/api/empresas/catalogo-bancos', [EmpresaController::class, 'listarBancosDisponibles'], true);
+$router->get('/api/empresas/centros-costo', [EmpresaController::class, 'listarCentrosCosto'], true);
+$router->post('/api/empresas/centros-costo', [EmpresaController::class, 'guardarCentroCosto'], true);
+$router->delete('/api/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentroCosto'], true);
 
 // --- Activos Fijos Directos ---
 $router->get('/api/activos', [ActivoController::class, 'listar'], true);
@@ -187,6 +194,15 @@ $router->get('/api/renta/pre-calculo/{anio}', [RentaController::class, 'obtenerP
 $router->get('/api/renta/mapeo', [RentaController::class, 'obtenerMapeo'], true);
 $router->post('/api/renta/mapeo', [RentaController::class, 'guardarMapeo'], true);
 $router->delete('/api/renta/mapeo/{id}', [RentaController::class, 'eliminarMapeo'], true);
+
+// --- Banco y Tesorería ---
+$router->get('/api/banco/cuentas', [BancoController::class, 'listarCuentasEmpresa'], true);
+$router->post('/api/banco/cartola/importar', [BancoController::class, 'importarExcel'], true);
+$router->post('/api/banco/nomina/pagar', [BancoController::class, 'procesarNominaMasiva'], true);
+$router->get('/api/banco/movimientos/pendientes/{id}', [BancoController::class, 'listarMovimientosPendientes'], true);
+$router->get('/api/banco/cuentas-imputables', [BancoController::class, 'listarCuentasImputables'], true);
+$router->post('/api/banco/movimientos/conciliar', [BancoController::class, 'conciliarMovimiento'], true);
+$router->post('/api/banco/movimientos/ignorar', [BancoController::class, 'ignorarMovimiento'], true);
 
 // -----------------------------------------------------------------------------
 // 4. Despacho de la Petición
