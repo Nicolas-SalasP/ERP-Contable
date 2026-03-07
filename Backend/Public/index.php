@@ -47,6 +47,7 @@ $files = [
     '/Repositories/ActivoRepository.php',
     '/Repositories/RentaRepository.php',
     '/Repositories/BancoRepository.php',
+    '/Repositories/ImpuestoRepository.php',
 
     // Servicios
     '/Services/EmpresaService.php',
@@ -63,6 +64,7 @@ $files = [
     '/Services/ActivoService.php',
     '/Services/RentaService.php',
     '/Services/BancoService.php',
+    '/Services/ImpuestoService.php',
 
     // Controladores
     '/Controllers/AutenticacionController.php',
@@ -78,7 +80,8 @@ $files = [
     '/Controllers/ClienteController.php',
     '/Controllers/ActivoController.php',
     '/Controllers/RentaController.php',
-    '/Controllers/BancoController.php'
+    '/Controllers/BancoController.php',
+    '/Controllers/ImpuestoController.php'
 ];
 
 foreach ($files as $file) {
@@ -103,6 +106,7 @@ use App\Controllers\CotizacionController;
 use App\Controllers\ActivoController;
 use App\Controllers\RentaController;
 use App\Controllers\BancoController;
+use App\Controllers\ImpuestoController;
 
 // -----------------------------------------------------------------------------
 // 3. Definición de Rutas del Sistema
@@ -203,6 +207,10 @@ $router->get('/api/banco/movimientos/pendientes/{id}', [BancoController::class, 
 $router->get('/api/banco/cuentas-imputables', [BancoController::class, 'listarCuentasImputables'], true);
 $router->post('/api/banco/movimientos/conciliar', [BancoController::class, 'conciliarMovimiento'], true);
 $router->post('/api/banco/movimientos/ignorar', [BancoController::class, 'ignorarMovimiento'], true);
+
+// --- IMPUESTOS Y F29 ---
+$router->get('/api/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestoController::class, 'simularCierre'], true);
+$router->post('/api/impuestos/cierre-f29/ejecutar', [ImpuestoController::class, 'ejecutarCierre'], true);
 
 // -----------------------------------------------------------------------------
 // 4. Despacho de la Petición

@@ -24,6 +24,7 @@ import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
 import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
 import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
 import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
+import CierreF29 from './Modulos/Contabilidad/Vistas/CierreF29';
 
 const RutaPrivada = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -160,6 +161,14 @@ function App() {
             <RutaPrivada>
               <LayoutPrincipal>
                 <MesaConciliacion />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/cierre-f29" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <CierreF29 />
               </LayoutPrincipal>
             </RutaPrivada>
           } />
