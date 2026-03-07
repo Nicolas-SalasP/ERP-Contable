@@ -7,6 +7,7 @@ import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 import Login from './Modulos/Autenticacion/Login';
 import RegistroEmpresa from './Modulos/Autenticacion/RegistroEmpresa';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
+import Dashboard from './Modulos/Dashboard/Dashboard';
 import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
 import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
 import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
@@ -19,6 +20,11 @@ import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
 import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
 import VisorAuditoriaFactura from './Modulos/Contabilidad/Vistas/VisorAuditoriaFactura';
 import AdministradorCuentas from './Modulos/Contabilidad/Vistas/AdministradorCuentas';
+import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
+import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
+import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
+import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
+import CierreF29 from './Modulos/Contabilidad/Vistas/CierreF29';
 
 const RutaPrivada = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -40,10 +46,7 @@ function App() {
           <Route path="/" element={
             <RutaPrivada>
               <LayoutPrincipal>
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                  <h1 className="text-2xl font-bold">Bienvenido al ERP Contable</h1>
-                  <p>Selecciona una opción del menú lateral.</p>
-                </div>
+                <Dashboard />
               </LayoutPrincipal>
             </RutaPrivada>
           } />
@@ -122,10 +125,50 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/tributario/renta" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <DashboardRenta />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
           <Route path="/facturas/:id/auditoria" element={
             <RutaPrivada>
               <LayoutPrincipal>
                 <VisorAuditoriaFactura />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/banco/nomina-pagos" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <NominaPagos />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/banco/cartola" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <CartolaBancaria />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/banco/conciliacion" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <MesaConciliacion />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/cierre-f29" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <CierreF29 />
               </LayoutPrincipal>
             </RutaPrivada>
           } />
@@ -137,4 +180,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; 

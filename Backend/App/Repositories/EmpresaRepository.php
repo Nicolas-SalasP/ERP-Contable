@@ -15,7 +15,7 @@ class EmpresaRepository
     {
         $this->db = Database::getConnection();
         try {
-            $auth = AuthMiddleware::authenticate(); 
+            $auth = AuthMiddleware::authenticate();
             $this->empresaId = $auth->empresa_id ?? null;
         } catch (Exception $e) {
             $this->empresaId = null;
@@ -25,10 +25,8 @@ class EmpresaRepository
     public function obtenerPerfil(?int $id = null)
     {
         $targetId = $id ?? $this->empresaId;
-
-        if (!$targetId) {
+        if (!$targetId)
             return null;
-        }
 
         $stmt = $this->db->prepare("SELECT * FROM empresas WHERE id = ?");
         $stmt->execute([$targetId]);
@@ -38,33 +36,32 @@ class EmpresaRepository
             $stmtBancos = $this->db->prepare("SELECT * FROM cuentas_bancarias_empresa WHERE empresa_id = ?");
             $stmtBancos->execute([$targetId]);
             $empresa['bancos'] = $stmtBancos->fetchAll(PDO::FETCH_ASSOC);
+            $stmtCentros = $this->db->prepare("SELECT * FROM centros_costo WHERE empresa_id = ? AND activo = 1 ORDER BY codigo");
+            $stmtCentros->execute([$targetId]);
+            $empresa['centros_costo'] = $stmtCentros->fetchAll(PDO::FETCH_ASSOC);
         }
-        
+
         return $empresa;
     }
 
     public function actualizarDatos(array $data)
     {
-        if (!$this->empresaId) return false;
-        $sql = "UPDATE empresas SET 
-                razon_social = ?, rut = ?, direccion = ?, email = ?, telefono = ?, color_primario = ?
-                WHERE id = ?";
-        
+        $sql = "UPDATE empresas SET razon_social = ?, giro = ?, direccion = ?, telefono = ?, email_contacto = ? WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            $data['razon_social'], 
-            $data['rut'], 
-            $data['direccion'], 
-            $data['email'], 
-            $data['telefono'],
-            $data['color_primario'],
+            $data['razon_social'],
+            $data['giro'] ?? null,
+            $data['direccion'] ?? null,
+            $data['telefono'] ?? null,
+            $data['email_contacto'] ?? null,
             $this->empresaId
         ]);
     }
 
     public function actualizarLogo($path)
     {
-        if (!$this->empresaId) return false;
+        if (!$this->empresaId)
+            return false;
 
         $stmt = $this->db->prepare("UPDATE empresas SET logo_path = ? WHERE id = ?");
         return $stmt->execute([$path, $this->empresaId]);
@@ -72,25 +69,27 @@ class EmpresaRepository
 
     public function agregarCuenta(array $data)
     {
-        if (!$this->empresaId) return false;
+        if (!$this->empresaId)
+            return false;
 
         $sql = "INSERT INTO cuentas_bancarias_empresa (empresa_id, banco, tipo_cuenta, numero_cuenta, titular, rut_titular, email_notificacion) 
                 VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            $this->empresaId, 
-            $data['banco'], 
-            $data['tipo_cuenta'], 
-            $data['numero_cuenta'], 
-            $data['titular'], 
-            $data['rut_titular'], 
+            $this->empresaId,
+            $data['banco'],
+            $data['tipo_cuenta'],
+            $data['numero_cuenta'],
+            $data['titular'],
+            $data['rut_titular'],
             $data['email_notificacion']
         ]);
     }
 
     public function eliminarCuenta($id)
     {
-        if (!$this->empresaId) return false;
+        if (!$this->empresaId)
+            return false;
 
         $stmt = $this->db->prepare("DELETE FROM cuentas_bancarias_empresa WHERE id = ? AND empresa_id = ?");
         return $stmt->execute([$id, $this->empresaId]);
@@ -115,7 +114,7 @@ class EmpresaRepository
         $sql = "INSERT INTO empresas (rut, razon_social, created_at) VALUES (?, ?, NOW())";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$rut, $razonSocial]);
-        return (int)$this->db->lastInsertId();
+        return (int) $this->db->lastInsertId();
     }
 
     public function crearUsuarioAdmin(int $empresaId, string $nombre, string $email, string $passwordHash): int
@@ -126,7 +125,7 @@ class EmpresaRepository
                 ) VALUES (?, ?, ?, ?, 1, 1, DATE_ADD(NOW(), INTERVAL 30 DAY), NOW())";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$empresaId, $nombre, $email, $passwordHash]);
-        return (int)$this->db->lastInsertId();
+        return (int) $this->db->lastInsertId();
     }
 
     public function clonarPlanMaestro(int $empresaId): void
@@ -149,10 +148,29 @@ class EmpresaRepository
         }
     }
 
-    public function obtenerCatalogoBancos(): array 
+    public function obtenerCatalogoBancos(): array
     {
         $sql = "SELECT * FROM catalogo_bancos ORDER BY nombre ASC";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function listarCentrosCostoFormat()
+    {
+        $stmt = $this->db->prepare("SELECT id as value, CONCAT('[', codigo, '] ', nombre) as label FROM centros_costo WHERE empresa_id = ? AND activo = 1 ORDER BY nombre");
+        $stmt->execute([$this->empresaId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function agregarCentroCosto($codigo, $nombre)
+    {
+        $stmt = $this->db->prepare("INSERT INTO centros_costo (empresa_id, codigo, nombre) VALUES (?, ?, ?)");
+        return $stmt->execute([$this->empresaId, $codigo, $nombre]);
+    }
+
+    public function eliminarCentroCosto($id)
+    {
+        $stmt = $this->db->prepare("DELETE FROM centros_costo WHERE id = ? AND empresa_id = ?");
+        return $stmt->execute([$id, $this->empresaId]);
     }
 }

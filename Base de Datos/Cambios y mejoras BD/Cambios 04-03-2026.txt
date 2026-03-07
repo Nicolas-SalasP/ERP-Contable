@@ -1,0 +1,42 @@
+-- Cambios 04-03-2026
+
+
+CREATE TABLE proyectos_activos (
+    id_proyecto INT AUTO_INCREMENT PRIMARY KEY,
+    empresa_id INT NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    tipo_activo_id INT NOT NULL, -- FK a catalogo_plan_maestro (ej. 120103 Maquinarias)
+    anio_fabricacion INT,
+    vida_util_meses INT NOT NULL,
+    metodo_depreciacion ENUM('LINEAL', 'ACELERADA') DEFAULT 'LINEAL',
+    centro_costo_id INT NOT NULL, -- FK a nueva tabla centros_costo
+    empleado_id INT NOT NULL, -- FK a tabla de empleados/usuarios
+    estado ENUM('EN_CONSTRUCCION', 'ACTIVO_OPERATIVO', 'VENDIDO', 'DADO_DE_BAJA') DEFAULT 'EN_CONSTRUCCION',
+    valor_total_original DECIMAL(15,2) DEFAULT 0.00,
+    depreciacion_acumulada DECIMAL(15,2) DEFAULT 0.00,
+    fecha_activacion DATE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_proyecto_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
+);
+
+
+CREATE TABLE proyectos_facturas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    proyecto_id INT NOT NULL,
+    factura_id INT NOT NULL, -- FK a tabla facturas existente
+    monto_imputado DECIMAL(15,2) NOT NULL, -- Permite imputar facturas parciales si es necesario
+    fecha_vinculacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_pf_proyecto FOREIGN KEY (proyecto_id) REFERENCES proyectos_activos(id_proyecto),
+    CONSTRAINT fk_pf_factura FOREIGN KEY (factura_id) REFERENCES facturas(id)
+);
+
+
+CREATE TABLE depreciaciones_mensuales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    proyecto_id INT NOT NULL,
+    fecha_proceso DATE NOT NULL,
+    monto DECIMAL(15,2) NOT NULL,
+    asiento_id INT NOT NULL, -- FK a asientos_contables para trazabilidad estricta
+    CONSTRAINT fk_deprec_proyecto FOREIGN KEY (proyecto_id) REFERENCES proyectos_activos(id_proyecto),
+    CONSTRAINT fk_deprec_asiento FOREIGN KEY (asiento_id) REFERENCES asientos_contables(id)
+);

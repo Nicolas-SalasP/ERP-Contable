@@ -21,14 +21,17 @@ class ActivoController
         exit;
     }
 
+    public function getParametros() {
+        $cuentas = $this->servicio->obtenerCuentasActivos();
+        return $this->responderJson(['success' => true, 'data' => ['cuentas' => $cuentas]]);
+    }
+
+    // ======================================================================
+    // ACTIVOS FIJOS DIRECTOS
+    // ======================================================================
     public function crear()
     {
         $input = json_decode(file_get_contents("php://input"), true);
-
-        // $token = $_SERVER['HTTP_AUTHORIZATION'];
-        // $payload = JwtHelper::decode($token);
-        // $empresaId = $payload->empresa_id;
-        
         $empresaId = 1;
 
         if (empty($input['nombre_activo']) || empty($input['categoria_sii_id'])) {
@@ -37,12 +40,7 @@ class ActivoController
 
         try {
             $nuevoId = $this->servicio->crearDesdeFactura($input, $empresaId);
-            
-            return $this->responderJson([
-                'success' => true,
-                'mensaje' => 'Activo creado y activado exitosamente.',
-                'id' => $nuevoId
-            ]);
+            return $this->responderJson(['success' => true, 'mensaje' => 'Activo creado y activado exitosamente.', 'id' => $nuevoId]);
         } catch (Exception $e) {
             return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
@@ -87,13 +85,68 @@ class ActivoController
 
         try {
             $resultado = $this->servicio->ejecutarDepreciacionMensual($fechaCierre);
-            return $this->responderJson([
-                'success' => true,
-                'mensaje' => 'Proceso de depreciación ejecutado con éxito.',
-                'data' => $resultado
-            ]);
+            return $this->responderJson(['success' => true, 'mensaje' => 'Proceso ejecutado.', 'data' => $resultado]);
         } catch (Exception $e) {
             return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
+    }
+
+    // ======================================================================
+    // PROYECTOS DE ACTIVOS (En Construcción)
+    // ======================================================================
+    public function crearProyecto()
+    {
+        $input = json_decode(file_get_contents("php://input"), true);
+        $response = $this->servicio->crearProyecto($input);
+        $this->responderJson($response, $response['success'] ? 200 : 400);
+    }
+
+    public function listarProyectos()
+    {
+        try {
+            $proyectos = $this->servicio->obtenerTodosProyectos();
+            return $this->responderJson(['success' => true, 'data' => $proyectos]);
+        } catch (Exception $e) {
+            return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
+
+    public function imputarFacturaProyecto($idProyecto)
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $response = $this->servicio->vincularFacturaProyecto((int)$idProyecto, (int)$data['factura_id'], (float)$data['monto']);
+        $this->responderJson($response, $response['success'] ? 200 : 400);
+    }
+
+    public function activarProyecto($idProyecto)
+    {
+        $response = $this->servicio->activarProyecto((int)$idProyecto);
+        $this->responderJson($response, $response['success'] ? 200 : 400);
+    }
+
+    public function procesarDepreciacionProyectos()
+    {
+        $input = json_decode(file_get_contents("php://input"), true);
+        $fechaCierre = $input['fecha_cierre'] ?? date('Y-m-t');
+        
+        $response = $this->servicio->ejecutarDepreciacionMensualProyectos($fechaCierre);
+        $this->responderJson($response, $response['success'] ? 200 : 500);
+    }
+
+    public function bajaProyecto($idProyecto)
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $response = $this->servicio->darDeBajaProyecto((int)$idProyecto, $data['motivo'] ?? 'BAJA', (float)($data['monto_venta'] ?? 0));
+        $this->responderJson($response, $response['success'] ? 200 : 400);
+    }
+
+    public function facturasDisponiblesProyecto() {
+        $data = $this->servicio->obtenerFacturasDisponiblesProyecto();
+        return $this->responderJson(['success' => true, 'data' => $data]);
+    }
+
+    public function analisisProyecto($idProyecto) {
+        $data = $this->servicio->obtenerAnalisisProyecto((int)$idProyecto);
+        return $this->responderJson(['success' => true, 'data' => $data]);
     }
 }

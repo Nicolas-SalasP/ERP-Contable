@@ -1,0 +1,38 @@
+-- Cambios 05-03-2026
+
+-- 1. Agregar configuración tributaria a la empresa
+ALTER TABLE empresas 
+ADD COLUMN regimen_tributario ENUM('14_D3', '14_D8', '14_A') DEFAULT '14_D3',
+ADD COLUMN tasa_impuesto DECIMAL(5,2) DEFAULT 25.00;
+
+-- 2. Crear tabla de mapeo tributario (Traductor Contabilidad -> SII)
+CREATE TABLE sii_mapeo_cuentas (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    empresa_id INT(11) NOT NULL,
+    codigo_cuenta VARCHAR(20) COLLATE utf8mb4_unicode_ci NOT NULL, -- <-- Solución aquí
+    concepto_sii ENUM(
+        'INGRESOS_DEL_GIRO',
+        'OTROS_INGRESOS',
+        'REMUNERACIONES_PAGADAS',
+        'HONORARIOS_PAGADOS',
+        'ARRIENDOS_PAGADOS',
+        'GASTOS_GENERALES'
+    ) NOT NULL,
+    UNIQUE KEY unique_mapeo (empresa_id, codigo_cuenta),
+    CONSTRAINT fk_mapeo_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mapeo_cuenta FOREIGN KEY (codigo_cuenta) REFERENCES plan_cuentas(codigo) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. Inserción de mapeo inicial basándonos en tu plan de cuentas actual
+INSERT INTO sii_mapeo_cuentas (empresa_id, codigo_cuenta, concepto_sii) VALUES
+(1, '410101', 'INGRESOS_DEL_GIRO'),       -- Ventas Netas
+(1, '410102', 'INGRESOS_DEL_GIRO'),       -- Ventas Exentas
+(1, '410103', 'INGRESOS_DEL_GIRO'),       -- Servicios Prestados
+(1, '420101', 'OTROS_INGRESOS'),          -- Intereses Ganados
+(1, '610101', 'REMUNERACIONES_PAGADAS'),  -- Sueldos Base
+(1, '610105', 'REMUNERACIONES_PAGADAS'),  -- Bonos y Aguinaldos
+(1, '660101', 'HONORARIOS_PAGADOS'),      -- Servicio Contable
+(1, '660102', 'HONORARIOS_PAGADOS'),      -- Asesoría Legal
+(1, '620101', 'ARRIENDOS_PAGADOS'),       -- Arriendo Oficina
+(1, '620103', 'GASTOS_GENERALES'),        -- Electricidad
+(1, '620106', 'GASTOS_GENERALES');        -- Internet

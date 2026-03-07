@@ -434,7 +434,7 @@ const RegistroFactura = () => {
                                         value={formData.montoVisual}
                                         onChange={handleMontoChange}
                                         placeholder="0"
-                                        className="block w-full rounded-lg border border-slate-300 py-4 pl-10 pr-12 text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-2xl font-bold outline-none tracking-wide"
+                                        className="block w-full !pl-10 rounded-lg border border-slate-300 py-4 pl-10 pr-12 text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-2xl font-bold outline-none tracking-wide"
                                     />
                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
                                         <span className="text-slate-400 text-sm font-bold">CLP</span>

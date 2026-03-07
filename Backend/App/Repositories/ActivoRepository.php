@@ -22,6 +22,22 @@ class ActivoRepository
         }
     }
 
+    public function getCuentasActivoFijo() {
+        $stmt = $this->db->prepare("SELECT id, codigo, nombre FROM plan_cuentas WHERE codigo LIKE '1201%' AND imputable = 1 AND empresa_id = ?");
+        $stmt->execute([$this->empresaId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // ======================================================================
+    // CONTROL TRANSACCIONAL
+    // ======================================================================
+    public function beginTransaction() { $this->db->beginTransaction(); }
+    public function commit() { $this->db->commit(); }
+    public function rollBack() { $this->db->rollBack(); }
+
+    // ======================================================================
+    // ACTIVOS FIJOS DIRECTOS
+    // ======================================================================
     public function crearActivoFijo($datos, $empresaId)
     {
         $stmtCuenta = $this->db->prepare("SELECT id FROM plan_cuentas WHERE codigo = ? AND empresa_id = ?");
@@ -53,15 +69,9 @@ class ActivoRepository
                 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            $empresaId,
-            $planCuentaId,
-            $datos['factura_id'],
-            $datos['nombre_activo'],
-            $datos['monto_adquisicion'],
-            $datos['fecha_activacion'],
-            $datos['categoria_sii_id'],
-            $datos['tipo_depreciacion'],
-            $vidaUtilMeses
+            $empresaId, $planCuentaId, $datos['factura_id'], $datos['nombre_activo'],
+            $datos['monto_adquisicion'], $datos['fecha_activacion'], $datos['categoria_sii_id'],
+            $datos['tipo_depreciacion'], $vidaUtilMeses
         ]);
 
         return $this->db->lastInsertId();
@@ -90,42 +100,28 @@ class ActivoRepository
     public function activarActivo($id, $datos)
     {
         $sql = "UPDATE activos_fijos 
-                SET estado = 'ACTIVO', 
-                    categoria_sii_id = ?, 
-                    tipo_depreciacion = ?, 
-                    fecha_activacion = ? 
+                SET estado = 'ACTIVO', categoria_sii_id = ?, tipo_depreciacion = ?, fecha_activacion = ? 
                 WHERE id = ? AND empresa_id = ?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            $datos['categoria_sii_id'],
-            $datos['tipo_depreciacion'],
-            $datos['fecha_activacion'],
-            $id,
-            $this->empresaId
+            $datos['categoria_sii_id'], $datos['tipo_depreciacion'], 
+            $datos['fecha_activacion'], $id, $this->empresaId
         ]);
     }
 
     public function obtenerPendientesDeContabilidad()
     {
-        $sql = "SELECT 
-                    f.id AS factura_id, 
-                    f.numero_factura, 
-                    p.razon_social AS proveedor, 
-                    f.fecha_emision,
-                    da.cuenta_contable,
-                    pc.nombre AS nombre_cuenta,
-                    da.debe AS monto_adquisicion
+        $sql = "SELECT f.id AS factura_id, f.numero_factura, p.razon_social AS proveedor, f.fecha_emision,
+                    da.cuenta_contable, pc.nombre AS nombre_cuenta, da.debe AS monto_adquisicion
                 FROM detalles_asiento da
                 JOIN asientos_contables a ON da.asiento_id = a.id
                 JOIN facturas f ON a.origen_id = f.id
                 JOIN proveedores p ON f.proveedor_id = p.id
                 JOIN plan_cuentas pc ON da.cuenta_contable = pc.codigo
-                WHERE da.cuenta_contable LIKE '120%' 
-                AND da.debe > 0
+                WHERE da.cuenta_contable LIKE '120%' AND da.debe > 0
                 AND f.id NOT IN (SELECT factura_id FROM activos_fijos WHERE factura_id IS NOT NULL)
                 GROUP BY f.id, da.cuenta_contable, da.debe
                 ORDER BY f.fecha_emision DESC";
-                
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -133,12 +129,126 @@ class ActivoRepository
 
     public function obtenerActivosDepreciables()
     {
-        $sql = "SELECT id, nombre_activo, monto_adquisicion, vida_util_meses 
-                FROM activos_fijos 
-                WHERE estado = 'ACTIVO' AND vida_util_meses > 0";
-                
+        $sql = "SELECT a.id, a.nombre_activo, a.monto_adquisicion, a.vida_util_meses, 
+                    a.depreciacion_acumulada, pc.codigo as cuenta_activo
+                FROM activos_fijos a
+                JOIN plan_cuentas pc ON a.plan_cuenta_id = pc.id
+                WHERE a.estado = 'ACTIVO' AND a.vida_util_meses > 0 AND a.empresa_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$this->empresaId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function registrarDepreciacionActivo(int $activoId, float $monto)
+    {
+        $stmt = $this->db->prepare("UPDATE activos_fijos SET depreciacion_acumulada = depreciacion_acumulada + ?, meses_depreciados = meses_depreciados + 1 WHERE id = ?");
+        $stmt->execute([$monto, $activoId]);
+    }
+
+    // ======================================================================
+    // PROYECTOS DE ACTIVOS (En Construcción)
+    // ======================================================================
+    public function getProyectoById(int $id): ?array {
+        $stmt = $this->db->prepare("SELECT * FROM proyectos_activos WHERE id_proyecto = ? AND empresa_id = ?");
+        $stmt->execute([$id, $this->empresaId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    public function crearProyectoActivo(array $data): int {
+        $stmt = $this->db->prepare("
+            INSERT INTO proyectos_activos 
+            (empresa_id, nombre, tipo_activo_id, anio_fabricacion, vida_util_meses, centro_costo_id, empleado_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $this->empresaId, $data['nombre'], $data['tipo_activo_id'], 
+            $data['anio_fabricacion'], $data['vida_util_meses'], 
+            $data['centro_costo_id'], $data['empleado_id']
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function obtenerProyectos() {
+        $stmt = $this->db->prepare("SELECT * FROM proyectos_activos WHERE empresa_id = ? ORDER BY id_proyecto DESC");
+        $stmt->execute([$this->empresaId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function vincularFacturaAProyecto(int $proyectoId, int $facturaId, float $monto): void {
+        $stmt = $this->db->prepare("INSERT INTO proyectos_facturas (proyecto_id, factura_id, monto_imputado) VALUES (?, ?, ?)");
+        $stmt->execute([$proyectoId, $facturaId, $monto]);
+
+        $stmtUpdate = $this->db->prepare("UPDATE proyectos_activos SET valor_total_original = valor_total_original + ? WHERE id_proyecto = ?");
+        $stmtUpdate->execute([$monto, $proyectoId]);
+    }
+
+    public function cambiarEstadoProyecto(int $proyectoId, string $nuevoEstado, ?string $fechaActivacion = null): void {
+        $sql = "UPDATE proyectos_activos SET estado = ?";
+        $params = [$nuevoEstado];
+
+        if ($fechaActivacion) {
+            $sql .= ", fecha_activacion = ?";
+            $params[] = $fechaActivacion;
+        }
+        $sql .= " WHERE id_proyecto = ?";
+        $params[] = $proyectoId;
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+    }
+
+    public function getProyectosParaDepreciar(): array {
+        $stmt = $this->db->prepare("
+            SELECT * FROM proyectos_activos 
+            WHERE estado = 'ACTIVO_OPERATIVO' 
+            AND valor_total_original > depreciacion_acumulada 
+            AND empresa_id = ? 
+            FOR UPDATE
+        ");
+        $stmt->execute([$this->empresaId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function registrarDepreciacionMensualProyecto(int $proyectoId, float $monto, int $asientoId, string $fecha): void {
+        $stmt = $this->db->prepare("INSERT INTO depreciaciones_mensuales (proyecto_id, fecha_proceso, monto, asiento_id) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$proyectoId, $fecha, $monto, $asientoId]);
+
+        $stmtUpdate = $this->db->prepare("UPDATE proyectos_activos SET depreciacion_acumulada = depreciacion_acumulada + ? WHERE id_proyecto = ?");
+        $stmtUpdate->execute([$monto, $proyectoId]);
+    }
+
+    public function obtenerFacturasParaProyectos() {
+        $sql = "SELECT f.id AS factura_id, f.numero_factura, p.razon_social AS proveedor, f.fecha_emision, da.debe AS monto, pc.nombre AS nombre_cuenta
+                FROM detalles_asiento da
+                JOIN asientos_contables a ON da.asiento_id = a.id
+                JOIN facturas f ON a.origen_id = f.id
+                JOIN proveedores p ON f.proveedor_id = p.id
+                JOIN plan_cuentas pc ON da.cuenta_contable = pc.codigo
+                WHERE da.cuenta_contable LIKE '120%' AND da.debe > 0
+                AND f.id NOT IN (SELECT factura_id FROM activos_fijos WHERE factura_id IS NOT NULL)
+                AND f.id NOT IN (SELECT factura_id FROM proyectos_facturas)
+                GROUP BY f.id, da.cuenta_contable, da.debe
+                ORDER BY f.fecha_emision DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getDetalleAnaliticoProyecto(int $id) {
+        $proyecto = $this->getProyectoById($id);
+        if (!$proyecto) return null;
+
+        $stmtF = $this->db->prepare("SELECT pf.id, f.numero_factura as numero, p.razon_social as proveedor, f.fecha_emision as fecha, pf.monto_imputado as monto 
+                                    FROM proyectos_facturas pf JOIN facturas f ON pf.factura_id = f.id JOIN proveedores p ON f.proveedor_id = p.id 
+                                    WHERE pf.proyecto_id = ?");
+        $stmtF->execute([$id]);
+        $proyecto['facturas'] = $stmtF->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmtH = $this->db->prepare("SELECT * FROM depreciaciones_mensuales WHERE proyecto_id = ? ORDER BY fecha_proceso DESC");
+        $stmtH->execute([$id]);
+        $proyecto['historial_depreciacion'] = $stmtH->fetchAll(PDO::FETCH_ASSOC);
+
+        return $proyecto;
     }
 }
