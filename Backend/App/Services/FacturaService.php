@@ -209,4 +209,88 @@ class FacturaService
             'asiento_codigo' => $resultadoAsiento['codigo']
         ];
     }
+
+    public function adjuntarPdfFactura(int $facturaId, array $archivo): array
+    {
+        if ($archivo['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Error en la transmisión del archivo.");
+        }
+        if ($archivo['type'] !== 'application/pdf') {
+            throw new Exception("El archivo debe ser un documento PDF.");
+        }
+        $directorioDestino = dirname(__DIR__, 2) . '/Public/uploads/facturas/';
+        if (!is_dir($directorioDestino)) {
+            mkdir($directorioDestino, 0755, true);
+        }
+
+        $nombreSeguro = 'factura_' . $facturaId . '_' . bin2hex(random_bytes(5)) . '.pdf';
+        $rutaFinal = $directorioDestino . $nombreSeguro;
+        $rutaRelativa = 'uploads/facturas/' . $nombreSeguro;
+
+        if (move_uploaded_file($archivo['tmp_name'], $rutaFinal)) {
+            $this->repoFactura->actualizarRutaPdf($facturaId, $rutaRelativa);
+
+            return [
+                'success' => true, 
+                'mensaje' => 'PDF adjuntado correctamente',
+                'archivo_pdf' => $rutaRelativa
+            ];
+        } else {
+            throw new Exception("Error al guardar el archivo en el servidor.");
+        }
+    }
+
+    public function procesarPagoConAnticipo(int $facturaId, array $datos)
+    {
+        $anticipoId = (int)$datos['anticipo_id'];
+        $montoAplicar = (float)$datos['monto'];
+        $this->repoFactura->beginTransaction();
+        
+        try {
+            $factura = $this->repoFactura->obtenerFacturaPorId($facturaId);
+            if (!$factura || $factura['estado'] === 'PAGADA') {
+                throw new Exception("Factura inválida o ya se encuentra pagada por completo.");
+            }
+
+            $anticipo = $this->repoFactura->obtenerAnticipoParaActualizar($anticipoId);
+            if (!$anticipo || (float)$anticipo['saldo_disponible'] < $montoAplicar) {
+                throw new Exception("El anticipo no existe o no tiene saldo suficiente para este cruce.");
+            }
+
+            $codigoAsiento = $this->repoContabilidad->generarCodigoAsiento('MANUAL');
+            $asientoId = $this->repoContabilidad->crearCabeceraAsiento(
+                date('Y-m-d'), 
+                "Cruce Anticipo Ref: {$anticipo['referencia']} a Fact. N° {$factura['numero_factura']}", 
+                $codigoAsiento
+            );
+            $this->repoContabilidad->crearDetalleAvanzado($asientoId, '210101', $montoAplicar, 0.0);
+            $this->repoContabilidad->crearDetalleAvanzado($asientoId, '110205', 0.0, $montoAplicar);
+
+            $nuevoSaldoAnticipo = (float)$anticipo['saldo_disponible'] - $montoAplicar;
+            $estadoAnticipo = $nuevoSaldoAnticipo <= 0 ? 'APLICADO' : 'VIGENTE';
+            
+            $this->repoFactura->actualizarSaldoAnticipo($anticipoId, $nuevoSaldoAnticipo, $estadoAnticipo);
+
+            $this->repoFactura->registrarPago([
+                'factura_id' => $facturaId,
+                'cuenta_bancaria_empresa_id' => null,
+                'fecha_pago' => date('Y-m-d'),
+                'monto_pagado' => $montoAplicar,
+                'metodo_pago' => 'Cruce Anticipo',
+                'numero_operacion' => 'ANT-'.$anticipoId
+            ], $asientoId);
+
+            $totalPagado = $this->repoFactura->obtenerTotalPagadoFactura($facturaId);
+            if ($totalPagado >= (float)$factura['monto_bruto']) {
+                $this->repoFactura->marcarComoPagada($facturaId);
+            }
+
+            $this->repoFactura->commit();
+            return ['success' => true, 'mensaje' => 'Factura cruzada con anticipo exitosamente.'];
+            
+        } catch (Exception $e) {
+            $this->repoFactura->rollBack();
+            throw $e;
+        }
+    }
 }

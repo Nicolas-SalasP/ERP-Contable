@@ -25,6 +25,8 @@ import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
 import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
 import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
 import CierreF29 from './Modulos/Contabilidad/Vistas/CierreF29';
+import AsientoManual from './Modulos/Contabilidad/Vistas/AsientoManual';
+import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
 
 const RutaPrivada = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -172,6 +174,17 @@ function App() {
               </LayoutPrincipal>
             </RutaPrivada>
           } />
+
+          <Route path="/contabilidad/asiento-manual" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <AsientoManual />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/proveedores/visor" element={<RutaPrivada><LayoutPrincipal><VisorProveedor /></LayoutPrincipal></RutaPrivada>} />
+          <Route path="/proveedores/visor/:id" element={<RutaPrivada><LayoutPrincipal><VisorProveedor /></LayoutPrincipal></RutaPrivada>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

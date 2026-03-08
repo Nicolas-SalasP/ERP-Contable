@@ -140,4 +140,54 @@ class ContabilidadService
         $this->repositorio->actualizarCuenta($id, $datos);
         return ['success' => true, 'mensaje' => 'Cuenta actualizada correctamente.'];
     }
+
+    public function registrarAsientoManualAvanzado(array $datos): array
+    {
+        $detalles = $datos['detalles'] ?? [];
+        if (empty($detalles) || count($detalles) < 2) {
+            throw new Exception("El asiento debe tener al menos dos líneas contables.");
+        }
+        $totalDebe = 0.0;
+        $totalHaber = 0.0;
+        foreach ($detalles as $det) {
+            $totalDebe += (float) ($det['debe'] ?? 0);
+            $totalHaber += (float) ($det['haber'] ?? 0);
+        }
+        if (round($totalDebe, 2) !== round($totalHaber, 2)) {
+            throw new Exception("El asiento está descuadrado. Diferencia detectada. (Debe: $totalDebe, Haber: $totalHaber).");
+        }
+        if (round($totalDebe, 2) <= 0) {
+            throw new Exception("El asiento no puede tener valor cero.");
+        }
+
+        $this->repositorio->beginTransaction();
+        try {
+            $fecha = $datos['fecha'] ?? date('Y-m-d');
+            $glosa = $datos['glosa'] ?? 'Asiento Manual Avanzado';
+            
+            $codigoUnico = $this->repositorio->generarCodigoAsiento('MANUAL');
+            
+            $asientoId = $this->repositorio->crearCabeceraAsiento($fecha, $glosa, $codigoUnico);
+
+            foreach ($detalles as $fila) {
+                $this->repositorio->crearDetalleAvanzado(
+                    $asientoId,
+                    (string) $fila['cuenta_codigo'],
+                    (float) ($fila['debe'] ?? 0),
+                    (float) ($fila['haber'] ?? 0),
+                    isset($fila['centro_costo_id']) ? (int) $fila['centro_costo_id'] : null,
+                    $fila['empleado_nombre'] ?? null
+                );
+            }
+            AuditoriaService::registrar('REGISTRAR_ASIENTO_AVANZADO', 'asientos_contables', $asientoId, null, ['codigo' => $codigoUnico]);
+
+            $this->repositorio->commit();
+
+            return ['success' => true, 'id' => $asientoId, 'codigo' => $codigoUnico];
+
+        } catch (Exception $e) {
+            $this->repositorio->rollBack();
+            throw $e;
+        }
+    }
 }

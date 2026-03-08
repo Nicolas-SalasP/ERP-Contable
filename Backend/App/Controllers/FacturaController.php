@@ -187,4 +187,29 @@ class FacturaController
             return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
     }
+
+    public function subirPdf($id)
+    {
+        try {
+            if (!isset($_FILES['pdf'])) {
+                throw new Exception("No se recibió ningún archivo.");
+            }
+            $resultado = $this->servicio->adjuntarPdfFactura((int)$id, $_FILES['pdf']);
+            
+            $this->responderJson($resultado);
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 400);
+        }
+    }
+
+    public function cruzarConAnticipo($id)
+    {
+        $input = json_decode(file_get_contents("php://input"), true);
+        try {
+            $resultado = $this->servicio->procesarPagoConAnticipo((int)$id, $input);
+            $this->responderJson($resultado);
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 400);
+        }
+    }
 }

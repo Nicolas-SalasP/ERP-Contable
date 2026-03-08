@@ -4,9 +4,23 @@ declare(strict_types=1);
 // -----------------------------------------------------------------------------
 // 1. Configuración de Headers y CORS
 // -----------------------------------------------------------------------------
-header("Access-Control-Allow-Origin: *");
+$origenes_permitidos = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost',
+    'https://tu-dominio-produccion.com'
+];
+
+$origen_peticion = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+if (in_array($origen_peticion, $origenes_permitidos)) {
+    header("Access-Control-Allow-Origin: $origen_peticion");
+} else {
+}
+
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -122,16 +136,18 @@ $router->post('/api/auth/resetear', [AutenticacionController::class, 'restablece
 $router->get('/api/proveedores', [ProveedorController::class, 'getAll'], true);
 $router->post('/api/proveedores', [ProveedorController::class, 'create'], true);
 $router->get('/api/proveedores/{codigo}', [ProveedorController::class, 'getByCodigo'], true);
+$router->get('/api/proveedores/ficha/{id}', [ProveedorController::class, 'verFicha360'], true);
+$router->post('/api/proveedores/anticipos', [ProveedorController::class, 'crearAnticipo'], true);
 
 // --- Países ---
-$router->get('/api/paises', [PaisController::class, 'index'], true); 
+$router->get('/api/paises', [PaisController::class, 'index'], true);
 
 // --- Cuentas Bancarias ---
 $router->post('/api/cuentas-bancarias', [CuentaBancariaController::class, 'create'], true);
 $router->delete('/api/cuentas-bancarias/{id}', [CuentaBancariaController::class, 'delete'], true);
 $router->get('/api/cuentas-bancarias/proveedor/{id}', [CuentaBancariaController::class, 'getByProveedor'], true);
 
-// --- FACTURAS (Módulo Completo) ---
+// --- Facturas ---
 $router->post('/api/facturas', [FacturaController::class, 'registrarCompra'], true);
 $router->get('/api/facturas/check', [FacturaController::class, 'checkDuplicada'], true);
 $router->get('/api/facturas/historial', [FacturaController::class, 'historial'], true);
@@ -139,6 +155,8 @@ $router->get('/api/facturas/{id}/asiento', [FacturaController::class, 'obtenerAs
 $router->post('/api/facturas/anular', [FacturaController::class, 'anular'], true);
 $router->post('/api/anulacion/buscar', [AnulacionController::class, 'buscar'], true);
 $router->post('/api/anulacion/ejecutar', [AnulacionController::class, 'ejecutar'], true);
+$router->post('/api/facturas/{id}/pdf', [FacturaController::class, 'subirPdf'], true);
+$router->post('/api/facturas/{id}/cruzar-anticipo', [FacturaController::class, 'cruzarConAnticipo'], true);
 
 // --- Contabilidad ---
 $router->post('/api/contabilidad/asiento-manual', [ContabilidadController::class, 'registrarAsientoManual'], true);
@@ -150,6 +168,7 @@ $router->get('/api/contabilidad/asientos/{id}', [ContabilidadController::class, 
 $router->post('/api/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificar'], true);
 $router->put('/api/contabilidad/plan-cuentas/{id}', [ContabilidadController::class, 'actualizarCuenta'], true);
 $router->post('/api/facturas/{id}/pagar', [FacturaController::class, 'pagar'], true);
+$router->post('/api/contabilidad/asiento-manual/avanzado', [ContabilidadController::class, 'registrarAsientoManualAvanzado'], true);
 
 // --- Cotizaciones ---
 $router->post('/api/cotizaciones', [CotizacionController::class, 'crear'], true);
@@ -207,6 +226,8 @@ $router->get('/api/banco/movimientos/pendientes/{id}', [BancoController::class, 
 $router->get('/api/banco/cuentas-imputables', [BancoController::class, 'listarCuentasImputables'], true);
 $router->post('/api/banco/movimientos/conciliar', [BancoController::class, 'conciliarMovimiento'], true);
 $router->post('/api/banco/movimientos/ignorar', [BancoController::class, 'ignorarMovimiento'], true);
+$router->get('/api/banco/anticipos-pendientes', [BancoController::class, 'listarAnticiposPendientes'], true);
+$router->post('/api/banco/movimientos/conciliar-anticipo', [BancoController::class, 'conciliarConAnticipo'], true);
 
 // --- IMPUESTOS Y F29 ---
 $router->get('/api/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestoController::class, 'simularCierre'], true);

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
-import * as XLSX from 'xlsx';
-import ModalGenerico from '../../../Componentes/ModalGenerico'; // Asegúrate de tener este componente
+import * as XLSX from "@e965/xlsx";
+import ModalGenerico from '../../../Componentes/ModalGenerico';
 
-// Helpers de formato
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);

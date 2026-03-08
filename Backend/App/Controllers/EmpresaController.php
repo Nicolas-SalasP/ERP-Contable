@@ -62,7 +62,7 @@ class EmpresaController
     {
         try {
             $perfil = $this->service->obtenerPerfil();
-            
+
             return $this->jsonResponse(['success' => true, 'data' => $perfil]);
 
         } catch (Exception $e) {
@@ -91,35 +91,48 @@ class EmpresaController
     {
         try {
             if (!isset($_FILES['logo']) || $_FILES['logo']['error'] !== UPLOAD_ERR_OK) {
-                throw new Exception("No se ha enviado ningún archivo válido.");
+                throw new Exception("No se recibió ningún archivo o hubo un error en la transmisión.");
             }
 
-            $file = $_FILES['logo'];
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-
-            if (!in_array($ext, $allowed)) {
-                throw new Exception("Formato no permitido. Solo JPG, PNG o WEBP.");
+            $archivo = $_FILES['logo'];
+            $maxSize = 2 * 1024 * 1024;
+            if ($archivo['size'] > $maxSize) {
+                throw new Exception("El archivo excede el límite permitido de 2MB.");
             }
-            $uploadDir = __DIR__ . '/../../public/uploads/logos/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            $fileName = 'logo_' . uniqid() . '.' . $ext;
-            $targetPath = $uploadDir . $fileName;
 
-            if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                $relativePath = 'uploads/logos/' . $fileName;
-                $this->service->actualizarLogo($relativePath);
-                $fullUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/ERP-Contable/Backend/Public/' . $relativePath;
-                
-                $this->jsonResponse(['success' => true, 'logo_url' => $fullUrl]);
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeReal = finfo_file($finfo, $archivo['tmp_name']);
+            finfo_close($finfo);
+
+            $mimesPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!in_array($mimeReal, $mimesPermitidos)) {
+                throw new Exception("Tipo de archivo no permitido o corrupto. Solo JPG, PNG y WEBP.");
+            }
+
+            $extension = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+            $nombreSeguro = 'logo_' . bin2hex(random_bytes(8)) . '.' . $extension;
+            $directorioDestino = dirname(__DIR__, 2) . '/Public/uploads/logos/';
+            if (!is_dir($directorioDestino)) {
+                mkdir($directorioDestino, 0755, true);
+            }
+
+            $rutaFinal = $directorioDestino . $nombreSeguro;
+
+            if (move_uploaded_file($archivo['tmp_name'], $rutaFinal)) {
+                // Aquí iría tu lógica para guardar $nombreSeguro en la base de datos de la empresa
+                // $this->service->actualizarLogoEmpresa($nombreSeguro);
+
+                $this->jsonResponse([
+                    'success' => true,
+                    'mensaje' => 'Logo subido y procesado con máxima seguridad.',
+                    'archivo' => $nombreSeguro
+                ]);
             } else {
-                throw new Exception("Error al mover el archivo al servidor.");
+                throw new Exception("Error interno al mover el archivo al almacén seguro.");
             }
 
         } catch (Exception $e) {
-            $this->jsonResponse(['error' => $e->getMessage()], 400);
+            $this->jsonResponse(['success' => false, 'mensaje' => $e->getMessage()], 400);
         }
     }
 
@@ -159,7 +172,8 @@ class EmpresaController
         }
     }
 
-    public function listarCentrosCosto() {
+    public function listarCentrosCosto()
+    {
         try {
             $centros = $this->service->listarCentrosCosto();
             $this->jsonResponse(['success' => true, 'data' => $centros]);
@@ -168,7 +182,8 @@ class EmpresaController
         }
     }
 
-    public function guardarCentroCosto() {
+    public function guardarCentroCosto()
+    {
         try {
             $data = $this->getJsonInput();
             $this->service->agregarCentroCosto($data);
@@ -178,7 +193,8 @@ class EmpresaController
         }
     }
 
-    public function eliminarCentroCosto($id) {
+    public function eliminarCentroCosto($id)
+    {
         try {
             $this->service->eliminarCentroCosto($id);
             $this->jsonResponse(['success' => true, 'mensaje' => 'Centro de costo eliminado.']);

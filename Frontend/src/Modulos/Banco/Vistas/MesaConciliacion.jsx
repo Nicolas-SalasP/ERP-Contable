@@ -11,17 +11,16 @@ const MesaConciliacion = () => {
     const [movimientos, setMovimientos] = useState([]);
     const [planCuentas, setPlanCuentas] = useState([]);
     const [centrosCosto, setCentrosCosto] = useState([]); 
+    const [anticiposPendientes, setAnticiposPendientes] = useState([]);
     const [loading, setLoading] = useState(false);
-
-    // Estado del Modal
     const [modalActivo, setModalActivo] = useState(false);
     const [movSeleccionado, setMovSeleccionado] = useState(null);
-    
-    // Formularios
+    const [tipoConciliacion, setTipoConciliacion] = useState('DIRECTA');
     const [cuentaSel, setCuentaSel] = useState(null);
     const [centroSel, setCentroSel] = useState(null);
     const [empleadoNombre, setEmpleadoNombre] = useState(''); 
     const [glosa, setGlosa] = useState('');
+    const [anticipoSelId, setAnticipoSelId] = useState('');
 
     useEffect(() => {
         cargarDatosBase();
@@ -47,6 +46,11 @@ const MesaConciliacion = () => {
                 }));
                 setPlanCuentas(cuentasFormat);
             }
+
+            try {
+                const resAnticipos = await api.get('/banco/anticipos-pendientes');
+                if (resAnticipos.success) setAnticiposPendientes(resAnticipos.data);
+            } catch (err) { console.warn("Sin anticipos pendientes."); }
 
             try {
                 const resCentros = await api.get('/empresas/centros-costo');
@@ -86,47 +90,72 @@ const MesaConciliacion = () => {
         setCuentaSel(null);
         setCentroSel(null);
         setEmpleadoNombre('');
+        setAnticipoSelId('');
+        setTipoConciliacion('DIRECTA');
         setModalActivo(true);
     };
 
     const ejecutarConciliacion = async () => {
-        if (!cuentaSel) {
-            return Swal.fire({
-                icon: 'warning', title: 'Atención', text: 'Debes buscar y seleccionar una cuenta contable.',
-                buttonsStyling: false, customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg' }
-            });
-        }
-        if (!glosa.trim()) {
-            return Swal.fire({
-                icon: 'warning', title: 'Atención', text: 'La glosa no puede estar vacía.',
-                buttonsStyling: false, customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg' }
-            });
-        }
-
-        try {
-            const payload = {
-                movimiento_id: movSeleccionado.id,
-                cuenta_codigo: cuentaSel.value,
-                glosa: glosa,
-                centro_costo_id: centroSel ? centroSel.value : null,
-                empleado_nombre: empleadoNombre.trim() || null
-            };
-            
-            const res = await api.post('/banco/movimientos/conciliar', payload);
-            
-            if (res.success) {
-                Swal.fire({ 
-                    icon: 'success', title: '¡Asiento Generado!', text: 'Contabilizado con éxito.', timer: 2000, showConfirmButton: false 
+        if (tipoConciliacion === 'DIRECTA') {
+            if (!cuentaSel) {
+                return Swal.fire({
+                    icon: 'warning', title: 'Atención', text: 'Debes buscar y seleccionar una cuenta contable.',
+                    buttonsStyling: false, customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg' }
                 });
-                setModalActivo(false);
-                cargarMovimientos(cuentaActiva);
             }
-        } catch (error) {
-            Swal.fire({
-                icon: 'error', title: 'Error', text: error.response?.data?.mensaje || 'Error al contabilizar.',
-                buttonsStyling: false, customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
-            });
+            if (!glosa.trim()) {
+                return Swal.fire({
+                    icon: 'warning', title: 'Atención', text: 'La glosa no puede estar vacía.',
+                    buttonsStyling: false, customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg' }
+                });
+            }
+
+            try {
+                Swal.fire({ title: 'Contabilizando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const payload = {
+                    movimiento_id: movSeleccionado.id,
+                    cuenta_codigo: cuentaSel.value,
+                    glosa: glosa,
+                    centro_costo_id: centroSel ? centroSel.value : null,
+                    empleado_nombre: empleadoNombre.trim() || null
+                };
+                
+                const res = await api.post('/banco/movimientos/conciliar', payload);
+                
+                if (res.success) {
+                    Swal.fire({ icon: 'success', title: '¡Asiento Generado!', text: 'Contabilizado con éxito.', timer: 2000, showConfirmButton: false });
+                    cerrarModalYRecargar();
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.mensaje || 'Error al contabilizar.', buttonsStyling: false, customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }});
+            }
+        } 
+        else if (tipoConciliacion === 'ANTICIPO') {
+            if (!anticipoSelId) {
+                return Swal.fire({ icon: 'warning', title: 'Atención', text: 'Selecciona una solicitud de anticipo.', buttonsStyling: false, customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg' }});
+            }
+
+            try {
+                Swal.fire({ title: 'Enlazando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const res = await api.post('/banco/movimientos/conciliar-anticipo', { 
+                    movimiento_id: movSeleccionado.id, 
+                    anticipo_id: anticipoSelId 
+                });
+                
+                if (res.success) {
+                    Swal.fire({ icon: 'success', title: '¡Anticipo Conciliado!', text: 'Se ha habilitado el saldo a favor.', timer: 2000, showConfirmButton: false });
+                    cerrarModalYRecargar();
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.mensaje || 'Error al cruzar el anticipo.', buttonsStyling: false, customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }});
+            }
         }
+    };
+
+    const cerrarModalYRecargar = () => {
+        setModalActivo(false);
+        cargarMovimientos(cuentaActiva);
+        api.get('/banco/anticipos-pendientes').then(res => { if(res.success) setAnticiposPendientes(res.data); });
     };
 
     const formatHora = (horaString) => {
@@ -158,7 +187,6 @@ const MesaConciliacion = () => {
         menuPortal: base => ({ ...base, zIndex: 9999 }) 
     };
 
-    // --- FUNCIÓN PARA OBTENER EL NOMBRE DEL BANCO ACTUAL ---
     const getNombreBancoActivo = () => {
         const banco = cuentasBanco.find(c => c.id == cuentaActiva);
         return banco ? `[${banco.cuenta_contable || '110100'}] ${banco.banco}` : 'Cuenta Bancaria';
@@ -259,12 +287,10 @@ const MesaConciliacion = () => {
                 </div>
             )}
 
-            {/* MODAL DE CONCILIACIÓN */}
             {modalActivo && movSeleccionado && (
                 <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-700 flex flex-col max-h-[90vh]">
-                        {/* HEADER OSCURO */}
-                        <div className="bg-slate-900 p-6 flex justify-between items-center text-white border-b border-slate-700 rounded-t-2xl">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-700 flex flex-col max-h-[90vh] overflow-hidden">
+                        <div className="bg-slate-900 p-6 flex justify-between items-center text-white border-b border-slate-700">
                             <div>
                                 <h3 className="text-xl font-black flex items-center gap-2">
                                     <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
@@ -276,9 +302,26 @@ const MesaConciliacion = () => {
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
-                        
+
+                        {movSeleccionado.cargo > 0 && anticiposPendientes.length > 0 && (
+                            <div className="flex border-b border-slate-200 bg-slate-50">
+                                <button 
+                                    onClick={() => setTipoConciliacion('DIRECTA')} 
+                                    className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-colors ${tipoConciliacion === 'DIRECTA' ? 'text-indigo-600 bg-white border-b-2 border-indigo-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+                                >
+                                    Imputación Directa a Cuentas
+                                </button>
+                                <button 
+                                    onClick={() => setTipoConciliacion('ANTICIPO')} 
+                                    className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 ${tipoConciliacion === 'ANTICIPO' ? 'text-emerald-600 bg-white border-b-2 border-emerald-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+                                >
+                                    <i className="fas fa-link"></i> Asociar a Anticipo
+                                    <span className="bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full text-[10px] ml-1">{anticiposPendientes.length}</span>
+                                </button>
+                            </div>
+                        )}
+
                         <div className="p-6 space-y-6 overflow-y-auto rounded-b-2xl">
-                            {/* CAJA DE MONTO ORIGINAL */}
                             <div className={`p-4 rounded-xl border ${movSeleccionado.cargo > 0 ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'} flex justify-between items-center shadow-sm`}>
                                 <div>
                                     <p className={`text-[10px] font-black uppercase tracking-widest ${movSeleccionado.cargo > 0 ? 'text-rose-500' : 'text-emerald-600'} mb-1`}>
@@ -291,122 +334,161 @@ const MesaConciliacion = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 flex items-center justify-between">
-                                        <span>Descripción del Asiento</span>
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        value={glosa} 
-                                        onChange={(e) => setGlosa(e.target.value)}
-                                        className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all shadow-inner"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
-                                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                                        ¿A qué cuenta contable corresponde este movimiento?
-                                    </label>
-                                    <Select 
-                                        options={planCuentas}
-                                        value={cuentaSel}
-                                        onChange={setCuentaSel}
-                                        placeholder="Buscar cuenta por nombre o código..."
-                                        styles={selectStyles}
-                                        menuPortalTarget={document.body}
-                                        menuPosition="fixed"
-                                        isClearable
-                                        noOptionsMessage={() => "No se encontraron cuentas"}
-                                    />
-                                </div>
-
-                                {/* --- NUEVO: VISTA PREVIA DEL ASIENTO CONTABLE --- */}
-                                <div className="mt-6 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                                    <div className="bg-slate-100 px-4 py-2 border-b border-slate-200">
-                                        <p className="text-xs font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                            Vista Previa del Asiento a Generar
-                                        </p>
-                                    </div>
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="bg-white border-b border-slate-100 text-xs text-slate-400">
-                                            <tr>
-                                                <th className="px-4 py-2 font-medium">Cuenta Contable</th>
-                                                <th className="px-4 py-2 font-medium text-right">Debe</th>
-                                                <th className="px-4 py-2 font-medium text-right">Haber</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50 bg-slate-50/50">
-                                            {movSeleccionado.cargo > 0 ? (
-                                                /* SALIDA DE DINERO: La cuenta elegida va al DEBE, el Banco al HABER */
-                                                <>
-                                                    <tr>
-                                                        <td className="px-4 py-2 font-bold text-slate-700">{cuentaSel ? cuentaSel.label : <span className="text-rose-400 italic">Seleccione cuenta arriba...</span>}</td>
-                                                        <td className="px-4 py-2 font-black text-slate-800 text-right">{formatCurrency(movSeleccionado.cargo)}</td>
-                                                        <td className="px-4 py-2 text-right text-slate-300">-</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="px-4 py-2 font-medium text-slate-600 ml-4 pl-8">{getNombreBancoActivo()}</td>
-                                                        <td className="px-4 py-2 text-right text-slate-300">-</td>
-                                                        <td className="px-4 py-2 font-black text-rose-600 text-right">{formatCurrency(movSeleccionado.cargo)}</td>
-                                                    </tr>
-                                                </>
-                                            ) : (
-                                                /* ENTRADA DE DINERO: El Banco va al DEBE, la cuenta elegida va al HABER */
-                                                <>
-                                                    <tr>
-                                                        <td className="px-4 py-2 font-bold text-slate-700">{getNombreBancoActivo()}</td>
-                                                        <td className="px-4 py-2 font-black text-emerald-600 text-right">{formatCurrency(movSeleccionado.abono)}</td>
-                                                        <td className="px-4 py-2 text-right text-slate-300">-</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="px-4 py-2 font-medium text-slate-600 ml-4 pl-8">{cuentaSel ? cuentaSel.label : <span className="text-emerald-400 italic">Seleccione cuenta arriba...</span>}</td>
-                                                        <td className="px-4 py-2 text-right text-slate-300">-</td>
-                                                        <td className="px-4 py-2 font-black text-slate-800 text-right">{formatCurrency(movSeleccionado.abono)}</td>
-                                                    </tr>
-                                                </>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                            {tipoConciliacion === 'DIRECTA' ? (
+                                <div className="space-y-4 animate-fade-in">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Centro de Costo <span className="text-[10px] text-slate-400 font-normal">(Opcional)</span></label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 flex items-center justify-between">
+                                            <span>Descripción del Asiento</span>
+                                        </label>
+                                        <input 
+                                            type="text" 
+                                            value={glosa} 
+                                            onChange={(e) => setGlosa(e.target.value)}
+                                            className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all shadow-inner"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                                            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                            ¿A qué cuenta contable corresponde este movimiento?
+                                        </label>
                                         <Select 
-                                            options={centrosCosto}
-                                            value={centroSel}
-                                            onChange={setCentroSel}
-                                            placeholder="Buscar centro..."
+                                            options={planCuentas}
+                                            value={cuentaSel}
+                                            onChange={setCuentaSel}
+                                            placeholder="Buscar cuenta por nombre o código..."
                                             styles={selectStyles}
                                             menuPortalTarget={document.body}
                                             menuPosition="fixed"
                                             isClearable
-                                            noOptionsMessage={() => "No hay centros registrados"}
+                                            noOptionsMessage={() => "No se encontraron cuentas"}
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Empleado Asociado <span className="text-[10px] text-slate-400 font-normal">(Opcional)</span></label>
-                                        <input 
-                                            type="text" 
-                                            value={empleadoNombre} 
-                                            onChange={(e) => setEmpleadoNombre(e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                                            placeholder="Ej: Nicolás Salas"
-                                        />
+
+                                    <div className="mt-6 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                                        <div className="bg-slate-100 px-4 py-2 border-b border-slate-200">
+                                            <p className="text-xs font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                                Vista Previa del Asiento a Generar
+                                            </p>
+                                        </div>
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-white border-b border-slate-100 text-xs text-slate-400">
+                                                <tr>
+                                                    <th className="px-4 py-2 font-medium">Cuenta Contable</th>
+                                                    <th className="px-4 py-2 font-medium text-right">Debe</th>
+                                                    <th className="px-4 py-2 font-medium text-right">Haber</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50 bg-slate-50/50">
+                                                {movSeleccionado.cargo > 0 ? (
+                                                    <>
+                                                        <tr>
+                                                            <td className="px-4 py-2 font-bold text-slate-700">{cuentaSel ? cuentaSel.label : <span className="text-rose-400 italic">Seleccione cuenta arriba...</span>}</td>
+                                                            <td className="px-4 py-2 font-black text-slate-800 text-right">{formatCurrency(movSeleccionado.cargo)}</td>
+                                                            <td className="px-4 py-2 text-right text-slate-300">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="px-4 py-2 font-medium text-slate-600 ml-4 pl-8">{getNombreBancoActivo()}</td>
+                                                            <td className="px-4 py-2 text-right text-slate-300">-</td>
+                                                            <td className="px-4 py-2 font-black text-rose-600 text-right">{formatCurrency(movSeleccionado.cargo)}</td>
+                                                        </tr>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <tr>
+                                                            <td className="px-4 py-2 font-bold text-slate-700">{getNombreBancoActivo()}</td>
+                                                            <td className="px-4 py-2 font-black text-emerald-600 text-right">{formatCurrency(movSeleccionado.abono)}</td>
+                                                            <td className="px-4 py-2 text-right text-slate-300">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="px-4 py-2 font-medium text-slate-600 ml-4 pl-8">{cuentaSel ? cuentaSel.label : <span className="text-emerald-400 italic">Seleccione cuenta arriba...</span>}</td>
+                                                            <td className="px-4 py-2 text-right text-slate-300">-</td>
+                                                            <td className="px-4 py-2 font-black text-slate-800 text-right">{formatCurrency(movSeleccionado.abono)}</td>
+                                                        </tr>
+                                                    </>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Centro de Costo <span className="text-[10px] text-slate-400 font-normal">(Opcional)</span></label>
+                                            <Select options={centrosCosto} value={centroSel} onChange={setCentroSel} placeholder="Buscar centro..." styles={selectStyles} menuPortalTarget={document.body} menuPosition="fixed" isClearable noOptionsMessage={() => "No hay centros registrados"} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Empleado Asociado <span className="text-[10px] text-slate-400 font-normal">(Opcional)</span></label>
+                                            <input type="text" value={empleadoNombre} onChange={(e) => setEmpleadoNombre(e.target.value)} className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all" placeholder="Ej: Nicolás Salas" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-4 animate-fade-in">
+                                    <div className="bg-amber-50 p-4 border border-amber-200 rounded-xl mb-4">
+                                        <p className="text-xs text-amber-800 font-medium">
+                                            <i className="fas fa-info-circle mr-1"></i> Selecciona la solicitud de anticipo (creada en el Visor del Proveedor) para enlazarla con esta salida de dinero real.
+                                        </p>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Solicitud de Anticipo Pendiente</label>
+                                        <select 
+                                            value={anticipoSelId} 
+                                            onChange={(e) => setAnticipoSelId(e.target.value)} 
+                                            className="w-full bg-white border border-slate-300 font-bold text-slate-700 rounded-lg p-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 cursor-pointer"
+                                        >
+                                            <option value="">-- Elija un anticipo para cruzar --</option>
+                                            {anticiposPendientes.map(ant => (
+                                                <option key={ant.id} value={ant.id}>
+                                                    Ref: {ant.referencia || 'S/R'} | {ant.razon_social} | {formatCurrency(ant.monto)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden opacity-80">
+                                        <div className="bg-slate-100 px-4 py-2 border-b border-slate-200">
+                                            <p className="text-xs font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                                                <i className="fas fa-lock text-slate-400"></i> Asiento Fijo Generado
+                                            </p>
+                                        </div>
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-white border-b border-slate-100 text-xs text-slate-400">
+                                                <tr>
+                                                    <th className="px-4 py-2 font-medium">Cuenta Contable</th>
+                                                    <th className="px-4 py-2 font-medium text-right">Debe</th>
+                                                    <th className="px-4 py-2 font-medium text-right">Haber</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50 bg-slate-50/50">
+                                                <tr>
+                                                    <td className="px-4 py-2 font-bold text-slate-700">[110205] Anticipos a Proveedores</td>
+                                                    <td className="px-4 py-2 font-black text-slate-800 text-right">{formatCurrency(movSeleccionado.cargo)}</td>
+                                                    <td className="px-4 py-2 text-right text-slate-300">-</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="px-4 py-2 font-medium text-slate-600 ml-4 pl-8">{getNombreBancoActivo()}</td>
+                                                    <td className="px-4 py-2 text-right text-slate-300">-</td>
+                                                    <td className="px-4 py-2 font-black text-rose-600 text-right">{formatCurrency(movSeleccionado.cargo)}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="pt-2 pb-2">
                                 <button 
                                     onClick={ejecutarConciliacion}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/30 transition-all flex justify-center items-center gap-2 text-sm"
+                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/30 transition-transform hover:-translate-y-0.5 flex justify-center items-center gap-2 text-sm"
                                 >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Generar Asiento Contable
+                                    {tipoConciliacion === 'DIRECTA' ? (
+                                        <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Generar Asiento Contable</>
+                                    ) : (
+                                        <><i className="fas fa-check-double text-lg"></i> Validar Salida de Anticipo</>
+                                    )}
                                 </button>
                             </div>
                         </div>

@@ -30,6 +30,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             icon: 'fas fa-shopping-cart',
             subItems: [
                 { path: '/proveedores', label: 'Directorio Proveedores' },
+                { path: '/proveedores/visor', label: 'Visor 360 Proveedor' },
                 { path: '/facturas/nueva', label: 'Ingresar Factura' },
                 { path: '/facturas/historial', label: 'Historial de Compras' },
             ]
@@ -52,6 +53,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 { path: '/contabilidad/libro-mayor', label: 'Libro Mayor' },
                 { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas' },
                 { path: '/contabilidad/anulacion', label: 'Anulaciones' },
+                { path: '/contabilidad/asiento-manual', label: 'Asiento Manual' },
             ]
         },
         {

@@ -127,4 +127,23 @@ class BancoController
             $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
     }
+
+    public function listarAnticiposPendientes() {
+        try {
+            $data = $this->servicio->obtenerAnticiposPendientes();
+            $this->responderJson(['success' => true, 'data' => $data]);
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
+
+    public function conciliarConAnticipo() {
+        try {
+            $datos = json_decode(file_get_contents("php://input"), true);
+            $resultado = $this->servicio->conciliarConAnticipo($datos);
+            $this->responderJson($resultado);
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
 }
