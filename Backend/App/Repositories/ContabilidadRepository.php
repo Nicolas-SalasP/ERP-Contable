@@ -301,6 +301,29 @@ class ContabilidadRepository
         ]);
     }
     
+    public function crearCabeceraAsiento(string $fecha, string $glosa, string $codigoUnico): int
+    {
+        $sql = "INSERT INTO asientos_contables 
+                (empresa_id, codigo_unico, fecha, glosa, tipo_asiento, origen_modulo, created_at) 
+                VALUES (?, ?, ?, ?, 'traspaso', 'MANUAL', NOW())";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            $this->empresaId,
+            $codigoUnico,
+            $fecha,
+            $glosa
+        ]);
+        return (int) $this->db->lastInsertId();
+    }
+
+    public function crearDetalleAvanzado(int $asientoId, string $cuentaCodigo, float $debe, float $haber, ?int $centroCostoId = null, ?string $empleadoNombre = null): void
+    {
+        $sql = "INSERT INTO detalles_asiento (asiento_id, cuenta_contable, debe, haber, centro_costo_id, empleado_nombre) 
+                VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$asientoId, $cuentaCodigo, $debe, $haber, $centroCostoId, $empleadoNombre]);
+    }
+
     // --- CONTROL DE TRANSACCIONES ---
     public function beginTransaction(): void
     {

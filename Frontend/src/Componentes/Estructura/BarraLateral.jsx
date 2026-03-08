@@ -52,6 +52,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 { path: '/contabilidad/libro-mayor', label: 'Libro Mayor' },
                 { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas' },
                 { path: '/contabilidad/anulacion', label: 'Anulaciones' },
+                { path: '/contabilidad/asiento-manual', label: 'Asiento Manual' },
             ]
         },
         {

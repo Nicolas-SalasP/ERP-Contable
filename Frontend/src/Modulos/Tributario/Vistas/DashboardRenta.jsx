@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import ModalMapeoSII from './ModalMapeoSII';
-
-// Importaciones para PDF y Excel
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import * as XLSX from "@e965/xlsx";
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 

@@ -4,9 +4,23 @@ declare(strict_types=1);
 // -----------------------------------------------------------------------------
 // 1. Configuración de Headers y CORS
 // -----------------------------------------------------------------------------
-header("Access-Control-Allow-Origin: *");
+$origenes_permitidos = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost',
+    'https://tu-dominio-produccion.com'
+];
+
+$origen_peticion = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+if (in_array($origen_peticion, $origenes_permitidos)) {
+    header("Access-Control-Allow-Origin: $origen_peticion");
+} else {
+}
+
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -124,7 +138,7 @@ $router->post('/api/proveedores', [ProveedorController::class, 'create'], true);
 $router->get('/api/proveedores/{codigo}', [ProveedorController::class, 'getByCodigo'], true);
 
 // --- Países ---
-$router->get('/api/paises', [PaisController::class, 'index'], true); 
+$router->get('/api/paises', [PaisController::class, 'index'], true);
 
 // --- Cuentas Bancarias ---
 $router->post('/api/cuentas-bancarias', [CuentaBancariaController::class, 'create'], true);
@@ -150,6 +164,7 @@ $router->get('/api/contabilidad/asientos/{id}', [ContabilidadController::class, 
 $router->post('/api/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificar'], true);
 $router->put('/api/contabilidad/plan-cuentas/{id}', [ContabilidadController::class, 'actualizarCuenta'], true);
 $router->post('/api/facturas/{id}/pagar', [FacturaController::class, 'pagar'], true);
+$router->post('/api/contabilidad/asiento-manual/avanzado', [ContabilidadController::class, 'registrarAsientoManualAvanzado'], true);
 
 // --- Cotizaciones ---
 $router->post('/api/cotizaciones', [CotizacionController::class, 'crear'], true);

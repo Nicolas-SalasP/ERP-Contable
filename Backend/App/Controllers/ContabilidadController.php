@@ -170,4 +170,35 @@ class ContabilidadController
             return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
     }
+
+    public function registrarAsientoManualAvanzado(): void 
+    {
+        $input = file_get_contents("php://input");
+        $datos = json_decode($input, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE || empty($datos)) {
+            $this->responderJson(['success' => false, 'mensaje' => 'JSON inválido o vacío'], 400);
+        }
+
+        try {
+            if (empty($datos['fecha']) || empty($datos['glosa']) || empty($datos['detalles'])) {
+                throw new Exception("Faltan datos obligatorios (fecha, glosa, detalles).");
+            }
+
+            $resultado = $this->servicio->registrarAsientoManualAvanzado($datos);
+            
+            $this->responderJson([
+                'success' => true,
+                'mensaje' => 'Asiento contabilizado correctamente.',
+                'id' => $resultado['id'],
+                'codigo' => $resultado['codigo']
+            ], 201);
+
+        } catch (Exception $e) {
+            $this->responderJson([
+                'success' => false, 
+                'mensaje' => $e->getMessage()
+            ], 400);
+        }
+    }
 }
