@@ -344,4 +344,47 @@ class BancoService
         $this->repo->actualizarEstadoMovimiento($movimientoId, 'IGNORADO', null);
         return ['success' => true, 'mensaje' => 'Movimiento omitido de la contabilidad.'];
     }
+
+    public function obtenerAnticiposPendientes() {
+        return $this->repo->getAnticiposPendientes();
+    }
+
+    public function conciliarConAnticipo($datos) {
+        $movimientoId = $datos['movimiento_id'];
+        $anticipoId = $datos['anticipo_id'];
+
+        $mov = $this->repo->getMovimientoById($movimientoId);
+        if (!$mov || $mov['estado'] !== 'PENDIENTE' || $mov['cargo'] <= 0) {
+            throw new Exception("El movimiento bancario no es válido o no es un egreso de dinero.");
+        }
+
+        $db = \App\Config\Database::getConnection();
+        $stmt = $db->prepare("SELECT * FROM anticipos_proveedores WHERE id = ? AND estado = 'PENDIENTE' FOR UPDATE");
+        $stmt->execute([$anticipoId]);
+        $anticipo = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$anticipo) throw new Exception("La solicitud de anticipo no existe o ya fue procesada.");
+
+        $cuentaBanco = $this->repo->getCuentaBancaria($mov['cuenta_bancaria_id']);
+        if (!$cuentaBanco || !$cuentaBanco['cuenta_contable']) throw new Exception("El banco no tiene cuenta contable asociada.");
+
+        $this->repo->iniciarTransaccion();
+        try {
+            $codigoUnicoAsiento = $this->repo->generarCodigoAsiento($mov['fecha']);
+            $glosaFinal = "Pago Anticipo Ref: " . $anticipo['referencia'];
+            $asientoId = $this->repo->crearAsientoContable($mov['fecha'], $glosaFinal, $codigoUnicoAsiento);
+
+            $this->repo->agregarDetalleAsiento($asientoId, '110205', $mov['cargo'], "0.00");
+            $this->repo->agregarDetalleAsiento($asientoId, $cuentaBanco['cuenta_contable'], "0.00", $mov['cargo']);
+
+            $this->repo->actualizarEstadoMovimiento($movimientoId, 'CONCILIADO', $asientoId);
+            $this->repo->actualizarAnticipoConciliado($anticipoId, $asientoId, $mov['cuenta_bancaria_id']);
+
+            $this->repo->confirmarTransaccion();
+            return ['success' => true, 'mensaje' => 'El anticipo fue pagado y el dinero se ingresó a tu saldo a favor exitosamente.'];
+        } catch (Exception $e) {
+            $this->repo->revertirTransaccion();
+            throw new Exception("Error al conciliar anticipo: " . $e->getMessage());
+        }
+    }
 }

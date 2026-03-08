@@ -133,4 +133,22 @@ class BancoRepository
 
         return $anioMes . str_pad((string)$nuevoValor, 5, "0", STR_PAD_LEFT);
     }
+
+    // --- LÓGICA DE ANTICIPOS ---
+    public function getAnticiposPendientes() {
+        $stmt = $this->db->prepare("
+            SELECT a.*, p.razon_social, p.rut 
+            FROM anticipos_proveedores a 
+            JOIN proveedores p ON a.proveedor_id = p.id 
+            WHERE a.estado = 'PENDIENTE' AND a.empresa_id = ?
+            ORDER BY a.fecha ASC
+        ");
+        $stmt->execute([$this->empresaId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function actualizarAnticipoConciliado($anticipoId, $asientoId, $cuentaBancariaId) {
+        $stmt = $this->db->prepare("UPDATE anticipos_proveedores SET estado = 'VIGENTE', asiento_id = ?, cuenta_bancaria_id = ? WHERE id = ?");
+        $stmt->execute([$asientoId, $cuentaBancariaId, $anticipoId]);
+    }
 }

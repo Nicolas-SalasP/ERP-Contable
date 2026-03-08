@@ -30,6 +30,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             icon: 'fas fa-shopping-cart',
             subItems: [
                 { path: '/proveedores', label: 'Directorio Proveedores' },
+                { path: '/proveedores/visor', label: 'Visor 360 Proveedor' },
                 { path: '/facturas/nueva', label: 'Ingresar Factura' },
                 { path: '/facturas/historial', label: 'Historial de Compras' },
             ]

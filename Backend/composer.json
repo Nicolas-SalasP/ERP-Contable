@@ -8,5 +8,8 @@
         "setasign/fpdf": "^1.8",
         "phpmailer/phpmailer": "^7.0",
         "phpoffice/phpspreadsheet": "^5.5"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
     }
 }

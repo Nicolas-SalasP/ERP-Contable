@@ -145,4 +145,33 @@ class ProveedorController
 
         return null;
     }
+
+    public function verFicha360(int $id): void
+    {
+        try {
+            $data = $this->service->obtenerFichaProveedor($id);
+            $this->responderJson(['success' => true, 'data' => $data]);
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 404);
+        }
+    }
+
+    private function responderJson(array $datos, int $codigoEstado = 200): void 
+    {
+        http_response_code($codigoEstado);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($datos);
+        exit;
+    }
+
+    public function crearAnticipo()
+    {
+        $datos = json_decode(file_get_contents("php://input"), true);
+        try {
+            $resultado = $this->service->registrarAnticipo($datos);
+            $this->responderJson($resultado);
+        } catch (Exception $e) {
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 400);
+        }
+    }
 }

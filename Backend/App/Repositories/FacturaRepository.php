@@ -40,7 +40,7 @@ class FacturaRepository
     }
 
     // --- SECUENCIAS ---
-    public function generarCodigoSistema($prefijo)
+    public function generarCodigoSistema(string $prefijo): string 
     {
         $stmt = $this->db->prepare("SELECT ultimo_valor FROM configuracion_secuencias WHERE empresa_id = ? AND entidad = 'facturas' FOR UPDATE");
         $stmt->execute([$this->empresaId]);
@@ -63,7 +63,7 @@ class FacturaRepository
             $stmtUpdate->execute([$nuevoCodigo, $this->empresaId]);
         }
 
-        return $nuevoCodigo;
+        return (string) $nuevoCodigo;
     }
 
     // --- CRUDS BÁSICOS ---
@@ -244,5 +244,39 @@ class FacturaRepository
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$id, $this->empresaId]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function actualizarRutaPdf(int $id, string $rutaPdf): void
+    {
+        $sql = "UPDATE facturas SET archivo_pdf = ? WHERE id = ? AND empresa_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$rutaPdf, $id, $this->empresaId]);
+    }
+
+    // --- MÉTODOS PARA CRUCE CON ANTICIPOS ---
+    public function obtenerAnticipoParaActualizar(int $anticipoId): ?array
+    {
+        $sql = "SELECT * FROM anticipos_proveedores WHERE id = ? AND empresa_id = ? FOR UPDATE";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$anticipoId, $this->empresaId]);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $res ?: null;
+    }
+
+    public function actualizarSaldoAnticipo(int $anticipoId, float $nuevoSaldo, string $estado): void
+    {
+        $sql = "UPDATE anticipos_proveedores SET saldo_disponible = ?, estado = ? WHERE id = ? AND empresa_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$nuevoSaldo, $estado, $anticipoId, $this->empresaId]);
+    }
+
+    public function obtenerTotalPagadoFactura(int $facturaId): float
+    {
+        $sql = "SELECT SUM(monto_pagado) FROM pagos_facturas WHERE factura_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$facturaId]);
+        
+        return (float) $stmt->fetchColumn();
     }
 }
