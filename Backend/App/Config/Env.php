@@ -4,23 +4,35 @@ declare(strict_types=1);
 namespace App\Config;
 
 class Env {
-    private static array $variables = [
-        'DB_HOST' => 'localhost',
-        'DB_NAME' => 'sistema_contable',
-        'DB_USER' => 'root',
-        'DB_PASS' => '',
+    private static array $variables = [];
+    private static bool $loaded = false;
 
-        // --- CONFIGURACIÓN DE CORREO (SMTP HOSTING) ---
-        'SMTP_HOST' => 'mail.tuempresa.com', 
-        'SMTP_USER' => 'contacto@tuempresa.com', 
-        'SMTP_PASS' => 'Tu_Contraseña_Segura_123', 
-        'SMTP_PORT' => 465, 
-        'SMTP_SECURE' => 'ssl', 
-        'SMTP_FROM_NAME' => 'ERP Contable - Seguridad',
-        'SMTP_FROM_EMAIL' => 'contacto@tuempresa.com'
-    ];
+    public static function load(): void {
+        if (self::$loaded) return;
 
-    public static function get(string $key) {
-        return self::$variables[$key] ?? null;
+        $envPath = __DIR__ . '/../../.env';
+        
+        if (file_exists($envPath)) {
+            $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (str_starts_with($line, '#')) continue;
+
+                if (strpos($line, '=') !== false) {
+                    [$key, $val] = explode('=', $line, 2);
+                    $key = trim($key);
+                    $val = trim($val, " '\"");
+                    
+                    self::$variables[$key] = $val;
+                    $_ENV[$key] = $val;
+                }
+            }
+        }
+        self::$loaded = true;
+    }
+
+    public static function get(string $key, $default = null) {
+        self::load();
+        return $_ENV[$key] ?? self::$variables[$key] ?? getenv($key) ?: $default;
     }
 }

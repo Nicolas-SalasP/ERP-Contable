@@ -1,2 +1,30 @@
 Cambios 08-03-2026
 
+-- 1. Agregar la columna para guardar la ruta del PDF en las facturas (Soluciona tu error actual)
+ALTER TABLE facturas ADD COLUMN archivo_pdf VARCHAR(255) DEFAULT NULL;
+
+-- 2. Modificar pagos_facturas para permitir cruces de anticipos (donde no sale dinero del banco)
+ALTER TABLE pagos_facturas MODIFY cuenta_bancaria_empresa_id INT NULL;
+
+-- 3. Crear la cuenta contable de Anticipos (Si te da error de duplicado, ignóralo, es que ya existe)
+INSERT INTO plan_cuentas (empresa_id, codigo, nombre, tipo, nivel, imputable, activo)
+VALUES (1, '110205', 'Anticipos a Proveedores', 'ACTIVO', 4, 1, 1);
+
+-- 4. Crear la tabla definitiva de Anticipos a Proveedores (con el estado PENDIENTE y cuenta_bancaria_id NULL que ajustamos para la Mesa de Conciliación)
+CREATE TABLE IF NOT EXISTS anticipos_proveedores (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  empresa_id INT NOT NULL,
+  proveedor_id INT NOT NULL,
+  cuenta_bancaria_id INT DEFAULT NULL,
+  fecha DATE NOT NULL,
+  monto DECIMAL(15,2) NOT NULL,
+  saldo_disponible DECIMAL(15,2) NOT NULL,
+  referencia VARCHAR(255) DEFAULT NULL,
+  estado ENUM('PENDIENTE', 'VIGENTE', 'APLICADO', 'ANULADO') DEFAULT 'PENDIENTE',
+  asiento_id INT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (empresa_id) REFERENCES empresas(id),
+  FOREIGN KEY (proveedor_id) REFERENCES proveedores(id),
+  FOREIGN KEY (cuenta_bancaria_id) REFERENCES cuentas_bancarias_empresa(id),
+  FOREIGN KEY (asiento_id) REFERENCES asientos_contables(id)
+);
