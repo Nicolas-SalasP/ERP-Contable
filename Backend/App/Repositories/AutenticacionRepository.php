@@ -26,6 +26,7 @@ class AutenticacionRepository {
                     u.intentos_fallidos, 
                     u.nivel_bloqueo, 
                     u.bloqueado_hasta,
+                    u.version_token,
                     e.razon_social as nombre_empresa
                 FROM usuarios u
                 INNER JOIN empresas e ON u.empresa_id = e.id
@@ -72,5 +73,15 @@ class AutenticacionRepository {
         $sql = "UPDATE usuarios SET intentos_fallidos = 0, nivel_bloqueo = 0, bloqueado_hasta = NULL WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$usuarioId]);
+    }
+
+    public function rotarVersionToken(int $usuarioId): int 
+    {
+        $sql = "UPDATE usuarios SET version_token = COALESCE(version_token, 0) + 1 WHERE id = ?";
+        $this->db->prepare($sql)->execute([$usuarioId]);
+        
+        $stmt = $this->db->prepare("SELECT version_token FROM usuarios WHERE id = ?");
+        $stmt->execute([$usuarioId]);
+        return (int)$stmt->fetchColumn();
     }
 }

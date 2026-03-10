@@ -24,10 +24,11 @@ class AutenticacionService {
     // 1. INICIAR SESIÓN
     // =========================================================================
     public function iniciarSesion(string $email, string $password): array {
+        
         $usuario = $this->repository->buscarUsuarioPorEmail($email);
 
         if (!$usuario) {
-            $this->registrarAuditoria('LOGIN_FALLIDO', null, null, ['email_intentado' => $email]);
+            $this->registrarAuditoria('LOGIN_FALLIDO', null, ['email_intentado' => $email]);
             throw new Exception('CREDENCIALES_INCORRECTAS');
         }
 
@@ -51,26 +52,22 @@ class AutenticacionService {
             if ($intentos >= 5) {
                 $nivel++; 
                 
-                if ($nivel === 1) {
-                    $minutosCastigo = 15;
-                } elseif ($nivel === 2) {
-                    $minutosCastigo = 30;
-                } elseif ($nivel === 3) {
-                    $minutosCastigo = 60;
-                } else {
-                    $minutosCastigo = 1440;
-                }
+                if ($nivel === 1) $minutosCastigo = 15;
+                elseif ($nivel === 2) $minutosCastigo = 30;
+                elseif ($nivel === 3) $minutosCastigo = 60;
+                else $minutosCastigo = 1440;
 
                 $bloqueadoHasta = date('Y-m-d H:i:s', strtotime("+$minutosCastigo minutes"));
+                
                 $this->repository->registrarIntentoFallido((int)$usuario['id'], $intentos, $nivel, $bloqueadoHasta);
-                $this->registrarAuditoria('BLOQUEO_CUENTA', (int)$usuario['id'], null, ['nivel_bloqueo' => $nivel, 'minutos' => $minutosCastigo]);
+                $this->registrarAuditoria('BLOQUEO_CUENTA', (int)$usuario['id'], ['nivel_bloqueo' => $nivel, 'minutos' => $minutosCastigo]);
 
                 throw new Exception("Demasiados intentos fallidos. Tu cuenta ha sido bloqueada por {$minutosCastigo} minutos.");
             } else {
                 $this->repository->registrarIntentoFallido((int)$usuario['id'], $intentos, $nivel, null);
                 
                 $restantes = 5 - $intentos;
-                $this->registrarAuditoria('LOGIN_FALLIDO', (int)$usuario['id'], null, ['email_intentado' => $email]);
+                $this->registrarAuditoria('LOGIN_FALLIDO', (int)$usuario['id'], ['email_intentado' => $email]);
                 
                 throw new Exception("Credenciales incorrectas. Te quedan {$restantes} intentos antes de bloquear la cuenta.");
             }
@@ -88,14 +85,17 @@ class AutenticacionService {
             throw new Exception('PLAN_VENCIDO');
         }
 
+        $nuevaVersion = $this->repository->rotarVersionToken((int)$usuario['id']);
+
         $token = JwtHelper::generate([
             'id' => $usuario['id'],
             'rol' => $usuario['rol_id'],
             'empresa_id' => $usuario['empresa_id'],
-            'nombre' => $usuario['nombre']
+            'nombre' => $usuario['nombre'],
+            'version_token' => $nuevaVersion
         ]);
 
-        $this->registrarAuditoria('LOGIN_EXITOSO', (int)$usuario['id'], null, ['empresa_id' => $usuario['empresa_id']]);
+        $this->registrarAuditoria('LOGIN_EXITOSO', (int)$usuario['id'], ['empresa_id' => $usuario['empresa_id']]);
         
         unset($usuario['password']);
 
@@ -105,10 +105,10 @@ class AutenticacionService {
         ];
     }
 
-    private function registrarAuditoria(string $accion, ?int $usuarioId, ?int $registroId, array $detalles = []): void {
+    private function registrarAuditoria(string $accion, ?int $usuarioId, array $detalles = []): void {
         if (class_exists('App\Services\AuditoriaService')) {
             try {
-                \App\Services\AuditoriaService::registrar($accion, 'usuarios', $registroId, $usuarioId, $detalles);
+                \App\Services\AuditoriaService::registrar($accion, 'usuarios', $usuarioId, null, $detalles);
             } catch (Exception $e) {
                 error_log("Fallo al registrar auditoría: " . $e->getMessage());
             }

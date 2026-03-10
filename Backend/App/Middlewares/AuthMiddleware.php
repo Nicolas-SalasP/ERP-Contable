@@ -23,11 +23,11 @@ class AuthMiddleware
         if ($authHeader !== null && preg_match('/^Bearer\s(\S+)$/', $authHeader, $matches)) {
             $token = $matches[1];
         }
-        
+
         if ($token === null || empty($token)) {
             self::denyAccess(401, 'AUTH_MISSING', 'Token de autorización no encontrado.');
         }
-        
+
         $payload = JwtHelper::validate($token);
 
         if (!$payload || !isset($payload->id)) {
@@ -36,15 +36,28 @@ class AuthMiddleware
 
         try {
             $db = Database::getConnection();
-            $stmt = $db->prepare("SELECT id, email, rol_id, empresa_id FROM usuarios WHERE id = ? LIMIT 1");
+            $stmt = $db->prepare("
+                SELECT id, email, rol_id, estado_suscripcion_id, fecha_fin_suscripcion, version_token 
+                FROM usuarios 
+                WHERE id = ? LIMIT 1
+            ");
             $stmt->execute([$payload->id]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$user) {
-                self::denyAccess(403, 'USER_DELETED', 'El usuario ya no existe.');
+                self::denyAccess(401, 'USER_NOT_FOUND', 'User identity no longer exists.');
+            }
+            if ((int) $user['estado_suscripcion_id'] !== 1) {
+                self::denyAccess(403, 'ACCOUNT_INACTIVE', 'Account is suspended or inactive.');
+            }
+            $expiryDate = $user['fecha_fin_suscripcion'];
+            if ($expiryDate && $expiryDate < date('Y-m-d')) {
+                self::denyAccess(403, 'SUBSCRIPTION_EXPIRED', 'Subscription plan has expired.');
+            }
+            if (isset($payload->version_token) && (int)$payload->version_token !== (int)$user['version_token']) {
+                self::denyAccess(401, 'SESSION_OVERRIDDEN', 'Se ha iniciado sesión en otro dispositivo.');
             }
 
-            $payload->empresa_id = (int) $user['empresa_id'];
             $payload->rol_id = (int) $user['rol_id'];
             $payload->email = $user['email'];
 
@@ -52,10 +65,10 @@ class AuthMiddleware
 
         } catch (Exception $e) {
             error_log("Auth Error: " . $e->getMessage());
-            self::denyAccess(500, 'INTERNAL_ERROR', 'Servicio de autenticación no disponible.');
+            self::denyAccess(500, 'INTERNAL_ERROR', 'Service temporarily unavailable.');
         }
-        
-        return (object)[]; 
+
+        return (object) [];
     }
 
     private static function getAuthorizationHeader(): ?string

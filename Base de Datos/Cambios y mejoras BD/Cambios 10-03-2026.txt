@@ -4,3 +4,5 @@ ALTER TABLE usuarios
 ADD COLUMN intentos_fallidos INT DEFAULT 0 AFTER password,
 ADD COLUMN nivel_bloqueo INT DEFAULT 0 AFTER intentos_fallidos,
 ADD COLUMN bloqueado_hasta DATETIME NULL AFTER nivel_bloqueo;
+
+ALTER TABLE usuarios ADD COLUMN version_token INT DEFAULT 1 AFTER password;
