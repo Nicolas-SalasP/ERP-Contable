@@ -1,0 +1,64 @@
+name: ERP Contable CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-backend:
+    name: Análisis y Pruebas Backend
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sistema_contable_testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Descargar Código (Checkout)
+      uses: actions/checkout@v3
+
+    - name: Configurar PHP 8.2
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: pdo, pdo_mysql, mbstring, json
+        coverage: xdebug
+
+    - name: Instalar Dependencias de Composer
+      working-directory: ./Backend
+      run: composer install --prefer-dist --no-progress
+
+    - name: Preparar Entorno (.env)
+      working-directory: ./Backend
+      run: |
+        cp .env.example .env
+        sed -i 's/DB_NAME=.*/DB_NAME=sistema_contable_testing/' .env
+        sed -i 's/APP_ENV=.*/APP_ENV=testing/' .env
+
+    - name: Inyectar Estructura de Base de Datos
+      run: mysql -h 127.0.0.1 -P 3306 -u root -proot sistema_contable_testing < "Base de Datos/sistema_contable.sql"
+
+    - name: Análisis Estático de Código (PHPStan)
+      working-directory: ./Backend
+      run: ./vendor/bin/phpstan analyse App --level=5
+
+    - name: Ejecutar Suite de Pruebas Unitarias y de Integración
+      working-directory: ./Backend
+      run: ./vendor/bin/phpunit --coverage-html coverage-report --coverage-clover coverage.xml --log-junit report.xml
+      
+    - name: Guardar Reportes de Pruebas (Artifacts)
+      if: always() # Guarda el reporte incluso si fallan las pruebas
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-reports
+        path: |
+          Backend/coverage-report/
+          Backend/report.xml

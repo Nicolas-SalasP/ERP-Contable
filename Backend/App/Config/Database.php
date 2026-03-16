@@ -23,9 +23,11 @@ class Database {
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             
         } catch(PDOException $e) {
+            error_log("Error crítico de BD: " . $e->getMessage());
             die(json_encode([
                 "success" => false, 
-                "message" => "Error crítico de conexión a BD: " . $e->getMessage()
+                "error_code" => "DB_CONNECTION_FAILED",
+                "message" => "El servicio no está disponible temporalmente. Intente más tarde."
             ]));
         }
     }
