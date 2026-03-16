@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: Descargar Código (Checkout)
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Configurar PHP 8.2
       uses: shivammathur/setup-php@v2
@@ -55,8 +55,8 @@ jobs:
       run: ./vendor/bin/phpunit --coverage-html coverage-report --coverage-clover coverage.xml --log-junit report.xml
       
     - name: Guardar Reportes de Pruebas (Artifacts)
-      if: always() # Guarda el reporte incluso si fallan las pruebas
-      uses: actions/upload-artifact@v3
+      if: always()
+      uses: actions/upload-artifact@v4
       with:
         name: test-reports
         path: |
