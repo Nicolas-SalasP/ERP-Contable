@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 05-03-2026 a las 16:36:55
+-- Tiempo de generación: 10-03-2026 a las 20:18:02
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -54,6 +54,34 @@ INSERT INTO `activos_fijos` (`id`, `empresa_id`, `factura_id`, `plan_cuenta_id`,
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `anticipos_proveedores`
+--
+
+CREATE TABLE `anticipos_proveedores` (
+  `id` int(11) NOT NULL,
+  `empresa_id` int(11) NOT NULL,
+  `proveedor_id` int(11) NOT NULL,
+  `cuenta_bancaria_id` int(11) DEFAULT NULL,
+  `fecha` date NOT NULL,
+  `monto` decimal(15,2) NOT NULL,
+  `saldo_disponible` decimal(15,2) NOT NULL,
+  `referencia` varchar(255) DEFAULT NULL,
+  `estado` enum('PENDIENTE','VIGENTE','APLICADO','ANULADO') DEFAULT 'PENDIENTE',
+  `asiento_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `anticipos_proveedores`
+--
+
+INSERT INTO `anticipos_proveedores` (`id`, `empresa_id`, `proveedor_id`, `cuenta_bancaria_id`, `fecha`, `monto`, `saldo_disponible`, `referencia`, `estado`, `asiento_id`, `created_at`) VALUES
+(1, 1, 1, NULL, '2026-03-10', 578000.00, 578000.00, 'Prueba insuban', 'PENDIENTE', NULL, '2026-03-10 14:41:23'),
+(2, 1, 1, NULL, '2026-03-10', 700000.00, 700000.00, 'aaaaaaaaaaaaaa', 'PENDIENTE', NULL, '2026-03-10 14:44:42');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `asientos_contables`
 --
 
@@ -61,6 +89,8 @@ CREATE TABLE `asientos_contables` (
   `id` int(11) NOT NULL,
   `codigo_unico` bigint(20) UNSIGNED DEFAULT NULL,
   `empresa_id` int(11) NOT NULL DEFAULT 1,
+  `centro_costo_id` int(11) DEFAULT NULL,
+  `empleado_nombre` varchar(150) DEFAULT NULL,
   `fecha` date NOT NULL,
   `glosa` varchar(255) NOT NULL,
   `tipo_asiento` enum('ingreso','egreso','traspaso') NOT NULL DEFAULT 'traspaso',
@@ -73,18 +103,18 @@ CREATE TABLE `asientos_contables` (
 -- Volcado de datos para la tabla `asientos_contables`
 --
 
-INSERT INTO `asientos_contables` (`id`, `codigo_unico`, `empresa_id`, `fecha`, `glosa`, `tipo_asiento`, `origen_modulo`, `origen_id`, `created_at`) VALUES
-(7, 26260000004, 1, '2026-01-06', 'Compra Fac. 1 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 5, '2026-01-06 20:51:01'),
-(8, 26260000005, 1, '2026-02-20', 'Compra Fac. 494150 - Ingenieria Informatica Asociada Limitada (Tecnomas) | [Reclasificado: Lenovo ThinkBook 14 F-494150 TecnoMas] | [Reclasificado: Lenovo ThinkBook 14 F-494150 TecnoMas]', 'egreso', 'COMPRA', 6, '2026-02-20 19:16:23'),
-(9, 26260000006, 1, '2026-02-20', 'Compra Fac. 20896 - Premium Hosting Solutions Spa', 'egreso', 'COMPRA', 7, '2026-02-20 19:16:58'),
-(10, 26260000007, 1, '2026-02-20', 'REVERSO NULO: Factura N° 1. Motivo: Documento de pruebas', '', 'COMPRA', 5, '2026-02-20 19:55:07'),
-(12, 26260000008, 1, '2026-02-20', 'Compra Fac. 2 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 9, '2026-02-20 20:04:08'),
-(13, 26260000009, 1, '2026-02-20', 'REVERSO NULO: Factura N° 2. Motivo: prueba', '', 'COMPRA', 9, '2026-02-20 20:10:06'),
-(14, 26260000010, 1, '2026-02-20', 'Compra Fac. 3 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 10, '2026-02-20 20:19:10'),
-(15, 26260000011, 1, '2026-02-20', 'Compra Fac. 4 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 11, '2026-02-20 20:23:22'),
-(16, 26260000012, 1, '2026-02-20', 'Compra Fac. 5 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 12, '2026-02-20 20:24:47'),
-(17, 26260000013, 1, '2026-02-20', 'REVERSO NULO: Factura N° 4. Motivo: Prueba', '', 'COMPRA', 11, '2026-02-20 22:06:25'),
-(21, 26120000001, 1, '2026-02-21', 'Depreciación de Activos Fijos - Periodo 02/2026', 'traspaso', 'ACTIVOS_FIJOS', 0, '2026-02-21 22:54:24');
+INSERT INTO `asientos_contables` (`id`, `codigo_unico`, `empresa_id`, `centro_costo_id`, `empleado_nombre`, `fecha`, `glosa`, `tipo_asiento`, `origen_modulo`, `origen_id`, `created_at`) VALUES
+(7, 26260000004, 1, NULL, NULL, '2026-01-06', 'Compra Fac. 1 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 5, '2026-01-06 20:51:01'),
+(8, 26260000005, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 494150 - Ingenieria Informatica Asociada Limitada (Tecnomas) | [Reclasificado: Lenovo ThinkBook 14 F-494150 TecnoMas] | [Reclasificado: Lenovo ThinkBook 14 F-494150 TecnoMas]', 'egreso', 'COMPRA', 6, '2026-02-20 19:16:23'),
+(9, 26260000006, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 20896 - Premium Hosting Solutions Spa', 'egreso', 'COMPRA', 7, '2026-02-20 19:16:58'),
+(10, 26260000007, 1, NULL, NULL, '2026-02-20', 'REVERSO NULO: Factura N° 1. Motivo: Documento de pruebas', '', 'COMPRA', 5, '2026-02-20 19:55:07'),
+(12, 26260000008, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 2 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 9, '2026-02-20 20:04:08'),
+(13, 26260000009, 1, NULL, NULL, '2026-02-20', 'REVERSO NULO: Factura N° 2. Motivo: prueba', '', 'COMPRA', 9, '2026-02-20 20:10:06'),
+(14, 26260000010, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 3 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 10, '2026-02-20 20:19:10'),
+(15, 26260000011, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 4 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 11, '2026-02-20 20:23:22'),
+(16, 26260000012, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 5 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 12, '2026-02-20 20:24:47'),
+(17, 26260000013, 1, NULL, NULL, '2026-02-20', 'REVERSO NULO: Factura N° 4. Motivo: Prueba', '', 'COMPRA', 11, '2026-02-20 22:06:25'),
+(21, 26120000001, 1, NULL, NULL, '2026-02-21', 'Depreciación de Activos Fijos - Periodo 02/2026', 'traspaso', 'ACTIVOS_FIJOS', 0, '2026-02-21 22:54:24');
 
 -- --------------------------------------------------------
 
@@ -325,6 +355,27 @@ INSERT INTO `catalogo_plan_maestro` (`id`, `codigo`, `nombre`, `tipo`, `nivel`, 
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `centros_costo`
+--
+
+CREATE TABLE `centros_costo` (
+  `id` int(11) NOT NULL,
+  `empresa_id` int(11) NOT NULL,
+  `codigo` varchar(50) NOT NULL,
+  `nombre` varchar(150) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `centros_costo`
+--
+
+INSERT INTO `centros_costo` (`id`, `empresa_id`, `codigo`, `nombre`, `activo`) VALUES
+(1, 1, '8010', 'Administracion', 1);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `clientes`
 --
 
@@ -437,6 +488,8 @@ CREATE TABLE `cuentas_bancarias_empresa` (
   `banco` varchar(100) NOT NULL,
   `tipo_cuenta` varchar(50) NOT NULL,
   `numero_cuenta` varchar(50) NOT NULL,
+  `cuenta_contable` varchar(20) DEFAULT NULL,
+  `saldo_actual` decimal(15,2) NOT NULL DEFAULT 0.00,
   `titular` varchar(150) NOT NULL,
   `rut_titular` varchar(20) NOT NULL,
   `email_notificacion` varchar(100) DEFAULT NULL,
@@ -447,8 +500,8 @@ CREATE TABLE `cuentas_bancarias_empresa` (
 -- Volcado de datos para la tabla `cuentas_bancarias_empresa`
 --
 
-INSERT INTO `cuentas_bancarias_empresa` (`id`, `empresa_id`, `banco`, `tipo_cuenta`, `numero_cuenta`, `titular`, `rut_titular`, `email_notificacion`, `created_at`) VALUES
-(1, 1, 'Scotiabank', 'Corriente', '000991980431', 'Tecnologias Nicolas Salas E.I.R.L', '78.149.179-9', '', '2026-01-08 01:40:43');
+INSERT INTO `cuentas_bancarias_empresa` (`id`, `empresa_id`, `banco`, `tipo_cuenta`, `numero_cuenta`, `cuenta_contable`, `saldo_actual`, `titular`, `rut_titular`, `email_notificacion`, `created_at`) VALUES
+(1, 1, 'Scotiabank', 'Corriente', '000991980431', '110107', 0.00, 'Tecnologias Nicolas Salas E.I.R.L', '78.149.179-9', '', '2026-01-08 01:40:43');
 
 -- --------------------------------------------------------
 
@@ -636,21 +689,43 @@ CREATE TABLE `facturas` (
   `motivo_correccion_iva` varchar(255) DEFAULT NULL,
   `autorizador_id` int(11) DEFAULT NULL,
   `estado` enum('BORRADOR','REGISTRADA','PAGADA','ANULADA') DEFAULT 'REGISTRADA',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `archivo_pdf` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `facturas`
 --
 
-INSERT INTO `facturas` (`id`, `empresa_id`, `codigo_unico`, `proveedor_id`, `cuenta_bancaria_id`, `numero_factura`, `fecha_emision`, `fecha_vencimiento`, `monto_bruto`, `monto_neto`, `monto_iva`, `motivo_correccion_iva`, `autorizador_id`, `estado`, `created_at`) VALUES
-(5, 1, 26260000004, 1, NULL, '1', '2026-01-06', '2026-01-22', 1000000.00, 1000000.00, 0.00, NULL, NULL, 'ANULADA', '2026-01-06 20:51:01'),
-(6, 1, 26260000005, 2, 3, '494150', '2026-02-19', '2026-02-19', 790989.00, 664697.00, 126292.00, NULL, NULL, 'REGISTRADA', '2026-02-20 19:16:23'),
-(7, 1, 26260000006, 3, NULL, '20896', '2026-02-01', '2026-02-01', 34510.00, 29000.00, 5510.00, NULL, NULL, 'REGISTRADA', '2026-02-20 19:16:58'),
-(9, 1, 26260000008, 1, NULL, '2', '2026-02-20', '2027-01-01', 1850000.00, 1554622.00, 295378.00, NULL, NULL, 'ANULADA', '2026-02-20 20:04:08'),
-(10, 1, 26260000010, 1, NULL, '3', '2026-02-01', '2026-02-20', 1850000.00, 1554622.00, 295378.00, NULL, NULL, 'REGISTRADA', '2026-02-20 20:19:10'),
-(11, 1, 26260000011, 1, NULL, '4', '2026-02-01', '2026-02-20', 2000000.00, 1680672.00, 319328.00, NULL, NULL, 'ANULADA', '2026-02-20 20:23:22'),
-(12, 1, 26260000012, 1, NULL, '5', '2026-02-05', '2026-02-20', 2000000.00, 1680672.00, 319328.00, NULL, NULL, 'REGISTRADA', '2026-02-20 20:24:47');
+INSERT INTO `facturas` (`id`, `empresa_id`, `codigo_unico`, `proveedor_id`, `cuenta_bancaria_id`, `numero_factura`, `fecha_emision`, `fecha_vencimiento`, `monto_bruto`, `monto_neto`, `monto_iva`, `motivo_correccion_iva`, `autorizador_id`, `estado`, `created_at`, `archivo_pdf`) VALUES
+(5, 1, 26260000004, 1, NULL, '1', '2026-01-06', '2026-01-22', 1000000.00, 1000000.00, 0.00, NULL, NULL, 'ANULADA', '2026-01-06 20:51:01', NULL),
+(6, 1, 26260000005, 2, 3, '494150', '2026-02-19', '2026-02-19', 790989.00, 664697.00, 126292.00, NULL, NULL, 'REGISTRADA', '2026-02-20 19:16:23', NULL),
+(7, 1, 26260000006, 3, NULL, '20896', '2026-02-01', '2026-02-01', 34510.00, 29000.00, 5510.00, NULL, NULL, 'REGISTRADA', '2026-02-20 19:16:58', NULL),
+(9, 1, 26260000008, 1, NULL, '2', '2026-02-20', '2027-01-01', 1850000.00, 1554622.00, 295378.00, NULL, NULL, 'ANULADA', '2026-02-20 20:04:08', NULL),
+(10, 1, 26260000010, 1, NULL, '3', '2026-02-01', '2026-02-20', 1850000.00, 1554622.00, 295378.00, NULL, NULL, 'REGISTRADA', '2026-02-20 20:19:10', NULL),
+(11, 1, 26260000011, 1, NULL, '4', '2026-02-01', '2026-02-20', 2000000.00, 1680672.00, 319328.00, NULL, NULL, 'ANULADA', '2026-02-20 20:23:22', NULL),
+(12, 1, 26260000012, 1, NULL, '5', '2026-02-05', '2026-02-20', 2000000.00, 1680672.00, 319328.00, NULL, NULL, 'REGISTRADA', '2026-02-20 20:24:47', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `movimientos_bancarios`
+--
+
+CREATE TABLE `movimientos_bancarios` (
+  `id` int(11) NOT NULL,
+  `cuenta_bancaria_id` int(11) NOT NULL,
+  `fecha` date NOT NULL,
+  `hora` time DEFAULT NULL,
+  `descripcion` varchar(255) NOT NULL,
+  `nro_documento` varchar(50) DEFAULT NULL,
+  `cargo` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `abono` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `saldo_historico` decimal(15,2) NOT NULL,
+  `estado` enum('PENDIENTE','CONCILIADO','IGNORADO') DEFAULT 'PENDIENTE',
+  `asiento_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -661,7 +736,7 @@ INSERT INTO `facturas` (`id`, `empresa_id`, `codigo_unico`, `proveedor_id`, `cue
 CREATE TABLE `pagos_facturas` (
   `id` int(11) NOT NULL,
   `factura_id` int(11) NOT NULL,
-  `cuenta_bancaria_empresa_id` int(11) NOT NULL,
+  `cuenta_bancaria_empresa_id` int(11) DEFAULT NULL,
   `asiento_id` int(11) DEFAULT NULL,
   `fecha_pago` date NOT NULL,
   `monto_pagado` decimal(15,2) NOT NULL,
@@ -891,7 +966,9 @@ INSERT INTO `plan_cuentas` (`id`, `empresa_id`, `codigo`, `nombre`, `tipo`, `niv
 (162, 1, '690104', 'Mermas y Castigos', 'GASTO', 4, 1, 1, '2026-01-04 05:42:36'),
 (163, 1, '690199', 'Compras por Clasificar (Cuenta Puente)', 'GASTO', 4, 1, 1, '2026-02-20 19:43:10'),
 (164, 1, '120304', 'Deprec. Acum. Equipos Computacionales', 'ACTIVO', 4, 1, 1, '2026-02-21 22:53:38'),
-(165, 1, '690105', 'Gasto por Depreciación de Activos', 'GASTO', 4, 1, 1, '2026-02-21 22:53:38');
+(165, 1, '690105', 'Gasto por Depreciación de Activos', 'GASTO', 4, 1, 1, '2026-02-21 22:53:38'),
+(166, 1, '210301', 'IVA por Pagar (F29)', 'PASIVO', 4, 1, 1, '2026-03-10 14:28:13'),
+(167, 1, '110205', 'Anticipos a Proveedores', 'ACTIVO', 4, 1, 1, '2026-03-10 14:32:07');
 
 -- --------------------------------------------------------
 
@@ -1057,6 +1134,9 @@ CREATE TABLE `usuarios` (
   `empresa_id` int(11) NOT NULL DEFAULT 1,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `intentos_fallidos` int(11) DEFAULT 0,
+  `nivel_bloqueo` int(11) DEFAULT 0,
+  `bloqueado_hasta` datetime DEFAULT NULL,
   `reset_token` varchar(10) DEFAULT NULL,
   `reset_expires_at` datetime DEFAULT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -1070,8 +1150,8 @@ CREATE TABLE `usuarios` (
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id`, `empresa_id`, `email`, `password`, `reset_token`, `reset_expires_at`, `nombre`, `rol_id`, `estado_suscripcion_id`, `fecha_fin_suscripcion`, `created_at`) VALUES
-(1, 1, 'admin@erp.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, NULL, 'Super Admin', 1, 1, '2030-12-31', '2026-01-04 19:03:19');
+INSERT INTO `usuarios` (`id`, `empresa_id`, `email`, `password`, `intentos_fallidos`, `nivel_bloqueo`, `bloqueado_hasta`, `reset_token`, `reset_expires_at`, `nombre`, `rol_id`, `estado_suscripcion_id`, `fecha_fin_suscripcion`, `created_at`) VALUES
+(1, 1, 'admin@erp.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0, 0, NULL, NULL, NULL, 'Super Admin', 1, 1, '2030-12-31', '2026-01-04 19:03:19');
 
 --
 -- Índices para tablas volcadas
@@ -1084,6 +1164,16 @@ ALTER TABLE `activos_fijos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `categoria_sii_id` (`categoria_sii_id`),
   ADD KEY `fk_activo_factura` (`factura_id`);
+
+--
+-- Indices de la tabla `anticipos_proveedores`
+--
+ALTER TABLE `anticipos_proveedores`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `empresa_id` (`empresa_id`),
+  ADD KEY `proveedor_id` (`proveedor_id`),
+  ADD KEY `cuenta_bancaria_id` (`cuenta_bancaria_id`),
+  ADD KEY `asiento_id` (`asiento_id`);
 
 --
 -- Indices de la tabla `asientos_contables`
@@ -1112,6 +1202,13 @@ ALTER TABLE `catalogo_bancos`
 ALTER TABLE `catalogo_plan_maestro`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_codigo_maestro` (`codigo`);
+
+--
+-- Indices de la tabla `centros_costo`
+--
+ALTER TABLE `centros_costo`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `empresa_id` (`empresa_id`);
 
 --
 -- Indices de la tabla `clientes`
@@ -1202,6 +1299,14 @@ ALTER TABLE `facturas`
   ADD KEY `fk_fact_empresa` (`empresa_id`);
 
 --
+-- Indices de la tabla `movimientos_bancarios`
+--
+ALTER TABLE `movimientos_bancarios`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_mov_cuenta` (`cuenta_bancaria_id`),
+  ADD KEY `fk_mov_asiento` (`asiento_id`);
+
+--
 -- Indices de la tabla `pagos_facturas`
 --
 ALTER TABLE `pagos_facturas`
@@ -1288,6 +1393,12 @@ ALTER TABLE `activos_fijos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT de la tabla `anticipos_proveedores`
+--
+ALTER TABLE `anticipos_proveedores`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT de la tabla `asientos_contables`
 --
 ALTER TABLE `asientos_contables`
@@ -1310,6 +1421,12 @@ ALTER TABLE `catalogo_bancos`
 --
 ALTER TABLE `catalogo_plan_maestro`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=164;
+
+--
+-- AUTO_INCREMENT de la tabla `centros_costo`
+--
+ALTER TABLE `centros_costo`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `clientes`
@@ -1378,6 +1495,12 @@ ALTER TABLE `facturas`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
+-- AUTO_INCREMENT de la tabla `movimientos_bancarios`
+--
+ALTER TABLE `movimientos_bancarios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `pagos_facturas`
 --
 ALTER TABLE `pagos_facturas`
@@ -1387,7 +1510,7 @@ ALTER TABLE `pagos_facturas`
 -- AUTO_INCREMENT de la tabla `plan_cuentas`
 --
 ALTER TABLE `plan_cuentas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=168;
 
 --
 -- AUTO_INCREMENT de la tabla `proveedores`
@@ -1443,6 +1566,15 @@ ALTER TABLE `activos_fijos`
   ADD CONSTRAINT `fk_activo_factura` FOREIGN KEY (`factura_id`) REFERENCES `facturas` (`id`) ON DELETE SET NULL;
 
 --
+-- Filtros para la tabla `anticipos_proveedores`
+--
+ALTER TABLE `anticipos_proveedores`
+  ADD CONSTRAINT `anticipos_proveedores_ibfk_1` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`),
+  ADD CONSTRAINT `anticipos_proveedores_ibfk_2` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`),
+  ADD CONSTRAINT `anticipos_proveedores_ibfk_3` FOREIGN KEY (`cuenta_bancaria_id`) REFERENCES `cuentas_bancarias_empresa` (`id`),
+  ADD CONSTRAINT `anticipos_proveedores_ibfk_4` FOREIGN KEY (`asiento_id`) REFERENCES `asientos_contables` (`id`);
+
+--
 -- Filtros para la tabla `asientos_contables`
 --
 ALTER TABLE `asientos_contables`
@@ -1453,6 +1585,12 @@ ALTER TABLE `asientos_contables`
 --
 ALTER TABLE `auditoria_facturas`
   ADD CONSTRAINT `auditoria_facturas_ibfk_1` FOREIGN KEY (`id_factura`) REFERENCES `facturas` (`id`);
+
+--
+-- Filtros para la tabla `centros_costo`
+--
+ALTER TABLE `centros_costo`
+  ADD CONSTRAINT `centros_costo_ibfk_1` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `clientes`
@@ -1512,6 +1650,13 @@ ALTER TABLE `facturas`
   ADD CONSTRAINT `facturas_ibfk_1` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`),
   ADD CONSTRAINT `facturas_ibfk_2` FOREIGN KEY (`cuenta_bancaria_id`) REFERENCES `cuentas_bancarias_proveedores` (`id`),
   ADD CONSTRAINT `fk_fact_empresa` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `movimientos_bancarios`
+--
+ALTER TABLE `movimientos_bancarios`
+  ADD CONSTRAINT `fk_mov_asiento` FOREIGN KEY (`asiento_id`) REFERENCES `asientos_contables` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_mov_cuenta` FOREIGN KEY (`cuenta_bancaria_id`) REFERENCES `cuentas_bancarias_empresa` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `pagos_facturas`

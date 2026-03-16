@@ -6,8 +6,15 @@ namespace App\Helpers;
 use Exception;
 
 class JwtHelper {
-    private static string $secret_key = 'TU_CLAVE_SECRETA_MUY_LARGA_Y_ALEATORIA_DE_PRODUCCION_AQUI'; 
     private static string $algorithm = 'sha512';
+
+    private static function getSecretKey(): string {
+        $secret = \App\Config\Env::get('JWT_SECRET');
+        if (!$secret) {
+            throw new Exception("CRITICAL ERROR: JWT_SECRET no está configurado en el archivo .env.");
+        }
+        return $secret;
+    }
 
     public static function generate(array $data): string {
         $header = json_encode(['typ' => 'JWT', 'alg' => 'HS512'], JSON_THROW_ON_ERROR);
@@ -20,7 +27,7 @@ class JwtHelper {
         $base64UrlHeader = self::base64UrlEncode($header);
         $base64UrlPayload = self::base64UrlEncode($payload);
 
-        $signature = hash_hmac(self::$algorithm, $base64UrlHeader . "." . $base64UrlPayload, self::$secret_key, true);
+        $signature = hash_hmac(self::$algorithm, $base64UrlHeader . "." . $base64UrlPayload, self::getSecretKey(), true);
         $base64UrlSignature = self::base64UrlEncode($signature);
 
         return $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
@@ -38,7 +45,7 @@ class JwtHelper {
 
         if (!$header || !$payload || !$signatureProvided) return null;
 
-        $signatureExpected = hash_hmac(self::$algorithm, $headerB64 . "." . $payloadB64, self::$secret_key, true);
+        $signatureExpected = hash_hmac(self::$algorithm, $headerB64 . "." . $payloadB64, self::getSecretKey(), true);
 
         if (!hash_equals($signatureExpected, $signatureProvided)) return null;
 
@@ -59,6 +66,6 @@ class JwtHelper {
     }
 
     private static function base64UrlDecode(string $data): string {
-        return base64_decode(strtr($data, '-_', '+/'));
+        return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
     }
 }

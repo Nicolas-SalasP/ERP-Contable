@@ -107,8 +107,11 @@ class ProveedorRepository
         if (!$proveedor)
             return null;
 
-        $sqlFacturas = "SELECT f.id, f.numero_factura, f.fecha_emision, f.monto_neto, f.monto_bruto, f.estado, f.archivo_pdf, ac.codigo_unico as comprobante_contable 
-                        FROM facturas f LEFT JOIN asientos_contables ac ON (ac.origen_modulo = 'COMPRA' AND ac.origen_id = f.id) 
+        $sqlFacturas = "SELECT f.id, f.numero_factura, f.fecha_emision, f.monto_neto, f.monto_bruto, f.estado, f.archivo_pdf, 
+                        (SELECT codigo_unico FROM asientos_contables 
+                        WHERE origen_modulo = 'COMPRA' AND origen_id = f.id AND tipo_asiento != 'anulacion' 
+                        ORDER BY id ASC LIMIT 1) as comprobante_contable 
+                        FROM facturas f 
                         WHERE f.proveedor_id = ? AND f.empresa_id = ? ORDER BY f.fecha_emision DESC";
         $stmtFacturas = $this->db->prepare($sqlFacturas);
         $stmtFacturas->execute([$id, $this->empresaId]);
@@ -116,7 +119,7 @@ class ProveedorRepository
 
         $sqlAnticipos = "SELECT a.*, c.banco, c.numero_cuenta, ac.codigo_unico as comprobante_contable 
                         FROM anticipos_proveedores a 
-                        JOIN cuentas_bancarias_empresa c ON a.cuenta_bancaria_id = c.id 
+                        LEFT JOIN cuentas_bancarias_empresa c ON a.cuenta_bancaria_id = c.id 
                         LEFT JOIN asientos_contables ac ON a.asiento_id = ac.id
                         WHERE a.proveedor_id = ? AND a.empresa_id = ? ORDER BY a.fecha DESC";
         $stmtAnticipos = $this->db->prepare($sqlAnticipos);
@@ -135,15 +138,15 @@ class ProveedorRepository
         $sql = "INSERT INTO anticipos_proveedores 
                 (empresa_id, proveedor_id, cuenta_bancaria_id, fecha, monto, saldo_disponible, referencia, estado, asiento_id) 
                 VALUES (?, ?, NULL, ?, ?, ?, ?, 'PENDIENTE', NULL)";
-        
+
         $stmt = $this->db->prepare($sql);
-        
+
         $stmt->execute([
-            $this->empresaId, 
-            $datos['proveedor_id'], 
-            $datos['fecha'], 
-            $datos['monto'], 
-            $datos['monto'], 
+            $this->empresaId,
+            $datos['proveedor_id'],
+            $datos['fecha'],
+            $datos['monto'],
+            $datos['monto'],
             $datos['referencia']
         ]);
     }
