@@ -78,7 +78,7 @@ class AnulacionService
 
         try {
             $nuevoAsientoId = 0;
-
+            $nuevoCodigo = '';
             if ($documento['tipo_origen'] === 'FACTURA') {
                 $this->facturaRepo->marcarComoAnulada((int)$documento['id']);
                 $asientoOriginal = $this->contabilidadRepo->obtenerAsientoPorOrigen('COMPRA', (int)$documento['id']);

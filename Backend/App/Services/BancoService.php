@@ -145,7 +145,7 @@ class BancoService
                     continue;
 
                 $fechaFormateada = date('Y-m-d', strtotime(str_replace('/', '-', $rawFecha)));
-                if ($fechaFormateada === '1970-01-01' || !$fechaFormateada)
+                if ($fechaFormateada === '1970-01-01')
                     continue;
 
                 $horaFormateada = null;

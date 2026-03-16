@@ -32,7 +32,7 @@ class AutenticacionService {
             throw new Exception('CREDENCIALES_INCORRECTAS');
         }
 
-        if (isset($usuario['bloqueado_hasta']) && $usuario['bloqueado_hasta'] !== null && strtotime($usuario['bloqueado_hasta']) > time()) {
+        if (isset($usuario['bloqueado_hasta']) && strtotime($usuario['bloqueado_hasta']) > time()) {
             $minutosRestantes = ceil((strtotime($usuario['bloqueado_hasta']) - time()) / 60);
             
             if ($minutosRestantes > 60) {
@@ -73,7 +73,7 @@ class AutenticacionService {
             }
         }
 
-        if ((isset($usuario['intentos_fallidos']) && $usuario['intentos_fallidos'] > 0) || (isset($usuario['bloqueado_hasta']) && $usuario['bloqueado_hasta'] !== null)) {
+        if ((isset($usuario['intentos_fallidos']) && $usuario['intentos_fallidos'] > 0) || isset($usuario['bloqueado_hasta'])) {
             $this->repository->limpiarIntentosFallidos((int)$usuario['id']);
         }
 

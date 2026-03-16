@@ -67,8 +67,6 @@ class AuthMiddleware
             error_log("Auth Error: " . $e->getMessage());
             self::denyAccess(500, 'INTERNAL_ERROR', 'Service temporarily unavailable.');
         }
-
-        return (object) [];
     }
 
     private static function getAuthorizationHeader(): ?string
