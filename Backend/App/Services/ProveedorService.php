@@ -11,11 +11,9 @@ use Exception;
 class ProveedorService {
     
     private ProveedorRepository $repositorio;
-    private ContabilidadRepository $repoContabilidad;
 
     public function __construct() {
         $this->repositorio = new ProveedorRepository();
-        $this->repoContabilidad = new ContabilidadRepository();
     }
 
     public function obtenerTodos(): array {
@@ -38,13 +36,7 @@ class ProveedorService {
 
         $id = $this->repositorio->create($data);
 
-        AuditoriaService::registrar(
-            'CREAR_PROVEEDOR', 
-            'proveedores', 
-            (int)$id, 
-            null, 
-            $data
-        );
+        // AuditoriaService::registrar('CREAR_PROVEEDOR', 'proveedores', (int)$id, null, $data);
 
         return ['id' => $id, 'codigo' => $nuevoCodigo];
     }
