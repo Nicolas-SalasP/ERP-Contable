@@ -6,7 +6,6 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     
-    // 1. ESTADO PARA EL CHECKBOX (Es crucial tener esto)
     const [rememberMe, setRememberMe] = useState(false); 
 
     const [error, setError] = useState('');
@@ -20,7 +19,6 @@ const Login = () => {
         setError('');
         setIsSubmitting(true);
         
-        // 2. ENVIAR 'rememberMe' COMO TERCER PARÁMETRO
         const result = await login(email, password, rememberMe);
         
         if (result.success) {
@@ -41,8 +39,6 @@ const Login = () => {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
             
             <div className="max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
-                
-                {/* SECCIÓN IZQUIERDA: IMAGEN / BRANDING */}
                 <div className="w-full md:w-1/2 bg-blue-600 p-12 flex flex-col justify-between text-white relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-40 h-40 bg-white opacity-10 rounded-full -translate-x-10 -translate-y-10"></div>
                     <div className="absolute bottom-0 right-0 w-60 h-60 bg-white opacity-10 rounded-full translate-x-20 translate-y-20"></div>
@@ -63,7 +59,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* SECCIÓN DERECHA: FORMULARIO */}
                 <div className="w-full md:w-1/2 p-8 md:p-12">
                     <div className="text-center mb-10">
                         <h3 className="text-3xl font-bold text-slate-800 mb-2">Bienvenido</h3>
@@ -113,7 +108,6 @@ const Login = () => {
                         </div>
 
                         <div className="flex items-center justify-between text-sm">
-                            {/* 3. CHECKBOX CONECTADO AL ESTADO */}
                             <label className="flex items-center text-slate-600 cursor-pointer select-none">
                                 <input 
                                     type="checkbox" 
@@ -146,13 +140,6 @@ const Login = () => {
                             ) : 'Ingresar al Sistema'}
                         </button>
                     </form>
-
-                    <div className="mt-8 text-center text-sm text-slate-500">
-                        ¿No tienes una cuenta?{' '}
-                        <Link to="/registro" className="text-blue-600 font-bold cursor-pointer hover:underline">
-                            Regístrate aquí
-                        </Link>
-                    </div>
                 </div>
             </div>
         </div>

@@ -6,30 +6,30 @@ namespace App\Repositories;
 use App\Config\Database;
 use PDO;
 
-class AutenticacionRepository {
-    
+class AutenticacionRepository
+{
+
     private PDO $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::getConnection();
     }
-    
-    public function buscarUsuarioPorEmail(string $email): ?array {
+
+    public function buscarUsuarioPorEmail(string $email): ?array
+    {
         $sql = "SELECT 
                     u.id, 
-                    u.password, 
                     u.nombre, 
+                    u.email,
                     u.rol_id, 
                     u.estado_suscripcion_id, 
                     u.fecha_fin_suscripcion, 
                     u.empresa_id, 
-                    u.intentos_fallidos, 
-                    u.nivel_bloqueo, 
-                    u.bloqueado_hasta,
                     u.version_token,
                     e.razon_social as nombre_empresa
                 FROM usuarios u
-                INNER JOIN empresas e ON u.empresa_id = e.id
+                LEFT JOIN empresas e ON u.empresa_id = e.id
                 WHERE u.email = ? 
                 LIMIT 1";
 
@@ -39,49 +39,42 @@ class AutenticacionRepository {
         return $resultado ?: null;
     }
 
-    public function guardarTokenRecuperacion(string $email, string $token): void 
+    public function buscarUsuarioPorId(int $id): ?array
     {
-        $sql = "UPDATE usuarios SET reset_token = ?, reset_expires_at = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE email = ?";
+        $sql = "SELECT 
+                    u.id, u.nombre, u.email, u.rol_id, u.empresa_id, e.razon_social as nombre_empresa
+                FROM usuarios u
+                LEFT JOIN empresas e ON u.empresa_id = e.id
+                WHERE u.id = ? LIMIT 1";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$token, $email]);
+        $stmt->execute([$id]);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res ?: null;
     }
 
-    public function verificarTokenValido(string $email, string $token): bool 
+    public function crearUsuarioEspejo(array $datos): int
     {
-        $sql = "SELECT id FROM usuarios WHERE email = ? AND reset_token = ? AND reset_expires_at > NOW()";
+        $sql = "INSERT INTO usuarios (nombre, email, rut, rol_id, empresa_id) VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$email, $token]);
-        return (bool)$stmt->fetch();
+        $stmt->execute([
+            $datos['nombre'],
+            $datos['email'],
+            $datos['rut'],
+            $datos['rol_id'] ?? 2,
+            $datos['empresa_id'] ?? 1
+        ]);
+        return (int) $this->db->lastInsertId();
     }
 
-    public function actualizarPasswordYLimpiarToken(string $email, string $nuevoHash): void 
+    public function rotarVersionToken(int $usuarioId): int
     {
-        $sql = "UPDATE usuarios SET password = ?, reset_token = NULL, reset_expires_at = NULL WHERE email = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$nuevoHash, $email]);
-    }
-
-    public function registrarIntentoFallido(int $usuarioId, int $intentos, int $nivel, ?string $bloqueadoHasta): void 
-    {
-        $sql = "UPDATE usuarios SET intentos_fallidos = ?, nivel_bloqueo = ?, bloqueado_hasta = ? WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$intentos, $nivel, $bloqueadoHasta, $usuarioId]);
-    }
-
-    public function limpiarIntentosFallidos(int $usuarioId): void 
-    {
-        $sql = "UPDATE usuarios SET intentos_fallidos = 0, nivel_bloqueo = 0, bloqueado_hasta = NULL WHERE id = ?";
+        $sql = "UPDATE usuarios SET version_token = version_token + 1 WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$usuarioId]);
-    }
 
-    public function rotarVersionToken(int $usuarioId): int 
-    {
-        $sql = "UPDATE usuarios SET version_token = COALESCE(version_token, 0) + 1 WHERE id = ?";
-        $this->db->prepare($sql)->execute([$usuarioId]);
-        
-        $stmt = $this->db->prepare("SELECT version_token FROM usuarios WHERE id = ?");
-        $stmt->execute([$usuarioId]);
-        return (int)$stmt->fetchColumn();
+        $sqlSelect = "SELECT version_token FROM usuarios WHERE id = ?";
+        $stmtSelect = $this->db->prepare($sqlSelect);
+        $stmtSelect->execute([$usuarioId]);
+        return (int) $stmtSelect->fetchColumn();
     }
 }

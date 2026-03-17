@@ -5,7 +5,6 @@ import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 
 // --- IMPORTACIONES DE VISTAS ---
 import Login from './Modulos/Autenticacion/Login';
-import RegistroEmpresa from './Modulos/Autenticacion/RegistroEmpresa';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
 import Dashboard from './Modulos/Dashboard/Dashboard';
 import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
@@ -42,7 +41,6 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<RegistroEmpresa />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
 
           <Route path="/" element={
