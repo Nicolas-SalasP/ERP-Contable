@@ -60,3 +60,59 @@ VALUES (4, 'Auditor (Solo Lectura)', 'Puede ver toda la información pero no pue
 ALTER TABLE roles 
 ADD COLUMN empresa_id INT NULL AFTER id,
 ADD CONSTRAINT fk_roles_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE;
+
+-- 1. Tabla catálogo de permisos (Son fijos del sistema)
+CREATE TABLE IF NOT EXISTS `permisos` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `modulo` VARCHAR(50) NOT NULL, -- Ej: 'Ventas', 'Contabilidad', 'Usuarios'
+  `codigo` VARCHAR(50) NOT NULL UNIQUE, -- Ej: 'ventas.crear', 'usuarios.ver'
+  `descripcion` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2. Tabla pivote que une el Rol con los Permisos
+CREATE TABLE IF NOT EXISTS `rol_permisos` (
+  `rol_id` INT(11) NOT NULL,
+  `permiso_id` INT(11) NOT NULL,
+  PRIMARY KEY (`rol_id`, `permiso_id`),
+  FOREIGN KEY (`rol_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`permiso_id`) REFERENCES `permisos`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 3. Insertamos los permisos base del sistema
+INSERT INTO `permisos` (`modulo`, `codigo`, `descripcion`) VALUES
+('Ventas', 'ventas.ver', 'Ver listado de cotizaciones y ventas'),
+('Ventas', 'ventas.crear', 'Crear nuevas cotizaciones y ventas'),
+('Ventas', 'ventas.editar', 'Editar cotizaciones existentes'),
+('Ventas', 'ventas.eliminar', 'Eliminar o anular cotizaciones'),
+
+('Clientes', 'clientes.ver', 'Ver directorio de clientes'),
+('Clientes', 'clientes.crear', 'Agregar nuevos clientes'),
+('Clientes', 'clientes.editar', 'Modificar datos de clientes'),
+('Clientes', 'clientes.eliminar', 'Eliminar clientes'),
+
+('Contabilidad', 'contabilidad.ver', 'Ver libros, plan de cuentas y asientos'),
+('Contabilidad', 'contabilidad.crear', 'Crear asientos manuales'),
+
+('Administración', 'usuarios.ver', 'Ver listado de usuarios y roles'),
+('Administración', 'usuarios.gestionar', 'Invitar usuarios y editar roles de la empresa');
+
+INSERT INTO `permisos` (`modulo`, `codigo`, `descripcion`) VALUES
+('Compras', 'compras.ver', 'Ver facturas e historial de compras'),
+('Compras', 'compras.crear', 'Ingresar nuevas facturas de compra'),
+('Compras', 'compras.editar', 'Editar facturas de compra'),
+('Compras', 'compras.eliminar', 'Anular o eliminar facturas de compra'),
+
+('Proveedores', 'proveedores.ver', 'Ver directorio de proveedores'),
+('Proveedores', 'proveedores.crear', 'Agregar nuevos proveedores'),
+('Proveedores', 'proveedores.editar', 'Modificar datos de proveedores'),
+('Proveedores', 'proveedores.eliminar', 'Eliminar proveedores'),
+
+('Tesorería', 'tesoreria.ver', 'Ver cuentas bancarias y cartolas'),
+('Tesorería', 'tesoreria.gestionar', 'Gestionar nóminas de pago y conciliación bancaria'),
+
+('Activos Fijos', 'activos.ver', 'Ver inventario de activos fijos'),
+('Activos Fijos', 'activos.gestionar', 'Crear, editar y eliminar activos fijos'),
+
+('Gestión Tributaria', 'tributario.ver', 'Ver reportes de impuestos (F29, Renta)'),
+('Gestión Tributaria', 'tributario.gestionar', 'Procesar cierres de IVA y Operación Renta');

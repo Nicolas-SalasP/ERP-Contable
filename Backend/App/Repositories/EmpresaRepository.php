@@ -194,13 +194,8 @@ class EmpresaRepository
         $sqlUsuario = "UPDATE usuarios SET empresa_id = ? WHERE id = ?";
         $stmtUsuario = $this->db->prepare($sqlUsuario);
         $stmtUsuario->execute([$empresaId, $usuarioId]);
-
-        if (method_exists($this, 'clonarPlanMaestro')) {
-            $this->clonarPlanMaestro($empresaId);
-        }
-        if (method_exists($this, 'inicializarSecuencias')) {
-            $this->inicializarSecuencias($empresaId);
-        }
+        $this->clonarPlanMaestro($empresaId);
+        $this->inicializarSecuencias($empresaId);
 
         return $empresaId;
     }
