@@ -235,6 +235,23 @@ $router->post('/api/banco/movimientos/conciliar-anticipo', [BancoController::cla
 $router->get('/api/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestoController::class, 'simularCierre'], true);
 $router->post('/api/impuestos/cierre-f29/ejecutar', [ImpuestoController::class, 'ejecutarCierre'], true);
 
+// --- GESTIÓN DE USUARIOS ---
+$router->get('/api/usuarios', [\App\Controllers\UsuarioController::class, 'listar'], true);
+$router->get('/api/usuarios/roles', [\App\Controllers\UsuarioController::class, 'roles'], true);
+$router->post('/api/usuarios/invitar', [\App\Controllers\UsuarioController::class, 'invitar'], true);
+$router->put('/api/usuarios/{id}/rol', [\App\Controllers\UsuarioController::class, 'actualizarRol'], true);
+$router->delete('/api/usuarios/{id}', [\App\Controllers\UsuarioController::class, 'eliminar'], true);
+
+// --- GESTIÓN DE ROLES ---
+$router->get('/api/roles', [\App\Controllers\RolController::class, 'listar'], true);
+$router->post('/api/roles', [\App\Controllers\RolController::class, 'crear'], true);
+$router->put('/api/roles/{id}', [\App\Controllers\RolController::class, 'actualizar'], true);
+$router->delete('/api/roles/{id}', [\App\Controllers\RolController::class, 'eliminar'], true);
+
+// --- PERMISOS ---
+$router->get('/api/permisos', [\App\Controllers\RolController::class, 'permisos'], true);
+$router->get('/api/roles/{id}/permisos', [\App\Controllers\RolController::class, 'permisosDeRol'], true);
+
 // -----------------------------------------------------------------------------
 // 4. Despacho de la Petición
 // -----------------------------------------------------------------------------

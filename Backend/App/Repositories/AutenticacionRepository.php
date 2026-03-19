@@ -35,40 +35,37 @@ class AutenticacionRepository
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$email]);
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         return $resultado ?: null;
     }
 
-public function sincronizarUsuarioEspejo(array $datosAtlas): void 
+    public function sincronizarUsuarioEspejo(array $datosAtlas): array
     {
         $estado_id = (isset($datosAtlas['is_active']) && $datosAtlas['is_active'] === true) ? 1 : 2;
-        $sql = "SELECT id FROM usuarios WHERE email = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$datosAtlas['email']]);
-        $existe = $stmt->fetch(PDO::FETCH_ASSOC);
+        $usuario = $this->buscarUsuarioPorEmail($datosAtlas['email']);
 
-        if ($existe) {
-            $sqlUpdate = "UPDATE usuarios SET nombre = ?, rut = ?, estado_suscripcion_id = ? WHERE email = ?";
-            $stmtUpdate = $this->db->prepare($sqlUpdate);
-            $stmtUpdate->execute([
+        if ($usuario) {
+            $sql = "UPDATE usuarios SET nombre = ?, rut = ?, estado_suscripcion_id = ?, ultimo_acceso = NOW() WHERE email = ?";
+            $this->db->prepare($sql)->execute([
                 $datosAtlas['name'],
                 $datosAtlas['rut'] ?? null,
                 $estado_id,
                 $datosAtlas['email']
             ]);
+            return $this->buscarUsuarioPorEmail($datosAtlas['email']);
         } else {
-            $sqlInsert = "INSERT INTO usuarios (nombre, email, rut, rol_id, empresa_id, estado_suscripcion_id) 
-                          VALUES (?, ?, ?, ?, ?, ?)";
-            $stmtInsert = $this->db->prepare($sqlInsert);
-            
-            $stmtInsert->execute([
+            $sql = "INSERT INTO usuarios (nombre, email, rut, rol_id, empresa_id, estado_suscripcion_id, ultimo_acceso) 
+                    VALUES (?, ?, ?, ?, ?, ?, NOW())";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
                 $datosAtlas['name'],
                 $datosAtlas['email'],
                 $datosAtlas['rut'] ?? null,
                 1,
-                null, 
+                null,
                 $estado_id
             ]);
+            return $this->buscarUsuarioPorId((int) $this->db->lastInsertId());
         }
     }
 
@@ -92,7 +89,7 @@ public function sincronizarUsuarioEspejo(array $datosAtlas): void
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$id]);
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         return $resultado ?: null;
     }
 
@@ -106,5 +103,21 @@ public function sincronizarUsuarioEspejo(array $datosAtlas): void
         $stmtSelect = $this->db->prepare($sqlSelect);
         $stmtSelect->execute([$usuarioId]);
         return (int) $stmtSelect->fetchColumn();
+    }
+
+    public function obtenerPermisosPorRol(int $rolId): array
+    {
+        if ($rolId === 1) {
+            $stmt = $this->db->query("SELECT codigo FROM permisos");
+            return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        }
+        $sql = "SELECT p.codigo 
+                FROM permisos p
+                INNER JOIN rol_permisos rp ON p.id = rp.permiso_id
+                WHERE rp.rol_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$rolId]);
+
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
     }
 }

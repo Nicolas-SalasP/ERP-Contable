@@ -53,6 +53,8 @@ class AutenticacionService {
             throw new Exception("ACCOUNT_INACTIVE");
         }
 
+        $usuarioLocal['permisos'] = $this->repository->obtenerPermisosPorRol((int)$usuarioLocal['rol_id']);
+
         $token = JwtHelper::generate([
             'id' => $usuarioLocal['id'],
             'email' => $usuarioLocal['email'],

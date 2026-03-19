@@ -30,3 +30,33 @@ ADD CONSTRAINT fk_mapeo_cuenta
 FOREIGN KEY (empresa_id, codigo_cuenta) 
 REFERENCES plan_cuentas(empresa_id, codigo) 
 ON DELETE CASCADE;
+
+ALTER TABLE usuarios 
+ADD COLUMN ultimo_acceso DATETIME NULL;
+
+
+ALTER TABLE roles 
+ADD COLUMN descripcion VARCHAR(255) NULL AFTER nombre;
+
+
+UPDATE roles SET 
+    nombre = 'Administrador', 
+    descripcion = 'Acceso total al sistema y configuración de la empresa.' 
+WHERE id = 1;
+
+UPDATE roles SET 
+    nombre = 'Finanzas / Contador', 
+    descripcion = 'Acceso a contabilidad, facturas, bancos y reportes.' 
+WHERE id = 2;
+
+UPDATE roles SET 
+    nombre = 'Ventas / Operador', 
+    descripcion = 'Puede crear cotizaciones y facturas, sin ver reportes globales.' 
+WHERE id = 3;
+
+INSERT INTO roles (id, nombre, descripcion) 
+VALUES (4, 'Auditor (Solo Lectura)', 'Puede ver toda la información pero no puede editar nada.');
+
+ALTER TABLE roles 
+ADD COLUMN empresa_id INT NULL AFTER id,
+ADD CONSTRAINT fk_roles_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE;
