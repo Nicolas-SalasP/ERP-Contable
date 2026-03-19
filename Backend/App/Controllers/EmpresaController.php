@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\EmpresaService;
+use App\Middlewares\AuthMiddleware;
 use Exception;
 
 class EmpresaController
@@ -36,21 +37,42 @@ class EmpresaController
     // ENDPOINTS PÚBLICOS (Registro / Onboarding)
     // =========================================================================
 
-    public function registrar()
+    public function onboarding()
     {
         try {
+            $payload = AuthMiddleware::authenticate();
+            $usuarioId = (int) $payload->id;
             $data = $this->getJsonInput();
-            if (empty($data['empresa_rut']) || empty($data['admin_email']) || empty($data['admin_password'])) {
-                return $this->jsonResponse(['error' => 'Faltan datos obligatorios para el registro.'], 400);
-            }
-            $resultado = $this->service->registrarEmpresaCompleta($data);
+            $resultado = $this->service->procesarOnboarding($usuarioId, $data);
             return $this->jsonResponse($resultado, 201);
 
         } catch (Exception $e) {
-            return $this->jsonResponse(['error' => $e->getMessage()], 400);
+            return $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 400);
         } catch (\Throwable $t) {
             error_log($t->getMessage());
-            return $this->jsonResponse(['error' => 'Error interno del servidor.'], 500);
+            return $this->jsonResponse(['success' => false, 'error' => 'Error interno del servidor.'], 500);
+        }
+    }
+
+    public function verificarRut()
+    {
+        try {
+            $rut = $_GET['rut'] ?? '';
+            if (empty($rut)) {
+                throw new Exception("RUT no proporcionado.");
+            }
+
+            $existe = $this->service->verificarExistenciaRut($rut);
+
+            return $this->jsonResponse([
+                'success' => true,
+                'existe' => $existe
+            ]);
+        } catch (Exception $e) {
+            return $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 

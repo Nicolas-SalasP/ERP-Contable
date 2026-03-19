@@ -183,7 +183,9 @@ $router->put('/api/clientes/{id}', [ClienteController::class, 'update'], true);
 $router->delete('/api/clientes/{id}', [ClienteController::class, 'delete'], true);
 
 // --- Empresas ---
-$router->post('/api/empresas/registro', [EmpresaController::class, 'registrar'], false);
+$router->post('/api/empresas/onboarding', [EmpresaController::class, 'onboarding'], true);
+$router->post('/api/auth/logout', [AutenticacionController::class, 'logoutGlobal'], true);
+$router->get('/api/empresas/verificar-rut', [EmpresaController::class, 'verificarRut'], true);
 $router->get('/api/empresas/perfil', [EmpresaController::class, 'verPerfil'], true);
 $router->put('/api/empresas/perfil', [EmpresaController::class, 'actualizarPerfil'], true);
 $router->post('/api/empresas/logo', [EmpresaController::class, 'subirLogo'], true);

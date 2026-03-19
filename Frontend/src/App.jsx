@@ -26,13 +26,25 @@ import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
 import CierreF29 from './Modulos/Contabilidad/Vistas/CierreF29';
 import AsientoManual from './Modulos/Contabilidad/Vistas/AsientoManual';
 import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
+import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
 
-const RutaPrivada = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+// --- RUTAS PROTEGIDAS INTELIGENTES ---
+const RutaPrivada = ({ children, requireEmpresa = true }) => {
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) return <div>Cargando...</div>;
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  if (requireEmpresa && (!user?.empresa_id)) {
+    return <Navigate to="/crear-empresa" />;
+  }
+  if (!requireEmpresa && user?.empresa_id) {
+    return <Navigate to="/" />;
+  }
+
+  return children;
 };
 
 function App() {
@@ -42,6 +54,11 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
+          <Route path="/crear-empresa" element={
+            <RutaPrivada requireEmpresa={false}>
+              <CrearEmpresa />
+            </RutaPrivada>
+          } />
 
           <Route path="/" element={
             <RutaPrivada>
@@ -181,8 +198,21 @@ function App() {
             </RutaPrivada>
           } />
 
-          <Route path="/proveedores/visor" element={<RutaPrivada><LayoutPrincipal><VisorProveedor /></LayoutPrincipal></RutaPrivada>} />
-          <Route path="/proveedores/visor/:id" element={<RutaPrivada><LayoutPrincipal><VisorProveedor /></LayoutPrincipal></RutaPrivada>} />
+          <Route path="/proveedores/visor" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <VisorProveedor />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/proveedores/visor/:id" element={
+            <RutaPrivada>
+              <LayoutPrincipal>
+                <VisorProveedor />
+              </LayoutPrincipal>
+            </RutaPrivada>
+          } />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

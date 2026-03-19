@@ -34,19 +34,22 @@ class AutenticacionController {
 
         } catch (Exception $e) {
             $codigoHttp = 401; 
-            $mensaje = 'Credenciales incorrectas o acceso denegado.';
             $codigoError = $e->getMessage();
+            $mensaje = 'Credenciales incorrectas o acceso denegado.';
 
-            if (strpos(strtolower($codigoError), 'suscripción') !== false) {
+            if ($codigoError === 'ACCOUNT_INACTIVE') {
                 $codigoHttp = 403;
-                $mensaje = $codigoError;
+                $codigoErrorInterno = 'ACCOUNT_INACTIVE';
+                $mensaje = 'Account is suspended or inactive.';
             } elseif ($codigoError === 'CREDENCIALES_INCORRECTAS') {
+                $codigoErrorInterno = 'ERROR_AUTH';
                 $mensaje = 'El correo o la contraseña no coinciden.';
             } else {
+                $codigoErrorInterno = 'ERROR_AUTH';
                 $mensaje = $codigoError; 
             }
 
-            $this->responderConError($codigoHttp, 'ERROR_AUTH', $mensaje);
+            $this->responderConError($codigoHttp, $codigoErrorInterno, $mensaje);
         }
     }
 
@@ -67,7 +70,7 @@ class AutenticacionController {
 
     public function solicitarRecuperacion(): void 
     {
-        $this->responderConError(400, 'REDIRECCION_ATLAS', 'Para recuperar tu contraseña, por favor dirígete al portal principal: atlasdigitaltech.cl');
+        $this->responderConError(400, 'REDIRECCION_ATLAS', 'Para recuperar tu contraseña, dirígete al portal principal: atlasdigitaltech.cl');
     }
 
     public function restablecerPassword(): void 

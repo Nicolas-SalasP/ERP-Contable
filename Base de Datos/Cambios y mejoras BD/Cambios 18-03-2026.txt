@@ -1,0 +1,32 @@
+-- Cambios 18-03-2026
+
+UPDATE usuarios 
+SET 
+    empresa_id = (SELECT empresa_id FROM (SELECT empresa_id FROM usuarios WHERE email = 'admin@erp.cl') AS temp_emp),
+    rol_id = (SELECT rol_id FROM (SELECT rol_id FROM usuarios WHERE email = 'admin@erp.cl') AS temp_rol),
+    estado_suscripcion_id = 1 -- Lo dejamos activo
+WHERE email = 'nicolas@atlas.cl';
+
+UPDATE usuarios 
+SET estado_suscripcion_id = 2 
+WHERE email = 'admin@erp.cl';
+
+ALTER TABLE usuarios MODIFY COLUMN empresa_id INT NULL;
+UPDATE usuarios SET empresa_id = NULL WHERE id = 2;
+
+ALTER TABLE empresas 
+ADD COLUMN giro VARCHAR(255) NULL AFTER razon_social,
+ADD COLUMN direccion VARCHAR(255) NULL AFTER giro,
+ADD COLUMN telefono VARCHAR(50) NULL AFTER direccion,
+ADD COLUMN regimen_tributario VARCHAR(50) DEFAULT '14_D3' AFTER telefono;
+
+
+ALTER TABLE sii_mapeo_cuentas DROP FOREIGN KEY fk_mapeo_cuenta;
+ALTER TABLE plan_cuentas DROP INDEX codigo;
+ALTER TABLE plan_cuentas ADD UNIQUE KEY unique_empresa_codigo (empresa_id, codigo);
+
+ALTER TABLE sii_mapeo_cuentas 
+ADD CONSTRAINT fk_mapeo_cuenta 
+FOREIGN KEY (empresa_id, codigo_cuenta) 
+REFERENCES plan_cuentas(empresa_id, codigo) 
+ON DELETE CASCADE;

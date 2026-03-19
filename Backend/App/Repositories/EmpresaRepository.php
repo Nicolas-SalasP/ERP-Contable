@@ -97,8 +97,10 @@ class EmpresaRepository
 
     public function existeRut(string $rut): bool
     {
-        $stmt = $this->db->prepare("SELECT id FROM empresas WHERE rut = ?");
-        $stmt->execute([$rut]);
+        $rutLimpio = str_replace(['.', '-'], '', $rut);
+        $stmt = $this->db->prepare("SELECT id FROM empresas WHERE rut = ? LIMIT 1");
+        $stmt->execute([$rutLimpio]);
+
         return (bool) $stmt->fetch();
     }
 
@@ -172,5 +174,34 @@ class EmpresaRepository
     {
         $stmt = $this->db->prepare("DELETE FROM centros_costo WHERE id = ? AND empresa_id = ?");
         return $stmt->execute([$id, $this->empresaId]);
+    }
+
+    public function crearEmpresaYVincularUsuario(int $usuarioId, array $datosEmpresa): int
+    {
+        $sqlEmpresa = "INSERT INTO empresas (rut, razon_social, giro, direccion, telefono, regimen_tributario, created_at) 
+                       VALUES (?, ?, ?, ?, ?, ?, NOW())";
+        $stmtEmpresa = $this->db->prepare($sqlEmpresa);
+        $stmtEmpresa->execute([
+            $datosEmpresa['empresa_rut'],
+            $datosEmpresa['empresa_razon_social'],
+            $datosEmpresa['giro'] ?? null,
+            $datosEmpresa['direccion'] ?? null,
+            $datosEmpresa['telefono'] ?? null,
+            $datosEmpresa['regimen_tributario'] ?? '14_D3'
+        ]);
+
+        $empresaId = (int) $this->db->lastInsertId();
+        $sqlUsuario = "UPDATE usuarios SET empresa_id = ? WHERE id = ?";
+        $stmtUsuario = $this->db->prepare($sqlUsuario);
+        $stmtUsuario->execute([$empresaId, $usuarioId]);
+
+        if (method_exists($this, 'clonarPlanMaestro')) {
+            $this->clonarPlanMaestro($empresaId);
+        }
+        if (method_exists($this, 'inicializarSecuencias')) {
+            $this->inicializarSecuencias($empresaId);
+        }
+
+        return $empresaId;
     }
 }

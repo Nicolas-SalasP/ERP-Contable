@@ -16,9 +16,6 @@ class AutenticacionService {
         $this->repository = new AutenticacionRepository();
     }
 
-    // =========================================================================
-    // 1. INICIAR SESIÓN (Integración con AtlasWeb IdP)
-    // =========================================================================
     public function iniciarSesion(string $email, string $password): array {
         
         $apiUrl = Env::get('ATLAS_API_URL') . '/internal/erp/validate-login';
@@ -37,13 +34,6 @@ class AutenticacionService {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        // Pruebas con POSTMAN
-        // die(json_encode([
-        //     'http_code' => $httpCode,
-        //     'url_consultada' => $apiUrl,
-        //     'respuesta_cruda_atlas' => $response
-        // ]));
-
         if (!$response) {
             throw new Exception("Error de comunicación con el servidor central de AtlasWeb.");
         }
@@ -56,25 +46,18 @@ class AutenticacionService {
         }
 
         $datosUsuarioAtlas = $atlasData['user'];
-
+        $this->repository->sincronizarUsuarioEspejo($datosUsuarioAtlas);
         $usuarioLocal = $this->repository->buscarUsuarioPorEmail($datosUsuarioAtlas['email']);
 
-        if (!$usuarioLocal) {
-            $usuarioId = $this->repository->crearUsuarioEspejo([
-                'nombre' => $datosUsuarioAtlas['name'],
-                'email' => $datosUsuarioAtlas['email'],
-                'rut' => $datosUsuarioAtlas['rut'] ?? null,
-                'rol_id' => 2, 
-                'empresa_id' => 1 
-            ]);
-            $usuarioLocal = $this->repository->buscarUsuarioPorId($usuarioId);
+        if ((int)$usuarioLocal['estado_suscripcion_id'] !== 1) {
+            throw new Exception("ACCOUNT_INACTIVE");
         }
 
         $token = JwtHelper::generate([
             'id' => $usuarioLocal['id'],
             'email' => $usuarioLocal['email'],
             'rol_id' => $usuarioLocal['rol_id'],
-            'empresa_id' => $usuarioLocal['empresa_id'] ?? 1,
+            'empresa_id' => $usuarioLocal['empresa_id'],
             'version_token' => $usuarioLocal['version_token'] ?? 1
         ]);
 
@@ -84,9 +67,6 @@ class AutenticacionService {
         ];
     }
 
-    // =========================================================================
-    // 2. CERRAR SESIÓN GLOBAL
-    // =========================================================================
     public function cerrarSesionGlobal(int $usuarioId): void 
     {
         $this->repository->rotarVersionToken($usuarioId);
