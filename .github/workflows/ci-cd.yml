@@ -87,7 +87,7 @@ jobs:
     - name: Construir Frontend (React)
       working-directory: ./Frontend
       run: |
-        npm install
+        npm install --legacy-peer-deps
         npm run build
 
     - name: Configurar PHP 8.2
