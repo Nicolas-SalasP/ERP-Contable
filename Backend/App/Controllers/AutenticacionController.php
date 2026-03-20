@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\AutenticacionService;
+use App\Middlewares\AuthMiddleware;
 use Exception;
 
 class AutenticacionController {
@@ -33,27 +34,48 @@ class AutenticacionController {
 
         } catch (Exception $e) {
             $codigoHttp = 401; 
-            $mensaje = 'Credenciales incorrectas.';
             $codigoError = $e->getMessage();
+            $mensaje = 'Credenciales incorrectas o acceso denegado.';
 
-            switch ($codigoError) {
-                case 'CUENTA_SUSPENDIDA':
-                    $codigoHttp = 403; 
-                    $mensaje = 'Su cuenta está inactiva. Contacte a soporte.';
-                    break;
-                case 'PLAN_VENCIDO':
-                    $codigoHttp = 403;
-                    $mensaje = 'Su suscripción ha vencido. Por favor realice el pago.';
-                    break;
-                case 'CREDENCIALES_INCORRECTAS':
-                case 'USUARIO_NO_ENCONTRADO':
-                    $codigoHttp = 401;
-                    $mensaje = 'Correo o contraseña incorrectos.';
-                    break;
+            if ($codigoError === 'ACCOUNT_INACTIVE') {
+                $codigoHttp = 403;
+                $codigoErrorInterno = 'ACCOUNT_INACTIVE';
+                $mensaje = 'Account is suspended or inactive.';
+            } elseif ($codigoError === 'CREDENCIALES_INCORRECTAS') {
+                $codigoErrorInterno = 'ERROR_AUTH';
+                $mensaje = 'El correo o la contraseña no coinciden.';
+            } else {
+                $codigoErrorInterno = 'ERROR_AUTH';
+                $mensaje = $codigoError; 
             }
 
-            $this->responderConError($codigoHttp, $codigoError, $mensaje);
+            $this->responderConError($codigoHttp, $codigoErrorInterno, $mensaje);
         }
+    }
+
+    public function logoutGlobal(): void 
+    {
+        try {
+            $payload = AuthMiddleware::authenticate();
+            $usuarioId = (int) $payload->id; 
+
+            $this->servicioAutenticacion->cerrarSesionGlobal($usuarioId);
+            
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Sesiones cerradas en todos los dispositivos.']);
+        } catch (Exception $e) {
+            $this->responderConError(500, 'LOGOUT_ERROR', 'No se pudo cerrar la sesión global.');
+        }
+    }
+
+    public function solicitarRecuperacion(): void 
+    {
+        $this->responderConError(400, 'REDIRECCION_ATLAS', 'Para recuperar tu contraseña, dirígete al portal principal: atlasdigitaltech.cl');
+    }
+
+    public function restablecerPassword(): void 
+    {
+        $this->responderConError(400, 'REDIRECCION_ATLAS', 'La gestión de contraseñas se realiza desde el portal principal.');
     }
 
     private function responderConError(int $codigoHttp, string $codigoErrorInterno, string $mensajeLegible): void {
@@ -65,37 +87,5 @@ class AutenticacionController {
             'message' => $mensajeLegible
         ]);
         exit;
-    }
-
-    public function solicitarRecuperacion(): void 
-    {
-        $data = json_decode(file_get_contents('php://input'), true);
-        
-        if (!empty($data['email'])) {
-            try {
-                $this->servicioAutenticacion->iniciarRecuperacion($data['email']);
-            } catch (Exception $e) {
-            }
-        }
-        echo json_encode(['success' => true, 'message' => 'Si el correo existe, se ha enviado un código.']);
-    }
-
-    public function restablecerPassword(): void 
-    {
-        $data = json_decode(file_get_contents('php://input'), true);
-        
-        try {
-            if (empty($data['email']) || empty($data['codigo']) || empty($data['password'])) {
-                throw new Exception("Faltan datos.");
-            }
-
-            $this->servicioAutenticacion->cambiarPasswordConToken($data['email'], $data['codigo'], $data['password']);
-            
-            echo json_encode(['success' => true, 'message' => 'Contraseña actualizada correctamente.']);
-
-        } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
     }
 }

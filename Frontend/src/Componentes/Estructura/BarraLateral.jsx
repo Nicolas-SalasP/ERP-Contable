@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../Contextos/AuthContext';
+import { usePermisos } from '../../Contextos/Permisos';
 
 const BarraLateral = ({ isOpen, toggleSidebar }) => {
     const location = useLocation();
     const { user, logout } = useAuth();
+    const { tieneAlgunPermiso } = usePermisos();
     const [openMenu, setOpenMenu] = useState('');
 
     const menuGroups = [
@@ -18,6 +20,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             id: 'comercial',
             label: 'Ventas y Comercial',
             icon: 'fas fa-store',
+            permisosRequeridos: ['ventas.ver', 'clientes.ver'],
             subItems: [
                 { path: '/clientes', label: 'Directorio de Clientes' },
                 { path: '/cotizaciones/nueva', label: 'Nueva Cotización' },
@@ -28,6 +31,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             id: 'compras',
             label: 'Compras y Gastos',
             icon: 'fas fa-shopping-cart',
+            permisosRequeridos: ['compras.ver', 'proveedores.ver'],
             subItems: [
                 { path: '/proveedores', label: 'Directorio Proveedores' },
                 { path: '/proveedores/visor', label: 'Visor 360 Proveedor' },
@@ -39,6 +43,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             id: 'tesoreria',
             label: 'Tesorería y Banco',
             icon: 'fas fa-landmark',
+            permisosRequeridos: ['tesoreria.ver'],
             subItems: [
                 { path: '/banco/nomina-pagos', label: 'Nómina de Pagos' },
                 { path: '/banco/cartola', label: 'Importar Cartola' },
@@ -49,6 +54,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             id: 'contabilidad',
             label: 'Contabilidad General',
             icon: 'fas fa-book-open',
+            permisosRequeridos: ['contabilidad.ver'],
             subItems: [
                 { path: '/contabilidad/libro-mayor', label: 'Libro Mayor' },
                 { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas' },
@@ -60,6 +66,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             id: 'activos',
             label: 'Activos Fijos',
             icon: 'fas fa-building',
+            permisosRequeridos: ['activos.ver'],
             subItems: [
                 { path: '/activos', label: 'Inventario Activos' },
             ]
@@ -68,15 +75,26 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             id: 'tributario',
             label: 'Gestión Tributaria',
             icon: 'fas fa-file-invoice-dollar',
+            permisosRequeridos: ['tributario.ver'],
             subItems: [
                 { path: '/contabilidad/cierre-f29', label: 'Cierre de IVA (F29)' },
                 { path: '/tributario/renta', label: 'Operación Renta' },
+            ]
+        },
+        {
+            id: 'administracion',
+            label: 'Administración',
+            icon: 'fas fa-cogs',
+            permisosRequeridos: ['usuarios.ver', 'usuarios.gestionar'],
+            subItems: [
+                { path: '/empresa/usuarios', label: 'Gestión de Equipo' },
+                { path: '/empresa/roles', label: 'Roles y Permisos' },
             ]
         }
     ];
 
     const isActive = (path) => location.pathname === path;
-    
+
     const isGroupActive = (group) => {
         if (group.path && isActive(group.path)) return true;
         if (group.subItems && group.subItems.some(item => isActive(item.path))) return true;
@@ -98,12 +116,12 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
 
     return (
         <>
-            <div 
+            <div
                 className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 transition-opacity lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={toggleSidebar}
             ></div>
             <div className={`fixed top-0 left-0 z-30 h-full w-64 bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-transform duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                
+
                 <div className="flex items-center justify-center h-16 border-b border-slate-800/50 bg-slate-950 shrink-0">
                     <h1 className="text-xl font-black tracking-widest text-white flex items-center gap-2">
                         <i className="fas fa-layer-group text-emerald-500"></i>
@@ -113,78 +131,77 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
 
                 {/* NAVEGACIÓN SCROLLABLE */}
                 <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto custom-scrollbar pb-6">
-                    {menuGroups.map((group) => {
-                        const active = isGroupActive(group);
-                        const open = openMenu === group.id;
+                    {menuGroups
+                        .filter(group => !group.permisosRequeridos || tieneAlgunPermiso(group.permisosRequeridos))
+                        .map((group) => {
+                            const active = isGroupActive(group);
+                            const open = openMenu === group.id;
 
-                        return (
-                            <div key={group.id} className="mb-1">
-                                {/* BOTÓN DEL GRUPO O ENLACE DIRECTO */}
-                                {group.subItems ? (
-                                    <button
-                                        onClick={() => toggleMenu(group.id, true)}
-                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                                            active
-                                                ? 'bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20' // 1. Estoy dentro de esta sección
-                                                : open
-                                                    ? 'bg-slate-800/80 text-white shadow-inner' // 2. Solo lo abrí para mirar (no se cruzan colores)
-                                                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200' // 3. Cerrado y normal
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <i className={`${group.icon} w-5 text-center text-lg`}></i>
-                                            <span className="text-sm">{group.label}</span>
-                                        </div>
-                                        <i className={`fas fa-chevron-down text-[10px] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}></i>
-                                    </button>
-                                ) : (
-                                    <Link
-                                        to={group.path}
-                                        onClick={() => toggleMenu(group.id, false)}
-                                        className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                                            isActive(group.path)
-                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 font-bold' // Directo activo (Dashboard)
-                                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <i className={`${group.icon} w-5 text-center text-lg`}></i>
-                                            <span className="text-sm">{group.label}</span>
-                                        </div>
-                                    </Link>
-                                )}
+                            return (
+                                <div key={group.id} className="mb-1">
+                                    {/* BOTÓN DEL GRUPO O ENLACE DIRECTO */}
+                                    {group.subItems ? (
+                                        <button
+                                            onClick={() => toggleMenu(group.id, true)}
+                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${active
+                                                    ? 'bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20'
+                                                    : open
+                                                        ? 'bg-slate-800/80 text-white shadow-inner'
+                                                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <i className={`${group.icon} w-5 text-center text-lg`}></i>
+                                                <span className="text-sm">{group.label}</span>
+                                            </div>
+                                            <i className={`fas fa-chevron-down text-[10px] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}></i>
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            to={group.path}
+                                            onClick={() => toggleMenu(group.id, false)}
+                                            className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive(group.path)
+                                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 font-bold'
+                                                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <i className={`${group.icon} w-5 text-center text-lg`}></i>
+                                                <span className="text-sm">{group.label}</span>
+                                            </div>
+                                        </Link>
+                                    )}
 
-                                {/* SUBMENÚ DESPLEGABLE */}
-                                {group.subItems && (
-                                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
-                                        <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
-                                            {group.subItems.map((subItem) => (
-                                                <Link
-                                                    key={subItem.path}
-                                                    to={subItem.path}
-                                                    onClick={() => window.innerWidth < 1024 && toggleSidebar()} // Se cierra en móviles al tocar
-                                                    className={`block px-3 py-2.5 rounded-md text-xs font-medium transition-colors ${
-                                                        isActive(subItem.path)
-                                                        ? 'bg-emerald-500/10 text-emerald-400 font-bold'
-                                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                                                    }`}
-                                                >
-                                                    {subItem.label}
-                                                </Link>
-                                            ))}
+                                    {/* SUBMENÚ DESPLEGABLE */}
+                                    {group.subItems && (
+                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
+                                            <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
+                                                {group.subItems.map((subItem) => (
+                                                    <Link
+                                                        key={subItem.path}
+                                                        to={subItem.path}
+                                                        onClick={() => window.innerWidth < 1024 && toggleSidebar()}
+                                                        className={`block px-3 py-2.5 rounded-md text-xs font-medium transition-colors ${isActive(subItem.path)
+                                                                ? 'bg-emerald-500/10 text-emerald-400 font-bold'
+                                                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                                                            }`}
+                                                    >
+                                                        {subItem.label}
+                                                    </Link>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                                    )}
+                                </div>
+                            );
+                        })}
                 </nav>
 
                 {/* PERFIL DE USUARIO ANCLADO ABAJO */}
                 <div className="p-4 border-t border-slate-800/50 bg-slate-950 shrink-0">
                     <div className="flex items-center justify-between gap-2">
-                        <Link 
-                            to="/empresa/perfil" 
+                        <Link
+                            to="/empresa/perfil"
                             className="flex items-center gap-3 flex-1 hover:bg-slate-900 p-2 rounded-lg transition-colors overflow-hidden group"
                             title="Ir a Configuración de Empresa"
                             onClick={() => window.innerWidth < 1024 && toggleSidebar()}
@@ -200,12 +217,15 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                             </div>
                         </Link>
 
-                        <button 
+                        {/* BOTÓN CERRAR SESIÓN CON SVG NATIVO */}
+                        <button
                             onClick={logout}
                             className="text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 h-10 w-10 flex items-center justify-center rounded-lg transition-all"
                             title="Cerrar Sesión"
                         >
-                            <i className="fas fa-sign-out-alt"></i>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
                         </button>
                     </div>
                 </div>

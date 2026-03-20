@@ -1,11 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Contextos/AuthContext';
+import { usePermisos } from './Contextos/Permisos';
 import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 
-// --- IMPORTACIONES DE VISTAS ---
 import Login from './Modulos/Autenticacion/Login';
-import RegistroEmpresa from './Modulos/Autenticacion/RegistroEmpresa';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
 import Dashboard from './Modulos/Dashboard/Dashboard';
 import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
@@ -27,13 +26,34 @@ import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
 import CierreF29 from './Modulos/Contabilidad/Vistas/CierreF29';
 import AsientoManual from './Modulos/Contabilidad/Vistas/AsientoManual';
 import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
+import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
+import GestionUsuarios from './Modulos/Administrador/GestionUsuarios';
+import GestionRoles from './Modulos/Administrador/GestionRoles';
 
-const RutaPrivada = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const RutaPrivada = ({ children, requireEmpresa = true }) => {
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) return <div>Cargando...</div>;
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  if (requireEmpresa && (!user?.empresa_id)) {
+    return <Navigate to="/crear-empresa" />;
+  }
+  if (!requireEmpresa && user?.empresa_id) {
+    return <Navigate to="/" />;
+  }
+
+  return children;
+};
+
+const RutaProtegida = ({ permiso, children }) => {
+  const { tienePermiso } = usePermisos();
+  if (!tienePermiso(permiso)) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
 };
 
 function App() {
@@ -42,8 +62,12 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<RegistroEmpresa />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
+          <Route path="/crear-empresa" element={
+            <RutaPrivada requireEmpresa={false}>
+              <CrearEmpresa />
+            </RutaPrivada>
+          } />
 
           <Route path="/" element={
             <RutaPrivada>
@@ -55,136 +79,177 @@ function App() {
 
           <Route path="/facturas/nueva" element={
             <RutaPrivada>
-              <LayoutPrincipal><RegistroFactura /></LayoutPrincipal>
+              <RutaProtegida permiso="compras.crear">
+                <LayoutPrincipal><RegistroFactura /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/facturas/historial" element={
             <RutaPrivada>
-              <LayoutPrincipal><HistorialFacturas /></LayoutPrincipal>
+              <RutaProtegida permiso="compras.ver">
+                <LayoutPrincipal><HistorialFacturas /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/cotizaciones" element={
             <RutaPrivada>
-              <LayoutPrincipal><GestionCotizaciones /></LayoutPrincipal>
+              <RutaProtegida permiso="ventas.ver">
+                <LayoutPrincipal><GestionCotizaciones /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/cotizaciones/nueva" element={
             <RutaPrivada>
-              <LayoutPrincipal><CrearCotizacion /></LayoutPrincipal>
+              <RutaProtegida permiso="ventas.crear">
+                <LayoutPrincipal><CrearCotizacion /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/clientes" element={
             <RutaPrivada>
-              <LayoutPrincipal><GestionClientes /></LayoutPrincipal>
+              <RutaProtegida permiso="clientes.ver">
+                <LayoutPrincipal><GestionClientes /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/proveedores" element={
             <RutaPrivada>
-              <LayoutPrincipal><GestionProveedores /></LayoutPrincipal>
+              <RutaProtegida permiso="proveedores.ver">
+                <LayoutPrincipal><GestionProveedores /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/contabilidad/libro-mayor" element={
             <RutaPrivada>
-              <LayoutPrincipal><LibroMayor /></LayoutPrincipal>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><LibroMayor /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/contabilidad/anulacion" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <AnulacionGeneral />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><AnulacionGeneral /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/contabilidad/plan-cuentas" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <AdministradorCuentas />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><AdministradorCuentas /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/empresa/perfil" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <PerfilEmpresa />
-              </LayoutPrincipal>
+              <LayoutPrincipal><PerfilEmpresa /></LayoutPrincipal>
             </RutaPrivada>
           } />
 
           <Route path="/activos" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <GestionActivos />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="activos.ver">
+                <LayoutPrincipal><GestionActivos /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/tributario/renta" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <DashboardRenta />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><DashboardRenta /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/facturas/:id/auditoria" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <VisorAuditoriaFactura />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><VisorAuditoriaFactura /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/banco/nomina-pagos" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <NominaPagos />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="tesoreria.ver">
+                <LayoutPrincipal><NominaPagos /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/banco/cartola" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <CartolaBancaria />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="tesoreria.ver">
+                <LayoutPrincipal><CartolaBancaria /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/banco/conciliacion" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <MesaConciliacion />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="tesoreria.ver">
+                <LayoutPrincipal><MesaConciliacion /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/contabilidad/cierre-f29" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <CierreF29 />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><CierreF29 /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="/contabilidad/asiento-manual" element={
             <RutaPrivada>
-              <LayoutPrincipal>
-                <AsientoManual />
-              </LayoutPrincipal>
+              <RutaProtegida permiso="contabilidad.crear">
+                <LayoutPrincipal><AsientoManual /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
-          <Route path="/proveedores/visor" element={<RutaPrivada><LayoutPrincipal><VisorProveedor /></LayoutPrincipal></RutaPrivada>} />
-          <Route path="/proveedores/visor/:id" element={<RutaPrivada><LayoutPrincipal><VisorProveedor /></LayoutPrincipal></RutaPrivada>} />
+          <Route path="/proveedores/visor" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="proveedores.ver">
+                <LayoutPrincipal><VisorProveedor /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/proveedores/visor/:id" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="proveedores.ver">
+                <LayoutPrincipal><VisorProveedor /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/empresa/usuarios" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="usuarios.gestionar">
+                <LayoutPrincipal><GestionUsuarios /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/empresa/roles" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="usuarios.gestionar">
+                <LayoutPrincipal><GestionRoles /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -193,4 +258,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

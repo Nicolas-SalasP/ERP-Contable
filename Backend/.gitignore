@@ -1,0 +1,11 @@
+# Dependencias de Composer
+/vendor/
+
+# Archivos de entorno (Credenciales secretas que no deben ir a internet)
+.env
+
+# Reportes de pruebas (Generados por PHPUnit)
+/coverage-report/
+coverage.xml
+report.xml
+.phpunit.result.cache

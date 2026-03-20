@@ -15,7 +15,7 @@ class LibroMayorService {
     }
 
     public function obtenerLibroDiario(): array {
-        AuditoriaService::registrar('GENERAR_LIBRO_DIARIO');
+        // AuditoriaService::registrar('GENERAR_LIBRO_DIARIO');
 
         return $this->repository->getLibroDiario();
     }

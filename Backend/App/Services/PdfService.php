@@ -6,7 +6,6 @@ use App\Helpers\FechaHelper;
 
 class PdfService extends FPDF
 {
-    private $cotizacion;
     private $empresa;
     private $colores; 
 
@@ -32,7 +31,6 @@ class PdfService extends FPDF
 
     public function generarCotizacion($cotizacion, $empresa, $dest = 'S')
     {
-        $this->cotizacion = $cotizacion;
         $this->empresa = $empresa;
 
         // CONFIGURAR COLOR DINÁMICO

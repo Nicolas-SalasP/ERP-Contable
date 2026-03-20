@@ -34,7 +34,7 @@ class ContabilidadService
             'haber' => $haber
         ]);
 
-        AuditoriaService::registrar('REGISTRAR_ASIENTO', 'asientos_contables', $asientoId, null, ['codigo' => $codigoUnico]);
+        // AuditoriaService::registrar('REGISTRAR_ASIENTO', 'asientos_contables', $asientoId, null, ['codigo' => $codigoUnico]);
 
         return ['id' => $asientoId, 'codigo' => $codigoUnico];
     }
@@ -56,7 +56,7 @@ class ContabilidadService
             $monto
         );
 
-        AuditoriaService::registrar('REGISTRAR_ASIENTO_DOBLE', 'asientos_contables', $asientoId, null, ['codigo' => $codigoUnico, 'modulo' => $modulo]);
+        // AuditoriaService::registrar('REGISTRAR_ASIENTO_DOBLE', 'asientos_contables', $asientoId, null, ['codigo' => $codigoUnico, 'modulo' => $modulo]);
 
         return ['id' => $asientoId, 'codigo' => $codigoUnico];
     }
@@ -94,7 +94,7 @@ class ContabilidadService
             $this->repositorio->crearDetalle($reversaId, $det['cuenta_contable'], $nuevoDebe, $nuevoHaber);
         }
 
-        AuditoriaService::registrar('ANULAR_ASIENTO', 'asientos_contables', $asiento['id'], null, ['reversa_id' => $reversaId]);
+        // AuditoriaService::registrar('ANULAR_ASIENTO', 'asientos_contables', $asiento['id'], null, ['reversa_id' => $reversaId]);
 
         return [
             'success' => true,
@@ -105,7 +105,7 @@ class ContabilidadService
 
     public function obtenerSaldosLibroMayor(string $fechaInicio, string $fechaFin): array
     {
-        AuditoriaService::registrar('CONSULTA_LIBRO_MAYOR', null, null, null, ['desde' => $fechaInicio, 'hasta' => $fechaFin]);
+        // AuditoriaService::registrar('CONSULTA_LIBRO_MAYOR', null, null, null, ['desde' => $fechaInicio, 'hasta' => $fechaFin]);
 
         $datos = $this->repositorio->getSaldosAgrupados($fechaInicio, $fechaFin);
         foreach ($datos as &$cuenta) {
@@ -179,7 +179,7 @@ class ContabilidadService
                     $fila['empleado_nombre'] ?? null
                 );
             }
-            AuditoriaService::registrar('REGISTRAR_ASIENTO_AVANZADO', 'asientos_contables', $asientoId, null, ['codigo' => $codigoUnico]);
+            // AuditoriaService::registrar('REGISTRAR_ASIENTO_AVANZADO', 'asientos_contables', $asientoId, null, ['codigo' => $codigoUnico]);
 
             $this->repositorio->commit();
 

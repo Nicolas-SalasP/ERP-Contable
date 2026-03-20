@@ -4,12 +4,19 @@
             "App\\": "App/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "require": {
         "setasign/fpdf": "^1.8",
         "phpmailer/phpmailer": "^7.0",
         "phpoffice/phpspreadsheet": "^5.5"
     },
     "require-dev": {
-        "phpunit/phpunit": "^11.5"
+        "phpunit/phpunit": "^11.5",
+        "fakerphp/faker": "^1.24",
+        "phpstan/phpstan": "^2.1"
     }
 }

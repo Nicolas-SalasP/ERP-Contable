@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // -----------------------------------------------------------------------------
-// 1. Configuración de Headers y CORS
+// 1. Configuración de Headers - CORS - Seguridad
 // -----------------------------------------------------------------------------
 $origenes_permitidos = [
     'http://localhost:5173',
@@ -22,6 +22,13 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
+
+// -----------------------------------------------------------------------------
+// CABECERAS DE SEGURIDAD
+// -----------------------------------------------------------------------------
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: DENY");
+header("Content-Security-Policy: default-src 'self'; frame-ancestors 'none';");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -183,7 +190,9 @@ $router->put('/api/clientes/{id}', [ClienteController::class, 'update'], true);
 $router->delete('/api/clientes/{id}', [ClienteController::class, 'delete'], true);
 
 // --- Empresas ---
-$router->post('/api/empresas/registro', [EmpresaController::class, 'registrar'], false);
+$router->post('/api/empresas/onboarding', [EmpresaController::class, 'onboarding'], true);
+$router->post('/api/auth/logout', [AutenticacionController::class, 'logoutGlobal'], true);
+$router->get('/api/empresas/verificar-rut', [EmpresaController::class, 'verificarRut'], true);
 $router->get('/api/empresas/perfil', [EmpresaController::class, 'verPerfil'], true);
 $router->put('/api/empresas/perfil', [EmpresaController::class, 'actualizarPerfil'], true);
 $router->post('/api/empresas/logo', [EmpresaController::class, 'subirLogo'], true);
@@ -232,6 +241,23 @@ $router->post('/api/banco/movimientos/conciliar-anticipo', [BancoController::cla
 // --- IMPUESTOS Y F29 ---
 $router->get('/api/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestoController::class, 'simularCierre'], true);
 $router->post('/api/impuestos/cierre-f29/ejecutar', [ImpuestoController::class, 'ejecutarCierre'], true);
+
+// --- GESTIÓN DE USUARIOS ---
+$router->get('/api/usuarios', [\App\Controllers\UsuarioController::class, 'listar'], true);
+$router->get('/api/usuarios/roles', [\App\Controllers\UsuarioController::class, 'roles'], true);
+$router->post('/api/usuarios/invitar', [\App\Controllers\UsuarioController::class, 'invitar'], true);
+$router->put('/api/usuarios/{id}/rol', [\App\Controllers\UsuarioController::class, 'actualizarRol'], true);
+$router->delete('/api/usuarios/{id}', [\App\Controllers\UsuarioController::class, 'eliminar'], true);
+
+// --- GESTIÓN DE ROLES ---
+$router->get('/api/roles', [\App\Controllers\RolController::class, 'listar'], true);
+$router->post('/api/roles', [\App\Controllers\RolController::class, 'crear'], true);
+$router->put('/api/roles/{id}', [\App\Controllers\RolController::class, 'actualizar'], true);
+$router->delete('/api/roles/{id}', [\App\Controllers\RolController::class, 'eliminar'], true);
+
+// --- PERMISOS ---
+$router->get('/api/permisos', [\App\Controllers\RolController::class, 'permisos'], true);
+$router->get('/api/roles/{id}/permisos', [\App\Controllers\RolController::class, 'permisosDeRol'], true);
 
 // -----------------------------------------------------------------------------
 // 4. Despacho de la Petición

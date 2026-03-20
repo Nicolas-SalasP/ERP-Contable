@@ -1,0 +1,118 @@
+-- Cambios 18-03-2026
+
+UPDATE usuarios 
+SET 
+    empresa_id = (SELECT empresa_id FROM (SELECT empresa_id FROM usuarios WHERE email = 'admin@erp.cl') AS temp_emp),
+    rol_id = (SELECT rol_id FROM (SELECT rol_id FROM usuarios WHERE email = 'admin@erp.cl') AS temp_rol),
+    estado_suscripcion_id = 1 -- Lo dejamos activo
+WHERE email = 'nicolas@atlas.cl';
+
+UPDATE usuarios 
+SET estado_suscripcion_id = 2 
+WHERE email = 'admin@erp.cl';
+
+ALTER TABLE usuarios MODIFY COLUMN empresa_id INT NULL;
+UPDATE usuarios SET empresa_id = NULL WHERE id = 2;
+
+ALTER TABLE empresas 
+ADD COLUMN giro VARCHAR(255) NULL AFTER razon_social,
+ADD COLUMN direccion VARCHAR(255) NULL AFTER giro,
+ADD COLUMN telefono VARCHAR(50) NULL AFTER direccion,
+ADD COLUMN regimen_tributario VARCHAR(50) DEFAULT '14_D3' AFTER telefono;
+
+
+ALTER TABLE sii_mapeo_cuentas DROP FOREIGN KEY fk_mapeo_cuenta;
+ALTER TABLE plan_cuentas DROP INDEX codigo;
+ALTER TABLE plan_cuentas ADD UNIQUE KEY unique_empresa_codigo (empresa_id, codigo);
+
+ALTER TABLE sii_mapeo_cuentas 
+ADD CONSTRAINT fk_mapeo_cuenta 
+FOREIGN KEY (empresa_id, codigo_cuenta) 
+REFERENCES plan_cuentas(empresa_id, codigo) 
+ON DELETE CASCADE;
+
+ALTER TABLE usuarios 
+ADD COLUMN ultimo_acceso DATETIME NULL;
+
+
+ALTER TABLE roles 
+ADD COLUMN descripcion VARCHAR(255) NULL AFTER nombre;
+
+
+UPDATE roles SET 
+    nombre = 'Administrador', 
+    descripcion = 'Acceso total al sistema y configuración de la empresa.' 
+WHERE id = 1;
+
+UPDATE roles SET 
+    nombre = 'Finanzas / Contador', 
+    descripcion = 'Acceso a contabilidad, facturas, bancos y reportes.' 
+WHERE id = 2;
+
+UPDATE roles SET 
+    nombre = 'Ventas / Operador', 
+    descripcion = 'Puede crear cotizaciones y facturas, sin ver reportes globales.' 
+WHERE id = 3;
+
+INSERT INTO roles (id, nombre, descripcion) 
+VALUES (4, 'Auditor (Solo Lectura)', 'Puede ver toda la información pero no puede editar nada.');
+
+ALTER TABLE roles 
+ADD COLUMN empresa_id INT NULL AFTER id,
+ADD CONSTRAINT fk_roles_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE;
+
+-- 1. Tabla catálogo de permisos (Son fijos del sistema)
+CREATE TABLE IF NOT EXISTS `permisos` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `modulo` VARCHAR(50) NOT NULL, -- Ej: 'Ventas', 'Contabilidad', 'Usuarios'
+  `codigo` VARCHAR(50) NOT NULL UNIQUE, -- Ej: 'ventas.crear', 'usuarios.ver'
+  `descripcion` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2. Tabla pivote que une el Rol con los Permisos
+CREATE TABLE IF NOT EXISTS `rol_permisos` (
+  `rol_id` INT(11) NOT NULL,
+  `permiso_id` INT(11) NOT NULL,
+  PRIMARY KEY (`rol_id`, `permiso_id`),
+  FOREIGN KEY (`rol_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`permiso_id`) REFERENCES `permisos`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 3. Insertamos los permisos base del sistema
+INSERT INTO `permisos` (`modulo`, `codigo`, `descripcion`) VALUES
+('Ventas', 'ventas.ver', 'Ver listado de cotizaciones y ventas'),
+('Ventas', 'ventas.crear', 'Crear nuevas cotizaciones y ventas'),
+('Ventas', 'ventas.editar', 'Editar cotizaciones existentes'),
+('Ventas', 'ventas.eliminar', 'Eliminar o anular cotizaciones'),
+
+('Clientes', 'clientes.ver', 'Ver directorio de clientes'),
+('Clientes', 'clientes.crear', 'Agregar nuevos clientes'),
+('Clientes', 'clientes.editar', 'Modificar datos de clientes'),
+('Clientes', 'clientes.eliminar', 'Eliminar clientes'),
+
+('Contabilidad', 'contabilidad.ver', 'Ver libros, plan de cuentas y asientos'),
+('Contabilidad', 'contabilidad.crear', 'Crear asientos manuales'),
+
+('Administración', 'usuarios.ver', 'Ver listado de usuarios y roles'),
+('Administración', 'usuarios.gestionar', 'Invitar usuarios y editar roles de la empresa');
+
+INSERT INTO `permisos` (`modulo`, `codigo`, `descripcion`) VALUES
+('Compras', 'compras.ver', 'Ver facturas e historial de compras'),
+('Compras', 'compras.crear', 'Ingresar nuevas facturas de compra'),
+('Compras', 'compras.editar', 'Editar facturas de compra'),
+('Compras', 'compras.eliminar', 'Anular o eliminar facturas de compra'),
+
+('Proveedores', 'proveedores.ver', 'Ver directorio de proveedores'),
+('Proveedores', 'proveedores.crear', 'Agregar nuevos proveedores'),
+('Proveedores', 'proveedores.editar', 'Modificar datos de proveedores'),
+('Proveedores', 'proveedores.eliminar', 'Eliminar proveedores'),
+
+('Tesorería', 'tesoreria.ver', 'Ver cuentas bancarias y cartolas'),
+('Tesorería', 'tesoreria.gestionar', 'Gestionar nóminas de pago y conciliación bancaria'),
+
+('Activos Fijos', 'activos.ver', 'Ver inventario de activos fijos'),
+('Activos Fijos', 'activos.gestionar', 'Crear, editar y eliminar activos fijos'),
+
+('Gestión Tributaria', 'tributario.ver', 'Ver reportes de impuestos (F29, Renta)'),
+('Gestión Tributaria', 'tributario.gestionar', 'Procesar cierres de IVA y Operación Renta');

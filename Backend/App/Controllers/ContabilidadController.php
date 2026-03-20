@@ -165,9 +165,9 @@ class ContabilidadController
         $input = json_decode(file_get_contents("php://input"), true);
         try {
             $resultado = $this->servicio->actualizarCuenta((int)$id, $input);
-            return $this->responderJson($resultado);
+            $this->responderJson($resultado);
         } catch (Exception $e) {
-            return $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
+            $this->responderJson(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
     }
 

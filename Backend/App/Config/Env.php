@@ -23,8 +23,11 @@ class Env {
                     $key = trim($key);
                     $val = trim($val, " '\"");
                     
-                    self::$variables[$key] = $val;
-                    $_ENV[$key] = $val;
+                    if (!isset($_ENV[$key])) {
+                        $_ENV[$key] = $val;
+                        self::$variables[$key] = $val;
+                        putenv("$key=$val"); 
+                    }
                 }
             }
         }

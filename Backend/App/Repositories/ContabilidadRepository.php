@@ -39,7 +39,7 @@ class ContabilidadRepository
             $stmt->execute([$this->empresaId, $entidadSecuencia]);
             $fila = $stmt->fetch(PDO::FETCH_ASSOC);
             $ultimoValor = $fila ? (string) $fila['ultimo_valor'] : $prefijo . '0000000';
-            $nuevoCodigo = (string) ($ultimoValor + 1);
+            $nuevoCodigo = (string) ((int)$ultimoValor + 1);
             if (strpos($nuevoCodigo, $prefijo) !== 0) {
                 $nuevoCodigo = $prefijo . substr($nuevoCodigo, strlen($prefijo));
             }
