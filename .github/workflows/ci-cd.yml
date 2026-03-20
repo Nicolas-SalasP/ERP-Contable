@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # ==========================================
+  # FASE 1: PRUEBAS
+  # ==========================================
   test-backend:
     name: Análisis y Pruebas Backend
     runs-on: ubuntu-latest
@@ -62,3 +65,58 @@ jobs:
         path: |
           Backend/coverage-report/
           Backend/report.xml
+
+# ==========================================
+  # FASE 2: DESPLIEGUE AUTOMÁTICO (CD)
+  # ==========================================
+  deploy-produccion:
+    name: Desplegar a Producción
+    needs: test-backend 
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar Código
+      uses: actions/checkout@v4
+
+    - name: Instalar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Construir Frontend (React)
+      working-directory: ./Frontend
+      run: |
+        npm install
+        npm run build
+
+    - name: Configurar PHP 8.2
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+
+    - name: Instalar dependencias de Backend (Producción)
+      working-directory: ./Backend
+      run: composer install --no-dev --optimize-autoloader --no-progress
+
+    - name: Preparar archivos para el servidor
+      run: |
+        mkdir -p deploy_produccion
+        # Copiamos lo compilado de React a la raíz
+        cp -a Frontend/dist/. deploy_produccion/
+        # Copiamos el Backend completo
+        cp -r Backend deploy_produccion/
+
+    - name: Sincronizar con Servidor vía FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./deploy_produccion/
+        server-dir: / 
+        exclude: |
+          Backend/Tests/**
+          Backend/coverage-report/**
+          Backend/phpunit.xml
+          Backend/phpstan.neon
