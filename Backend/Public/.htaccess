@@ -1,8 +1,7 @@
 <IfModule mod_rewrite.c>
     Options -Multiviews
     RewriteEngine On
-    
-    # Si no es un archivo físico, mandar a index.php
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [QSA,L]
