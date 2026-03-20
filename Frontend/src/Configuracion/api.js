@@ -5,8 +5,8 @@ const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 
     (isLocal 
         ? 'http://localhost/ERP-Contable/Backend/Public/api' 
-        : 'https://api.tudominio.com/api'); // <--- Ajustar cuando tenga IP de Hosting o dominio
-
+        : 'https://erp.atlasdigitaltech.cl/Backend/Public/api');
+        
 // Función para obtener headers con limpieza de token
 const getAuthHeaders = () => {
     let token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
