@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { api } from '../Configuracion/api';
 
 const AuthContext = createContext(null);
@@ -16,23 +16,20 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.auth.login({ email, password });
 
-            if (response.success) {
+            if (response.token) {
                 const tokenRecibido = response.token;
                 const usuarioRecibido = response.user;
 
                 setUser(usuarioRecibido);
+                
                 if (remember) {
-                    console.log("Guardando en LocalStorage (Permanente)");
                     localStorage.setItem('erp_token', tokenRecibido);
                     localStorage.setItem('erp_user', JSON.stringify(usuarioRecibido));
-
                     sessionStorage.removeItem('erp_token');
                     sessionStorage.removeItem('erp_user');
                 } else {
-                    console.log("Guardando en SessionStorage (Temporal)");
                     sessionStorage.setItem('erp_token', tokenRecibido);
                     sessionStorage.setItem('erp_user', JSON.stringify(usuarioRecibido));
-
                     localStorage.removeItem('erp_token');
                     localStorage.removeItem('erp_user');
                 }
@@ -47,7 +44,6 @@ export const AuthProvider = ({ children }) => {
             }
 
         } catch (error) {
-            console.error("Login error:", error);
             return {
                 success: false,
                 message: error.message,
@@ -65,7 +61,6 @@ export const AuthProvider = ({ children }) => {
         sessionStorage.removeItem('erp_user');
 
         setUser(null);
-        // Opcional: window.location.href = '/login';
     };
 
     return (

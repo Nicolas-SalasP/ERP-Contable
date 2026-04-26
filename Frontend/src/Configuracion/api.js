@@ -1,4 +1,3 @@
-// Detección dinámica del entorno
 const hostname = window.location.hostname;
 const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 
@@ -6,8 +5,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL ||
     (isLocal 
         ? 'http://127.0.0.1:8000/api' 
         : 'https://erp.tenri.cl/api');
-        
-// Función para obtener headers con limpieza de token
+
 const getAuthHeaders = () => {
     let token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
     
@@ -20,7 +18,6 @@ const getAuthHeaders = () => {
     return {};
 };
 
-// Manejador de respuestas unificado
 const handleResponse = async (response) => {
     const isJson = response.headers.get('content-type')?.includes('application/json');
     const data = isJson ? await response.json() : null;
@@ -50,12 +47,12 @@ const handleResponse = async (response) => {
     return data;
 };
 
-// Función base para realizar peticiones (Wrapper de Fetch)
 const request = async (endpoint, method, body = null, customHeaders = {}) => {
     const config = {
         method,
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             ...getAuthHeaders(),
             ...customHeaders,
         },
@@ -81,7 +78,6 @@ const request = async (endpoint, method, body = null, customHeaders = {}) => {
     }
 };
 
-// Objeto API exportado para usar en los componentes
 export const api = {
     defaults: {
         baseURL: API_BASE_URL
