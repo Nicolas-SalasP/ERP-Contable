@@ -17,12 +17,13 @@ class ProveedorService
 
     public function registrarProveedor(array $datos): Proveedor
     {
+        $codigo = !empty($datos['codigo']) ? $datos['codigo'] : 'PROV-' . rand(1000, 9999);
         $codigoExiste = Proveedor::where('empresa_id', $datos['empresa_id'])
-            ->where('codigo_interno', $datos['codigo_interno'])
+            ->where('codigo_interno', $codigo)
             ->exists();
 
         if ($codigoExiste) {
-            throw new Exception("El código interno {$datos['codigo_interno']} ya está en uso.");
+            throw new Exception("El código interno {$codigo} ya está en uso.");
         }
 
         if (!empty($datos['rut'])) {
@@ -31,10 +32,21 @@ class ProveedorService
                 ->exists();
 
             if ($rutExiste) {
-                throw new Exception("El proveedor con RUT {$datos['rut']} ya se encuentra registrado.");
+                throw new Exception("El proveedor con identificador {$datos['rut']} ya se encuentra registrado.");
             }
         }
 
-        return Proveedor::create($datos);
+        return Proveedor::create([
+            'empresa_id' => $datos['empresa_id'],
+            'codigo_interno' => $codigo,
+            'rut' => $datos['rut'] ?? null,
+            'razon_social' => $datos['razonSocial'],
+            'pais_iso' => $datos['paisIso'] ?? 'CL',
+            'moneda_defecto' => $datos['moneda'] ?? 'CLP',
+            'nombre_contacto' => $datos['nombreContacto'] ?? null,
+            'email_contacto' => $datos['emailContacto'] ?? null,
+            'direccion' => $datos['direccion'] ?? null,
+            'telefono' => $datos['telefono'] ?? null,
+        ]);
     }
 }

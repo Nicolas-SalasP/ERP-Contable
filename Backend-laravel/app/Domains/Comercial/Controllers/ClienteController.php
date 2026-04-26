@@ -17,27 +17,35 @@ class ClienteController
 
     public function index(Request $request)
     {
-        return response()->json($this->service->obtenerClientesPorEmpresa($request->user()->empresa_id));
+        return response()->json([
+            'success' => true,
+            'data'    => $this->service->buscarClientesPorEmpresa($request->user()->empresa_id, $request->search)
+        ]);
     }
 
     public function store(Request $request)
     {
         try {
-            $datos = $request->validate([
-                'rut' => 'required|string|max:20',
-                'razon_social' => 'required|string|max:255',
-                'email' => 'nullable|email',
-                'telefono' => 'nullable|string'
-            ]);
-
+            $datos = $request->all();
             $datos['empresa_id'] = $request->user()->empresa_id;
 
             $cliente = $this->service->registrarCliente($datos);
 
-            return response()->json(['message' => 'Cliente creado con éxito', 'data' => $cliente], 201);
-            
+            return response()->json([
+                'success' => true, 
+                'data'    => $cliente
+            ], 201);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ], 422);
         }
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $this->service->inactivarCliente($request->user()->empresa_id, $id);
+        return response()->json(['success' => true]);
     }
 }

@@ -7,11 +7,19 @@ use Exception;
 
 class ClienteService
 {
-    public function obtenerClientesPorEmpresa(int $empresaId)
+    public function buscarClientesPorEmpresa(int $empresaId, ?string $search = null)
     {
-        return Cliente::where('empresa_id', $empresaId)
-            ->orderBy('razon_social')
-            ->get();
+        $query = Cliente::where('empresa_id', $empresaId);
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('rut', 'like', "%{$search}%")
+                    ->orWhere('razon_social', 'like', "%{$search}%")
+                    ->orWhere('codigo_cliente', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderBy('razon_social')->get();
     }
 
     public function registrarCliente(array $datos): Cliente
@@ -21,9 +29,16 @@ class ClienteService
             ->exists();
 
         if ($existe) {
-            throw new Exception("El cliente con RUT {$datos['rut']} ya se encuentra registrado en su empresa.");
+            throw new Exception("El cliente con RUT {$datos['rut']} ya se encuentra registrado.");
         }
 
         return Cliente::create($datos);
+    }
+
+    public function inactivarCliente(int $empresaId, int $id)
+    {
+        $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($id);
+        $cliente->update(['estado' => 'INACTIVO']);
+        return $cliente;
     }
 }

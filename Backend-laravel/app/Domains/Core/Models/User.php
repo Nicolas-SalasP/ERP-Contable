@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Domains\Core\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,7 +11,7 @@ class User extends Authenticatable
     use HasApiTokens, Notifiable;
 
     protected $table = 'usuarios';
-    public const UPDATED_AT = null; 
+    public const UPDATED_AT = null;
 
     protected $fillable = [
         'empresa_id',
@@ -18,27 +19,18 @@ class User extends Authenticatable
         'password',
         'nombre',
         'rol_id',
-        'estado_suscripcion_id',
-        'fecha_fin_suscripcion',
-        'intentos_fallidos',
-        'nivel_bloqueo',
-        'bloqueado_hasta',
-        'reset_token',
-        'reset_expires_at',
+        'estado_suscripcion_id'
     ];
 
     protected $hidden = [
         'password',
-        'reset_token',
+        'remember_token',
     ];
 
     protected function casts(): array
     {
         return [
             'password' => 'hashed',
-            'bloqueado_hasta' => 'datetime',
-            'reset_expires_at' => 'datetime',
-            'fecha_fin_suscripcion' => 'date',
         ];
     }
 

@@ -2,15 +2,15 @@
 
 namespace App\Domains\Comercial\Controllers;
 
-use App\Domains\Comercial\Services\ProveedorService;
+use App\Domains\Comercial\Services\CotizacionService;
 use Illuminate\Http\Request;
 use Exception;
 
-class ProveedorController
+class CotizacionController
 {
     protected $service;
 
-    public function __construct(ProveedorService $service)
+    public function __construct(CotizacionService $service)
     {
         $this->service = $service;
     }
@@ -19,23 +19,29 @@ class ProveedorController
     {
         return response()->json([
             'success' => true,
-            'data' => $this->service->obtenerProveedoresPorEmpresa($request->user()->empresa_id)
+            'data'    => $this->service->obtenerPorEmpresa($request->user()->empresa_id)
         ]);
     }
 
     public function store(Request $request)
     {
         try {
-            $datos = $request->all();
+            $datos = $request->except('detalles');
             $datos['empresa_id'] = $request->user()->empresa_id;
+            
+            $detalles = $request->input('detalles', []);
 
-            $proveedor = $this->service->registrarProveedor($datos);
+            if (empty($detalles)) {
+                throw new Exception("La cotización debe tener al menos un detalle.");
+            }
+
+            $cotizacion = $this->service->crearCotizacion($datos, $detalles);
 
             return response()->json([
                 'success' => true,
-                'data' => $proveedor,
-                'codigo_generado' => $proveedor->codigo_interno
+                'data'    => $cotizacion
             ], 201);
+            
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

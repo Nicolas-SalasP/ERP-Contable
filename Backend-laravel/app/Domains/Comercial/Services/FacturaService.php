@@ -8,6 +8,39 @@ use Exception;
 
 class FacturaService
 {
+    public function obtenerFacturasPorEmpresa(int $empresaId, ?string $estado = null)
+    {
+        $query = Factura::where('empresa_id', $empresaId)
+            ->with(['proveedor', 'cuentaBancaria']);
+
+        if ($estado) {
+            $query->where('estado', $estado);
+        }
+
+        return $query->orderBy('fecha_emision', 'desc')->get();
+    }
+
+    public function obtenerFacturaPorId(int $empresaId, int $facturaId)
+    {
+        $factura = Factura::where('empresa_id', $empresaId)
+            ->with(['proveedor', 'cuentaBancaria'])
+            ->find($facturaId);
+
+        if (!$factura) {
+            throw new Exception("La factura solicitada no existe o no pertenece a su empresa.");
+        }
+
+        return $factura;
+    }
+
+    public function verificarDuplicado(int $empresaId, int $proveedorId, string $numero): bool
+    {
+        return Factura::where('empresa_id', $empresaId)
+            ->where('proveedor_id', $proveedorId)
+            ->where('numero_factura', $numero)
+            ->exists();
+    }
+
     public function registrarFacturaCompra(array $datos): Factura
     {
         if (!isset($datos['monto_neto']) || $datos['monto_neto'] <= 0) {
@@ -23,9 +56,7 @@ class FacturaService
         }
 
         return DB::transaction(function () use ($datos, $neto, $iva, $bruto) {
-            $existe = Factura::where('proveedor_id', $datos['proveedor_id'])
-                ->where('numero_factura', $datos['numero_factura'])
-                ->exists();
+            $existe = $this->verificarDuplicado($datos['empresa_id'], $datos['proveedor_id'], $datos['numero_factura']);
 
             if ($existe) {
                 throw new Exception("La factura {$datos['numero_factura']} ya se encuentra registrada para este proveedor.");
