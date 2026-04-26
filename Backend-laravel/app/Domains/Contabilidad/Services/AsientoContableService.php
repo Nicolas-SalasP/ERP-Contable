@@ -1,51 +1,39 @@
 <?php
 
-namespace App\Domains\Contabilidad\Controllers;
+namespace App\Domains\Contabilidad\Services;
 
-use App\Domains\Contabilidad\Services\PlanCuentaService;
-use Illuminate\Http\Request;
+use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Contabilidad\Models\DetalleAsiento;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
-class PlanCuentaController
+class AsientoContableService
 {
-    protected $service;
-
-    public function __construct(PlanCuentaService $service)
+    public function registrarAsiento(array $datosAsiento, array $detalles): AsientoContable
     {
-        $this->service = $service;
-    }
-
-    public function index(Request $request)
-    {
-        $cuentas = $this->service->listarCuentas($request->user()->empresa_id);
-        return response()->json($cuentas);
-    }
-
-    public function store(Request $request)
-    {
-        try {
-            $datos = $request->validate([
-                'codigo'    => 'required|string',
-                'nombre'    => 'required|string',
-                'tipo'      => 'required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
-                'nivel'     => 'integer',
-                'imputable' => 'boolean'
-            ]);
-
-            $datos['empresa_id'] = $request->user()->empresa_id;
-
-            $cuenta = $this->service->registrarCuenta($datos);
-
-            return response()->json([
-                'success' => true,
-                'data'    => $cuenta
-            ], 201);
-
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 422);
+        $totalDebe = 0;
+        $totalHaber = 0;
+        foreach ($detalles as $detalle) {
+            $totalDebe += round((float) ($detalle['debe'] ?? 0), 2);
+            $totalHaber += round((float) ($detalle['haber'] ?? 0), 2);
         }
+        if (abs($totalDebe - $totalHaber) > 0.01) {
+            throw new Exception("Rechazado por Partida Doble: El Debe ({$totalDebe}) no cuadra con el Haber ({$totalHaber}).");
+        }
+
+        return DB::transaction(function () use ($datosAsiento, $detalles) {
+            $asiento = AsientoContable::create($datosAsiento);
+            foreach ($detalles as $detalle) {
+                $asiento->detalles()->create([
+                    'cuenta_contable' => $detalle['cuenta_contable'],
+                    'fecha'           => $detalle['fecha'] ?? $asiento->fecha,
+                    'tipo_operacion'  => $detalle['tipo_operacion'] ?? null,
+                    'debe'            => $detalle['debe'] ?? 0.00,
+                    'haber'           => $detalle['haber'] ?? 0.00,
+                ]);
+            }
+
+            return $asiento;
+        });
     }
 }
