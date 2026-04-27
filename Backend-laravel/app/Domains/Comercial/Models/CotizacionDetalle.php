@@ -11,15 +11,13 @@ class CotizacionDetalle extends Model
 
     protected $fillable = [
         'cotizacion_id',
+        'producto_id',
         'producto_nombre',
+        'descripcion',
         'cantidad',
-        'precio_unitario',
-        'subtotal',
-    ];
-
-    protected $casts = [
-        'precio_unitario' => 'decimal:2',
-        'subtotal' => 'decimal:2',
+        'precio',
+        'precio_unitario', 
+        'subtotal'
     ];
 
     public function cotizacion()

@@ -13,17 +13,29 @@ class Cotizacion extends Model
     protected $fillable = [
         'cliente_id',
         'nombre_cliente',
+        'numero_cotizacion',
         'fecha_emision',
+        'fecha_validez',
+        'validez',
+        'subtotal',
+        'porcentaje_descuento',
+        'monto_descuento',
+        'monto_neto',
+        'porcentaje_iva',
+        'monto_iva',
+        'monto_total',
         'total',
         'estado_id',
         'empresa_id',
         'es_afecta',
-        'validez',
+        'notas_condiciones'
     ];
 
     protected $casts = [
         'fecha_emision' => 'date',
+        'fecha_validez' => 'date',
         'total' => 'decimal:2',
+        'monto_total' => 'decimal:2',
         'es_afecta' => 'boolean',
     ];
 
