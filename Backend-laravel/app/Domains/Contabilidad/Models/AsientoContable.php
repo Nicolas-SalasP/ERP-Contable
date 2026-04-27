@@ -13,6 +13,7 @@ class AsientoContable extends Model
     protected $fillable = [
         'codigo_unico',
         'empresa_id',
+        'numero_comprobante',
         'centro_costo_id',
         'empleado_nombre',
         'fecha',
@@ -20,6 +21,8 @@ class AsientoContable extends Model
         'tipo_asiento',
         'origen_modulo',
         'origen_id',
+        'usuario_id',
+        'estado',
     ];
 
     protected $casts = [

@@ -13,9 +13,11 @@ class DatabaseSeeder extends Seeder
             RolSeeder::class,
             EstadoSuscripcionSeeder::class,
             EstadoCotizacionSeeder::class,
+            CatalogoPlanMaestroSeeder::class,
             EmpresaSeeder::class,
             CentroCostoSeeder::class,
             UserSeeder::class,
+            SincronizarCuentasSeeder::class,
             TestDataSeeder::class,
         ]);
     }
