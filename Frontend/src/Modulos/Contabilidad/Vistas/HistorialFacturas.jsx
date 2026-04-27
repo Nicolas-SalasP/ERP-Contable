@@ -211,11 +211,11 @@ const HistorialFacturas = () => {
     const [cuentasPlan, setCuentasPlan] = useState([]);
 
     useEffect(() => {
-        api.get('/proveedores')
+        api.get('/proveedores/catalogo')
             .then(res => { if (res.success) setListaProveedores(res.data); })
             .catch(err => console.error("Error", err));
-            
-        api.get('/contabilidad/plan-cuentas')
+
+        api.get('/contabilidad/cuentas')
             .then(res => {
                 if (res.success && res.data) {
                     const cuentasImputables = res.data.filter(c => c.imputable == 1 || c.imputable === true);
@@ -294,9 +294,9 @@ const HistorialFacturas = () => {
             const res = await api.get(`/facturas/${facturaId}/asiento`);
             if (res.success) {
                 setAsientoData(res.data);
-            } else { 
-                Swal.fire('Asiento no encontrado', 'Esta factura aún no ha sido procesada contablemente.', 'info'); 
-                setModalOpen(false); 
+            } else {
+                Swal.fire('Asiento no encontrado', 'Esta factura aún no ha sido procesada contablemente.', 'info');
+                setModalOpen(false);
             }
         } catch (error) {
             Swal.fire('Error', 'Hubo un problema al obtener el asiento contable.', 'error');
@@ -458,7 +458,7 @@ const HistorialFacturas = () => {
                                         onKeyDown={(e) => e.key === 'Enter' && ejecutarBusqueda(true)}
                                     />
                                 </div>
-                                
+
                                 {mostrarSugerencias && sugerencias.length > 0 && (
                                     <div className="absolute top-full left-0 w-full bg-white border border-slate-200 mt-2 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 custom-scrollbar">
                                         {sugerencias.map(p => (
@@ -521,35 +521,32 @@ const HistorialFacturas = () => {
                             </div>
                         ) : (
                             <>
-                                {/* VERSIÓN MÓVIL (Tarjetas con Grid y Corrección de NaN) */}
                                 <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
                                     {facturas.map((fac) => (
                                         <div key={fac.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative">
                                             <div className={`absolute top-0 left-0 w-1.5 h-full rounded-l-xl ${fac.estado === 'PAGADA' ? 'bg-emerald-500' : fac.estado === 'ANULADA' ? 'bg-red-400' : 'bg-amber-400'}`}></div>
-                                            
+
                                             <div className="flex justify-between items-start mb-2 pl-2">
                                                 <div>
                                                     <div className="text-xs font-bold text-slate-500 font-mono mb-0.5">
                                                         {vistaActual === 2 && fac.codigo_asiento ? `Asiento: ${fac.codigo_asiento}` : `Fac: ${fac.numero_factura}`}
                                                     </div>
-                                                    <h3 className="font-bold text-slate-800 leading-tight">{fac.nombre_proveedor}</h3>
+                                                    <h3 className="font-bold text-slate-800 leading-tight">{fac.proveedor?.razon_social || 'Proveedor Desconocido'}</h3>
                                                 </div>
-                                                <span className={`inline-flex px-2 py-1 text-[10px] font-bold rounded uppercase border ${
-                                                    fac.estado === 'PAGADA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                                                    fac.estado === 'ANULADA' ? 'bg-red-50 text-red-700 border-red-200' : 
-                                                    'bg-amber-50 text-amber-700 border-amber-200'
-                                                }`}>
+                                                <span className={`inline-flex px-2 py-1 text-[10px] font-bold rounded uppercase border ${fac.estado === 'PAGADA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                        fac.estado === 'ANULADA' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                            'bg-amber-50 text-amber-700 border-amber-200'
+                                                    }`}>
                                                     {fac.estado === 'REGISTRADA' ? 'Pendiente' : fac.estado}
                                                 </span>
                                             </div>
-                                            
+
                                             <div className="pl-2 mb-4">
                                                 <div className="text-sm text-slate-600 flex items-center gap-2 mb-2">
-                                                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> 
+                                                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                                     {formatDate(fac.fecha_emision)}
                                                 </div>
-                                                
-                                                {/* CORRECCIÓN DE NaN: Vista detallada muestra total, Vista contable muestra desglose */}
+
                                                 {vistaActual === 1 ? (
                                                     <div className="text-xl font-black text-slate-800 mt-1">
                                                         {formatCurrency(fac.monto_bruto)}
@@ -572,11 +569,10 @@ const HistorialFacturas = () => {
                                                 )}
                                             </div>
 
-                                            {/* BOTONERA MOVIL MEJORADA (CSS GRID) */}
                                             <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 pl-2">
                                                 {fac.estado === 'REGISTRADA' && (
                                                     <button onClick={() => abrirModalPago(fac)} className="w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs py-2.5 rounded-lg transition-colors border border-emerald-100 flex items-center justify-center gap-2">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> 
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                         Pagar Factura
                                                     </button>
                                                 )}
@@ -601,7 +597,6 @@ const HistorialFacturas = () => {
                                     ))}
                                 </div>
 
-                                {/* VERSIÓN ESCRITORIO (Tabla) */}
                                 <div className="hidden md:block overflow-visible pb-10">
                                     <table className="min-w-full divide-y divide-slate-100">
                                         <thead className="bg-slate-50 border-b border-slate-200">
@@ -633,8 +628,8 @@ const HistorialFacturas = () => {
                                                         <>
                                                             <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-mono text-xs">{formatDate(fac.fecha_emision)}</td>
                                                             <td className="px-6 py-4">
-                                                                <div className="font-bold text-slate-800">{fac.nombre_proveedor}</div>
-                                                                <div className="text-xs text-slate-400 mt-0.5">{fac.rut_proveedor}</div>
+                                                                <div className="font-bold text-slate-800">{fac.proveedor?.razon_social || 'Proveedor Desconocido'}</div>
+                                                                <div className="text-xs text-slate-400 mt-0.5">{fac.proveedor?.rut}</div>
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap">
                                                                 <span className="font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 font-bold">N° {fac.numero_factura}</span>
@@ -767,13 +762,12 @@ const HistorialFacturas = () => {
                     </div>
                 </>
             ) : (
-                /* VISTA 3: RECLASIFICACIÓN */
                 <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-visible animate-fade-in flex flex-col">
                     <div className="bg-slate-50 p-4 md:p-8 border-b border-slate-200 rounded-t-2xl">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                             <div>
                                 <h2 className="text-xl font-black text-slate-800">Asiento Contable N° {facturaActiva?.codigo_asiento}</h2>
-                                <p className="text-sm text-slate-500 font-medium">Factura N° {facturaActiva?.numero_factura} - {facturaActiva?.nombre_proveedor}</p>
+                                <p className="text-sm text-slate-500 font-medium">Factura N° {facturaActiva?.numero_factura} - {facturaActiva?.proveedor?.razon_social}</p>
                             </div>
                             <button onClick={() => setVistaActual(1)} className="w-full md:w-auto text-slate-500 hover:text-red-500 transition-colors px-4 py-2.5 bg-white rounded-lg border border-slate-200 shadow-sm font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg> Cancelar
@@ -816,7 +810,6 @@ const HistorialFacturas = () => {
                             </div>
                         ) : (
                             <div className="border border-slate-200 rounded-xl overflow-visible shadow-sm">
-                                {/* Tabla Desktop, Tarjetas Móvil para Reclasificación */}
                                 <div className="hidden md:block overflow-visible pb-24">
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-900 text-white text-xs uppercase tracking-wider font-bold">
@@ -853,8 +846,6 @@ const HistorialFacturas = () => {
                                         </tbody>
                                     </table>
                                 </div>
-
-                                {/* Tarjetas para Reclasificación en Móvil */}
                                 <div className="md:hidden flex flex-col divide-y divide-slate-100 pb-10">
                                     {asientoReclasificacion?.detalles?.map((linea, index) => {
                                         const isBloqueada = linea.cuenta_contable === '110001' || linea.cuenta_contable === '210101' || parseFloat(linea.haber) > 0;
