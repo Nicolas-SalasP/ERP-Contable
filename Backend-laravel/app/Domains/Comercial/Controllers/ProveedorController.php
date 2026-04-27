@@ -23,6 +23,14 @@ class ProveedorController
         ]);
     }
 
+    public function catalogo(Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->service->obtenerCatalogoBasico($request->user()->empresa_id)
+        ]);
+    }
+
     public function store(Request $request)
     {
         try {

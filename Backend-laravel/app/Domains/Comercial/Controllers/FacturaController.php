@@ -25,7 +25,18 @@ class FacturaController
 
     public function historial(Request $request)
     {
-        return $this->index($request);
+        $filtros = $request->only(['estado', 'search', 'num', 'limit']);
+        $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_id, $filtros);
+
+        return response()->json([
+            'success' => true,
+            'data' => $paginador->items(),
+            'pagination' => [
+                'total' => $paginador->total(),
+                'totalPages' => $paginador->lastPage(),
+                'page' => $paginador->currentPage()
+            ]
+        ]);
     }
 
     public function check(Request $request)

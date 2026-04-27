@@ -27,20 +27,22 @@ Route::middleware('auth:sanctum')->group(function () {
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
 
-    // Comercial
+    // Comercial - Clientes
     Route::apiResource('clientes', ClienteController::class)->except(['create', 'edit', 'show', 'update']);
+
+    // Comercial - Proveedores
+    Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo']);
     Route::apiResource('proveedores', ProveedorController::class)->except(['create', 'edit', 'show', 'update', 'destroy']);
+
+    // Comercial - Facturas
     Route::get('/facturas/historial', [FacturaController::class, 'historial']);
     Route::get('/facturas/check', [FacturaController::class, 'check']);
     Route::apiResource('facturas', FacturaController::class)->except(['create', 'edit', 'update']);
+
+    // Comercial - Cotizaciones
     Route::apiResource('cotizaciones', CotizacionController::class)->except(['create', 'edit', 'show', 'update']);
 
     // Tesoreria - Cuentas de Proveedores
-    Route::get('/cuentas-bancarias/proveedor/{proveedorId}', [CuentaProveedorController::class, 'index']);
-    Route::post('/cuentas-bancarias', [CuentaProveedorController::class, 'store']);
-    Route::delete('/cuentas-bancarias/{id}', [CuentaProveedorController::class, 'destroy']);
-
-    // Tesoreria - Cuentas Bancarias
     Route::get('/cuentas-bancarias/proveedor/{proveedorId}', [CuentaProveedorController::class, 'index']);
     Route::post('/cuentas-bancarias', [CuentaProveedorController::class, 'store']);
     Route::delete('/cuentas-bancarias/{id}', [CuentaProveedorController::class, 'destroy']);
@@ -50,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tesoreria/cuentas-propias', [BancoController::class, 'cuentasEmpresa']);
     Route::post('/tesoreria/cuentas-propias', [BancoController::class, 'storeCuenta']);
     Route::post('/tesoreria/conciliar/factura-compra', [ConciliacionController::class, 'pagarFacturaCompra']);
+    Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa']);
 
     // Contabilidad
     Route::get('/contabilidad/cuentas', [PlanCuentaController::class, 'index']);
@@ -57,5 +60,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/contabilidad/asientos', [AsientoContableController::class, 'index']);
     Route::post('/contabilidad/asientos', [AsientoContableController::class, 'store']);
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor']);
-
 });

@@ -17,18 +17,20 @@ class PlanCuentaController
 
     public function index(Request $request)
     {
-        $cuentas = $this->service->listarCuentas($request->user()->empresa_id);
-        return response()->json($cuentas);
+        return response()->json([
+            'success' => true,
+            'data' => $this->service->listarCuentas($request->user()->empresa_id)
+        ]);
     }
 
     public function store(Request $request)
     {
         try {
             $datos = $request->validate([
-                'codigo'    => 'required|string',
-                'nombre'    => 'required|string',
-                'tipo'      => 'required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
-                'nivel'     => 'integer',
+                'codigo' => 'required|string',
+                'nombre' => 'required|string',
+                'tipo' => 'required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
+                'nivel' => 'integer',
                 'imputable' => 'boolean'
             ]);
 
@@ -37,7 +39,7 @@ class PlanCuentaController
 
             return response()->json([
                 'success' => true,
-                'data'    => $cuenta
+                'data' => $cuenta
             ], 201);
 
         } catch (Exception $e) {

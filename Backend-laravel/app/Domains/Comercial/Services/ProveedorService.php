@@ -15,6 +15,14 @@ class ProveedorService
             ->get();
     }
 
+    public function obtenerCatalogoBasico(int $empresaId)
+    {
+        return Proveedor::where('empresa_id', $empresaId)
+            ->select('id', 'rut', 'razon_social', 'codigo_interno')
+            ->orderBy('razon_social')
+            ->get();
+    }
+
     public function registrarProveedor(array $datos): Proveedor
     {
         $codigo = !empty($datos['codigo']) ? $datos['codigo'] : 'PROV-' . rand(1000, 9999);

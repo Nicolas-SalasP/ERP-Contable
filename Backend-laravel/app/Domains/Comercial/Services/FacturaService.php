@@ -20,6 +20,30 @@ class FacturaService
         return $query->orderBy('fecha_emision', 'desc')->get();
     }
 
+    public function obtenerFacturasPaginadas(int $empresaId, array $filtros)
+    {
+        $query = Factura::where('empresa_id', $empresaId)
+            ->with(['proveedor', 'cuentaBancaria']);
+
+        if (!empty($filtros['estado'])) {
+            $query->where('estado', $filtros['estado']);
+        }
+
+        if (!empty($filtros['num'])) {
+            $query->where('numero_factura', 'like', "%{$filtros['num']}%");
+        }
+
+        if (!empty($filtros['search'])) {
+            $query->whereHas('proveedor', function ($q) use ($filtros) {
+                $q->where('razon_social', 'like', "%{$filtros['search']}%")
+                    ->orWhere('rut', 'like', "%{$filtros['search']}%");
+            });
+        }
+
+        $limit = $filtros['limit'] ?? 10;
+        return $query->orderBy('fecha_emision', 'desc')->paginate($limit);
+    }
+
     public function obtenerFacturaPorId(int $empresaId, int $facturaId)
     {
         $factura = Factura::where('empresa_id', $empresaId)
