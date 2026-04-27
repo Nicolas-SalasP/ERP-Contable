@@ -4,6 +4,7 @@ namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
 use Exception;
@@ -11,6 +12,7 @@ use Exception;
 class FacturaService
 {
     protected $asientoService;
+
     public function __construct(AsientoContableService $asientoService)
     {
         $this->asientoService = $asientoService;
@@ -112,7 +114,7 @@ class FacturaService
             ]);
 
             $anio = date('y', strtotime($factura->fecha_emision));
-            $tipo = '26'; // 26 = Factura de Compra
+            $tipo = '26';
             $secuencia = str_pad($factura->id, 6, '0', STR_PAD_LEFT);
             $comprobanteEstructurado = $anio . $tipo . $secuencia;
 
@@ -121,49 +123,52 @@ class FacturaService
                 'comprobante_contable' => $comprobanteEstructurado
             ]);
 
-            $cuentaGasto = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '510101')->first();
-            $cuentaIva = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '110601')->first();
-            $cuentaProveedor = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '210101')->first();
+            $codigoDestino   = $datos['cuentaDestino'] ?? '352130'; 
+            
+            $cuentaIva       = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '353350')->first();
+            $cuentaProveedor = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '352130')->first(); 
+            $cuentaGasto     = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoDestino)->first();
 
             if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
-                throw new Exception("Centralización fallida: La empresa no tiene su Plan de Cuentas inicializado con los códigos del SII (Falta 510101, 110601 o 210101).");
+                throw new Exception("Centralización fallida: Verifique que las cuentas 353350 (IVA), 352130 (Puente) y {$codigoDestino} (Destino) existan.");
             }
 
-            $datosAsiento = [
+           $datosAsiento = [
                 'empresa_id' => $datos['empresa_id'],
-                'numero_comprobante' => $comprobanteEstructurado,
-                'fecha' => $datos['fecha_emision'],
-                'glosa' => "Centralización Automática Factura Compra N° {$datos['numero_factura']}",
+                'numero_comprobante' => $comprobanteEstructurado, 
+                'fecha' => $datos['fechaContable'] ?? $datos['fecha_emision'],
+                'glosa' => "Centralización Automática Factura Compra N° " . $datos['numero_factura'],
                 'estado' => 'CONTABILIZADO',
-                'usuario_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
+                'usuario_id' => auth()->id(),
             ];
 
-            $detallesAsiento = [
-                [
-                    'cuenta_contable' => $cuentaGasto->codigo,
-                    'debe' => $neto,
-                    'haber' => 0,
-                ],
-                [
-                    'cuenta_contable' => $cuentaIva->codigo,
+            $asiento = AsientoContable::create($datosAsiento);
+
+            // 3. Detalles del Asiento
+            // DEBE: El Gasto (Monto Neto)
+            $asiento->detalles()->create([
+                'cuenta_contable' => $cuentaGasto->id,
+                'debe' => $neto, 
+                'haber' => 0,
+            ]);
+
+            // DEBE: IVA (si aplica)
+            if (!empty($datos['tieneIva'])) {
+                $asiento->detalles()->create([
+                    'cuenta_contable' => $cuentaIva->id,
                     'debe' => $iva,
                     'haber' => 0,
-                ],
-                [
-                    'cuenta_contable' => $cuentaProveedor->codigo,
-                    'debe' => 0,
-                    'haber' => $bruto,
-                ]
-            ];
-
-            if ($iva <= 0) {
-                unset($detallesAsiento[1]);
-                $detallesAsiento = array_values($detallesAsiento);
+                ]);
             }
 
-            $this->asientoService->registrarAsiento($datosAsiento, $detallesAsiento);
+            // HABER: La cuenta puente (Monto Total)
+            $asiento->detalles()->create([
+                'cuenta_contable' => $cuentaProveedor->id,
+                'debe' => 0,
+                'haber' => $bruto,
+            ]);
 
-            return $factura;
+            return $factura; 
         });
     }
 }

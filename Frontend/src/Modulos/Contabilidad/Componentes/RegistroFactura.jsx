@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ModalGenerico from '../../../Componentes/ModalGenerico';
+import BuscadorCuentaContable from './BuscadorCuentaContable';
 import { api } from '../../../Configuracion/api';
 
 const formatCurrency = (value) => {
@@ -11,16 +12,6 @@ const cleanNumber = (value) => {
     if (!value) return 0;
     return parseInt(value.toString().replace(/\D/g, '')) || 0;
 };
-
-// --- Cuentas rápidas comunes para compras ---
-const opcionesCuentas = [
-    { codigo: '690199', nombre: 'Compras por Clasificar (Cuenta Puente)' },
-    { codigo: '110301', nombre: 'Mercaderías para Reventa (Inventario)' },
-    { codigo: '120106', nombre: 'Equipos Computacionales (Activo Fijo)' },
-    { codigo: '620109', nombre: 'Artículos de Librería y Oficina (Gasto)' },
-    { codigo: '690101', nombre: 'Gastos Menores (Gasto)' },
-    { codigo: '660104', nombre: 'Consultorías Varias (Servicios)' }
-];
 
 const IvaWarningModal = ({ isOpen, onClose, onConfirm, calculado, ingresado }) => {
     const [motivo, setMotivo] = useState('');
@@ -258,7 +249,6 @@ const RegistroFactura = () => {
 
     return (
         <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden mt-8 border border-slate-200 font-sans">
-
             <IvaWarningModal
                 isOpen={showIvaModal}
                 onClose={() => setShowIvaModal(false)}
@@ -286,7 +276,7 @@ const RegistroFactura = () => {
                 message={successData ? <div className="text-center mt-4"><div className="bg-slate-100 p-4 rounded-lg inline-block"><p className="text-xs text-slate-500 uppercase font-bold tracking-wider">ID Interno</p><p className="text-3xl font-mono font-bold text-slate-800">{successData.codigo}</p></div></div> : null}
             />
 
-            <div className="bg-slate-900 px-8 py-6 flex flex-col md:flex-row justify-between items-center text-white">
+            <div className="bg-slate-900 rounded-t-xl px-8 py-6 flex flex-col md:flex-row justify-between items-center text-white">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Registro de Factura</h2>
                     <p className="text-slate-400 text-sm mt-1">Gestión de Compras e Inventario</p>
@@ -386,8 +376,6 @@ const RegistroFactura = () => {
                         </div>
 
                         <div className="flex flex-col gap-6">
-                            
-                            {/* --- AJUSTE: AHORA SON 3 COLUMNAS PARA INCLUIR LA FECHA CONTABLE --- */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">N° Factura</label>
@@ -498,8 +486,8 @@ const RegistroFactura = () => {
                             </label>
                         </div>
 
-                        <div className="max-w-4xl mx-auto overflow-hidden border border-slate-200 rounded-xl shadow-lg bg-white">
-                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center">
+                        <div className="max-w-4xl mx-auto border border-slate-200 rounded-xl shadow-lg bg-white mb-36">
+                            <div className="bg-slate-50 rounded-t-xl px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center">
                                 <h3 className="font-bold text-slate-700">Previsualización de Asiento</h3>
                                 <span className="text-xs font-mono text-slate-400 mt-1 md:mt-0">AUTOMÁTICO</span>
                             </div>
@@ -519,7 +507,7 @@ const RegistroFactura = () => {
                                     <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0">
                                         <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
                                             <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
-                                            <span className="text-slate-300">-</span>
+                                            <span className="font-bold text-slate-900 text-lg bg-emerald-50/30 px-2 rounded">{formatCurrency(formData.montoNeto)}</span>
                                         </div>
                                         <div className="w-full md:w-1/2 flex justify-between md:block text-right">
                                             <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
@@ -555,26 +543,27 @@ const RegistroFactura = () => {
                                     </div>
                                 )}
 
-                                <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-yellow-50/30 transition">
-                                    <div className="w-full md:w-1/2 pr-4">
-                                        
-                                        {/* --- NUEVO SELECTOR DE CUENTAS --- */}
-                                        <select 
-                                            name="cuentaDestino"
-                                            value={formData.cuentaDestino}
-                                            onChange={handleChange}
-                                            className="w-full border border-slate-300 rounded-lg p-2 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
-                                        >
-                                            {opcionesCuentas.map(c => (
-                                                <option key={c.codigo} value={c.codigo}>{c.codigo} - {c.nombre}</option>
-                                            ))}
-                                        </select>
-                                        <span className="text-[10px] text-slate-400 mt-1 block">Seleccione dónde clasificar este monto neto.</span>
+                                {/* --- FILA DE CUENTA DE DESTINO --- */}
+                                <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-blue-50/30 transition rounded-b-xl relative z-30">
+                                    <div className="w-full md:w-3/5 pr-0 md:pr-10">
+                                        <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
+                                            Clasificar Compra en Cuenta:
+                                        </label>
+                                        <BuscadorCuentaContable
+                                            cuentaSeleccionada={formData.cuentaDestino}
+                                            setCuentaSeleccionada={(codigo) => setFormData(prev => ({ ...prev, cuentaDestino: codigo }))}
+                                        />
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-2 block ml-1">
+                                            <i className="fas fa-info-circle mr-1 text-blue-400"></i>
+                                            Busque por código numérico o nombre
+                                        </span>
                                     </div>
-                                    <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0">
+                                    <div className="w-full md:w-2/5 flex flex-col md:flex-row gap-2 md:gap-0 items-center mt-2 md:mt-0">
                                         <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
                                             <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
-                                            <span className="font-bold text-slate-900 text-lg bg-emerald-50/30 px-2 rounded">{formatCurrency(formData.montoNeto)}</span>
+                                            <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1 rounded shadow-sm">
+                                                {formatCurrency(formData.montoNeto)}
+                                            </span>
                                         </div>
                                         <div className="w-full md:w-1/2 flex justify-between md:block text-right">
                                             <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
@@ -588,7 +577,7 @@ const RegistroFactura = () => {
                 )}
             </div>
 
-            <div className="bg-slate-50 p-4 md:px-8 md:py-6 flex flex-col md:flex-row justify-between border-t border-slate-200 gap-3">
+            <div className="bg-slate-50 rounded-b-xl relative z-10 p-4 md:px-8 md:py-6 flex flex-col md:flex-row justify-between border-t border-slate-200 gap-3">
                 <button
                     onClick={prevStep}
                     disabled={currentStep === 1}

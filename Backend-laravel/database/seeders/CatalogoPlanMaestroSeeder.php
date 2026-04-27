@@ -3,81 +3,90 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Domains\Contabilidad\Models\CatalogoPlanMaestro;
 use Illuminate\Support\Facades\DB;
 
 class CatalogoPlanMaestroSeeder extends Seeder
 {
     public function run(): void
     {
-        // Limpiamos la tabla antes de inyectar
-        DB::table('catalogo_plan_maestro')->truncate();
-
         $cuentas = [
-            // ==========================================
-            // 1. ACTIVOS (Circulantes y Fijos)
-            // ==========================================
-            ['codigo' => '110101', 'nombre' => 'Caja', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '110102', 'nombre' => 'Banco', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '110201', 'nombre' => 'Depósitos a Plazo', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '110301', 'nombre' => 'Clientes (Deudores por Venta)', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '110302', 'nombre' => 'Documentos por Cobrar', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '110401', 'nombre' => 'Anticipos al Personal', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '110501', 'nombre' => 'Existencias / Mercaderías', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '110601', 'nombre' => 'IVA Crédito Fiscal', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '110602', 'nombre' => 'PPM por Recuperar', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '120101', 'nombre' => 'Terrenos y Bienes Raíces', 'tipo' => 'ACTIVO', 'nivel' => 2, 'imputable' => true],
-            ['codigo' => '120102', 'nombre' => 'Maquinarias y Equipos', 'tipo' => 'ACTIVO', 'nivel' => 2, 'imputable' => true],
-            ['codigo' => '120103', 'nombre' => 'Muebles y Útiles', 'tipo' => 'ACTIVO', 'nivel' => 2, 'imputable' => true],
-            ['codigo' => '120201', 'nombre' => 'Depreciación Acumulada', 'tipo' => 'ACTIVO', 'nivel' => 2, 'imputable' => true],
+            // --- ACTIVOS (1xxxx) ---
+            ['codigo' => '111205', 'nombre' => 'Software', 'tipo' => 'ACTIVO'],
+            ['codigo' => '111206', 'nombre' => 'Depreciacion acumulada Software', 'tipo' => 'ACTIVO'],
+            ['codigo' => '112005', 'nombre' => 'Edificios', 'tipo' => 'ACTIVO'],
+            ['codigo' => '112105', 'nombre' => 'Maquinarias y equipos', 'tipo' => 'ACTIVO'],
+            ['codigo' => '112205', 'nombre' => 'Hardware', 'tipo' => 'ACTIVO'],
+            ['codigo' => '112210', 'nombre' => 'Vehiculos', 'tipo' => 'ACTIVO'],
+            ['codigo' => '112215', 'nombre' => 'Camiones', 'tipo' => 'ACTIVO'],
+            ['codigo' => '112220', 'nombre' => 'Muebles e instalaciones', 'tipo' => 'ACTIVO'],
+            ['codigo' => '151005', 'nombre' => 'Inventario Materiales', 'tipo' => 'ACTIVO'],
+            ['codigo' => '151010', 'nombre' => 'Inventario Insumos', 'tipo' => 'ACTIVO'],
+            ['codigo' => '151225', 'nombre' => 'Mercaderia entregada en consignacion', 'tipo' => 'ACTIVO'],
+            ['codigo' => '152005', 'nombre' => 'Cuentas por Cobrar Clientes', 'tipo' => 'ACTIVO'],
+            ['codigo' => '152045', 'nombre' => 'Cheques en cartera', 'tipo' => 'ACTIVO'],
+            ['codigo' => '152406', 'nombre' => 'Fondos por Rendir', 'tipo' => 'ACTIVO'],
+            ['codigo' => '152408', 'nombre' => 'Canje divisa', 'tipo' => 'ACTIVO'],
+            ['codigo' => '152540', 'nombre' => 'IVA por cobrar', 'tipo' => 'ACTIVO'],
+            ['codigo' => '152541', 'nombre' => 'PPM por recuperar', 'tipo' => 'ACTIVO'],
+            ['codigo' => '154020', 'nombre' => 'Caja Chica', 'tipo' => 'ACTIVO'],
+            ['codigo' => '154205', 'nombre' => 'Banco Santander CLP', 'tipo' => 'ACTIVO'],
+            ['codigo' => '154230', 'nombre' => 'Banco Estado CLP', 'tipo' => 'ACTIVO'],
+            ['codigo' => '154236', 'nombre' => 'Banco Itau CLP', 'tipo' => 'ACTIVO'],
+            ['codigo' => '154240', 'nombre' => 'Banco Security CLP', 'tipo' => 'ACTIVO'],
 
-            // ==========================================
-            // 2. PASIVOS (Corto y Largo Plazo)
-            // ==========================================
-            ['codigo' => '210101', 'nombre' => 'Proveedores', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '210102', 'nombre' => 'Acreedores Varios', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '210103', 'nombre' => 'Honorarios por Pagar', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '210201', 'nombre' => 'IVA Débito Fiscal', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '210202', 'nombre' => 'Impuesto Único de los Trabajadores', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '210203', 'nombre' => 'Retenciones 2da Categoría (13%)', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '210301', 'nombre' => 'Remuneraciones por Pagar', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '210302', 'nombre' => 'Instituciones Previsionales por Pagar', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '210401', 'nombre' => 'Obligaciones con Bancos a Corto Plazo', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '220101', 'nombre' => 'Obligaciones con Bancos a Largo Plazo', 'tipo' => 'PASIVO', 'nivel' => 2, 'imputable' => true],
+            // --- PATRIMONIO (31xxx) ---
+            ['codigo' => '311005', 'nombre' => 'Resultado Acumulado', 'tipo' => 'PATRIMONIO'],
+            ['codigo' => '311406', 'nombre' => 'Correccion Monetaria Patrimonio', 'tipo' => 'PATRIMONIO'],
 
-            // ==========================================
-            // 3. PATRIMONIO
-            // ==========================================
-            ['codigo' => '310101', 'nombre' => 'Capital Pagado', 'tipo' => 'PATRIMONIO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '310201', 'nombre' => 'Utilidades Retenidas (Acumuladas)', 'tipo' => 'PATRIMONIO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '310202', 'nombre' => 'Pérdidas Acumuladas', 'tipo' => 'PATRIMONIO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '310301', 'nombre' => 'Utilidad o Pérdida del Ejercicio', 'tipo' => 'PATRIMONIO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '310401', 'nombre' => 'Cuenta Obligada Socios', 'tipo' => 'PATRIMONIO', 'nivel' => 1, 'imputable' => true],
+            // --- PASIVOS (33xxx - 35xxx) ---
+            ['codigo' => '331005', 'nombre' => 'Provision Impuesto a la Renta', 'tipo' => 'PASIVO'],
+            ['codigo' => '352050', 'nombre' => 'Cheques por pagar', 'tipo' => 'PASIVO'],
+            ['codigo' => '352060', 'nombre' => 'Tarjetas de credito', 'tipo' => 'PASIVO'],
+            ['codigo' => '352075', 'nombre' => 'Linea sobregiro', 'tipo' => 'PASIVO'],
+            ['codigo' => '352105', 'nombre' => 'Cuentas por pagar', 'tipo' => 'PASIVO'],
+            ['codigo' => '352130', 'nombre' => 'Facturas por pagar (Puente)', 'tipo' => 'PASIVO'],
+            ['codigo' => '352135', 'nombre' => 'Facturas por pagar Honorarios', 'tipo' => 'PASIVO'],
+            ['codigo' => '353205', 'nombre' => 'Remuneraciones por pagar', 'tipo' => 'PASIVO'],
+            ['codigo' => '353242', 'nombre' => 'Impuesto Unico Trabajadores', 'tipo' => 'PASIVO'],
+            ['codigo' => '353245', 'nombre' => 'Retenciones AFP', 'tipo' => 'PASIVO'],
+            ['codigo' => '353350', 'nombre' => 'IVA por Cobrar (Transito)', 'tipo' => 'PASIVO'],
+            ['codigo' => '353360', 'nombre' => 'IVA por pagar', 'tipo' => 'PASIVO'],
+            ['codigo' => '353410', 'nombre' => 'Honorarios devengados por pagar', 'tipo' => 'PASIVO'],
 
-            // ==========================================
-            // 4. INGRESOS (Resultados Positivos)
-            // ==========================================
-            ['codigo' => '410101', 'nombre' => 'Ingresos por Ventas del Giro', 'tipo' => 'INGRESO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '410102', 'nombre' => 'Ingresos por Servicios del Giro', 'tipo' => 'INGRESO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '410201', 'nombre' => 'Ingresos Financieros (Intereses)', 'tipo' => 'INGRESO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '410301', 'nombre' => 'Otros Ingresos Fuera de la Explotación', 'tipo' => 'INGRESO', 'nivel' => 1, 'imputable' => true],
+            // --- INGRESOS (5xxxx) ---
+            ['codigo' => '501105', 'nombre' => 'Ventas Nacionales', 'tipo' => 'INGRESO'],
+            ['codigo' => '501110', 'nombre' => 'Ventas Servicios', 'tipo' => 'INGRESO'],
+            ['codigo' => '501205', 'nombre' => 'Ventas - Exportacion', 'tipo' => 'INGRESO'],
 
-            // ==========================================
-            // 5. GASTOS Y COSTOS (Resultados Negativos)
-            // ==========================================
-            ['codigo' => '510101', 'nombre' => 'Costo de Ventas / Gastos Generales', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '510201', 'nombre' => 'Remuneraciones (Sueldos)', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '510202', 'nombre' => 'Honorarios', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '510203', 'nombre' => 'Leyes Sociales (Aporte Patronal)', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '510301', 'nombre' => 'Arriendos Pagados', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '510302', 'nombre' => 'Gastos de Administración y Ventas', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '510401', 'nombre' => 'Depreciación del Ejercicio', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '510501', 'nombre' => 'Gastos Financieros e Intereses', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
-            ['codigo' => '510601', 'nombre' => 'Castigo de Deudores Incobrables', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => true],
+            // --- COSTOS Y GASTOS (6xxxx - 9xxxx) ---
+            ['codigo' => '601205', 'nombre' => 'Costo Ventas Nacional', 'tipo' => 'GASTO'],
+            ['codigo' => '601705', 'nombre' => 'Remuneraciones (Operaciones)', 'tipo' => 'GASTO'],
+            ['codigo' => '601707', 'nombre' => 'Aporte patronal', 'tipo' => 'GASTO'],
+            ['codigo' => '603505', 'nombre' => 'Flete maritimo', 'tipo' => 'GASTO'],
+            ['codigo' => '603507', 'nombre' => 'Flete aereo-terrestre', 'tipo' => 'GASTO'],
+            ['codigo' => '605305', 'nombre' => 'Reparacion y Mantencion', 'tipo' => 'GASTO'],
+            ['codigo' => '605405', 'nombre' => 'Aseo y Ornato', 'tipo' => 'GASTO'],
+            ['codigo' => '606405', 'nombre' => 'Gastos de viaje', 'tipo' => 'GASTO'],
+            ['codigo' => '606406', 'nombre' => 'Viatico', 'tipo' => 'GASTO'],
+            ['codigo' => '606705', 'nombre' => 'Gastos telefonia fija', 'tipo' => 'GASTO'],
+            ['codigo' => '606710', 'nombre' => 'Gastos telefonia movil', 'tipo' => 'GASTO'],
+            ['codigo' => '606730', 'nombre' => 'Insumos de oficina', 'tipo' => 'GASTO'],
+            ['codigo' => '607125', 'nombre' => 'Electricidad', 'tipo' => 'GASTO'],
+            ['codigo' => '607130', 'nombre' => 'Agua', 'tipo' => 'GASTO'],
+            ['codigo' => '608010', 'nombre' => 'Gastos TI asignados', 'tipo' => 'GASTO'],
+            ['codigo' => '905510', 'nombre' => 'Gastos bancarios', 'tipo' => 'GASTO'],
+            ['codigo' => '905530', 'nombre' => 'Commission garantias', 'tipo' => 'GASTO'],
+            ['codigo' => '905805', 'nombre' => 'Perdida tipo de cambio', 'tipo' => 'GASTO'],
+            ['codigo' => '999999', 'nombre' => 'Cancelaciones / Ajustes Finales', 'tipo' => 'GASTO'],
         ];
 
+        DB::table('catalogo_plan_maestro')->truncate();
+
         foreach ($cuentas as $cuenta) {
-            CatalogoPlanMaestro::create($cuenta);
+            DB::table('catalogo_plan_maestro')->insert(array_merge($cuenta, [
+                'nivel' => 1,
+                'imputable' => true,
+            ]));
         }
     }
 }
