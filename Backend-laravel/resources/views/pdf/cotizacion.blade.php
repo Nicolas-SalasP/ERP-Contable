@@ -150,9 +150,10 @@
         <tr>
             <td class="info-izq">
                 <strong>{{ $cotizacion->nombre_cliente }}</strong><br>
+                Atención: {{ $cotizacion->cliente->contacto_nombre ?? 'S/I' }}<br>
                 RUT: {{ $cotizacion->cliente->rut ?? 'N/A' }}<br>
-                Email: {{ $cotizacion->cliente->email_contacto ?? 'N/A' }}<br>
-                Teléfono: {{ $cotizacion->cliente->telefono ?? 'N/A' }}
+                Email: {{ $cotizacion->cliente->contacto_email ?? $cotizacion->cliente->email ?? 'S/I' }}<br>
+                Teléfono: {{ $cotizacion->cliente->contacto_telefono ?? $cotizacion->cliente->telefono ?? 'S/I' }}
             </td>
             <td class="info-der">
                 Fecha de Emisión: {{ $fechaEmision->format('d-m-Y') }}<br>

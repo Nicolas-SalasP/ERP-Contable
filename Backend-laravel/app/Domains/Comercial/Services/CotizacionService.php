@@ -32,9 +32,9 @@ class CotizacionService
             $porcentajeDescuento = $datos['porcentaje_descuento'] ?? 0;
             $montoDescuento = round($subtotalCalculado * ($porcentajeDescuento / 100));
             $montoNeto = $subtotalCalculado - $montoDescuento;
-
-            $porcentajeIva = $datos['porcentaje_iva'] ?? 19;
-            $montoIva = round($montoNeto * ($porcentajeIva / 100));
+            $esAfecta = isset($datos['es_afecta']) ? (bool) $datos['es_afecta'] : true;
+            $porcentajeIva = $esAfecta ? ($datos['porcentaje_iva'] ?? 19) : 0;
+            $montoIva = $esAfecta ? round($montoNeto * ($porcentajeIva / 100)) : 0;
             $montoTotal = $montoNeto + $montoIva;
 
             $fechaEmision = $datos['fecha_emision'] ?? date('Y-m-d');
@@ -58,9 +58,15 @@ class CotizacionService
                 'monto_total' => $montoTotal,
                 'total' => $montoTotal,
                 'estado_id' => $datos['estado_id'] ?? 1,
-                'es_afecta' => true,
+                'es_afecta' => $esAfecta,
                 'notas_condiciones' => $datos['notas_condiciones'] ?? null,
             ]);
+
+            if (!isset($datos['numero_cotizacion'])) {
+                $cotizacion->update([
+                    'numero_cotizacion' => 'COT-' . str_pad($cotizacion->id, 6, '0', STR_PAD_LEFT)
+                ]);
+            }
 
             foreach ($detalles as $detalle) {
                 $subtotalLinea = $detalle['cantidad'] * $detalle['precio_unitario'];

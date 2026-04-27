@@ -19,25 +19,36 @@ class ClienteController
     {
         return response()->json([
             'success' => true,
-            'data'    => $this->service->buscarClientesPorEmpresa($request->user()->empresa_id, $request->search)
+            'data' => $this->service->buscarClientesPorEmpresa($request->user()->empresa_id, $request->search)
         ]);
     }
 
     public function store(Request $request)
     {
         try {
-            $datos = $request->all();
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            $datos = [
+                'empresa_id' => $request->user()->empresa_id,
+                'rut' => $request->rut,
+                'razon_social' => $request->razonSocial ?? $request->razon_social,
+                'direccion' => $request->direccion,
+                'email' => $request->emailFacturacion ?? $request->email,
+                'telefono' => $request->telefono,
+                'contacto_nombre' => $request->nombreContacto ?? $request->contactoNombre ?? $request->contacto_nombre,
+                'contacto_email' => $request->emailContacto ?? $request->contacto_email,
+                'contacto_telefono' => $request->telefonoContacto ?? $request->contacto_telefono,
+
+                'estado' => 'ACTIVO'
+            ];
 
             $cliente = $this->service->registrarCliente($datos);
 
             return response()->json([
-                'success' => true, 
-                'data'    => $cliente
+                'success' => true,
+                'data' => $cliente
             ], 201);
         } catch (Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => $e->getMessage()
             ], 422);
         }
