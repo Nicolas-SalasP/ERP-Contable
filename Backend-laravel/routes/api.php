@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('facturas', FacturaController::class)->except(['create', 'edit', 'update']);
 
     // Comercial - Cotizaciones
+    Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);
     Route::apiResource('cotizaciones', CotizacionController::class)->except(['create', 'edit', 'show', 'update']);
 
     // Tesoreria - Cuentas de Proveedores
