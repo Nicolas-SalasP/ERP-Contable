@@ -13,6 +13,7 @@ class Factura extends Model
 
     protected $fillable = [
         'empresa_id',
+        'codigo_interno',
         'codigo_unico',
         'proveedor_id',
         'cuenta_bancaria_id',
@@ -26,6 +27,7 @@ class Factura extends Model
         'autorizador_id',
         'estado',
         'archivo_pdf',
+        'comprobante_contable',
     ];
 
     protected $casts = [

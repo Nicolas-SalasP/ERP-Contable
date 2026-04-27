@@ -228,7 +228,7 @@ const VisorProveedor = () => {
         );
     }
 
-    const { proveedor, facturas, anticipos = [] } = datos;
+    const { proveedor, facturas = [], anticipos = [] } = datos;
     const totalComprado = facturas.reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
     const totalDeuda = facturas.filter(f => f.estado !== 'PAGADA' && f.estado !== 'ANULADA').reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
     const anticiposVigentes = anticipos.filter(a => a.estado === 'VIGENTE').reduce((sum, a) => sum + parseFloat(a.saldo_disponible), 0);

@@ -15,13 +15,32 @@ class ReporteController
         $this->service = $service;
     }
 
+    public function libroDiario(Request $request)
+    {
+        try {
+            $reporte = $this->service->generarLibroMayor(
+                $request->user()->empresa_id,
+                $request->query('cuenta') ?? '',
+                $request->query('desde'),
+                $request->query('hasta')
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $reporte
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
     public function libroMayor(Request $request)
     {
         try {
             $request->validate([
                 'cuenta_contable' => 'required|string',
-                'fecha_inicio'    => 'required|date',
-                'fecha_fin'       => 'required|date|after_or_equal:fecha_inicio',
+                'fecha_inicio' => 'required|date',
+                'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
             ]);
 
             $reporte = $this->service->generarLibroMayor(
@@ -31,16 +50,9 @@ class ReporteController
                 $request->fecha_fin
             );
 
-            return response()->json([
-                'success' => true,
-                'data'    => $reporte
-            ]);
-
+            return response()->json(['success' => true, 'data' => $reporte]);
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
     }
 }

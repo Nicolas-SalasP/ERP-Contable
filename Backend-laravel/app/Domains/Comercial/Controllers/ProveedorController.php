@@ -51,4 +51,19 @@ class ProveedorController
             ], 422);
         }
     }
+
+    public function ficha(Request $request, $id)
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => $this->service->obtenerFichaProveedor($request->user()->empresa_id, (int) $id)
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
 }

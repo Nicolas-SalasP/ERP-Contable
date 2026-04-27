@@ -33,6 +33,16 @@ class AsientoContableService
                 ]);
             }
 
+            if (empty($asiento->numero_comprobante)) { 
+                $anio = date('y', strtotime($asiento->fecha ?? date('Y-m-d')));
+                $tipo = '10';
+                $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
+                
+                $asiento->update([
+                    'numero_comprobante' => $anio . $tipo . $secuencia
+                ]);
+            }
+
             return $asiento;
         });
     }

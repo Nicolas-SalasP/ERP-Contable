@@ -32,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Comercial - Proveedores
     Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo']);
+    Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha']);
     Route::apiResource('proveedores', ProveedorController::class)->except(['create', 'edit', 'show', 'update', 'destroy']);
 
     // Comercial - Facturas
@@ -56,9 +57,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa']);
 
     // Contabilidad
-    Route::get('/contabilidad/cuentas', [PlanCuentaController::class, 'index']);
-    Route::post('/contabilidad/cuentas', [PlanCuentaController::class, 'store']);
+    Route::get('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'index']);
+    Route::post('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'store']);
     Route::get('/contabilidad/asientos', [AsientoContableController::class, 'index']);
     Route::post('/contabilidad/asientos', [AsientoContableController::class, 'store']);
+    Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario']);
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor']);
 });

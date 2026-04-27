@@ -3,11 +3,19 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class FacturaService
 {
+    protected $asientoService;
+    public function __construct(AsientoContableService $asientoService)
+    {
+        $this->asientoService = $asientoService;
+    }
+
     public function obtenerFacturasPorEmpresa(int $empresaId, ?string $estado = null)
     {
         $query = Factura::where('empresa_id', $empresaId)
@@ -88,7 +96,7 @@ class FacturaService
 
             $codigoUnico = (int) (time() . rand(100, 999));
 
-            return Factura::create([
+            $factura = Factura::create([
                 'empresa_id' => $datos['empresa_id'],
                 'codigo_unico' => $codigoUnico,
                 'proveedor_id' => $datos['proveedor_id'],
@@ -102,6 +110,60 @@ class FacturaService
                 'estado' => 'REGISTRADA',
                 'autorizador_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
             ]);
+
+            $anio = date('y', strtotime($factura->fecha_emision));
+            $tipo = '26'; // 26 = Factura de Compra
+            $secuencia = str_pad($factura->id, 6, '0', STR_PAD_LEFT);
+            $comprobanteEstructurado = $anio . $tipo . $secuencia;
+
+            $factura->update([
+                'codigo_interno' => 'FAC-' . str_pad($factura->id, 5, '0', STR_PAD_LEFT),
+                'comprobante_contable' => $comprobanteEstructurado
+            ]);
+
+            $cuentaGasto = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '510101')->first();
+            $cuentaIva = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '110601')->first();
+            $cuentaProveedor = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '210101')->first();
+
+            if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
+                throw new Exception("Centralización fallida: La empresa no tiene su Plan de Cuentas inicializado con los códigos del SII (Falta 510101, 110601 o 210101).");
+            }
+
+            $datosAsiento = [
+                'empresa_id' => $datos['empresa_id'],
+                'numero_comprobante' => $comprobanteEstructurado,
+                'fecha' => $datos['fecha_emision'],
+                'glosa' => "Centralización Automática Factura Compra N° {$datos['numero_factura']}",
+                'estado' => 'CONTABILIZADO',
+                'usuario_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
+            ];
+
+            $detallesAsiento = [
+                [
+                    'cuenta_contable' => $cuentaGasto->codigo,
+                    'debe' => $neto,
+                    'haber' => 0,
+                ],
+                [
+                    'cuenta_contable' => $cuentaIva->codigo,
+                    'debe' => $iva,
+                    'haber' => 0,
+                ],
+                [
+                    'cuenta_contable' => $cuentaProveedor->codigo,
+                    'debe' => 0,
+                    'haber' => $bruto,
+                ]
+            ];
+
+            if ($iva <= 0) {
+                unset($detallesAsiento[1]);
+                $detallesAsiento = array_values($detallesAsiento);
+            }
+
+            $this->asientoService->registrarAsiento($datosAsiento, $detallesAsiento);
+
+            return $factura;
         });
     }
 }
