@@ -16,6 +16,7 @@ use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\AnulacionController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
+use App\Domains\Contabilidad\Controllers\ImpuestosController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -96,6 +97,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor']);
     Route::get('/contabilidad/asientos/{id}', [AsientoContableController::class, 'show']);
     Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado']);
+    Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29']);
+    Route::post('/impuestos/cierre-f29/ejecutar', [ImpuestosController::class, 'ejecutarF29']);
 
     // Contabilidad - Anulaciones
     Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar']);
