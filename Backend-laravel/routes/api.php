@@ -97,8 +97,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor']);
     Route::get('/contabilidad/asientos/{id}', [AsientoContableController::class, 'show']);
     Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado']);
+
+    // Contabilidad - Formularios 29 y 22 (Renta)
     Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29']);
     Route::post('/impuestos/cierre-f29/ejecutar', [ImpuestosController::class, 'ejecutarF29']);
+    Route::get('/renta/pre-calculo/{anio}', [ImpuestosController::class, 'preCalculoRenta']);
+    Route::get('/renta/mapeo', [ImpuestosController::class, 'obtenerMapeo']);
+    Route::post('/renta/mapeo', [ImpuestosController::class, 'guardarMapeo']);
+    Route::delete('/renta/mapeo/{id}', [ImpuestosController::class, 'eliminarMapeo']);
 
     // Contabilidad - Anulaciones
     Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar']);

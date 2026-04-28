@@ -99,4 +99,136 @@ class ImpuestosService
             return $asientoService->registrarAsiento($cabecera, $detalles);
         });
     }
+
+    public function preCalculoRenta(int $empresaId, int $anio_comercial)
+    {
+        $empresa = DB::table('empresas')->where('id', $empresaId)->first();
+        $regimen = $empresa->regimen_tributario ?? '14_A';
+
+        $fechaInicio = "$anio_comercial-01-01";
+        $fechaFin = "$anio_comercial-12-31";
+
+        $esFlujoCaja = in_array($regimen, ['14_D3', '14_D8']);
+        $tasaImpuesto = ($regimen === '14_A') ? 27.0 : (($regimen === '14_D3') ? 10.0 : 0.0);
+
+        $queryVentas = DB::table('cotizaciones')
+            ->where('empresa_id', $empresaId)
+            ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin]);
+        
+        if ($esFlujoCaja) {
+        }
+
+        $totalIngresos = $queryVentas->sum('monto_neto');
+
+        $queryCompras = DB::table('facturas')
+            ->where('empresa_id', $empresaId)
+            ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])
+            ->where('estado', '!=', 'ANULADA');
+
+        $totalCostosGastos = $queryCompras->sum('monto_neto');
+
+        $totalDepreciacion = DB::table('asientos_contables')
+            ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
+            ->where('asientos_contables.empresa_id', $empresaId)
+            ->where('asientos_contables.origen_modulo', 'activos')
+            ->whereBetween('asientos_contables.fecha', [$fechaInicio, $fechaFin])
+            ->where('detalles_asiento.tipo_operacion', 'DEBE')
+            ->sum('detalles_asiento.debe');
+
+        $baseImponible = max(0, ($totalIngresos - $totalCostosGastos - $totalDepreciacion));
+        $impuestoRenta = round($baseImponible * ($tasaImpuesto / 100));
+
+        $ppmAcumulado = DB::table('asientos_contables')
+            ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
+            ->where('asientos_contables.empresa_id', $empresaId)
+            ->where('asientos_contables.origen_modulo', 'impuestos')
+            ->whereBetween('asientos_contables.fecha', [$fechaInicio, $fechaFin])
+            ->where('detalles_asiento.cuenta_contable', '110403')
+            ->where('detalles_asiento.tipo_operacion', 'DEBE')
+            ->sum('detalles_asiento.debe');
+
+        $saldoFinal = $impuestoRenta - $ppmAcumulado;
+
+        return [
+            'anio_comercial' => $anio_comercial,
+            'anio_tributario' => $anio_comercial + 1,
+            'regimen_tributario' => $regimen,
+            'regla_calculo' => $esFlujoCaja ? 'FLUJO_DE_CAJA' : 'DEVENGADO',
+            'ingresos' => ['ventas_netas' => $totalIngresos, 'otros_ingresos' => 0],
+            'gastos' => ['costos_directos' => $totalCostosGastos, 'depreciacion' => $totalDepreciacion, 'remuneraciones' => 0],
+            'resultado' => ['base_imponible' => $baseImponible, 'tasa_impuesto' => $tasaImpuesto, 'impuesto_renta' => $impuestoRenta],
+            'creditos' => ['ppm_acumulado' => $ppmAcumulado],
+            'liquidacion' => ['saldo_final' => abs($saldoFinal), 'tipo_saldo' => $saldoFinal > 0 ? 'A_PAGAR' : 'DEVOLUCION']
+        ];
+    }
+
+    public function obtenerMapeo(int $empresaId)
+    {
+        $conceptos = [
+            'INGRESOS_GIRO' => 'Ingresos del Giro (Ventas)',
+            'OTROS_INGRESOS' => 'Otros Ingresos',
+            'COMPRAS' => 'Compras y Proveedores',
+            'DEPRECIACION' => 'Depreciación de Activos Fijos',
+            'REMUNERACIONES' => 'Remuneraciones Pagadas',
+            'HONORARIOS' => 'Honorarios Pagados',
+            'ARRIENDOS' => 'Arriendos Pagados',
+            'GASTOS_GENERALES' => 'Gastos Generales'
+        ];
+
+        $mapeadas = DB::table('mapeo_cuentas_sii')
+            ->join('plan_cuentas', function($join) use ($empresaId) {
+                $join->on('mapeo_cuentas_sii.codigo_cuenta', '=', 'plan_cuentas.codigo')
+                     ->where('plan_cuentas.empresa_id', '=', $empresaId);
+            })
+            ->where('mapeo_cuentas_sii.empresa_id', $empresaId)
+            ->select('mapeo_cuentas_sii.id', 'mapeo_cuentas_sii.codigo_cuenta', 'plan_cuentas.nombre', 'mapeo_cuentas_sii.concepto_sii')
+            ->get();
+
+        $codigosMapeados = $mapeadas->pluck('codigo_cuenta')->toArray();
+
+        $disponibles = DB::table('plan_cuentas')
+            ->where('empresa_id', $empresaId)
+            ->where('imputable', true)
+            ->where(function($query) {
+                $query->where('codigo', 'like', '4%')
+                      ->orWhere('codigo', 'like', '5%')
+                      ->orWhere('codigo', 'like', '6%')
+                      ->orWhere('codigo', 'like', '7%')
+                      ->orWhere('codigo', 'like', '8%');
+            })
+            ->whereNotIn('codigo', $codigosMapeados)
+            ->select('codigo', 'nombre')
+            ->orderBy('codigo', 'asc')
+            ->get();
+
+        return [
+            'mapeadas' => $mapeadas,
+            'disponibles' => $disponibles,
+            'conceptos' => $conceptos
+        ];
+    }
+
+    public function guardarMapeo(int $empresaId, string $codigoCuenta, string $conceptoSii)
+    {
+        return DB::table('mapeo_cuentas_sii')->updateOrInsert(
+            [
+                'empresa_id' => $empresaId,
+                'codigo_cuenta' => $codigoCuenta
+            ],
+            [
+                'concepto_sii' => $conceptoSii,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
+        );
+    }
+
+    public function eliminarMapeo(int $empresaId, int $id)
+    {
+        return DB::table('mapeo_cuentas_sii')
+            ->where('id', $id)
+            ->where('empresa_id', $empresaId)
+            ->delete();
+    }
+    
 }

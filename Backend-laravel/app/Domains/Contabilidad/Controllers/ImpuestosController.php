@@ -49,4 +49,54 @@ class ImpuestosController
             return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 422);
         }
     }
+
+    public function preCalculoRenta(Request $request, $anio)
+    {
+        try {
+            $resultado = $this->service->preCalculoRenta($request->user()->empresa_id, (int) $anio);
+            return response()->json(['success' => true, 'data' => $resultado]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+    
+    public function obtenerMapeo(Request $request)
+    {
+        try {
+            $data = $this->service->obtenerMapeo($request->user()->empresa_id);
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function guardarMapeo(Request $request)
+    {
+        try {
+            $request->validate([
+                'codigo_cuenta' => 'required|string',
+                'concepto_sii' => 'required|string'
+            ]);
+
+            $this->service->guardarMapeo(
+                $request->user()->empresa_id,
+                $request->codigo_cuenta,
+                $request->concepto_sii
+            );
+
+            return response()->json(['success' => true, 'message' => 'Mapeo guardado exitosamente.']);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function eliminarMapeo(Request $request, $id)
+    {
+        try {
+            $this->service->eliminarMapeo($request->user()->empresa_id, $id);
+            return response()->json(['success' => true, 'message' => 'Mapeo eliminado.']);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
 }
