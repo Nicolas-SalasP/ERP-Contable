@@ -8,7 +8,11 @@ class Rol extends Model
     protected $table = 'roles';
     public $timestamps = false;
 
-    protected $fillable = ['nombre'];
+    protected $fillable = ['nombre', 'permisos'];
+
+    protected $casts = [
+        'permisos' => 'array'
+    ];
 
     public function usuarios()
     {

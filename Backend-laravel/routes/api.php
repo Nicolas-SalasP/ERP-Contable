@@ -17,6 +17,7 @@ use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\AnulacionController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
+use App\Domains\Core\Controllers\UsuarioController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -28,6 +29,15 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+    // Gestion de usuarios y roles
+    Route::get('/usuarios', [UsuarioController::class, 'index']);
+    Route::get('/usuarios/roles', [UsuarioController::class, 'roles']);
+    Route::post('/usuarios/invitar', [UsuarioController::class, 'invitar']);
+    Route::put('/usuarios/{id}/rol', [UsuarioController::class, 'actualizarRol']);
+    Route::delete('/usuarios/{id}', [UsuarioController::class, 'desvincular']);
+    Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol']);
+    Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol']);
+
     // Empresa - Perfil
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
     Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil']);

@@ -22,6 +22,9 @@ class AuthController
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json(['message' => 'Credenciales incorrectas'], 401);
             }
+            $user->update([
+                'ultimo_acceso' => now()
+            ]);
 
             $permisos = [];
             

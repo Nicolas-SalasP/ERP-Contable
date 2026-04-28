@@ -19,7 +19,8 @@ class User extends Authenticatable
         'password',
         'nombre',
         'rol_id',
-        'estado_suscripcion_id'
+        'estado_suscripcion_id',
+        'ultimo_acceso',
     ];
 
     protected $hidden = [
