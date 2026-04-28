@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco']);
 
     // Empresa - Centros de Costos
+    Route::get('/empresas/centros-costo', [EmpresaController::class, 'listarCentros']);
     Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro']);
     Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro']);
     Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro']);
@@ -71,8 +72,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tesoreria/cuentas-propias', [BancoController::class, 'cuentasEmpresa']);
     Route::post('/tesoreria/cuentas-propias', [BancoController::class, 'storeCuenta']);
     Route::post('/tesoreria/conciliar/factura-compra', [ConciliacionController::class, 'pagarFacturaCompra']);
-    Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa']);
+    
+    // Tesoreria - Bancos y Conciliacion
     Route::post('/banco/nomina/pagar', [BancoController::class, 'pagarNomina']);
+    Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa']);
+    Route::get('/banco/cuentas-imputables', [PlanCuentaController::class, 'imputables']);
+    
+    // Tesoreria - Mesa de Conciliacion
+    Route::get('/banco/movimientos/pendientes/{idCuenta}', [ConciliacionController::class, 'movimientosPendientes']);
+    Route::get('/banco/anticipos-pendientes', [ConciliacionController::class, 'anticiposPendientes']);
+    Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliar']);
+    Route::post('/banco/movimientos/conciliar-anticipo', [ConciliacionController::class, 'conciliarAnticipo']);
 
     // Contabilidad
     Route::get('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'index']);

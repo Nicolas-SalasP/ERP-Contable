@@ -22,8 +22,18 @@ class BancoController
 
     public function cuentasEmpresa(Request $request)
     {
-        $cuentas = $this->service->obtenerCuentasPorEmpresa($request->user()->empresa_id);
-        return response()->json($cuentas);
+        try {
+            $cuentas = $this->service->obtenerCuentasPorEmpresa($request->user()->empresa_id);
+            return response()->json([
+                'success' => true,
+                'data' => $cuentas
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 
     public function storeCuenta(Request $request)
@@ -69,9 +79,9 @@ class BancoController
                 $request->facturas_ids,
                 $request->cuenta_bancaria_id
             );
-            
+
             return response()->json(array_merge(['success' => true], $resultado));
-            
+
         } catch (Exception $e) {
             return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }

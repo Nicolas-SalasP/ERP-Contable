@@ -14,6 +14,15 @@ class PlanCuentaService
             ->get();
     }
 
+    public function listarCuentasImputables(int $empresaId)
+    {
+        return PlanCuenta::where('empresa_id', $empresaId)
+            ->where('activo', true)
+            ->where('imputable', true)
+            ->orderBy('codigo')
+            ->get();
+    }
+
     public function registrarCuenta(array $datos): PlanCuenta
     {
         $existe = PlanCuenta::where('empresa_id', $datos['empresa_id'])
@@ -47,7 +56,6 @@ class PlanCuentaService
         }
 
         $cuenta->update($datos);
-
         return $cuenta;
     }
 }

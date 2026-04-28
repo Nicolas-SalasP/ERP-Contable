@@ -189,7 +189,7 @@ const MesaConciliacion = () => {
 
     const getNombreBancoActivo = () => {
         const banco = cuentasBanco.find(c => c.id == cuentaActiva);
-        return banco ? `[${banco.cuenta_contable || '110100'}] ${banco.banco}` : 'Cuenta Bancaria';
+        return banco ? `[${banco.cuenta_contable || '110100'}] ${banco.banco || 'Banco'}` : 'Cuenta Bancaria';
     };
 
     return (
@@ -215,9 +215,13 @@ const MesaConciliacion = () => {
                         onChange={(e) => setCuentaActiva(e.target.value)}
                         className="bg-slate-50 border border-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-blue-500"
                     >
-                        {cuentasBanco.map(c => (
-                            <option key={c.id} value={c.id}>{c.banco} - {c.numero_cuenta}</option>
-                        ))}
+                        {cuentasBanco.length === 0 ? (
+                            <option value="">Sin cuentas registradas</option>
+                        ) : (
+                            cuentasBanco.map(c => (
+                                <option key={c.id} value={c.id}>{c.banco} - {c.numero_cuenta}</option>
+                            ))
+                        )}
                     </select>
                 </div>
             </div>

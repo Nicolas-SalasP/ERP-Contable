@@ -78,4 +78,19 @@ class PlanCuentaController
             ], 422);
         }
     }
+
+    public function imputables(Request $request)
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => $this->service->listarCuentasImputables($request->user()->empresa_id)
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

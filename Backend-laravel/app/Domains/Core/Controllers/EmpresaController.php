@@ -39,7 +39,6 @@ class EmpresaController extends Controller
         return response()->json(['success' => true, 'data' => $bancos]);
     }
 
-
     public function actualizarPerfil(Request $request)
     {
         try {
@@ -51,9 +50,9 @@ class EmpresaController extends Controller
             }
 
             return response()->json([
-                'success' => true, 
-                'message' => 'Perfil actualizado.', 
-                'data' => $empresa->fresh() 
+                'success' => true,
+                'message' => 'Perfil actualizado.',
+                'data' => $empresa->fresh()
             ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -72,7 +71,6 @@ class EmpresaController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
-
 
     public function agregarBanco(Request $request)
     {
@@ -104,6 +102,20 @@ class EmpresaController extends Controller
         }
     }
 
+    public function listarCentros(Request $request)
+    {
+        $centros = \App\Domains\Contabilidad\Models\CentroCosto::where('empresa_id', $request->user()->empresa_id)
+            ->where('activo', true)
+            ->get();
+        $centrosFormateados = $centros->map(function ($c) {
+            return [
+                'value' => $c->id,
+                'label' => $c->codigo . ' - ' . $c->nombre
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $centrosFormateados]);
+    }
 
     public function agregarCentro(Request $request)
     {
@@ -111,7 +123,6 @@ class EmpresaController extends Controller
             $centro = $this->empresaService->agregarCentroCosto($request->user()->empresa_id, $request->all());
             return response()->json(['success' => true, 'data' => $centro]);
         } catch (Exception $e) {
-            // Enviamos "error" porque el frontend React lee: error.response?.data?.error
             return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
         }
     }
