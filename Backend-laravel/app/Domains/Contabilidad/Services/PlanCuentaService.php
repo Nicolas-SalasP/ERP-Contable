@@ -10,7 +10,6 @@ class PlanCuentaService
     public function listarCuentas(int $empresaId)
     {
         return PlanCuenta::where('empresa_id', $empresaId)
-            ->where('activo', true)
             ->orderBy('codigo')
             ->get();
     }
@@ -26,5 +25,29 @@ class PlanCuentaService
         }
 
         return PlanCuenta::create($datos);
+    }
+
+    public function actualizarCuenta(int $empresaId, int $id, array $datos): PlanCuenta
+    {
+        $cuenta = PlanCuenta::where('empresa_id', $empresaId)->find($id);
+
+        if (!$cuenta) {
+            throw new Exception("La cuenta contable no existe.");
+        }
+
+        if (isset($datos['codigo']) && $datos['codigo'] !== $cuenta->codigo) {
+            $existe = PlanCuenta::where('empresa_id', $empresaId)
+                ->where('codigo', $datos['codigo'])
+                ->where('id', '!=', $id)
+                ->exists();
+
+            if ($existe) {
+                throw new Exception("El código de cuenta {$datos['codigo']} ya está en uso por otra cuenta.");
+            }
+        }
+
+        $cuenta->update($datos);
+
+        return $cuenta;
     }
 }

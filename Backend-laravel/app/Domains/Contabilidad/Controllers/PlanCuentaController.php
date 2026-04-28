@@ -31,7 +31,8 @@ class PlanCuentaController
                 'nombre' => 'required|string',
                 'tipo' => 'required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
                 'nivel' => 'integer',
-                'imputable' => 'boolean'
+                'imputable' => 'boolean',
+                'activo' => 'boolean'
             ]);
 
             $datos['empresa_id'] = $request->user()->empresa_id;
@@ -41,6 +42,34 @@ class PlanCuentaController
                 'success' => true,
                 'data' => $cuenta
             ], 201);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $datos = $request->validate([
+                'codigo' => 'sometimes|required|string',
+                'nombre' => 'sometimes|required|string',
+                'tipo' => 'sometimes|required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
+                'nivel' => 'sometimes|integer',
+                'imputable' => 'sometimes|boolean',
+                'activo' => 'sometimes|boolean'
+            ]);
+
+            $cuenta = $this->service->actualizarCuenta($request->user()->empresa_id, $id, $datos);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cuenta actualizada correctamente',
+                'data' => $cuenta
+            ]);
 
         } catch (Exception $e) {
             return response()->json([
