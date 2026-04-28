@@ -9,6 +9,21 @@ use Exception;
 
 class AsientoContableService
 {
+    public function obtenerAsientosPaginados(int $empresaId)
+    {
+        return AsientoContable::where('empresa_id', $empresaId)
+            ->with('detalles.cuenta')
+            ->orderBy('fecha', 'desc')
+            ->paginate(15);
+    }
+
+    public function obtenerAsientoPorId(int $empresaId, int $id)
+    {
+        return AsientoContable::where('empresa_id', $empresaId)
+            ->with('detalles.cuenta')
+            ->findOrFail($id);
+    }
+
     public function registrarAsiento(array $datosAsiento, array $detalles): AsientoContable
     {
         $totalDebe = 0;
@@ -22,7 +37,12 @@ class AsientoContableService
         }
 
         return DB::transaction(function () use ($datosAsiento, $detalles) {
+            if (empty($datosAsiento['numero_comprobante'])) {
+                $datosAsiento['numero_comprobante'] = 'T' . time() . rand(10, 99);
+            }
+
             $asiento = AsientoContable::create($datosAsiento);
+
             foreach ($detalles as $detalle) {
                 $asiento->detalles()->create([
                     'cuenta_contable' => $detalle['cuenta_contable'],
@@ -33,15 +53,13 @@ class AsientoContableService
                 ]);
             }
 
-            if (empty($asiento->numero_comprobante)) {
-                $anio = date('y', strtotime($asiento->fecha ?? date('Y-m-d')));
-                $tipo = '10';
-                $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
+            $anio = date('y', strtotime($asiento->fecha ?? date('Y-m-d')));
+            $tipo = '10';
+            $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
 
-                $asiento->update([
-                    'numero_comprobante' => $anio . $tipo . $secuencia
-                ]);
-            }
+            $asiento->update([
+                'numero_comprobante' => $anio . $tipo . $secuencia
+            ]);
 
             return $asiento;
         });

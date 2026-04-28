@@ -18,12 +18,15 @@ class ReporteController
     public function libroDiario(Request $request)
     {
         try {
-            $reporte = $this->service->generarLibroMayor(
-                $request->user()->empresa_id,
-                $request->query('cuenta') ?? '',
-                $request->query('desde'),
-                $request->query('hasta')
-            );
+            $cuenta = $request->query('cuenta');
+            $desde = $request->query('desde') ?? now()->startOfMonth()->format('Y-m-d');
+            $hasta = $request->query('hasta') ?? now()->format('Y-m-d');
+
+            if (!empty($cuenta)) {
+                $reporte = $this->service->generarLibroMayor($request->user()->empresa_id, $cuenta, $desde, $hasta);
+            } else {
+                $reporte = $this->service->generarLibroDiario($request->user()->empresa_id, $desde, $hasta);
+            }
 
             return response()->json([
                 'success' => true,

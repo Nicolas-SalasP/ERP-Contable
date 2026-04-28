@@ -234,8 +234,13 @@ const RegistroFactura = () => {
 
         api.post('/facturas', payload)
             .then(data => {
-                if (data.success) {
-                    setSuccessData({ id: data.id, codigo: data.codigo || 'N/A' });
+                if (data.success) { 
+                    const facturaGuardada = data.data || data; 
+                    
+                    setSuccessData({
+                        id: facturaGuardada.id,
+                        codigo: facturaGuardada.comprobante_contable || facturaGuardada.codigo_interno || 'N/A'
+                    });
                 } else {
                     alert('❌ Error al guardar: ' + data.message);
                 }
@@ -273,7 +278,14 @@ const RegistroFactura = () => {
                 confirmText="Nueva Factura"
                 onConfirm={handleSuccessClose}
                 onClose={handleSuccessClose}
-                message={successData ? <div className="text-center mt-4"><div className="bg-slate-100 p-4 rounded-lg inline-block"><p className="text-xs text-slate-500 uppercase font-bold tracking-wider">ID Interno</p><p className="text-3xl font-mono font-bold text-slate-800">{successData.codigo}</p></div></div> : null}
+                message={successData ? (
+                    <div className="text-center mt-4">
+                        <div className="bg-slate-100 p-4 rounded-lg inline-block">
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Se ha generado el siguiente comprobante contable:</p>
+                            <p className="text-3xl font-mono font-bold text-slate-800">{successData.codigo}</p>
+                        </div>
+                    </div>
+                ) : null}
             />
 
             <div className="bg-slate-900 rounded-t-xl px-8 py-6 flex flex-col md:flex-row justify-between items-center text-white">
@@ -507,7 +519,6 @@ const RegistroFactura = () => {
                                     <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0">
                                         <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
                                             <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
-                                            <span className="font-bold text-slate-900 text-lg bg-emerald-50/30 px-2 rounded">{formatCurrency(formData.montoNeto)}</span>
                                         </div>
                                         <div className="w-full md:w-1/2 flex justify-between md:block text-right">
                                             <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
@@ -592,7 +603,7 @@ const RegistroFactura = () => {
                         disabled={
                             !formData.montoBruto ||
                             !formData.proveedorId ||
-                            !formData.fechaContable || 
+                            !formData.fechaContable ||
                             (currentStep === 2 && (!formData.fechaVencimiento || fechaInvalida)) ||
                             checkingDuplicate
                         }

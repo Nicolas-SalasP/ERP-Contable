@@ -69,7 +69,6 @@ class BancoService
             }
 
             $cuentaEmpresa = CuentaBancariaEmpresa::find($cuentaBancariaId);
-            // Si la cuenta empresa no tiene una cuenta contable asociada, usamos la 110201 (Banco)
             $cuentaContableBanco = $cuentaEmpresa->cuenta_contable_id ?? 110201; 
 
             $datosAsiento = [
@@ -80,14 +79,14 @@ class BancoService
                 'tipo'       => 'EGRESO',
                 'detalles'   => [
                     [
-                        'cuenta_contable' => 352130, // DEBE: Rebaja la cuenta puente de pasivo
+                        'cuenta_contable' => '352105',
                         'debe'            => $totalNomina,
                         'haber'           => 0,
                         'fecha'           => $fechaHoy,
                         'tipo_operacion'  => 'DEBE'
                     ],
                     [
-                        'cuenta_contable' => $cuentaContableBanco, // HABER: Salida de dinero del Banco
+                        'cuenta_contable' => $cuentaContableBanco,
                         'debe'            => 0,
                         'haber'           => $totalNomina,
                         'fecha'           => $fechaHoy,

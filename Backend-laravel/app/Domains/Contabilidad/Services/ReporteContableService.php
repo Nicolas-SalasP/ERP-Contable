@@ -4,6 +4,7 @@ namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Models\DetalleAsiento;
 use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Contabilidad\Models\AsientoContable;
 use Exception;
 
 class ReporteContableService
@@ -51,7 +52,7 @@ class ReporteContableService
 
             $lineas[] = [
                 'fecha'       => $mov->asiento->fecha->format('Y-m-d'),
-                'comprobante' => $mov->asiento->id,
+                'comprobante' => $mov->asiento->numero_comprobante ?? $mov->asiento->id,
                 'glosa'       => $mov->asiento->glosa,
                 'debe'        => $mov->debe,
                 'haber'       => $mov->haber,
@@ -66,5 +67,15 @@ class ReporteContableService
             'movimientos'   => $lineas,
             'saldo_final'   => round($saldoAcumulado, 2)
         ];
+    }
+
+    public function generarLibroDiario(int $empresaId, string $fechaInicio, string $fechaFin)
+    {
+        return AsientoContable::with(['detalles.cuenta'])
+            ->where('empresa_id', $empresaId)
+            ->whereBetween('fecha', [$fechaInicio, $fechaFin])
+            ->orderBy('fecha', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
     }
 }

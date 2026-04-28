@@ -3,8 +3,8 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
-use App\Domains\Contabilidad\Models\AsientoContable;
 use Illuminate\Http\Request;
+use Exception;
 
 class AsientoContableController
 {
@@ -17,10 +17,7 @@ class AsientoContableController
 
     public function index(Request $request)
     {
-        return AsientoContable::where('empresa_id', $request->user()->empresa_id)
-            ->with('detalles.cuenta')
-            ->orderBy('fecha', 'desc')
-            ->paginate(15);
+        return $this->service->obtenerAsientosPaginados($request->user()->empresa_id);
     }
 
     public function store(Request $request)
@@ -36,11 +33,37 @@ class AsientoContableController
                 'message' => 'Asiento contable registrado con éxito',
                 'data' => $asiento->load('detalles')
             ], 201);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
             ], 422);
+        }
+    }
+
+    public function show(Request $request, $id)
+    {
+        try {
+            $asiento = $this->service->obtenerAsientoPorId($request->user()->empresa_id, $id);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'cabecera' => $asiento,
+                    'detalles' => $asiento->detalles->map(function ($d) {
+                        return [
+                            'cuenta_contable' => $d->cuenta_contable,
+                            'cuenta_nombre' => $d->cuenta->nombre ?? 'Sin nombre',
+                            'debe' => $d->debe,
+                            'haber' => $d->haber,
+                        ];
+                    })
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El asiento contable no existe o no pertenece a tu empresa.'
+            ], 404);
         }
     }
 }
