@@ -83,4 +83,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario']);
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor']);
     Route::get('/contabilidad/asientos/{id}', [AsientoContableController::class, 'show']);
+
+    // Contabilidad - Anulaciones
+    Route::post('/anulacion/buscar', [\App\Domains\Core\Controllers\AnulacionController::class, 'buscar']);
+    Route::post('/anulacion/anular', [\App\Domains\Core\Controllers\AnulacionController::class, 'anular']);
 });

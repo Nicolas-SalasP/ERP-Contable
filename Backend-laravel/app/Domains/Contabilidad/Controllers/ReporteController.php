@@ -21,11 +21,12 @@ class ReporteController
             $cuenta = $request->query('cuenta');
             $desde = $request->query('desde') ?? now()->startOfMonth()->format('Y-m-d');
             $hasta = $request->query('hasta') ?? now()->format('Y-m-d');
+            $filtro = (int) $request->query('filtro', 1);
 
             if (!empty($cuenta)) {
-                $reporte = $this->service->generarLibroMayor($request->user()->empresa_id, $cuenta, $desde, $hasta);
+                $reporte = $this->service->generarLibroMayor($request->user()->empresa_id, $cuenta, $desde, $hasta, $filtro);
             } else {
-                $reporte = $this->service->generarLibroDiario($request->user()->empresa_id, $desde, $hasta);
+                $reporte = $this->service->generarLibroDiario($request->user()->empresa_id, $desde, $hasta, $filtro);
             }
 
             return response()->json([

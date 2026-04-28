@@ -26,11 +26,11 @@ const LibroMayor = () => {
     const [loading, setLoading] = useState(false);
     const cuentaGuardada = localStorage.getItem('ultimaCuentaLibroDiario') || '';
 
-    // Estado filtros
     const [filtros, setFiltros] = useState({
         desde: new Date().toISOString().slice(0, 7) + '-01',
         hasta: new Date().toISOString().split('T')[0],
-        cuenta: cuentaGuardada
+        cuenta: cuentaGuardada,
+        auditoria: 1 
     });
 
     // Estados buscador inteligente
@@ -94,7 +94,12 @@ const LibroMayor = () => {
         setLoading(true);
         try {
             const cuentaAEnviar = filtros.cuenta || (busquedaCuenta.match(/^\d+/) ? busquedaCuenta : '');
-            const params = { desde: filtros.desde, hasta: filtros.hasta, cuenta: cuentaAEnviar };
+            const params = { 
+                desde: filtros.desde, 
+                hasta: filtros.hasta, 
+                cuenta: cuentaAEnviar,
+                filtro: filtros.auditoria 
+            };
             const query = new URLSearchParams(params).toString();
             const res = await api.get(`/contabilidad/libro-diario?${query}`);
 
@@ -113,6 +118,7 @@ const LibroMayor = () => {
                         cuenta_codigo: ctaCodigo,
                         cuenta_nombre: ctaNombre,
                         glosa: mov.glosa,
+                        estado: mov.estado, // Capturamos el estado
                         debe: mov.debe,
                         haber: mov.haber
                     }));
@@ -128,6 +134,8 @@ const LibroMayor = () => {
                                     cuenta_codigo: det.cuenta_contable || det.cuenta?.codigo,
                                     cuenta_nombre: det.cuenta?.nombre || '',
                                     glosa: asiento.glosa,
+                                    estado: asiento.estado, // Capturamos el estado
+                                    numero_documento: asiento.numero_documento,
                                     debe: det.debe,
                                     haber: det.haber
                                 });
@@ -203,12 +211,13 @@ const LibroMayor = () => {
             "Código Cuenta": fila.cuenta_codigo,
             "Nombre Cuenta": fila.cuenta_nombre,
             "Glosa": fila.glosa,
+            "Estado": fila.estado, // Agregado para auditoría en excel
             "Debe": parseFloat(fila.debe) || 0,
             "Haber": parseFloat(fila.haber) || 0
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(datosExcel);
-        worksheet['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 40 }, { wch: 15 }, { wch: 15 }];
+        worksheet['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Libro Diario");
 
@@ -219,7 +228,6 @@ const LibroMayor = () => {
     return (
         <div className="max-w-7xl mx-auto p-6 font-sans text-slate-800 relative">
 
-            {/* COMPONENTE MODAL GENÉRICO */}
             <ModalGenerico
                 isOpen={notificacion.show}
                 onClose={() => setNotificacion({ ...notificacion, show: false })}
@@ -228,7 +236,6 @@ const LibroMayor = () => {
                 type={notificacion.type}
             />
 
-            {/* MENÚ CONTEXTUAL FLOTANTE */}
             {contextMenu.visible && (
                 <div
                     className="fixed bg-white shadow-xl border border-slate-200 rounded-lg py-1 z-50 w-56 animate-fade-in"
@@ -244,7 +251,6 @@ const LibroMayor = () => {
                 </div>
             )}
 
-            {/* ENCABEZADO */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-slate-900">Libros Contables</h1>
                 <div className="flex bg-white rounded-lg shadow-sm border p-1">
@@ -258,7 +264,6 @@ const LibroMayor = () => {
                 </div>
             </div>
 
-            {/* FILTROS (Solo visible en Libro Diario) */}
             {activeTab === 'diario' && (
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end z-20 relative">
                     <div>
@@ -270,8 +275,8 @@ const LibroMayor = () => {
                         <input type="date" className="border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.hasta} onChange={e => setFiltros({ ...filtros, hasta: e.target.value })} />
                     </div>
 
-                    <div className="flex-1 min-w-[300px] relative" ref={wrapperRef}>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buscar Cuenta (Déjalo vacío para ver todo)</label>
+                    <div className="flex-1 min-w-[250px] relative" ref={wrapperRef}>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buscar Cuenta (Vacío para ver todo)</label>
                         <div className="relative">
                             <input
                                 type="text"
@@ -283,7 +288,7 @@ const LibroMayor = () => {
                                     setMostrarLista(true);
                                     if (e.target.value === '') {
                                         setFiltros({ ...filtros, cuenta: '' });
-                                        localStorage.removeItem('ultimaCuentaLibroDiario'); // Limpia memoria
+                                        localStorage.removeItem('ultimaCuentaLibroDiario');
                                     }
                                 }}
                                 onFocus={() => setMostrarLista(true)}
@@ -293,12 +298,10 @@ const LibroMayor = () => {
                                     onClick={() => {
                                         setBusquedaCuenta('');
                                         setFiltros({ ...filtros, cuenta: '' });
-                                        localStorage.removeItem('ultimaCuentaLibroDiario'); // Limpia memoria
+                                        localStorage.removeItem('ultimaCuentaLibroDiario');
                                     }}
                                     className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
-                                >
-                                    ✕
-                                </button>
+                                >✕</button>
                             )}
                         </div>
                         {mostrarLista && sugerencias.length > 0 && (
@@ -310,7 +313,7 @@ const LibroMayor = () => {
                                             onClick={() => {
                                                 setBusquedaCuenta(cta.codigo);
                                                 setFiltros({ ...filtros, cuenta: cta.codigo });
-                                                localStorage.setItem('ultimaCuentaLibroDiario', cta.codigo); // <-- GUARDA EN MEMORIA
+                                                localStorage.setItem('ultimaCuentaLibroDiario', cta.codigo);
                                                 setMostrarLista(false);
                                             }}
                                             className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex justify-between border-b border-slate-50"
@@ -322,6 +325,18 @@ const LibroMayor = () => {
                                 </ul>
                             </div>
                         )}
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Auditoría</label>
+                        <select 
+                            className="border border-blue-200 bg-blue-50 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700"
+                            value={filtros.auditoria}
+                            onChange={e => setFiltros({ ...filtros, auditoria: Number(e.target.value) })}
+                        >
+                            <option value="1">1 - Conciliado / Válidos</option>
+                            <option value="0">0 - Historia Completa (Todo)</option>
+                            <option value="2">2 - Anulados / Internos</option>
+                        </select>
                     </div>
 
                     <div className="flex gap-2">
@@ -345,31 +360,39 @@ const LibroMayor = () => {
                                     <th className="px-4 py-3 w-28 border-r border-slate-200 text-center">Fecha</th>
                                     <th className="px-4 py-3 w-64 border-r border-slate-200">Cuenta Contable</th>
                                     <th className="px-4 py-3 border-r border-slate-200">Descripción / Glosa</th>
+                                    <th className="px-4 py-3 w-28 border-r border-slate-200 text-center">Ref. Doc</th>
                                     <th className="px-4 py-3 w-32 text-right border-r border-slate-200">Debe</th>
                                     <th className="px-4 py-3 w-32 text-right">Haber</th>
                                 </tr>
                             </thead>
                             <tbody className="text-xs divide-y divide-slate-100">
-                                {loading ? <tr><td colSpan="6" className="p-8 text-center text-slate-400">Cargando...</td></tr> :
-                                    asientos.length === 0 ? <tr><td colSpan="6" className="p-8 text-center text-slate-400">No hay movimientos.</td></tr> : (
-                                        asientos.map((row, idx) => (
-                                            <tr
-                                                key={idx}
-                                                onContextMenu={(e) => handleContextMenu(e, row.asiento_id)}
-                                                className="hover:bg-blue-50 transition-colors cursor-context-menu"
-                                                title="Click derecho para opciones"
-                                            >
-                                                <td className="px-4 py-2 font-mono text-blue-600 font-bold border-r border-slate-100">{row.codigo_unico || row.asiento_id}</td>
-                                                <td className="px-4 py-2 text-center text-slate-500 border-r border-slate-100 whitespace-nowrap">{formatDate(row.fecha)}</td>
-                                                <td className="px-4 py-2 border-r border-slate-100">
-                                                    <div className="font-mono text-slate-600 font-bold">{row.cuenta_codigo}</div>
-                                                    <div className="text-slate-400 truncate max-w-[200px]">{row.cuenta_nombre}</div>
-                                                </td>
-                                                <td className="px-4 py-2 text-slate-700 border-r border-slate-100">{row.glosa}</td>
-                                                <td className="px-4 py-2 text-right font-mono text-emerald-600 bg-emerald-50/30">{formatMoney(row.debe)}</td>
-                                                <td className="px-4 py-2 text-right font-mono text-slate-600 bg-slate-50/30">{formatMoney(row.haber)}</td>
-                                            </tr>
-                                        ))
+                                {loading ? <tr><td colSpan="7" className="p-8 text-center text-slate-400">Cargando...</td></tr> :
+                                    asientos.length === 0 ? <tr><td colSpan="7" className="p-8 text-center text-slate-400">No hay movimientos.</td></tr> : (
+                                        asientos.map((row, idx) => {
+                                            const esAnulado = row.estado === 'ANULADO' || row.estado === 'RECLASIFICADO';
+                                            return (
+                                                <tr
+                                                    key={idx}
+                                                    onContextMenu={(e) => handleContextMenu(e, row.asiento_id)}
+                                                    className={`transition-colors cursor-context-menu ${esAnulado ? 'bg-red-50/60 hover:bg-red-100/80 opacity-80' : 'hover:bg-blue-50'}`}
+                                                    title={esAnulado ? 'Asiento Anulado/Interno' : 'Click derecho para opciones'}
+                                                >
+                                                    <td className="px-4 py-2 font-mono text-blue-600 font-bold border-r border-slate-100">
+                                                        {row.codigo_unico || row.asiento_id}
+                                                        {esAnulado && <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] bg-red-200 text-red-700">R</span>}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-center text-slate-500 border-r border-slate-100 whitespace-nowrap">{formatDate(row.fecha)}</td>
+                                                    <td className="px-4 py-2 border-r border-slate-100">
+                                                        <div className={`font-mono font-bold ${esAnulado ? 'text-red-700' : 'text-slate-600'}`}>{row.cuenta_codigo}</div>
+                                                        <div className={`truncate max-w-[200px] ${esAnulado ? 'text-red-500' : 'text-slate-400'}`}>{row.cuenta_nombre}</div>
+                                                    </td>
+                                                    <td className={`px-4 py-2 border-r border-slate-100 ${esAnulado ? 'text-red-800 line-through decoration-red-300' : 'text-slate-700'}`}>{row.glosa}</td>
+                                                    <td className="px-4 py-2 text-center text-slate-500 font-mono border-r border-slate-100">{row.numero_documento || '-'}</td>
+                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50' : 'text-emerald-600 bg-emerald-50/30'}`}>{formatMoney(row.debe)}</td>
+                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50' : 'text-slate-600 bg-slate-50/30'}`}>{formatMoney(row.haber)}</td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                             </tbody>
                         </table>
@@ -396,8 +419,8 @@ const LibroMayor = () => {
                                     <p className="text-slate-500 mt-1">N° Único: <span className="font-mono font-bold text-slate-700">{asientoSeleccionado.cabecera?.codigo_unico || asientoSeleccionado.cabecera?.numero_comprobante}</span></p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 uppercase mb-2">
-                                        {asientoSeleccionado.cabecera?.tipo_asiento || asientoSeleccionado.cabecera?.tipo}
+                                    <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-2 ${asientoSeleccionado.cabecera?.estado === 'ANULADO' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                                        {asientoSeleccionado.cabecera?.estado === 'ANULADO' ? 'ANULADO / REVERSO' : (asientoSeleccionado.cabecera?.tipo_asiento || asientoSeleccionado.cabecera?.tipo)}
                                     </div>
                                     <p className="text-sm text-slate-500">Fecha: {formatDate(asientoSeleccionado.cabecera?.fecha)}</p>
                                 </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';
-import { api } from '../../../Configuracion/api'; 
+import { api } from '../../../Configuracion/api';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 const formatDate = (dateString) => {
@@ -9,13 +9,12 @@ const formatDate = (dateString) => {
 };
 
 const AnulacionGeneral = () => {
-    // ESTADOS (Todos deben ir dentro del componente)
     const [codigo, setCodigo] = useState('');
     const [documento, setDocumento] = useState(null);
     const [loading, setLoading] = useState(false);
     const [procesando, setProcesando] = useState(false);
     const [motivo, setMotivo] = useState('');
-    const [fechaAnulacion, setFechaAnulacion] = useState(new Date().toISOString().split('T')[0]); // <-- Movido aquí adentro
+    const [fechaAnulacion, setFechaAnulacion] = useState(new Date().toISOString().split('T')[0]);
     const [error, setError] = useState(null);
     const [exito, setExito] = useState(null);
 
@@ -30,7 +29,10 @@ const AnulacionGeneral = () => {
         setMotivo('');
 
         try {
-            const res = await api.post('/anulacion/buscar', { codigo });
+            const res = await api.post('/anulacion/buscar', {
+                tipo_documento: 'ASIENTO',
+                numero_documento: codigo
+            });
             if (res.success) {
                 setDocumento(res.data);
             } else {
@@ -38,7 +40,7 @@ const AnulacionGeneral = () => {
             }
         } catch (err) {
             console.error(err);
-            setError('Error de conexión al buscar el documento.');
+            setError(err.response?.data?.message || 'Error de conexión al buscar el documento.');
         } finally {
             setLoading(false);
         }
@@ -55,10 +57,11 @@ const AnulacionGeneral = () => {
                     confirmButton: 'bg-slate-900 text-white px-6 py-2 rounded-lg hover:bg-slate-800 transition-colors'
                 }
             });
-            
+
             return;
         }
-        if (fechaAnulacion < documento.fecha) {
+        const fechaOriginalLimpia = documento.fecha.split('T')[0];
+        if (fechaAnulacion < fechaOriginalLimpia) {
             Swal.fire({
                 icon: 'error',
                 title: 'Fecha Inválida',
@@ -74,8 +77,8 @@ const AnulacionGeneral = () => {
             showCancelButton: true,
             confirmButtonText: 'Sí, anular documento',
             cancelButtonText: 'Cancelar',
-            reverseButtons: true, 
-            buttonsStyling: false, 
+            reverseButtons: true,
+            buttonsStyling: false,
             customClass: {
                 confirmButton: 'bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 font-bold ml-3 transition-all',
                 cancelButton: 'bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600 focus:ring-4 focus:ring-slate-300 font-medium transition-all'
@@ -95,17 +98,16 @@ const AnulacionGeneral = () => {
         });
 
         try {
-            // AQUÍ ENVIAMOS LA FECHA AL BACKEND
-            const res = await api.post('/anulacion/ejecutar', { 
-                codigo: documento.codigo, 
-                tipo: documento.tipo_origen, 
+            const res = await api.post('/anulacion/anular', {
+                tipo_documento: documento.tipo,
+                documento_id: documento.id,
                 motivo,
-                fecha_anulacion: fechaAnulacion 
+                fecha_anulacion: fechaAnulacion
             });
 
             if (res.success) {
-                const mensajeExito = `Documento anulado correctamente. Se generó el Asiento de Reverso N° ${res.nuevo_asiento_id}`;
-                
+                const mensajeExito = `Documento anulado correctamente. Se registró el motivo en la glosa.`;
+
                 await Swal.fire({
                     icon: 'success',
                     title: '¡Anulación Exitosa!',
@@ -114,17 +116,17 @@ const AnulacionGeneral = () => {
                 });
 
                 setExito(mensajeExito);
-                setDocumento(null); 
+                setDocumento(null);
                 setCodigo('');
                 setMotivo('');
             } else {
-                throw new Error(res.mensaje || 'Error desconocido');
+                throw new Error(res.message || 'Error desconocido');
             }
         } catch (err) {
             console.error(err);
             let msgError = 'Error crítico al procesar la anulación.';
-            if (err.response && err.response.data && err.response.data.mensaje) {
-                msgError = err.response.data.mensaje;
+            if (err.response && err.response.data && err.response.data.message) {
+                msgError = err.response.data.message;
             } else if (err.message) {
                 msgError = err.message;
             }
@@ -142,14 +144,12 @@ const AnulacionGeneral = () => {
 
     return (
         <div className="max-w-5xl mx-auto font-sans text-slate-800 pb-10">
-            
-            {/* ENCABEZADO */}
+
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-slate-900">Anulación de Documentos</h1>
                 <p className="text-slate-500 text-sm mt-1">Busque cualquier documento por su código único (Ej: 2626... o 2610...) para proceder con su reversa contable.</p>
             </div>
 
-            {/* TARJETA DE BÚSQUEDA */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
                 <form onSubmit={buscarDocumento} className="flex flex-col md:flex-row gap-4 items-end">
                     <div className="flex-1 w-full">
@@ -157,8 +157,8 @@ const AnulacionGeneral = () => {
                             Código Único del Documento
                         </label>
                         <div className="relative group">
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg font-bold text-slate-700 placeholder-slate-300"
                                 placeholder="Ej: 2626000001"
                                 value={codigo}
@@ -167,7 +167,7 @@ const AnulacionGeneral = () => {
                             />
                         </div>
                     </div>
-                    <button 
+                    <button
                         type="submit"
                         disabled={loading || !codigo}
                         className="w-full md:w-auto px-8 py-3 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 shadow-lg disabled:opacity-70 transition-all flex justify-center items-center gap-2"
@@ -180,7 +180,6 @@ const AnulacionGeneral = () => {
                     </button>
                 </form>
 
-                {/* MENSAJES DE ESTADO */}
                 {error && (
                     <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg border border-red-100 flex items-start gap-3 animate-fade-in">
                         <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -189,7 +188,7 @@ const AnulacionGeneral = () => {
                         </div>
                     </div>
                 )}
-                
+
                 {exito && (
                     <div className="mt-4 p-4 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 flex items-start gap-3 animate-fade-in">
                         <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -200,33 +199,30 @@ const AnulacionGeneral = () => {
                 )}
             </div>
 
-            {/* RESULTADO Y ACCIONES */}
             {documento && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up">
-                    
-                    {/* COLUMNA IZQUIERDA: DETALLES DEL DOCUMENTO */}
+
                     <div className="lg:col-span-2 space-y-6">
-                        
-                        {/* Header del Documento */}
+
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className={`px-6 py-4 border-b flex justify-between items-center ${documento.tipo_origen === 'FACTURA' ? 'bg-blue-50 border-blue-100' : 'bg-purple-50 border-purple-100'}`}>
+                            <div className={`px-6 py-4 border-b flex justify-between items-center ${documento.tipo === 'FACTURA' ? 'bg-blue-50 border-blue-100' : 'bg-purple-50 border-purple-100'}`}>
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${documento.tipo_origen === 'FACTURA' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
-                                        {documento.tipo_origen === 'FACTURA' 
+                                    <div className={`p-2 rounded-lg ${documento.tipo === 'FACTURA' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                                        {documento.tipo === 'FACTURA'
                                             ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                             : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                         }
                                     </div>
                                     <div>
                                         <p className="text-xs font-bold uppercase tracking-wider opacity-60">Tipo de Documento</p>
-                                        <p className="font-bold text-slate-800">{documento.tipo_origen === 'FACTURA' ? 'Factura de Compra' : 'Asiento Manual'}</p>
+                                        <p className="font-bold text-slate-800">{documento.tipo === 'FACTURA' ? 'Factura de Compra' : 'Asiento Contable'}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <span className="block text-xs font-bold text-slate-400 uppercase">Estado Actual</span>
-                                    {documento.estado === 'ANULADA' ? (
+                                    {documento.estado === 'ANULADO' ? (
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200 mt-1">
-                                            ANULADA
+                                            ANULADO
                                         </span>
                                     ) : (
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 mt-1">
@@ -242,7 +238,7 @@ const AnulacionGeneral = () => {
                                 </div>
                                 <div>
                                     <p className="text-xs text-slate-400 font-bold uppercase">Entidad Relacionada</p>
-                                    <p className="text-slate-800 font-medium mt-1">{documento.entidad}</p>
+                                    <p className="text-slate-800 font-medium mt-1">{documento.entidad || 'Módulo General'}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-slate-400 font-bold uppercase">Fecha de Emisión</p>
@@ -250,12 +246,11 @@ const AnulacionGeneral = () => {
                                 </div>
                                 <div>
                                     <p className="text-xs text-slate-400 font-bold uppercase">Monto Total</p>
-                                    <p className="text-slate-900 font-bold text-lg mt-1">{formatCurrency(documento.monto)}</p>
+                                    <p className="text-slate-900 font-bold text-lg mt-1">{formatCurrency(documento.total)}</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Detalle Contable */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div className="px-6 py-3 bg-slate-50 border-b border-slate-200">
                                 <h3 className="font-bold text-slate-700 text-sm uppercase">Detalle del Asiento Original</h3>
@@ -270,11 +265,11 @@ const AnulacionGeneral = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
-                                        {documento.asiento_detalle.map((linea, i) => (
+                                        {documento.detalles && documento.detalles.map((linea, i) => (
                                             <tr key={i} className="hover:bg-slate-50 transition-colors">
                                                 <td className="px-6 py-3">
                                                     <div className="font-bold text-slate-700">{linea.cuenta_contable}</div>
-                                                    <div className="text-xs text-slate-400">{linea.nombre_cuenta}</div>
+                                                    <div className="text-xs text-slate-400">{linea.cuenta?.nombre || 'Cuenta Contable'}</div>
                                                 </td>
                                                 <td className="px-6 py-3 text-right font-mono text-emerald-600 bg-emerald-50/30">
                                                     {parseFloat(linea.debe) > 0 ? formatCurrency(linea.debe) : '-'}
@@ -290,20 +285,19 @@ const AnulacionGeneral = () => {
                         </div>
                     </div>
 
-                    {/* COLUMNA DERECHA: ACCIÓN DE ANULAR */}
                     <div className="lg:col-span-1">
-                        <div className={`rounded-xl border shadow-sm sticky top-6 ${documento.estado === 'ANULADA' ? 'bg-slate-50 border-slate-200' : 'bg-white border-red-200 ring-4 ring-red-50'}`}>
+                        <div className={`rounded-xl border shadow-sm sticky top-6 ${documento.estado === 'ANULADO' ? 'bg-slate-50 border-slate-200' : 'bg-white border-red-200 ring-4 ring-red-50'}`}>
                             <div className="p-5 border-b border-inherit">
-                                <h3 className={`font-bold flex items-center gap-2 ${documento.estado === 'ANULADA' ? 'text-slate-500' : 'text-red-700'}`}>
-                                    {documento.estado === 'ANULADA' 
+                                <h3 className={`font-bold flex items-center gap-2 ${documento.estado === 'ANULADO' ? 'text-slate-500' : 'text-red-700'}`}>
+                                    {documento.estado === 'ANULADO'
                                         ? <><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Documento Anulado</>
                                         : <><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> Zona de Anulación</>
                                     }
                                 </h3>
                             </div>
-                            
+
                             <div className="p-5">
-                                {documento.estado === 'ANULADA' ? (
+                                {documento.estado === 'ANULADO' ? (
                                     <p className="text-slate-500 text-sm">
                                         Este documento ya fue procesado y su reverso contable generado. No se pueden realizar más acciones.
                                     </p>
@@ -313,8 +307,8 @@ const AnulacionGeneral = () => {
                                             <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
                                                 Fecha Contable del Reverso <span className="text-red-500">*</span>
                                             </label>
-                                            <input 
-                                                type="date" 
+                                            <input
+                                                type="date"
                                                 className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm bg-slate-50 focus:bg-white transition-colors"
                                                 value={fechaAnulacion}
                                                 min={documento.fecha}
@@ -330,7 +324,7 @@ const AnulacionGeneral = () => {
                                             <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
                                                 Motivo de la Anulación <span className="text-red-500">*</span>
                                             </label>
-                                            <textarea 
+                                            <textarea
                                                 className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm min-h-[100px] bg-slate-50 focus:bg-white transition-colors"
                                                 placeholder="Describa claramente por qué se está anulando este documento (error de digitación, devolución, etc.)"
                                                 value={motivo}
@@ -340,11 +334,11 @@ const AnulacionGeneral = () => {
 
                                         <div className="bg-red-50 p-3 rounded-lg border border-red-100 mb-4">
                                             <p className="text-xs text-red-800 leading-relaxed">
-                                                <strong>Atención:</strong> Al confirmar, se generará un asiento contable inverso automáticamente. Esta acción no se puede deshacer.
+                                                <strong>Atención:</strong> Al confirmar, se actualizará el estado y se añadirá el motivo a la glosa del asiento. Esta acción no se puede deshacer.
                                             </p>
                                         </div>
 
-                                        <button 
+                                        <button
                                             onClick={confirmarAnulacion}
                                             disabled={procesando || !motivo || !fechaAnulacion}
                                             className="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all"
