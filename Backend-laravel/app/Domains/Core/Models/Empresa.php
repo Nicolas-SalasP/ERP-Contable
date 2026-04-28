@@ -5,7 +5,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Empresa extends Model
 {
-    // Por defecto Laravel asume timestamps (created_at, updated_at). Tu BD original solo tiene created_at.
     public const UPDATED_AT = null; 
 
     protected $fillable = [
@@ -23,5 +22,15 @@ class Empresa extends Model
     public function usuarios()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function centrosCosto()
+    {
+        return $this->hasMany(\App\Domains\Contabilidad\Models\CentroCosto::class, 'empresa_id');
+    }
+
+    public function cuentasBancarias()
+    {
+        return $this->hasMany(\App\Domains\Tesoreria\Models\CuentaBancariaEmpresa::class, 'empresa_id');
     }
 }

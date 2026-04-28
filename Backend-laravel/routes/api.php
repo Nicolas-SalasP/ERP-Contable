@@ -13,6 +13,7 @@ use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
+use App\Domains\Core\Controllers\EmpresaController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -24,6 +25,22 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+    // Empresa - Perfil
+    Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
+    Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil']);
+    Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo']);
+    Route::get('/empresas/catalogo-bancos', [EmpresaController::class, 'catalogoBancos']);
+
+    // Empresa - Cuentas Bancarias
+    Route::post('/empresas/bancos', [EmpresaController::class, 'agregarBanco']);
+    Route::put('/empresas/bancos/{id}', [EmpresaController::class, 'actualizarBanco']);
+    Route::delete('/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco']);
+
+    // Empresa - Centros de Costos
+    Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro']);
+    Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro']);
+    Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro']);
+
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
 

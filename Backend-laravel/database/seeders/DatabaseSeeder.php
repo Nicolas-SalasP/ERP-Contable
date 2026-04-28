@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             SincronizarCuentasSeeder::class,
             TestDataSeeder::class,
+            CatalogoBancosSeeder::class,
         ]);
     }
 }
