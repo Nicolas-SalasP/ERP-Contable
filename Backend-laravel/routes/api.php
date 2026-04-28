@@ -72,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tesoreria/cuentas-propias', [BancoController::class, 'storeCuenta']);
     Route::post('/tesoreria/conciliar/factura-compra', [ConciliacionController::class, 'pagarFacturaCompra']);
     Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa']);
+    Route::post('/banco/nomina/pagar', [BancoController::class, 'pagarNomina']);
 
     // Contabilidad
     Route::get('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'index']);

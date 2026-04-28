@@ -54,4 +54,26 @@ class BancoController
             ], 422);
         }
     }
+
+    public function pagarNomina(Request $request)
+    {
+        $request->validate([
+            'facturas_ids' => 'required|array',
+            'cuenta_bancaria_id' => 'required|integer'
+        ]);
+
+        try {
+            $resultado = $this->service->pagarNominaMasiva(
+                $request->user()->empresa_id,
+                $request->user()->id,
+                $request->facturas_ids,
+                $request->cuenta_bancaria_id
+            );
+            
+            return response()->json(array_merge(['success' => true], $resultado));
+            
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 500);
+        }
+    }
 }

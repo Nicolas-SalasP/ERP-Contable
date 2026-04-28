@@ -8,8 +8,8 @@ const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'curr
 const NominaPagos = () => {
     const [facturas, setFacturas] = useState([]);
     const [cuentasProveedores, setCuentasProveedores] = useState({});
-    const [cuentasOrigen, setCuentasOrigen] = useState([]); // Cuentas de la Empresa
-    const [cuentaOrigenId, setCuentaOrigenId] = useState(''); // Cuenta seleccionada para pagar
+    const [cuentasOrigen, setCuentasOrigen] = useState([]); 
+    const [cuentaOrigenId, setCuentaOrigenId] = useState(''); 
     
     const [loading, setLoading] = useState(true);
     const [seleccionadas, setSeleccionadas] = useState([]);
@@ -22,27 +22,35 @@ const NominaPagos = () => {
     const cargarDatosIniciales = async () => {
         setLoading(true);
         try {
-            // 1. Cargamos las facturas pendientes
             const resFacturas = await api.get('/facturas/historial?estado=REGISTRADA&limit=100');
-            if (resFacturas.success) {
-                const facturasConVencimiento = resFacturas.data.map(fac => {
+            if (resFacturas.success && resFacturas.data) {
+                const facturasMapeadas = resFacturas.data.map(fac => {
                     const fechaEmision = new Date(fac.fecha_emision);
-                    const fechaVencimiento = new Date(fechaEmision.setDate(fechaEmision.getDate() + 30));
+                    const fechaVencimiento = fac.fecha_vencimiento ? new Date(fac.fecha_vencimiento) : new Date(fechaEmision.setDate(fechaEmision.getDate() + 30));
                     const diasRestantes = Math.ceil((fechaVencimiento - new Date()) / (1000 * 60 * 60 * 24));
-                    return { ...fac, fecha_vencimiento: fechaVencimiento, diasRestantes };
+                    
+                    return { 
+                        ...fac, 
+                        fecha_vencimiento: fechaVencimiento, 
+                        diasRestantes,
+                        nombre_proveedor: fac.proveedor?.razon_social || 'Proveedor Desconocido',
+                        rut_proveedor: fac.proveedor?.rut || 'S/R',
+                        email_proveedor: fac.proveedor?.email_contacto || ''
+                    };
                 });
-                facturasConVencimiento.sort((a, b) => a.diasRestantes - b.diasRestantes);
-                setFacturas(facturasConVencimiento);
+
+                const facturasUrgentes = facturasMapeadas.filter(f => f.diasRestantes <= 7);
+
+                facturasUrgentes.sort((a, b) => a.diasRestantes - b.diasRestantes);
+                setFacturas(facturasUrgentes);
             }
 
-            // 2. Cargamos las cuentas bancarias de la EMPRESA (Desde donde saldrá la plata)
             const resCuentas = await api.get('/banco/cuentas');
-            if (resCuentas.success) {
-                setCuentasOrigen(resCuentas.data);
-                // Si solo hay una cuenta, la pre-seleccionamos por comodidad
-                if (resCuentas.data.length === 1) {
-                    setCuentaOrigenId(resCuentas.data[0].id);
-                }
+            const listaCuentas = Array.isArray(resCuentas) ? resCuentas : (resCuentas.data || []);
+            
+            setCuentasOrigen(listaCuentas);
+            if (listaCuentas.length === 1) {
+                setCuentaOrigenId(listaCuentas[0].id);
             }
 
         } catch (error) {
@@ -117,6 +125,7 @@ const NominaPagos = () => {
                 proveedor_id: fac.proveedor_id,
                 rut: fac.rut_proveedor,
                 nombre: fac.nombre_proveedor,
+                email: fac.email_proveedor,
                 facturas: [],
                 total_pagar: 0
             };
@@ -135,10 +144,11 @@ const NominaPagos = () => {
                 'RUT Beneficiario': p.rut,
                 'Nombre Beneficiario': p.nombre,
                 'Banco Destino': cuenta ? cuenta.banco : 'FALTA CUENTA',
+                'Tipo de Cuenta': cuenta ? cuenta.tipo_cuenta : '',
                 'N° Cuenta': cuenta ? cuenta.numero_cuenta : 'FALTA CUENTA',
                 'Monto a Pagar': p.total_pagar,
                 'Glosa / Detalle': `Pago Facturas: ${p.facturas.map(f => f.numero_factura).join(', ')}`,
-                'Correo Aviso': cuenta ? 'proveedor@mail.com' : ''
+                'Correo Aviso': p.email || ''
             };
         });
 
@@ -148,7 +158,6 @@ const NominaPagos = () => {
         XLSX.writeFile(wb, `Nomina_Banco_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
-    // CONEXIÓN REAL AL BACKEND
     const ejecutarPagoMasivo = () => {
         if (!cuentaOrigenId) {
             return Swal.fire({
@@ -247,7 +256,7 @@ const NominaPagos = () => {
             <div className="flex items-center gap-4 mb-8 bg-slate-50 p-2 rounded-xl border border-slate-200 w-fit mx-auto md:mx-0">
                 <div className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 ${paso === 1 ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500'}`}>
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paso === 1 ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-500'}`}>1</span>
-                    Seleccionar Facturas
+                    Seleccionar Facturas Vencidas / Por Vencer
                 </div>
                 <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                 <div className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 ${paso === 2 ? 'bg-white text-emerald-700 shadow-sm border border-slate-200' : 'text-slate-500'}`}>
@@ -274,7 +283,7 @@ const NominaPagos = () => {
                             />
                             <span className="font-bold text-slate-700 group-hover:text-blue-600 transition-colors">Seleccionar Todas ({facturas.length})</span>
                         </label>
-                        <span className="text-sm font-bold text-slate-400"><i className="fas fa-sort-amount-down-alt mr-1"></i> Ordenadas por vencimiento</span>
+                        <span className="text-sm font-bold text-slate-400"><i className="fas fa-sort-amount-down-alt mr-1"></i> Ordenadas por urgencia</span>
                     </div>
 
                     <div className="overflow-x-auto custom-scrollbar">
@@ -282,14 +291,21 @@ const NominaPagos = () => {
                             <thead className="bg-white border-b border-slate-100">
                                 <tr>
                                     <th className="px-6 py-4 w-10"></th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Vencimiento</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado / Vencimiento</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total a Pagar</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {facturas.map(fac => {
+                                {facturas.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-12 text-center">
+                                            <p className="text-slate-500 font-bold text-lg">No hay facturas urgentes por pagar</p>
+                                            <p className="text-slate-400 text-sm mt-1">¡Todo está al día en tu contabilidad!</p>
+                                        </td>
+                                    </tr>
+                                ) : facturas.map(fac => {
                                     const isSelected = seleccionadas.includes(fac.id);
                                     const isVencida = fac.diasRestantes < 0;
                                     const isUrgente = fac.diasRestantes >= 0 && fac.diasRestantes <= 5;
@@ -311,7 +327,7 @@ const NominaPagos = () => {
                                                     ) : isUrgente ? (
                                                         <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-xs font-bold border border-amber-200">Vence en {fac.diasRestantes} días</span>
                                                     ) : (
-                                                        <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded text-xs font-bold border border-slate-200">En {fac.diasRestantes} días</span>
+                                                        <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded text-xs font-bold border border-slate-200">Vence en {fac.diasRestantes} días</span>
                                                     )}
                                                 </div>
                                             </td>
@@ -338,8 +354,6 @@ const NominaPagos = () => {
                 /* PASO 2: RESUMEN Y EXPORTACIÓN */
                 <div className="animate-fade-in-up">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        
-                        {/* LISTA AGRUPADA POR PROVEEDOR */}
                         <div className="lg:col-span-2 space-y-4">
                             {nominasAgrupadas.map(prov => {
                                 const cuentaInfo = cuentasProveedores[prov.proveedor_id];
@@ -357,7 +371,6 @@ const NominaPagos = () => {
                                         </div>
                                         
                                         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {/* INFO BANCARIA */}
                                             <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
                                                 <div className="bg-white p-2 rounded-lg shadow-sm text-blue-500">
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
@@ -377,7 +390,6 @@ const NominaPagos = () => {
                                                 </div>
                                             </div>
 
-                                            {/* FACTURAS INCLUIDAS */}
                                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Facturas a Pagar ({prov.facturas.length})</p>
                                                 <div className="flex flex-wrap gap-2">
