@@ -12,6 +12,7 @@ const GestionActivos = () => {
     const [notificacion, setNotificacion] = useState(null);
     const [loading, setLoading] = useState(true);
     const [depreciando, setDepreciando] = useState(false);
+    const [mesDepreciacion, setMesDepreciacion] = useState(new Date().toISOString().slice(0, 7));
 
     const mostrarNotificacion = (tipo, mensaje) => {
         setNotificacion({ tipo, mensaje });
@@ -47,22 +48,26 @@ const GestionActivos = () => {
     }, []);
 
     const handleEjecutarDepreciacion = async () => {
+        if (!mesDepreciacion) {
+            return mostrarNotificacion('error', 'Debes seleccionar un mes para depreciar.');
+        }
+
         setDepreciando(true);
         try {
             const response = await api.post('/activos/depreciar-mes', {
-                fecha_cierre: new Date().toISOString().split('T')[0] 
+                mes_anio: mesDepreciacion 
             });
 
             if (response.success) {
-                mostrarNotificacion('success', response.mensaje);
+                mostrarNotificacion('success', response.message || response.data?.mensaje);
                 cargarDatos(); 
             }
         } catch (error) {
-            mostrarNotificacion('error', error.message || 'Error al ejecutar depreciación.');
+            mostrarNotificacion('error', error.response?.data?.message || error.message || 'Error al ejecutar depreciación.');
         } finally {
             setDepreciando(false);
         }
-    };;
+    };
 
     return (
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto bg-slate-50 min-h-screen">
@@ -146,14 +151,23 @@ const GestionActivos = () => {
 
                     {tabActiva === 'REGISTRADOS' && (
                         <div className="space-y-4">
-                            <div className="flex justify-end">
+                            <div className="flex justify-end items-center gap-3">
+                                <div className="flex flex-col items-end">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Período a Depreciar</label>
+                                    <input 
+                                        type="month" 
+                                        value={mesDepreciacion}
+                                        onChange={(e) => setMesDepreciacion(e.target.value)}
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all bg-white"
+                                    />
+                                </div>
                                 <button 
                                     onClick={handleEjecutarDepreciacion}
-                                    disabled={depreciando}
-                                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-sm font-bold rounded-lg shadow-sm transition-all flex items-center gap-2"
+                                    disabled={depreciando || !mesDepreciacion}
+                                    className="px-4 py-2 mt-4 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-sm font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 h-10"
                                 >
                                     {depreciando ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-calculator"></i>}
-                                    <span>{depreciando ? 'Calculando...' : 'Ejecutar Depreciación del Mes'}</span>
+                                    <span>{depreciando ? 'Calculando...' : 'Ejecutar Depreciación'}</span>
                                 </button>
                             </div>
                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

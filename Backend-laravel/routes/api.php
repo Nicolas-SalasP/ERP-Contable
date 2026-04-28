@@ -14,6 +14,8 @@ use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Core\Controllers\EmpresaController;
+use App\Domains\Core\Controllers\AnulacionController;
+use App\Domains\Activos\Controllers\ActivoFijoController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -96,6 +98,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado']);
 
     // Contabilidad - Anulaciones
-    Route::post('/anulacion/buscar', [\App\Domains\Core\Controllers\AnulacionController::class, 'buscar']);
-    Route::post('/anulacion/anular', [\App\Domains\Core\Controllers\AnulacionController::class, 'anular']);
+    Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar']);
+    Route::post('/anulacion/anular', [AnulacionController::class, 'anular']);
+
+    // Activos Fijos
+    Route::get('/activos', [ActivoFijoController::class, 'index']);
+    Route::get('/activos/pendientes', [ActivoFijoController::class, 'pendientes']);
+    Route::post('/activos', [ActivoFijoController::class, 'store']);
+    Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros']);
+    Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes']);
+    
+    // Rutas de Proyectos
+    Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos']);
+    Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto']);
 });

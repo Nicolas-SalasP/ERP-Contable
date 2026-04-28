@@ -25,7 +25,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
             ]);
             
             if (resProyectos.success) setProyectos(resProyectos.data);
-            if (resParams.success) setTiposActivos(resParams.data.cuentas);
+            if (resParams.success) setTiposActivos(resParams.data.cuentas_activo || []);
         } catch (error) {
             console.error(error);
         } finally {
@@ -148,7 +148,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                                         className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium bg-white"
                                     >
                                         <option value="">Seleccione Cuenta...</option>
-                                        {tiposActivos.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
+                                        {tiposActivos?.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
                                     </select>
                                 </div>
                                 <div>
