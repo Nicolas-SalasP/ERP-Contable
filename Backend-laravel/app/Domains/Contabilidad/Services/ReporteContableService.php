@@ -68,7 +68,7 @@ class ReporteContableService
             $lineas[] = [
                 'fecha' => $mov->asiento->fecha->format('Y-m-d'),
                 'comprobante' => $mov->asiento->numero_comprobante ?? $mov->asiento->id,
-                'glosa' => $mov->asiento->glosa,
+                'glosa' => $mov->descripcion_extensa ?: $mov->asiento->glosa,
                 'estado' => $mov->asiento->estado,
                 'debe' => $mov->debe,
                 'haber' => $mov->haber,

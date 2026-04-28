@@ -47,9 +47,10 @@ class AsientoContableService
                 $asiento->detalles()->create([
                     'cuenta_contable' => $detalle['cuenta_contable'],
                     'fecha' => $detalle['fecha'] ?? $asiento->fecha,
-                    'tipo_operacion' => $detalle['tipo_operacion'] ?? null,
+                    'tipo_operacion' => $detalle['tipo_operacion'] ?? ($detalle['debe'] > 0 ? 'DEBE' : 'HABER'),
                     'debe' => $detalle['debe'] ?? 0.00,
                     'haber' => $detalle['haber'] ?? 0.00,
+                    'descripcion_extensa' => $detalle['glosa_detalle'] ?? null,
                 ]);
             }
 

@@ -16,6 +16,7 @@ class DetalleAsiento extends Model
         'tipo_operacion',
         'debe',
         'haber',
+        'descripcion_extensa',
     ];
 
     protected $casts = [

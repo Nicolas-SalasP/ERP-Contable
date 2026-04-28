@@ -41,6 +41,44 @@ class AsientoContableController
         }
     }
 
+    public function storeAvanzado(Request $request)
+    {
+        try {
+            $datos = $request->validate([
+                'fecha' => 'required|date',
+                'glosa' => 'required|string|min:3',
+                'detalles' => 'required|array|min:2',
+                'detalles.*.cuenta_contable' => 'required|string',
+                'detalles.*.debe' => 'required|numeric',
+                'detalles.*.haber' => 'required|numeric'
+            ]);
+
+            $cabecera = [
+                'empresa_id' => $request->user()->empresa_id,
+                'usuario_id' => $request->user()->id,
+                'fecha' => $datos['fecha'],
+                'glosa' => $datos['glosa'],
+                'tipo_asiento' => 'traspaso',
+                'origen_modulo' => 'contabilidad',
+                'estado' => 'MAYORIZADO',
+            ];
+
+            $asiento = $this->service->registrarAsiento($cabecera, $datos['detalles']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Asiento contable registrado exitosamente.',
+                'data' => $asiento
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
+    }
+
     public function show(Request $request, $id)
     {
         try {
