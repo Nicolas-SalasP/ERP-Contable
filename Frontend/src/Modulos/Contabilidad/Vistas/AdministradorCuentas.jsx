@@ -7,9 +7,14 @@ const AdministradorCuentas = () => {
     const [loading, setLoading] = useState(true);
     const [busqueda, setBusqueda] = useState('');
     const [filtroTipo, setFiltroTipo] = useState('');
+    const [filtroEstado, setFiltroEstado] = useState('');
+    
     const [modalOpen, setModalOpen] = useState(false);
     const [cuentaEditando, setCuentaEditando] = useState(null);
-    const [formEdit, setFormEdit] = useState({ nombre: '', imputable: 1, activo: 1 });
+    const [saving, setSaving] = useState(false);
+    
+    const formBase = { codigo: '', nombre: '', tipo: 'ACTIVO', imputable: 1, activo: 1 };
+    const [formEdit, setFormEdit] = useState(formBase);
 
     const cargarCuentas = async () => {
         setLoading(true);
@@ -34,10 +39,18 @@ const AdministradorCuentas = () => {
 
     useEffect(() => { cargarCuentas(); }, []);
 
+    const abrirCreacion = () => {
+        setCuentaEditando(null); 
+        setFormEdit(formBase);
+        setModalOpen(true);
+    };
+
     const abrirEdicion = (cuenta) => {
-        setCuentaEditando(cuenta);
+        setCuentaEditando(cuenta); 
         setFormEdit({
+            codigo: cuenta.codigo,
             nombre: cuenta.nombre,
+            tipo: cuenta.tipo,
             imputable: cuenta.imputable ? 1 : 0,
             activo: cuenta.activo !== undefined ? (cuenta.activo ? 1 : 0) : 1
         });
@@ -45,23 +58,31 @@ const AdministradorCuentas = () => {
     };
 
     const guardarCambios = async () => {
-        if (!formEdit.nombre.trim()) {
+        if (!formEdit.codigo.trim() || !formEdit.nombre.trim()) {
             return Swal.fire({
                 icon: 'warning',
                 title: 'Atención',
-                text: 'El nombre de la cuenta no puede estar vacío',
+                text: 'El código y el nombre de la cuenta son obligatorios.',
                 customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-amber-600' },
                 buttonsStyling: false
             });
         }
 
+        setSaving(true);
+
         try {
-            const res = await api.put(`/contabilidad/plan-cuentas/${cuentaEditando.id}`, formEdit);
+            let res;
+            if (cuentaEditando) {
+                res = await api.put(`/contabilidad/plan-cuentas/${cuentaEditando.id}`, formEdit);
+            } else {
+                res = await api.post(`/contabilidad/plan-cuentas`, formEdit);
+            }
+
             if (res.success) {
                 Swal.fire({
                     icon: 'success',
                     title: '¡Guardado!',
-                    text: 'La cuenta se actualizó correctamente.',
+                    text: cuentaEditando ? 'La cuenta se actualizó correctamente.' : 'Nueva cuenta creada con éxito.',
                     timer: 1500,
                     showConfirmButton: false,
                     customClass: { popup: 'rounded-2xl' }
@@ -73,17 +94,25 @@ const AdministradorCuentas = () => {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Hubo un problema al guardar los cambios.',
+                text: error.response?.data?.message || 'Hubo un problema al guardar los cambios.',
                 customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' },
                 buttonsStyling: false
             });
+        } finally {
+            setSaving(false);
         }
     };
 
     const cuentasFiltradas = cuentas.filter(c => {
         const coincideBusqueda = c.codigo.includes(busqueda) || c.nombre.toLowerCase().includes(busqueda.toLowerCase());
         const coincideTipo = filtroTipo === '' || c.tipo === filtroTipo;
-        return coincideBusqueda && coincideTipo;
+        
+        const isActiva = c.activo === undefined || c.activo == 1;
+        const coincideEstado = filtroEstado === '' || 
+                               (filtroEstado === 'ACTIVA' && isActiva) || 
+                               (filtroEstado === 'INACTIVA' && !isActiva);
+
+        return coincideBusqueda && coincideTipo && coincideEstado;
     });
 
     const getTipoColor = (tipo) => {
@@ -99,12 +128,21 @@ const AdministradorCuentas = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans pb-10">
-            <div className="mb-8">
-                <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Configuración: Plan de Cuentas</h2>
-                <p className="text-slate-500 text-sm mt-1">Administra la visibilidad, nombres y comportamiento de tus cuentas contables.</p>
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Configuración: Plan de Cuentas</h2>
+                    <p className="text-slate-500 text-sm mt-1">Administra la visibilidad, nombres y comportamiento de tus cuentas contables.</p>
+                </div>
+                <button 
+                    onClick={abrirCreacion}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    Nueva Cuenta
+                </button>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col lg:flex-row gap-4">
                 <div className="flex-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -117,19 +155,32 @@ const AdministradorCuentas = () => {
                         onChange={(e) => setBusqueda(e.target.value)}
                     />
                 </div>
-                <div className="w-full md:w-64">
-                    <select 
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm cursor-pointer"
-                        value={filtroTipo}
-                        onChange={(e) => setFiltroTipo(e.target.value)}
-                    >
-                        <option value="">Todos los tipos</option>
-                        <option value="ACTIVO">Activos</option>
-                        <option value="PASIVO">Pasivos</option>
-                        <option value="PATRIMONIO">Patrimonio</option>
-                        <option value="INGRESO">Ingresos</option>
-                        <option value="GASTO">Gastos</option>
-                    </select>
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="w-full sm:w-48">
+                        <select 
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm cursor-pointer"
+                            value={filtroTipo}
+                            onChange={(e) => setFiltroTipo(e.target.value)}
+                        >
+                            <option value="">Todos los tipos</option>
+                            <option value="ACTIVO">Activos</option>
+                            <option value="PASIVO">Pasivos</option>
+                            <option value="PATRIMONIO">Patrimonio</option>
+                            <option value="INGRESO">Ingresos</option>
+                            <option value="GASTO">Gastos</option>
+                        </select>
+                    </div>
+                    <div className="w-full sm:w-48">
+                        <select 
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm cursor-pointer"
+                            value={filtroEstado}
+                            onChange={(e) => setFiltroEstado(e.target.value)}
+                        >
+                            <option value="">Todos los estados</option>
+                            <option value="ACTIVA">Cuentas Activas</option>
+                            <option value="INACTIVA">Cuentas Inactivas</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -142,7 +193,7 @@ const AdministradorCuentas = () => {
                 ) : cuentasFiltradas.length === 0 ? (
                     <div className="p-10 text-center text-slate-400">
                         <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        <p className="font-medium">No se encontraron cuentas contables.</p>
+                        <p className="font-medium">No se encontraron cuentas contables con esos filtros.</p>
                     </div>
                 ) : (
                     <>
@@ -199,7 +250,7 @@ const AdministradorCuentas = () => {
                                     {cuentasFiltradas.map((cuenta) => {
                                         const isActiva = cuenta.activo === undefined || cuenta.activo == 1;
                                         return (
-                                            <tr key={cuenta.id} className={`hover:bg-slate-50 transition-colors group ${!isActiva ? 'opacity-60 bg-slate-50' : 'bg-white'}`}>
+                                            <tr key={cuenta.id} className={`hover:bg-slate-50 transition-colors ${!isActiva ? 'opacity-60 bg-slate-50' : 'bg-white'}`}>
                                                 <td className="px-6 py-4 font-mono font-bold text-slate-600 whitespace-nowrap">{cuenta.codigo}</td>
                                                 <td className={`px-6 py-4 font-bold ${isActiva ? 'text-slate-800' : 'text-slate-500 line-through decoration-slate-300'}`}>
                                                     {cuenta.nombre}
@@ -224,7 +275,7 @@ const AdministradorCuentas = () => {
                                                 <td className="px-6 py-4 text-right whitespace-nowrap">
                                                     <button 
                                                         onClick={() => abrirEdicion(cuenta)}
-                                                        className="flex items-center gap-1.5 ml-auto bg-slate-50 border border-slate-200 hover:bg-blue-50 text-slate-600 hover:text-blue-700 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-xs opacity-100 md:opacity-0 group-hover:opacity-100"
+                                                        className="flex items-center gap-1.5 ml-auto bg-white border border-slate-200 hover:bg-blue-50 text-slate-600 hover:text-blue-700 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-xs shadow-sm"
                                                         title="Configurar Cuenta"
                                                     >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -246,8 +297,11 @@ const AdministradorCuentas = () => {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-slide-up">
                         <div className="bg-slate-900 px-6 py-5 flex justify-between items-center text-white">
                             <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
-                                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                Propiedades de Cuenta
+                                {cuentaEditando ? (
+                                    <><svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg> Propiedades de Cuenta</>
+                                ) : (
+                                    <><svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg> Nueva Cuenta Contable</>
+                                )}
                             </h2>
                             <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -255,9 +309,34 @@ const AdministradorCuentas = () => {
                         </div>
                         
                         <div className="p-6 space-y-5 bg-white">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Código Contable (No editable)</label>
-                                <input type="text" value={cuentaEditando?.codigo} disabled className="w-full bg-slate-100 border border-slate-200 rounded-lg p-3 text-slate-500 font-mono font-bold cursor-not-allowed outline-none" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Código Contable</label>
+                                    <input 
+                                        type="text" 
+                                        value={formEdit.codigo} 
+                                        onChange={e => setFormEdit({...formEdit, codigo: e.target.value.replace(/\D/g, '')})} 
+                                        disabled={!!cuentaEditando} 
+                                        className={`w-full border rounded-lg p-3 font-mono font-bold outline-none transition-all ${cuentaEditando ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' : 'bg-white border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-slate-800'}`}
+                                        placeholder="Ej: 110101"
+                                    />
+                                    {cuentaEditando && <span className="text-[10px] text-slate-400 mt-1 block">El código no es editable.</span>}
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Tipo de Cuenta</label>
+                                    <select 
+                                        value={formEdit.tipo} 
+                                        onChange={e => setFormEdit({...formEdit, tipo: e.target.value})}
+                                        disabled={!!cuentaEditando}
+                                        className={`w-full border rounded-lg p-3 font-bold outline-none transition-all ${cuentaEditando ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' : 'bg-white border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-slate-800 cursor-pointer'}`}
+                                    >
+                                        <option value="ACTIVO">ACTIVO</option>
+                                        <option value="PASIVO">PASIVO</option>
+                                        <option value="PATRIMONIO">PATRIMONIO</option>
+                                        <option value="INGRESO">INGRESO</option>
+                                        <option value="GASTO">GASTO</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div>
@@ -267,6 +346,7 @@ const AdministradorCuentas = () => {
                                     value={formEdit.nombre} 
                                     onChange={e => setFormEdit({...formEdit, nombre: e.target.value})}
                                     className="w-full border border-slate-300 rounded-lg p-3 font-bold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all" 
+                                    placeholder="Ej: Banco Santander, Caja, etc."
                                 />
                             </div>
 
@@ -297,9 +377,15 @@ const AdministradorCuentas = () => {
                             <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-bold transition-all text-center">
                                 Cancelar
                             </button>
-                            <button onClick={guardarCambios} className="w-full sm:w-auto px-8 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
-                                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                                Guardar Cambios
+                            <button onClick={guardarCambios} disabled={saving} className="w-full sm:w-auto px-8 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                                {saving ? (
+                                    <><i className="fas fa-spinner fa-spin"></i> Guardando...</>
+                                ) : (
+                                    <>
+                                        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                                        {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
