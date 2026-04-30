@@ -20,7 +20,6 @@ class Producto extends Model
         'costo_promedio',
         'precio_venta_neto',
         'afecto_iva',
-        'codigo_dte',
         'codigo_barra',
         'stock_minimo',
         'bodega_defecto_id',

@@ -8,7 +8,6 @@ use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\Producto;
-use App\Domains\Inventario\Models\StockProducto;
 use App\Domains\Inventario\Models\UnidadMedida;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -481,7 +480,6 @@ class InventarioApiTest extends TestCase
             ['codigo' => 'UN'],
             [
                 'nombre' => 'Unidad',
-                'codigo_sii' => 'UN',
                 'permite_decimal' => false,
                 'activo' => true,
             ]
@@ -500,7 +498,6 @@ class InventarioApiTest extends TestCase
             'costo_promedio' => 0,
             'precio_venta_neto' => 10000,
             'afecto_iva' => true,
-            'codigo_dte' => 'DTE-' . uniqid(),
             'codigo_barra' => '780' . random_int(1000000000, 9999999999),
             'stock_minimo' => 0,
             'bodega_defecto_id' => null,

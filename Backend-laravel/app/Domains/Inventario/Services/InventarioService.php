@@ -87,7 +87,6 @@ class InventarioService
                 'costo_promedio' => $datos['costo_promedio'] ?? 0,
                 'precio_venta_neto' => $datos['precio_venta_neto'] ?? 0,
                 'afecto_iva' => $datos['afecto_iva'] ?? true,
-                'codigo_dte' => $datos['codigo_dte'] ?? null,
                 'codigo_barra' => $datos['codigo_barra'] ?? null,
                 'stock_minimo' => $datos['stock_minimo'] ?? 0,
                 'bodega_defecto_id' => $datos['bodega_defecto_id'] ?? null,
@@ -135,7 +134,6 @@ class InventarioService
             'metodo_valorizacion' => $datos['metodo_valorizacion'] ?? 'PMP',
             'precio_venta_neto' => $datos['precio_venta_neto'] ?? 0,
             'afecto_iva' => $datos['afecto_iva'] ?? true,
-            'codigo_dte' => $datos['codigo_dte'] ?? null,
             'codigo_barra' => $datos['codigo_barra'] ?? null,
             'stock_minimo' => $datos['stock_minimo'] ?? 0,
             'bodega_defecto_id' => $datos['bodega_defecto_id'] ?? null,
@@ -184,6 +182,30 @@ class InventarioService
 
         if (!preg_match('/^[A-Z0-9._-]{2,50}$/', $sku)) {
             throw new Exception('El SKU debe tener entre 2 y 50 caracteres y solo puede incluir letras, números, punto, guion o guion bajo.');
+        }
+
+        $nombre = trim((string) ($datos['nombre'] ?? ''));
+
+        if ($nombre === '') {
+            throw new Exception('El nombre del producto es obligatorio.');
+        }
+
+        $tipoProducto = $datos['tipo_producto'] ?? 'BIEN';
+
+        if (!in_array($tipoProducto, ['BIEN', 'SERVICIO', 'INSUMO'], true)) {
+            throw new Exception('El tipo de producto no es válido.');
+        }
+
+        $metodoValorizacion = $datos['metodo_valorizacion'] ?? 'PMP';
+
+        if (!in_array($metodoValorizacion, ['PMP', 'FIFO'], true)) {
+            throw new Exception('El método de valorización no es válido.');
+        }
+
+        foreach (['costo_promedio', 'precio_venta_neto', 'stock_minimo'] as $campo) {
+            if (isset($datos[$campo]) && (float) $datos[$campo] < 0) {
+                throw new Exception('Los valores monetarios y de stock no pueden ser negativos.');
+            }
         }
 
         $querySku = Producto::where('empresa_id', $empresaId)->where('sku', $sku);

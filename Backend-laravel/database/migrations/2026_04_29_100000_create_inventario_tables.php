@@ -12,7 +12,6 @@ return new class extends Migration {
             $table->id();
             $table->string('codigo', 10)->unique();
             $table->string('nombre', 80);
-            $table->string('codigo_sii', 10)->nullable();
             $table->boolean('permite_decimal')->default(true);
             $table->boolean('activo')->default(true);
             $table->timestamps();
@@ -42,7 +41,6 @@ return new class extends Migration {
             $table->decimal('costo_promedio', 18, 4)->default(0);
             $table->decimal('precio_venta_neto', 18, 4)->default(0);
             $table->boolean('afecto_iva')->default(true);
-            $table->string('codigo_dte', 35)->nullable();
             $table->string('codigo_barra', 80)->nullable();
             $table->decimal('stock_minimo', 18, 4)->default(0);
             $table->foreignId('bodega_defecto_id')->nullable()->constrained('inventario_bodegas')->nullOnDelete();
@@ -68,14 +66,70 @@ return new class extends Migration {
         });
 
         DB::table('inventario_unidades_medida')->insert([
-            ['codigo' => 'UN', 'nombre' => 'Unidad', 'codigo_sii' => 'UN', 'permite_decimal' => false, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'KG', 'nombre' => 'Kilogramo', 'codigo_sii' => 'KG', 'permite_decimal' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'LT', 'nombre' => 'Litro', 'codigo_sii' => 'LT', 'permite_decimal' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'M', 'nombre' => 'Metro', 'codigo_sii' => 'M', 'permite_decimal' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'M2', 'nombre' => 'Metro cuadrado', 'codigo_sii' => 'M2', 'permite_decimal' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'M3', 'nombre' => 'Metro cúbico', 'codigo_sii' => 'M3', 'permite_decimal' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'HR', 'nombre' => 'Hora', 'codigo_sii' => 'HR', 'permite_decimal' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'CJ', 'nombre' => 'Caja', 'codigo_sii' => 'CJ', 'permite_decimal' => false, 'created_at' => now(), 'updated_at' => now()],
+            [
+                'codigo' => 'UN',
+                'nombre' => 'Unidad',
+                'permite_decimal' => false,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'codigo' => 'KG',
+                'nombre' => 'Kilogramo',
+                'permite_decimal' => true,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'codigo' => 'LT',
+                'nombre' => 'Litro',
+                'permite_decimal' => true,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'codigo' => 'M',
+                'nombre' => 'Metro',
+                'permite_decimal' => true,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'codigo' => 'M2',
+                'nombre' => 'Metro cuadrado',
+                'permite_decimal' => true,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'codigo' => 'M3',
+                'nombre' => 'Metro cúbico',
+                'permite_decimal' => true,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'codigo' => 'HR',
+                'nombre' => 'Hora',
+                'permite_decimal' => true,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'codigo' => 'CJ',
+                'nombre' => 'Caja',
+                'permite_decimal' => false,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
 
         $this->agregarPermisosARoles();
@@ -126,7 +180,13 @@ return new class extends Migration {
             }
 
             DB::table('roles')->where('id', $rol->id)->update([
-                'permisos' => json_encode(array_values(array_unique(array_merge($permisosActuales, $permisosNuevos)))),
+                'permisos' => json_encode(
+                    array_values(
+                        array_unique(
+                            array_merge($permisosActuales, $permisosNuevos)
+                        )
+                    )
+                ),
             ]);
         }
     }

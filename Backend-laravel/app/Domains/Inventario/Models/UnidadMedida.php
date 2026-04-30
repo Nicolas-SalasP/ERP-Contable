@@ -11,7 +11,6 @@ class UnidadMedida extends Model
     protected $fillable = [
         'codigo',
         'nombre',
-        'codigo_sii',
         'permite_decimal',
         'activo',
     ];
