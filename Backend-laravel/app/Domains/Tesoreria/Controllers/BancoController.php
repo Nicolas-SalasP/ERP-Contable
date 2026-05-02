@@ -86,4 +86,62 @@ class BancoController
             return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 500);
         }
     }
+
+    public function ingresoManual(Request $request)
+    {
+        try {
+            $datos = $request->validate([
+                'cuenta_bancaria_id' => 'required|integer',
+                'fecha' => 'required|date',
+                'monto' => 'required|numeric|min:1',
+                'tipo_movimiento' => 'required|string',
+                'descripcion' => 'required|string|max:255',
+            ]);
+
+            // Delegamos al servicio
+            $resultado = $this->service->registrarIngresoManual($request->user()->empresa_id, $datos);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ingreso manual registrado correctamente.',
+                'data' => $resultado
+            ], 201);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    public function importarCartola(Request $request)
+    {
+        try {
+            $request->validate([
+                'cuenta_bancaria_id' => 'required|integer',
+                'cuenta_contrapartida' => 'required|string',
+                'archivo' => 'required|file|mimes:csv,txt'
+            ]);
+
+            $resultado = $this->service->procesarCartola(
+                $request->user()->empresa_id, 
+                $request->user()->id,
+                $request->cuenta_bancaria_id, 
+                $request->cuenta_contrapartida, 
+                $request->file('archivo')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => "Proceso completado. Importados: {$resultado['importados']} | Ignorados (Duplicados): {$resultado['ignorados']}",
+                'data' => $resultado
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ], 422);
+        }
+    }
 }

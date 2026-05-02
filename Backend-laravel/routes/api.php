@@ -70,6 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/facturas/historial', [FacturaController::class, 'historial']);
     Route::get('/facturas/check', [FacturaController::class, 'check']);
     Route::apiResource('facturas', FacturaController::class)->except(['create', 'edit', 'update']);
+    Route::get('/facturas/{id}/asiento', [FacturaController::class, 'verAsiento']);
+    Route::post('/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificarAsiento']);
 
     // Comercial - Cotizaciones
     Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);
@@ -90,6 +92,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/banco/nomina/pagar', [BancoController::class, 'pagarNomina']);
     Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa']);
     Route::get('/banco/cuentas-imputables', [PlanCuentaController::class, 'imputables']);
+    Route::post('/banco/ingreso-manual', [BancoController::class, 'ingresoManual']);
+    Route::post('/banco/importar', [BancoController::class, 'importarCartola']);
     
     // Tesoreria - Mesa de Conciliacion
     Route::get('/banco/movimientos/pendientes/{idCuenta}', [ConciliacionController::class, 'movimientosPendientes']);
@@ -130,4 +134,5 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rutas de Proyectos
     Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos']);
     Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto']);
+    Route::get('/activos/proyectos/{id}/analisis', [ActivoFijoController::class, 'analisisProyecto']);
 });

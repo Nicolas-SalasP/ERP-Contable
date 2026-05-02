@@ -127,4 +127,17 @@ class ActivoFijoService
             ];
         });
     }
+
+    public function analizarProyecto(int $empresaId, int $proyectoId): array
+    {
+        $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->findOrFail($proyectoId);
+            
+        return [
+            'proyecto' => $proyecto,
+            'total_invertido' => $proyecto->valor_total_original ?? 0,
+            'estado_actual' => $proyecto->estado,
+            'fecha_inicio' => $proyecto->created_at,
+            'analisis_completado' => true
+        ];
+    }
 }

@@ -105,4 +105,14 @@ class AsientoContableService
             return $asiento;
         });
     }
+
+    public function existeAsientoPorOrigen(int $empresaId, string $modulo, int $origenId, string $fecha, string $glosa): bool
+    {
+        return AsientoContable::where('empresa_id', $empresaId)
+            ->where('origen_modulo', $modulo)
+            ->where('origen_id', $origenId)
+            ->where('fecha', $fecha)
+            ->where('glosa', $glosa)
+            ->exists();
+    }
 }

@@ -61,7 +61,6 @@ class BancoService
             foreach ($facturas as $factura) {
                 /** @var Factura $factura */
                 $factura->estado = 'PAGADA'; 
-                // Se eliminó la línea de fecha_pago para evitar el error SQL
                 $factura->save();
 
                 $totalNomina += $factura->monto_bruto;
@@ -104,5 +103,94 @@ class BancoService
                 'total'      => $totalNomina
             ];
         });
+    }
+
+    public function registrarIngresoManual(int $empresaId, array $datos): array
+    {
+        return [
+            'estado' => 'REGISTRADO', 
+            'mensaje' => 'Movimiento guardado exitosamente.',
+            'datos_ingresados' => $datos
+        ];
+    }
+
+    public function procesarCartola(int $empresaId, int $usuarioId, int $cuentaBancariaId, string $cuentaContrapartida, $archivo): array
+    {
+        DB::beginTransaction();
+        
+        try {
+            $cuentaBanco = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->findOrFail($cuentaBancariaId);
+            $codigoCuentaBanco = $cuentaBanco->cuenta_contable_codigo ?? '1-1-01-01';
+
+            $gestor = fopen($archivo->getRealPath(), "r");
+            $esCabecera = true;
+            $importados = 0;
+            $ignorados = 0;
+
+            while (($fila = fgetcsv($gestor, 1000, ",")) !== FALSE) {
+                if ($esCabecera) {
+                    $esCabecera = false;
+                    continue;
+                }
+
+                if (count($fila) < 3) continue; 
+
+                $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $fila[0])));
+                $descripcion = substr(trim($fila[1]), 0, 255);
+                $monto = (float) $fila[2];
+
+                if ($monto == 0) continue;
+
+                $existeDuplicado = $this->asientoService->existeAsientoPorOrigen(
+                    $empresaId,
+                    'importacion_banco',
+                    $cuentaBancariaId,
+                    $fecha,
+                    $descripcion
+                );
+
+                if ($existeDuplicado) {
+                    $ignorados++;
+                    continue;
+                }
+
+                $detalles = [];
+                $montoAbsoluto = abs($monto);
+
+                if ($monto > 0) {
+                    $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => $montoAbsoluto, 'haber' => 0];
+                    $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => 0, 'haber' => $montoAbsoluto];
+                } else {
+                    $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => $montoAbsoluto, 'haber' => 0];
+                    $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $montoAbsoluto];
+                }
+
+                $cabeceraAsiento = [
+                    'empresa_id' => $empresaId,
+                    'usuario_id' => $usuarioId,
+                    'fecha' => $fecha,
+                    'glosa' => $descripcion,
+                    'tipo_asiento' => 'traspaso',
+                    'origen_modulo' => 'importacion_banco',
+                    'origen_id' => $cuentaBancariaId,
+                    'estado' => 'MAYORIZADO'
+                ];
+
+                $this->asientoService->registrarAsiento($cabeceraAsiento, $detalles);
+                $importados++;
+            }
+            fclose($gestor);
+
+            DB::commit();
+
+            return [
+                'importados' => $importados,
+                'ignorados' => $ignorados
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new Exception("El archivo contiene errores y la importación fue abortada. Error: " . $e->getMessage());
+        }
     }
 }

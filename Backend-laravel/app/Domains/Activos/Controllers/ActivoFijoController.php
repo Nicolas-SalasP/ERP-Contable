@@ -157,4 +157,21 @@ class ActivoFijoController
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
     }
+
+    public function analisisProyecto(Request $request, $id)
+    {
+        try {
+            $analisis = $this->service->analizarProyecto($request->user()->empresa_id, $id);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $analisis
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'No se pudo cargar el análisis del proyecto. Es posible que no exista.'
+            ], 404);
+        }
+    }
 }

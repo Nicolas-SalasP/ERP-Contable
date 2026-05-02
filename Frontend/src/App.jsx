@@ -29,6 +29,8 @@ import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
 import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
 import GestionUsuarios from './Modulos/Administrador/GestionUsuarios';
 import GestionRoles from './Modulos/Administrador/GestionRoles';
+import VisorAsientoCompleto from './Modulos/Contabilidad/Vistas/VisorAsientoCompleto';
+import ReclasificadorAsiento from './Modulos/Contabilidad/Vistas/ReclasificadorAsiento';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -247,6 +249,26 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="usuarios.gestionar">
                 <LayoutPrincipal><GestionRoles /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/factura/:id/asiento" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal>
+                  <VisorAsientoCompleto />
+                </LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/factura/:id/reclasificar" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.crear">
+                <LayoutPrincipal>
+                  <ReclasificadorAsiento />
+                </LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />

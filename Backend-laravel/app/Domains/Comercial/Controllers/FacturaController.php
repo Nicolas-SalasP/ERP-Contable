@@ -101,4 +101,49 @@ class FacturaController
             ], 422);
         }
     }
+
+    public function verAsiento(Request $request, $id)
+    {
+        try {
+            $datosAsiento = $this->service->obtenerAsientoDeFactura($request->user()->empresa_id, $id);
+
+            return response()->json([
+                'success' => true, 
+                'data' => $datosAsiento
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    public function reclasificarAsiento(Request $request, $id)
+    {
+        try {
+            $datos = $request->validate([
+                'fecha' => 'required|date',
+                'glosa' => 'required|string',
+                'cambios' => 'required|array'
+            ]);
+
+            $this->service->reclasificarAsiento(
+                $request->user()->empresa_id, 
+                $request->user()->id, 
+                $id, 
+                $datos
+            );
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Asiento reclasificado exitosamente.'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
 }

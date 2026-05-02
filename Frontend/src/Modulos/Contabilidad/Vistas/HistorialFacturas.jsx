@@ -215,7 +215,7 @@ const HistorialFacturas = () => {
             .then(res => { if (res.success) setListaProveedores(res.data); })
             .catch(err => console.error("Error", err));
 
-        api.get('/contabilidad/cuentas')
+        api.get('/contabilidad/plan-cuentas')
             .then(res => {
                 if (res.success && res.data) {
                     const cuentasImputables = res.data.filter(c => c.imputable == 1 || c.imputable === true);
@@ -534,8 +534,8 @@ const HistorialFacturas = () => {
                                                     <h3 className="font-bold text-slate-800 leading-tight">{fac.proveedor?.razon_social || 'Proveedor Desconocido'}</h3>
                                                 </div>
                                                 <span className={`inline-flex px-2 py-1 text-[10px] font-bold rounded uppercase border ${fac.estado === 'PAGADA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                                        fac.estado === 'ANULADA' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                            'bg-amber-50 text-amber-700 border-amber-200'
+                                                    fac.estado === 'ANULADA' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                        'bg-amber-50 text-amber-700 border-amber-200'
                                                     }`}>
                                                     {fac.estado === 'REGISTRADA' ? 'Pendiente' : fac.estado}
                                                 </span>
@@ -699,17 +699,16 @@ const HistorialFacturas = () => {
 
                                                                     <li>
                                                                         <button
-                                                                            onClick={() => verAsientoContable(fac.id)}
-                                                                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-3"
+                                                                            onClick={() => navigate(`/contabilidad/factura/${fac.id}/asiento`)}
+                                                                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-amber-600 transition-colors flex items-center gap-3"
                                                                         >
-                                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                                                                             Ver Asiento
                                                                         </button>
                                                                     </li>
                                                                     {fac.estado !== 'ANULADA' && (
                                                                         <li>
                                                                             <button
-                                                                                onClick={() => iniciarCambio(fac)}
+                                                                                onClick={() => navigate(`/contabilidad/factura/${fac.id}/reclasificar`)}
                                                                                 className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-amber-600 transition-colors flex items-center gap-3"
                                                                             >
                                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>

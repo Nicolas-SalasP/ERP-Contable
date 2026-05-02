@@ -183,4 +183,80 @@ class FacturaService
             return $factura;
         });
     }
+
+    public function obtenerAsientoDeFactura(int $empresaId, int $facturaId): array
+    {
+        $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+
+        if (!$factura->comprobante_contable) {
+            throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
+        }
+
+        $asiento = AsientoContable::with(['detalles.cuenta', 'usuario'])
+            ->where('empresa_id', $empresaId)
+            ->where('numero_comprobante', $factura->comprobante_contable)
+            ->first();
+
+        if (!$asiento) {
+            throw new Exception('El asiento asociado no fue encontrado en la base de datos.');
+        }
+
+        return [
+            'cabecera' => $asiento,
+            'detalles' => $asiento->detalles->map(function ($d) {
+                return [
+                    'cuenta_contable' => $d->cuenta_contable,
+                    'cuenta_nombre' => $d->cuenta->nombre ?? 'Sin nombre',
+                    'debe' => $d->debe,
+                    'haber' => $d->haber,
+                    'glosa_detalle' => $d->descripcion_extensa
+                ];
+            })
+        ];
+    }
+
+    public function reclasificarAsiento(int $empresaId, int $usuarioId, int $facturaId, array $datos): void
+    {
+        DB::transaction(function () use ($empresaId, $usuarioId, $facturaId, $datos) {
+            $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+
+            if (!$factura->comprobante_contable) {
+                throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
+            }
+
+            $asiento = AsientoContable::with('detalles')
+                ->where('empresa_id', $empresaId)
+                ->where('numero_comprobante', $factura->comprobante_contable)
+                ->firstOrFail();
+
+            $glosaCabeceraOriginal = $asiento->glosa;
+            $asiento->update([
+                'fecha' => $datos['fecha'],
+                'usuario_id' => $usuarioId
+            ]);
+
+            $detalles = $asiento->detalles->values(); 
+
+            foreach ($datos['cambios'] as $indexVisual => $nuevoCodigoCuenta) {
+                if (isset($detalles[$indexVisual])) {
+                    $lineaOriginal = $detalles[$indexVisual];
+                    $glosaLineaOriginal = $lineaOriginal->descripcion_extensa ?: $glosaCabeceraOriginal;
+
+                    $asiento->detalles()->create([
+                        'cuenta_contable' => $lineaOriginal->cuenta_contable,
+                        'debe' => $lineaOriginal->haber, 
+                        'haber' => $lineaOriginal->debe, 
+                        'descripcion_extensa' => $glosaLineaOriginal
+                    ]);
+
+                    $asiento->detalles()->create([
+                        'cuenta_contable' => $nuevoCodigoCuenta,
+                        'debe' => $lineaOriginal->debe, 
+                        'haber' => $lineaOriginal->haber, 
+                        'descripcion_extensa' => $datos['glosa']
+                    ]);
+                }
+            }
+        });
+    }
 }
