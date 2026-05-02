@@ -5,11 +5,17 @@ namespace App\Domains\Activos\Services;
 use App\Domains\Activos\Models\ActivoFijo;
 use App\Domains\Activos\Models\ProyectoActivo;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Comercial\Services\FacturaService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class ActivoFijoService
 {
+    protected $facturaService;
+    public function __construct(FacturaService $facturaService)
+    {
+        $this->facturaService = $facturaService;
+    }
     public function listarActivos(int $empresaId)
     {
         return ActivoFijo::where('empresa_id', $empresaId)
@@ -51,7 +57,7 @@ class ActivoFijoService
     {
         $datos['estado'] = 'EN_CONSTRUCCION';
         $datos['valor_total_original'] = 0;
-        
+
         return ProyectoActivo::create($datos);
     }
 
@@ -60,7 +66,7 @@ class ActivoFijoService
         $fechaCalculo = date('Y-m-t', strtotime($mesAnio . '-01'));
 
         return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculo) {
-            
+
             $activos = ActivoFijo::where('empresa_id', $empresaId)
                 ->where('estado', 'ACTIVO')
                 ->whereRaw('depreciacion_acumulada < (valor_adquisicion - valor_residual)')
@@ -77,7 +83,7 @@ class ActivoFijoService
             foreach ($activos as $activo) {
                 $montoDepreciable = $activo->valor_adquisicion - $activo->valor_residual;
                 $cuotaMensual = round($montoDepreciable / $activo->vida_util_meses, 0);
-                
+
                 $saldoPorDepreciar = $montoDepreciable - $activo->depreciacion_acumulada;
                 if ($cuotaMensual > $saldoPorDepreciar) {
                     $cuotaMensual = $saldoPorDepreciar;
@@ -108,7 +114,7 @@ class ActivoFijoService
             }
 
             $asientoService = app(AsientoContableService::class);
-            
+
             $cabecera = [
                 'empresa_id' => $empresaId,
                 'usuario_id' => $usuarioId,
@@ -131,13 +137,64 @@ class ActivoFijoService
     public function analizarProyecto(int $empresaId, int $proyectoId): array
     {
         $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->findOrFail($proyectoId);
-            
+        $facturas = $this->facturaService->obtenerPorProyecto($proyectoId);
+
         return [
-            'proyecto' => $proyecto,
-            'total_invertido' => $proyecto->valor_total_original ?? 0,
-            'estado_actual' => $proyecto->estado,
-            'fecha_inicio' => $proyecto->created_at,
-            'analisis_completado' => true
+            'id' => $proyecto->id_proyecto,
+            'nombre' => $proyecto->nombre,
+            'estado' => $proyecto->estado,
+            'valor_total_original' => (float) $proyecto->valor_total_original,
+            'depreciacion_acumulada' => 0,
+            'facturas' => $facturas,
+            'vida_util_meses' => $proyecto->vida_util_meses,
+            'anio_fabricacion' => $proyecto->anio_fabricacion
         ];
+    }
+
+    public function listarFacturasDisponibles(int $empresaId): array
+    {
+        return $this->facturaService->obtenerFacturasDisponiblesParaProyectos($empresaId);
+    }
+
+    public function imputarFacturaAProyecto(int $empresaId, int $proyectoId, array $datos)
+    {
+        return DB::transaction(function () use ($empresaId, $proyectoId, $datos) {
+            $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->findOrFail($proyectoId);
+            $this->facturaService->vincularAProyecto($empresaId, $datos['factura_id'], $proyectoId);
+            $proyecto->increment('valor_total_original', $datos['monto']);
+        });
+    }
+
+    public function activarProyecto(int $empresaId, int $usuarioId, int $proyectoId): array
+    {
+        return DB::transaction(function () use ($empresaId, $usuarioId, $proyectoId) {
+            $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->findOrFail($proyectoId);
+
+            if ($proyecto->estado !== 'EN_CONSTRUCCION') {
+                throw new Exception("Este proyecto ya ha sido activado anteriormente.");
+            }
+
+            $proyecto->update(['estado' => 'ACTIVO_OPERATIVO']);
+
+            $activo = $this->registrarActivo([
+                'empresa_id'         => $empresaId,
+                'nombre'             => $proyecto->nombre,
+                'cuenta_activo_codigo' => '120101',
+                'valor_adquisicion'  => (float) $proyecto->valor_total_original,
+                'fecha_adquisicion'  => now()->toDateString(),
+                'vida_util_meses'    => $proyecto->vida_util_meses,
+                'valor_residual'     => 1,
+                'estado'             => 'ACTIVO'
+            ]);
+
+            return [
+                'id'                 => $activo->id,
+                'codigo'             => $activo->codigo,
+                'nombre'             => $activo->nombre,
+                'valor_capitalizado' => (float) $activo->valor_adquisicion,
+                'fecha_activacion'   => $activo->fecha_adquisicion,
+                'estado'             => $activo->estado
+            ];
+        });
     }
 }

@@ -130,6 +130,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/activos', [ActivoFijoController::class, 'store']);
     Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros']);
     Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes']);
+    Route::get('/activos/proyectos/facturas-disponibles', [ActivoFijoController::class, 'facturasDisponibles']);
+    Route::post('/activos/proyectos/{id}/facturas', [ActivoFijoController::class, 'imputarFactura']);
+    Route::put('/activos/proyectos/{id}/activar', [ActivoFijoController::class, 'activarProyecto']);
     
     // Rutas de Proyectos
     Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos']);

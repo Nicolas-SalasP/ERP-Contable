@@ -174,4 +174,39 @@ class ActivoFijoController
             ], 404);
         }
     }
+
+    public function facturasDisponibles(Request $request)
+    {
+        try {
+            $facturas = $this->service->listarFacturasDisponibles($request->user()->empresa_id);
+            return response()->json(['success' => true, 'data' => $facturas]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function imputarFactura(Request $request, $id)
+    {
+        try {
+            $datos = $request->validate([
+                'factura_id' => 'required|integer',
+                'monto' => 'required|numeric|min:1'
+            ]);
+
+            $this->service->imputarFacturaAProyecto($request->user()->empresa_id, $id, $datos);
+            return response()->json(['success' => true, 'message' => 'Costo imputado exitosamente']);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function activarProyecto(Request $request, $id)
+    {
+        try {
+            $activo = $this->service->activarProyecto($request->user()->empresa_id, $request->user()->id, $id);
+            return response()->json(['success' => true, 'message' => 'Proyecto activado y capitalizado', 'data' => $activo]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
 }

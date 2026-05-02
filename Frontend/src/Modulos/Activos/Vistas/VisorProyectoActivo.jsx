@@ -6,7 +6,7 @@ const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'curr
 const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
     const [proyecto, setProyecto] = useState(null);
     const [loading, setLoading] = useState(true);
-    
+
     const [modalFacturasAbierto, setModalFacturasAbierto] = useState(false);
     const [facturasDisponibles, setFacturasDisponibles] = useState([]);
     const [facturaSeleccionadaId, setFacturaSeleccionadaId] = useState('');
@@ -71,7 +71,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 setModalFacturasAbierto(false);
                 setFacturaSeleccionadaId('');
                 setMontoImputar('');
-                cargarProyecto(); 
+                cargarProyecto();
             }
         } catch (error) {
             onNotificar('error', error.message || 'Error al imputar factura.');
@@ -97,7 +97,9 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
 
     if (loading || !proyecto) return <div className="text-center py-12"><i className="fas fa-spinner fa-spin text-3xl text-slate-400"></i></div>;
 
-    const valorLibro = proyecto.valor_total_original - proyecto.depreciacion_acumulada;
+    const valorOriginal = Number(proyecto.valor_total_original) || 0;
+    const depreciacion = Number(proyecto.depreciacion_acumulada) || 0;
+    const valorLibro = valorOriginal - depreciacion;
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -108,18 +110,18 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 <div>
                     <h2 className="text-2xl font-black text-slate-800 tracking-tight">{proyecto.nombre}</h2>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold inline-block mt-1 ${proyecto.estado === 'EN_CONSTRUCCION' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                        {proyecto.estado.replace('_', ' ')}
+                        {proyecto.estado ? proyecto.estado.replace('_', ' ') : 'ESTADO DESCONOCIDO'}
                     </span>
                 </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
                     <p className="text-xs font-bold text-slate-500 uppercase">Costo Histórico</p>
-                    <h3 className="text-2xl font-black text-slate-800 mt-1">{formatCurrency(proyecto.valor_total_original)}</h3>
+                    <h3 className="text-2xl font-black text-slate-800 mt-1">{formatCurrency(valorOriginal)}</h3>
                 </div>
                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-rose-500">
                     <p className="text-xs font-bold text-slate-500 uppercase">Depreciación Acum.</p>
-                    <h3 className="text-2xl font-black text-rose-600 mt-1">-{formatCurrency(proyecto.depreciacion_acumulada)}</h3>
+                    <h3 className="text-2xl font-black text-rose-600 mt-1">-{formatCurrency(depreciacion)}</h3>
                 </div>
                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
                     <p className="text-xs font-bold text-slate-500 uppercase">Valor Libro Actual</p>
@@ -190,10 +192,10 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                             <form onSubmit={handleImputarFactura} className="space-y-5">
                                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Seleccionar Factura Pendiente</label>
-                                    <select 
-                                        required 
+                                    <select
+                                        required
                                         value={facturaSeleccionadaId}
-                                        onChange={handleSelectFactura} 
+                                        onChange={handleSelectFactura}
                                         className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium bg-white"
                                     >
                                         <option value="">Seleccione una factura...</option>
@@ -207,12 +209,12 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
 
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Monto a Imputar (CLP)</label>
-                                    <input 
-                                        type="number" 
-                                        required 
-                                        value={montoImputar} 
-                                        onChange={(e) => setMontoImputar(e.target.value)} 
-                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-bold" 
+                                    <input
+                                        type="number"
+                                        required
+                                        value={montoImputar}
+                                        onChange={(e) => setMontoImputar(e.target.value)}
+                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-bold"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">Puedes imputar el total o un monto parcial de la factura.</p>
                                 </div>
@@ -241,7 +243,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                             <p className="text-slate-600 text-sm mb-6">
                                 Al confirmar, el costo del activo se congelará en <b>{formatCurrency(proyecto.valor_total_original)}</b> y no podrás agregar más facturas. El activo comenzará a depreciarse en el próximo cierre mensual.
                             </p>
-                            
+
                             <div className="flex gap-3">
                                 <button onClick={() => setModalActivacionAbierto(false)} className="w-1/2 py-2.5 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
                                     Cancelar

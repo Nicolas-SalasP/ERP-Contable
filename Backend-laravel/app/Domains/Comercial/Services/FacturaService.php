@@ -100,6 +100,7 @@ class FacturaService
 
             $factura = Factura::create([
                 'empresa_id' => $datos['empresa_id'],
+                'tipo' => 'COMPRA',
                 'codigo_unico' => $codigoUnico,
                 'proveedor_id' => $datos['proveedor_id'],
                 'cuenta_bancaria_id' => $datos['cuenta_bancaria_id'] ?? null,
@@ -235,7 +236,7 @@ class FacturaService
                 'usuario_id' => $usuarioId
             ]);
 
-            $detalles = $asiento->detalles->values(); 
+            $detalles = $asiento->detalles->values();
 
             foreach ($datos['cambios'] as $indexVisual => $nuevoCodigoCuenta) {
                 if (isset($detalles[$indexVisual])) {
@@ -244,19 +245,65 @@ class FacturaService
 
                     $asiento->detalles()->create([
                         'cuenta_contable' => $lineaOriginal->cuenta_contable,
-                        'debe' => $lineaOriginal->haber, 
-                        'haber' => $lineaOriginal->debe, 
+                        'debe' => $lineaOriginal->haber,
+                        'haber' => $lineaOriginal->debe,
                         'descripcion_extensa' => $glosaLineaOriginal
                     ]);
 
                     $asiento->detalles()->create([
                         'cuenta_contable' => $nuevoCodigoCuenta,
-                        'debe' => $lineaOriginal->debe, 
-                        'haber' => $lineaOriginal->haber, 
+                        'debe' => $lineaOriginal->debe,
+                        'haber' => $lineaOriginal->haber,
                         'descripcion_extensa' => $datos['glosa']
                     ]);
                 }
             }
         });
+    }
+
+    public function obtenerFacturasDisponiblesParaProyectos(int $empresaId): array
+    {
+        return Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
+            ->whereNull('proyecto_activo_id')
+            ->with('proveedor')
+            ->get()
+            ->map(function ($f) {
+                $nombreProv = $f->proveedor->nombre_fantasia
+                    ?? $f->proveedor->razon_social
+                    ?? 'Proveedor sin nombre';
+
+                return [
+                    'factura_id' => $f->id,
+                    'numero_factura' => $f->numero_factura,
+                    'proveedor' => $nombreProv,
+                    'monto' => (float) $f->monto_bruto
+                ];
+            })
+            ->toArray();
+    }
+
+    public function vincularAProyecto(int $empresaId, int $facturaId, int $proyectoId): Factura
+    {
+        $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+        $factura->update(['proyecto_activo_id' => $proyectoId]);
+        return $factura;
+    }
+
+    public function obtenerPorProyecto(int $proyectoId): array
+    {
+        return Factura::where('proyecto_activo_id', $proyectoId)
+            ->with('proveedor')
+            ->get()
+            ->map(function ($f) {
+                return [
+                    'numero' => $f->numero_factura,
+                    'proveedor' => $f->proveedor->nombre_fantasia
+                        ?? $f->proveedor->razon_social
+                        ?? $f->proveedor->rut,
+                    'monto' => (float) $f->monto_bruto
+                ];
+            })
+            ->toArray();
     }
 }

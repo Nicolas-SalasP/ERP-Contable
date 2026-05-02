@@ -92,7 +92,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {proyectos.map((p) => (
-                        <div key={p.id_proyecto} className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all flex flex-col relative overflow-hidden group">
+                        <div key={p.id || p.id_proyecto} className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all flex flex-col relative overflow-hidden group">
                             <div className={`h-1.5 w-full ${p.estado === 'EN_CONSTRUCCION' ? 'bg-amber-400' : 'bg-emerald-500'}`}></div>
                             <div className="p-5 flex-grow">
                                 <h3 className="font-bold text-slate-800 text-lg mb-4">{p.nombre}</h3>
@@ -105,7 +105,10 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                             </div>
                             <div className="px-5 py-4 border-t border-slate-100 flex justify-between items-center bg-white">
                                 {getEstadoBadge(p.estado)}
-                                <button onClick={() => setProyectoSeleccionado(p.id_proyecto)} className="text-indigo-600 text-sm font-bold hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded transition-colors opacity-0 group-hover:opacity-100">
+                                <button 
+                                    onClick={() => setProyectoSeleccionado(p.id || p.id_proyecto)} 
+                                    className="text-indigo-600 text-sm font-bold hover:text-white bg-indigo-50 hover:bg-indigo-600 px-4 py-2 rounded-lg transition-colors shadow-sm"
+                                >
                                     Analizar <i className="fas fa-arrow-right ml-1"></i>
                                 </button>
                             </div>

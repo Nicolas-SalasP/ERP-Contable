@@ -13,11 +13,13 @@ class Factura extends Model
 
     protected $fillable = [
         'empresa_id',
+        'proyecto_activo_id',
         'codigo_interno',
         'codigo_unico',
         'proveedor_id',
         'cuenta_bancaria_id',
         'numero_factura',
+        'tipo',
         'fecha_emision',
         'fecha_vencimiento',
         'monto_bruto',
