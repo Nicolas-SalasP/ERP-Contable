@@ -38,12 +38,12 @@ const CartolaBancaria = () => {
         if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv'))) {
             setArchivo(file);
         } else {
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'Archivo inválido', 
-                text: 'Solo se permiten archivos Excel (.xlsx, .xls) o CSV.', 
-                buttonsStyling: false, 
-                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' } 
+            Swal.fire({
+                icon: 'error',
+                title: 'Archivo inválido',
+                text: 'Solo se permiten archivos Excel (.xlsx, .xls) o CSV.',
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
             });
             e.target.value = null;
         }
@@ -81,16 +81,16 @@ const CartolaBancaria = () => {
                 });
                 setArchivo(null);
                 if (fileInputRef.current) fileInputRef.current.value = '';
-                cargarCuentas(); 
+                cargarCuentas();
             } else {
                 throw new Error(data.mensaje);
             }
         } catch (error) {
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'Error de Importación', 
-                text: error.message || 'El archivo no tiene el formato correcto.', 
-                buttonsStyling: false, 
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de Importación',
+                text: error.message || 'El archivo no tiene el formato correcto.',
+                buttonsStyling: false,
                 customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
             });
         }
@@ -105,7 +105,7 @@ const CartolaBancaria = () => {
         try {
             const payload = { ...formIngreso, cuenta_bancaria_id: cuentaActiva };
             const res = await api.post('/banco/ingreso-manual', payload);
-            
+
             if (res.success) {
                 Swal.fire({ icon: 'success', title: 'Ingreso Registrado', timer: 1500, showConfirmButton: false });
                 setFormIngreso({ fecha: '', descripcion: '', monto: '', nro_documento: '' });
@@ -150,7 +150,7 @@ const CartolaBancaria = () => {
                         ))}
                     </select>
                 </div>
-                
+
                 <div className="text-center md:text-right bg-slate-800 px-8 py-4 rounded-xl border border-slate-700 w-full md:w-auto">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Saldo Actual Contable</p>
                     <p className="text-3xl font-black text-emerald-400 truncate max-wxs">
@@ -167,19 +167,19 @@ const CartolaBancaria = () => {
                         Importar Cartola del Banco
                     </h3>
                     <p className="text-sm text-slate-500 mb-6">Sube el archivo Excel descargado desde tu portal bancario para registrar abonos y cargos automáticamente.</p>
-                    
-                    <div 
+
+                    <div
                         className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors flex-1 flex flex-col justify-center items-center ${archivo ? 'border-blue-500 bg-blue-50' : 'border-slate-300 hover:border-blue-400 bg-slate-50'}`}
                     >
                         {/* INPUT ACTUALIZADO CON ACEPTACIÓN DE .XLS */}
-                        <input 
-                            type="file" 
-                            accept=".xlsx, .xls, .csv" 
-                            className="hidden" 
-                            ref={fileInputRef} 
-                            onChange={handleFileChange} 
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls, .csv"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
                         />
-                        
+
                         {!archivo ? (
                             <>
                                 <div className="bg-white p-4 rounded-full shadow-sm mb-4 text-blue-500">
@@ -224,23 +224,29 @@ const CartolaBancaria = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Fecha del Abono</label>
-                                    <input type="date" value={formIngreso.fecha} onChange={e => setFormIngreso({...formIngreso, fecha: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-sm font-bold text-slate-700" />
+                                    <input type="date" value={formIngreso.fecha} onChange={e => setFormIngreso({ ...formIngreso, fecha: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-sm font-bold text-slate-700" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Monto Recibido</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-3 text-slate-400 font-bold">$</span>
-                                        <input type="number" placeholder="0" value={formIngreso.monto} onChange={e => setFormIngreso({...formIngreso, monto: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-8 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-sm font-black text-emerald-600" />
+                                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500/30 focus-within:border-emerald-500 transition-all h-[46px] shadow-none">
+                                        <span className="pl-4 text-slate-400 font-bold shrink-0">$</span>
+                                        <input
+                                            type="number"
+                                            placeholder="0"
+                                            value={formIngreso.monto}
+                                            onChange={e => setFormIngreso({ ...formIngreso, monto: e.target.value })}
+                                            className="flex-1 bg-transparent px-3 outline-none border-none shadow-none appearance-none text-sm font-black text-emerald-600 h-full m-0"
+                                        />
                                     </div>
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Detalle / Cliente</label>
-                                <input type="text" placeholder="Ej: Pago de Cotización #45 - Constructora S.A." value={formIngreso.descripcion} onChange={e => setFormIngreso({...formIngreso, descripcion: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-sm text-slate-700 font-medium" />
+                                <input type="text" placeholder="Ej: Pago de Cotización #45 - Constructora S.A." value={formIngreso.descripcion} onChange={e => setFormIngreso({ ...formIngreso, descripcion: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-sm text-slate-700 font-medium" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">N° Documento (Opcional)</label>
-                                <input type="text" placeholder="N° Transacción o Cheque" value={formIngreso.nro_documento} onChange={e => setFormIngreso({...formIngreso, nro_documento: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-sm text-slate-700 font-mono" />
+                                <input type="text" placeholder="N° Transacción o Cheque" value={formIngreso.nro_documento} onChange={e => setFormIngreso({ ...formIngreso, nro_documento: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-sm text-slate-700 font-mono" />
                             </div>
                         </div>
 

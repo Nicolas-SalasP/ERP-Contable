@@ -280,16 +280,21 @@ const AsientoManual = () => {
                             </div>
                         </div>
 
-                        <div className="md:col-span-3">
+                        <div className="md:col-span-2 lg:col-span-3">
                             <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Monto *</label>
-                            <div className={`flex items-center bg-white border rounded-lg overflow-hidden h-[42px] transition-all ${tipoMovimiento === 'debe' ? 'focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 border-slate-300' : 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-100 border-slate-300'}`}>
-                                <span className="bg-slate-100 text-slate-500 font-bold px-3 h-full flex items-center border-r border-slate-200">$</span>
+                            <div className={`flex items-center bg-white border rounded-lg h-[42px] transition-all shadow-none overflow-hidden ${tipoMovimiento === 'debe' ? 'focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 border-slate-300' : 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-100 border-slate-300'}`}>
+                                <span className="bg-slate-100 text-slate-500 font-bold px-3 h-full flex items-center border-r border-slate-200 shrink-0">
+                                    $
+                                </span>
                                 <input
-                                    type="number" min="0" step="1" value={montoActual}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={montoActual}
                                     onChange={(e) => setMontoActual(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder="0"
-                                    className="w-full py-2 px-3 font-mono font-black text-slate-800 outline-none"
+                                    className="flex-1 h-full bg-transparent px-3 font-mono font-black text-slate-800 outline-none border-none appearance-none shadow-none"
                                 />
                             </div>
                         </div>

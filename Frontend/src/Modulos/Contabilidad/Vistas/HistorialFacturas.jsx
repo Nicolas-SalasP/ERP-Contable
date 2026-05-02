@@ -4,7 +4,7 @@ import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import ModalPagoFactura from '../Componentes/ModalPagoFactura';
 
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -643,7 +643,7 @@ const HistorialFacturas = () => {
                                                                 ) : fac.estado === 'PAGADA' ? (
                                                                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Pagada</span>
                                                                 ) : fac.estado === 'ANULADA' ? (
-                                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-red-50 text-red-700 border border-red-200">Anulada</span>
+                                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-red-50 text-red-700 border-red-200">Anulada</span>
                                                                 ) : (
                                                                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-gray-50 text-gray-700 border border-gray-200">{fac.estado}</span>
                                                                 )}
@@ -679,11 +679,13 @@ const HistorialFacturas = () => {
                                                             className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
                                                             title="Opciones"
                                                         >
-                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" opacity=".3" /><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" /></svg>
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01"></path>
+                                                            </svg>
                                                         </button>
 
                                                         {menuAbiertoId === fac.id && (
-                                                            <div className="absolute right-8 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-[99] animate-fade-in text-left">
+                                                            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[100] animate-fade-in text-left">
                                                                 <ul className="text-sm font-medium text-slate-700 py-1">
                                                                     {fac.estado === 'REGISTRADA' && (
                                                                         <li>
@@ -700,8 +702,9 @@ const HistorialFacturas = () => {
                                                                     <li>
                                                                         <button
                                                                             onClick={() => navigate(`/contabilidad/factura/${fac.id}/asiento`)}
-                                                                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-amber-600 transition-colors flex items-center gap-3"
+                                                                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-3"
                                                                         >
+                                                                            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                                                             Ver Asiento
                                                                         </button>
                                                                     </li>
@@ -711,7 +714,7 @@ const HistorialFacturas = () => {
                                                                                 onClick={() => navigate(`/contabilidad/factura/${fac.id}/reclasificar`)}
                                                                                 className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-amber-600 transition-colors flex items-center gap-3"
                                                                             >
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                                                                <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
                                                                                 Reclasificar
                                                                             </button>
                                                                         </li>
@@ -724,7 +727,7 @@ const HistorialFacturas = () => {
                                                                             }}
                                                                             className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-emerald-600 transition-colors flex items-center gap-3 border-t border-slate-100"
                                                                         >
-                                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                                            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                                             Ver Auditoría
                                                                         </button>
                                                                     </li>
