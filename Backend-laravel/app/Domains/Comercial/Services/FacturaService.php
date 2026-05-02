@@ -7,6 +7,7 @@ use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
+use \Carbon\Carbon;
 use Exception;
 
 class FacturaService
@@ -305,5 +306,53 @@ class FacturaService
                 ];
             })
             ->toArray();
+    }
+
+    public function obtenerAuditoriaCompleta(int $id): array
+    {
+        $factura = Factura::with('proveedor')->findOrFail($id);
+
+        $historial = DB::table('auditorias')
+            ->where('auditable_type', Factura::class)
+            ->where('auditable_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'usuario' => $log->nombre_usuario,
+                    'fecha' => Carbon::parse($log->created_at)->format('Y-m-d H:i:s'),
+                    'operacion' => $log->operacion,
+                    'estado_ant' => $log->estado_anterior ?? '-',
+                    'estado_nue' => $log->estado_nuevo ?? '-',
+                    'detalle' => $log->detalle,
+                    'asiento' => $log->referencia_cruzada
+                ];
+            })->toArray();
+
+        if (empty($historial)) {
+            $historial = [
+                [
+                    'id' => 0,
+                    'usuario' => 'Sistema',
+                    'fecha' => $factura->created_at ? $factura->created_at->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s'),
+                    'operacion' => 'CREACIÓN',
+                    'estado_ant' => '-',
+                    'estado_nue' => $factura->estado,
+                    'detalle' => 'Registro original migrado/creado en el sistema.',
+                    'asiento' => $factura->codigo_asiento ?? null
+                ]
+            ];
+        }
+
+        return [
+            'factura' => [
+                'id' => $factura->id,
+                'numero_factura' => $factura->numero_factura,
+                'proveedor' => $factura->proveedor->razon_social ?? 'Proveedor Desconocido',
+                'estado' => $factura->estado
+            ],
+            'historial' => $historial
+        ];
     }
 }

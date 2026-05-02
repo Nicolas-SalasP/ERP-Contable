@@ -72,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('facturas', FacturaController::class)->except(['create', 'edit', 'update']);
     Route::get('/facturas/{id}/asiento', [FacturaController::class, 'verAsiento']);
     Route::post('/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificarAsiento']);
+    Route::get('/facturas/{id}/auditoria', [FacturaController::class, 'auditoria']);
 
     // Comercial - Cotizaciones
     Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);

@@ -18,8 +18,8 @@ class DatabaseSeeder extends Seeder
             CentroCostoSeeder::class,
             UserSeeder::class,
             SincronizarCuentasSeeder::class,
-            TestDataSeeder::class,
             CatalogoBancosSeeder::class,
+            FacturasYAsientosSeeder::class, 
         ]);
     }
 }

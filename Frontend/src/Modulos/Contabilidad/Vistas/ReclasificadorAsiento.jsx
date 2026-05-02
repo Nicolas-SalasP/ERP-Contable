@@ -119,7 +119,7 @@ const ReclasificadorAsiento = () => {
                         <p className="text-slate-500">Asiento #{cabecera.numero_comprobante} | Factura Origen ID {id}</p>
                     </div>
                     <div className="flex gap-3">
-                        <button onClick={() => navigate(-1)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all">
+                        <button onClick={() => navigate("/facturas/historial")} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all">
                             Cancelar
                         </button>
                         <button onClick={ejecutarReclasificacion} className="px-8 py-2.5 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all">

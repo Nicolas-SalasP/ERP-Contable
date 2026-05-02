@@ -146,4 +146,21 @@ class FacturaController
             ], 400);
         }
     }
+
+    public function auditoria($id)
+{
+    try {
+        $data = $this->service->obtenerAuditoriaCompleta($id);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'mensaje' => 'Error al obtener auditoría: ' . $e->getMessage()
+        ], 404);
+    }
+}
 }

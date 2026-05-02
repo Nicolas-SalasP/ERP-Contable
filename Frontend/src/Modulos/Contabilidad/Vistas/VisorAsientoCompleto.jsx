@@ -89,7 +89,7 @@ const VisorAsientoCompleto = () => {
                         <button onClick={manejarReclasificacion} className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded shadow transition-colors">
                             Reclasificar
                         </button>
-                        <button onClick={() => navigate(-1)} className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-sm font-bold rounded shadow-sm transition-colors">
+                        <button onClick={() => navigate("/facturas/historial")} className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-sm font-bold rounded shadow-sm transition-colors">
                             Volver
                         </button>
                     </div>
