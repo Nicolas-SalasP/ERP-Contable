@@ -4,6 +4,7 @@ namespace App\Domains\Core\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use App\Domains\Core\Models\User;
 use Throwable;
 
@@ -17,18 +18,16 @@ class AuthController
                 'password' => 'required'
             ]);
 
-            $user = User::where('email', $request->email)->first();
+            $user = User::with('rol')->where('email', $request->email)->first();
 
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json(['message' => 'Credenciales incorrectas'], 401);
             }
-            $user->update([
-                'ultimo_acceso' => now()
-            ]);
+            $user->update(['ultimo_acceso' => now()]);
 
-            $permisos = [];
+            $permisos = $user->rol->permisos ?? [];
             
-            if ($user->rol_id === 1) {
+            if ($user->rol && $user->rol->jerarquia >= 100) {
                 $permisos = [
                     'ventas.ver', 'ventas.crear', 'clientes.ver', 'clientes.crear',
                     'compras.ver', 'compras.crear', 'proveedores.ver', 'proveedores.crear',
@@ -52,11 +51,9 @@ class AuthController
                 ]
             ]);
         } catch (Throwable $e) {
+            Log::error('Error en Login: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Error Interno de Laravel',
-                'error'   => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine()
+                'message' => 'Error Interno del Servidor. Inténtelo más tarde.'
             ], 500);
         }
     }
@@ -70,9 +67,9 @@ class AuthController
     public function me(Request $request)
     {
         $user = $request->user()->load(['empresa', 'rol']);
-        
-        $permisos = [];
-        if ($user->rol_id === 1) {
+        $permisos = $user->rol->permisos ?? [];
+
+        if ($user->rol && $user->rol->jerarquia >= 100) {
             $permisos = [
                 'ventas.ver', 'ventas.crear', 'clientes.ver', 'clientes.crear',
                 'compras.ver', 'compras.crear', 'proveedores.ver', 'proveedores.crear',

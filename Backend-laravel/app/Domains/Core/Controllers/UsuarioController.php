@@ -3,6 +3,8 @@
 namespace App\Domains\Core\Controllers;
 
 use App\Domains\Core\Services\UsuarioService;
+use App\Domains\Core\Models\User;
+use App\Domains\Core\Models\Rol;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -60,12 +62,19 @@ class UsuarioController
         try {
             $datos = $request->validate(['rol_id' => 'required|integer']);
 
-            $this->service->actualizarRol(
-                $request->user()->empresa_id,
-                $id,
-                $datos['rol_id']
-            );
+            $miRol = $request->user()->load('rol')->rol;
+            $usuarioDestino = User::with('rol')->findOrFail($id);
+            $rolDestino = Rol::findOrFail($datos['rol_id']);
 
+            if ($usuarioDestino->rol && $usuarioDestino->rol->jerarquia >= $miRol->jerarquia && $request->user()->id !== $usuarioDestino->id) {
+                return response()->json(['success' => false, 'message' => 'No puedes editar usuarios de jerarquía igual o superior.'], 403);
+            }
+
+            if ($rolDestino->jerarquia >= $miRol->jerarquia && $miRol->jerarquia < 100) {
+                return response()->json(['success' => false, 'message' => 'Solo puedes asignar roles de menor jerarquía al tuyo.'], 403);
+            }
+
+            $this->service->actualizarRol($request->user()->empresa_id, $id, $datos['rol_id']);
             return response()->json(['success' => true, 'message' => 'Rol actualizado.']);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al actualizar rol'], 400);
@@ -75,6 +84,17 @@ class UsuarioController
     public function desvincular(Request $request, $id)
     {
         try {
+            $miRol = $request->user()->load('rol')->rol;
+            $usuarioDestino = User::with('rol')->findOrFail($id);
+
+            if ($request->user()->id === $usuarioDestino->id) {
+                return response()->json(['success' => false, 'message' => 'No puedes eliminarte a ti mismo del sistema.'], 403);
+            }
+
+            if ($usuarioDestino->rol && $usuarioDestino->rol->jerarquia >= $miRol->jerarquia) {
+                return response()->json(['success' => false, 'message' => 'No puedes desvincular a este usuario.'], 403);
+            }
+
             $this->service->desvincularUsuario($request->user()->empresa_id, $id);
             return response()->json(['success' => true, 'message' => 'Usuario desvinculado.']);
         } catch (Exception $e) {

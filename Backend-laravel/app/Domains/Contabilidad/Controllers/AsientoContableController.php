@@ -23,10 +23,31 @@ class AsientoContableController
     public function store(Request $request)
     {
         try {
-            $datos = $request->all();
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            $datosValidados = $request->validate([
+                'fecha' => 'required|date',
+                'glosa' => 'required|string|max:255',
+                'tipo_asiento' => 'nullable|string',
+                'origen_modulo' => 'nullable|string',
+                'origen_id' => 'nullable|integer',
+                'detalles' => 'required|array|min:2',
+                'detalles.*.cuenta_contable' => 'required|string',
+                'detalles.*.debe' => 'required|numeric|min:0',
+                'detalles.*.haber' => 'required|numeric|min:0',
+                'detalles.*.glosa_detalle' => 'nullable|string'
+            ]);
 
-            $asiento = $this->service->registrarAsiento($datos, $request->detalles);
+            $cabecera = [
+                'empresa_id' => $request->user()->empresa_id,
+                'usuario_id' => $request->user()->id,
+                'fecha' => $datosValidados['fecha'],
+                'glosa' => $datosValidados['glosa'],
+                'tipo_asiento' => $datosValidados['tipo_asiento'] ?? 'traspaso',
+                'origen_modulo' => $datosValidados['origen_modulo'] ?? 'manual',
+                'origen_id' => $datosValidados['origen_id'] ?? null,
+                'estado' => 'MAYORIZADO',
+            ];
+
+            $asiento = $this->service->registrarAsiento($cabecera, $datosValidados['detalles']);
 
             return response()->json([
                 'success' => true,
