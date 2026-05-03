@@ -4,6 +4,7 @@ namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Models\DetalleAsiento;
+use App\Domains\Contabilidad\Models\PlanCuenta;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -28,12 +29,41 @@ class AsientoContableService
     {
         $totalDebe = 0;
         $totalHaber = 0;
+        $codigosCuentas = [];
+
         foreach ($detalles as $detalle) {
             $totalDebe += round((float) ($detalle['debe'] ?? 0), 2);
             $totalHaber += round((float) ($detalle['haber'] ?? 0), 2);
+            $codigosCuentas[] = $detalle['cuenta_contable'];
         }
-        if (abs($totalDebe - $totalHaber) > 0.01) {
+
+        $totalDebe = round($totalDebe, 2);
+        $totalHaber = round($totalHaber, 2);
+        $diferencia = round(abs($totalDebe - $totalHaber), 2);
+
+        if ($diferencia > 0.00) {
             throw new Exception("Rechazado por Partida Doble: El Debe ({$totalDebe}) no cuadra con el Haber ({$totalHaber}).");
+        }
+
+        $cuentasValidas = PlanCuenta::where('empresa_id', $datosAsiento['empresa_id'])
+            ->whereIn('codigo', array_unique($codigosCuentas))
+            ->get()
+            ->keyBy('codigo');
+
+        foreach ($codigosCuentas as $codigo) {
+            if (!$cuentasValidas->has($codigo)) {
+                throw new Exception("La cuenta contable {$codigo} no existe o pertenece a otra empresa.");
+            }
+
+            $cuenta = $cuentasValidas->get($codigo);
+
+            if (!$cuenta->imputable) {
+                throw new Exception("La cuenta contable {$codigo} no es imputable (es una cuenta padre o agrupadora).");
+            }
+
+            if (!$cuenta->activo) {
+                throw new Exception("La cuenta contable {$codigo} se encuentra inactiva.");
+            }
         }
 
         return DB::transaction(function () use ($datosAsiento, $detalles) {

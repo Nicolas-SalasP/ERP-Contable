@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -54,6 +55,12 @@ class AsientoContableController
                 'message' => 'Asiento contable registrado con éxito',
                 'data' => $asiento->load('detalles')
             ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -91,6 +98,13 @@ class AsientoContableController
                 'message' => 'Asiento contable registrado exitosamente.',
                 'data' => $asiento
             ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors()
+            ], 422);
 
         } catch (Exception $e) {
             return response()->json([

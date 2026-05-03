@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\ReporteContableService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -18,6 +19,11 @@ class ReporteController
     public function libroDiario(Request $request)
     {
         try {
+            $request->validate([
+                'desde' => 'required|date',
+                'hasta' => 'required|date|after_or_equal:desde'
+            ]);
+
             $cuenta = $request->query('cuenta');
             $desde = $request->query('desde') ?? now()->startOfMonth()->format('Y-m-d');
             $hasta = $request->query('hasta') ?? now()->format('Y-m-d');
@@ -33,8 +39,17 @@ class ReporteController
                 'success' => true,
                 'data' => $reporte
             ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Faltan parámetros obligatorios',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400); 
         }
     }
 

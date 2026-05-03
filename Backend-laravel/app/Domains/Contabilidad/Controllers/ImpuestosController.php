@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\ImpuestosService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -29,8 +30,8 @@ class ImpuestosController
     {
         try {
             $datos = $request->validate([
-                'mes' => 'required|integer',
-                'anio' => 'required|integer'
+                'mes' => 'required|integer|between:1,12',
+                'anio' => 'required|integer|min:2000|max:2100'
             ]);
 
             $asiento = $this->service->ejecutarF29(
@@ -45,8 +46,17 @@ class ImpuestosController
                 'message' => 'Cierre F29 ejecutado correctamente.',
                 'data' => $asiento
             ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 422);
+            return response()->json([
+                'success' => false,
+                'mensaje' => $e->getMessage()
+            ], 422);
         }
     }
 
@@ -59,7 +69,7 @@ class ImpuestosController
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
-    
+
     public function obtenerMapeo(Request $request)
     {
         try {
