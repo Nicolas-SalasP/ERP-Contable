@@ -144,14 +144,50 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Inventario
     Route::prefix('inventario')->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | Fase 1 - Catálogos, productos y bodegas
+    |--------------------------------------------------------------------------
+    */
     Route::get('/catalogos', [InventarioController::class, 'catalogos']);
 
     Route::get('/productos', [InventarioController::class, 'index']);
     Route::post('/productos', [InventarioController::class, 'store']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fase 2 - Kardex por producto
+    |--------------------------------------------------------------------------
+    |
+    | Esta ruta va antes de /productos/{id} para dejar explícito que es
+    | una subruta especializada del producto.
+    |
+    */
+    Route::get('/productos/{id}/kardex', [InventarioController::class, 'kardexProducto']);
+
     Route::get('/productos/{id}', [InventarioController::class, 'show']);
     Route::put('/productos/{id}', [InventarioController::class, 'update']);
 
     Route::get('/bodegas', [InventarioController::class, 'bodegas']);
     Route::post('/bodegas', [InventarioController::class, 'storeBodega']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fase 2 - Movimientos de Inventario
+    |--------------------------------------------------------------------------
+    |
+    | Inventario NO emite, gestiona ni prepara DTE.
+    | Estos endpoints trabajan solo con stock, movimientos y kardex.
+    |
+    */
+    Route::get('/movimientos', [InventarioController::class, 'movimientos']);
+    Route::post('/movimientos', [InventarioController::class, 'registrarMovimiento']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fase 2 - Kardex general
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/kardex', [InventarioController::class, 'kardex']);
 });
 });

@@ -2,20 +2,46 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Models\MovimientoInventario;
+use App\Domains\Inventario\Services\InventarioMovimientoService;
+use App\Domains\Inventario\Services\InventarioPermisoService;
 use App\Domains\Inventario\Services\InventarioService;
 use Exception;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class InventarioController
 {
     protected InventarioService $service;
 
-    public function __construct(InventarioService $service)
-    {
+    protected InventarioMovimientoService $movimientoService;
+
+    protected InventarioPermisoService $permisos;
+
+    public function __construct(
+        InventarioService $service,
+        InventarioMovimientoService $movimientoService,
+        InventarioPermisoService $permisos
+    ) {
         $this->service = $service;
+        $this->movimientoService = $movimientoService;
+        $this->permisos = $permisos;
     }
 
-    public function catalogos(Request $request)
+    /*
+    |--------------------------------------------------------------------------
+    | Fase 1 - Catálogos, productos y bodegas
+    |--------------------------------------------------------------------------
+    |
+    | Se conserva la lógica actual para no romper tests ni contrato existente.
+    |
+    */
+
+    public function catalogos(Request $request): JsonResponse
     {
         return response()->json([
             'success' => true,
@@ -23,7 +49,7 @@ class InventarioController
         ]);
     }
 
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $paginador = $this->service->listarProductos(
             $request->user(),
@@ -41,7 +67,7 @@ class InventarioController
         ]);
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, $id): JsonResponse
     {
         try {
             return response()->json([
@@ -56,7 +82,7 @@ class InventarioController
         }
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         try {
             $datos = $request->validate([
@@ -89,7 +115,7 @@ class InventarioController
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         try {
             $datos = $request->validate([
@@ -121,7 +147,7 @@ class InventarioController
         }
     }
 
-    public function bodegas(Request $request)
+    public function bodegas(Request $request): JsonResponse
     {
         return response()->json([
             'success' => true,
@@ -129,7 +155,7 @@ class InventarioController
         ]);
     }
 
-    public function storeBodega(Request $request)
+    public function storeBodega(Request $request): JsonResponse
     {
         try {
             $datos = $request->validate([
@@ -150,5 +176,274 @@ class InventarioController
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fase 2 - Movimientos de Inventario y Kardex
+    |--------------------------------------------------------------------------
+    |
+    | Inventario NO emite, gestiona ni prepara DTE.
+    |
+    | No usar:
+    | - codigo_dte
+    | - codigo_sii
+    | - folio_dte
+    | - xml_dte
+    |
+    | referencia, motivo y observacion son campos genéricos/no tributarios.
+    |
+    */
+
+    public function movimientos(Request $request): JsonResponse
+    {
+        try {
+            $usuario = $request->user();
+
+            $this->permisos->exigir($usuario, 'inventario.movimientos.ver');
+
+            $filtros = $request->validate([
+                'producto_id' => ['nullable', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+                'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
+                'desde' => ['nullable', 'date'],
+                'hasta' => ['nullable', 'date'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
+
+            $paginador = $this->movimientoService->listarMovimientos(
+                $filtros,
+                (int) $usuario->empresa_id
+            );
+
+            return response()->json($this->respuestaPaginada($paginador));
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function registrarMovimiento(Request $request): JsonResponse
+    {
+        try {
+            $usuario = $request->user();
+
+            $datos = $request->validate([
+                'tipo' => ['required', Rule::in(MovimientoInventario::tiposPermitidos())],
+                'producto_id' => ['required', 'integer'],
+
+                'bodega_origen_id' => ['nullable', 'integer'],
+                'bodega_destino_id' => ['nullable', 'integer'],
+
+                'cantidad' => ['required', 'numeric', 'gt:0'],
+
+                /*
+                |--------------------------------------------------------------------------
+                | Valorización opcional
+                |--------------------------------------------------------------------------
+                |
+                | Para entradas y ajustes positivos se puede enviar costo_unitario.
+                | Para salidas, traspasos y ajustes negativos el service puede usar
+                | el costo promedio actual del stock/producto.
+                |
+                */
+                'costo_unitario' => ['nullable', 'numeric', 'min:0'],
+
+                /*
+                |--------------------------------------------------------------------------
+                | Referencias genéricas NO tributarias
+                |--------------------------------------------------------------------------
+                */
+                'referencia' => ['nullable', 'string', 'max:120'],
+                'motivo' => ['nullable', 'string', 'max:80'],
+                'observacion' => ['nullable', 'string', 'max:2000'],
+
+                'fecha_movimiento' => ['nullable', 'date'],
+            ]);
+
+            $this->validarPermisoMovimiento($usuario, $datos['tipo']);
+            $this->validarBodegasMovimiento($datos);
+
+            $movimiento = $this->movimientoService->registrarMovimiento(
+                $datos,
+                (int) $usuario->empresa_id,
+                (int) $usuario->id
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $movimiento->load([
+                    'producto:id,empresa_id,sku,nombre,activo',
+                    'bodegaOrigen:id,empresa_id,codigo,nombre,estado',
+                    'bodegaDestino:id,empresa_id,codigo,nombre,estado',
+                ]),
+                'message' => 'Movimiento de inventario registrado correctamente.',
+            ], 201);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function kardex(Request $request): JsonResponse
+    {
+        try {
+            $usuario = $request->user();
+
+            $this->permisos->exigir($usuario, 'inventario.kardex.ver');
+
+            $filtros = $request->validate([
+                'producto_id' => ['nullable', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+                'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
+                'desde' => ['nullable', 'date'],
+                'hasta' => ['nullable', 'date'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
+
+            $paginador = $this->movimientoService->kardexGeneral(
+                $filtros,
+                (int) $usuario->empresa_id
+            );
+
+            return response()->json($this->respuestaPaginada($paginador));
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function kardexProducto(Request $request, $id): JsonResponse
+    {
+        try {
+            $usuario = $request->user();
+
+            $this->permisos->exigir($usuario, 'inventario.kardex.ver');
+
+            $filtros = $request->validate([
+                'bodega_id' => ['nullable', 'integer'],
+                'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
+                'desde' => ['nullable', 'date'],
+                'hasta' => ['nullable', 'date'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
+
+            $paginador = $this->movimientoService->kardexProducto(
+                (int) $id,
+                $filtros,
+                (int) $usuario->empresa_id
+            );
+
+            return response()->json($this->respuestaPaginada($paginador));
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validaciones privadas Fase 2
+    |--------------------------------------------------------------------------
+    */
+
+    private function validarPermisoMovimiento(User $usuario, string $tipo): void
+    {
+        $permiso = match ($tipo) {
+            MovimientoInventario::TIPO_ENTRADA => 'inventario.movimientos.entrada',
+            MovimientoInventario::TIPO_SALIDA => 'inventario.movimientos.salida',
+            MovimientoInventario::TIPO_TRASPASO => 'inventario.movimientos.traspaso',
+            MovimientoInventario::TIPO_AJUSTE_POSITIVO,
+            MovimientoInventario::TIPO_AJUSTE_NEGATIVO => 'inventario.movimientos.ajuste',
+            default => 'inventario.movimientos.ver',
+        };
+
+        $this->permisos->exigir($usuario, $permiso);
+    }
+
+    private function validarBodegasMovimiento(array $datos): void
+    {
+        $tipo = $datos['tipo'];
+
+        if (
+            in_array($tipo, [
+                MovimientoInventario::TIPO_SALIDA,
+                MovimientoInventario::TIPO_TRASPASO,
+                MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
+            ], true)
+            && empty($datos['bodega_origen_id'])
+        ) {
+            throw ValidationException::withMessages([
+                'bodega_origen_id' => 'La bodega origen es obligatoria para este tipo de movimiento.',
+            ]);
+        }
+
+        if (
+            in_array($tipo, [
+                MovimientoInventario::TIPO_ENTRADA,
+                MovimientoInventario::TIPO_TRASPASO,
+                MovimientoInventario::TIPO_AJUSTE_POSITIVO,
+            ], true)
+            && empty($datos['bodega_destino_id'])
+        ) {
+            throw ValidationException::withMessages([
+                'bodega_destino_id' => 'La bodega destino es obligatoria para este tipo de movimiento.',
+            ]);
+        }
+
+        if (
+            $tipo === MovimientoInventario::TIPO_TRASPASO
+            && !empty($datos['bodega_origen_id'])
+            && !empty($datos['bodega_destino_id'])
+            && (int) $datos['bodega_origen_id'] === (int) $datos['bodega_destino_id']
+        ) {
+            throw ValidationException::withMessages([
+                'bodega_destino_id' => 'La bodega destino debe ser distinta a la bodega origen.',
+            ]);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers de respuesta
+    |--------------------------------------------------------------------------
+    |
+    | Se mantienen locales al controller para no modificar el comportamiento
+    | global del ERP ni afectar otros domains.
+    |
+    */
+
+    private function respuestaPaginada(LengthAwarePaginator $paginador): array
+    {
+        return [
+            'success' => true,
+            'data' => $paginador->items(),
+            'pagination' => [
+                'total' => $paginador->total(),
+                'totalPages' => $paginador->lastPage(),
+                'page' => $paginador->currentPage(),
+            ],
+        ];
+    }
+
+    private function respuestaValidacion(ValidationException $e): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Los datos enviados no son válidos.',
+            'errors' => $e->errors(),
+        ], 422);
+    }
+
+    private function respuestaError(Exception $e): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 422);
     }
 }
