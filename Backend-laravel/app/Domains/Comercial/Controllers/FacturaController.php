@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Services\FacturaService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -73,6 +74,11 @@ class FacturaController
     public function store(Request $request)
     {
         try {
+            $request->validate([
+                'numero_factura' => 'required|string|max:255',
+                'tipo_documento' => 'required|string|in:COMPRA,VENTA',
+            ]);
+
             $datos = [
                 'empresa_id' => $request->user()->empresa_id,
                 'proveedor_id' => $request->proveedorId ?? $request->proveedor_id,
@@ -93,7 +99,12 @@ class FacturaController
                 'success' => true,
                 'data' => $factura
             ], 201);
-
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

@@ -24,6 +24,19 @@ class CotizacionService
 
             $cliente = Cliente::find($datos['cliente_id']);
 
+            if (!$cliente || $cliente->estado === 'INACTIVO') {
+                throw new Exception("No se puede emitir una cotización a un cliente inactivo.");
+            }
+
+            if (!empty($datos['numero_cotizacion'])) {
+                $existe = Cotizacion::where('empresa_id', $datos['empresa_id'])
+                            ->where('numero_cotizacion', $datos['numero_cotizacion'])
+                            ->exists();
+                if ($existe) {
+                    throw new Exception("El número de cotización {$datos['numero_cotizacion']} ya existe.");
+                }
+            }
+            
             $subtotalCalculado = 0;
             foreach ($detalles as $det) {
                 $subtotalCalculado += ($det['cantidad'] * $det['precio_unitario']);

@@ -7,6 +7,7 @@ use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Validation\ValidationException;
 use Exception;
 
 class CotizacionController
@@ -29,6 +30,15 @@ class CotizacionController
     public function store(Request $request)
     {
         try {
+            $request->validate([
+                'porcentaje_descuento' => 'nullable|numeric|min:0|max:100',
+                'fecha_emision' => 'nullable|date',
+                'fecha_validez' => 'nullable|date|after_or_equal:fecha_emision',
+                'detalles' => 'required|array|min:1',
+                'detalles.*.cantidad' => 'required|numeric|min:0.01',
+                'detalles.*.precio_unitario' => 'required|numeric|min:0',
+            ]);
+
             $datos = [
                 'empresa_id' => $request->user()->empresa_id,
                 'cliente_id' => $request->clienteId ?? $request->cliente_id,
@@ -48,15 +58,11 @@ class CotizacionController
                 'es_afecta' => $request->has('esAfecta') ? $request->esAfecta : ($request->es_afecta ?? 1),
             ];
 
-            $detallesRaw = $request->input('detalles', $request->input('items', []));
-
-            if (empty($detallesRaw)) {
-                throw new Exception("La cotización debe tener al menos un detalle.");
-            }
+            $detallesRaw = $request->input('detalles', []);
 
             $detalles = array_map(function ($item) {
                 return [
-                    'producto_nombre' => $item['productoNombre'] ?? 'Servicio/Producto General',
+                    'producto_nombre' => $item['productoNombre'] ?? $item['producto_nombre'] ?? 'Servicio/Producto General',
                     'descripcion' => $item['descripcion'] ?? '',
                     'cantidad' => $item['cantidad'] ?? 1,
                     'precio_unitario' => $item['precioUnitario'] ?? $item['precio_unitario'] ?? 0,
@@ -71,6 +77,12 @@ class CotizacionController
                 'data' => $cotizacion
             ], 201);
 
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

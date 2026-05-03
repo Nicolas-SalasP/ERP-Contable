@@ -68,8 +68,11 @@ class FacturaService
         return $factura;
     }
 
-    public function verificarDuplicado(int $empresaId, int $proveedorId, string $numero): bool
+    public function verificarDuplicado(int $empresaId, ?int $proveedorId, string $numero): bool
     {
+        if (!$proveedorId)
+            return false;
+
         return Factura::where('empresa_id', $empresaId)
             ->where('proveedor_id', $proveedorId)
             ->where('numero_factura', $numero)
