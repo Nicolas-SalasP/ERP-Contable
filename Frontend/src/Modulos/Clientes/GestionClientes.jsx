@@ -45,17 +45,23 @@ const GestionClientes = () => {
         setModalOpen(true);
     };
 
-    const handleBloquear = async (id, nombre) => {
+    const handleToggleEstado = async (cliente) => {
+        const isActivo = cliente.estado === 'ACTIVO';
+        
         const confirm = await Swal.fire({
-            title: '¿Bloquear Cliente?',
-            html: `¿Estás seguro de bloquear a <br/><strong class="text-slate-800 text-lg">${nombre}</strong>?<br/>No se podrán emitir nuevos documentos a su nombre.`,
-            icon: 'warning',
+            title: isActivo ? '¿Bloquear Cliente?' : '¿Activar Cliente?',
+            html: isActivo 
+                ? `¿Estás seguro de bloquear a <br/><strong class="text-slate-800 text-lg">${cliente.razon_social}</strong>?<br/>No se podrán emitir nuevos documentos a su nombre.`
+                : `¿Estás seguro de reactivar a <br/><strong class="text-slate-800 text-lg">${cliente.razon_social}</strong>?<br/>Podrá volver a operar normalmente.`,
+            icon: isActivo ? 'warning' : 'info',
             showCancelButton: true,
-            confirmButtonText: 'Sí, bloquear',
+            confirmButtonText: isActivo ? 'Sí, bloquear' : 'Sí, activar',
             cancelButtonText: 'Cancelar',
             buttonsStyling: false,
             customClass: {
-                confirmButton: 'bg-red-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-red-700 mx-2 transition-colors',
+                confirmButton: isActivo 
+                    ? 'bg-red-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-red-700 mx-2 transition-colors'
+                    : 'bg-emerald-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-emerald-700 mx-2 transition-colors',
                 cancelButton: 'bg-slate-500 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-slate-600 mx-2 transition-colors',
                 popup: 'rounded-2xl'
             }
@@ -63,18 +69,24 @@ const GestionClientes = () => {
 
         if (confirm.isConfirmed) {
             try {
-                const res = await api.delete(`/clientes/${id}`);
+                let res;
+                if (isActivo) {
+                    res = await api.delete(`/clientes/${cliente.id}`);
+                } else {
+                    res = await api.put(`/clientes/${cliente.id}/activar`);
+                }
+
                 if (res.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Cliente Bloqueado',
+                        title: isActivo ? 'Cliente Bloqueado' : 'Cliente Activado',
                         timer: 1500,
                         showConfirmButton: false
                     });
                     cargarClientes();
                 }
             } catch (error) {
-                Swal.fire('Error', error.message || 'Error al bloquear el cliente', 'error');
+                Swal.fire('Error', error.message || 'Error al cambiar el estado del cliente', 'error');
             }
         }
     };
@@ -147,8 +159,16 @@ const GestionClientes = () => {
                                     <button onClick={() => openEdit(c)} className="flex-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-sm py-2 rounded-lg transition-colors border border-emerald-100">
                                         Gestionar
                                     </button>
-                                    <button onClick={() => handleBloquear(c.id, c.razon_social)} className="px-4 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg transition-colors border border-red-100 flex items-center justify-center" title="Bloquear">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                    <button 
+                                        onClick={() => handleToggleEstado(c)} 
+                                        className={`px-4 rounded-lg transition-colors border flex items-center justify-center ${c.estado === 'ACTIVO' ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 border-emerald-100'}`} 
+                                        title={c.estado === 'ACTIVO' ? 'Bloquear' : 'Activar'}
+                                    >
+                                        {c.estado === 'ACTIVO' ? (
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                        ) : (
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -191,8 +211,16 @@ const GestionClientes = () => {
                                                 <button onClick={() => openEdit(c)} className="text-emerald-700 hover:text-emerald-900 font-bold text-sm bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 px-3 py-1.5 rounded transition-colors">
                                                     Gestionar
                                                 </button>
-                                                <button onClick={() => handleBloquear(c.id, c.razon_social)} className="text-red-500 hover:text-red-700 p-1.5 bg-red-50 border border-red-100 hover:bg-red-100 rounded transition-colors" title="Bloquear Cliente">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                <button 
+                                                    onClick={() => handleToggleEstado(c)} 
+                                                    className={`p-1.5 rounded transition-colors border ${c.estado === 'ACTIVO' ? 'text-red-500 hover:text-red-700 bg-red-50 border-red-100 hover:bg-red-100' : 'text-emerald-500 hover:text-emerald-700 bg-emerald-50 border-emerald-100 hover:bg-emerald-100'}`} 
+                                                    title={c.estado === 'ACTIVO' ? 'Bloquear Cliente' : 'Activar Cliente'}
+                                                >
+                                                    {c.estado === 'ACTIVO' ? (
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                    ) : (
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                                    )}
                                                 </button>
                                             </div>
                                         </td>

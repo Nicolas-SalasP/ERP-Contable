@@ -65,6 +65,7 @@ const RegistroFactura = () => {
         rut: '',
         pais: '',
         moneda: 'CLP',
+        tipoDocumento: 'FACTURA',
         numeroFactura: '',
         fechaEmision: new Date().toISOString().split('T')[0],
         fechaContable: new Date().toISOString().split('T')[0],
@@ -230,18 +231,24 @@ const RegistroFactura = () => {
     const finalSave = (motivo) => {
         setShowIvaModal(false);
         setSaving(true);
-        const payload = { ...formData, motivoCorreccion: motivo };
+        const payload = {
+            ...formData,
+            motivoCorreccion: motivo,
+            tipo_documento: formData.tipoDocumento,
+            numero_factura: formData.numeroFactura
+        };
 
         api.post('/facturas', payload)
             .then(data => {
-                if (data.success) { 
-                    const facturaGuardada = data.data || data; 
-                    
+                if (data.success) {
+                    const facturaGuardada = data.data || data;
+
                     setSuccessData({
                         id: facturaGuardada.id,
                         codigo: facturaGuardada.comprobante_contable || facturaGuardada.codigo_interno || 'N/A'
                     });
                 } else {
+                    console.error("Errores:", data.errors);
                     alert('❌ Error al guardar: ' + data.message);
                 }
             })
@@ -388,9 +395,23 @@ const RegistroFactura = () => {
                         </div>
 
                         <div className="flex flex-col gap-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">N° Factura</label>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Tipo Documento</label>
+                                    <select
+                                        name="tipoDocumento"
+                                        value={formData.tipoDocumento}
+                                        onChange={handleChange}
+                                        className="w-full border border-slate-300 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700 bg-white"
+                                    >
+                                        <option value="FACTURA">Factura</option>
+                                        <option value="BOLETA">Boleta</option>
+                                        <option value="NOTA_CREDITO">Nota de Crédito</option>
+                                        <option value="NOTA_DEBITO">Nota de Débito</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">N° Documento</label>
                                     <input
                                         type="text"
                                         name="numeroFactura"
@@ -400,6 +421,9 @@ const RegistroFactura = () => {
                                         className="w-full border border-slate-300 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700"
                                     />
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide" title="Fecha que aparece en el PDF">Emisión (Doc)</label>
                                     <input
@@ -511,77 +535,103 @@ const RegistroFactura = () => {
                                     <div className="w-1/4 text-right text-red-600">Haber</div>
                                 </div>
 
-                                <div className="flex flex-col md:flex-row border-b border-slate-100 p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center hover:bg-slate-50 transition">
-                                    <div className="w-full md:w-1/2">
-                                        <span className="font-bold text-slate-800 block text-base">Proveedores por Pagar</span>
-                                        <span className="text-xs text-slate-400">Pasivo Circulante</span>
-                                    </div>
-                                    <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0">
-                                        <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
-                                            <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
-                                        </div>
-                                        <div className="w-full md:w-1/2 flex justify-between md:block text-right">
-                                            <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
-                                            <span className="font-bold text-slate-900 text-lg bg-red-50/30 px-2 rounded">{formData.montoVisual}</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                {(() => {
+                                    const esNotaCredito = formData.tipoDocumento === 'NOTA_CREDITO';
 
-                                {formData.tieneIva && (
-                                    <div className={`flex flex-col md:flex-row border-b border-slate-100 p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center transition ${ivaInvalido ? 'bg-red-50' : 'hover:bg-blue-50/30'}`}>
-                                        <div className="w-full md:w-1/2">
-                                            <span className="font-bold text-blue-800 block text-base">IVA Crédito Fiscal</span>
-                                            {ivaInvalido && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded mt-1 inline-block">⚠️ Monto Inválido</span>}
-                                        </div>
-                                        <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-3 md:gap-0 items-center">
-                                            <div className="w-full md:w-1/2 flex justify-between md:justify-end items-center md:pr-6">
-                                                <span className="md:hidden text-xs font-bold text-blue-400 uppercase mr-4">Debe:</span>
-                                                <div className="relative w-full md:w-full">
-                                                    <span className="absolute left-3 top-2 text-blue-400 font-bold text-sm">$</span>
-                                                    <input
-                                                        type="text"
-                                                        value={formData.montoIvaVisual}
-                                                        onChange={handleIvaManualChange}
-                                                        className={`w-full text-right font-bold text-blue-700 bg-white border rounded-md py-1.5 pl-6 pr-2 outline-none focus:ring-2 shadow-sm ${ivaInvalido ? 'border-red-500 ring-red-200' : 'border-blue-200 focus:ring-blue-500'}`}
-                                                    />
+                                    return (
+                                        <>
+                                            <div className="flex flex-col md:flex-row border-b border-slate-100 p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center hover:bg-slate-50 transition">
+                                                <div className="w-full md:w-1/2">
+                                                    <span className="font-bold text-slate-800 block text-base">Proveedores por Pagar</span>
+                                                    <span className="text-xs text-slate-400">Pasivo Circulante</span>
+                                                </div>
+                                                <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0">
+                                                    <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
+                                                        <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
+                                                        {esNotaCredito && <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-2 rounded">{formData.montoVisual}</span>}
+                                                    </div>
+                                                    <div className="w-full md:w-1/2 flex justify-between md:block text-right">
+                                                        <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
+                                                        {!esNotaCredito ? <span className="font-bold text-slate-900 text-lg bg-red-50/30 px-2 rounded">{formData.montoVisual}</span> : <span className="text-slate-300">-</span>}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="w-full md:w-1/2 flex justify-between md:block text-right">
-                                                <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
-                                                <span className="text-slate-300">-</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
 
-                                {/* --- FILA DE CUENTA DE DESTINO --- */}
-                                <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-blue-50/30 transition rounded-b-xl relative z-30">
-                                    <div className="w-full md:w-3/5 pr-0 md:pr-10">
-                                        <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
-                                            Clasificar Compra en Cuenta:
-                                        </label>
-                                        <BuscadorCuentaContable
-                                            cuentaSeleccionada={formData.cuentaDestino}
-                                            setCuentaSeleccionada={(codigo) => setFormData(prev => ({ ...prev, cuentaDestino: codigo }))}
-                                        />
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-2 block ml-1">
-                                            <i className="fas fa-info-circle mr-1 text-blue-400"></i>
-                                            Busque por código numérico o nombre
-                                        </span>
-                                    </div>
-                                    <div className="w-full md:w-2/5 flex flex-col md:flex-row gap-2 md:gap-0 items-center mt-2 md:mt-0">
-                                        <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
-                                            <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
-                                            <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1 rounded shadow-sm">
-                                                {formatCurrency(formData.montoNeto)}
-                                            </span>
-                                        </div>
-                                        <div className="w-full md:w-1/2 flex justify-between md:block text-right">
-                                            <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
-                                            <span className="text-slate-300">-</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                            {/* FILA IVA */}
+                                            {formData.tieneIva && (
+                                                <div className={`flex flex-col md:flex-row border-b border-slate-100 p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center transition ${ivaInvalido ? 'bg-red-50' : 'hover:bg-blue-50/30'}`}>
+                                                    <div className="w-full md:w-1/2">
+                                                        <span className="font-bold text-blue-800 block text-base">IVA Crédito Fiscal</span>
+                                                        {ivaInvalido && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded mt-1 inline-block">⚠️ Monto Inválido</span>}
+                                                    </div>
+                                                    <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-3 md:gap-0 items-center">
+                                                        <div className="w-full md:w-1/2 flex justify-between md:justify-end items-center md:pr-6">
+                                                            <span className="md:hidden text-xs font-bold text-blue-400 uppercase mr-4">Debe:</span>
+                                                            {!esNotaCredito ? (
+                                                                <div className="relative w-full md:w-full">
+                                                                    <span className="absolute left-3 top-2 text-blue-400 font-bold text-sm">$</span>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={formData.montoIvaVisual}
+                                                                        onChange={handleIvaManualChange}
+                                                                        className={`w-full text-right font-bold text-blue-700 bg-white border rounded-md py-1.5 pl-6 pr-2 outline-none focus:ring-2 shadow-sm ${ivaInvalido ? 'border-red-500 ring-red-200' : 'border-blue-200 focus:ring-blue-500'}`}
+                                                                    />
+                                                                </div>
+                                                            ) : <span className="text-slate-300">-</span>}
+                                                        </div>
+                                                        <div className="w-full md:w-1/2 flex justify-between md:justify-end items-center">
+                                                            <span className="md:hidden text-xs font-bold text-gray-400 uppercase mr-4">Haber:</span>
+                                                            {esNotaCredito ? (
+                                                                <div className="relative w-full md:w-full">
+                                                                    <span className="absolute left-3 top-2 text-blue-400 font-bold text-sm">$</span>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={formData.montoIvaVisual}
+                                                                        onChange={handleIvaManualChange}
+                                                                        className={`w-full text-right font-bold text-blue-700 bg-white border rounded-md py-1.5 pl-6 pr-2 outline-none focus:ring-2 shadow-sm ${ivaInvalido ? 'border-red-500 ring-red-200' : 'border-blue-200 focus:ring-blue-500'}`}
+                                                                    />
+                                                                </div>
+                                                            ) : <span className="text-slate-300">-</span>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-blue-50/30 transition rounded-b-xl relative z-30">
+                                                <div className="w-full md:w-3/5 pr-0 md:pr-10">
+                                                    <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
+                                                        Clasificar Compra en Cuenta:
+                                                    </label>
+                                                    <BuscadorCuentaContable
+                                                        cuentaSeleccionada={formData.cuentaDestino}
+                                                        setCuentaSeleccionada={(codigo) => setFormData(prev => ({ ...prev, cuentaDestino: codigo }))}
+                                                    />
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-2 block ml-1">
+                                                        <i className="fas fa-info-circle mr-1 text-blue-400"></i>
+                                                        Busque por código numérico o nombre
+                                                    </span>
+                                                </div>
+                                                <div className="w-full md:w-2/5 flex flex-col md:flex-row gap-2 md:gap-0 items-center mt-2 md:mt-0">
+                                                    <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
+                                                        <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
+                                                        {!esNotaCredito ? (
+                                                            <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1 rounded shadow-sm">
+                                                                {formatCurrency(formData.montoNeto)}
+                                                            </span>
+                                                        ) : <span className="text-slate-300">-</span>}
+                                                    </div>
+                                                    <div className="w-full md:w-1/2 flex justify-between md:block text-right">
+                                                        <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
+                                                        {esNotaCredito ? (
+                                                            <span className="font-bold text-slate-900 text-lg bg-red-50/30 px-3 py-1 rounded shadow-sm">
+                                                                {formatCurrency(formData.montoNeto)}
+                                                            </span>
+                                                        ) : <span className="text-slate-300">-</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>

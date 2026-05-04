@@ -105,6 +105,7 @@ class FacturaService
             $factura = Factura::create([
                 'empresa_id' => $datos['empresa_id'],
                 'tipo' => 'COMPRA',
+                'tipo_documento' => $datos['tipo_documento'] ?? 'FACTURA',
                 'codigo_unico' => $codigoUnico,
                 'proveedor_id' => $datos['proveedor_id'],
                 'cuenta_bancaria_id' => $datos['cuenta_bancaria_id'] ?? null,
@@ -357,5 +358,24 @@ class FacturaService
             ],
             'historial' => $historial
         ];
+    }
+
+    public function registrarPago(int $empresaId, int $facturaId, array $datos)
+    {
+        $factura = Factura::where('empresa_id', $empresaId)
+            ->findOrFail($facturaId);
+
+        if ($factura->estado === 'PAGADA') {
+            throw new Exception("Esta factura ya se encuentra pagada.");
+        }
+
+        $factura->estado = 'PAGADA';
+
+        $factura->fecha_pago = $datos['fechaPago'] ?? now()->format('Y-m-d');
+        $factura->medio_pago = $datos['medioPago'] ?? 'TRANSFERENCIA';
+
+        $factura->save();
+
+        return $factura;
     }
 }

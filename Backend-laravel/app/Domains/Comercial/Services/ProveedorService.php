@@ -4,6 +4,7 @@ namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\AnticipoProveedor;
 use Exception;
 
 class ProveedorService
@@ -71,11 +72,63 @@ class ProveedorService
             ->orderBy('fecha_emision', 'desc')
             ->get();
 
-        $anticipos = [];
+        $anticipos = AnticipoProveedor::where('empresa_id', $empresaId)
+            ->where('proveedor_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return [
             'proveedor' => $proveedor,
             'facturas'  => $facturas,
             'anticipos' => $anticipos
         ];
+    }
+
+    public function actualizarProveedor(int $empresaId, int $id, array $datos)
+    {
+        $proveedor = Proveedor::where('empresa_id', $empresaId)->findOrFail($id);
+
+        if (isset($datos['rut']) && !empty($datos['rut']) && $datos['rut'] !== $proveedor->rut) {
+            $existe = Proveedor::where('empresa_id', $empresaId)
+                ->where('rut', $datos['rut'])
+                ->exists();
+
+            if ($existe) {
+                throw new Exception("El Identificador Fiscal ingresado ya pertenece a otro proveedor.");
+            }
+        }
+
+        $proveedor->update($datos);
+        return $proveedor;
+    }
+
+    public function registrarAnticipo(int $empresaId, array $datos)
+    {
+        $proveedor = Proveedor::where('empresa_id', $empresaId)
+            ->findOrFail($datos['proveedor_id']);
+
+        return AnticipoProveedor::create([
+            'empresa_id' => $empresaId,
+            'proveedor_id' => $proveedor->id,
+            'fecha' => $datos['fecha'],
+            'monto' => $datos['monto'],
+            'saldo_disponible' => $datos['monto'],
+            'referencia' => $datos['referencia'] ?? null,
+            'estado' => 'PENDIENTE'
+        ]);
+    }
+
+    public function adjuntarPdfAnticipo(int $empresaId, int $anticipoId, ?string $rutaArchivo)
+    {
+        if (!$rutaArchivo) {
+            throw new Exception("No se pudo procesar el archivo adjunto.");
+        }
+
+        $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)->findOrFail($anticipoId);
+        
+        $anticipo->archivo_pdf = $rutaArchivo;
+        $anticipo->save();
+
+        return $anticipo;
     }
 }

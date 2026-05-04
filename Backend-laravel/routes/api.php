@@ -59,12 +59,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/paises', [PaisController::class, 'index']);
 
     // Comercial - Clientes
-    Route::apiResource('clientes', ClienteController::class)->except(['create', 'edit', 'show', 'update']);
+    Route::get('/clientes', [ClienteController::class, 'index']);
+    Route::post('/clientes', [ClienteController::class, 'store']);
+    Route::get('/clientes/{id}', [ClienteController::class, 'show']);
+    Route::put('/clientes/{id}', [ClienteController::class, 'update']);
+    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy']);
+    Route::put('/clientes/{id}/activar', [ClienteController::class, 'activar']);
 
     // Comercial - Proveedores
     Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo']);
     Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha']);
-    Route::apiResource('proveedores', ProveedorController::class)->except(['create', 'edit', 'show', 'update', 'destroy']);
+    Route::post('/proveedores/anticipos', [ProveedorController::class, 'guardarAnticipo']);
+    Route::apiResource('proveedores', ProveedorController::class)->except(['create', 'edit', 'show', 'destroy']);
 
     // Comercial - Facturas
     Route::get('/facturas/historial', [FacturaController::class, 'historial']);
@@ -73,6 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/facturas/{id}/asiento', [FacturaController::class, 'verAsiento']);
     Route::post('/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificarAsiento']);
     Route::get('/facturas/{id}/auditoria', [FacturaController::class, 'auditoria']);
+    Route::post('/facturas/{id}/pagar', [FacturaController::class, 'pagar']);
 
     // Comercial - Cotizaciones
     Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);

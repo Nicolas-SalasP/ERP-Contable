@@ -36,7 +36,13 @@ class ClienteController
                 'empresa_id' => $request->user()->empresa_id,
                 'rut' => $request->rut,
                 'razon_social' => $request->razonSocial ?? $request->razon_social,
-                'email' => $request->email ?? null,
+                'contacto_nombre' => $request->nombre_contacto ?? $request->contacto_nombre ?? null,
+                'contacto_email' => $request->email_contacto ?? $request->contacto_email ?? null,
+                'contacto_telefono' => $request->telefono_contacto ?? $request->contacto_telefono ?? null,
+                'direccion' => $request->direccion_comercial ?? $request->direccion ?? null,
+                'telefono' => $request->telefono ?? null,
+                'email' => $request->email_facturacion ?? $request->email ?? null,
+
                 'estado' => 'ACTIVO'
             ];
 
@@ -54,8 +60,59 @@ class ClienteController
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
-                'errors' => ['rut' => [$e->getMessage()]]
             ], 422);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $datos = [];
+
+            if ($request->has('rut'))
+                $datos['rut'] = $request->rut;
+            if ($request->has('razonSocial'))
+                $datos['razon_social'] = $request->razonSocial;
+            if ($request->has('razon_social'))
+                $datos['razon_social'] = $request->razon_social;
+            if ($request->has('estado')) {
+                $est = $request->estado;
+                $datos['estado'] = ($est === true || $est === 'true' || $est == 1 || $est === 'ACTIVO') ? 'ACTIVO' : 'INACTIVO';
+            }
+            if ($request->has('activo')) {
+                $datos['estado'] = filter_var($request->activo, FILTER_VALIDATE_BOOLEAN) ? 'ACTIVO' : 'INACTIVO';
+            }
+            if ($request->has('nombre_contacto'))
+                $datos['contacto_nombre'] = $request->nombre_contacto;
+            if ($request->has('contacto_nombre'))
+                $datos['contacto_nombre'] = $request->contacto_nombre;
+            if ($request->has('email_contacto'))
+                $datos['contacto_email'] = $request->email_contacto;
+            if ($request->has('contacto_email'))
+                $datos['contacto_email'] = $request->contacto_email;
+            if ($request->has('telefono_contacto'))
+                $datos['contacto_telefono'] = $request->telefono_contacto;
+            if ($request->has('contacto_telefono'))
+                $datos['contacto_telefono'] = $request->contacto_telefono;
+            if ($request->has('direccion_comercial'))
+                $datos['direccion'] = $request->direccion_comercial;
+            if ($request->has('direccion'))
+                $datos['direccion'] = $request->direccion;
+            if ($request->has('email_facturacion'))
+                $datos['email'] = $request->email_facturacion;
+            if ($request->has('email'))
+                $datos['email'] = $request->email;
+            if ($request->has('telefono'))
+                $datos['telefono'] = $request->telefono;
+
+            $cliente = $this->service->actualizarCliente($id, $datos);
+
+            return response()->json(['success' => true, 'data' => $cliente]);
+
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Errores de validación', 'errors' => $e->errors()], 422);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
     }
 
@@ -63,5 +120,15 @@ class ClienteController
     {
         $this->service->inactivarCliente($request->user()->empresa_id, $id);
         return response()->json(['success' => true]);
+    }
+
+    public function activar(Request $request, $id)
+    {
+        try {
+            $cliente = $this->service->activarCliente($request->user()->empresa_id, $id);
+            return response()->json(['success' => true, 'message' => 'Cliente activado']);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
     }
 }

@@ -73,24 +73,49 @@ class FacturaController
 
     public function store(Request $request)
     {
+        $mapeo = [
+            'numeroFactura' => 'numero_factura',
+            'tipoDocumento' => 'tipo_documento',
+            'proveedorId' => 'proveedor_id',
+            'cuentaBancariaId' => 'cuenta_bancaria_id',
+            'fechaEmision' => 'fecha_emision',
+            'fechaVencimiento' => 'fecha_vencimiento',
+            'montoNeto' => 'monto_neto',
+            'montoIva' => 'monto_iva',
+            'montoBruto' => 'monto_bruto',
+            'autorizadorId' => 'autorizador_id'
+        ];
+
+        $input = $request->all();
+
+        foreach ($mapeo as $camel => $snake) {
+            if (isset($input[$camel]) && !isset($input[$snake])) {
+                $input[$snake] = $input[$camel];
+            }
+        }
+
+        $request->merge($input);
+
         try {
             $request->validate([
-                'numero_factura' => 'required|string|max:255',
-                'tipo_documento' => 'required|string|in:COMPRA,VENTA',
+                'numero_factura' => 'required|string',
+                'tipo_documento' => 'required|string',
+                'empresa_id' => 'nullable',
             ]);
 
             $datos = [
                 'empresa_id' => $request->user()->empresa_id,
-                'proveedor_id' => $request->proveedorId ?? $request->proveedor_id,
-                'cuenta_bancaria_id' => $request->cuentaBancariaId ?? $request->cuenta_bancaria_id,
-                'numero_factura' => $request->numeroFactura ?? $request->numero_factura,
-                'fecha_emision' => $request->fechaEmision ?? $request->fecha_emision,
-                'fecha_vencimiento' => $request->fechaVencimiento ?? $request->fecha_vencimiento,
-                'monto_neto' => $request->montoNeto ?? $request->monto_neto,
-                'monto_iva' => $request->montoIva ?? $request->monto_iva,
-                'monto_bruto' => $request->montoBruto ?? $request->monto_bruto,
-                'tipo_documento' => $request->tipoDocumento ?? $request->tipo_documento,
-                'autorizador_id' => $request->autorizadorId ?? $request->autorizador_id,
+                'proveedor_id' => $input['proveedor_id'],
+                'cuenta_bancaria_id' => $input['cuenta_bancaria_id'] ?? null,
+                'numero_factura' => $input['numero_factura'],
+                'fecha_emision' => $input['fecha_emision'],
+                'fecha_vencimiento' => $input['fecha_vencimiento'] ?? null,
+                'monto_neto' => $input['monto_neto'],
+                'monto_iva' => $input['monto_iva'],
+                'monto_bruto' => $input['monto_bruto'],
+                'tipo_documento' => $input['tipo_documento'],
+                'autorizador_id' => $input['autorizador_id'] ?? null,
+                'motivo_correccion' => $input['motivoCorreccion'] ?? null
             ];
 
             $factura = $this->service->registrarFacturaCompra($datos);
@@ -119,12 +144,12 @@ class FacturaController
             $datosAsiento = $this->service->obtenerAsientoDeFactura($request->user()->empresa_id, $id);
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'data' => $datosAsiento
             ]);
         } catch (Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => $e->getMessage()
             ], 404);
         }
@@ -140,38 +165,59 @@ class FacturaController
             ]);
 
             $this->service->reclasificarAsiento(
-                $request->user()->empresa_id, 
-                $request->user()->id, 
-                $id, 
+                $request->user()->empresa_id,
+                $request->user()->id,
+                $id,
                 $datos
             );
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Asiento reclasificado exitosamente.'
             ]);
         } catch (Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => $e->getMessage()
             ], 400);
         }
     }
 
     public function auditoria($id)
-{
-    try {
-        $data = $this->service->obtenerAuditoriaCompleta($id);
-
-        return response()->json([
-            'success' => true,
-            'data'    => $data
-        ]);
-    } catch (Exception $e) {
-        return response()->json([
-            'success' => false,
-            'mensaje' => 'Error al obtener auditoría: ' . $e->getMessage()
-        ], 404);
+    {
+        try {
+            $data = $this->service->obtenerAuditoriaCompleta($id);
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al obtener auditoría: ' . $e->getMessage()
+            ], 404);
+        }
     }
-}
+
+    public function pagar(Request $request, $id)
+    {
+        try {
+            $factura = $this->service->registrarPago(
+                $request->user()->empresa_id,
+                $id,
+                $request->all()
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Factura pagada correctamente.',
+                'data' => $factura
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
 }
