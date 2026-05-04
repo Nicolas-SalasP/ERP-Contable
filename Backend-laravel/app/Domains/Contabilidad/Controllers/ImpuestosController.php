@@ -5,6 +5,7 @@ namespace App\Domains\Contabilidad\Controllers;
 use App\Domains\Contabilidad\Services\ImpuestosService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Exception;
 
 class ImpuestosController
@@ -84,8 +85,14 @@ class ImpuestosController
     {
         try {
             $request->validate([
-                'codigo_cuenta' => 'required|string',
-                'concepto_sii' => 'required|string'
+                'codigo_cuenta' => [
+                    'required',
+                    'string',
+                    Rule::unique('mapeo_cuentas_sii')->where(function ($query) use ($request) {
+                        return $query->where('empresa_id', $request->user()->empresa_id);
+                    })
+                ],
+                'concepto_sii' => 'required|string|in:INGRESOS_GIRO,OTROS_INGRESOS,COMPRAS,DEPRECIACION,REMUNERACIONES,HONORARIOS,ARRIENDOS,GASTOS_GENERALES'
             ]);
 
             $this->service->guardarMapeo(

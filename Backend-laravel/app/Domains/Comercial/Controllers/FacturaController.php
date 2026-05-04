@@ -98,20 +98,24 @@ class FacturaController
 
         try {
             $request->validate([
-                'numero_factura' => 'required|string',
-                'tipo_documento' => 'required|string',
-                'empresa_id' => 'nullable',
+                'numero_factura' => 'required|string|max:255',
+                'tipo_documento' => 'required|string|in:FACTURA,NOTA_CREDITO,BOLETA,NOTA_DEBITO,COMPRA',
+                'monto_bruto' => 'required|numeric|gt:0',
+                'monto_neto' => 'required|numeric|gt:0',
+            ], [
+                'monto_bruto.gt' => 'El monto bruto debe ser mayor a 0',
+                'monto_neto.gt' => 'El monto neto debe ser mayor a 0',
             ]);
 
             $datos = [
                 'empresa_id' => $request->user()->empresa_id,
-                'proveedor_id' => $input['proveedor_id'],
+                'proveedor_id' => $input['proveedor_id'] ?? null,
                 'cuenta_bancaria_id' => $input['cuenta_bancaria_id'] ?? null,
                 'numero_factura' => $input['numero_factura'],
-                'fecha_emision' => $input['fecha_emision'],
+                'fecha_emision' => $input['fecha_emision'] ?? now()->toDateString(),
                 'fecha_vencimiento' => $input['fecha_vencimiento'] ?? null,
                 'monto_neto' => $input['monto_neto'],
-                'monto_iva' => $input['monto_iva'],
+                'monto_iva' => $input['monto_iva'] ?? 0,
                 'monto_bruto' => $input['monto_bruto'],
                 'tipo_documento' => $input['tipo_documento'],
                 'autorizador_id' => $input['autorizador_id'] ?? null,

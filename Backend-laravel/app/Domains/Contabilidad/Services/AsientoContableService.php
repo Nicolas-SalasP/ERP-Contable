@@ -25,8 +25,26 @@ class AsientoContableService
             ->findOrFail($id);
     }
 
+    private function validarMesAbierto(int $empresaId, string $fecha)
+    {
+        $mes = date('n', strtotime($fecha));
+        $anio = date('Y', strtotime($fecha));
+
+        $mesCerrado = AsientoContable::where('empresa_id', $empresaId)
+            ->whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->where('glosa', 'like', '%Cierre F29%')
+            ->exists();
+
+        if ($mesCerrado) {
+            throw new Exception("El periodo {$mes}/{$anio} ya está cerrado tributariamente.");
+        }
+    }
+
     public function registrarAsiento(array $datosAsiento, array $detalles): AsientoContable
     {
+        $this->validarMesAbierto($datosAsiento['empresa_id'], $datosAsiento['fecha']);
+
         $totalDebe = 0;
         $totalHaber = 0;
         $codigosCuentas = [];
@@ -98,6 +116,8 @@ class AsientoContableService
 
     public function crearAsientoManual(array $datos)
     {
+        $this->validarMesAbierto($datos['empresa_id'], $datos['fecha']);
+
         return DB::transaction(function () use ($datos) {
             $tempNum = 'T' . time() . rand(10, 99);
 

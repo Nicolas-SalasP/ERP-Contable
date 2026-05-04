@@ -113,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'index']);
     Route::post('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'store']);
     Route::put('/contabilidad/plan-cuentas/{id}', [PlanCuentaController::class, 'update']);
+    Route::delete('/contabilidad/plan-cuentas/{id}', [PlanCuentaController::class, 'destroy']);
     Route::get('/contabilidad/asientos', [AsientoContableController::class, 'index']);
     Route::post('/contabilidad/asientos', [AsientoContableController::class, 'store']);
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario']);

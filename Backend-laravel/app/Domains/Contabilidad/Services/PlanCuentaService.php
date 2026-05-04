@@ -41,29 +41,34 @@ class PlanCuentaService
     public function actualizarCuenta($empresa_id, $id, array $datos)
     {
         $cuenta = PlanCuenta::where('empresa_id', $empresa_id)->where('id', $id)->first();
-        
-        if (!$cuenta) {
+        if (!$cuenta)
             throw new Exception("La cuenta contable no existe o pertenece a otra empresa.");
-        }
 
         if (isset($datos['codigo']) && $datos['codigo'] !== $cuenta->codigo) {
-            $existe = PlanCuenta::where('empresa_id', $empresa_id)
-                ->where('codigo', $datos['codigo'])
-                ->exists();
-
-            if ($existe) {
+            $existe = PlanCuenta::where('empresa_id', $empresa_id)->where('codigo', $datos['codigo'])->exists();
+            if ($existe)
                 throw new Exception("El código contable ya está en uso por otra cuenta.");
-            }
         }
 
         $tieneMovimientos = DetalleAsiento::where('cuenta_contable', $cuenta->codigo)->exists();
 
-        if ($tieneMovimientos) {
-            if (isset($datos['tipo']) && $datos['tipo'] !== $cuenta->tipo) {
-                throw new Exception("No puedes cambiar el tipo (naturaleza) de una cuenta que ya posee movimientos.");
-            }
-            if (isset($datos['activo']) && $datos['activo'] == false) {
+        if ($tieneMovimientos && isset($datos['tipo']) && $datos['tipo'] !== $cuenta->tipo) {
+            throw new Exception("No puedes cambiar el tipo (naturaleza) de una cuenta que ya posee movimientos.");
+        }
+
+        if (isset($datos['activo']) && $datos['activo'] == false) {
+            if ($tieneMovimientos) {
                 throw new Exception("No puedes inactivar una cuenta que ya posee movimientos históricos.");
+            }
+
+            $hijasActivas = PlanCuenta::where('empresa_id', $empresa_id)
+                ->where('codigo', 'like', $cuenta->codigo . '%')
+                ->where('codigo', '!=', $cuenta->codigo)
+                ->where('activo', true)
+                ->exists();
+
+            if ($hijasActivas) {
+                throw new Exception("No puedes inactivar una cuenta padre que tiene cuentas hijas activas.");
             }
         }
 
@@ -71,5 +76,23 @@ class PlanCuentaService
             $cuenta->update($datos);
             return $cuenta;
         });
+    }
+
+    public function eliminarCuenta($empresa_id, $id)
+    {
+        $cuenta = PlanCuenta::where('empresa_id', $empresa_id)->where('id', $id)->first();
+        if (!$cuenta)
+            throw new Exception("La cuenta contable no existe o pertenece a otra empresa.", 404);
+
+        if (DetalleAsiento::where('cuenta_contable', $cuenta->codigo)->exists()) {
+            throw new Exception("No puedes eliminar una cuenta que ya posee movimientos históricos.");
+        }
+
+        if (DB::table('mapeo_cuentas_sii')->where('codigo_cuenta', $cuenta->codigo)->where('empresa_id', $empresa_id)->exists()) {
+            throw new Exception("No puedes eliminar una cuenta que está mapeada al SII.");
+        }
+
+        $cuenta->delete();
+        return true;
     }
 }

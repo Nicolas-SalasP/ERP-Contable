@@ -52,6 +52,13 @@ class ImpuestosService
 
     public function ejecutarF29(int $empresaId, int $usuarioId, int $mes, int $anio)
     {
+        $cuentasBase = DB::table('plan_cuentas')->where('empresa_id', $empresaId)
+            ->whereIn('codigo', ['110001', '210201'])->pluck('codigo')->toArray();
+
+        if (count($cuentasBase) < 2) {
+            throw new Exception("Falta configuración: Se requieren cuentas de IVA Crédito (110001) y Débito (210201).");
+        }
+
         $simulacion = $this->simularF29($empresaId, $mes, $anio);
 
         if ($simulacion['ya_cerrado']) {
@@ -114,7 +121,7 @@ class ImpuestosService
         $queryVentas = DB::table('cotizaciones')
             ->where('empresa_id', $empresaId)
             ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin]);
-        
+
         if ($esFlujoCaja) {
         }
 
@@ -176,9 +183,9 @@ class ImpuestosService
         ];
 
         $mapeadas = DB::table('mapeo_cuentas_sii')
-            ->join('plan_cuentas', function($join) use ($empresaId) {
+            ->join('plan_cuentas', function ($join) use ($empresaId) {
                 $join->on('mapeo_cuentas_sii.codigo_cuenta', '=', 'plan_cuentas.codigo')
-                     ->where('plan_cuentas.empresa_id', '=', $empresaId);
+                    ->where('plan_cuentas.empresa_id', '=', $empresaId);
             })
             ->where('mapeo_cuentas_sii.empresa_id', $empresaId)
             ->select('mapeo_cuentas_sii.id', 'mapeo_cuentas_sii.codigo_cuenta', 'plan_cuentas.nombre', 'mapeo_cuentas_sii.concepto_sii')
@@ -189,12 +196,12 @@ class ImpuestosService
         $disponibles = DB::table('plan_cuentas')
             ->where('empresa_id', $empresaId)
             ->where('imputable', true)
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('codigo', 'like', '4%')
-                      ->orWhere('codigo', 'like', '5%')
-                      ->orWhere('codigo', 'like', '6%')
-                      ->orWhere('codigo', 'like', '7%')
-                      ->orWhere('codigo', 'like', '8%');
+                    ->orWhere('codigo', 'like', '5%')
+                    ->orWhere('codigo', 'like', '6%')
+                    ->orWhere('codigo', 'like', '7%')
+                    ->orWhere('codigo', 'like', '8%');
             })
             ->whereNotIn('codigo', $codigosMapeados)
             ->select('codigo', 'nombre')
@@ -225,10 +232,15 @@ class ImpuestosService
 
     public function eliminarMapeo(int $empresaId, int $id)
     {
-        return DB::table('mapeo_cuentas_sii')
+        $eliminado = DB::table('mapeo_cuentas_sii')
             ->where('id', $id)
             ->where('empresa_id', $empresaId)
             ->delete();
+
+        if (!$eliminado) {
+            throw new Exception("El mapeo no existe o no pertenece a la empresa.", 400);
+        }
+
+        return true;
     }
-    
 }
