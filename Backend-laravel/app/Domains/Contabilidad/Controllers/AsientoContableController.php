@@ -32,7 +32,7 @@ class AsientoContableController
             Cache::put($lockKey, true, 3);
 
             $datosValidados = $request->validate([
-                'fecha' => 'required|date|before_or_equal:today',
+                'fecha' => 'required|date',
                 'glosa' => 'required|string|max:255',
                 'tipo_asiento' => 'nullable|string',
                 'origen_modulo' => 'nullable|string|in:manual',
@@ -93,7 +93,7 @@ class AsientoContableController
             Cache::put($lockKey, true, 3);
 
             $datos = $request->validate([
-                'fecha' => 'required|date|before_or_equal:today',
+                'fecha' => 'required|date',
                 'glosa' => 'required|string|min:3|max:255',
                 'detalles' => 'required|array|min:2',
                 'detalles.*.cuenta_contable' => 'required|string',

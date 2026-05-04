@@ -101,7 +101,9 @@ const AsientoManual = () => {
     const estaCuadrado = totalDebe === totalHaber && totalDebe > 0 && filas.length >= 2;
 
     const guardarAsiento = async () => {
-        if (!glosaGeneral.trim()) return Swal.fire({ icon: 'warning', text: 'La glosa general es obligatoria.' });
+        const glosaLimpia = glosaGeneral.trim();
+        if (!glosaLimpia || glosaLimpia.length < 3) return Swal.fire({ icon: 'warning', text: 'La glosa general debe tener al menos 3 caracteres.' });
+        if (glosaLimpia.length > 255) return Swal.fire({ icon: 'warning', text: 'La glosa no puede superar los 255 caracteres.' });
         if (filas.length < 2) return Swal.fire({ icon: 'warning', text: 'El comprobante debe tener al menos 2 líneas.' });
         if (!estaCuadrado) return Swal.fire({ icon: 'warning', text: 'El asiento no está cuadrado.' });
 
@@ -110,7 +112,7 @@ const AsientoManual = () => {
             debe: f.debe,
             haber: f.haber,
             tipo_operacion: f.debe > 0 ? 'DEBE' : 'HABER',
-            glosa_detalle: f.glosa.trim() || null,
+            glosa_detalle: f.glosa.trim().substring(0, 255) || null,
             centro_costo_id: f.centroCosto ? f.centroCosto.value : null,
             empleado_nombre: f.empleado.trim() || null
         }));
@@ -162,7 +164,7 @@ const AsientoManual = () => {
                     <div className="w-full md:w-3/4">
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Glosa General del Comprobante</label>
                         <input
-                            type="text" value={glosaGeneral} onChange={(e) => setGlosaGeneral(e.target.value)} placeholder="Ej: Reconocimiento de gastos bancarios..."
+                            type="text" value={glosaGeneral} onChange={(e) => setGlosaGeneral(e.target.value)} placeholder="Ej: Reconocimiento de gastos bancarios..." maxLength="255"
                             className="w-full bg-slate-50 border border-slate-300 text-slate-800 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                         />
                     </div>
@@ -289,6 +291,7 @@ const AsientoManual = () => {
                                 <input
                                     type="number"
                                     min="0"
+                                    max="999999999999"
                                     step="1"
                                     value={montoActual}
                                     onChange={(e) => setMontoActual(e.target.value)}
@@ -303,7 +306,7 @@ const AsientoManual = () => {
                             <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Glosa Específica (Opcional)</label>
                             <input
                                 type="text" value={glosaDetalleActual} onChange={(e) => setGlosaDetalleActual(e.target.value)} onKeyDown={handleKeyDown}
-                                placeholder="Detalle de esta cuenta..."
+                                placeholder="Detalle de esta cuenta..." maxLength="255"
                                 className="w-full h-[42px] bg-white border border-slate-300 text-slate-700 text-sm rounded-lg px-3 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                             />
                         </div>

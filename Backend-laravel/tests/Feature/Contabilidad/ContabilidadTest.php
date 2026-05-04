@@ -956,20 +956,21 @@ class ContabilidadTest extends TestCase
     }
 
     // PRUEBA: Bloqueo de Fechas Irreales (Filtro Anti-Futuro)
-    public function test_rechaza_asientos_con_fecha_en_el_futuro()
+    public function test_permite_asientos_con_fecha_en_el_futuro_para_provisiones()
     {
         $cuenta = PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1001', 'nombre' => 'Caja', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
 
         $response = $this->actingAs($this->usuarioContador)->postJson($this->rutaAsientos, [
-            'fecha' => now()->addYears(5)->format('Y-m-d'),
-            'glosa' => 'Asiento en el año 2031',
+            'fecha' => now()->addDays(15)->format('Y-m-d'),
+            'glosa' => 'Provisión programada',
             'detalles' => [
                 ['cuenta_contable' => $cuenta->codigo, 'debe' => 100, 'haber' => 0],
                 ['cuenta_contable' => $cuenta->codigo, 'debe' => 0, 'haber' => 100]
             ]
         ]);
 
-        $response->assertStatus(422)->assertJsonValidationErrors(['fecha']);
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true);
     }
 
     // PRUEBA: Profundidad del Catálogo (Límites de Nivel)
@@ -1206,7 +1207,7 @@ class ContabilidadTest extends TestCase
     public function test_simulacion_f29_ignora_facturas_de_otra_empresa()
     {
         Pais::firstOrCreate(['iso' => 'CL'], ['nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'activo' => true]);
-        
+
         $empresaB = Empresa::create(['rut' => '44.555.666-7', 'razon_social' => 'Empresa B']);
         $provB = Proveedor::create(['empresa_id' => $empresaB->id, 'codigo_interno' => 'P-B', 'rut' => '1.1.1.1-1', 'razon_social' => 'PB', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
         Factura::create(['empresa_id' => $empresaB->id, 'proveedor_id' => $provB->id, 'numero_factura' => 'F-001', 'tipo' => 'COMPRA', 'codigo_unico' => 1234, 'fecha_emision' => '2026-05-15', 'monto_neto' => 1000000, 'monto_iva' => 190000, 'monto_bruto' => 1190000, 'estado' => 'REGISTRADA']);
@@ -1253,7 +1254,7 @@ class ContabilidadTest extends TestCase
     public function test_precalculo_renta_ignora_facturas_anuladas()
     {
         Pais::firstOrCreate(['iso' => 'CL'], ['nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'activo' => true]);
-        
+
         $prov = Proveedor::create(['empresa_id' => $this->empresaA->id, 'codigo_interno' => 'P-C', 'rut' => '2.2.2.2-2', 'razon_social' => 'PC', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
         Factura::create(['empresa_id' => $this->empresaA->id, 'proveedor_id' => $prov->id, 'numero_factura' => 'F-ANUL', 'tipo' => 'COMPRA', 'codigo_unico' => 9999, 'fecha_emision' => '2026-05-15', 'monto_neto' => 500000, 'monto_iva' => 95000, 'monto_bruto' => 595000, 'estado' => 'ANULADA']);
 
@@ -1322,15 +1323,15 @@ class ContabilidadTest extends TestCase
     {
         $empresaB = Empresa::create(['rut' => '12.111.111-1', 'razon_social' => 'B']);
         $cuentaB = PlanCuenta::create(['empresa_id' => $empresaB->id, 'codigo' => '4001', 'nombre' => 'V', 'tipo' => 'INGRESO', 'imputable' => true, 'activo' => true]);
-        
+
         $this->actingAs(User::create(['nombre' => 'Conta B', 'email' => 'cb3@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => 1]))
-             ->postJson('/api/renta/mapeo', ['codigo_cuenta' => $cuentaB->codigo, 'concepto_sii' => 'INGRESOS_GIRO']);
+            ->postJson('/api/renta/mapeo', ['codigo_cuenta' => $cuentaB->codigo, 'concepto_sii' => 'INGRESOS_GIRO']);
 
         $mapeoB = DB::table('mapeo_cuentas_sii')->where('empresa_id', $empresaB->id)->first();
 
         $response = $this->actingAs($this->usuarioContador)->deleteJson("/api/renta/mapeo/{$mapeoB->id}");
 
-        $response->assertStatus(400); 
+        $response->assertStatus(400);
     }
 
     // PRUEBA: Protección de Base de Datos en Libro Diario
