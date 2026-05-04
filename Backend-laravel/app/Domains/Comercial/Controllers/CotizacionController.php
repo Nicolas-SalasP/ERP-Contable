@@ -109,4 +109,35 @@ class CotizacionController
             ], 500);
         }
     }
+
+    public function actualizarEstado(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'estado' => 'required|string'
+            ]);
+
+            $cotizacion = $this->service->actualizarEstado(
+                $request->user()->empresa_id,
+                (int) $id,
+                $request->estado
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $cotizacion
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
 }

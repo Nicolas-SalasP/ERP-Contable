@@ -83,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Comercial - Cotizaciones
     Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);
+    Route::put('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
     Route::apiResource('cotizaciones', CotizacionController::class)->except(['create', 'edit', 'show', 'update']);
 
     // Tesoreria - Cuentas de Proveedores

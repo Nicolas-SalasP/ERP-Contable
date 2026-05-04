@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             SincronizarCuentasSeeder::class,
             CatalogoBancosSeeder::class,
             FacturasYAsientosSeeder::class, 
+            GastosOperacionalesSeeder::class,
+            CotizacionSeeder::class,
         ]);
     }
 }

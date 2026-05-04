@@ -5,6 +5,7 @@ namespace App\Domains\Comercial\Services;
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\CotizacionDetalle;
 use App\Domains\Comercial\Models\Cliente;
+use App\Domains\Comercial\Models\EstadoCotizacion;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -109,5 +110,25 @@ class CotizacionService
         }
 
         return $cotizacion;
+    }
+
+    public function actualizarEstado(int $empresaId, int $id, string $nombreEstado)
+    {
+        $cotizacion = Cotizacion::where('empresa_id', $empresaId)->find($id);
+
+        if (!$cotizacion) {
+            throw new Exception("La cotización solicitada no existe o no pertenece a su empresa.");
+        }
+
+        $estado = EstadoCotizacion::where('nombre', $nombreEstado)->first();
+        
+        if (!$estado) {
+            throw new Exception("El estado '$nombreEstado' no es válido en el sistema.");
+        }
+
+        $cotizacion->estado_id = $estado->id;
+        $cotizacion->save();
+
+        return $cotizacion->load(['cliente', 'estado']);
     }
 }
