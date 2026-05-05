@@ -1099,3 +1099,4 @@ La lógica actual trabaja con costo promedio simple para mantener trazabilidad b
 [OK] Pruebas Postman negativas
 [OK] Documentación README
 ```
+

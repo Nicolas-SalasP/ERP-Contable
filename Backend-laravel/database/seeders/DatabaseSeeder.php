@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             SincronizarCuentasSeeder::class,
             TestDataSeeder::class,
             CatalogoBancosSeeder::class,
+            InventarioPermisosSeeder::class,
+            InventarioPostmanSeeder::class,
         ]);
     }
 }

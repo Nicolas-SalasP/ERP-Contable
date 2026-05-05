@@ -7,6 +7,7 @@ use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Services\InventarioMovimientoService;
 use App\Domains\Inventario\Services\InventarioPermisoService;
 use App\Domains\Inventario\Services\InventarioService;
+use App\Domains\Inventario\Services\InventarioValorizacionService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
@@ -22,23 +23,24 @@ class InventarioController
 
     protected InventarioPermisoService $permisos;
 
+    protected InventarioValorizacionService $valorizacionService;
+
     public function __construct(
         InventarioService $service,
         InventarioMovimientoService $movimientoService,
-        InventarioPermisoService $permisos
+        InventarioPermisoService $permisos,
+        InventarioValorizacionService $valorizacionService
     ) {
         $this->service = $service;
         $this->movimientoService = $movimientoService;
         $this->permisos = $permisos;
+        $this->valorizacionService = $valorizacionService;
     }
 
     /*
     |--------------------------------------------------------------------------
     | Fase 1 - Catálogos, productos y bodegas
     |--------------------------------------------------------------------------
-    |
-    | Se conserva la lógica actual para no romper tests ni contrato existente.
-    |
     */
 
     public function catalogos(Request $request): JsonResponse
@@ -182,17 +184,6 @@ class InventarioController
     |--------------------------------------------------------------------------
     | Fase 2 - Movimientos de Inventario y Kardex
     |--------------------------------------------------------------------------
-    |
-    | Inventario NO emite, gestiona ni prepara DTE.
-    |
-    | No usar:
-    | - codigo_dte
-    | - codigo_sii
-    | - folio_dte
-    | - xml_dte
-    |
-    | referencia, motivo y observacion son campos genéricos/no tributarios.
-    |
     */
 
     public function movimientos(Request $request): JsonResponse
@@ -232,33 +223,13 @@ class InventarioController
             $datos = $request->validate([
                 'tipo' => ['required', Rule::in(MovimientoInventario::tiposPermitidos())],
                 'producto_id' => ['required', 'integer'],
-
                 'bodega_origen_id' => ['nullable', 'integer'],
                 'bodega_destino_id' => ['nullable', 'integer'],
-
                 'cantidad' => ['required', 'numeric', 'gt:0'],
-
-                /*
-                |--------------------------------------------------------------------------
-                | Valorización opcional
-                |--------------------------------------------------------------------------
-                |
-                | Para entradas y ajustes positivos se puede enviar costo_unitario.
-                | Para salidas, traspasos y ajustes negativos el service puede usar
-                | el costo promedio actual del stock/producto.
-                |
-                */
                 'costo_unitario' => ['nullable', 'numeric', 'min:0'],
-
-                /*
-                |--------------------------------------------------------------------------
-                | Referencias genéricas NO tributarias
-                |--------------------------------------------------------------------------
-                */
                 'referencia' => ['nullable', 'string', 'max:120'],
                 'motivo' => ['nullable', 'string', 'max:80'],
                 'observacion' => ['nullable', 'string', 'max:2000'],
-
                 'fecha_movimiento' => ['nullable', 'date'],
             ]);
 
@@ -347,7 +318,88 @@ class InventarioController
 
     /*
     |--------------------------------------------------------------------------
-    | Validaciones privadas Fase 2
+    | Fase 3 - Precio Medio Ponderado / Valorización
+    |--------------------------------------------------------------------------
+    |
+    | Inventario NO emite, gestiona ni prepara DTE.
+    | Estos endpoints consultan stock valorizado y resumen PMP.
+    |
+    */
+
+    public function valorizacion(Request $request): JsonResponse
+    {
+        try {
+            $usuario = $request->user();
+
+            $this->permisos->exigir($usuario, 'inventario.valorizacion.ver');
+
+            $filtros = $request->validate([
+                'producto_id' => ['nullable', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+                'search' => ['nullable', 'string', 'max:120'],
+                'page' => ['nullable', 'integer', 'min:1'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
+
+            $paginador = $this->valorizacionService->listarValorizacion(
+                (int) $usuario->empresa_id,
+                $filtros
+            );
+
+            $resumen = $this->valorizacionService->resumenValorizacion(
+                (int) $usuario->empresa_id,
+                $filtros
+            );
+
+            return response()->json(
+                $this->respuestaPaginadaConResumen($paginador, $resumen)
+            );
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function valorizacionProducto(Request $request, $id): JsonResponse
+    {
+        try {
+            $usuario = $request->user();
+
+            $this->permisos->exigir($usuario, 'inventario.valorizacion.ver');
+
+            $filtros = $request->validate([
+                'bodega_id' => ['nullable', 'integer'],
+                'search' => ['nullable', 'string', 'max:120'],
+                'page' => ['nullable', 'integer', 'min:1'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
+
+            $filtros['producto_id'] = (int) $id;
+
+            $paginador = $this->valorizacionService->listarValorizacion(
+                (int) $usuario->empresa_id,
+                $filtros
+            );
+
+            $resumen = $this->valorizacionService->resumenValorizacion(
+                (int) $usuario->empresa_id,
+                $filtros
+            );
+
+            return response()->json(
+                $this->respuestaPaginadaConResumen($paginador, $resumen)
+            );
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validaciones privadas
     |--------------------------------------------------------------------------
     */
 
@@ -411,10 +463,6 @@ class InventarioController
     |--------------------------------------------------------------------------
     | Helpers de respuesta
     |--------------------------------------------------------------------------
-    |
-    | Se mantienen locales al controller para no modificar el comportamiento
-    | global del ERP ni afectar otros domains.
-    |
     */
 
     private function respuestaPaginada(LengthAwarePaginator $paginador): array
@@ -428,6 +476,14 @@ class InventarioController
                 'page' => $paginador->currentPage(),
             ],
         ];
+    }
+
+    private function respuestaPaginadaConResumen(LengthAwarePaginator $paginador, array $resumen): array
+    {
+        $respuesta = $this->respuestaPaginada($paginador);
+        $respuesta['resumen'] = $resumen;
+
+        return $respuesta;
     }
 
     private function respuestaValidacion(ValidationException $e): JsonResponse

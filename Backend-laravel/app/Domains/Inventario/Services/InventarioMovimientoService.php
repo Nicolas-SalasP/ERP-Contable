@@ -13,6 +13,11 @@ use Illuminate\Validation\ValidationException;
 
 class InventarioMovimientoService
 {
+    public function __construct(
+        private readonly InventarioValorizacionService $valorizacionService
+    ) {
+    }
+
     public function registrarMovimiento(array $data, int $empresaId, ?int $userId = null): MovimientoInventario
     {
         return DB::transaction(function () use ($data, $empresaId, $userId) {
@@ -36,24 +41,16 @@ class InventarioMovimientoService
         $producto = $this->obtenerProductoActivoEmpresa((int) $data['producto_id'], $empresaId);
         $bodegaDestino = $this->obtenerBodegaActivaEmpresa((int) $data['bodega_destino_id'], $empresaId);
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
+        $costoUnitarioEntrada = $this->normalizarCostoUnitarioEntrada($data);
 
         $stockDestino = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaDestino->id, $empresaId);
 
-        $stockAntes = $this->toFloat($stockDestino->stock_actual);
-        $valorAntes = $this->toFloat($stockDestino->valor_total);
-
-        $costoUnitario = $this->obtenerCostoUnitarioEntrada($data, $stockDestino, $producto);
-        $costoTotal = $this->redondearCantidad($cantidad * $costoUnitario);
-
-        $stockDespues = $this->redondearCantidad($stockAntes + $cantidad);
-        $valorDespues = $this->redondearCantidad($valorAntes + $costoTotal);
-        $costoPromedioDespues = $this->calcularCostoPromedio($stockDespues, $valorDespues);
-
-        $stockDestino->update([
-            'stock_actual' => $stockDespues,
-            'costo_promedio' => $costoPromedioDespues,
-            'valor_total' => $valorDespues,
-        ]);
+        $valorizacion = $this->valorizacionService->calcularEntradaPmp(
+            stock: $stockDestino,
+            producto: $producto,
+            cantidad: $cantidad,
+            costoUnitario: $costoUnitarioEntrada
+        );
 
         return MovimientoInventario::create(array_merge([
             'empresa_id' => $empresaId,
@@ -64,9 +61,14 @@ class InventarioMovimientoService
             'cantidad' => $cantidad,
             'stock_origen_antes' => null,
             'stock_origen_despues' => null,
-            'stock_destino_antes' => $stockAntes,
-            'stock_destino_despues' => $stockDespues,
-        ], $this->datosComplementariosMovimiento($data, $costoUnitario, $costoTotal, $userId)));
+            'stock_destino_antes' => $valorizacion['stock_antes'],
+            'stock_destino_despues' => $valorizacion['stock_despues'],
+        ], $this->datosComplementariosMovimiento(
+            $data,
+            (float) $valorizacion['costo_unitario'],
+            (float) $valorizacion['costo_total'],
+            $userId
+        )));
     }
 
     private function registrarSalida(array $data, int $empresaId, ?int $userId): MovimientoInventario
@@ -76,7 +78,6 @@ class InventarioMovimientoService
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
 
         $stockOrigen = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaOrigen->id, $empresaId);
-
         $stockAntes = $this->toFloat($stockOrigen->stock_actual);
 
         if ($stockAntes < $cantidad) {
@@ -85,19 +86,11 @@ class InventarioMovimientoService
             ]);
         }
 
-        $valorAntes = $this->toFloat($stockOrigen->valor_total);
-        $costoUnitario = $this->obtenerCostoUnitarioSalida($stockOrigen, $producto);
-        $costoTotal = $this->redondearCantidad($cantidad * $costoUnitario);
-
-        $stockDespues = $this->redondearCantidad($stockAntes - $cantidad);
-        $valorDespues = $this->calcularValorDespuesSalida($stockDespues, $valorAntes, $costoTotal);
-        $costoPromedioDespues = $this->calcularCostoPromedio($stockDespues, $valorDespues);
-
-        $stockOrigen->update([
-            'stock_actual' => $stockDespues,
-            'costo_promedio' => $costoPromedioDespues,
-            'valor_total' => $valorDespues,
-        ]);
+        $valorizacion = $this->valorizacionService->calcularSalidaPmp(
+            stock: $stockOrigen,
+            producto: $producto,
+            cantidad: $cantidad
+        );
 
         return MovimientoInventario::create(array_merge([
             'empresa_id' => $empresaId,
@@ -106,11 +99,16 @@ class InventarioMovimientoService
             'bodega_origen_id' => $bodegaOrigen->id,
             'bodega_destino_id' => null,
             'cantidad' => $cantidad,
-            'stock_origen_antes' => $stockAntes,
-            'stock_origen_despues' => $stockDespues,
+            'stock_origen_antes' => $valorizacion['stock_antes'],
+            'stock_origen_despues' => $valorizacion['stock_despues'],
             'stock_destino_antes' => null,
             'stock_destino_despues' => null,
-        ], $this->datosComplementariosMovimiento($data, $costoUnitario, $costoTotal, $userId)));
+        ], $this->datosComplementariosMovimiento(
+            $data,
+            (float) $valorizacion['costo_unitario'],
+            (float) $valorizacion['costo_total'],
+            $userId
+        )));
     }
 
     private function registrarTraspaso(array $data, int $empresaId, ?int $userId): MovimientoInventario
@@ -136,7 +134,6 @@ class InventarioMovimientoService
 
         $stockOrigen = $stocks['origen'];
         $stockDestino = $stocks['destino'];
-
         $stockOrigenAntes = $this->toFloat($stockOrigen->stock_actual);
 
         if ($stockOrigenAntes < $cantidad) {
@@ -145,33 +142,12 @@ class InventarioMovimientoService
             ]);
         }
 
-        $stockDestinoAntes = $this->toFloat($stockDestino->stock_actual);
-
-        $valorOrigenAntes = $this->toFloat($stockOrigen->valor_total);
-        $valorDestinoAntes = $this->toFloat($stockDestino->valor_total);
-
-        $costoUnitario = $this->obtenerCostoUnitarioSalida($stockOrigen, $producto);
-        $costoTotal = $this->redondearCantidad($cantidad * $costoUnitario);
-
-        $stockOrigenDespues = $this->redondearCantidad($stockOrigenAntes - $cantidad);
-        $valorOrigenDespues = $this->calcularValorDespuesSalida($stockOrigenDespues, $valorOrigenAntes, $costoTotal);
-        $costoPromedioOrigenDespues = $this->calcularCostoPromedio($stockOrigenDespues, $valorOrigenDespues);
-
-        $stockDestinoDespues = $this->redondearCantidad($stockDestinoAntes + $cantidad);
-        $valorDestinoDespues = $this->redondearCantidad($valorDestinoAntes + $costoTotal);
-        $costoPromedioDestinoDespues = $this->calcularCostoPromedio($stockDestinoDespues, $valorDestinoDespues);
-
-        $stockOrigen->update([
-            'stock_actual' => $stockOrigenDespues,
-            'costo_promedio' => $costoPromedioOrigenDespues,
-            'valor_total' => $valorOrigenDespues,
-        ]);
-
-        $stockDestino->update([
-            'stock_actual' => $stockDestinoDespues,
-            'costo_promedio' => $costoPromedioDestinoDespues,
-            'valor_total' => $valorDestinoDespues,
-        ]);
+        $valorizacion = $this->valorizacionService->calcularTraspasoPmp(
+            stockOrigen: $stockOrigen,
+            stockDestino: $stockDestino,
+            producto: $producto,
+            cantidad: $cantidad
+        );
 
         return MovimientoInventario::create(array_merge([
             'empresa_id' => $empresaId,
@@ -180,11 +156,16 @@ class InventarioMovimientoService
             'bodega_origen_id' => $bodegaOrigen->id,
             'bodega_destino_id' => $bodegaDestino->id,
             'cantidad' => $cantidad,
-            'stock_origen_antes' => $stockOrigenAntes,
-            'stock_origen_despues' => $stockOrigenDespues,
-            'stock_destino_antes' => $stockDestinoAntes,
-            'stock_destino_despues' => $stockDestinoDespues,
-        ], $this->datosComplementariosMovimiento($data, $costoUnitario, $costoTotal, $userId)));
+            'stock_origen_antes' => $valorizacion['origen']['stock_antes'],
+            'stock_origen_despues' => $valorizacion['origen']['stock_despues'],
+            'stock_destino_antes' => $valorizacion['destino']['stock_antes'],
+            'stock_destino_despues' => $valorizacion['destino']['stock_despues'],
+        ], $this->datosComplementariosMovimiento(
+            $data,
+            (float) $valorizacion['costo_unitario'],
+            (float) $valorizacion['costo_total'],
+            $userId
+        )));
     }
 
     private function registrarAjustePositivo(array $data, int $empresaId, ?int $userId): MovimientoInventario
@@ -192,24 +173,16 @@ class InventarioMovimientoService
         $producto = $this->obtenerProductoActivoEmpresa((int) $data['producto_id'], $empresaId);
         $bodegaDestino = $this->obtenerBodegaActivaEmpresa((int) $data['bodega_destino_id'], $empresaId);
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
+        $costoUnitarioEntrada = $this->normalizarCostoUnitarioEntrada($data);
 
         $stockDestino = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaDestino->id, $empresaId);
 
-        $stockAntes = $this->toFloat($stockDestino->stock_actual);
-        $valorAntes = $this->toFloat($stockDestino->valor_total);
-
-        $costoUnitario = $this->obtenerCostoUnitarioEntrada($data, $stockDestino, $producto);
-        $costoTotal = $this->redondearCantidad($cantidad * $costoUnitario);
-
-        $stockDespues = $this->redondearCantidad($stockAntes + $cantidad);
-        $valorDespues = $this->redondearCantidad($valorAntes + $costoTotal);
-        $costoPromedioDespues = $this->calcularCostoPromedio($stockDespues, $valorDespues);
-
-        $stockDestino->update([
-            'stock_actual' => $stockDespues,
-            'costo_promedio' => $costoPromedioDespues,
-            'valor_total' => $valorDespues,
-        ]);
+        $valorizacion = $this->valorizacionService->calcularEntradaPmp(
+            stock: $stockDestino,
+            producto: $producto,
+            cantidad: $cantidad,
+            costoUnitario: $costoUnitarioEntrada
+        );
 
         return MovimientoInventario::create(array_merge([
             'empresa_id' => $empresaId,
@@ -220,9 +193,14 @@ class InventarioMovimientoService
             'cantidad' => $cantidad,
             'stock_origen_antes' => null,
             'stock_origen_despues' => null,
-            'stock_destino_antes' => $stockAntes,
-            'stock_destino_despues' => $stockDespues,
-        ], $this->datosComplementariosMovimiento($data, $costoUnitario, $costoTotal, $userId)));
+            'stock_destino_antes' => $valorizacion['stock_antes'],
+            'stock_destino_despues' => $valorizacion['stock_despues'],
+        ], $this->datosComplementariosMovimiento(
+            $data,
+            (float) $valorizacion['costo_unitario'],
+            (float) $valorizacion['costo_total'],
+            $userId
+        )));
     }
 
     private function registrarAjusteNegativo(array $data, int $empresaId, ?int $userId): MovimientoInventario
@@ -232,7 +210,6 @@ class InventarioMovimientoService
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
 
         $stockOrigen = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaOrigen->id, $empresaId);
-
         $stockAntes = $this->toFloat($stockOrigen->stock_actual);
 
         if ($stockAntes < $cantidad) {
@@ -241,19 +218,11 @@ class InventarioMovimientoService
             ]);
         }
 
-        $valorAntes = $this->toFloat($stockOrigen->valor_total);
-        $costoUnitario = $this->obtenerCostoUnitarioSalida($stockOrigen, $producto);
-        $costoTotal = $this->redondearCantidad($cantidad * $costoUnitario);
-
-        $stockDespues = $this->redondearCantidad($stockAntes - $cantidad);
-        $valorDespues = $this->calcularValorDespuesSalida($stockDespues, $valorAntes, $costoTotal);
-        $costoPromedioDespues = $this->calcularCostoPromedio($stockDespues, $valorDespues);
-
-        $stockOrigen->update([
-            'stock_actual' => $stockDespues,
-            'costo_promedio' => $costoPromedioDespues,
-            'valor_total' => $valorDespues,
-        ]);
+        $valorizacion = $this->valorizacionService->calcularSalidaPmp(
+            stock: $stockOrigen,
+            producto: $producto,
+            cantidad: $cantidad
+        );
 
         return MovimientoInventario::create(array_merge([
             'empresa_id' => $empresaId,
@@ -262,11 +231,16 @@ class InventarioMovimientoService
             'bodega_origen_id' => $bodegaOrigen->id,
             'bodega_destino_id' => null,
             'cantidad' => $cantidad,
-            'stock_origen_antes' => $stockAntes,
-            'stock_origen_despues' => $stockDespues,
+            'stock_origen_antes' => $valorizacion['stock_antes'],
+            'stock_origen_despues' => $valorizacion['stock_despues'],
             'stock_destino_antes' => null,
             'stock_destino_despues' => null,
-        ], $this->datosComplementariosMovimiento($data, $costoUnitario, $costoTotal, $userId)));
+        ], $this->datosComplementariosMovimiento(
+            $data,
+            (float) $valorizacion['costo_unitario'],
+            (float) $valorizacion['costo_total'],
+            $userId
+        )));
     }
 
     public function listarMovimientos(array $filtros, int $empresaId): LengthAwarePaginator
@@ -504,37 +478,14 @@ class InventarioMovimientoService
         return $cantidad;
     }
 
-    private function obtenerCostoUnitarioEntrada(array $data, StockProducto $stock, Producto $producto): float
+    private function normalizarCostoUnitarioEntrada(array $data): ?float
     {
-        $costoUnitario = $this->normalizarDecimalNullable(
+        return $this->normalizarDecimalNullable(
             $data['costo_unitario'] ?? null,
             'costo_unitario',
             'El costo unitario debe ser numérico.',
             'El costo unitario no puede ser negativo.'
         );
-
-        if ($costoUnitario !== null) {
-            return $costoUnitario;
-        }
-
-        $costoProducto = $this->toFloat($producto->costo_promedio);
-
-        if ($costoProducto > 0) {
-            return $costoProducto;
-        }
-
-        return $this->toFloat($stock->costo_promedio);
-    }
-
-    private function obtenerCostoUnitarioSalida(StockProducto $stock, Producto $producto): float
-    {
-        $costoStock = $this->toFloat($stock->costo_promedio);
-
-        if ($costoStock > 0) {
-            return $costoStock;
-        }
-
-        return $this->toFloat($producto->costo_promedio);
     }
 
     private function datosComplementariosMovimiento(
@@ -544,8 +495,8 @@ class InventarioMovimientoService
         ?int $userId
     ): array {
         return [
-            'costo_unitario' => $costoUnitario,
-            'costo_total' => $costoTotal,
+            'costo_unitario' => $this->redondearCantidad($costoUnitario),
+            'costo_total' => $this->redondearCantidad($costoTotal),
             'referencia' => $data['referencia'] ?? null,
             'motivo' => $data['motivo'] ?? null,
             'observacion' => $data['observacion'] ?? null,
@@ -579,24 +530,6 @@ class InventarioMovimientoService
         }
 
         return $valor;
-    }
-
-    private function calcularValorDespuesSalida(float $stockDespues, float $valorAntes, float $costoTotal): float
-    {
-        if ($stockDespues <= 0) {
-            return 0;
-        }
-
-        return max(0, $this->redondearCantidad($valorAntes - $costoTotal));
-    }
-
-    private function calcularCostoPromedio(float $stock, float $valorTotal): float
-    {
-        if ($stock <= 0) {
-            return 0;
-        }
-
-        return $this->redondearCantidad($valorTotal / $stock);
     }
 
     private function normalizarPerPage(mixed $perPage): int

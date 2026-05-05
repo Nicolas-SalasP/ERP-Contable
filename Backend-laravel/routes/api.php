@@ -143,51 +143,73 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto']);
 
 // Inventario
+   // Inventario
     Route::prefix('inventario')->group(function () {
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 1 - Catálogos, productos y bodegas
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/catalogos', [InventarioController::class, 'catalogos']);
+        /*
+        |--------------------------------------------------------------------------
+        | Fase 1 - Catálogos, productos y bodegas
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/catalogos', [InventarioController::class, 'catalogos']);
 
-    Route::get('/productos', [InventarioController::class, 'index']);
-    Route::post('/productos', [InventarioController::class, 'store']);
+        Route::get('/productos', [InventarioController::class, 'index']);
+        Route::post('/productos', [InventarioController::class, 'store']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 2 - Kardex por producto
-    |--------------------------------------------------------------------------
-    |
-    | Esta ruta va antes de /productos/{id} para dejar explícito que es
-    | una subruta especializada del producto.
-    |
-    */
-    Route::get('/productos/{id}/kardex', [InventarioController::class, 'kardexProducto']);
+        /*
+        |--------------------------------------------------------------------------
+        | Fase 2 - Kardex por producto
+        |--------------------------------------------------------------------------
+        |
+        | Esta ruta va antes de /productos/{id} para evitar conflicto con
+        | la ruta dinámica /productos/{id}.
+        |
+        */
+        Route::get('/productos/{id}/kardex', [InventarioController::class, 'kardexProducto']);
 
-    Route::get('/productos/{id}', [InventarioController::class, 'show']);
-    Route::put('/productos/{id}', [InventarioController::class, 'update']);
+        /*
+        |--------------------------------------------------------------------------
+        | Fase 3 - Valorización por producto
+        |--------------------------------------------------------------------------
+        |
+        | Esta ruta también va antes de /productos/{id}.
+        |
+        */
+        Route::get('/productos/{id}/valorizacion', [InventarioController::class, 'valorizacionProducto']);
 
-    Route::get('/bodegas', [InventarioController::class, 'bodegas']);
-    Route::post('/bodegas', [InventarioController::class, 'storeBodega']);
+        Route::get('/productos/{id}', [InventarioController::class, 'show']);
+        Route::put('/productos/{id}', [InventarioController::class, 'update']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 2 - Movimientos de Inventario
-    |--------------------------------------------------------------------------
-    |
-    | Inventario NO emite, gestiona ni prepara DTE.
-    | Estos endpoints trabajan solo con stock, movimientos y kardex.
-    |
-    */
-    Route::get('/movimientos', [InventarioController::class, 'movimientos']);
-    Route::post('/movimientos', [InventarioController::class, 'registrarMovimiento']);
+        Route::get('/bodegas', [InventarioController::class, 'bodegas']);
+        Route::post('/bodegas', [InventarioController::class, 'storeBodega']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 2 - Kardex general
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/kardex', [InventarioController::class, 'kardex']);
+        /*
+        |--------------------------------------------------------------------------
+        | Fase 2 - Movimientos de Inventario
+        |--------------------------------------------------------------------------
+        |
+        | Inventario NO emite, gestiona ni prepara DTE.
+        | Estos endpoints trabajan solo con stock, movimientos y kardex.
+        |
+        */
+        Route::get('/movimientos', [InventarioController::class, 'movimientos']);
+        Route::post('/movimientos', [InventarioController::class, 'registrarMovimiento']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fase 2 - Kardex general
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/kardex', [InventarioController::class, 'kardex']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fase 3 - Precio Medio Ponderado / Valorización
+        |--------------------------------------------------------------------------
+        |
+        | Inventario NO emite, gestiona ni prepara DTE.
+        | Este endpoint consulta stock valorizado y resumen PMP.
+        |
+        */
+        Route::get('/valorizacion', [InventarioController::class, 'valorizacion']);
 });
 });
