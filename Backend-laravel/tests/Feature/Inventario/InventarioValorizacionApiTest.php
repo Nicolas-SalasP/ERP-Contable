@@ -1,10 +1,8 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Inventario;
 
 use App\Domains\Core\Models\Empresa;
-use App\Domains\Core\Models\EstadoSuscripcion;
-use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\MovimientoInventario;
@@ -12,13 +10,23 @@ use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockProducto;
 use App\Domains\Inventario\Models\UnidadMedida;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PreparaInventarioTest;
 use Tests\TestCase;
 
 class InventarioValorizacionApiTest extends TestCase
 {
     use RefreshDatabase;
+    use PreparaInventarioTest;
+
+    protected bool $seed = true;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->prepararUsuariosInventarioDemo();
+    }
 
     public function test_contador_puede_listar_valorizacion_general(): void
     {
@@ -368,32 +376,37 @@ class InventarioValorizacionApiTest extends TestCase
 
     private function crearUsuarioConPermisos(array $permisos, string $nombreRol = 'Contador'): array
     {
-        $empresa = $this->crearEmpresa();
+        if ($nombreRol === 'Auditor') {
+            return $this->usuarioAuditorConPermisos($permisos);
+        }
 
-        $usuario = $this->crearUsuarioParaEmpresa($empresa, $permisos, $nombreRol);
+        if ($nombreRol === 'Administrador') {
+            return $this->usuarioAdministradorSeeder();
+        }
 
-        return [$empresa, $usuario];
+        return $this->usuarioContadorConPermisos($permisos);
     }
 
     private function crearUsuarioParaEmpresa(Empresa $empresa, array $permisos, string $nombreRol = 'Contador'): User
     {
-        $estado = EstadoSuscripcion::firstOrCreate([
-            'nombre' => 'Activa',
-        ]);
+        if ($nombreRol === 'Auditor') {
+            [, $usuario] = $this->usuarioAuditorConPermisos($permisos);
+        } elseif ($nombreRol === 'Administrador') {
+            [, $usuario] = $this->usuarioAdministradorSeeder();
+        } else {
+            [, $usuario] = $this->usuarioContadorConPermisos($permisos);
+        }
 
-        $rol = Rol::create([
-            'nombre' => $nombreRol,
-            'permisos' => $permisos,
-        ]);
+        if ((int) $usuario->empresa_id !== (int) $empresa->id) {
+            $usuario->update([
+                'empresa_id' => $empresa->id,
+            ]);
 
-        return User::create([
-            'empresa_id' => $empresa->id,
-            'nombre' => 'Usuario Inventario Valorizacion ' . uniqid(),
-            'email' => 'inventario_valorizacion_' . uniqid() . '@example.com',
-            'password' => Hash::make('password'),
-            'rol_id' => $rol->id,
-            'estado_suscripcion_id' => $estado->id,
-        ]);
+            $usuario->refresh();
+            $usuario->load('rol');
+        }
+
+        return $usuario;
     }
 
     private function crearEmpresa(): Empresa

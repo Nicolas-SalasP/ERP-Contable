@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Feature\Inventario;
 
 use App\Domains\Inventario\Models\MovimientoInventario;
 use PHPUnit\Framework\TestCase;

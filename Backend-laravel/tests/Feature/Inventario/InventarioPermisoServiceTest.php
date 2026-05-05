@@ -1,17 +1,14 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Feature\Inventario;
 
 use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Services\InventarioPermisoService;
 use Exception;
-use PHPUnit\Framework\TestCase;
-use Tests\Concerns\PreparaInventarioTest;
+use Tests\TestCase;
 
 class InventarioPermisoServiceTest extends TestCase
-
-
 {
     public function test_administrador_puede_ejecutar_cualquier_permiso(): void
     {

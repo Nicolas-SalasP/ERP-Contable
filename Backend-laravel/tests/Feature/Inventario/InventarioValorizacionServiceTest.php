@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Feature\Inventario;
 
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Inventario\Models\Bodega;

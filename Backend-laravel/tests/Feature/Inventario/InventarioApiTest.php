@@ -1,22 +1,29 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Inventario;
 
 use App\Domains\Core\Models\Empresa;
-use App\Domains\Core\Models\EstadoSuscripcion;
-use App\Domains\Core\Models\Rol;
-use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\UnidadMedida;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PreparaInventarioTest;
 use Tests\TestCase;
 
 class InventarioApiTest extends TestCase
 {
     use RefreshDatabase;
+    use PreparaInventarioTest;
+
+    protected bool $seed = true;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->prepararUsuariosInventarioDemo();
+    }
 
     public function test_catalogos_de_inventario_responden_correctamente(): void
     {
@@ -448,30 +455,15 @@ class InventarioApiTest extends TestCase
 
     private function crearUsuarioConPermisos(array $permisos, string $nombreRol = 'Contador'): array
     {
-        $estado = EstadoSuscripcion::firstOrCreate([
-            'nombre' => 'Activa',
-        ]);
+        if ($nombreRol === 'Auditor') {
+            return $this->usuarioAuditorConPermisos($permisos);
+        }
 
-        $empresa = Empresa::create([
-            'rut' => $this->rutUnico(),
-            'razon_social' => 'Empresa Demo ' . uniqid(),
-        ]);
+        if ($nombreRol === 'Administrador') {
+            return $this->usuarioAdministradorSeeder();
+        }
 
-        $rol = Rol::create([
-            'nombre' => $nombreRol,
-            'permisos' => $permisos,
-        ]);
-
-        $usuario = User::create([
-            'empresa_id' => $empresa->id,
-            'nombre' => 'Usuario Demo',
-            'email' => 'usuario_' . uniqid() . '@example.com',
-            'password' => Hash::make('password'),
-            'rol_id' => $rol->id,
-            'estado_suscripcion_id' => $estado->id,
-        ]);
-
-        return [$empresa, $usuario, $rol];
+        return $this->usuarioContadorConPermisos($permisos);
     }
 
     private function obtenerUnidadBase(): UnidadMedida
