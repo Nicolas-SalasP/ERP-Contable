@@ -12,6 +12,7 @@ class UserSeeder extends Seeder
     {
         $empresaId = 1;
         $password = Hash::make('password123');
+        $estadoActivo = 1;
 
         $usuarios = [
             [
@@ -19,33 +20,40 @@ class UserSeeder extends Seeder
                 'email' => 'superadmin@tenri.cl',
                 'password' => $password,
                 'empresa_id' => $empresaId,
-                'rol_id' => 1 // Super Admin
+                'rol_id' => 1,
+                'estado_suscripcion_id' => $estadoActivo
             ],
             [
                 'nombre' => 'Gerente Administrador',
                 'email' => 'admin@tenri.cl',
                 'password' => $password,
                 'empresa_id' => $empresaId,
-                'rol_id' => 2 // Administrador
+                'rol_id' => 2,
+                'estado_suscripcion_id' => $estadoActivo
             ],
             [
                 'nombre' => 'Experto Contador',
                 'email' => 'contador@tenri.cl',
                 'password' => $password,
                 'empresa_id' => $empresaId,
-                'rol_id' => 3 // Contador
+                'rol_id' => 3,
+                'estado_suscripcion_id' => $estadoActivo
             ],
             [
                 'nombre' => 'Revisor Auditor',
                 'email' => 'auditor@tenri.cl',
                 'password' => $password,
                 'empresa_id' => $empresaId,
-                'rol_id' => 4 // Auditor
+                'rol_id' => 4,
+                'estado_suscripcion_id' => $estadoActivo
             ]
         ];
 
         foreach ($usuarios as $usuario) {
-            User::firstOrCreate(['email' => $usuario['email']], $usuario);
+            User::updateOrCreate(
+                ['email' => $usuario['email']], 
+                $usuario
+            );
         }
     }
 }
