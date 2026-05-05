@@ -107,7 +107,7 @@ class EmpresaController extends Controller
             ]);
 
             $cuenta = $this->empresaService->agregarBanco($request->user()->empresa_id, $datos);
-            return response()->json(['success' => true, 'data' => $cuenta]);
+            return response()->json(['success' => true, 'data' => $cuenta], 201);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {

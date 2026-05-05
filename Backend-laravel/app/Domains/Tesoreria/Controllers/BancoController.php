@@ -4,6 +4,7 @@ namespace App\Domains\Tesoreria\Controllers;
 
 use App\Domains\Tesoreria\Services\BancoService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Exception;
 
 class BancoController
@@ -40,11 +41,11 @@ class BancoController
     {
         try {
             $datos = $request->validate([
-                'banco' => 'required|string',
-                'numero_cuenta' => 'required|string',
-                'tipo_cuenta' => 'required|string',
-                'titular' => 'required|string',
-                'rut_titular' => 'required|string',
+                'banco' => 'required|string|max:100',
+                'numero_cuenta' => 'required|string|max:50',
+                'tipo_cuenta' => 'required|string|max:50',
+                'titular' => 'required|string|max:150',
+                'rut_titular' => 'required|string|max:20',
             ]);
 
             $datos['empresa_id'] = $request->user()->empresa_id;
@@ -57,6 +58,8 @@ class BancoController
                 'data' => $cuenta
             ], 201);
 
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -98,7 +101,6 @@ class BancoController
                 'descripcion' => 'required|string|max:255',
             ]);
 
-            // Delegamos al servicio
             $resultado = $this->service->registrarIngresoManual($request->user()->empresa_id, $datos);
 
             return response()->json([
@@ -106,12 +108,11 @@ class BancoController
                 'message' => 'Ingreso manual registrado correctamente.',
                 'data' => $resultado
             ], 201);
-
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false, 
-                'message' => $e->getMessage()
-            ], 422);
+            $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
 

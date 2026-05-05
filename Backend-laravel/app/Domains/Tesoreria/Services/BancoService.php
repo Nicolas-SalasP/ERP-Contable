@@ -107,6 +107,12 @@ class BancoService
 
     public function registrarIngresoManual(int $empresaId, array $datos): array
     {
+        $cuenta = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->find($datos['cuenta_bancaria_id']);
+        
+        if (!$cuenta) {
+            throw new Exception("Cuenta bancaria no encontrada o no pertenece a tu empresa.", 403); // <--- Lanza 403
+        }
+
         return [
             'estado' => 'REGISTRADO', 
             'mensaje' => 'Movimiento guardado exitosamente.',

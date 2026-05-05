@@ -4,6 +4,7 @@ namespace App\Domains\Tesoreria\Services;
 
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -18,14 +19,22 @@ class ConciliacionService
 
     public function conciliarPagoFacturaCompra(array $datos): Factura
     {
+        $cuentaBanco = CuentaBancariaEmpresa::where('empresa_id', $datos['empresa_id'])->find($datos['cuenta_bancaria_id']);
+        if (!$cuentaBanco) {
+            throw new Exception("La cuenta bancaria seleccionada no existe o no pertenece a la empresa.", 403);
+        }
+
         return DB::transaction(function () use ($datos) {
             $factura = Factura::lockForUpdate()->where('empresa_id', $datos['empresa_id'])->findOrFail($datos['factura_id']);
-            if ($factura->estado === 'PAGADA')
-                throw new Exception("La factura {$factura->numero_factura} ya está pagada.");
+            
+            if ($factura->estado === 'PAGADA') {
+                throw new Exception("La factura {$factura->numero_factura} ya está pagada.", 422);
+            }
+            
             $factura->update(['estado' => 'PAGADA']);
 
             $cuentaProveedores = '352105';
-            $cuentaBanco = '110101';
+            $codigoCuentaBanco = $cuentaBanco->cuenta_contable_codigo ?? '110101';
             $glosa = "Pago Factura N° {$factura->numero_factura} a Proveedor";
 
             $this->asientoService->registrarAsiento([
@@ -37,7 +46,7 @@ class ConciliacionService
                 'origen_id' => $factura->id,
             ], [
                 ['cuenta_contable' => $cuentaProveedores, 'debe' => $factura->monto_bruto, 'haber' => 0],
-                ['cuenta_contable' => $cuentaBanco, 'debe' => 0, 'haber' => $factura->monto_bruto]
+                ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $factura->monto_bruto]
             ]);
 
             return $factura;
@@ -46,6 +55,11 @@ class ConciliacionService
 
     public function obtenerMovimientosPendientes(int $empresaId, int $cuentaBancariaId)
     {
+        $cuentaBanco = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->find($cuentaBancariaId);
+        if (!$cuentaBanco) {
+            throw new Exception("Acceso denegado a los movimientos de esta cuenta bancaria.", 403);
+        }
+
         return DB::table('movimientos_bancarios')
             ->where('empresa_id', $empresaId)
             ->where('cuenta_bancaria_id', $cuentaBancariaId)
@@ -65,9 +79,14 @@ class ConciliacionService
     public function conciliarDirecto(int $empresaId, array $datos, int $usuarioId)
     {
         return DB::transaction(function () use ($empresaId, $datos, $usuarioId) {
-            $movimiento = DB::table('movimientos_bancarios')->where('empresa_id', $empresaId)->where('id', $datos['movimiento_id'])->first();
-            if (!$movimiento)
-                throw new Exception("Movimiento bancario no encontrado.");
+            $movimiento = DB::table('movimientos_bancarios')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $datos['movimiento_id'])
+                ->first();
+
+            if (!$movimiento) {
+                throw new Exception("Movimiento bancario no encontrado o no pertenece a su empresa.", 404);
+            }
 
             $esIngreso = $movimiento->abono > 0;
             $monto = $esIngreso ? $movimiento->abono : $movimiento->cargo;
@@ -102,9 +121,23 @@ class ConciliacionService
     public function conciliarAnticipo(int $empresaId, array $datos, int $usuarioId)
     {
         return DB::transaction(function () use ($empresaId, $datos) {
-            $mov = DB::table('movimientos_bancarios')->where('empresa_id', $empresaId)->where('id', $datos['movimiento_id'])->first();
-            if (!$mov)
-                throw new Exception("Movimiento bancario no encontrado.");
+            $mov = DB::table('movimientos_bancarios')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $datos['movimiento_id'])
+                ->first();
+
+            if (!$mov) {
+                throw new Exception("Movimiento bancario no encontrado o no pertenece a tu empresa.", 404);
+            }
+
+            $anticipo = DB::table('anticipos_proveedores')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $datos['anticipo_id'])
+                ->first();
+
+            if (!$anticipo) {
+                throw new Exception("El anticipo seleccionado no fue encontrado o no pertenece a tu empresa.", 404);
+            }
 
             DB::table('movimientos_bancarios')->where('id', $mov->id)->update(['estado' => 'CONCILIADO_ANTICIPO']);
             DB::table('anticipos_proveedores')->where('id', $datos['anticipo_id'])->update(['estado' => 'PAGADO', 'movimiento_id' => $mov->id]);

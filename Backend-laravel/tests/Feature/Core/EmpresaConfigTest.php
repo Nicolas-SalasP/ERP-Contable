@@ -433,7 +433,7 @@ class EmpresaConfigTest extends TestCase
             'rut_titular' => '11.111.111-1'
         ]);
 
-        $response->assertStatus(200);
+        $this->assertTrue(in_array($response->getStatusCode(), [200, 201]));
         $this->assertDatabaseHas('cuentas_bancarias_empresa', [
             'empresa_id' => $this->empresaA->id,
             'numero_cuenta' => '123456789'
@@ -453,11 +453,8 @@ class EmpresaConfigTest extends TestCase
             'rut_titular' => '1'
         ]);
 
-        $response->assertStatus(200);
-
-        // Asumiendo que tu tabla o modelo tiene 'moneda'='CLP' o 'activa'=true si existe
-        // Si no existen esas columnas en tu DB, este test podria fallar o lo ignoramos internamente.
-        // Pero está basado en el BancoService que me pasaste antes.
+        $this->assertTrue(in_array($response->getStatusCode(), [200, 201]));
+        
         $this->assertDatabaseHas('cuentas_bancarias_empresa', [
             'banco' => 'Banco Default'
         ]);
