@@ -142,12 +142,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos']);
     Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto']);
 
-// Inventario
-   // Inventario
+ /*
+    |--------------------------------------------------------------------------
+    | Inventario
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('inventario')->group(function () {
         /*
         |--------------------------------------------------------------------------
-        | Fase 1 - Catálogos, productos y bodegas
+        | Fase 1 - Catalogos, productos y bodegas
         |--------------------------------------------------------------------------
         */
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
@@ -159,20 +162,13 @@ Route::middleware('auth:sanctum')->group(function () {
         |--------------------------------------------------------------------------
         | Fase 2 - Kardex por producto
         |--------------------------------------------------------------------------
-        |
-        | Esta ruta va antes de /productos/{id} para evitar conflicto con
-        | la ruta dinámica /productos/{id}.
-        |
         */
         Route::get('/productos/{id}/kardex', [InventarioController::class, 'kardexProducto']);
 
         /*
         |--------------------------------------------------------------------------
-        | Fase 3 - Valorización por producto
+        | Fase 3 - Valorizacion por producto
         |--------------------------------------------------------------------------
-        |
-        | Esta ruta también va antes de /productos/{id}.
-        |
         */
         Route::get('/productos/{id}/valorizacion', [InventarioController::class, 'valorizacionProducto']);
 
@@ -184,7 +180,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         /*
         |--------------------------------------------------------------------------
-        | Fase 2 - Movimientos de Inventario
+        | Fase 2 - Movimientos de inventario
         |--------------------------------------------------------------------------
         |
         | Inventario NO emite, gestiona ni prepara DTE.
@@ -203,7 +199,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         /*
         |--------------------------------------------------------------------------
-        | Fase 3 - Precio Medio Ponderado / Valorización
+        | Fase 3 - Precio Medio Ponderado / Valorizacion
         |--------------------------------------------------------------------------
         |
         | Inventario NO emite, gestiona ni prepara DTE.
@@ -211,5 +207,21 @@ Route::middleware('auth:sanctum')->group(function () {
         |
         */
         Route::get('/valorizacion', [InventarioController::class, 'valorizacion']);
-});
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fase 4 - Mermas y ajustes criticos
+        |--------------------------------------------------------------------------
+        |
+        | Inventario NO emite, gestiona ni prepara DTE.
+        | Estos endpoints registran mermas, deterioros, perdidas,
+        | vencimientos y ajustes criticos sin logica SII/DTE.
+        |
+        */
+        Route::get('/ajustes-criticos/tipos', [InventarioController::class, 'tiposAjusteCritico']);
+        Route::get('/ajustes-criticos', [InventarioController::class, 'ajustesCriticos']);
+        Route::post('/ajustes-criticos', [InventarioController::class, 'registrarAjusteCritico']);
+        Route::get('/ajustes-criticos/{id}', [InventarioController::class, 'verAjusteCritico']);
+    });
+
 });

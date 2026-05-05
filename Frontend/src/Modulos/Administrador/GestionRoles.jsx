@@ -8,15 +8,36 @@ const GestionRoles = () => {
     const [loading, setLoading] = useState(true);
 
     // Definición maestra de permisos del sistema
-    const listaPermisos = [
-        { categoria: 'Ventas', keys: ['ventas.ver', 'ventas.crear', 'ventas.anular', 'clientes.gestionar'] },
-        { categoria: 'Compras', keys: ['compras.ver', 'compras.crear', 'proveedores.gestionar'] },
-        { categoria: 'Tesorería', keys: ['tesoreria.ver', 'bancos.gestionar', 'conciliacion.ejecutar'] },
-        { categoria: 'Contabilidad', keys: ['contabilidad.ver', 'asientos.crear', 'plan_cuentas.editar'] },
-        { categoria: 'Activos', keys: ['activos.ver', 'activos.gestionar', 'proyectos.crear'] },
-        { categoria: 'Tributario', keys: ['f29.ver', 'f29.ejecutar', 'renta.ver'] },
-        { categoria: 'Administración', keys: ['usuarios.gestionar', 'roles.gestionar', 'empresa.editar'] },
-    ];
+ const listaPermisos = [
+    { categoria: 'Ventas', keys: ['ventas.ver', 'ventas.crear', 'ventas.anular', 'clientes.gestionar'] },
+    { categoria: 'Compras', keys: ['compras.ver', 'compras.crear', 'proveedores.gestionar'] },
+    { categoria: 'Tesorería', keys: ['tesoreria.ver', 'bancos.gestionar', 'conciliacion.ejecutar'] },
+    { categoria: 'Contabilidad', keys: ['contabilidad.ver', 'asientos.crear', 'plan_cuentas.editar'] },
+    { categoria: 'Activos', keys: ['activos.ver', 'activos.gestionar', 'proyectos.crear'] },
+    { categoria: 'Tributario', keys: ['f29.ver', 'f29.ejecutar', 'renta.ver'] },
+
+    {
+        categoria: 'Inventario',
+        keys: [
+            'inventario.productos.ver',
+            'inventario.productos.crear',
+            'inventario.productos.editar',
+            'inventario.bodegas.ver',
+            'inventario.bodegas.crear',
+            'inventario.movimientos.ver',
+            'inventario.movimientos.entrada',
+            'inventario.movimientos.salida',
+            'inventario.movimientos.traspaso',
+            'inventario.movimientos.ajuste',
+            'inventario.kardex.ver',
+            'inventario.valorizacion.ver',
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ],
+    },
+
+    { categoria: 'Administración', keys: ['usuarios.gestionar', 'roles.gestionar', 'empresa.editar'] },
+];
 
     useEffect(() => { cargarRoles(); }, []);
 

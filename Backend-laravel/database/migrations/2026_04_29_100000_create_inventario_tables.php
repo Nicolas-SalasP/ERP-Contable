@@ -132,7 +132,6 @@ return new class extends Migration {
             ],
         ]);
 
-        $this->agregarPermisosARoles();
     }
 
     public function down(): void
@@ -143,51 +142,4 @@ return new class extends Migration {
         Schema::dropIfExists('inventario_unidades_medida');
     }
 
-    private function agregarPermisosARoles(): void
-    {
-        $permisosPorRol = [
-            'Administrador' => [
-                'inventario.productos.ver',
-                'inventario.productos.crear',
-                'inventario.productos.editar',
-                'inventario.bodegas.ver',
-                'inventario.bodegas.crear',
-            ],
-            'Contador' => [
-                'inventario.productos.ver',
-                'inventario.productos.crear',
-                'inventario.productos.editar',
-                'inventario.bodegas.ver',
-                'inventario.bodegas.crear',
-            ],
-            'Auditor' => [
-                'inventario.productos.ver',
-                'inventario.bodegas.ver',
-            ],
-        ];
-
-        foreach ($permisosPorRol as $nombreRol => $permisosNuevos) {
-            $rol = DB::table('roles')->where('nombre', $nombreRol)->first();
-
-            if (!$rol) {
-                continue;
-            }
-
-            $permisosActuales = $rol->permisos ? json_decode($rol->permisos, true) : [];
-
-            if (!is_array($permisosActuales)) {
-                $permisosActuales = [];
-            }
-
-            DB::table('roles')->where('id', $rol->id)->update([
-                'permisos' => json_encode(
-                    array_values(
-                        array_unique(
-                            array_merge($permisosActuales, $permisosNuevos)
-                        )
-                    )
-                ),
-            ]);
-        }
-    }
 };

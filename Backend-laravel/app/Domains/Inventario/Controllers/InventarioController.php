@@ -502,4 +502,145 @@ class InventarioController
             'message' => $e->getMessage(),
         ], 422);
     }
+        /*
+    |--------------------------------------------------------------------------
+    | Fase 4 — Mermas y ajustes críticos
+    |--------------------------------------------------------------------------
+    |
+    | Inventario NO emite, gestiona ni prepara DTE.
+    | No se usan codigo_dte, codigo_sii, folio_dte, xml_dte ni lógica SII.
+    |
+    */
+
+    public function tiposAjusteCritico(
+        Request $request,
+        InventarioAjusteCriticoService $ajusteCriticoService
+    ): JsonResponse {
+        try {
+            $tipos = $ajusteCriticoService->listarTiposAjusteCritico($request->user());
+
+            return response()->json([
+                'success' => true,
+                'data' => $tipos,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $this->mensajeValidacionAjusteCritico($e),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function ajustesCriticos(
+        Request $request,
+        InventarioAjusteCriticoService $ajusteCriticoService
+    ): JsonResponse {
+        try {
+            $ajustes = $ajusteCriticoService->listarAjustesCriticos(
+                $request->user(),
+                $request->all()
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $ajustes->items(),
+                'meta' => [
+                    'current_page' => $ajustes->currentPage(),
+                    'from' => $ajustes->firstItem(),
+                    'last_page' => $ajustes->lastPage(),
+                    'per_page' => $ajustes->perPage(),
+                    'to' => $ajustes->lastItem(),
+                    'total' => $ajustes->total(),
+                ],
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $this->mensajeValidacionAjusteCritico($e),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function registrarAjusteCritico(
+        Request $request,
+        InventarioAjusteCriticoService $ajusteCriticoService
+    ): JsonResponse {
+        try {
+            $ajuste = $ajusteCriticoService->registrarAjusteCritico(
+                $request->user(),
+                $request->all()
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ajuste crítico registrado correctamente.',
+                'data' => $ajuste,
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $this->mensajeValidacionAjusteCritico($e),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function verAjusteCritico(
+        Request $request,
+        int $id,
+        InventarioAjusteCriticoService $ajusteCriticoService
+    ): JsonResponse {
+        try {
+            $ajuste = $ajusteCriticoService->obtenerAjusteCritico(
+                $request->user(),
+                $id
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $ajuste,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $this->mensajeValidacionAjusteCritico($e),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    private function mensajeValidacionAjusteCritico(ValidationException $e): string
+    {
+        $errores = $e->errors();
+
+        foreach ($errores as $mensajes) {
+            if (is_array($mensajes) && isset($mensajes[0])) {
+                return (string) $mensajes[0];
+            }
+        }
+
+        return 'Los datos enviados no son válidos.';
+    }
 }
