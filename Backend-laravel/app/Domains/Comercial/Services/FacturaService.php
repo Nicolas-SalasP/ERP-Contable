@@ -219,6 +219,11 @@ class FacturaService
     {
         DB::transaction(function () use ($empresaId, $usuarioId, $facturaId, $datos) {
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+            
+            if (!$factura->comprobante_contable) {
+                throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
+            }
+            
             $asiento = AsientoContable::with('detalles')
                 ->where('empresa_id', $empresaId)
                 ->where('numero_comprobante', $factura->comprobante_contable)

@@ -99,6 +99,24 @@ class ConciliacionService
             $detallesAsiento = [];
             $glosaAsiento = "";
 
+            if ($facturas->count() > 0) {
+                $saldoRestante = $montoMovimiento;
+                $facturas = $facturas->sortBy('fecha_emision');
+                
+                foreach ($facturas as $fac) {
+                    $montoFactura = (float) $fac->monto_bruto;
+                    if ($saldoRestante >= $montoFactura) {
+                        $this->facturaService->cambiarEstado($empresaId, $fac->id, 'PAGADA');
+                        $saldoRestante -= $montoFactura;
+                    } elseif ($saldoRestante > 0) {
+                        $this->facturaService->cambiarEstado($empresaId, $fac->id, 'ABONADA');
+                        $saldoRestante = 0;
+                    } else {
+                        break; 
+                    }
+                }
+            }
+
             if ($esIngreso) {
                 $detallesAsiento[] = ['cuenta_contable' => $cuentaBanco, 'debe' => $montoMovimiento, 'haber' => 0, 'glosa_detalle' => 'Ingreso a Banco'];
                 
@@ -106,10 +124,6 @@ class ConciliacionService
                     $montoCubre = min($montoMovimiento, $totalFacturas);
                     $detallesAsiento[] = ['cuenta_contable' => $cuentaContraparte, 'debe' => 0, 'haber' => $montoCubre, 'glosa_detalle' => 'Cobro Facturas'];
                     $glosaAsiento = "Cobro Fac. " . $facturas->pluck('numero_factura')->implode(', ');
-                    
-                    foreach ($facturas as $fac) {
-                        $this->facturaService->cambiarEstado($empresaId, $fac->id, $diferencia < 0 ? 'ABONADA' : 'PAGADA');
-                    }
                 }
                 
                 if ($diferencia > 0) {
@@ -121,17 +135,12 @@ class ConciliacionService
                     $montoCubre = min($montoMovimiento, $totalFacturas);
                     $detallesAsiento[] = ['cuenta_contable' => $cuentaContraparte, 'debe' => $montoCubre, 'haber' => 0, 'glosa_detalle' => 'Pago Facturas'];
                     $glosaAsiento = "Pago Fac. " . $facturas->pluck('numero_factura')->implode(', ');
-                    
-                    foreach ($facturas as $fac) {
-                        $this->facturaService->cambiarEstado($empresaId, $fac->id, $diferencia < 0 ? 'ABONADA' : 'PAGADA');
-                    }
                 }
 
                 if ($diferencia > 0) {
                     $detallesAsiento[] = ['cuenta_contable' => $cuentaAnticipo, 'debe' => $diferencia, 'haber' => 0, 'glosa_detalle' => 'Anticipo a Proveedor'];
                     $glosaAsiento .= ($glosaAsiento ? " | " : "") . "Anticipo Generado";
                     
-                    // Generamos físicamente el anticipo en el módulo comercial
                     if ($entidadId) {
                         DB::table('anticipos_proveedores')->insert([
                             'empresa_id' => $empresaId,

@@ -260,6 +260,7 @@ class BancoService
 
     public function obtenerMovimientosPendientes(int $empresaId, int $cuentaBancariaId)
     {
+        $this->obtenerCuentaBancaria($empresaId, $cuentaBancariaId);
         return DB::table('movimientos_bancarios')
             ->where('empresa_id', $empresaId)
             ->where('cuenta_bancaria_id', $cuentaBancariaId)
@@ -278,6 +279,16 @@ class BancoService
 
     public function vincularMovimientoAAnticipo(int $empresaId, int $movimientoId, int $anticipoId)
     {
+        $this->obtenerMovimiento($empresaId, $movimientoId);
+        $anticipo = DB::table('anticipos_proveedores')
+            ->where('empresa_id', $empresaId)
+            ->where('id', $anticipoId)
+            ->first();
+
+        if (!$anticipo) {
+            throw new Exception("El anticipo no existe o no pertenece a tu empresa.");
+        }
+
         DB::table('movimientos_bancarios')
             ->where('empresa_id', $empresaId)
             ->where('id', $movimientoId)

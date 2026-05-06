@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Services\ProveedorService;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -133,10 +134,10 @@ class ProveedorController
 
     public function subirPdfAnticipo(Request $request, $id)
     {
+        $rutaPdf = null;
         try {
             $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
             
-            $rutaPdf = null;
             if ($request->hasFile('pdf')) {
                 $path = $request->file('pdf')->store('anticipos_proveedores/pdfs', 'public');
                 $rutaPdf = 'storage/' . $path;
@@ -146,6 +147,11 @@ class ProveedorController
 
             return response()->json(['success' => true, 'data' => $anticipo]);
         } catch (Exception $e) {
+            if ($rutaPdf) {
+                $pathToDelete = str_replace('storage/', '', $rutaPdf);
+                Storage::disk('public')->delete($pathToDelete);
+            }
+            
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }

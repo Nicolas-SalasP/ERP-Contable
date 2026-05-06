@@ -42,16 +42,17 @@ class CatalogoPlanMaestroSeeder extends Seeder
 
             ['codigo' => '1520', 'nombre' => 'DEUDORES COMERCIALES Y OTROS', 'tipo' => 'ACTIVO', 'nivel' => 3, 'imputable' => false],
             ['codigo' => '152005', 'nombre' => 'Cuentas por Cobrar Clientes', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
-            ['codigo' => '110205', 'nombre' => 'Anticipos a Proveedores', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true], // AGREGADA
+            ['codigo' => '110205', 'nombre' => 'Anticipos a Proveedores', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true], 
             ['codigo' => '152045', 'nombre' => 'Cheques en cartera', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '152406', 'nombre' => 'Fondos por Rendir', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '152408', 'nombre' => 'Canje divisa', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
-            ['codigo' => '152540', 'nombre' => 'IVA por cobrar', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '152540', 'nombre' => 'IVA Crédito Fiscal', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '152541', 'nombre' => 'PPM por recuperar', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '152542', 'nombre' => 'Remanente IVA F29', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true], // AGREGADA
 
             ['codigo' => '1540', 'nombre' => 'EFECTIVO Y EQUIVALENTES', 'tipo' => 'ACTIVO', 'nivel' => 3, 'imputable' => false],
             ['codigo' => '154020', 'nombre' => 'Caja Chica', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
-            ['codigo' => '154201', 'nombre' => 'Banco Scotiabank CLP', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true], // AGREGADA
+            ['codigo' => '154201', 'nombre' => 'Banco Scotiabank CLP', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true], 
             ['codigo' => '154205', 'nombre' => 'Banco Santander CLP', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '154230', 'nombre' => 'Banco Estado CLP', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '154236', 'nombre' => 'Banco Itau CLP', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
@@ -73,8 +74,8 @@ class CatalogoPlanMaestroSeeder extends Seeder
             ['codigo' => '352050', 'nombre' => 'Cheques por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '352060', 'nombre' => 'Tarjetas de credito', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '352075', 'nombre' => 'Linea sobregiro', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
-            ['codigo' => '352105', 'nombre' => 'Cuentas por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
-            ['codigo' => '210205', 'nombre' => 'Anticipos de Clientes', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true], // AGREGADA
+            ['codigo' => '352105', 'nombre' => 'Cuentas por pagar Proveedores', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '210205', 'nombre' => 'Anticipos de Clientes', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true], 
             ['codigo' => '352130', 'nombre' => 'Facturas por pagar (Puente)', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '352135', 'nombre' => 'Facturas por pagar Honorarios', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
 
@@ -83,7 +84,8 @@ class CatalogoPlanMaestroSeeder extends Seeder
             ['codigo' => '353242', 'nombre' => 'Impuesto Unico Trabajadores', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '353245', 'nombre' => 'Retenciones AFP', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '353350', 'nombre' => 'IVA por Cobrar (Transito)', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
-            ['codigo' => '353360', 'nombre' => 'IVA por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '353360', 'nombre' => 'IVA Débito Fiscal', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '353365', 'nombre' => 'Impuestos a Pagar F29', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true], // AGREGADA
             ['codigo' => '353410', 'nombre' => 'Honorarios devengados por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
 
             // =================================================================

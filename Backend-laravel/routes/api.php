@@ -112,7 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Tesoreria - Mesa de Conciliacion
     Route::get('/banco/anticipos-pendientes', [ConciliacionController::class, 'anticiposPendientes']);
-    Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliarDirecto']);
+    Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliar']);
     Route::post('/banco/movimientos/conciliar-anticipo', [ConciliacionController::class, 'conciliarAnticipo']);
     Route::post('/banco/movimientos/conciliar-facturas', [ConciliacionController::class, 'conciliarFacturas']);
 
