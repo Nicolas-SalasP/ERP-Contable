@@ -4,10 +4,13 @@ namespace App\Domains\Inventario\Controllers;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\MovimientoInventario;
+use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Services\InventarioAjusteCriticoService;
+use App\Domains\Inventario\Services\InventarioDisponibilidadService;
 use App\Domains\Inventario\Services\InventarioLoteService;
 use App\Domains\Inventario\Services\InventarioMovimientoService;
 use App\Domains\Inventario\Services\InventarioPermisoService;
+use App\Domains\Inventario\Services\InventarioReservaService;
 use App\Domains\Inventario\Services\InventarioService;
 use App\Domains\Inventario\Services\InventarioValorizacionService;
 use Exception;
@@ -17,32 +20,33 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
-
 class InventarioController
 {
     protected InventarioService $service;
-
     protected InventarioMovimientoService $movimientoService;
-
     protected InventarioPermisoService $permisos;
-
     protected InventarioValorizacionService $valorizacionService;
-
     protected InventarioLoteService $loteService;
+    protected InventarioReservaService $reservaService;
+    protected InventarioDisponibilidadService $disponibilidadService;
 
-    public function __construct(
-        InventarioService $service,
-        InventarioMovimientoService $movimientoService,
-        InventarioPermisoService $permisos,
-        InventarioValorizacionService $valorizacionService,
-        InventarioLoteService $loteService
-    ) {
-        $this->service = $service;
-        $this->movimientoService = $movimientoService;
-        $this->permisos = $permisos;
-        $this->valorizacionService = $valorizacionService;
-        $this->loteService = $loteService;
-    }
+public function __construct(
+    InventarioService $service,
+    InventarioMovimientoService $movimientoService,
+    InventarioPermisoService $permisos,
+    InventarioValorizacionService $valorizacionService,
+    InventarioLoteService $loteService,
+    InventarioReservaService $reservaService,
+    InventarioDisponibilidadService $disponibilidadService
+) {
+    $this->service = $service;
+    $this->movimientoService = $movimientoService;
+    $this->permisos = $permisos;
+    $this->valorizacionService = $valorizacionService;
+    $this->loteService = $loteService;
+    $this->reservaService = $reservaService;
+    $this->disponibilidadService = $disponibilidadService;
+}
 
     public function catalogos(Request $request): JsonResponse
     {
@@ -695,6 +699,243 @@ class InventarioController
             ], 422);
         }
     }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Fase 6 - Reservas y disponibilidad comprometida
+    |--------------------------------------------------------------------------
+    |
+    | Inventario NO emite, gestiona ni prepara DTE.
+    | Las reservas comprometen disponibilidad, pero NO descuentan stock físico.
+    | El stock físico solo se descuenta al consumir una reserva mediante una
+    | salida real delegada a InventarioMovimientoService.
+    |
+    */
+
+public function reservas(Request $request): JsonResponse
+{
+    try {
+        $filtros = $request->validate([
+            'estado' => ['nullable', Rule::in(ReservaInventario::estadosPermitidos())],
+            'referencia' => ['nullable', 'string', 'max:120'],
+            'origen_modulo' => ['nullable', 'string', 'max:80'],
+            'origen_id' => ['nullable', 'integer'],
+            'producto_id' => ['nullable', 'integer'],
+            'bodega_id' => ['nullable', 'integer'],
+            'lote_id' => ['nullable', 'integer'],
+            'desde' => ['nullable', 'date'],
+            'hasta' => ['nullable', 'date'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $paginador = $this->reservaService->listarReservas(
+            $request->user(),
+            $filtros
+        );
+
+        return response()->json($this->respuestaPaginada($paginador));
+    } catch (ValidationException $e) {
+        return $this->respuestaValidacion($e);
+    } catch (Exception $e) {
+        return $this->respuestaError($e);
+    }
+}
+
+public function storeReserva(Request $request): JsonResponse
+{
+    try {
+        $datos = $request->validate([
+            'codigo_reserva' => ['nullable', 'string', 'max:60'],
+            'referencia' => ['nullable', 'string', 'max:120'],
+            'motivo' => ['nullable', 'string', 'max:120'],
+            'observacion' => ['nullable', 'string', 'max:2000'],
+            'origen_modulo' => ['nullable', 'string', 'max:80'],
+            'origen_id' => ['nullable', 'integer'],
+            'fecha_reserva' => ['nullable', 'date'],
+            'fecha_expiracion' => ['nullable', 'date'],
+
+            'detalles' => ['required', 'array', 'min:1'],
+            'detalles.*.producto_id' => ['required', 'integer'],
+            'detalles.*.bodega_id' => ['required', 'integer'],
+            'detalles.*.lote_id' => ['nullable', 'integer'],
+            'detalles.*.cantidad' => ['required', 'numeric', 'gt:0'],
+        ]);
+
+        $reserva = $this->reservaService->crearReserva(
+            $request->user(),
+            $datos
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $reserva,
+            'message' => 'Reserva de inventario creada correctamente.',
+        ], 201);
+    } catch (ValidationException $e) {
+        return $this->respuestaValidacion($e);
+    } catch (Exception $e) {
+        return $this->respuestaError($e);
+    }
+}
+
+public function showReserva(Request $request, $id): JsonResponse
+{
+    try {
+        $reserva = $this->reservaService->obtenerReserva(
+            $request->user(),
+            (int) $id
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $reserva,
+        ]);
+    } catch (ValidationException $e) {
+        return $this->respuestaValidacion($e);
+    } catch (Exception $e) {
+        return $this->respuestaError($e);
+    }
+}
+
+public function cancelarReserva(Request $request, $id): JsonResponse
+{
+    try {
+        $datos = $request->validate([
+            'observacion' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $reserva = $this->reservaService->cancelarReserva(
+            $request->user(),
+            (int) $id,
+            $datos
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $reserva,
+            'message' => 'Reserva cancelada correctamente.',
+        ]);
+    } catch (ValidationException $e) {
+        return $this->respuestaValidacion($e);
+    } catch (Exception $e) {
+        return $this->respuestaError($e);
+    }
+}
+
+public function liberarReserva(Request $request, $id): JsonResponse
+{
+    try {
+        $datos = $request->validate([
+            'observacion' => ['nullable', 'string', 'max:2000'],
+
+            'detalles' => ['required', 'array', 'min:1'],
+            'detalles.*.detalle_id' => ['required', 'integer'],
+            'detalles.*.cantidad' => ['required', 'numeric', 'gt:0'],
+        ]);
+
+        $reserva = $this->reservaService->liberarReserva(
+            $request->user(),
+            (int) $id,
+            $datos
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $reserva,
+            'message' => 'Reserva liberada correctamente.',
+        ]);
+    } catch (ValidationException $e) {
+        return $this->respuestaValidacion($e);
+    } catch (Exception $e) {
+        return $this->respuestaError($e);
+    }
+}
+
+public function consumirReserva(Request $request, $id): JsonResponse
+{
+    try {
+        $datos = $request->validate([
+            'referencia' => ['nullable', 'string', 'max:120'],
+            'motivo' => ['nullable', 'string', 'max:80'],
+            'observacion' => ['nullable', 'string', 'max:2000'],
+            'fecha_movimiento' => ['nullable', 'date'],
+
+            /*
+            | Si detalles no viene, el service consumirá todo lo pendiente.
+            | Si viene, consumirá parcialmente los detalles indicados.
+            */
+            'detalles' => ['nullable', 'array', 'min:1'],
+            'detalles.*.detalle_id' => ['required_with:detalles', 'integer'],
+            'detalles.*.cantidad' => ['required_with:detalles', 'numeric', 'gt:0'],
+        ]);
+
+        $reserva = $this->reservaService->consumirReserva(
+            $request->user(),
+            (int) $id,
+            $datos
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $reserva,
+            'message' => 'Reserva consumida correctamente. Se generó la salida real de inventario.',
+        ]);
+    } catch (ValidationException $e) {
+        return $this->respuestaValidacion($e);
+    } catch (Exception $e) {
+        return $this->respuestaError($e);
+    }
+}
+
+public function disponibilidad(Request $request): JsonResponse
+{
+    try {
+        $filtros = $request->validate([
+            'producto_id' => ['nullable', 'integer'],
+            'bodega_id' => ['nullable', 'integer'],
+            'incluir_lotes' => ['nullable', 'boolean'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $paginador = $this->disponibilidadService->consultar(
+            $request->user(),
+            $filtros
+        );
+
+        return response()->json($this->respuestaPaginada($paginador));
+    } catch (ValidationException $e) {
+        return $this->respuestaValidacion($e);
+    } catch (Exception $e) {
+        return $this->respuestaError($e);
+    }
+}
+
+public function disponibilidadProducto(Request $request, $id): JsonResponse
+{
+    try {
+        $filtros = $request->validate([
+            'bodega_id' => ['nullable', 'integer'],
+            'incluir_lotes' => ['nullable', 'boolean'],
+        ]);
+
+        $disponibilidad = $this->disponibilidadService->porProducto(
+            $request->user(),
+            (int) $id,
+            $filtros
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $disponibilidad,
+        ]);
+    } catch (ValidationException $e) {
+        return $this->respuestaValidacion($e);
+    } catch (Exception $e) {
+        return $this->respuestaError($e);
+    }
+}
 
     /*
     |--------------------------------------------------------------------------

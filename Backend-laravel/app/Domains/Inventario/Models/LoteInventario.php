@@ -61,6 +61,16 @@ class LoteInventario extends Model
         return $this->hasMany(AjusteCriticoInventario::class, 'lote_id');
     }
 
+
+    public function reservaDetalles(): HasMany
+    {
+        return $this->hasMany(ReservaDetalleInventario::class, 'lote_id');
+    }
+
+    public function reservaConsumos(): HasMany
+    {
+        return $this->hasMany(ReservaConsumoInventario::class, 'lote_id');
+    }
     /*
     |--------------------------------------------------------------------------
     | Scopes

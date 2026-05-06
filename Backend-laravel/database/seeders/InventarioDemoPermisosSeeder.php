@@ -17,6 +17,7 @@ class InventarioDemoPermisosSeeder extends Seeder
         | Este seeder NO crea roles.
         | Este seeder NO crea usuarios.
         | Este seeder NO pertenece al flujo normal de producción.
+        | Este seeder NO debe agregarse al DatabaseSeeder.
         |
         | Solo asigna permisos de Inventario a los roles existentes creados
         | por RolSeeder, para facilitar pruebas Postman/demo.
@@ -99,7 +100,7 @@ class InventarioDemoPermisosSeeder extends Seeder
         return [
             /*
             |--------------------------------------------------------------------------
-            | Fase 1 - Productos y bodegas
+            | Fase 1 - Catálogos, productos, bodegas y stock base
             |--------------------------------------------------------------------------
             */
             'inventario.productos.ver',
@@ -111,7 +112,7 @@ class InventarioDemoPermisosSeeder extends Seeder
 
             /*
             |--------------------------------------------------------------------------
-            | Fase 2 - Movimientos y Kardex
+            | Fase 2 - Movimientos de inventario y Kardex
             |--------------------------------------------------------------------------
             */
             'inventario.movimientos.ver',
@@ -124,7 +125,7 @@ class InventarioDemoPermisosSeeder extends Seeder
 
             /*
             |--------------------------------------------------------------------------
-            | Fase 3 - Valorización PMP
+            | Fase 3 - PMP y valorización
             |--------------------------------------------------------------------------
             */
             'inventario.valorizacion.ver',
@@ -139,12 +140,24 @@ class InventarioDemoPermisosSeeder extends Seeder
 
             /*
             |--------------------------------------------------------------------------
-            | Fase 5 - Lotes, vencimientos y trazabilidad
+            | Fase 5 - Lotes, vencimientos y trazabilidad avanzada
             |--------------------------------------------------------------------------
             */
             'inventario.lotes.ver',
             'inventario.lotes.crear',
             'inventario.lotes.editar',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 6 - Reservas y disponibilidad comprometida
+            |--------------------------------------------------------------------------
+            */
+            'inventario.reservas.ver',
+            'inventario.reservas.crear',
+            'inventario.reservas.cancelar',
+            'inventario.reservas.liberar',
+            'inventario.reservas.consumir',
+            'inventario.disponibilidad.ver',
         ];
     }
 
@@ -155,20 +168,54 @@ class InventarioDemoPermisosSeeder extends Seeder
         | Auditor
         |--------------------------------------------------------------------------
         |
-        | Solo consulta. No registra movimientos ni ajustes críticos.
+        | Solo consulta. No registra movimientos, ajustes críticos, lotes ni reservas.
         |
         */
         return [
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 1 - Consulta base
+            |--------------------------------------------------------------------------
+            */
             'inventario.productos.ver',
             'inventario.bodegas.ver',
 
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 2 - Consulta de movimientos y Kardex
+            |--------------------------------------------------------------------------
+            */
             'inventario.movimientos.ver',
             'inventario.kardex.ver',
 
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 3 - Consulta de valorización
+            |--------------------------------------------------------------------------
+            */
             'inventario.valorizacion.ver',
 
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 4 - Consulta de ajustes críticos
+            |--------------------------------------------------------------------------
+            */
             'inventario.ajustes_criticos.ver',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 5 - Consulta de lotes
+            |--------------------------------------------------------------------------
+            */
             'inventario.lotes.ver',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 6 - Consulta de reservas y disponibilidad
+            |--------------------------------------------------------------------------
+            */
+            'inventario.reservas.ver',
+            'inventario.disponibilidad.ver',
         ];
     }
 }

@@ -116,6 +116,13 @@ trait PreparaInventarioTest
             'inventario.lotes.ver',
             'inventario.lotes.crear',
             'inventario.lotes.editar',
+
+            'inventario.reservas.ver',
+            'inventario.reservas.crear',
+            'inventario.reservas.cancelar',
+            'inventario.reservas.liberar',
+            'inventario.reservas.consumir',
+            'inventario.disponibilidad.ver',
         ];
     }
 
@@ -129,7 +136,8 @@ trait PreparaInventarioTest
             'inventario.valorizacion.ver',
             'inventario.ajustes_criticos.ver',
             'inventario.lotes.ver',
-
+            'inventario.reservas.ver',
+            'inventario.disponibilidad.ver',
         ];
     }
 
@@ -161,5 +169,31 @@ trait PreparaInventarioTest
         return [
             'inventario.lotes.ver',
         ];
+}
+protected function permisosInventarioReservasCompleto(): array
+{
+    return [
+        'inventario.reservas.ver',
+        'inventario.reservas.crear',
+        'inventario.reservas.cancelar',
+        'inventario.reservas.liberar',
+        'inventario.reservas.consumir',
+        'inventario.disponibilidad.ver',
+    ];
+}
+
+protected function permisosInventarioReservasLectura(): array
+{
+    return [
+        'inventario.reservas.ver',
+        'inventario.disponibilidad.ver',
+    ];
+}
+
+protected function permisosInventarioDisponibilidadLectura(): array
+{
+    return [
+        'inventario.disponibilidad.ver',
+    ];
 }
 }

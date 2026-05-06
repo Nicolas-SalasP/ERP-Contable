@@ -91,6 +91,10 @@ class MovimientoInventario extends Model
         return $this->hasMany(MovimientoLoteInventario::class, 'movimiento_inventario_id');
     }
 
+    public function consumosReserva(): HasMany
+    {
+        return $this->hasMany(ReservaConsumoInventario::class, 'movimiento_inventario_id');
+    }
     /*
     |--------------------------------------------------------------------------
     | Scopes

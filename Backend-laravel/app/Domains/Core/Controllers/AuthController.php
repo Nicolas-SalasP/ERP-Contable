@@ -292,6 +292,18 @@ class AuthController
             'inventario.lotes.ver',
             'inventario.lotes.crear',
             'inventario.lotes.editar',
-        ];
+
+            /*
+            |--------------------------------------------------------------------------
+            | Inventario - Fase 6
+            |--------------------------------------------------------------------------
+            */
+            'inventario.reservas.ver',
+            'inventario.reservas.crear',
+            'inventario.reservas.cancelar',
+            'inventario.reservas.liberar',
+            'inventario.reservas.consumir',
+            'inventario.disponibilidad.ver',
+    ];
     }
 }

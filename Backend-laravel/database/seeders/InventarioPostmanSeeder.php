@@ -13,6 +13,26 @@ class InventarioPostmanSeeder extends Seeder
 {
     public function run(): void
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Seeder opcional para Postman/Demo de Inventario
+        |--------------------------------------------------------------------------
+        |
+        | Este seeder prepara usuarios demo para probar endpoints de Inventario.
+        |
+        | No crea roles.
+        | No asigna permisos.
+        | No debe agregarse al DatabaseSeeder.
+        | No crea stock, productos, reservas ni movimientos automáticamente.
+        |
+        | Para Fase 6, el flujo Postman debe crear datos mediante endpoints:
+        | producto -> bodega -> entrada -> reserva -> disponibilidad -> consumo.
+        |
+        | Uso manual:
+        | php artisan db:seed --class=InventarioPostmanSeeder
+        |
+        */
+
         if (!app()->environment(['local', 'testing'])) {
             return;
         }

@@ -46,6 +46,15 @@ class Bodega extends Model
         return $this->hasMany(MovimientoInventario::class, 'bodega_destino_id');
     }
 
+    public function reservaDetalles()
+    {
+        return $this->hasMany(ReservaDetalleInventario::class, 'bodega_id');
+    }
+
+    public function reservaConsumos()
+    {
+        return $this->hasMany(ReservaConsumoInventario::class, 'bodega_id');
+    }
     public function estaActiva(): bool
     {
         return $this->estado === 'ACTIVA';

@@ -85,6 +85,15 @@ class Producto extends Model
         return $this->hasMany(AjusteCriticoInventario::class, 'producto_id');
     }
 
+    public function reservaDetalles()
+    {
+        return $this->hasMany(ReservaDetalleInventario::class, 'producto_id');
+    }
+
+    public function reservaConsumos()
+    {
+        return $this->hasMany(ReservaConsumoInventario::class, 'producto_id');
+    }
     public function estaActivo(): bool
     {
         return $this->activo === true;

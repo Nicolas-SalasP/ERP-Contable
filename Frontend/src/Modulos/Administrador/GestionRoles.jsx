@@ -36,6 +36,12 @@ const GestionRoles = () => {
             'inventario.lotes.ver',
             'inventario.lotes.crear',
             'inventario.lotes.editar',
+            'inventario.reservas.ver',
+            'inventario.reservas.crear',
+            'inventario.reservas.cancelar',
+            'inventario.reservas.liberar',
+            'inventario.reservas.consumir',
+            'inventario.disponibilidad.ver',
 
 
         ],
