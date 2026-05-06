@@ -68,7 +68,7 @@ const ReclasificadorAsiento = () => {
                 const payload = {
                     fecha: form.fecha_ajuste,
                     glosa: form.glosa_auditoria,
-                    cambios: form.lineas_editadas
+                    cambios: form.lineas_editadas // Ya contiene los IDs reales
                 };
 
                 const res = await api.post(`/facturas/${id}/reclasificar`, payload);
@@ -88,12 +88,12 @@ const ReclasificadorAsiento = () => {
     const { cabecera, detalles } = data;
 
     // --- LÓGICA DE DETECCIÓN DE REVERSOS (PARES ESPEJO) ---
+    // Usamos el índice para la lógica visual de "espejos", eso está bien
     const indicesAnulados = new Set();
     
     detalles.forEach((det, i) => {
-        if (indicesAnulados.has(i)) return; // Si ya lo emparejamos, lo saltamos
+        if (indicesAnulados.has(i)) return; 
         
-        // Buscamos su línea "espejo" (misma cuenta, montos invertidos)
         const indexReverso = detalles.findIndex((otro, j) => 
             j !== i &&
             !indicesAnulados.has(j) &&
@@ -103,7 +103,6 @@ const ReclasificadorAsiento = () => {
             (Number(det.debe) > 0 || Number(det.haber) > 0)
         );
 
-        // Si encontramos el espejo, ambas líneas quedan bloqueadas por ser historial
         if (indexReverso !== -1) {
             indicesAnulados.add(i);
             indicesAnulados.add(indexReverso);
@@ -119,7 +118,7 @@ const ReclasificadorAsiento = () => {
                         <p className="text-slate-500">Asiento #{cabecera.numero_comprobante} | Factura Origen ID {id}</p>
                     </div>
                     <div className="flex gap-3">
-                        <button onClick={() => navigate("/facturas/historial")} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all">
+                        <button onClick={() => navigate(`/contabilidad/factura/${id}/asiento`)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all">
                             Cancelar
                         </button>
                         <button onClick={ejecutarReclasificacion} className="px-8 py-2.5 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all">
@@ -149,8 +148,7 @@ const ReclasificadorAsiento = () => {
                     </div>
                 </div>
 
-                {/* El div ya NO tiene overflow-hidden para permitir que el buscador se vea completo */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm pb-32">
                     <table className="w-full border-collapse">
                         <thead className="bg-slate-900 text-white text-[11px] uppercase tracking-widest font-bold">
                             <tr>
@@ -163,11 +161,7 @@ const ReclasificadorAsiento = () => {
                         <tbody className="divide-y divide-slate-100">
                             {detalles.map((det, idx) => {
                                 const nombreFila = (det.cuenta_nombre || '').toUpperCase();
-                                
-                                // Verificamos si esta línea está en nuestro Set de anuladas
                                 const esAnulada = indicesAnulados.has(idx);
-                                
-                                // Bloqueamos si está anulada, o si es de sistema
                                 const esBloqueada = 
                                     esAnulada ||
                                     ['210101', '210201', '110401', '352105'].includes(det.cuenta_contable) || 
@@ -175,7 +169,7 @@ const ReclasificadorAsiento = () => {
                                     nombreFila.includes('PROVEEDOR');
                                 
                                 return (
-                                    <tr key={idx} className={esBloqueada ? 'bg-slate-50' : 'hover:bg-blue-50/30'}>
+                                    <tr key={det.id || idx} className={esBloqueada ? 'bg-slate-50' : 'hover:bg-blue-50/30'}>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-slate-800">{det.cuenta_nombre}</div>
                                             <div className="text-xs font-mono text-slate-400">{det.cuenta_contable}</div>
@@ -200,11 +194,12 @@ const ReclasificadorAsiento = () => {
                                             ) : (
                                                 <BuscadorCuentaContable 
                                                     cuentas={cuentasPlan}
-                                                    valor={form.lineas_editadas[idx] || ''}
+                                                    valor={form.lineas_editadas[det.id] || ''} 
                                                     onChange={(codigo) => {
+                                                        // FIX: Ahora enviamos el ID real de la línea a la base de datos
                                                         setForm({
                                                             ...form,
-                                                            lineas_editadas: { ...form.lineas_editadas, [idx]: codigo }
+                                                            lineas_editadas: { ...form.lineas_editadas, [det.id]: codigo }
                                                         });
                                                     }}
                                                 />

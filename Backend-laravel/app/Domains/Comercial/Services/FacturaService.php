@@ -204,6 +204,7 @@ class FacturaService
             'cabecera' => $asiento,
             'detalles' => $asiento->detalles->map(function ($d) {
                 return [
+                    'id' => $d->id,
                     'cuenta_contable' => $d->cuenta_contable,
                     'cuenta_nombre' => $d->cuenta->nombre ?? 'Sin nombre',
                     'debe' => $d->debe,
@@ -218,11 +219,6 @@ class FacturaService
     {
         DB::transaction(function () use ($empresaId, $usuarioId, $facturaId, $datos) {
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
-
-            if (!$factura->comprobante_contable) {
-                throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
-            }
-
             $asiento = AsientoContable::with('detalles')
                 ->where('empresa_id', $empresaId)
                 ->where('numero_comprobante', $factura->comprobante_contable)
@@ -234,11 +230,10 @@ class FacturaService
                 'usuario_id' => $usuarioId
             ]);
 
-            $detalles = $asiento->detalles->values();
+            foreach ($datos['cambios'] as $detalleId => $nuevoCodigoCuenta) {
+                $lineaOriginal = $asiento->detalles->firstWhere('id', $detalleId);
 
-            foreach ($datos['cambios'] as $indexVisual => $nuevoCodigoCuenta) {
-                if (isset($detalles[$indexVisual])) {
-                    $lineaOriginal = $detalles[$indexVisual];
+                if ($lineaOriginal) {
                     $glosaLineaOriginal = $lineaOriginal->descripcion_extensa ?: $glosaCabeceraOriginal;
 
                     $asiento->detalles()->create([
