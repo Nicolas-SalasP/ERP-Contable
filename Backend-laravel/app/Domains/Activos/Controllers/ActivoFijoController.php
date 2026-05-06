@@ -272,4 +272,23 @@ class ActivoFijoController
         }
     }
     
+    public function darDeBaja(Request $request, $id)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $datos = $request->validate([
+                'motivo' => 'nullable|string|max:255'
+            ]);
+
+            $resultado = $this->service->darDeBaja($request->user()->empresa_id, $request->user()->id, $id, $datos);
+
+            return response()->json([
+                'success' => true, 
+                'message' => $resultado['mensaje']
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
 }

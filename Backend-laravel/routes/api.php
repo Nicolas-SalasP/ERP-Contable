@@ -145,12 +145,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/activos', [ActivoFijoController::class, 'store']);
     Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros']);
     Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes']);
+    Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja']);
+
+    // Activos Fijos - Proyectos
     Route::get('/activos/proyectos/facturas-disponibles', [ActivoFijoController::class, 'facturasDisponibles']);
     Route::post('/activos/proyectos/{id}/facturas', [ActivoFijoController::class, 'imputarFactura']);
     Route::put('/activos/proyectos/{id}/activar', [ActivoFijoController::class, 'activarProyecto']);
     Route::put('/activos/proyectos/{id}', [ActivoFijoController::class, 'updateProyecto']);
-    
-    // Rutas de Proyectos
     Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos']);
     Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto']);
     Route::get('/activos/proyectos/{id}/analisis', [ActivoFijoController::class, 'analisisProyecto']);

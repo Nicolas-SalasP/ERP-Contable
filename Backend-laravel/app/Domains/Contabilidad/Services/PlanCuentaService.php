@@ -100,4 +100,11 @@ class PlanCuentaService
     {
         return PlanCuenta::where('empresa_id', $empresaId)->find($id);
     }
+
+    public function obtenerCuentaPorCodigo(int $empresaId, string $codigo)
+    {
+        return PlanCuenta::where('empresa_id', $empresaId)
+            ->where('codigo', $codigo)
+            ->first();
+    }
 }

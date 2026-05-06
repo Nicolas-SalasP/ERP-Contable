@@ -279,4 +279,75 @@ class ActivoFijoService
 
         return $proyecto;
     }
+
+    public function darDeBaja(int $empresaId, int $usuarioId, int $activoId, array $datos = [])
+    {
+        return DB::transaction(function () use ($empresaId, $usuarioId, $activoId, $datos) {
+            $activo = ActivoFijo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($activoId);
+
+            if ($activo->estado !== 'ACTIVO') {
+                throw new Exception("Solo se pueden dar de baja activos que se encuentren operativos.");
+            }
+
+            $valorAdquisicion = (float) $activo->valor_adquisicion;
+            $depreciacionAcumulada = (float) $activo->depreciacion_acumulada;
+            $valorLibro = $valorAdquisicion - $depreciacionAcumulada;
+
+            $cuentaPerdida = $this->planCuentaService->obtenerCuentaPorCodigo($empresaId, '999999');
+
+            if (!$cuentaPerdida) {
+                throw new Exception("Falta configuración: No se encontró la cuenta '999999 - Cancelaciones / Ajustes' para reconocer la pérdida del valor libro.");
+            }
+
+            $detallesAsiento = [];
+
+            if ($depreciacionAcumulada > 0) {
+                $detallesAsiento[] = [
+                    'cuenta_contable' => $activo->cuenta_depreciacion_codigo,
+                    'debe' => $depreciacionAcumulada,
+                    'haber' => 0,
+                    'glosa_detalle' => "Reverso Deprec. Acum. por Baja Activo {$activo->codigo}"
+                ];
+            }
+
+            if ($valorLibro > 0) {
+                $detallesAsiento[] = [
+                    'cuenta_contable' => $cuentaPerdida->codigo,
+                    'debe' => $valorLibro,
+                    'haber' => 0,
+                    'glosa_detalle' => "Pérdida por Baja de Activo {$activo->codigo}"
+                ];
+            }
+
+            $detallesAsiento[] = [
+                'cuenta_contable' => $activo->cuenta_activo_codigo,
+                'debe' => 0,
+                'haber' => $valorAdquisicion,
+                'glosa_detalle' => "Baja Activo {$activo->codigo} - " . ($datos['motivo'] ?? 'Obsolescencia/Retiro')
+            ];
+
+            $asientoService = app(AsientoContableService::class);
+            $cabecera = [
+                'empresa_id' => $empresaId,
+                'usuario_id' => $usuarioId,
+                'fecha' => now()->toDateString(),
+                'glosa' => "Baja de Activo Fijo {$activo->codigo} - {$activo->nombre}",
+                'tipo_asiento' => 'traspaso',
+                'origen_modulo' => 'activos',
+                'estado' => 'MAYORIZADO'
+            ];
+
+            $asiento = $asientoService->registrarAsiento($cabecera, $detallesAsiento);
+
+            $activo->update([
+                'estado' => 'DADO_DE_BAJA',
+                'descripcion' => ($activo->descripcion ? $activo->descripcion . " | " : "") . "BAJA: " . ($datos['motivo'] ?? 'Sin especificar')
+            ]);
+
+            return [
+                'mensaje' => "Activo dado de baja exitosamente. (Asiento N°{$asiento->numero_comprobante})",
+                'activo' => $activo
+            ];
+        });
+    }
 }
