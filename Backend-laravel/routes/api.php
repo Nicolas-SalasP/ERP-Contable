@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo']);
     Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha']);
     Route::post('/proveedores/anticipos', [ProveedorController::class, 'guardarAnticipo']);
+    Route::post('/proveedores/{id}/cruzar-documentos', [ProveedorController::class, 'cruzarDocumentos']);
     Route::apiResource('proveedores', ProveedorController::class)->except(['show', 'destroy']);
 
     // Comercial - Facturas
@@ -104,11 +105,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/banco/ingreso-manual', [BancoController::class, 'ingresoManual']);
     Route::post('/banco/importar', [BancoController::class, 'importarCartola']);
     
-    // Tesoreria - Mesa de Conciliacion
+    // Tesoreria - Movimientos
     Route::get('/banco/movimientos/pendientes/{idCuenta}', [ConciliacionController::class, 'movimientosPendientes']);
+    Route::get('/banco/movimientos/{id}/sugerencias', [ConciliacionController::class, 'sugerencias']);
+    Route::get('/banco/movimientos/{idCuenta}', [BancoController::class, 'movimientos']);
+    
+    // Tesoreria - Mesa de Conciliacion
     Route::get('/banco/anticipos-pendientes', [ConciliacionController::class, 'anticiposPendientes']);
-    Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliar']);
+    Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliarDirecto']);
     Route::post('/banco/movimientos/conciliar-anticipo', [ConciliacionController::class, 'conciliarAnticipo']);
+    Route::post('/banco/movimientos/conciliar-facturas', [ConciliacionController::class, 'conciliarFacturas']);
 
     // Contabilidad - Plan de Cuentas
     Route::get('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'index']);

@@ -362,4 +362,29 @@ class FacturaService
 
         return $factura;
     }
+
+    public function obtenerFacturasPorIds(int $empresaId, array $ids)
+    {
+        return Factura::where('empresa_id', $empresaId)
+            ->whereIn('id', $ids)
+            ->get();
+    }
+
+    public function cambiarEstado(int $empresaId, int $id, string $estado)
+    {
+        $factura = $this->obtenerFacturaPorId($empresaId, $id);
+        $factura->update(['estado' => $estado]);
+        return $factura;
+    }
+
+    public function obtenerFacturasImpagasPorMontoExacto(int $empresaId, string $tipo, float $monto)
+    {
+        return Factura::with(['proveedor', 'cliente'])
+            ->where('empresa_id', $empresaId)
+            ->where('tipo', $tipo)
+            ->where('estado', '!=', 'PAGADA')
+            ->where('monto_bruto', $monto)
+            ->get();
+    }
+
 }

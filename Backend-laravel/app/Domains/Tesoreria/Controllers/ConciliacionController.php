@@ -100,4 +100,41 @@ class ConciliacionController
             return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
         }
     }
+
+    public function sugerencias(Request $request, $id)
+    {
+        try {
+            $sugerencias = $this->service->obtenerSugerenciasConciliacion($request->user()->empresa_id, $id);
+            return response()->json(['success' => true, 'data' => $sugerencias]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function conciliarFacturas(Request $request)
+    {
+        try {
+            $datos = $request->validate([
+                'movimiento_id' => 'required|integer',
+                'facturas_ids' => 'nullable|array',
+                'entidad_id' => 'nullable|integer'
+            ]);
+
+            $asiento = $this->service->procesarPagoFacturas(
+                $request->user()->empresa_id,
+                $request->user()->id,
+                $datos['movimiento_id'],
+                $datos['facturas_ids'] ?? [],
+                $datos['entidad_id'] ?? null
+            );
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'Conciliación procesada exitosamente.',
+                'asiento' => $asiento 
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
 }

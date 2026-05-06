@@ -25,6 +25,11 @@ const VisorProveedor = () => {
     const [modalAnticipoAbierto, setModalAnticipoAbierto] = useState(false);
     const [formAnticipo, setFormAnticipo] = useState({ fecha: new Date().toISOString().split('T')[0], monto: '', referencia: '' });
 
+    // --- ESTADOS PARA EL CRUCE DE DOCUMENTOS ---
+    const [modalCruceAbierto, setModalCruceAbierto] = useState(false);
+    const [facturasCruceSel, setFacturasCruceSel] = useState([]);
+    const [aFavorCruceSel, setAFavorCruceSel] = useState([]); 
+
     useEffect(() => {
         if (id) {
             cargarFicha(id);
@@ -42,6 +47,7 @@ const VisorProveedor = () => {
             if (e.key === 'Escape') {
                 setModalAbierto(false);
                 setModalAnticipoAbierto(false);
+                setModalCruceAbierto(false);
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -136,6 +142,51 @@ const VisorProveedor = () => {
             }
         } catch (error) {
             Swal.fire('Error', error.response?.data?.mensaje || 'Error al guardar.', 'error');
+        }
+    };
+
+    // --- FUNCIONES DE CRUCE ---
+    const abrirModalCruce = () => {
+        setFacturasCruceSel([]);
+        setAFavorCruceSel([]);
+        setModalCruceAbierto(true);
+    };
+
+    const toggleSeleccionCruce = (item, tipo, isAFavor) => {
+        if (isAFavor) {
+            const existe = aFavorCruceSel.find(x => x.id === item.id && x.tipo === tipo);
+            if (existe) setAFavorCruceSel(aFavorCruceSel.filter(x => !(x.id === item.id && x.tipo === tipo)));
+            else setAFavorCruceSel([...aFavorCruceSel, { ...item, tipo }]);
+        } else {
+            const existe = facturasCruceSel.find(x => x.id === item.id);
+            if (existe) setFacturasCruceSel(facturasCruceSel.filter(x => x.id !== item.id));
+            else setFacturasCruceSel([...facturasCruceSel, item]);
+        }
+    };
+
+    const ejecutarCruceDocumentos = async () => {
+        if (facturasCruceSel.length === 0 || aFavorCruceSel.length === 0) {
+            return Swal.fire('Selección Incompleta', 'Debes seleccionar al menos una deuda y un saldo a favor para poder compensarlos.', 'warning');
+        }
+
+        try {
+            Swal.fire({ title: 'Contabilizando Cruce...', text: 'Generando comprobante de traspaso...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            const payload = {
+                facturas_ids: facturasCruceSel.map(f => f.id),
+                notas_credito_ids: aFavorCruceSel.filter(x => x.tipo === 'NOTA_CREDITO').map(x => x.id),
+                anticipos_ids: aFavorCruceSel.filter(x => x.tipo === 'ANTICIPO').map(x => x.id),
+            };
+
+            const res = await api.post(`/proveedores/${id}/cruzar-documentos`, payload);
+            
+            if (res.success) {
+                Swal.fire('¡Cruce Exitoso!', 'Los documentos han sido compensados contablemente.', 'success');
+                setModalCruceAbierto(false);
+                cargarFicha(id);
+            }
+        } catch (error) {
+            Swal.fire('Error al Cruzar', error.response?.data?.message || 'Error al procesar la compensación en el servidor.', 'error');
         }
     };
 
@@ -234,12 +285,10 @@ const VisorProveedor = () => {
         );
     }
 
-    // Desestructuración segura
     const proveedor = datos?.proveedor || {};
     const facturas = datos?.facturas || [];
     const anticipos = datos?.anticipos || [];
 
-    // --- LÓGICA DE CARTOLA CONTABLE ESTRICTA CORREGIDA ---
     const historialCombinado = [
         ...facturas.map(f => {
             const isNotaCredito = f.tipo_documento === 'NOTA_CREDITO';
@@ -248,8 +297,8 @@ const VisorProveedor = () => {
                 _tipo: isNotaCredito ? 'NOTA_CREDITO' : 'FACTURA',
                 _fechaOrden: new Date(f.fecha_emision),
                 _documento: f.numero_factura ? `${isNotaCredito ? 'NC' : 'Factura'} #${f.numero_factura}` : `${isNotaCredito ? 'NC' : 'Factura'} S/N`,
-                _cargo: isNotaCredito ? 0 : parseFloat(f.monto_bruto || 0), // Solo es cargo (deuda) si NO es Nota de Crédito
-                _abono: isNotaCredito ? parseFloat(f.monto_bruto || 0) : 0, // Si ES Nota de Crédito, se va directo a Abonos (Plata a favor)
+                _cargo: isNotaCredito ? 0 : parseFloat(f.monto_bruto || 0), 
+                _abono: isNotaCredito ? parseFloat(f.monto_bruto || 0) : 0, 
                 _estado: f.estado,
                 _archivo: f.archivo_pdf
             };
@@ -260,26 +309,24 @@ const VisorProveedor = () => {
             _fechaOrden: new Date(a.fecha || a.created_at),
             _documento: a.referencia ? `Anticipo: ${a.referencia}` : 'Anticipo S/R',
             _cargo: 0,
-            _abono: parseFloat(a.monto || 0), // Dinero a favor
+            _abono: parseFloat(a.monto || 0), 
             _estado: a.estado,
             _archivo: a.archivo_pdf
         }))
     ].sort((a, b) => b._fechaOrden - a._fechaOrden);
 
-    // Sumamos Facturas reales (Que no sean Notas de Crédito)
-    const totalDeuda = facturas.filter(f => f.estado !== 'PAGADA' && f.estado !== 'ANULADA' && f.tipo_documento !== 'NOTA_CREDITO').reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
+    const facturasDeuda = facturas.filter(f => f.estado !== 'PAGADA' && f.estado !== 'ANULADA' && f.tipo_documento !== 'NOTA_CREDITO');
+    const ncVigentes = facturas.filter(f => f.estado !== 'APLICADA' && f.estado !== 'ANULADA' && f.tipo_documento === 'NOTA_CREDITO');
     
-    // Sumamos Notas de Crédito que aún no se han aplicado/usado
-    const ncVigentes = facturas.filter(f => f.estado !== 'APLICADA' && f.estado !== 'ANULADA' && f.tipo_documento === 'NOTA_CREDITO').reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
-    
-    // Sumamos Anticipos vigentes
-    const anticiposVigentes = anticipos.filter(a => a.estado === 'VIGENTE' || a.estado === 'PENDIENTE').reduce((sum, a) => sum + parseFloat(a.saldo_disponible || a.monto), 0);
+    // Filtro para considerar como "activos/a favor" todos los anticipos que no han sido anulados ni consumidos en su totalidad
+    const anticiposVigentes = anticipos.filter(a => a.estado !== 'APLICADO' && a.estado !== 'ANULADO');
 
-    // Cálculo de saldo contable total
-    const totalActivos = anticiposVigentes + ncVigentes;
+    const totalDeuda = facturasDeuda.reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
+    const totalActivos = ncVigentes.reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0) + anticiposVigentes.reduce((sum, a) => sum + parseFloat(a.saldo_disponible || a.monto), 0);
+    
     const saldoNeto = totalDeuda - totalActivos;
-    const esAcreedor = saldoNeto > 0; // Le debemos dinero al proveedor
-    const esDeudor = saldoNeto < 0;   // El proveedor nos debe mercadería/dinero (Tenemos saldo a favor)
+    const esAcreedor = saldoNeto > 0; 
+    const esDeudor = saldoNeto < 0;   
 
     const historialFiltrado = historialCombinado.filter(item => {
         let pasaTipo = filtroTipo === 'TODOS' ? true : item._tipo === filtroTipo;
@@ -291,7 +338,7 @@ const VisorProveedor = () => {
                 pasaEstado = 
                     (item._tipo === 'FACTURA' && item._estado !== 'PAGADA' && item._estado !== 'ANULADA') ||
                     (item._tipo === 'NOTA_CREDITO' && item._estado !== 'APLICADA' && item._estado !== 'ANULADA') ||
-                    (item._tipo === 'ANTICIPO' && (item._estado === 'VIGENTE' || item._estado === 'PENDIENTE'));
+                    (item._tipo === 'ANTICIPO' && item._estado !== 'APLICADO' && item._estado !== 'ANULADO');
             } else if (filtroEstado === 'CERRADOS') {
                 pasaEstado = item._estado === 'PAGADA' || item._estado === 'APLICADO' || item._estado === 'APLICADA';
             } else if (filtroEstado === 'ANULADOS') {
@@ -301,10 +348,178 @@ const VisorProveedor = () => {
         return pasaTipo && pasaNumero && pasaEstado;
     });
 
+    // --- CÁLCULOS DEL MODAL DE CRUCE ---
+    const totalSelCargos = facturasCruceSel.reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
+    const totalSelAbonos = aFavorCruceSel.reduce((sum, f) => sum + parseFloat(f.monto_bruto || f.monto), 0);
+    const difCruce = totalSelCargos - totalSelAbonos;
+
+    const modalCruceJSX = modalCruceAbierto && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center animate-fade-in p-4" onClick={() => setModalCruceAbierto(false)}>
+            <div className="bg-slate-50 w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-300 animate-slide-down" onClick={e => e.stopPropagation()}>
+                
+                {/* CABECERA */}
+                <div className="bg-slate-900 px-6 py-5 flex justify-between items-center text-white shrink-0 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-blue-500 opacity-20 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-2xl border border-blue-500/30">
+                            <i className="fas fa-random"></i>
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                                Compensación de Partidas (Clearing)
+                            </h2>
+                            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mt-0.5">
+                                Cruce de Facturas vs Notas de Crédito / Anticipos
+                            </p>
+                        </div>
+                    </div>
+                    <button onClick={() => setModalCruceAbierto(false)} className="text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-slate-700 w-10 h-10 rounded-full flex items-center justify-center transition-colors relative z-10">
+                        <i className="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                {/* CUERPO A DOS COLUMNAS */}
+                <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+                    
+                    {/* COLUMNA IZQUIERDA: DEUDAS (FACTURAS) */}
+                    <div className="flex-1 flex flex-col border-r border-slate-200 bg-white">
+                        <div className="bg-rose-50 px-5 py-3 border-b border-rose-100 flex justify-between items-center shrink-0">
+                            <h3 className="font-black text-rose-800 text-sm flex items-center gap-2 uppercase tracking-wide">
+                                <i className="fas fa-file-invoice"></i> Deudas Vigentes
+                            </h3>
+                            <span className="bg-rose-200 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full">{facturasDeuda.length} docs</span>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            {facturasDeuda.length === 0 ? (
+                                <p className="text-center text-slate-400 text-sm py-10 font-medium italic">No hay facturas pendientes.</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {facturasDeuda.map(fac => {
+                                        const seleccionado = facturasCruceSel.some(x => x.id === fac.id);
+                                        return (
+                                            <div 
+                                                key={fac.id} 
+                                                onClick={() => toggleSeleccionCruce(fac, 'FACTURA', false)}
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${seleccionado ? 'bg-rose-50 border-rose-400 shadow-sm ring-1 ring-rose-400' : 'bg-white border-slate-200 hover:border-rose-300 hover:bg-slate-50'}`}
+                                            >
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${seleccionado ? 'bg-rose-500 border-rose-500' : 'bg-white border-slate-300'}`}>
+                                                    {seleccionado && <i className="fas fa-check text-white text-[10px]"></i>}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-slate-700 text-sm leading-none">Fac #{fac.numero_factura}</p>
+                                                    <p className="text-[10px] text-slate-400 font-mono mt-1">{new Date(fac.fecha_emision).toLocaleDateString()}</p>
+                                                </div>
+                                                <p className="font-black text-rose-600">{formatCurrency(fac.monto_bruto)}</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* COLUMNA DERECHA: A FAVOR (NC Y ANTICIPOS) */}
+                    <div className="flex-1 flex flex-col bg-white">
+                        <div className="bg-emerald-50 px-5 py-3 border-b border-emerald-100 flex justify-between items-center shrink-0">
+                            <h3 className="font-black text-emerald-800 text-sm flex items-center gap-2 uppercase tracking-wide">
+                                <i className="fas fa-piggy-bank"></i> Saldos a Favor
+                            </h3>
+                            <span className="bg-emerald-200 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">{ncVigentes.length + anticiposVigentes.length} docs</span>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            {(ncVigentes.length === 0 && anticiposVigentes.length === 0) ? (
+                                <p className="text-center text-slate-400 text-sm py-10 font-medium italic">No hay notas de crédito ni anticipos disponibles.</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {/* Mostrar Notas de Crédito */}
+                                    {ncVigentes.map(nc => {
+                                        const seleccionado = aFavorCruceSel.some(x => x.id === nc.id && x.tipo === 'NOTA_CREDITO');
+                                        return (
+                                            <div 
+                                                key={`nc-${nc.id}`} 
+                                                onClick={() => toggleSeleccionCruce(nc, 'NOTA_CREDITO', true)}
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${seleccionado ? 'bg-emerald-50 border-emerald-400 shadow-sm ring-1 ring-emerald-400' : 'bg-white border-slate-200 hover:border-emerald-300 hover:bg-slate-50'}`}
+                                            >
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${seleccionado ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-300'}`}>
+                                                    {seleccionado && <i className="fas fa-check text-white text-[10px]"></i>}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-slate-700 text-sm leading-none flex items-center gap-1.5">
+                                                        <span className="bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded text-[8px] uppercase">NC</span>
+                                                        #{nc.numero_factura}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400 font-mono mt-1">{new Date(nc.fecha_emision).toLocaleDateString()}</p>
+                                                </div>
+                                                <p className="font-black text-emerald-600">{formatCurrency(nc.monto_bruto)}</p>
+                                            </div>
+                                        );
+                                    })}
+                                    {/* Mostrar Anticipos */}
+                                    {anticiposVigentes.map(ant => {
+                                        const seleccionado = aFavorCruceSel.some(x => x.id === ant.id && x.tipo === 'ANTICIPO');
+                                        return (
+                                            <div 
+                                                key={`ant-${ant.id}`} 
+                                                onClick={() => toggleSeleccionCruce(ant, 'ANTICIPO', true)}
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${seleccionado ? 'bg-emerald-50 border-emerald-400 shadow-sm ring-1 ring-emerald-400' : 'bg-white border-slate-200 hover:border-emerald-300 hover:bg-slate-50'}`}
+                                            >
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${seleccionado ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-300'}`}>
+                                                    {seleccionado && <i className="fas fa-check text-white text-[10px]"></i>}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-slate-700 text-sm leading-none flex items-center gap-1.5">
+                                                        <span className="bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] uppercase">ANT</span>
+                                                        Ref: {ant.referencia || 'S/N'}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400 font-mono mt-1">{new Date(ant.fecha || ant.created_at).toLocaleDateString()}</p>
+                                                </div>
+                                                <p className="font-black text-emerald-600">{formatCurrency(ant.monto)}</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* FOOTER: RESUMEN MATEMÁTICO Y BOTÓN */}
+                <div className="bg-slate-100 border-t border-slate-300 p-5 shrink-0 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="flex items-center gap-6 w-full md:w-auto">
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Total Deudas Sel.</p>
+                            <p className="text-xl font-black text-rose-600">{formatCurrency(totalSelCargos)}</p>
+                        </div>
+                        <div className="text-slate-300 text-2xl font-light">-</div>
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Total a Favor Sel.</p>
+                            <p className="text-xl font-black text-emerald-600">{formatCurrency(totalSelAbonos)}</p>
+                        </div>
+                        <div className="text-slate-300 text-2xl font-light">=</div>
+                        <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Diferencia (Saldo)</p>
+                            <p className={`text-xl font-black ${difCruce === 0 ? 'text-blue-500' : difCruce > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                {formatCurrency(Math.abs(difCruce))} {difCruce > 0 && <span className="text-[10px] uppercase font-bold ml-1">Por Pagar</span>}
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={ejecutarCruceDocumentos}
+                        disabled={facturasCruceSel.length === 0 || aFavorCruceSel.length === 0}
+                        className="w-full md:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-black rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2"
+                    >
+                        <i className="fas fa-random"></i> Ejecutar Compensación
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans text-slate-800 animate-fade-in pb-20">
             {modalSpotlightJSX}
             {modalAnticipoJSX}
+            {modalCruceJSX}
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
                 <div>
@@ -320,18 +535,20 @@ const VisorProveedor = () => {
                     <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Ficha 360° del Proveedor</h1>
                 </div>
 
-                <div className="flex gap-3">
-                    <button onClick={() => setModalAnticipoAbierto(true)} className="bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 font-bold py-2.5 px-5 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                <div className="flex flex-wrap gap-3">
+                    <button onClick={abrirModalCruce} className="bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white border border-blue-200 font-bold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                        <i className="fas fa-random"></i> Cruzar Documentos
+                    </button>
+                    <button onClick={() => setModalAnticipoAbierto(true)} className="bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 font-bold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center gap-2">
                         <i className="fas fa-plus-circle"></i> Nuevo Anticipo
                     </button>
-                    <button onClick={abrirBuscador} className="bg-white border border-slate-200 hover:border-indigo-500 text-slate-600 hover:text-indigo-600 font-bold py-2.5 px-5 rounded-xl shadow-sm transition-all flex items-center gap-2">
-                        <i className="fas fa-search"></i> Buscar Proveedor
+                    <button onClick={abrirBuscador} className="bg-white border border-slate-200 hover:border-indigo-500 text-slate-600 hover:text-indigo-600 font-bold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                        <i className="fas fa-search"></i> Buscar
                     </button>
                 </div>
             </div>
 
-            {/* TARJETA OSCURA CON DATOS Y SALDO CONTABLE ESTRICTO */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-3xl p-8 text-white shadow-2xl shadow-indigo-900/20 mb-8 relative overflow-hidden border border-slate-700">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 bg-slate-900 rounded-3xl p-8 text-white shadow-2xl shadow-indigo-900/20 mb-8 relative overflow-hidden border border-slate-700">
                 <i className="fas fa-globe absolute -right-10 -top-10 text-[250px] text-white opacity-5 pointer-events-none"></i>
                 <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-10">
                     <div className="space-y-5 flex-1">
@@ -360,7 +577,8 @@ const VisorProveedor = () => {
 
                     {/* RESUMEN CONTABLE */}
                     <div className="flex flex-col justify-center gap-4 lg:min-w-[280px] shrink-0">
-                        <div className="bg-slate-950/50 p-5 rounded-2xl border border-white/10 backdrop-blur-md relative overflow-hidden">
+                        {/* FIX: Se cambia 'bg-slate-950/50' a 'bg-slate-900/50' por compatibilidad de versión */}
+                        <div className="bg-slate-900/50 p-5 rounded-2xl border border-white/10 backdrop-blur-md relative overflow-hidden">
                             <div className={`absolute top-0 left-0 w-1 h-full ${esAcreedor ? 'bg-rose-500' : esDeudor ? 'bg-emerald-500' : 'bg-slate-500'}`}></div>
                             <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Saldo Contable Actual</p>
                             <div className="flex items-baseline gap-2">

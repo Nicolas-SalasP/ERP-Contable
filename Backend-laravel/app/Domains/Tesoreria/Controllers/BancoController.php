@@ -145,4 +145,24 @@ class BancoController
             ], 422);
         }
     }
+
+    public function movimientos(Request $request, $idCuenta)
+    {
+        try {
+            $movimientos = $this->service->obtenerMovimientosPorCuenta(
+                $request->user()->empresa_id, 
+                $idCuenta
+            );
+            
+            return response()->json([
+                'success' => true,
+                'data' => $movimientos
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
 }

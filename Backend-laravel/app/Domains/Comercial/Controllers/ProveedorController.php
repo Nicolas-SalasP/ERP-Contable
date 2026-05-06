@@ -149,4 +149,33 @@ class ProveedorController
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
+
+    public function cruzarDocumentos(Request $request, $id)
+    {
+        try {
+            $datos = $request->validate([
+                'facturas_ids' => 'required|array',
+                'notas_credito_ids' => 'nullable|array',
+                'anticipos_ids' => 'nullable|array',
+            ]);
+
+            $resultado = $this->service->compensarPartidas(
+                $request->user()->empresa_id,
+                $request->user()->id,
+                (int) $id,
+                $datos
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Documentos cruzados y compensados exitosamente.',
+                'data' => $resultado
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
 }
