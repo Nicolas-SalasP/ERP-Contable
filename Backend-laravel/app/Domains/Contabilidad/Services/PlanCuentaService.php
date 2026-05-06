@@ -95,4 +95,9 @@ class PlanCuentaService
         $cuenta->delete();
         return true;
     }
+
+    public function obtenerCuentaPorId(int $empresaId, int $id)
+    {
+        return PlanCuenta::where('empresa_id', $empresaId)->find($id);
+    }
 }

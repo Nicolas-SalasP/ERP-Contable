@@ -11,8 +11,6 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger('codigo_unico')->unique()->nullable();
             $table->foreignId('empresa_id')->default(1)->constrained('empresas')->onDelete('cascade');
-            $table->foreignId('centro_costo_id')->nullable()->constrained('centros_costo');
-            $table->string('empleado_nombre', 150)->nullable();
             $table->date('fecha');
             $table->string('glosa', 255);
             $table->enum('tipo_asiento', ['ingreso', 'egreso', 'traspaso', ''])->default('traspaso');

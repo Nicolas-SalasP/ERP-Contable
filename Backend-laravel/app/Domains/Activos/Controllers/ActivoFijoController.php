@@ -7,6 +7,7 @@ use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Gate;
 use Exception;
 
 class ActivoFijoController
@@ -20,9 +21,7 @@ class ActivoFijoController
 
     private function autorizarAccesoContable($user)
     {
-        $rol = \App\Domains\Core\Models\Rol::find($user->rol_id);
-
-        if ($rol && !in_array($rol->nombre, ['Admin', 'Contador', 'Dueño Super Admin', 'Experto Contador'])) {
+        if (!Gate::forUser($user)->allows('gestionar-contabilidad-critica')) {
             throw new Exception("Acceso denegado. Perfil no autorizado para operaciones contables críticas.", 403);
         }
     }
@@ -150,7 +149,7 @@ class ActivoFijoController
                 'nombre' => 'required|string',
                 'tipo_activo_id' => 'required|integer',
                 'anio_fabricacion' => 'required|integer',
-                'vida_util_meses' => 'required|integer',
+                'vida_util_meses' => 'required|integer|min:1',
                 'centro_costo_id' => 'nullable|integer',
                 'empleado_id' => 'nullable|integer'
             ]);
@@ -241,4 +240,36 @@ class ActivoFijoController
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
+
+    public function updateProyecto(Request $request, $id)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $datos = $request->validate([
+                'tipo_activo_id' => 'nullable|integer',
+                'cuenta_depreciacion_id' => 'nullable|integer',
+                'cuenta_gasto_id' => 'nullable|integer',
+                'nombre' => 'nullable|string',
+                'vida_util_meses' => 'nullable|integer|min:1'
+            ]);
+
+            $proyecto = $this->service->actualizarProyecto($request->user()->empresa_id, $id, $datos);
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Proyecto actualizado correctamente',
+                'data' => $proyecto
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error de validación', 
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+    
 }

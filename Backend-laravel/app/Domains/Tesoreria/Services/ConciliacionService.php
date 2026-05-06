@@ -24,16 +24,15 @@ class ConciliacionService
             throw new Exception("La cuenta bancaria seleccionada no existe o no pertenece a la empresa.", 403);
         }
 
-        return DB::transaction(function () use ($datos) {
+        return DB::transaction(function () use ($datos, $cuentaBanco) {
             $factura = Factura::lockForUpdate()->where('empresa_id', $datos['empresa_id'])->findOrFail($datos['factura_id']);
-            
+
             if ($factura->estado === 'PAGADA') {
                 throw new Exception("La factura {$factura->numero_factura} ya está pagada.", 422);
             }
-            
-            $factura->update(['estado' => 'PAGADA']);
 
-            $cuentaProveedores = '352105';
+            $factura->update(['estado' => 'PAGADA']);
+            $cuentaProveedores = $datos['cuenta_proveedor'] ?? '352105';
             $codigoCuentaBanco = $cuentaBanco->cuenta_contable_codigo ?? '110101';
             $glosa = "Pago Factura N° {$factura->numero_factura} a Proveedor";
 

@@ -15,8 +15,6 @@ class AsientoContable extends Model
         'codigo_unico',
         'empresa_id',
         'numero_comprobante',
-        'centro_costo_id',
-        'empleado_nombre',
         'fecha',
         'glosa',
         'tipo_asiento',

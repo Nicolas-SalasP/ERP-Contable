@@ -69,7 +69,6 @@ const RegistroFactura = () => {
         numeroFactura: '',
         fechaEmision: new Date().toISOString().split('T')[0],
         fechaContable: new Date().toISOString().split('T')[0],
-        cuentaDestino: '690199',
         montoBruto: '',
         montoVisual: '',
         fechaVencimiento: '',
@@ -78,7 +77,10 @@ const RegistroFactura = () => {
         montoNeto: 0,
         montoIva: 0,
         montoIvaVisual: '',
-        motivoCorreccion: ''
+        motivoCorreccion: '',
+        cuentaDestino: '',
+        cuentaIva: '353350',
+        cuentaProveedor: '352105'
     });
 
     const [cuentasDisponibles, setCuentasDisponibles] = useState([]);
@@ -217,6 +219,10 @@ const RegistroFactura = () => {
     };
 
     const handlePreSave = () => {
+        if (!formData.cuentaDestino) return alert("Debe seleccionar una cuenta de Destino (Gasto/Activo)");
+        if (!formData.cuentaProveedor) return alert("Debe seleccionar una cuenta de Proveedor (Pasivo)");
+        if (formData.tieneIva && !formData.cuentaIva) return alert("Debe seleccionar una cuenta de IVA");
+
         const bruto = parseInt(formData.montoBruto || 0);
         const ivaTeorico = formData.tieneIva ? (bruto - Math.round(bruto / 1.19)) : 0;
         const ivaReal = parseInt(formData.montoIva || 0);
@@ -249,10 +255,16 @@ const RegistroFactura = () => {
                     });
                 } else {
                     console.error("Errores:", data.errors);
-                    alert('❌ Error al guardar: ' + data.message);
+                    // Manejo visual de errores del 422
+                    const errorMsgs = data.errors ? Object.values(data.errors).flat().join('\n') : data.message;
+                    alert('❌ Error de Validación:\n' + errorMsgs);
                 }
             })
-            .catch(error => alert('Error crítico: ' + error.message))
+            .catch(error => {
+                const msj = error.response?.data?.message || error.message;
+                const errs = error.response?.data?.errors ? Object.values(error.response.data.errors).flat().join('\n') : '';
+                alert('Error crítico:\n' + msj + '\n' + errs);
+            })
             .finally(() => setSaving(false));
     };
 
@@ -522,15 +534,15 @@ const RegistroFactura = () => {
                             </label>
                         </div>
 
-                        <div className="max-w-4xl mx-auto border border-slate-200 rounded-xl shadow-lg bg-white mb-36">
+                        <div className="max-w-5xl mx-auto border border-slate-200 rounded-xl shadow-lg bg-white mb-36">
                             <div className="bg-slate-50 rounded-t-xl px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center">
-                                <h3 className="font-bold text-slate-700">Previsualización de Asiento</h3>
-                                <span className="text-xs font-mono text-slate-400 mt-1 md:mt-0">AUTOMÁTICO</span>
+                                <h3 className="font-bold text-slate-700">Previsualización y Clasificación del Asiento</h3>
+                                <span className="text-xs font-mono text-slate-400 mt-1 md:mt-0">OBLIGATORIO</span>
                             </div>
 
                             <div className="flex flex-col">
                                 <div className="hidden md:flex bg-white text-xs font-bold text-slate-500 uppercase tracking-wider py-3 px-6 border-b border-slate-100">
-                                    <div className="w-1/2">Cuenta Contable</div>
+                                    <div className="w-1/2">Cuenta Contable (Clasificación)</div>
                                     <div className="w-1/4 text-right text-emerald-600">Debe</div>
                                     <div className="w-1/4 text-right text-red-600">Haber</div>
                                 </div>
@@ -540,31 +552,47 @@ const RegistroFactura = () => {
 
                                     return (
                                         <>
-                                            <div className="flex flex-col md:flex-row border-b border-slate-100 p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center hover:bg-slate-50 transition">
-                                                <div className="w-full md:w-1/2">
-                                                    <span className="font-bold text-slate-800 block text-base">Proveedores por Pagar</span>
-                                                    <span className="text-xs text-slate-400">Pasivo Circulante</span>
+                                            {/* FILA GASTO / DESTINO */}
+                                            <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-white border-b border-slate-100 transition relative z-30">
+                                                <div className="w-full md:w-1/2 pr-0 md:pr-10">
+                                                    <span className="font-bold text-slate-800 block text-xs uppercase mb-1">1. Cuenta Destino (Gasto / Activo)</span>
+                                                    <BuscadorCuentaContable
+                                                        cuentaSeleccionada={formData.cuentaDestino}
+                                                        setCuentaSeleccionada={(codigo) => setFormData(prev => ({ ...prev, cuentaDestino: codigo }))}
+                                                    />
                                                 </div>
-                                                <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0">
+                                                <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0 items-center mt-2 md:mt-0">
                                                     <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
                                                         <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
-                                                        {esNotaCredito && <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-2 rounded">{formData.montoVisual}</span>}
+                                                        {!esNotaCredito ? (
+                                                            <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1 rounded shadow-sm">
+                                                                {formatCurrency(formData.montoNeto)}
+                                                            </span>
+                                                        ) : <span className="text-slate-300">-</span>}
                                                     </div>
                                                     <div className="w-full md:w-1/2 flex justify-between md:block text-right">
                                                         <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
-                                                        {!esNotaCredito ? <span className="font-bold text-slate-900 text-lg bg-red-50/30 px-2 rounded">{formData.montoVisual}</span> : <span className="text-slate-300">-</span>}
+                                                        {esNotaCredito ? (
+                                                            <span className="font-bold text-slate-900 text-lg bg-red-50/30 px-3 py-1 rounded shadow-sm">
+                                                                {formatCurrency(formData.montoNeto)}
+                                                            </span>
+                                                        ) : <span className="text-slate-300">-</span>}
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* FILA IVA */}
                                             {formData.tieneIva && (
-                                                <div className={`flex flex-col md:flex-row border-b border-slate-100 p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center transition ${ivaInvalido ? 'bg-red-50' : 'hover:bg-blue-50/30'}`}>
-                                                    <div className="w-full md:w-1/2">
-                                                        <span className="font-bold text-blue-800 block text-base">IVA Crédito Fiscal</span>
-                                                        {ivaInvalido && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded mt-1 inline-block">⚠️ Monto Inválido</span>}
+                                                <div className={`flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center border-b border-slate-100 relative z-20 transition ${ivaInvalido ? 'bg-red-50' : 'hover:bg-blue-50/30'}`}>
+                                                    <div className="w-full md:w-1/2 pr-0 md:pr-10">
+                                                        <span className="font-bold text-slate-800 block text-xs uppercase mb-1">2. Cuenta de Impuesto (IVA CF)</span>
+                                                        <BuscadorCuentaContable
+                                                            cuentaSeleccionada={formData.cuentaIva}
+                                                            setCuentaSeleccionada={(codigo) => setFormData(prev => ({ ...prev, cuentaIva: codigo }))}
+                                                        />
+                                                        {ivaInvalido && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded mt-2 inline-block">⚠️ Monto Inválido</span>}
                                                     </div>
-                                                    <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-3 md:gap-0 items-center">
+                                                    <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-3 md:gap-0 items-center mt-2 md:mt-0">
                                                         <div className="w-full md:w-1/2 flex justify-between md:justify-end items-center md:pr-6">
                                                             <span className="md:hidden text-xs font-bold text-blue-400 uppercase mr-4">Debe:</span>
                                                             {!esNotaCredito ? (
@@ -596,39 +624,28 @@ const RegistroFactura = () => {
                                                     </div>
                                                 </div>
                                             )}
-                                            <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-blue-50/30 transition rounded-b-xl relative z-30">
-                                                <div className="w-full md:w-3/5 pr-0 md:pr-10">
-                                                    <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
-                                                        Clasificar Compra en Cuenta:
-                                                    </label>
+
+                                            {/* FILA PROVEEDORES */}
+                                            <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-slate-50 transition rounded-b-xl relative z-10">
+                                                <div className="w-full md:w-1/2 pr-0 md:pr-10">
+                                                    <span className="font-bold text-slate-800 block text-xs uppercase mb-1">3. Cuenta Proveedor (Pasivo)</span>
                                                     <BuscadorCuentaContable
-                                                        cuentaSeleccionada={formData.cuentaDestino}
-                                                        setCuentaSeleccionada={(codigo) => setFormData(prev => ({ ...prev, cuentaDestino: codigo }))}
+                                                        cuentaSeleccionada={formData.cuentaProveedor}
+                                                        setCuentaSeleccionada={(codigo) => setFormData(prev => ({ ...prev, cuentaProveedor: codigo }))}
                                                     />
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-2 block ml-1">
-                                                        <i className="fas fa-info-circle mr-1 text-blue-400"></i>
-                                                        Busque por código numérico o nombre
-                                                    </span>
                                                 </div>
-                                                <div className="w-full md:w-2/5 flex flex-col md:flex-row gap-2 md:gap-0 items-center mt-2 md:mt-0">
+                                                <div className="w-full md:w-1/2 flex flex-col md:flex-row gap-2 md:gap-0 mt-2 md:mt-0">
                                                     <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
                                                         <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
-                                                        {!esNotaCredito ? (
-                                                            <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1 rounded shadow-sm">
-                                                                {formatCurrency(formData.montoNeto)}
-                                                            </span>
-                                                        ) : <span className="text-slate-300">-</span>}
+                                                        {esNotaCredito && <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-2 py-1 rounded">{formData.montoVisual}</span>}
                                                     </div>
                                                     <div className="w-full md:w-1/2 flex justify-between md:block text-right">
                                                         <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Haber:</span>
-                                                        {esNotaCredito ? (
-                                                            <span className="font-bold text-slate-900 text-lg bg-red-50/30 px-3 py-1 rounded shadow-sm">
-                                                                {formatCurrency(formData.montoNeto)}
-                                                            </span>
-                                                        ) : <span className="text-slate-300">-</span>}
+                                                        {!esNotaCredito ? <span className="font-bold text-slate-900 text-lg bg-red-50/30 px-2 py-1 rounded shadow-sm">{formData.montoVisual}</span> : <span className="text-slate-300">-</span>}
                                                     </div>
                                                 </div>
                                             </div>
+
                                         </>
                                     );
                                 })()}

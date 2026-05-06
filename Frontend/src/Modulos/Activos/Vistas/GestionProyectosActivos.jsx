@@ -8,10 +8,10 @@ const GestionProyectosActivos = ({ onNotificar }) => {
     const [proyectos, setProyectos] = useState([]);
     const [tiposActivos, setTiposActivos] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
     const [modalAbierto, setModalAbierto] = useState(false);
-    
+
     const [nuevoProyecto, setNuevoProyecto] = useState({
         nombre: '', tipo_activo_id: '', anio_fabricacion: new Date().getFullYear(), vida_util_meses: 60, centro_costo_id: 1, empleado_id: 1
     });
@@ -21,9 +21,9 @@ const GestionProyectosActivos = ({ onNotificar }) => {
         try {
             const [resProyectos, resParams] = await Promise.all([
                 api.get('/activos/proyectos'),
-                api.get('/activos/parametros') 
+                api.get('/activos/parametros')
             ]);
-            
+
             if (resProyectos.success) setProyectos(resProyectos.data);
             if (resParams.success) setTiposActivos(resParams.data.cuentas_activo || []);
         } catch (error) {
@@ -33,12 +33,19 @@ const GestionProyectosActivos = ({ onNotificar }) => {
         }
     };
 
-    useEffect(() => { 
-        cargarDatos(); 
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const handleCrearProyecto = async (e) => {
         e.preventDefault();
+
+        // FIX: Validación de seguridad para que el Backend no arroje Error 500 al activar
+        if (!nuevoProyecto.tipo_activo_id) {
+            alert("Error: Debe seleccionar una 'Cuenta de Activo' para que el proyecto pueda ser capitalizado contablemente.");
+            return;
+        }
+
         try {
             const res = await api.post('/activos/proyectos', nuevoProyecto);
             if (res.success) {
@@ -48,15 +55,15 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                 cargarDatos();
             }
         } catch (error) {
-            onNotificar('error', error.message || 'Error al crear proyecto.');
+            onNotificar('error', error.response?.data?.message || 'Error al crear proyecto.');
         }
     };
 
     if (proyectoSeleccionado) {
-        return <VisorProyectoActivo 
-            proyectoId={proyectoSeleccionado} 
-            onVolver={() => { setProyectoSeleccionado(null); cargarDatos(); }} 
-            onNotificar={onNotificar} 
+        return <VisorProyectoActivo
+            proyectoId={proyectoSeleccionado}
+            onVolver={() => { setProyectoSeleccionado(null); cargarDatos(); }}
+            onNotificar={onNotificar}
         />;
     }
 
@@ -105,8 +112,8 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                             </div>
                             <div className="px-5 py-4 border-t border-slate-100 flex justify-between items-center bg-white">
                                 {getEstadoBadge(p.estado)}
-                                <button 
-                                    onClick={() => setProyectoSeleccionado(p.id || p.id_proyecto)} 
+                                <button
+                                    onClick={() => setProyectoSeleccionado(p.id || p.id_proyecto)}
                                     className="text-indigo-600 text-sm font-bold hover:text-white bg-indigo-50 hover:bg-indigo-600 px-4 py-2 rounded-lg transition-colors shadow-sm"
                                 >
                                     Analizar <i className="fas fa-arrow-right ml-1"></i>
@@ -134,33 +141,34 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                             <form onSubmit={handleCrearProyecto} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre del Proyecto</label>
-                                    <input 
-                                        type="text" required 
-                                        value={nuevoProyecto.nombre} 
-                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, nombre: e.target.value})} 
-                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium" 
+                                    <input
+                                        type="text" required
+                                        value={nuevoProyecto.nombre}
+                                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, nombre: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium"
                                         placeholder="Ej: Maquinaria Industrial"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Cuenta de Activo</label>
-                                    <select 
-                                        required 
-                                        value={nuevoProyecto.tipo_activo_id} 
-                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, tipo_activo_id: e.target.value})} 
+                                    <select
+                                        required
+                                        value={nuevoProyecto.tipo_activo_id}
+                                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, tipo_activo_id: e.target.value })}
                                         className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium bg-white"
                                     >
                                         <option value="">Seleccione Cuenta...</option>
                                         {tiposActivos?.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
                                     </select>
+                                    <p className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-wider">* Obligatorio para capitalización contable</p>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Vida Útil (Meses)</label>
-                                    <input 
+                                    <input
                                         type="number" required min="1"
-                                        value={nuevoProyecto.vida_util_meses} 
-                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, vida_util_meses: e.target.value})} 
-                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium" 
+                                        value={nuevoProyecto.vida_util_meses}
+                                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, vida_util_meses: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium"
                                     />
                                 </div>
                                 <div className="flex gap-3 pt-4 border-t border-slate-200 mt-6">

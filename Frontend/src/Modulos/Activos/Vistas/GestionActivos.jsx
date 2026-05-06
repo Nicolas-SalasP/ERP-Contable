@@ -4,6 +4,16 @@ import GestionProyectosActivos from './GestionProyectosActivos';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
+const calcularVidaUtilRestante = (activo) => {
+    if (!activo.vida_util_meses || !activo.valor_adquisicion || activo.valor_adquisicion === 0) {
+        return activo.vida_util_meses || 0;
+    }
+    const depreciado = activo.depreciacion_acumulada || 0;
+    const porcentaje = depreciado / activo.valor_adquisicion;
+    const mesesRestantes = activo.vida_util_meses - Math.floor(porcentaje * activo.vida_util_meses);
+    return Math.max(0, mesesRestantes);
+};
+
 const GestionActivos = () => {
     const [activosPendientes, setActivosPendientes] = useState([]);
     const [activosRegistrados, setActivosRegistrados] = useState([]);
@@ -55,12 +65,12 @@ const GestionActivos = () => {
         setDepreciando(true);
         try {
             const response = await api.post('/activos/depreciar-mes', {
-                mes_anio: mesDepreciacion 
+                mes_anio: mesDepreciacion
             });
 
             if (response.success) {
                 mostrarNotificacion('success', response.message || response.data?.mensaje);
-                cargarDatos(); 
+                cargarDatos();
             }
         } catch (error) {
             mostrarNotificacion('error', error.response?.data?.message || error.message || 'Error al ejecutar depreciación.');
@@ -135,9 +145,12 @@ const GestionActivos = () => {
                                             <td className="px-6 py-4 font-bold text-indigo-600">{activo.numero_factura}</td>
                                             <td className="px-6 py-4 text-slate-700">{activo.proveedor}</td>
                                             <td className="px-6 py-4 text-slate-500"><span className="bg-slate-100 px-2 py-1 rounded text-xs">{activo.nombre_cuenta}</span></td>
-                                            <td className="px-6 py-4 font-black text-slate-800 text-right">{formatCurrency(activo.monto_adquisicion)}</td>
+                                            <td className="px-6 py-4 font-black text-slate-800 text-right">{formatCurrency(activo.valor_adquisicion)}</td>
                                             <td className="px-6 py-4 text-center">
-                                                <button className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded transition-colors text-xs">
+                                                <button
+                                                    onClick={() => alert("Para activar este activo, vincúlelo primero a un Proyecto para consolidar su costo neto.")}
+                                                    className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded transition-colors text-xs"
+                                                >
                                                     Activar Activo
                                                 </button>
                                             </td>
@@ -154,14 +167,14 @@ const GestionActivos = () => {
                             <div className="flex justify-end items-center gap-3">
                                 <div className="flex flex-col items-end">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase">Período a Depreciar</label>
-                                    <input 
-                                        type="month" 
+                                    <input
+                                        type="month"
                                         value={mesDepreciacion}
                                         onChange={(e) => setMesDepreciacion(e.target.value)}
                                         className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all bg-white"
                                     />
                                 </div>
-                                <button 
+                                <button
                                     onClick={handleEjecutarDepreciacion}
                                     disabled={depreciando || !mesDepreciacion}
                                     className="px-4 py-2 mt-4 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-sm font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 h-10"
@@ -183,17 +196,26 @@ const GestionActivos = () => {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-sm">
                                         {activosRegistrados.map((activo) => {
-                                            const valorActual = activo.monto_adquisicion - (activo.depreciacion_acumulada || 0);
+                                            const valorActual = (activo.valor_adquisicion || 0) - (activo.depreciacion_acumulada || 0);
+                                            const nombreActivo = activo.nombre;
+                                            const categoriaSii = activo.cuenta?.categoria_sii || 'General';
+                                            const nombreCuenta = activo.cuenta?.nombre || 'Cuenta no vinculada';
 
                                             return (
                                                 <tr key={activo.id} className="hover:bg-slate-50 transition-colors">
                                                     <td className="px-6 py-4">
-                                                        <p className="font-bold text-slate-800">{activo.nombre_activo}</p>
-                                                        <p className="text-xs text-slate-500 mt-0.5">{activo.cuenta_nombre}</p>
+                                                        <p className="font-bold text-slate-800">{nombreActivo}</p>
+                                                        <p className="text-xs text-slate-500 mt-0.5">{nombreCuenta}</p>
                                                     </td>
-                                                    <td className="px-6 py-4 text-slate-600">{activo.categoria_sii}</td>
-                                                    <td className="px-6 py-4 text-slate-600">{activo.vida_util_meses} meses</td>
-                                                    <td className="px-6 py-4 font-black text-slate-500 text-right">{formatCurrency(activo.monto_adquisicion)}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-medium">
+                                                            {categoriaSii}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-600">
+                                                        <span className="font-bold">{calcularVidaUtilRestante(activo)}</span> / {activo.vida_util_meses || 0} meses
+                                                    </td>
+                                                    <td className="px-6 py-4 font-black text-slate-500 text-right">{formatCurrency(activo.valor_adquisicion)}</td>
                                                     <td className="px-6 py-4 font-black text-emerald-600 text-right">{formatCurrency(valorActual)}</td>
                                                 </tr>
                                             );

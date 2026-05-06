@@ -99,16 +99,11 @@ class AsientoContableService
                     'debe' => $detalle['debe'] ?? 0.00,
                     'haber' => $detalle['haber'] ?? 0.00,
                     'descripcion_extensa' => $detalle['glosa_detalle'] ?? null,
+                    'centro_costo_id' => $detalle['centro_costo_id'] ?? null,
+                    'empleado_nombre' => $detalle['empleado_nombre'] ?? null,
                 ]);
             }
-
-            $anio = date('y', strtotime($asiento->fecha ?? date('Y-m-d')));
-            $tipo = '10';
-            $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
-
-            $asiento->update([
-                'numero_comprobante' => $anio . $tipo . $secuencia
-            ]);
+            $this->generarNumeroComprobante($asiento);
 
             return $asiento;
         });
@@ -133,13 +128,7 @@ class AsientoContableService
                 'origen_id' => $datos['origen_id'] ?? null,
             ]);
 
-            $anio = date('y', strtotime($asiento->fecha));
-            $tipoCode = '10';
-            $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
-
-            $asiento->update([
-                'numero_comprobante' => $anio . $tipoCode . $secuencia
-            ]);
+            $this->generarNumeroComprobante($asiento);
 
             foreach ($datos['detalles'] as $detalle) {
                 DetalleAsiento::create([
@@ -148,7 +137,10 @@ class AsientoContableService
                     'debe' => $detalle['debe'] ?? 0,
                     'haber' => $detalle['haber'] ?? 0,
                     'fecha' => $datos['fecha'],
-                    'tipo_operacion' => $detalle['tipo_operacion']
+                    'tipo_operacion' => $detalle['tipo_operacion'] ?? ($detalle['debe'] > 0 ? 'DEBE' : 'HABER'),
+                    'descripcion_extensa' => $detalle['glosa_detalle'] ?? null,
+                    'centro_costo_id' => $detalle['centro_costo_id'] ?? null,
+                    'empleado_nombre' => $detalle['empleado_nombre'] ?? null,
                 ]);
             }
 
@@ -164,5 +156,16 @@ class AsientoContableService
             ->where('fecha', $fecha)
             ->where('glosa', $glosa)
             ->exists();
+    }
+
+    private function generarNumeroComprobante(AsientoContable $asiento): void
+    {
+        $anio = date('y', strtotime($asiento->fecha ?? date('Y-m-d')));
+        $tipoCode = '10';
+        $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
+
+        $asiento->update([
+            'numero_comprobante' => $anio . $tipoCode . $secuencia
+        ]);
     }
 }

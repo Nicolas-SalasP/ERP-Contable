@@ -16,22 +16,24 @@ class CatalogoPlanMaestroSeeder extends Seeder
             // CLASE 1: ACTIVOS
             // =================================================================
             ['codigo' => '1', 'nombre' => 'ACTIVO', 'tipo' => 'ACTIVO', 'nivel' => 1, 'imputable' => false],
-
-            // Grupo 11: Activos No Corrientes (Fijos / Intangibles)
             ['codigo' => '11', 'nombre' => 'ACTIVO NO CORRIENTE', 'tipo' => 'ACTIVO', 'nivel' => 2, 'imputable' => false],
             ['codigo' => '1112', 'nombre' => 'INTANGIBLES', 'tipo' => 'ACTIVO', 'nivel' => 3, 'imputable' => false],
             ['codigo' => '111205', 'nombre' => 'Software', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
-            ['codigo' => '111206', 'nombre' => 'Depreciacion acumulada Software', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
-
+            ['codigo' => '111206', 'nombre' => 'Depreciacion Acum. Software', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '1120', 'nombre' => 'PROPIEDADES, PLANTA Y EQUIPO', 'tipo' => 'ACTIVO', 'nivel' => 3, 'imputable' => false],
             ['codigo' => '112005', 'nombre' => 'Edificios', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '112006', 'nombre' => 'Depreciacion Acum. Edificios', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '112105', 'nombre' => 'Maquinarias y equipos', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
-            ['codigo' => '112205', 'nombre' => 'Hardware', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '112106', 'nombre' => 'Depreciacion Acum. Maquinarias', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '112205', 'nombre' => 'Hardware / Equipos Computacionales', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '112206', 'nombre' => 'Depreciacion Acum. Hardware', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '112210', 'nombre' => 'Vehiculos', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '112211', 'nombre' => 'Depreciacion Acum. Vehiculos', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '112215', 'nombre' => 'Camiones', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '112216', 'nombre' => 'Depreciacion Acum. Camiones', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '112220', 'nombre' => 'Muebles e instalaciones', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '112221', 'nombre' => 'Depreciacion Acum. Muebles', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
 
-            // Grupo 15: Activos Corrientes (Disponibilidad / Existencias)
             ['codigo' => '15', 'nombre' => 'ACTIVO CORRIENTE', 'tipo' => 'ACTIVO', 'nivel' => 2, 'imputable' => false],
             ['codigo' => '1510', 'nombre' => 'INVENTARIOS', 'tipo' => 'ACTIVO', 'nivel' => 3, 'imputable' => false],
             ['codigo' => '151005', 'nombre' => 'Inventario Materiales', 'tipo' => 'ACTIVO', 'nivel' => 4, 'imputable' => true],
@@ -57,13 +59,10 @@ class CatalogoPlanMaestroSeeder extends Seeder
             // CLASE 3: PASIVO Y PATRIMONIO
             // =================================================================
             ['codigo' => '3', 'nombre' => 'PASIVO Y PATRIMONIO', 'tipo' => 'PASIVO', 'nivel' => 1, 'imputable' => false],
-
-            // Patrimonio (31)
             ['codigo' => '31', 'nombre' => 'PATRIMONIO', 'tipo' => 'PATRIMONIO', 'nivel' => 2, 'imputable' => false],
             ['codigo' => '311005', 'nombre' => 'Resultado Acumulado', 'tipo' => 'PATRIMONIO', 'nivel' => 3, 'imputable' => true],
             ['codigo' => '311406', 'nombre' => 'Correccion Monetaria Patrimonio', 'tipo' => 'PATRIMONIO', 'nivel' => 3, 'imputable' => true],
 
-            // Pasivos (33 y 35)
             ['codigo' => '33', 'nombre' => 'PASIVO NO CORRIENTE', 'tipo' => 'PASIVO', 'nivel' => 2, 'imputable' => false],
             ['codigo' => '331005', 'nombre' => 'Provision Impuesto a la Renta', 'tipo' => 'PASIVO', 'nivel' => 3, 'imputable' => true],
 
@@ -97,6 +96,15 @@ class CatalogoPlanMaestroSeeder extends Seeder
             // CLASE 6 Y 9: GASTOS
             // =================================================================
             ['codigo' => '6', 'nombre' => 'GASTOS OPERACIONALES', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => false],
+            ['codigo' => '609', 'nombre' => 'DEPRECIACIONES Y AMORTIZACIONES', 'tipo' => 'GASTO', 'nivel' => 2, 'imputable' => false],
+            ['codigo' => '609101', 'nombre' => 'Gasto Depreciacion Edificios', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '609102', 'nombre' => 'Gasto Depreciacion Maquinarias', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '609103', 'nombre' => 'Gasto Depreciacion Hardware', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '609104', 'nombre' => 'Gasto Depreciacion Vehiculos', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '609105', 'nombre' => 'Gasto Depreciacion Camiones', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '609106', 'nombre' => 'Gasto Depreciacion Muebles', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '609107', 'nombre' => 'Gasto Amortizacion Software', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+
             ['codigo' => '60', 'nombre' => 'ADMINISTRACION Y VENTAS', 'tipo' => 'GASTO', 'nivel' => 2, 'imputable' => false],
             ['codigo' => '601205', 'nombre' => 'Costo Ventas Nacional', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
             ['codigo' => '601705', 'nombre' => 'Remuneraciones (Operaciones)', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],

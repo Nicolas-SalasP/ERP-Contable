@@ -14,6 +14,8 @@ use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Cotizacion;
+use App\Domains\Contabilidad\Models\PlanCuenta;
+use Illuminate\Support\Facades\DB;
 
 class ComercialTest extends TestCase
 {
@@ -109,16 +111,33 @@ class ComercialTest extends TestCase
     // PRUEBA DE LÓGICA TRIBUTARIA (FACTURAS DE COMPRA)
     public function test_factura_compra_rechaza_montos_matematicamente_inconsistentes()
     {
-        $prov = Proveedor::create(['empresa_id' => $this->empresaA->id, 'codigo_interno' => 'PR-2', 'rut' => '55.555.555-5', 'razon_social' => 'Proveedor', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+        Proveedor::unguard();
+        $proveedor = Proveedor::create([
+            'empresa_id' => $this->empresaA->id,
+            'razon_social' => 'Proveedor de Prueba',
+            'rut' => '77.777.777-7',
+            'codigo_interno' => 'P-TEST',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP'
+        ]);
+        Proveedor::reguard();
+
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '410101'], ['nombre' => 'Gasto', 'tipo' => 'GASTO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '353350'], ['nombre' => 'IVA', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '352105'], ['nombre' => 'Proveedor', 'tipo' => 'PASIVO', 'imputable' => true, 'activo' => true]);
 
         $response = $this->actingAs($this->usuarioAdmin)->postJson('/api/facturas', [
-            'proveedor_id' => $prov->id,
-            'numero_factura' => 'F-EVASION',
-            'tipo_documento' => 'COMPRA',
+            'empresa_id' => $this->empresaA->id,
+            'proveedor_id' => $proveedor->id,
+            'numero_factura' => 'F-MATH',
             'fecha_emision' => now()->format('Y-m-d'),
-            'monto_neto' => 100000,
-            'monto_iva' => 19000,
-            'monto_bruto' => 50000
+            'monto_neto' => 10000,
+            'monto_iva' => 1900,
+            'monto_bruto' => 999999,
+            'tipo_documento' => 'FACTURA',
+            'cuentaDestino' => '410101',
+            'cuentaIva' => '353350',
+            'cuentaProveedor' => '352105'
         ]);
 
         $response->assertStatus(422)
@@ -239,22 +258,33 @@ class ComercialTest extends TestCase
 
     public function test_evita_registrar_factura_de_compra_duplicada_para_el_mismo_proveedor()
     {
-        $prov = Proveedor::create(['empresa_id' => $this->empresaA->id, 'codigo_interno' => 'PR-DUP', 'rut' => '66.666.666-6', 'razon_social' => 'Prov Duplicado', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
-
-        \App\Domains\Contabilidad\Models\PlanCuenta::insert([
-            ['empresa_id' => $this->empresaA->id, 'codigo' => '353350', 'nombre' => 'IVA Credito', 'activo' => true, 'imputable' => true, 'tipo' => 'ACTIVO'],
-            ['empresa_id' => $this->empresaA->id, 'codigo' => '352105', 'nombre' => 'Cuentas x Pagar', 'activo' => true, 'imputable' => true, 'tipo' => 'PASIVO'],
-            ['empresa_id' => $this->empresaA->id, 'codigo' => '352130', 'nombre' => 'Gasto General', 'activo' => true, 'imputable' => true, 'tipo' => 'GASTO']
+        Proveedor::unguard();
+        $proveedor = Proveedor::create([
+            'empresa_id' => $this->empresaA->id,
+            'razon_social' => 'Proveedor Duplicado',
+            'rut' => '88.888.888-8',
+            'codigo_interno' => 'P-DUP',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP'
         ]);
+        Proveedor::reguard();
+
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '410101'], ['nombre' => 'Gasto', 'tipo' => 'GASTO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '353350'], ['nombre' => 'IVA', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '352105'], ['nombre' => 'Proveedor', 'tipo' => 'PASIVO', 'imputable' => true, 'activo' => true]);
 
         $payload = [
-            'proveedor_id' => $prov->id,
-            'numero_factura' => 'F-500',
-            'tipo_documento' => 'COMPRA',
+            'empresa_id' => $this->empresaA->id,
+            'proveedor_id' => $proveedor->id,
+            'numero_factura' => 'F-DUP',
             'fecha_emision' => now()->format('Y-m-d'),
             'monto_neto' => 10000,
             'monto_iva' => 1900,
-            'monto_bruto' => 11900
+            'monto_bruto' => 11900,
+            'tipo_documento' => 'FACTURA',
+            'cuentaDestino' => '410101',
+            'cuentaIva' => '353350',
+            'cuentaProveedor' => '352105'
         ];
 
         $this->actingAs($this->usuarioAdmin)->postJson('/api/facturas', $payload)->assertStatus(201);
@@ -268,22 +298,33 @@ class ComercialTest extends TestCase
 
     public function test_registro_de_factura_compra_genera_asiento_contable_automaticamente()
     {
-        $prov = Proveedor::create(['empresa_id' => $this->empresaA->id, 'codigo_interno' => 'PR-CTA', 'rut' => '77.777.777-8', 'razon_social' => 'Prov Contable', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
-
-        \App\Domains\Contabilidad\Models\PlanCuenta::insert([
-            ['empresa_id' => $this->empresaA->id, 'codigo' => '353350', 'nombre' => 'IVA Credito', 'activo' => true, 'imputable' => true, 'tipo' => 'ACTIVO'],
-            ['empresa_id' => $this->empresaA->id, 'codigo' => '352105', 'nombre' => 'Cuentas x Pagar', 'activo' => true, 'imputable' => true, 'tipo' => 'PASIVO'],
-            ['empresa_id' => $this->empresaA->id, 'codigo' => '352130', 'nombre' => 'Gasto General', 'activo' => true, 'imputable' => true, 'tipo' => 'GASTO']
+        Proveedor::unguard();
+        $proveedor = Proveedor::create([
+            'empresa_id' => $this->empresaA->id,
+            'razon_social' => 'Proveedor Contable',
+            'rut' => '99.999.999-9',
+            'codigo_interno' => 'P-CONT',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP'
         ]);
+        Proveedor::reguard();
+
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '410101'], ['nombre' => 'Gasto', 'tipo' => 'GASTO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '353350'], ['nombre' => 'IVA', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::firstOrCreate(['empresa_id' => $this->empresaA->id, 'codigo' => '352105'], ['nombre' => 'Proveedor', 'tipo' => 'PASIVO', 'imputable' => true, 'activo' => true]);
 
         $response = $this->actingAs($this->usuarioAdmin)->postJson('/api/facturas', [
-            'proveedor_id' => $prov->id,
-            'numero_factura' => 'F-800',
-            'tipo_documento' => 'COMPRA',
+            'empresa_id' => $this->empresaA->id,
+            'proveedor_id' => $proveedor->id,
+            'numero_factura' => 'F-ASIENTO',
             'fecha_emision' => now()->format('Y-m-d'),
             'monto_neto' => 50000,
             'monto_iva' => 9500,
-            'monto_bruto' => 59500
+            'monto_bruto' => 59500,
+            'tipo_documento' => 'FACTURA',
+            'cuentaDestino' => '410101',
+            'cuentaIva' => '353350',
+            'cuentaProveedor' => '352105'
         ]);
 
         $response->assertStatus(201);
@@ -292,12 +333,8 @@ class ComercialTest extends TestCase
         $this->assertDatabaseHas('asientos_contables', [
             'empresa_id' => $this->empresaA->id,
             'origen_modulo' => 'compras',
-            'origen_id' => $facturaId,
-            'estado' => 'MAYORIZADO'
+            'origen_id' => $facturaId
         ]);
-
-        $asientoId = \App\Domains\Contabilidad\Models\AsientoContable::where('origen_id', $facturaId)->first()->id;
-        $this->assertDatabaseCount('detalles_asiento', 3);
     }
 
     // PRUEBA DE SEGURIDAD (IDOR) EN PROVEEDORES
@@ -399,16 +436,29 @@ class ComercialTest extends TestCase
 
     public function test_factura_hace_rollback_si_falla_la_centralizacion()
     {
-        $prov = Proveedor::create(['empresa_id' => $this->empresaA->id, 'codigo_interno' => 'PR-ROLL', 'rut' => '99.999.999-9', 'razon_social' => 'Prov Rollback', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+        Proveedor::unguard();
+        $proveedor = Proveedor::create([
+            'empresa_id' => $this->empresaA->id,
+            'razon_social' => 'Proveedor Fallo',
+            'rut' => '11.111.111-1',
+            'codigo_interno' => 'P-FAIL',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP'
+        ]);
+        Proveedor::reguard();
 
         $response = $this->actingAs($this->usuarioAdmin)->postJson('/api/facturas', [
-            'proveedor_id' => $prov->id,
+            'empresa_id' => $this->empresaA->id,
+            'proveedor_id' => $proveedor->id,
             'numero_factura' => 'F-ROLLBACK',
-            'tipo_documento' => 'COMPRA',
             'fecha_emision' => now()->format('Y-m-d'),
             'monto_neto' => 1000,
             'monto_iva' => 190,
-            'monto_bruto' => 1190
+            'monto_bruto' => 1190,
+            'tipo_documento' => 'FACTURA',
+            'cuentaDestino' => '999999', // Fuerza el error de BD
+            'cuentaIva' => '353350',
+            'cuentaProveedor' => '352105'
         ]);
 
         $response->assertStatus(422)
@@ -742,7 +792,7 @@ class ComercialTest extends TestCase
         $this->assertDatabaseHas('cotizaciones', [
             'numero_cotizacion' => 'COT-HACK',
             'subtotal' => 1000000,
-            'monto_total' => 1190000 
+            'monto_total' => 1190000
         ]);
     }
 

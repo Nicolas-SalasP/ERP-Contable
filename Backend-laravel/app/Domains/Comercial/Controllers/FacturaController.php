@@ -102,6 +102,10 @@ class FacturaController
                 'tipo_documento' => 'required|string|in:FACTURA,NOTA_CREDITO,BOLETA,NOTA_DEBITO,COMPRA',
                 'monto_bruto' => 'required|numeric|gt:0',
                 'monto_neto' => 'required|numeric|gt:0',
+                'cuentaDestino' => 'required|string',
+                'cuentaIva' => 'nullable|string',   
+                'cuentaProveedor' => 'nullable|string',
+                'centro_costo_id' => 'nullable|integer',
             ], [
                 'monto_bruto.gt' => 'El monto bruto debe ser mayor a 0',
                 'monto_neto.gt' => 'El monto neto debe ser mayor a 0',
@@ -119,7 +123,11 @@ class FacturaController
                 'monto_bruto' => $input['monto_bruto'],
                 'tipo_documento' => $input['tipo_documento'],
                 'autorizador_id' => $input['autorizador_id'] ?? null,
-                'motivo_correccion' => $input['motivoCorreccion'] ?? null
+                'motivo_correccion' => $input['motivoCorreccion'] ?? null,
+                'cuentaDestino' => $input['cuentaDestino'] ?? null,
+                'cuentaIva' => $input['cuentaIva'] ?? null,
+                'cuentaProveedor' => $input['cuentaProveedor'] ?? null,
+                'centro_costo_id' => $input['centro_costo_id'] ?? null
             ];
 
             $factura = $this->service->registrarFacturaCompra($datos);
