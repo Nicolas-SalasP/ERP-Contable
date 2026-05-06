@@ -282,6 +282,16 @@ class AuthController
             */
             'inventario.ajustes_criticos.ver',
             'inventario.ajustes_criticos.crear',
+
+
+                        /*
+            |--------------------------------------------------------------------------
+            | Inventario - Fase 5
+            |--------------------------------------------------------------------------
+            */
+            'inventario.lotes.ver',
+            'inventario.lotes.crear',
+            'inventario.lotes.editar',
         ];
     }
 }

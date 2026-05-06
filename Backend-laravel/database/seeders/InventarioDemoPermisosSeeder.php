@@ -136,6 +136,15 @@ class InventarioDemoPermisosSeeder extends Seeder
             */
             'inventario.ajustes_criticos.ver',
             'inventario.ajustes_criticos.crear',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 5 - Lotes, vencimientos y trazabilidad
+            |--------------------------------------------------------------------------
+            */
+            'inventario.lotes.ver',
+            'inventario.lotes.crear',
+            'inventario.lotes.editar',
         ];
     }
 
@@ -159,6 +168,7 @@ class InventarioDemoPermisosSeeder extends Seeder
             'inventario.valorizacion.ver',
 
             'inventario.ajustes_criticos.ver',
+            'inventario.lotes.ver',
         ];
     }
 }

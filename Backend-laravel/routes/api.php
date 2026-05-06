@@ -222,6 +222,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/ajustes-criticos', [InventarioController::class, 'ajustesCriticos']);
         Route::post('/ajustes-criticos', [InventarioController::class, 'registrarAjusteCritico']);
         Route::get('/ajustes-criticos/{id}', [InventarioController::class, 'verAjusteCritico']);
+
+                /*
+        |--------------------------------------------------------------------------
+        | Fase 5 - Lotes, vencimientos y trazabilidad avanzada
+        |--------------------------------------------------------------------------
+        |
+        | Inventario NO emite, gestiona ni prepara DTE.
+        | Estos endpoints trabajan con trazabilidad granular por lote.
+        |
+        */
+
+        Route::get('/lotes', [InventarioController::class, 'lotes']);
+        Route::post('/lotes', [InventarioController::class, 'storeLote']);
+        Route::get('/lotes/{id}/stock', [InventarioController::class, 'stockLote']);
+        Route::get('/lotes/{id}', [InventarioController::class, 'showLote']);
+        Route::put('/lotes/{id}', [InventarioController::class, 'updateLote']);
+        Route::get('/productos/{id}/lotes', [InventarioController::class, 'lotesProducto']);
     });
 
 });

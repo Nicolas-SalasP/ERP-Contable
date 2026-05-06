@@ -19,6 +19,10 @@ class StockProducto extends Model
     ];
 
     protected $casts = [
+        'empresa_id' => 'integer',
+        'producto_id' => 'integer',
+        'bodega_id' => 'integer',
+
         'stock_actual' => 'decimal:4',
         'costo_promedio' => 'decimal:4',
         'valor_total' => 'decimal:4',
@@ -37,5 +41,21 @@ class StockProducto extends Model
     public function bodega()
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
+    }
+
+    public function stockLotes()
+    {
+        return $this->hasMany(StockLoteInventario::class, 'producto_id', 'producto_id')
+            ->where('bodega_id', $this->bodega_id);
+    }
+
+    public function stockDisponible(): float
+    {
+        return (float) $this->stock_actual;
+    }
+
+    public function tieneStockSuficiente(float $cantidad): bool
+    {
+        return (float) $this->stock_actual >= $cantidad;
     }
 }

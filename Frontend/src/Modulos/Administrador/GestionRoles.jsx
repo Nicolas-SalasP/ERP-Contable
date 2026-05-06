@@ -33,6 +33,11 @@ const GestionRoles = () => {
             'inventario.valorizacion.ver',
             'inventario.ajustes_criticos.ver',
             'inventario.ajustes_criticos.crear',
+            'inventario.lotes.ver',
+            'inventario.lotes.crear',
+            'inventario.lotes.editar',
+
+
         ],
     },
 

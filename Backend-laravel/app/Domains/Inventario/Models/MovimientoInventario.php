@@ -5,6 +5,7 @@ namespace App\Domains\Inventario\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MovimientoInventario extends Model
 {
@@ -83,6 +84,11 @@ class MovimientoInventario extends Model
     public function bodegaDestino(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_destino_id');
+    }
+
+    public function lotes(): HasMany
+    {
+        return $this->hasMany(MovimientoLoteInventario::class, 'movimiento_inventario_id');
     }
 
     /*
@@ -226,6 +232,11 @@ class MovimientoInventario extends Model
     public function mueveEntreBodegas(): bool
     {
         return $this->tipo === self::TIPO_TRASPASO;
+    }
+
+    public function tieneDetalleLote(): bool
+    {
+        return $this->lotes()->exists();
     }
 
     /*

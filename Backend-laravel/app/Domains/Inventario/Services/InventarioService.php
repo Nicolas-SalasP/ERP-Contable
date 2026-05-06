@@ -91,6 +91,8 @@ class InventarioService
                 'stock_minimo' => $datos['stock_minimo'] ?? 0,
                 'bodega_defecto_id' => $datos['bodega_defecto_id'] ?? null,
                 'permite_merma' => $datos['permite_merma'] ?? false,
+                'maneja_lotes' => $datos['maneja_lotes'] ?? false,
+                'requiere_fecha_vencimiento' => $datos['requiere_fecha_vencimiento'] ?? false,
                 'activo' => $datos['activo'] ?? true,
             ]);
 
@@ -138,6 +140,8 @@ class InventarioService
             'stock_minimo' => $datos['stock_minimo'] ?? 0,
             'bodega_defecto_id' => $datos['bodega_defecto_id'] ?? null,
             'permite_merma' => $datos['permite_merma'] ?? false,
+            'maneja_lotes' => $datos['maneja_lotes'] ?? false,
+            'requiere_fecha_vencimiento' => $datos['requiere_fecha_vencimiento'] ?? false,
             'activo' => $datos['activo'] ?? true,
         ]);
 
@@ -231,6 +235,13 @@ class InventarioService
             if (!$bodegaValida) {
                 throw new Exception('La bodega por defecto no existe o no pertenece a la empresa.');
             }
+        }
+
+        $manejaLotes = filter_var($datos['maneja_lotes'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $requiereFechaVencimiento = filter_var($datos['requiere_fecha_vencimiento'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if ($requiereFechaVencimiento && !$manejaLotes) {
+            throw new Exception('Un producto que requiere fecha de vencimiento debe manejar lotes.');
         }
     }
 }

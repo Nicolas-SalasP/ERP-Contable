@@ -24,15 +24,24 @@ class Producto extends Model
         'stock_minimo',
         'bodega_defecto_id',
         'permite_merma',
+        'maneja_lotes',
+        'requiere_fecha_vencimiento',
         'activo',
     ];
 
     protected $casts = [
+        'empresa_id' => 'integer',
+        'unidad_medida_id' => 'integer',
+        'bodega_defecto_id' => 'integer',
+
         'costo_promedio' => 'decimal:4',
         'precio_venta_neto' => 'decimal:4',
         'stock_minimo' => 'decimal:4',
+
         'afecto_iva' => 'boolean',
         'permite_merma' => 'boolean',
+        'maneja_lotes' => 'boolean',
+        'requiere_fecha_vencimiento' => 'boolean',
         'activo' => 'boolean',
     ];
 
@@ -54,5 +63,45 @@ class Producto extends Model
     public function stocks()
     {
         return $this->hasMany(StockProducto::class, 'producto_id');
+    }
+
+    public function lotes()
+    {
+        return $this->hasMany(LoteInventario::class, 'producto_id');
+    }
+
+    public function stockLotes()
+    {
+        return $this->hasMany(StockLoteInventario::class, 'producto_id');
+    }
+
+    public function movimientosLotes()
+    {
+        return $this->hasMany(MovimientoLoteInventario::class, 'producto_id');
+    }
+
+    public function ajustesCriticos()
+    {
+        return $this->hasMany(AjusteCriticoInventario::class, 'producto_id');
+    }
+
+    public function estaActivo(): bool
+    {
+        return $this->activo === true;
+    }
+
+    public function manejaLotes(): bool
+    {
+        return $this->maneja_lotes === true;
+    }
+
+    public function requiereFechaVencimiento(): bool
+    {
+        return $this->requiere_fecha_vencimiento === true;
+    }
+
+    public function perteneceAEmpresa(int $empresaId): bool
+    {
+        return (int) $this->empresa_id === $empresaId;
     }
 }

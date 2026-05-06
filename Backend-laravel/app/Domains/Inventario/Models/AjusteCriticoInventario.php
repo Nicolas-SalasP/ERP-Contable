@@ -18,6 +18,7 @@ class AjusteCriticoInventario extends Model
         'tipo_ajuste_critico_id',
         'producto_id',
         'bodega_id',
+        'lote_id',
         'cantidad',
         'costo_unitario',
         'costo_total',
@@ -35,6 +36,7 @@ class AjusteCriticoInventario extends Model
         'tipo_ajuste_critico_id' => 'integer',
         'producto_id' => 'integer',
         'bodega_id' => 'integer',
+        'lote_id' => 'integer',
         'origen_id' => 'integer',
         'registrado_por' => 'integer',
 
@@ -74,6 +76,11 @@ class AjusteCriticoInventario extends Model
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
+    public function lote(): BelongsTo
+    {
+        return $this->belongsTo(LoteInventario::class, 'lote_id');
+    }
+
     public function registradoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registrado_por');
@@ -98,6 +105,11 @@ class AjusteCriticoInventario extends Model
     public function scopeBodega(Builder $query, int $bodegaId): Builder
     {
         return $query->where('bodega_id', $bodegaId);
+    }
+
+    public function scopeLote(Builder $query, int $loteId): Builder
+    {
+        return $query->where('lote_id', $loteId);
     }
 
     public function scopeTipoAjusteCritico(Builder $query, int $tipoAjusteCriticoId): Builder
@@ -147,6 +159,11 @@ class AjusteCriticoInventario extends Model
     public function esAjusteNegativo(): bool
     {
         return $this->tipo?->esAjusteNegativo() === true;
+    }
+
+    public function tieneLote(): bool
+    {
+        return $this->lote_id !== null;
     }
 
     public function costoTotalCalculado(): float

@@ -112,6 +112,10 @@ trait PreparaInventarioTest
 
             'inventario.ajustes_criticos.ver',
             'inventario.ajustes_criticos.crear',
+            
+            'inventario.lotes.ver',
+            'inventario.lotes.crear',
+            'inventario.lotes.editar',
         ];
     }
 
@@ -124,6 +128,8 @@ trait PreparaInventarioTest
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',
             'inventario.ajustes_criticos.ver',
+            'inventario.lotes.ver',
+
         ];
     }
 
@@ -141,4 +147,19 @@ trait PreparaInventarioTest
             'inventario.ajustes_criticos.ver',
         ];
     }
+    protected function permisosInventarioLotesCompleto(): array
+{
+    return [
+        'inventario.lotes.ver',
+        'inventario.lotes.crear',
+        'inventario.lotes.editar',
+    ];
+    }
+
+    protected function permisosInventarioLotesLectura(): array
+    {
+        return [
+            'inventario.lotes.ver',
+        ];
+}
 }

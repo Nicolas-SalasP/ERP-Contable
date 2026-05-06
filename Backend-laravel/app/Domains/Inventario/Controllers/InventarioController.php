@@ -4,6 +4,8 @@ namespace App\Domains\Inventario\Controllers;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\MovimientoInventario;
+use App\Domains\Inventario\Services\InventarioAjusteCriticoService;
+use App\Domains\Inventario\Services\InventarioLoteService;
 use App\Domains\Inventario\Services\InventarioMovimientoService;
 use App\Domains\Inventario\Services\InventarioPermisoService;
 use App\Domains\Inventario\Services\InventarioService;
@@ -14,7 +16,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use App\Domains\Inventario\Services\InventarioAjusteCriticoService;
 use Throwable;
 
 class InventarioController
@@ -27,23 +28,21 @@ class InventarioController
 
     protected InventarioValorizacionService $valorizacionService;
 
+    protected InventarioLoteService $loteService;
+
     public function __construct(
         InventarioService $service,
         InventarioMovimientoService $movimientoService,
         InventarioPermisoService $permisos,
-        InventarioValorizacionService $valorizacionService
+        InventarioValorizacionService $valorizacionService,
+        InventarioLoteService $loteService
     ) {
         $this->service = $service;
         $this->movimientoService = $movimientoService;
         $this->permisos = $permisos;
         $this->valorizacionService = $valorizacionService;
+        $this->loteService = $loteService;
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 1 - Catálogos, productos y bodegas
-    |--------------------------------------------------------------------------
-    */
 
     public function catalogos(Request $request): JsonResponse
     {
@@ -103,6 +102,8 @@ class InventarioController
                 'stock_minimo' => 'nullable|numeric|min:0',
                 'bodega_defecto_id' => 'nullable|integer',
                 'permite_merma' => 'nullable|boolean',
+                'maneja_lotes' => 'nullable|boolean',
+                'requiere_fecha_vencimiento' => 'nullable|boolean',
                 'activo' => 'nullable|boolean',
             ]);
 
@@ -135,6 +136,8 @@ class InventarioController
                 'stock_minimo' => 'nullable|numeric|min:0',
                 'bodega_defecto_id' => 'nullable|integer',
                 'permite_merma' => 'nullable|boolean',
+                'maneja_lotes' => 'nullable|boolean',
+                'requiere_fecha_vencimiento' => 'nullable|boolean',
                 'activo' => 'nullable|boolean',
             ]);
 
@@ -198,6 +201,7 @@ class InventarioController
             $filtros = $request->validate([
                 'producto_id' => ['nullable', 'integer'],
                 'bodega_id' => ['nullable', 'integer'],
+                'lote_id' => ['nullable', 'integer'],
                 'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
                 'desde' => ['nullable', 'date'],
                 'hasta' => ['nullable', 'date'],
@@ -229,6 +233,14 @@ class InventarioController
                 'bodega_destino_id' => ['nullable', 'integer'],
                 'cantidad' => ['required', 'numeric', 'gt:0'],
                 'costo_unitario' => ['nullable', 'numeric', 'min:0'],
+
+                'lote_id' => ['nullable', 'integer'],
+                'lote' => ['nullable', 'array'],
+                'lote.codigo_lote' => ['required_with:lote', 'string', 'max:80'],
+                'lote.fecha_fabricacion' => ['nullable', 'date'],
+                'lote.fecha_vencimiento' => ['nullable', 'date'],
+                'lote.observacion' => ['nullable', 'string', 'max:2000'],
+
                 'referencia' => ['nullable', 'string', 'max:120'],
                 'motivo' => ['nullable', 'string', 'max:80'],
                 'observacion' => ['nullable', 'string', 'max:2000'],
@@ -247,9 +259,12 @@ class InventarioController
             return response()->json([
                 'success' => true,
                 'data' => $movimiento->load([
-                    'producto:id,empresa_id,sku,nombre,activo',
+                    'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
                     'bodegaOrigen:id,empresa_id,codigo,nombre,estado',
                     'bodegaDestino:id,empresa_id,codigo,nombre,estado',
+                    'lotes.lote:id,empresa_id,producto_id,codigo_lote,fecha_fabricacion,fecha_vencimiento,activo',
+                    'lotes.bodegaOrigen:id,empresa_id,codigo,nombre,estado',
+                    'lotes.bodegaDestino:id,empresa_id,codigo,nombre,estado',
                 ]),
                 'message' => 'Movimiento de inventario registrado correctamente.',
             ], 201);
@@ -270,6 +285,7 @@ class InventarioController
             $filtros = $request->validate([
                 'producto_id' => ['nullable', 'integer'],
                 'bodega_id' => ['nullable', 'integer'],
+                'lote_id' => ['nullable', 'integer'],
                 'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
                 'desde' => ['nullable', 'date'],
                 'hasta' => ['nullable', 'date'],
@@ -298,6 +314,7 @@ class InventarioController
 
             $filtros = $request->validate([
                 'bodega_id' => ['nullable', 'integer'],
+                'lote_id' => ['nullable', 'integer'],
                 'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
                 'desde' => ['nullable', 'date'],
                 'hasta' => ['nullable', 'date'],
@@ -401,112 +418,158 @@ class InventarioController
 
     /*
     |--------------------------------------------------------------------------
-    | Validaciones privadas
+    | Fase 5 - Lotes, vencimientos y trazabilidad avanzada
     |--------------------------------------------------------------------------
+    |
+    | Inventario NO emite, gestiona ni prepara DTE.
+    | Los lotes entregan trazabilidad granular por producto/bodega/lote.
+    |
     */
 
-    private function validarPermisoMovimiento(User $usuario, string $tipo): void
+    public function lotes(Request $request): JsonResponse
     {
-        $permiso = match ($tipo) {
-            MovimientoInventario::TIPO_ENTRADA => 'inventario.movimientos.entrada',
-            MovimientoInventario::TIPO_SALIDA => 'inventario.movimientos.salida',
-            MovimientoInventario::TIPO_TRASPASO => 'inventario.movimientos.traspaso',
-            MovimientoInventario::TIPO_AJUSTE_POSITIVO,
-            MovimientoInventario::TIPO_AJUSTE_NEGATIVO => 'inventario.movimientos.ajuste',
-            default => 'inventario.movimientos.ver',
-        };
+        try {
+            $filtros = $request->validate([
+                'producto_id' => ['nullable', 'integer'],
+                'activo' => ['nullable'],
+                'search' => ['nullable', 'string', 'max:120'],
+                'vencidos' => ['nullable'],
+                'por_vencer_hasta' => ['nullable', 'date'],
+                'page' => ['nullable', 'integer', 'min:1'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
 
-        $this->permisos->exigir($usuario, $permiso);
+            $paginador = $this->loteService->listarLotes(
+                $request->user(),
+                $filtros
+            );
+
+            return response()->json($this->respuestaPaginada($paginador));
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
     }
 
-    private function validarBodegasMovimiento(array $datos): void
+    public function storeLote(Request $request): JsonResponse
     {
-        $tipo = $datos['tipo'];
-
-        if (
-            in_array($tipo, [
-                MovimientoInventario::TIPO_SALIDA,
-                MovimientoInventario::TIPO_TRASPASO,
-                MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
-            ], true)
-            && empty($datos['bodega_origen_id'])
-        ) {
-            throw ValidationException::withMessages([
-                'bodega_origen_id' => 'La bodega origen es obligatoria para este tipo de movimiento.',
+        try {
+            $datos = $request->validate([
+                'producto_id' => ['required', 'integer'],
+                'codigo_lote' => ['required', 'string', 'max:80'],
+                'fecha_fabricacion' => ['nullable', 'date'],
+                'fecha_vencimiento' => ['nullable', 'date'],
+                'observacion' => ['nullable', 'string', 'max:2000'],
+                'activo' => ['nullable', 'boolean'],
             ]);
+
+            $lote = $this->loteService->crearLote($request->user(), $datos);
+
+            return response()->json([
+                'success' => true,
+                'data' => $lote,
+                'message' => 'Lote de inventario creado correctamente.',
+            ], 201);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
         }
+    }
 
-        if (
-            in_array($tipo, [
-                MovimientoInventario::TIPO_ENTRADA,
-                MovimientoInventario::TIPO_TRASPASO,
-                MovimientoInventario::TIPO_AJUSTE_POSITIVO,
-            ], true)
-            && empty($datos['bodega_destino_id'])
-        ) {
-            throw ValidationException::withMessages([
-                'bodega_destino_id' => 'La bodega destino es obligatoria para este tipo de movimiento.',
+    public function showLote(Request $request, $id): JsonResponse
+    {
+        try {
+            $lote = $this->loteService->obtenerLote($request->user(), (int) $id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $lote,
             ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
         }
+    }
 
-        if (
-            $tipo === MovimientoInventario::TIPO_TRASPASO
-            && !empty($datos['bodega_origen_id'])
-            && !empty($datos['bodega_destino_id'])
-            && (int) $datos['bodega_origen_id'] === (int) $datos['bodega_destino_id']
-        ) {
-            throw ValidationException::withMessages([
-                'bodega_destino_id' => 'La bodega destino debe ser distinta a la bodega origen.',
+    public function updateLote(Request $request, $id): JsonResponse
+    {
+        try {
+            $datos = $request->validate([
+                'codigo_lote' => ['nullable', 'string', 'max:80'],
+                'fecha_fabricacion' => ['nullable', 'date'],
+                'fecha_vencimiento' => ['nullable', 'date'],
+                'observacion' => ['nullable', 'string', 'max:2000'],
+                'activo' => ['nullable', 'boolean'],
             ]);
+
+            $lote = $this->loteService->actualizarLote(
+                $request->user(),
+                (int) $id,
+                $datos
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $lote,
+                'message' => 'Lote de inventario actualizado correctamente.',
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function lotesProducto(Request $request, $id): JsonResponse
+    {
+        try {
+            $filtros = $request->validate([
+                'activo' => ['nullable'],
+                'con_stock' => ['nullable'],
+            ]);
+
+            $lotes = $this->loteService->listarLotesProducto(
+                $request->user(),
+                (int) $id,
+                $filtros
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $lotes,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function stockLote(Request $request, $id): JsonResponse
+    {
+        try {
+            $stock = $this->loteService->consultarStockPorLote(
+                $request->user(),
+                (int) $id
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $stock,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
         }
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Helpers de respuesta
-    |--------------------------------------------------------------------------
-    */
-
-    private function respuestaPaginada(LengthAwarePaginator $paginador): array
-    {
-        return [
-            'success' => true,
-            'data' => $paginador->items(),
-            'pagination' => [
-                'total' => $paginador->total(),
-                'totalPages' => $paginador->lastPage(),
-                'page' => $paginador->currentPage(),
-            ],
-        ];
-    }
-
-    private function respuestaPaginadaConResumen(LengthAwarePaginator $paginador, array $resumen): array
-    {
-        $respuesta = $this->respuestaPaginada($paginador);
-        $respuesta['resumen'] = $resumen;
-
-        return $respuesta;
-    }
-
-    private function respuestaValidacion(ValidationException $e): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'Los datos enviados no son válidos.',
-            'errors' => $e->errors(),
-        ], 422);
-    }
-
-    private function respuestaError(Exception $e): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 422);
-    }
-        /*
-    |--------------------------------------------------------------------------
-    | Fase 4 — Mermas y ajustes críticos
+    | Fase 4 - Mermas y ajustes críticos
     |--------------------------------------------------------------------------
     |
     | Inventario NO emite, gestiona ni prepara DTE.
@@ -631,6 +694,112 @@ class InventarioController
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validaciones privadas
+    |--------------------------------------------------------------------------
+    */
+
+    private function validarPermisoMovimiento(User $usuario, string $tipo): void
+    {
+        $permiso = match ($tipo) {
+            MovimientoInventario::TIPO_ENTRADA => 'inventario.movimientos.entrada',
+            MovimientoInventario::TIPO_SALIDA => 'inventario.movimientos.salida',
+            MovimientoInventario::TIPO_TRASPASO => 'inventario.movimientos.traspaso',
+            MovimientoInventario::TIPO_AJUSTE_POSITIVO,
+            MovimientoInventario::TIPO_AJUSTE_NEGATIVO => 'inventario.movimientos.ajuste',
+            default => 'inventario.movimientos.ver',
+        };
+
+        $this->permisos->exigir($usuario, $permiso);
+    }
+
+    private function validarBodegasMovimiento(array $datos): void
+    {
+        $tipo = $datos['tipo'];
+
+        if (
+            in_array($tipo, [
+                MovimientoInventario::TIPO_SALIDA,
+                MovimientoInventario::TIPO_TRASPASO,
+                MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
+            ], true)
+            && empty($datos['bodega_origen_id'])
+        ) {
+            throw ValidationException::withMessages([
+                'bodega_origen_id' => 'La bodega origen es obligatoria para este tipo de movimiento.',
+            ]);
+        }
+
+        if (
+            in_array($tipo, [
+                MovimientoInventario::TIPO_ENTRADA,
+                MovimientoInventario::TIPO_TRASPASO,
+                MovimientoInventario::TIPO_AJUSTE_POSITIVO,
+            ], true)
+            && empty($datos['bodega_destino_id'])
+        ) {
+            throw ValidationException::withMessages([
+                'bodega_destino_id' => 'La bodega destino es obligatoria para este tipo de movimiento.',
+            ]);
+        }
+
+        if (
+            $tipo === MovimientoInventario::TIPO_TRASPASO
+            && !empty($datos['bodega_origen_id'])
+            && !empty($datos['bodega_destino_id'])
+            && (int) $datos['bodega_origen_id'] === (int) $datos['bodega_destino_id']
+        ) {
+            throw ValidationException::withMessages([
+                'bodega_destino_id' => 'La bodega destino debe ser distinta a la bodega origen.',
+            ]);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers de respuesta
+    |--------------------------------------------------------------------------
+    */
+
+    private function respuestaPaginada(LengthAwarePaginator $paginador): array
+    {
+        return [
+            'success' => true,
+            'data' => $paginador->items(),
+            'pagination' => [
+                'total' => $paginador->total(),
+                'totalPages' => $paginador->lastPage(),
+                'page' => $paginador->currentPage(),
+            ],
+        ];
+    }
+
+    private function respuestaPaginadaConResumen(LengthAwarePaginator $paginador, array $resumen): array
+    {
+        $respuesta = $this->respuestaPaginada($paginador);
+        $respuesta['resumen'] = $resumen;
+
+        return $respuesta;
+    }
+
+    private function respuestaValidacion(ValidationException $e): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Los datos enviados no son válidos.',
+            'errors' => $e->errors(),
+        ], 422);
+    }
+
+    private function respuestaError(Exception $e): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 422);
     }
 
     private function mensajeValidacionAjusteCritico(ValidationException $e): string
