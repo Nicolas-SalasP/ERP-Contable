@@ -106,9 +106,10 @@ const AsientoManual = () => {
         if (!estaCuadrado) return Swal.fire({ icon: 'warning', text: 'El asiento no está cuadrado.' });
 
         const detallesFormateados = filas.map(f => ({
-            cuenta_codigo: f.cuenta.value,
+            cuenta_contable: f.cuenta.value,
             debe: f.debe,
             haber: f.haber,
+            tipo_operacion: f.debe > 0 ? 'DEBE' : 'HABER',
             glosa_detalle: f.glosa.trim() || null,
             centro_costo_id: f.centroCosto ? f.centroCosto.value : null,
             empleado_nombre: f.empleado.trim() || null
@@ -120,12 +121,12 @@ const AsientoManual = () => {
         try {
             const res = await api.post('/contabilidad/asiento-manual/avanzado', payload);
             if (res.success) {
-                Swal.fire({ icon: 'success', title: 'Comprobante Generado', text: `Folio: ${res.codigo || ''}`, confirmButtonColor: '#10b981' });
+                Swal.fire({ icon: 'success', title: 'Comprobante Generado', text: `Folio: ${res.data?.numero_comprobante || ''}`, confirmButtonColor: '#10b981' });
                 setGlosaGeneral('');
                 setFilas([]);
             }
         } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.mensaje || 'Error al guardar.' });
+            Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || 'Error al guardar.' });
         } finally {
             setLoading(false);
         }
