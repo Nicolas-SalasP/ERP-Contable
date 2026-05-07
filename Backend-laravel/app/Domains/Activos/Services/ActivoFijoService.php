@@ -67,8 +67,20 @@ class ActivoFijoService
     public function depreciarMes(int $empresaId, int $usuarioId, string $mesAnio)
     {
         $fechaCalculo = date('Y-m-t', strtotime($mesAnio . '-01'));
+        $glosaMes = "Centralización Depreciación Activos Fijos - " . date('m/Y', strtotime($fechaCalculo));
 
-        return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculo) {
+        return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculo, $glosaMes) {
+            $yaEjecutado = DB::table('asientos_contables')
+                ->where('empresa_id', $empresaId)
+                ->where('origen_modulo', 'activos')
+                ->where('glosa', $glosaMes)
+                ->where('estado', 'MAYORIZADO')
+                ->exists();
+
+            if ($yaEjecutado) {
+                throw new Exception("El proceso de depreciación para este período ya fue ejecutado y contabilizado.");
+            }
+
             $activosOperativos = ActivoFijo::where('empresa_id', $empresaId)
                 ->where('estado', 'ACTIVO')
                 ->count();
@@ -92,10 +104,13 @@ class ActivoFijoService
 
             foreach ($activos as $activo) {
                 $montoDepreciable = $activo->valor_adquisicion - $activo->valor_residual;
+                $saldoPorDepreciar = $montoDepreciable - $activo->depreciacion_acumulada;
                 $cuotaMensual = round($montoDepreciable / $activo->vida_util_meses, 0);
 
-                $saldoPorDepreciar = $montoDepreciable - $activo->depreciacion_acumulada;
-                if ($cuotaMensual > $saldoPorDepreciar) {
+                $diferencia = $saldoPorDepreciar - $cuotaMensual;
+                if ($diferencia <= 0) {
+                    $cuotaMensual = $saldoPorDepreciar;
+                } elseif ($diferencia <= 10 && $cuotaMensual > 10) {
                     $cuotaMensual = $saldoPorDepreciar;
                 }
 
@@ -130,33 +145,28 @@ class ActivoFijoService
                 return ['mensaje' => 'Los activos ya han alcanzado su valor residual mínimo.', 'asiento_comprobante' => null];
             }
 
-            try {
-                if (!empty($idsActivos)) {
-                    $casesStr = implode(' ', $sqlCases);
-                    $placeholders = implode(',', array_fill(0, count($idsActivos), '?'));
-                    $sqlBindings = array_merge($sqlBindings, $idsActivos);
+            if (!empty($idsActivos)) {
+                $casesStr = implode(' ', $sqlCases);
+                $placeholders = implode(',', array_fill(0, count($idsActivos), '?'));
+                $sqlBindings = array_merge($sqlBindings, $idsActivos);
 
-                    DB::statement("UPDATE activos_fijos SET depreciacion_acumulada = CASE id {$casesStr} ELSE depreciacion_acumulada END WHERE id IN ({$placeholders})", $sqlBindings);
-                }
-
-                $asientoService = app(AsientoContableService::class);
-                $cabecera = [
-                    'empresa_id' => $empresaId,
-                    'usuario_id' => $usuarioId,
-                    'fecha' => $fechaCalculo,
-                    'glosa' => "Centralización Depreciación Activos Fijos - " . date('m/Y', strtotime($fechaCalculo)),
-                    'tipo_asiento' => 'traspaso',
-                    'origen_modulo' => 'activos',
-                    'estado' => 'MAYORIZADO'
-                ];
-
-                $asiento = $asientoService->registrarAsiento($cabecera, $detallesAsiento);
-                $comprobante = $asiento->numero_comprobante;
-                $mensaje = "Depreciación calculada correctamente. Total mes: $" . number_format($totalDepreciacionMes, 0, ',', '.');
-            } catch (Exception $e) {
-                $comprobante = null;
-                $mensaje = "Depreciación física registrada, pero el asiento contable falló: " . $e->getMessage();
+                DB::statement("UPDATE activos_fijos SET depreciacion_acumulada = CASE id {$casesStr} ELSE depreciacion_acumulada END WHERE id IN ({$placeholders})", $sqlBindings);
             }
+
+            $asientoService = app(AsientoContableService::class);
+            $cabecera = [
+                'empresa_id' => $empresaId,
+                'usuario_id' => $usuarioId,
+                'fecha' => $fechaCalculo,
+                'glosa' => $glosaMes,
+                'tipo_asiento' => 'traspaso',
+                'origen_modulo' => 'activos',
+                'estado' => 'MAYORIZADO'
+            ];
+
+            $asiento = $asientoService->registrarAsiento($cabecera, $detallesAsiento);
+            $comprobante = $asiento->numero_comprobante;
+            $mensaje = "Depreciación calculada correctamente. Total mes: $" . number_format($totalDepreciacionMes, 0, ',', '.');
 
             return [
                 'mensaje' => $mensaje,

@@ -8,6 +8,7 @@ use App\Domains\Contabilidad\Models\PlanCuenta;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Exception;
 
 class ActivoFijoController
@@ -52,7 +53,7 @@ class ActivoFijoController
             $this->autorizarAccesoContable($request->user());
 
             $datos = $request->validate([
-                'nombre' => 'required|string',
+                'nombre' => 'required|string|max:255',
                 'codigo' => 'nullable|string',
                 'descripcion' => 'nullable|string',
                 'cuenta_activo_codigo' => 'nullable|string',
@@ -61,7 +62,7 @@ class ActivoFijoController
                 'centro_costo_id' => 'nullable|integer',
                 'valor_adquisicion' => 'required|numeric|min:1',
                 'fecha_adquisicion' => 'required|date',
-                'vida_util_meses' => 'required|integer|min:1',
+                'vida_util_meses' => 'required|integer|min:1|max:1200',
                 'valor_residual' => 'nullable|numeric|min:1',
                 'estado' => 'nullable|string'
             ]);
@@ -146,10 +147,10 @@ class ActivoFijoController
             $this->autorizarAccesoContable($request->user());
 
             $datos = $request->validate([
-                'nombre' => 'required|string',
+                'nombre' => 'required|string|max:255',
                 'tipo_activo_id' => 'required|integer',
                 'anio_fabricacion' => 'required|integer',
-                'vida_util_meses' => 'required|integer|min:1',
+                'vida_util_meses' => 'required|integer|min:1|max:1200',
                 'centro_costo_id' => 'nullable|integer',
                 'empleado_id' => 'nullable|integer'
             ]);
@@ -191,7 +192,7 @@ class ActivoFijoController
     public function analisisProyecto(Request $request, $id)
     {
         try {
-            $analisis = $this->service->analizarProyecto($request->user()->empresa_id, $id);
+            $analisis = $this->service->analizarProyecto($request->user()->empresa_id, (int) $id);
             return response()->json(['success' => true, 'data' => $analisis]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'No se pudo cargar el análisis del proyecto. Es posible que no exista.'], 404);
@@ -218,7 +219,7 @@ class ActivoFijoController
                 'monto' => 'required|numeric|min:1'
             ]);
 
-            $this->service->imputarFacturaAProyecto($request->user()->empresa_id, $id, $datos);
+            $this->service->imputarFacturaAProyecto($request->user()->empresa_id, (int) $id, $datos);
             return response()->json(['success' => true, 'message' => 'Costo imputado exitosamente']);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
@@ -233,7 +234,7 @@ class ActivoFijoController
         try {
             $this->autorizarAccesoContable($request->user());
 
-            $activo = $this->service->activarProyecto($request->user()->empresa_id, $request->user()->id, $id);
+            $activo = $this->service->activarProyecto($request->user()->empresa_id, $request->user()->id, (int) $id);
             return response()->json(['success' => true, 'message' => 'Proyecto activado y capitalizado', 'data' => $activo]);
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
@@ -250,28 +251,30 @@ class ActivoFijoController
                 'tipo_activo_id' => 'nullable|integer',
                 'cuenta_depreciacion_id' => 'nullable|integer',
                 'cuenta_gasto_id' => 'nullable|integer',
-                'nombre' => 'nullable|string',
-                'vida_util_meses' => 'nullable|integer|min:1'
+                'nombre' => 'nullable|string|max:255',
+                'vida_util_meses' => 'nullable|integer|min:1|max:1200'
             ]);
 
-            $proyecto = $this->service->actualizarProyecto($request->user()->empresa_id, $id, $datos);
+            $proyecto = $this->service->actualizarProyecto($request->user()->empresa_id, (int) $id, $datos);
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Proyecto actualizado correctamente',
                 'data' => $proyecto
             ]);
         } catch (ValidationException $e) {
             return response()->json([
-                'success' => false, 
-                'message' => 'Error de validación', 
+                'success' => false,
+                'message' => 'Error de validación',
                 'errors' => $e->errors()
             ], 422);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'El proyecto no existe o no pertenece a su empresa.'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
-    
+
     public function darDeBaja(Request $request, $id)
     {
         try {
@@ -281,10 +284,10 @@ class ActivoFijoController
                 'motivo' => 'nullable|string|max:255'
             ]);
 
-            $resultado = $this->service->darDeBaja($request->user()->empresa_id, $request->user()->id, $id, $datos);
+            $resultado = $this->service->darDeBaja($request->user()->empresa_id, $request->user()->id, (int) $id, $datos);
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => $resultado['mensaje']
             ]);
         } catch (Exception $e) {

@@ -267,6 +267,7 @@ class FacturaService
     {
         return Factura::where('empresa_id', $empresaId)
             ->where('tipo', 'COMPRA')
+            ->where('estado', '!=', 'ANULADA')
             ->whereNull('proyecto_activo_id')
             ->with('proveedor')
             ->get()
