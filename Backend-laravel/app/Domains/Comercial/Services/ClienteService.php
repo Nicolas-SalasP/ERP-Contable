@@ -68,4 +68,18 @@ class ClienteService
         $cliente->update(['estado' => 'ACTIVO']);
         return $cliente;
     }
+
+    public function reactivarCliente(int $empresaId, int $clienteId)
+    {
+        $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($clienteId);
+
+        if ($cliente->estado === 'ACTIVO') {
+            throw new Exception("El cliente ya se encuentra activo.");
+        }
+
+        $cliente->estado = 'ACTIVO';
+        $cliente->save();
+
+        return $cliente;
+    }
 }

@@ -31,13 +31,13 @@ class CotizacionService
 
             if (!empty($datos['numero_cotizacion'])) {
                 $existe = Cotizacion::where('empresa_id', $datos['empresa_id'])
-                            ->where('numero_cotizacion', $datos['numero_cotizacion'])
-                            ->exists();
+                    ->where('numero_cotizacion', $datos['numero_cotizacion'])
+                    ->exists();
                 if ($existe) {
                     throw new Exception("El número de cotización {$datos['numero_cotizacion']} ya existe.");
                 }
             }
-            
+
             $subtotalCalculado = 0;
             foreach ($detalles as $det) {
                 $subtotalCalculado += ($det['cantidad'] * $det['precio_unitario']);
@@ -121,7 +121,7 @@ class CotizacionService
         }
 
         $estado = EstadoCotizacion::where('nombre', $nombreEstado)->first();
-        
+
         if (!$estado) {
             throw new Exception("El estado '$nombreEstado' no es válido en el sistema.");
         }
@@ -130,5 +130,55 @@ class CotizacionService
         $cotizacion->save();
 
         return $cotizacion->load(['cliente', 'estado']);
+    }
+
+    public function actualizarCotizacion(int $empresaId, int $cotiId, array $datos)
+    {
+        return DB::transaction(function () use ($empresaId, $cotiId, $datos) {
+            $cotizacion = Cotizacion::where('empresa_id', $empresaId)->findOrFail($cotiId);
+
+            if (in_array($cotizacion->estado_id, [3, 5])) {
+                throw new Exception("No se puede editar una cotización que ya ha sido aprobada o facturada.");
+            }
+
+            if (isset($datos['fecha_validez'])) {
+                $cotizacion->fecha_validez = $datos['fecha_validez'];
+            }
+            if (isset($datos['porcentaje_descuento'])) {
+                $cotizacion->porcentaje_descuento = $datos['porcentaje_descuento'];
+            }
+
+            if (isset($datos['detalles'])) {
+                $cotizacion->detalles()->delete();
+
+                $subtotal = 0;
+                foreach ($datos['detalles'] as $item) {
+                    $lineSubtotal = $item['cantidad'] * $item['precio_unitario'];
+                    $subtotal += $lineSubtotal;
+
+                    $cotizacion->detalles()->create([
+                        'producto_nombre' => $item['producto_nombre'],
+                        'cantidad' => $item['cantidad'],
+                        'precio_unitario' => $item['precio_unitario'],
+                        'subtotal' => $lineSubtotal
+                    ]);
+                }
+
+                $descuento = $subtotal * (($cotizacion->porcentaje_descuento ?? 0) / 100);
+                $neto = $subtotal - $descuento;
+                $iva = $cotizacion->es_afecta ? ($neto * 0.19) : 0;
+
+                $cotizacion->subtotal = $subtotal;
+                $cotizacion->monto_descuento = $descuento;
+                $cotizacion->monto_neto = $neto;
+                $cotizacion->monto_iva = $iva;
+                $cotizacion->monto_total = $neto + $iva;
+                $cotizacion->total = $neto + $iva;
+            }
+
+            $cotizacion->save();
+
+            return $cotizacion->load('detalles');
+        });
     }
 }

@@ -168,4 +168,61 @@ class AsientoContableService
             'numero_comprobante' => $anio . $tipoCode . $secuencia
         ]);
     }
+
+    public function reversarAsientoPorId(int $empresaId, int $userId, int $asientoId, string $fechaReversa, string $motivo)
+    {
+        $asientoOriginal = AsientoContable::where('empresa_id', $empresaId)->findOrFail($asientoId);
+
+        if ($fechaReversa < $asientoOriginal->fecha->format('Y-m-d')) {
+            throw new Exception('No puedes reversar con una fecha anterior al asiento original.');
+        }
+
+        return $this->procesarReversa($asientoOriginal, $userId, $fechaReversa, $motivo);
+    }
+
+    public function reversarAsiento(int $empresaId, int $userId, string $numeroComprobante, string $motivo)
+    {
+        $asientoOriginal = AsientoContable::where('empresa_id', $empresaId)
+            ->where('numero_comprobante', $numeroComprobante)
+            ->firstOrFail();
+
+        return $this->procesarReversa($asientoOriginal, $userId, now()->toDateString(), $motivo);
+    }
+
+    private function procesarReversa(AsientoContable $asientoOriginal, int $userId, string $fechaReversa, string $motivo)
+    {
+        $asientoOriginal->load('detalles');
+
+        return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
+            $tempNum = 'T' . time() . rand(10, 99);
+            $nuevoAsiento = AsientoContable::create([
+                'empresa_id' => $asientoOriginal->empresa_id,
+                'fecha' => $fechaReversa,
+                'glosa' => $motivo,
+                'tipo_asiento' => 'traspaso',
+                'origen_modulo' => $asientoOriginal->origen_modulo,
+                'origen_id' => $asientoOriginal->origen_id,
+                'usuario_id' => $userId,
+                'estado' => 'MAYORIZADO',
+                'numero_comprobante' => $tempNum
+            ]);
+
+            foreach ($asientoOriginal->detalles as $detalle) {
+                $nuevoAsiento->detalles()->create([
+                    'cuenta_contable' => $detalle->cuenta_contable,
+                    'fecha' => $fechaReversa,
+                    'tipo_operacion' => $detalle->debe > 0 ? 'HABER' : 'DEBE',
+                    'debe' => $detalle->haber,
+                    'haber' => $detalle->debe,
+                    'descripcion_extensa' => "REVERSA: " . ($detalle->descripcion_extensa ?? 'Anulación'),
+                    'centro_costo_id' => $detalle->centro_costo_id,
+                    'empleado_nombre' => $detalle->empleado_nombre,
+                ]);
+            }
+
+            $this->generarNumeroComprobante($nuevoAsiento);
+
+            return $nuevoAsiento;
+        });
+    }
 }

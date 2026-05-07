@@ -4,6 +4,7 @@ namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Services\ClienteService;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -67,6 +68,17 @@ class ClienteController
     public function update(Request $request, $id)
     {
         try {
+            $request->validate([
+                'rut' => [
+                    'sometimes',
+                    'string',
+                    Rule::unique('clientes', 'rut')
+                        ->where('empresa_id', $request->user()->empresa_id)
+                        ->ignore($id)
+                ],
+                'razon_social' => 'sometimes|string',
+                'razonSocial' => 'sometimes|string',
+            ]);
             $datos = [];
 
             if ($request->has('rut'))
@@ -129,6 +141,24 @@ class ClienteController
             return response()->json(['success' => true, 'message' => 'Cliente activado']);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function reactivar(Request $request, $id)
+    {
+        try {
+            $cliente = $this->service->reactivarCliente($request->user()->empresa_id, (int) $id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cliente reactivado exitosamente.',
+                'data' => $cliente
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
 }

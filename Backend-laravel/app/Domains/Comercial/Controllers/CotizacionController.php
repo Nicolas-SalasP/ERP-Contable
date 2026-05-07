@@ -140,4 +140,34 @@ class CotizacionController
             ], 400);
         }
     }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $datos = $request->validate([
+                'porcentaje_descuento' => 'nullable|numeric|min:0|max:100',
+                'fecha_validez' => 'nullable|date',
+                'detalles' => 'nullable|array|min:1',
+                'detalles.*.producto_nombre' => 'required_with:detalles|string|max:255',
+                'detalles.*.cantidad' => 'required_with:detalles|numeric|min:1',
+                'detalles.*.precio_unitario' => 'required_with:detalles|numeric|min:0',
+            ]);
+
+            $cotizacion = $this->service->actualizarCotizacion(
+                $request->user()->empresa_id, 
+                (int) $id, 
+                $datos
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cotización actualizada correctamente.',
+                'data' => $cotizacion
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
 }

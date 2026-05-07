@@ -88,7 +88,7 @@ class ProveedorService
 
         return [
             'proveedor' => $proveedor,
-            'facturas'  => $facturas,
+            'facturas' => $facturas,
             'anticipos' => $anticipos
         ];
     }
@@ -135,7 +135,7 @@ class ProveedorService
         }
 
         $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)->findOrFail($anticipoId);
-        
+
         $anticipo->archivo_pdf = $rutaArchivo;
         $anticipo->save();
 
@@ -242,5 +242,12 @@ class ProveedorService
                 'comprobante_traspaso' => $asiento ? $asiento->numero_comprobante : null
             ];
         });
+    }
+
+    public function obtenerProveedoresPaginados(int $empresaId, int $limit)
+    {
+        return Proveedor::where('empresa_id', $empresaId)
+            ->orderBy('created_at', 'desc')
+            ->paginate($limit);
     }
 }

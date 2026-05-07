@@ -65,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/clientes/{id}', [ClienteController::class, 'update']);
     Route::delete('/clientes/{id}', [ClienteController::class, 'destroy']);
     Route::put('/clientes/{id}/activar', [ClienteController::class, 'activar']);
+    Route::patch('/clientes/{id}/reactivar', [ClienteController::class, 'reactivar']);
 
     // Comercial - Proveedores
     Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo']);
@@ -76,16 +77,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // Comercial - Facturas
     Route::get('/facturas/historial', [FacturaController::class, 'historial']);
     Route::get('/facturas/check', [FacturaController::class, 'check']);
+    Route::get('/facturas/vencidas', [FacturaController::class, 'vencidas']);
+    Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel']);
     Route::apiResource('facturas', FacturaController::class)->except(['update']);
     Route::get('/facturas/{id}/asiento', [FacturaController::class, 'verAsiento']);
     Route::post('/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificarAsiento']);
     Route::get('/facturas/{id}/auditoria', [FacturaController::class, 'auditoria']);
     Route::post('/facturas/{id}/pagar', [FacturaController::class, 'pagar']);
+    Route::post('/facturas/{id}/anular', [FacturaController::class, 'anular']);
 
     // Comercial - Cotizaciones
     Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);
     Route::put('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
     Route::apiResource('cotizaciones', CotizacionController::class)->except(['show', 'update']);
+    Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update']);
 
     // Tesoreria - Cuentas de Proveedores
     Route::get('/cuentas-bancarias/proveedor/{proveedorId}', [CuentaProveedorController::class, 'index']);

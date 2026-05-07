@@ -175,21 +175,35 @@ class AsientoContableController
     public function reversar(Request $request, $id)
     {
         try {
-            $request->validate([
+            $datos = $request->validate([
                 'fecha_reversa' => 'required|date',
                 'motivo' => 'required|string|min:3'
             ]);
 
-            $asiento = \App\Domains\Contabilidad\Models\AsientoContable::where('empresa_id', $request->user()->empresa_id)->findOrFail($id);
-            if ($request->fecha_reversa < $asiento->fecha->format('Y-m-d')) {
-                throw ValidationException::withMessages(['fecha_reversa' => 'No puedes reversar con una fecha anterior.']); // TODO 8 resuelto
-            }
+            $nuevoAsiento = $this->service->reversarAsientoPorId(
+                $request->user()->empresa_id,
+                $request->user()->id,
+                (int) $id,
+                $datos['fecha_reversa'],
+                $datos['motivo']
+            );
 
-            return response()->json(['success' => true, 'message' => 'Asiento reversado.']);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Asiento reversado exitosamente.',
+                'data' => $nuevoAsiento
+            ]);
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Errores de validación', 'errors' => $e->errors()], 422);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Errores de validación', 
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
 }

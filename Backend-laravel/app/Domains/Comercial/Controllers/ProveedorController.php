@@ -18,9 +18,17 @@ class ProveedorController
 
     public function index(Request $request)
     {
+        $limit = (int) $request->query('limit', 15);
+        $paginador = $this->service->obtenerProveedoresPaginados($request->user()->empresa_id, $limit);
+
         return response()->json([
             'success' => true,
-            'data' => $this->service->obtenerProveedoresPorEmpresa($request->user()->empresa_id)
+            'data' => $paginador->items(),
+            'pagination' => [
+                'total' => $paginador->total(),
+                'totalPages' => $paginador->lastPage(),
+                'page' => $paginador->currentPage()
+            ]
         ]);
     }
 
@@ -108,25 +116,25 @@ class ProveedorController
             ]);
 
             $anticipo = $this->service->registrarAnticipo(
-                $request->user()->empresa_id, 
+                $request->user()->empresa_id,
                 $datosValidados
             );
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Anticipo registrado correctamente.',
                 'data' => $anticipo
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'success' => false, 
-                'message' => 'Faltan datos obligatorios', 
+                'success' => false,
+                'message' => 'Faltan datos obligatorios',
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'mensaje' => $e->getMessage()
             ], 400);
         }
@@ -137,7 +145,7 @@ class ProveedorController
         $rutaPdf = null;
         try {
             $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
-            
+
             if ($request->hasFile('pdf')) {
                 $path = $request->file('pdf')->store('anticipos_proveedores/pdfs', 'public');
                 $rutaPdf = 'storage/' . $path;
@@ -151,7 +159,7 @@ class ProveedorController
                 $pathToDelete = str_replace('storage/', '', $rutaPdf);
                 Storage::disk('public')->delete($pathToDelete);
             }
-            
+
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }

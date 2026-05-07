@@ -51,6 +51,14 @@ class FacturaService
             });
         }
 
+        if (!empty($filtros['fecha_desde'])) {
+            $query->whereDate('fecha_emision', '>=', $filtros['fecha_desde']);
+        }
+
+        if (!empty($filtros['fecha_hasta'])) {
+            $query->whereDate('fecha_emision', '<=', $filtros['fecha_hasta']);
+        }
+
         $limit = $filtros['limit'] ?? 10;
         return $query->orderBy('fecha_emision', 'desc')->paginate($limit);
     }
@@ -219,11 +227,11 @@ class FacturaService
     {
         DB::transaction(function () use ($empresaId, $usuarioId, $facturaId, $datos) {
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
-            
+
             if (!$factura->comprobante_contable) {
                 throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
             }
-            
+
             $asiento = AsientoContable::with('detalles')
                 ->where('empresa_id', $empresaId)
                 ->where('numero_comprobante', $factura->comprobante_contable)
@@ -277,7 +285,7 @@ class FacturaService
                     'factura_id' => $f->id,
                     'numero_factura' => $f->numero_factura,
                     'proveedor' => $nombreProv,
-                    'monto' => (float) $f->monto_neto 
+                    'monto' => (float) $f->monto_neto
                 ];
             })
             ->toArray();
@@ -393,4 +401,70 @@ class FacturaService
             ->get();
     }
 
+    public function anularFactura(int $empresaId, int $userId, int $facturaId, string $motivo)
+    {
+        return DB::transaction(function () use ($empresaId, $userId, $facturaId, $motivo) {
+
+            $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+
+            if ($factura->estado === 'ANULADA') {
+                throw new Exception("Esta factura ya fue anulada anteriormente.");
+            }
+
+            if ($factura->estado === 'PAGADA') {
+                throw new Exception("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.");
+            }
+
+            if ($factura->comprobante_contable) {
+                $this->asientoService->reversarAsiento(
+                    $empresaId,
+                    $userId,
+                    $factura->comprobante_contable,
+                    "Reversa automática por anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}"
+                );
+            }
+            
+            $factura->estado = 'ANULADA';
+
+            if ($factura->proyecto_activo_id) {
+                $factura->proyecto_activo_id = null;
+            }
+
+            $factura->save();
+
+            return $factura;
+        });
+    }
+
+    public function obtenerVencidas(int $empresaId)
+    {
+        return Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->whereNotNull('fecha_vencimiento')
+            ->whereDate('fecha_vencimiento', '<', now()->toDateString())
+            ->with('proveedor')
+            ->orderBy('fecha_vencimiento', 'asc')
+            ->get();
+    }
+
+    public function generarCsvExportacion(int $empresaId): string
+    {
+        $facturas = Factura::where('empresa_id', $empresaId)
+            ->with('proveedor')
+            ->orderBy('fecha_emision', 'desc')
+            ->get();
+
+        $csvData = "ID,Numero Factura,Proveedor,RUT,Fecha Emision,Fecha Vencimiento,Monto Neto,IVA,Monto Bruto,Estado\n";
+
+        foreach ($facturas as $f) {
+            $provNombre = $f->proveedor->razon_social ?? 'Sin Proveedor';
+            $provRut = $f->proveedor->rut ?? 'N/A';
+            $emision = $f->fecha_emision ? $f->fecha_emision->format('Y-m-d') : '';
+            $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
+            $csvData .= "{$f->id},{$f->numero_factura},\"{$provNombre}\",{$provRut},{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
+        }
+
+        return $csvData;
+    }
 }

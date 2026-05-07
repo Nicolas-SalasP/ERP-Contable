@@ -26,7 +26,7 @@ class FacturaController
 
     public function historial(Request $request)
     {
-        $filtros = $request->only(['estado', 'search', 'num', 'limit']);
+        $filtros = $request->only(['estado', 'search', 'num', 'limit', 'fecha_desde', 'fecha_hasta']);
         $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_id, $filtros);
 
         return response()->json([
@@ -106,6 +106,8 @@ class FacturaController
                 'cuentaIva' => 'nullable|string',   
                 'cuentaProveedor' => 'nullable|string',
                 'centro_costo_id' => 'nullable|integer',
+                'fecha_emision' => 'nullable|date',
+                'fecha_vencimiento' => 'nullable|date',
             ], [
                 'monto_bruto.gt' => 'El monto bruto debe ser mayor a 0',
                 'monto_neto.gt' => 'El monto neto debe ser mayor a 0',
@@ -230,6 +232,57 @@ class FacturaController
                 'success' => false,
                 'message' => $e->getMessage()
             ], 400);
+        }
+    }
+
+    public function anular(Request $request, $id)
+    {
+        try {
+            $request->validate(['motivo' => 'required|string|min:5']);
+
+            $this->service->anularFactura(
+                $request->user()->empresa_id,
+                $request->user()->id,
+                (int) $id,
+                $request->input('motivo')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Factura anulada con éxito y contabilidad reversada.'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function vencidas(Request $request)
+    {
+        try {
+            $vencidas = $this->service->obtenerVencidas($request->user()->empresa_id);
+            return response()->json([
+                'success' => true,
+                'data' => $vencidas
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function exportarExcel(Request $request)
+    {
+        try {
+            $csvContent = $this->service->generarCsvExportacion($request->user()->empresa_id);
+            
+            return response($csvContent, 200, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="reporte_facturas_' . date('Y_m_d') . '.csv"',
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 }
