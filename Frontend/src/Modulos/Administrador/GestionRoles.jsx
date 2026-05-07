@@ -158,7 +158,7 @@ const GestionRoles = () => {
                                                         />
                                                     </div>
                                                     <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 capitalize">
-                                                        {key.split('.')[1].replace('_', ' ')}
+                                                        {key.split('.').slice(1).join(' ').replaceAll('_', ' ')}
                                                     </span>
                                                 </label>
                                             ))}

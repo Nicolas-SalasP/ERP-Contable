@@ -71,6 +71,79 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 { path: '/activos', label: 'Inventario Activos' },
             ]
         },
+                {
+            id: 'inventario',
+            label: 'Inventario',
+            icon: 'fas fa-boxes-stacked',
+            permisosRequeridos: [
+                'inventario.productos.ver',
+                'inventario.bodegas.ver',
+                'inventario.movimientos.ver',
+                'inventario.kardex.ver',
+                'inventario.valorizacion.ver',
+                'inventario.lotes.ver',
+                'inventario.reservas.ver',
+                'inventario.disponibilidad.ver',
+                'inventario.tomas_fisicas.ver',
+            ],
+            subItems: [
+                {
+                    path: '/inventario/dashboard',
+                    label: 'Dashboard Inventario',
+                    permisosRequeridos: [
+                        'inventario.productos.ver',
+                        'inventario.bodegas.ver',
+                        'inventario.movimientos.ver',
+                        'inventario.kardex.ver',
+                        'inventario.valorizacion.ver',
+                        'inventario.lotes.ver',
+                        'inventario.reservas.ver',
+                        'inventario.disponibilidad.ver',
+                        'inventario.tomas_fisicas.ver',
+                    ],
+                },
+                {
+                    path: '/inventario/productos',
+                    label: 'Productos',
+                    permisosRequeridos: ['inventario.productos.ver'],
+                },
+                {
+                    path: '/inventario/bodegas',
+                    label: 'Bodegas',
+                    permisosRequeridos: ['inventario.bodegas.ver'],
+                },
+                {
+                    path: '/inventario/movimientos',
+                    label: 'Movimientos',
+                    permisosRequeridos: ['inventario.movimientos.ver'],
+                },
+                {
+                    path: '/inventario/kardex',
+                    label: 'Kardex',
+                    permisosRequeridos: ['inventario.kardex.ver'],
+                },
+                {
+                    path: '/inventario/lotes',
+                    label: 'Lotes',
+                    permisosRequeridos: ['inventario.lotes.ver'],
+                },
+                {
+                    path: '/inventario/reservas',
+                    label: 'Reservas',
+                    permisosRequeridos: ['inventario.reservas.ver'],
+                },
+                {
+                    path: '/inventario/tomas-fisicas',
+                    label: 'Tomas Físicas',
+                    permisosRequeridos: ['inventario.tomas_fisicas.ver'],
+                },
+                {
+                    path: '/inventario/valorizacion',
+                    label: 'Valorización',
+                    permisosRequeridos: ['inventario.valorizacion.ver'],
+                },
+            ]
+        },
         {
             id: 'tributario',
             label: 'Gestión Tributaria',
@@ -176,7 +249,10 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                                     {group.subItems && (
                                         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                                             <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
-                                                {group.subItems.map((subItem) => (
+                                             {group.subItems
+                                                .filter((subItem) => !subItem.permisosRequeridos || tieneAlgunPermiso(subItem.permisosRequeridos))
+                                                .map((subItem) => (
+                                                    
                                                     <Link
                                                         key={subItem.path}
                                                         to={subItem.path}
