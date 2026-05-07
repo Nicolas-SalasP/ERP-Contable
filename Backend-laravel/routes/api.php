@@ -17,11 +17,8 @@ use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
-use App\Domains\Core\Controllers\EmpresaController;
-use App\Domains\Core\Controllers\AnulacionController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
-use App\Domains\Core\Controllers\UsuarioController;
 use App\Domains\Inventario\Controllers\InventarioController;
 
 Route::prefix('auth')->group(function () {
