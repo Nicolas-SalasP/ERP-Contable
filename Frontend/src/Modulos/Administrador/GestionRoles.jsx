@@ -42,6 +42,12 @@ const GestionRoles = () => {
             'inventario.reservas.liberar',
             'inventario.reservas.consumir',
             'inventario.disponibilidad.ver',
+            'inventario.tomas_fisicas.ver',
+            'inventario.tomas_fisicas.crear',
+            'inventario.tomas_fisicas.contar',
+            'inventario.tomas_fisicas.cerrar',
+            'inventario.tomas_fisicas.ajustar',
+            'inventario.tomas_fisicas.cancelar',
 
 
         ],

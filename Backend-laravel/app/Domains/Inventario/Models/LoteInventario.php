@@ -71,11 +71,10 @@ class LoteInventario extends Model
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'lote_id');
     }
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
+    public function tomaFisicaDetalles(): HasMany
+    {
+    return $this->hasMany(TomaFisicaDetalleInventario::class, 'lote_id');
+    }
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {

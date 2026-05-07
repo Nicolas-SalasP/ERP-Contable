@@ -23,10 +23,18 @@ class InventarioPostmanSeeder extends Seeder
         | No crea roles.
         | No asigna permisos.
         | No debe agregarse al DatabaseSeeder.
-        | No crea stock, productos, reservas ni movimientos automáticamente.
+        | No crea productos, bodegas, stock, lotes, reservas, movimientos
+        | ni tomas físicas automáticamente.
         |
         | Para Fase 6, el flujo Postman debe crear datos mediante endpoints:
         | producto -> bodega -> entrada -> reserva -> disponibilidad -> consumo.
+        |
+        | Para Fase 7, el flujo Postman debe crear datos mediante endpoints:
+        | producto -> bodega -> entrada -> toma física -> iniciar -> conteo
+        | -> cerrar -> ajustar -> Kardex.
+        |
+        | La toma física compara contra stock físico, no contra stock disponible.
+        | Las reservas activas no deben alterar el snapshot stock_sistema.
         |
         | Uso manual:
         | php artisan db:seed --class=InventarioPostmanSeeder

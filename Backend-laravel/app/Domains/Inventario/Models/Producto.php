@@ -94,6 +94,11 @@ class Producto extends Model
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'producto_id');
     }
+    public function tomaFisicaDetalles()
+    {
+    
+    return $this->hasMany(TomaFisicaDetalleInventario::class, 'producto_id');
+    }
     public function estaActivo(): bool
     {
         return $this->activo === true;

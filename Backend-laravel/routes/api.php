@@ -323,5 +323,25 @@ Route::middleware('auth:sanctum')->group(function () {
         */
         Route::get('/productos/{id}', [InventarioController::class, 'show']);
         Route::put('/productos/{id}', [InventarioController::class, 'update']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fase 7 - Toma física e inventario cíclico
+        |--------------------------------------------------------------------------
+        |
+        | Inventario NO emite, gestiona ni prepara DTE.
+        | Estos endpoints comparan stock físico del sistema contra stock contado.
+        | El ajuste real se delega a InventarioMovimientoService para mantener
+        | Kardex, PMP, valorización, stock consolidado y stock por lote.
+        |
+        */
+        Route::get('/tomas-fisicas', [InventarioController::class, 'tomasFisicas']);
+        Route::post('/tomas-fisicas', [InventarioController::class, 'storeTomaFisica']);
+        Route::get('/tomas-fisicas/{id}', [InventarioController::class, 'showTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/iniciar', [InventarioController::class, 'iniciarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/conteos', [InventarioController::class, 'registrarConteosTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cerrar', [InventarioController::class, 'cerrarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/ajustar', [InventarioController::class, 'ajustarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cancelar', [InventarioController::class, 'cancelarTomaFisica']);
     });
 });

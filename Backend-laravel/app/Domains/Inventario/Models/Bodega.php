@@ -55,6 +55,15 @@ class Bodega extends Model
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'bodega_id');
     }
+    public function tomasFisicas()
+    {
+    return $this->hasMany(TomaFisicaInventario::class, 'bodega_id');
+    }
+
+    public function tomaFisicaDetalles()
+    {
+    return $this->hasMany(TomaFisicaDetalleInventario::class, 'bodega_id');
+    }
     public function estaActiva(): bool
     {
         return $this->estado === 'ACTIVA';

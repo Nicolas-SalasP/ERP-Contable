@@ -123,7 +123,14 @@ trait PreparaInventarioTest
             'inventario.reservas.liberar',
             'inventario.reservas.consumir',
             'inventario.disponibilidad.ver',
-        ];
+
+            'inventario.tomas_fisicas.ver',
+            'inventario.tomas_fisicas.crear',
+            'inventario.tomas_fisicas.contar',
+            'inventario.tomas_fisicas.cerrar',
+            'inventario.tomas_fisicas.ajustar',
+            'inventario.tomas_fisicas.cancelar',
+    ];
     }
 
     protected function permisosInventarioAuditor(): array
@@ -138,6 +145,7 @@ trait PreparaInventarioTest
             'inventario.lotes.ver',
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',
+            'inventario.tomas_fisicas.ver',
         ];
     }
 
@@ -194,6 +202,24 @@ protected function permisosInventarioDisponibilidadLectura(): array
 {
     return [
         'inventario.disponibilidad.ver',
+    ];
+}
+protected function permisosInventarioTomasFisicasCompleto(): array
+{
+    return [
+        'inventario.tomas_fisicas.ver',
+        'inventario.tomas_fisicas.crear',
+        'inventario.tomas_fisicas.contar',
+        'inventario.tomas_fisicas.cerrar',
+        'inventario.tomas_fisicas.ajustar',
+        'inventario.tomas_fisicas.cancelar',
+    ];
+}
+
+protected function permisosInventarioTomasFisicasLectura(): array
+{
+    return [
+        'inventario.tomas_fisicas.ver',
     ];
 }
 }

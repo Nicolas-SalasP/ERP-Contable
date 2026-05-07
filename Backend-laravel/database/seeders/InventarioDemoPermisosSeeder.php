@@ -158,6 +158,17 @@ class InventarioDemoPermisosSeeder extends Seeder
             'inventario.reservas.liberar',
             'inventario.reservas.consumir',
             'inventario.disponibilidad.ver',
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 7 - Toma física e inventario cíclico
+            |--------------------------------------------------------------------------
+            */
+            'inventario.tomas_fisicas.ver',
+            'inventario.tomas_fisicas.crear',
+            'inventario.tomas_fisicas.contar',
+            'inventario.tomas_fisicas.cerrar',
+            'inventario.tomas_fisicas.ajustar',
+            'inventario.tomas_fisicas.cancelar',
         ];
     }
 
@@ -216,6 +227,13 @@ class InventarioDemoPermisosSeeder extends Seeder
             */
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',
+            
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 7 - Consulta de toma física
+            |--------------------------------------------------------------------------
+            */
+            'inventario.tomas_fisicas.ver',
         ];
     }
 }

@@ -95,11 +95,10 @@ class MovimientoInventario extends Model
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'movimiento_inventario_id');
     }
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
+    public function tomaFisicaDetalles(): HasMany
+    {
+    return $this->hasMany(TomaFisicaDetalleInventario::class, 'movimiento_ajuste_id');
+    }
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
