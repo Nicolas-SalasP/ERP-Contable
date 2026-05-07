@@ -29,6 +29,15 @@ import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
 import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
 import GestionUsuarios from './Modulos/Administrador/GestionUsuarios';
 import GestionRoles from './Modulos/Administrador/GestionRoles';
+import InventarioDashboard from './Modulos/Inventario/Vistas/InventarioDashboard';
+import ProductosInventario from './Modulos/Inventario/Vistas/ProductosInventario';
+import BodegasInventario from './Modulos/Inventario/Vistas/BodegasInventario';
+import MovimientosInventario from './Modulos/Inventario/Vistas/MovimientosInventario';
+import KardexInventario from './Modulos/Inventario/Vistas/KardexInventario';
+import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
+import ReservasInventario from './Modulos/Inventario/Vistas/ReservasInventario';
+import TomasFisicasInventario from './Modulos/Inventario/Vistas/TomasFisicasInventario';
+import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInventario';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -50,11 +59,35 @@ const RutaPrivada = ({ children, requireEmpresa = true }) => {
 
 const RutaProtegida = ({ permiso, children }) => {
   const { tienePermiso } = usePermisos();
+
   if (!tienePermiso(permiso)) {
     return <Navigate to="/" replace />;
   }
+
   return children;
 };
+
+const RutaProtegidaAlgunPermiso = ({ permisos = [], children }) => {
+  const { tieneAlgunPermiso } = usePermisos();
+
+  if (!tieneAlgunPermiso(permisos)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+const permisosLecturaInventario = [
+  'inventario.productos.ver',
+  'inventario.bodegas.ver',
+  'inventario.movimientos.ver',
+  'inventario.kardex.ver',
+  'inventario.valorizacion.ver',
+  'inventario.lotes.ver',
+  'inventario.reservas.ver',
+  'inventario.disponibilidad.ver',
+  'inventario.tomas_fisicas.ver',
+];
 
 function App() {
   return (
@@ -250,7 +283,82 @@ function App() {
               </RutaProtegida>
             </RutaPrivada>
           } />
+             <Route path="/inventario" element={
+            <Navigate to="/inventario/dashboard" replace />
+          } />
 
+          <Route path="/inventario/dashboard" element={
+            <RutaPrivada>
+              <RutaProtegidaAlgunPermiso permisos={permisosLecturaInventario}>
+                <LayoutPrincipal><InventarioDashboard /></LayoutPrincipal>
+              </RutaProtegidaAlgunPermiso>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/productos" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.productos.ver">
+                <LayoutPrincipal><ProductosInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/bodegas" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.bodegas.ver">
+                <LayoutPrincipal><BodegasInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/movimientos" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.movimientos.ver">
+                <LayoutPrincipal><MovimientosInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/kardex" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.kardex.ver">
+                <LayoutPrincipal><KardexInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/lotes" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.lotes.ver">
+                <LayoutPrincipal><LotesInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/reservas" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.reservas.ver">
+                <LayoutPrincipal><ReservasInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/tomas-fisicas" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.tomas_fisicas.ver">
+                <LayoutPrincipal><TomasFisicasInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/valorizacion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.valorizacion.ver">
+                <LayoutPrincipal><ValorizacionInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
