@@ -4,6 +4,7 @@ namespace Tests\Feature\Comercial;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
@@ -15,17 +16,14 @@ use App\Domains\Comercial\Models\EstadoCotizacion;
 
 class ComercialTransicionesReglasTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, PreparaEntornoBase;
     protected $empresa;
     protected $usuario;
 
     protected function setUp(): void
     {
         parent::setUp();
-        EstadoSuscripcion::create(['id' => 1, 'nombre' => 'Activa']);
-        $rol = Rol::create(['id' => 1, 'nombre' => 'Admin', 'jerarquia' => 100]);
-        Pais::create(['iso' => 'CL', 'nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'etiqueta_id' => 'RUT', 'activo' => true]);
-
+        $this->prepararEntornoBase();
         // Insertar los estados mínimos para evitar error de FK
         EstadoCotizacion::insert([
             ['id' => 1, 'nombre' => 'Borrador'],
@@ -34,7 +32,7 @@ class ComercialTransicionesReglasTest extends TestCase
         ]);
 
         $this->empresa = Empresa::create(['rut' => '77.777.777-7', 'razon_social' => 'Transiciones SpA']);
-        $this->usuario = User::create(['nombre' => 'Flujo', 'email' => 'f@flujo.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $rol->id, 'estado_suscripcion_id' => 1]);
+        $this->usuario = User::create(['nombre' => 'Flujo', 'email' => 'f@flujo.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $this->rolSuperAdmin->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
     }
 
     public function test_rechaza_crear_cotizacion_a_un_cliente_inactivo()

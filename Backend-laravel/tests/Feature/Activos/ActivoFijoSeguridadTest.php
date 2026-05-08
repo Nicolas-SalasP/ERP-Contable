@@ -4,6 +4,7 @@ namespace Tests\Feature\Activos;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
@@ -16,7 +17,7 @@ use App\Domains\Core\Models\Pais;
 
 class ActivoFijoSeguridadTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, PreparaEntornoBase;
 
     protected $empresa;
     protected $usuario;
@@ -24,13 +25,9 @@ class ActivoFijoSeguridadTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        EstadoSuscripcion::create(['id' => 1, 'nombre' => 'Activa']);
-        $rol = Rol::create(['id' => 1, 'nombre' => 'Admin', 'jerarquia' => 100]);
-
-        Pais::create(['iso' => 'CL', 'nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'etiqueta_id' => 'RUT', 'activo' => true]);
-
+        $this->prepararEntornoBase();
         $this->empresa = Empresa::create(['rut' => '77.777.777-7', 'razon_social' => 'Empresa Test QA', 'regimen_tributario' => '14_D3', 'tasa_impuesto' => 25.00]);
-        $this->usuario = User::create(['nombre' => 'QA Tester', 'email' => 'qa@erp.cl', 'password' => bcrypt('password123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $rol->id, 'estado_suscripcion_id' => 1]);
+        $this->usuario = User::create(['nombre' => 'QA Tester', 'email' => 'qa@erp.cl', 'password' => bcrypt('password123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $this->rolSuperAdmin->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
     }
 
     public function test_usuario_no_autenticado_es_rechazado()
@@ -42,7 +39,7 @@ class ActivoFijoSeguridadTest extends TestCase
     public function test_aislamiento_de_datos_multitenant_evita_fuga_de_informacion()
     {
         $empresaHacker = Empresa::create(['rut' => '66.666.666-6', 'razon_social' => 'Hacker SpA']);
-        $hacker = User::create(['nombre' => 'Hacker', 'email' => 'hacker@erp.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaHacker->id, 'rol_id' => 1, 'estado_suscripcion_id' => 1]);
+        $hacker = User::create(['nombre' => 'Hacker', 'email' => 'hacker@erp.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaHacker->id, 'rol_id' => $this->rolSuperAdmin->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
 
         ActivoFijo::create(['empresa_id' => $this->empresa->id, 'codigo' => 'AF-00001', 'nombre' => 'Servidor Confidencial', 'valor_adquisicion' => 1000000, 'fecha_adquisicion' => now(), 'vida_util_meses' => 60]);
 
@@ -91,7 +88,7 @@ class ActivoFijoSeguridadTest extends TestCase
     public function test_vendedor_no_puede_ejecutar_operaciones_contables_criticas()
     {
         $rolVendedor = Rol::create(['id' => 2, 'nombre' => 'Vendedor', 'jerarquia' => 10]);
-        $vendedor = User::create(['nombre' => 'Ventas', 'email' => 'ventas@erp.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $rolVendedor->id, 'estado_suscripcion_id' => 1]);
+        $vendedor = User::create(['nombre' => 'Ventas', 'email' => 'ventas@erp.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $rolVendedor->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
 
         $response = $this->actingAs($vendedor)->postJson('/api/activos/depreciar-mes', ['mes_anio' => now()->format('Y-m')]);
         $response->assertStatus(403)->assertSee('Acceso denegado');

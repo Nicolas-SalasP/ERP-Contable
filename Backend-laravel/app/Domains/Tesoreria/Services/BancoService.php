@@ -45,7 +45,17 @@ class BancoService
     public function pagarNominaMasiva($empresaId, $usuarioId, $facturasIds, $cuentaBancariaId)
     {
         return DB::transaction(function () use ($empresaId, $usuarioId, $facturasIds, $cuentaBancariaId) {
-            
+
+            // SEGURIDAD: validar que la cuenta bancaria pertenezca a la empresa del usuario.
+            // Sin esto, un usuario podria registrar pagos contra cuenta de otra empresa (IDOR).
+            $cuentaPertenece = CuentaBancariaEmpresa::where('id', $cuentaBancariaId)
+                ->where('empresa_id', $empresaId)
+                ->exists();
+
+            if (!$cuentaPertenece) {
+                throw new Exception("Cuenta bancaria no pertenece a la empresa.");
+            }
+
             $facturas = Factura::where('empresa_id', $empresaId)
                 ->whereIn('id', $facturasIds)
                 ->get();

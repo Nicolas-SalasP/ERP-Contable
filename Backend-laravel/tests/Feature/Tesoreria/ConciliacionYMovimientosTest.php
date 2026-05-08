@@ -153,15 +153,24 @@ class ConciliacionYMovimientosTest extends TestCase
 
     public function test_idor_rechaza_pagar_nomina_con_facturas_ajenas()
     {
+        $proveedorB = Proveedor::create([
+            'empresa_id' => $this->empresaB->id,
+            'rut' => '8.8.8-8',
+            'razon_social' => 'Prov B',
+            'codigo_interno' => 'PB',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP',
+        ]);
+
         $facturaB = Factura::create([
             'empresa_id' => $this->empresaB->id, 
-            'proveedor_id' => 1, 
+            'proveedor_id' => $proveedorB->id, 
             'numero_factura' => '1', 
             'monto_bruto' => 100, 
             'monto_neto' => 81,
             'monto_impuesto' => 19,
             'estado' => 'REGISTRADA',
-            'codigo_unico' => 'F-1-PROV1-B',
+            'codigo_unico' => 99999001,
             'fecha_emision' => '2026-05-04'
         ]);
         

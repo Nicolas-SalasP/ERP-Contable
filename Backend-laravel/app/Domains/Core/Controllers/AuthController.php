@@ -19,7 +19,7 @@ class AuthController
                 'password' => 'required'
             ]);
 
-            $user = User::with('rol')->where('email', $request->email)->first();
+            $user = User::with(['rol', 'estadoSuscripcion'])->where('email', $request->email)->first();
 
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
@@ -28,7 +28,9 @@ class AuthController
                 ], 401);
             }
 
-            if ($user->estado_suscripcion_id !== 1) {
+            // Validar contra el nombre del estado (no contra id hardcodeado).
+            // Razon: el id no es estable entre entornos / seeders y puede cambiar.
+            if (!$user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Cuenta inactiva o suspendida.'
