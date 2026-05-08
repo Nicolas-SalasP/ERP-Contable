@@ -170,8 +170,6 @@ jobs:
 
   # ============================================================
   # FASE 3: DEPLOY A HOSTING (SOLO EN MAIN)
-  # IMPORTANTE: Requiere que AMBOS jobs de backend (SQLite y MySQL)
-  # pasen, garantizando compatibilidad total con MySQL de produccion.
   # ============================================================
   deploy-produccion:
     name: Deploy a Hosting Produccion

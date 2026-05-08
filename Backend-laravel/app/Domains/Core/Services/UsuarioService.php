@@ -58,6 +58,12 @@ class UsuarioService
     public function desvincularUsuario(int $empresaId, int $usuarioId)
     {
         $usuario = User::where('empresa_id', $empresaId)->findOrFail($usuarioId);
+
+        // SEGURIDAD: revocar todos los tokens del usuario antes de eliminarlo.
+        // Sin esto, un usuario eliminado podria seguir usando su token activo
+        // hasta que expire.
+        $usuario->tokens()->delete();
+
         $usuario->delete();
 
         return true;
