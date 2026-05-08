@@ -189,21 +189,21 @@ class AsientoContableController
             );
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Asiento reversado exitosamente.',
                 'data' => $nuevoAsiento
             ]);
         } catch (ValidationException $e) {
             return response()->json([
-                'success' => false, 
-                'message' => 'Errores de validación', 
+                'success' => false,
+                'message' => 'Errores de validación',
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => $e->getMessage()
-            ], 400);
+            ], 422);
         }
     }
 }

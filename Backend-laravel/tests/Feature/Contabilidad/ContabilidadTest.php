@@ -243,8 +243,8 @@ class ContabilidadTest extends TestCase
     // El sistema debe impedir que se genere un asiento de cierre de impuestos (F29) si el mes no tiene ventas ni compras.
     public function test_impuestos_rechaza_cierre_f29_sin_movimientos()
     {
-        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '110001', 'nombre' => 'IVA Crédito', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
-        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '210201', 'nombre' => 'IVA Débito', 'tipo' => 'PASIVO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '152540', 'nombre' => 'IVA Crédito Fiscal', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', 'nombre' => 'IVA Débito Fiscal', 'tipo' => 'PASIVO', 'imputable' => true, 'activo' => true]);
 
         $response = $this->actingAs($this->usuarioContador)->postJson('/api/impuestos/cierre-f29/ejecutar', ['mes' => 2, 'anio' => 2026]);
         $response->assertStatus(422)->assertSee('No hay movimientos');
@@ -255,9 +255,9 @@ class ContabilidadTest extends TestCase
     public function test_impuestos_bloquea_doble_cierre_de_f29()
     {
         Pais::create(['iso' => 'CL', 'nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'activo' => true]);
-        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '110001', 'nombre' => 'IVA Crédito', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
-        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '210201', 'nombre' => 'IVA Débito', 'tipo' => 'PASIVO', 'imputable' => true, 'activo' => true]); // Faltaba esta
-        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '110402', 'nombre' => 'Remanente IVA F29', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '152540', 'nombre' => 'IVA Crédito Fiscal', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', 'nombre' => 'IVA Débito Fiscal', 'tipo' => 'PASIVO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '152542', 'nombre' => 'Remanente IVA F29', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
 
         $prov = Proveedor::create(['empresa_id' => $this->empresaA->id, 'codigo_interno' => 'PR-F29', 'rut' => '1.1.1.1-1', 'razon_social' => 'Prov', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
 
