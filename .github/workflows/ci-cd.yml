@@ -88,7 +88,7 @@ jobs:
           DB_DATABASE: sistema_contable_testing
           DB_USERNAME: root
           DB_PASSWORD: root
-        run: php artisan test --parallel
+        run: php artisan test tests
 
   # ============================================================
   # FASE 2: LINT + BUILD DEL FRONTEND
@@ -100,10 +100,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # IMPORTANTE: pnpm DEBE instalarse ANTES que setup-node,
-      # porque setup-node usa "cache: pnpm" y necesita que pnpm
-      # ya este disponible en el PATH para resolver el cache.
       - name: Instalar pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -139,10 +135,6 @@ jobs:
   # ============================================================
   # FASE 3: DEPLOY A HOSTING (SOLO EN MAIN)
   # ============================================================
-  # IMPORTANTE: este job SOLO se ejecuta cuando hay un push directo
-  # a main. Pull requests, push a dev, push a feature/* NO disparan
-  # deploy. Y ademas requiere que test-backend y test-frontend hayan
-  # pasado en verde primero.
   deploy-produccion:
     name: Deploy a Hosting Produccion
     runs-on: ubuntu-latest
