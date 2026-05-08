@@ -4,6 +4,7 @@ namespace App\Domains\Tesoreria\Controllers;
 
 use App\Domains\Tesoreria\Services\ConciliacionService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Exception;
 
 class ConciliacionController
@@ -27,8 +28,11 @@ class ConciliacionController
             $factura = $this->service->conciliarPagoFacturaCompra($datos);
 
             return response()->json(['success' => true, 'message' => 'Factura pagada exitosamente.', 'data' => $factura], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -40,7 +44,8 @@ class ConciliacionController
                 'data' => $this->service->obtenerMovimientosPendientes($request->user()->empresa_id, $idCuenta)
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 400);
+            $status = $e->getCode() === 403 ? 403 : 400;
+            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
         }
     }
 
@@ -70,8 +75,11 @@ class ConciliacionController
             $asiento = $this->service->conciliarDirecto($request->user()->empresa_id, $datos, $request->user()->id);
 
             return response()->json(['success' => true, 'mensaje' => 'Movimiento conciliado.', 'data' => $asiento]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 422);
+            $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
         }
     }
 
@@ -85,8 +93,48 @@ class ConciliacionController
             $this->service->conciliarAnticipo($request->user()->empresa_id, $datos, $request->user()->id);
 
             return response()->json(['success' => true, 'mensaje' => 'Anticipo conciliado correctamente.']);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 422);
+            $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
+        }
+    }
+
+    public function sugerencias(Request $request, $id)
+    {
+        try {
+            $sugerencias = $this->service->obtenerSugerenciasConciliacion($request->user()->empresa_id, $id);
+            return response()->json(['success' => true, 'data' => $sugerencias]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function conciliarFacturas(Request $request)
+    {
+        try {
+            $datos = $request->validate([
+                'movimiento_id' => 'required|integer',
+                'facturas_ids' => 'nullable|array',
+                'entidad_id' => 'nullable|integer'
+            ]);
+
+            $asiento = $this->service->procesarPagoFacturas(
+                $request->user()->empresa_id,
+                $request->user()->id,
+                $datos['movimiento_id'],
+                $datos['facturas_ids'] ?? [],
+                $datos['entidad_id'] ?? null
+            );
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'Conciliación procesada exitosamente.',
+                'asiento' => $asiento 
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 }

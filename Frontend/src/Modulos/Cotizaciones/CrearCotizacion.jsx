@@ -6,12 +6,10 @@ import ModalGenerico from '../../Componentes/ModalGenerico';
 
 const CrearCotizacion = () => {
     const navigate = useNavigate();
-
     const [clientes, setClientes] = useState([]);
     const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
     const [busquedaCliente, setBusquedaCliente] = useState('');
     const [mostrarDropdown, setMostrarDropdown] = useState(false);
-
     const [items, setItems] = useState([{ productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
     const [validez, setValidez] = useState(15);
@@ -30,7 +28,6 @@ const CrearCotizacion = () => {
         fetchClientes();
     }, []);
 
-    // BUSCADOR MEJORADO: Filtra por RUT y Razón Social
     const clientesFiltrados = clientes.filter(c =>
         c.razon_social.toLowerCase().includes(busquedaCliente.toLowerCase()) ||
         c.rut.toLowerCase().includes(busquedaCliente.toLowerCase())
@@ -38,7 +35,6 @@ const CrearCotizacion = () => {
 
     const handleItemChange = (index, name, value) => {
         const nuevosItems = [...items];
-        // Convertimos a número si es cantidad o precio para evitar errores de cálculo
         nuevosItems[index][name] = (name === 'cantidad' || name === 'precioUnitario') ? Number(value) : value;
         setItems(nuevosItems);
     };
@@ -63,13 +59,29 @@ const CrearCotizacion = () => {
         }
 
         try {
+            const detallesMapeados = items.map(item => ({
+                producto_nombre: item.productoNombre,
+                descripcion: item.descripcion,
+                cantidad: Number(item.cantidad),
+                precio_unitario: Number(item.precioUnitario)
+            }));
+
             const res = await api.post('/cotizaciones', {
+                cliente_id: clienteSeleccionado.id,
                 clienteId: clienteSeleccionado.id,
+                
+                fecha_emision: fecha,
                 fechaEmision: fecha,
+                
+                validez_dias: validez,
                 validezDias: validez,
+                
+                es_afecta: esAfecta ? 1 : 0,
                 esAfecta: esAfecta ? 1 : 0,
+ 
+                porcentaje_iva: ivaPorcentaje,
                 porcentajeIva: ivaPorcentaje,
-                items: items
+                detalles: detallesMapeados 
             });
 
             if (res.success) {
@@ -82,7 +94,9 @@ const CrearCotizacion = () => {
                 });
             }
         } catch (error) {
-            setModal({ show: true, title: 'Error', message: 'No se pudo guardar la cotización.', type: 'danger' });
+            console.error("Error del backend:", error.response?.data || error);
+            const mensajeError = error.response?.data?.message || 'No se pudo guardar la cotización.';
+            setModal({ show: true, title: 'Error', message: mensajeError, type: 'danger' });
         }
     };
 

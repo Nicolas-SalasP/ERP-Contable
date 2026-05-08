@@ -38,6 +38,8 @@ import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
 import ReservasInventario from './Modulos/Inventario/Vistas/ReservasInventario';
 import TomasFisicasInventario from './Modulos/Inventario/Vistas/TomasFisicasInventario';
 import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInventario';
+import VisorAsientoCompleto from './Modulos/Contabilidad/Vistas/VisorAsientoCompleto';
+import ReclasificadorAsiento from './Modulos/Contabilidad/Vistas/ReclasificadorAsiento';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -283,8 +285,18 @@ function App() {
               </RutaProtegida>
             </RutaPrivada>
           } />
-             <Route path="/inventario" element={
+          <Route path="/inventario" element={
             <Navigate to="/inventario/dashboard" replace />
+          } />
+
+          <Route path="/contabilidad/factura/:id/asiento" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal>
+                  <VisorAsientoCompleto />
+                </LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
           } />
 
           <Route path="/inventario/dashboard" element={
@@ -299,6 +311,16 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="inventario.productos.ver">
                 <LayoutPrincipal><ProductosInventario /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/factura/:id/reclasificar" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.crear">
+                <LayoutPrincipal>
+                  <ReclasificadorAsiento />
+                </LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -358,7 +380,7 @@ function App() {
               </RutaProtegida>
             </RutaPrivada>
           } />
-          
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

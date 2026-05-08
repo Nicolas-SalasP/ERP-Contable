@@ -52,6 +52,13 @@ class ImpuestosService
 
     public function ejecutarF29(int $empresaId, int $usuarioId, int $mes, int $anio)
     {
+        $cuentasBase = DB::table('plan_cuentas')->where('empresa_id', $empresaId)
+            ->whereIn('codigo', ['152540', '353360'])->pluck('codigo')->toArray();
+
+        if (count($cuentasBase) < 2) {
+            throw new Exception("Falta configuración: Se requieren cuentas de IVA Crédito (152540) y Débito (353360) en el plan de la empresa.");
+        }
+
         $simulacion = $this->simularF29($empresaId, $mes, $anio);
 
         if ($simulacion['ya_cerrado']) {
@@ -65,20 +72,19 @@ class ImpuestosService
         $detalles = [];
 
         if ($simulacion['ventas']['iva_debito'] > 0) {
-            $detalles[] = ['cuenta_contable' => '210201', 'debe' => $simulacion['ventas']['iva_debito'], 'haber' => 0, 'glosa_detalle' => 'Reversa IVA Débito'];
+            $detalles[] = ['cuenta_contable' => '353360', 'debe' => $simulacion['ventas']['iva_debito'], 'haber' => 0, 'glosa_detalle' => 'Reversa IVA Débito'];
         }
         if ($simulacion['ppm']['monto'] > 0) {
-            $detalles[] = ['cuenta_contable' => '110403', 'debe' => $simulacion['ppm']['monto'], 'haber' => 0, 'glosa_detalle' => 'PPM por Recuperar'];
+            $detalles[] = ['cuenta_contable' => '152541', 'debe' => $simulacion['ppm']['monto'], 'haber' => 0, 'glosa_detalle' => 'PPM por Recuperar'];
         }
         if ($simulacion['resumen']['remanente'] > 0) {
-            $detalles[] = ['cuenta_contable' => '110402', 'debe' => $simulacion['resumen']['remanente'], 'haber' => 0, 'glosa_detalle' => 'Remanente IVA F29'];
+            $detalles[] = ['cuenta_contable' => '152542', 'debe' => $simulacion['resumen']['remanente'], 'haber' => 0, 'glosa_detalle' => 'Remanente IVA F29'];
         }
-
         if ($simulacion['compras']['iva_credito'] > 0) {
-            $detalles[] = ['cuenta_contable' => '110001', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito'], 'glosa_detalle' => 'Reversa IVA Crédito'];
+            $detalles[] = ['cuenta_contable' => '152540', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito'], 'glosa_detalle' => 'Reversa IVA Crédito'];
         }
         if ($simulacion['resumen']['total_a_pagar'] > 0) {
-            $detalles[] = ['cuenta_contable' => '210301', 'debe' => 0, 'haber' => $simulacion['resumen']['total_a_pagar'], 'glosa_detalle' => 'IVA por Pagar F29'];
+            $detalles[] = ['cuenta_contable' => '353365', 'debe' => 0, 'haber' => $simulacion['resumen']['total_a_pagar'], 'glosa_detalle' => 'Impuesto a Pagar F29'];
         }
 
         $fechaAsiento = date('Y-m-t', strtotime("$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-01"));
@@ -114,20 +120,20 @@ class ImpuestosService
         $queryVentas = DB::table('cotizaciones')
             ->where('empresa_id', $empresaId)
             ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin]);
-        
+
         if ($esFlujoCaja) {
         }
 
-        $totalIngresos = $queryVentas->sum('monto_neto');
+        $totalIngresos = (float) $queryVentas->sum('monto_neto');
 
         $queryCompras = DB::table('facturas')
             ->where('empresa_id', $empresaId)
             ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])
             ->where('estado', '!=', 'ANULADA');
 
-        $totalCostosGastos = $queryCompras->sum('monto_neto');
+        $totalCostosGastos = (float) $queryCompras->sum('monto_neto');
 
-        $totalDepreciacion = DB::table('asientos_contables')
+        $totalDepreciacion = (float) DB::table('asientos_contables')
             ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
             ->where('asientos_contables.empresa_id', $empresaId)
             ->where('asientos_contables.origen_modulo', 'activos')
@@ -138,12 +144,12 @@ class ImpuestosService
         $baseImponible = max(0, ($totalIngresos - $totalCostosGastos - $totalDepreciacion));
         $impuestoRenta = round($baseImponible * ($tasaImpuesto / 100));
 
-        $ppmAcumulado = DB::table('asientos_contables')
+        $ppmAcumulado = (float) DB::table('asientos_contables')
             ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
             ->where('asientos_contables.empresa_id', $empresaId)
             ->where('asientos_contables.origen_modulo', 'impuestos')
             ->whereBetween('asientos_contables.fecha', [$fechaInicio, $fechaFin])
-            ->where('detalles_asiento.cuenta_contable', '110403')
+            ->where('detalles_asiento.cuenta_contable', '152541')
             ->where('detalles_asiento.tipo_operacion', 'DEBE')
             ->sum('detalles_asiento.debe');
 
@@ -176,9 +182,9 @@ class ImpuestosService
         ];
 
         $mapeadas = DB::table('mapeo_cuentas_sii')
-            ->join('plan_cuentas', function($join) use ($empresaId) {
+            ->join('plan_cuentas', function ($join) use ($empresaId) {
                 $join->on('mapeo_cuentas_sii.codigo_cuenta', '=', 'plan_cuentas.codigo')
-                     ->where('plan_cuentas.empresa_id', '=', $empresaId);
+                    ->where('plan_cuentas.empresa_id', '=', $empresaId);
             })
             ->where('mapeo_cuentas_sii.empresa_id', $empresaId)
             ->select('mapeo_cuentas_sii.id', 'mapeo_cuentas_sii.codigo_cuenta', 'plan_cuentas.nombre', 'mapeo_cuentas_sii.concepto_sii')
@@ -189,12 +195,12 @@ class ImpuestosService
         $disponibles = DB::table('plan_cuentas')
             ->where('empresa_id', $empresaId)
             ->where('imputable', true)
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('codigo', 'like', '4%')
-                      ->orWhere('codigo', 'like', '5%')
-                      ->orWhere('codigo', 'like', '6%')
-                      ->orWhere('codigo', 'like', '7%')
-                      ->orWhere('codigo', 'like', '8%');
+                    ->orWhere('codigo', 'like', '5%')
+                    ->orWhere('codigo', 'like', '6%')
+                    ->orWhere('codigo', 'like', '7%')
+                    ->orWhere('codigo', 'like', '8%');
             })
             ->whereNotIn('codigo', $codigosMapeados)
             ->select('codigo', 'nombre')
@@ -225,10 +231,15 @@ class ImpuestosService
 
     public function eliminarMapeo(int $empresaId, int $id)
     {
-        return DB::table('mapeo_cuentas_sii')
+        $eliminado = DB::table('mapeo_cuentas_sii')
             ->where('id', $id)
             ->where('empresa_id', $empresaId)
             ->delete();
+
+        if (!$eliminado) {
+            throw new Exception("El mapeo no existe o no pertenece a la empresa.", 400);
+        }
+
+        return true;
     }
-    
 }

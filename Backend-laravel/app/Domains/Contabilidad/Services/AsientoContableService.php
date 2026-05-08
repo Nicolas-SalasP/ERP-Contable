@@ -4,6 +4,7 @@ namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Models\DetalleAsiento;
+use App\Domains\Contabilidad\Models\PlanCuenta;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -24,16 +25,63 @@ class AsientoContableService
             ->findOrFail($id);
     }
 
+    private function validarMesAbierto(int $empresaId, string $fecha)
+    {
+        $mes = date('n', strtotime($fecha));
+        $anio = date('Y', strtotime($fecha));
+
+        $mesCerrado = AsientoContable::where('empresa_id', $empresaId)
+            ->whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->where('glosa', 'like', '%Cierre F29%')
+            ->exists();
+
+        if ($mesCerrado) {
+            throw new Exception("El periodo {$mes}/{$anio} ya está cerrado tributariamente.");
+        }
+    }
+
     public function registrarAsiento(array $datosAsiento, array $detalles): AsientoContable
     {
+        $this->validarMesAbierto($datosAsiento['empresa_id'], $datosAsiento['fecha']);
+
         $totalDebe = 0;
         $totalHaber = 0;
+        $codigosCuentas = [];
+
         foreach ($detalles as $detalle) {
             $totalDebe += round((float) ($detalle['debe'] ?? 0), 2);
             $totalHaber += round((float) ($detalle['haber'] ?? 0), 2);
+            $codigosCuentas[] = $detalle['cuenta_contable'];
         }
-        if (abs($totalDebe - $totalHaber) > 0.01) {
+
+        $totalDebe = round($totalDebe, 2);
+        $totalHaber = round($totalHaber, 2);
+        $diferencia = round(abs($totalDebe - $totalHaber), 2);
+
+        if ($diferencia > 0.00) {
             throw new Exception("Rechazado por Partida Doble: El Debe ({$totalDebe}) no cuadra con el Haber ({$totalHaber}).");
+        }
+
+        $cuentasValidas = PlanCuenta::where('empresa_id', $datosAsiento['empresa_id'])
+            ->whereIn('codigo', array_unique($codigosCuentas))
+            ->get()
+            ->keyBy('codigo');
+
+        foreach ($codigosCuentas as $codigo) {
+            if (!$cuentasValidas->has($codigo)) {
+                throw new Exception("La cuenta contable {$codigo} no existe o pertenece a otra empresa.");
+            }
+
+            $cuenta = $cuentasValidas->get($codigo);
+
+            if (!$cuenta->imputable) {
+                throw new Exception("La cuenta contable {$codigo} no es imputable (es una cuenta padre o agrupadora).");
+            }
+
+            if (!$cuenta->activo) {
+                throw new Exception("La cuenta contable {$codigo} se encuentra inactiva.");
+            }
         }
 
         return DB::transaction(function () use ($datosAsiento, $detalles) {
@@ -51,16 +99,11 @@ class AsientoContableService
                     'debe' => $detalle['debe'] ?? 0.00,
                     'haber' => $detalle['haber'] ?? 0.00,
                     'descripcion_extensa' => $detalle['glosa_detalle'] ?? null,
+                    'centro_costo_id' => $detalle['centro_costo_id'] ?? null,
+                    'empleado_nombre' => $detalle['empleado_nombre'] ?? null,
                 ]);
             }
-
-            $anio = date('y', strtotime($asiento->fecha ?? date('Y-m-d')));
-            $tipo = '10';
-            $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
-
-            $asiento->update([
-                'numero_comprobante' => $anio . $tipo . $secuencia
-            ]);
+            $this->generarNumeroComprobante($asiento);
 
             return $asiento;
         });
@@ -68,6 +111,8 @@ class AsientoContableService
 
     public function crearAsientoManual(array $datos)
     {
+        $this->validarMesAbierto($datos['empresa_id'], $datos['fecha']);
+
         return DB::transaction(function () use ($datos) {
             $tempNum = 'T' . time() . rand(10, 99);
 
@@ -83,13 +128,7 @@ class AsientoContableService
                 'origen_id' => $datos['origen_id'] ?? null,
             ]);
 
-            $anio = date('y', strtotime($asiento->fecha));
-            $tipoCode = '10';
-            $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
-
-            $asiento->update([
-                'numero_comprobante' => $anio . $tipoCode . $secuencia
-            ]);
+            $this->generarNumeroComprobante($asiento);
 
             foreach ($datos['detalles'] as $detalle) {
                 DetalleAsiento::create([
@@ -98,11 +137,92 @@ class AsientoContableService
                     'debe' => $detalle['debe'] ?? 0,
                     'haber' => $detalle['haber'] ?? 0,
                     'fecha' => $datos['fecha'],
-                    'tipo_operacion' => $detalle['tipo_operacion']
+                    'tipo_operacion' => $detalle['tipo_operacion'] ?? ($detalle['debe'] > 0 ? 'DEBE' : 'HABER'),
+                    'descripcion_extensa' => $detalle['glosa_detalle'] ?? null,
+                    'centro_costo_id' => $detalle['centro_costo_id'] ?? null,
+                    'empleado_nombre' => $detalle['empleado_nombre'] ?? null,
                 ]);
             }
 
             return $asiento;
+        });
+    }
+
+    public function existeAsientoPorOrigen(int $empresaId, string $modulo, int $origenId, string $fecha, string $glosa): bool
+    {
+        return AsientoContable::where('empresa_id', $empresaId)
+            ->where('origen_modulo', $modulo)
+            ->where('origen_id', $origenId)
+            ->where('fecha', $fecha)
+            ->where('glosa', $glosa)
+            ->exists();
+    }
+
+    private function generarNumeroComprobante(AsientoContable $asiento): void
+    {
+        $anio = date('y', strtotime($asiento->fecha ?? date('Y-m-d')));
+        $tipoCode = '10';
+        $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
+
+        $asiento->update([
+            'numero_comprobante' => $anio . $tipoCode . $secuencia
+        ]);
+    }
+
+    public function reversarAsientoPorId(int $empresaId, int $userId, int $asientoId, string $fechaReversa, string $motivo)
+    {
+        $asientoOriginal = AsientoContable::where('empresa_id', $empresaId)->findOrFail($asientoId);
+
+        if ($fechaReversa < $asientoOriginal->fecha->format('Y-m-d')) {
+            throw new Exception('No puedes reversar con una fecha anterior al asiento original.');
+        }
+
+        return $this->procesarReversa($asientoOriginal, $userId, $fechaReversa, $motivo);
+    }
+
+    public function reversarAsiento(int $empresaId, int $userId, string $numeroComprobante, string $motivo)
+    {
+        $asientoOriginal = AsientoContable::where('empresa_id', $empresaId)
+            ->where('numero_comprobante', $numeroComprobante)
+            ->firstOrFail();
+
+        return $this->procesarReversa($asientoOriginal, $userId, now()->toDateString(), $motivo);
+    }
+
+    private function procesarReversa(AsientoContable $asientoOriginal, int $userId, string $fechaReversa, string $motivo)
+    {
+        $asientoOriginal->load('detalles');
+
+        return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
+            $tempNum = 'T' . time() . rand(10, 99);
+            $nuevoAsiento = AsientoContable::create([
+                'empresa_id' => $asientoOriginal->empresa_id,
+                'fecha' => $fechaReversa,
+                'glosa' => $motivo,
+                'tipo_asiento' => 'traspaso',
+                'origen_modulo' => $asientoOriginal->origen_modulo,
+                'origen_id' => $asientoOriginal->origen_id,
+                'usuario_id' => $userId,
+                'estado' => 'MAYORIZADO',
+                'numero_comprobante' => $tempNum
+            ]);
+
+            foreach ($asientoOriginal->detalles as $detalle) {
+                $nuevoAsiento->detalles()->create([
+                    'cuenta_contable' => $detalle->cuenta_contable,
+                    'fecha' => $fechaReversa,
+                    'tipo_operacion' => $detalle->debe > 0 ? 'HABER' : 'DEBE',
+                    'debe' => $detalle->haber,
+                    'haber' => $detalle->debe,
+                    'descripcion_extensa' => "REVERSA: " . ($detalle->descripcion_extensa ?? 'Anulación'),
+                    'centro_costo_id' => $detalle->centro_costo_id,
+                    'empleado_nombre' => $detalle->empleado_nombre,
+                ]);
+            }
+
+            $this->generarNumeroComprobante($nuevoAsiento);
+
+            return $nuevoAsiento;
         });
     }
 }

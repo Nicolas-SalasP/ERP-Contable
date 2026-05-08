@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
 use App\Domains\Core\Controllers\AuthController;
 use App\Domains\Core\Controllers\PaisController;
 use App\Domains\Core\Controllers\EmpresaController;
@@ -14,11 +13,11 @@ use App\Domains\Comercial\Controllers\CotizacionController;
 use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
 use App\Domains\Contabilidad\Controllers\ReporteController;
+use App\Domains\Contabilidad\Controllers\ImpuestosController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
-use App\Domains\Contabilidad\Controllers\ImpuestosController;
 use App\Domains\Inventario\Controllers\InventarioController;
 
 Route::prefix('auth')->group(function () {
@@ -60,55 +59,99 @@ Route::middleware('auth:sanctum')->group(function () {
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
 
+    // ---------------------------------------------------------------------
     // Comercial - Clientes
-    Route::apiResource('clientes', ClienteController::class)->except(['create', 'edit', 'show', 'update']);
+    // ---------------------------------------------------------------------
+    Route::get('/clientes', [ClienteController::class, 'index']);
+    Route::post('/clientes', [ClienteController::class, 'store']);
+    Route::get('/clientes/{id}', [ClienteController::class, 'show']);
+    Route::put('/clientes/{id}', [ClienteController::class, 'update']);
+    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy']);
+    Route::put('/clientes/{id}/activar', [ClienteController::class, 'activar']);
+    Route::patch('/clientes/{id}/reactivar', [ClienteController::class, 'reactivar']);
 
+    // ---------------------------------------------------------------------
     // Comercial - Proveedores
+    // ---------------------------------------------------------------------
     Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo']);
     Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha']);
-    Route::apiResource('proveedores', ProveedorController::class)->except(['create', 'edit', 'show', 'update', 'destroy']);
+    Route::post('/proveedores/anticipos', [ProveedorController::class, 'guardarAnticipo']);
+    Route::post('/proveedores/{id}/cruzar-documentos', [ProveedorController::class, 'cruzarDocumentos']);
+    Route::apiResource('proveedores', ProveedorController::class)->except(['show', 'destroy']);
 
+    // ---------------------------------------------------------------------
     // Comercial - Facturas
+    // ---------------------------------------------------------------------
     Route::get('/facturas/historial', [FacturaController::class, 'historial']);
     Route::get('/facturas/check', [FacturaController::class, 'check']);
-    Route::apiResource('facturas', FacturaController::class)->except(['create', 'edit', 'update']);
+    Route::get('/facturas/vencidas', [FacturaController::class, 'vencidas']);
+    Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel']);
+    Route::apiResource('facturas', FacturaController::class)->except(['update']);
+    Route::get('/facturas/{id}/asiento', [FacturaController::class, 'verAsiento']);
+    Route::post('/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificarAsiento']);
+    Route::get('/facturas/{id}/auditoria', [FacturaController::class, 'auditoria']);
+    Route::post('/facturas/{id}/pagar', [FacturaController::class, 'pagar']);
+    Route::post('/facturas/{id}/anular', [FacturaController::class, 'anular']);
 
+    // ---------------------------------------------------------------------
     // Comercial - Cotizaciones
+    // ---------------------------------------------------------------------
     Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);
-    Route::apiResource('cotizaciones', CotizacionController::class)->except(['create', 'edit', 'show', 'update']);
+    Route::put('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
+    Route::apiResource('cotizaciones', CotizacionController::class)->except(['show', 'update']);
+    Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update']);
 
+    // ---------------------------------------------------------------------
     // Tesoreria - Cuentas de Proveedores
+    // ---------------------------------------------------------------------
     Route::get('/cuentas-bancarias/proveedor/{proveedorId}', [CuentaProveedorController::class, 'index']);
     Route::post('/cuentas-bancarias', [CuentaProveedorController::class, 'store']);
     Route::delete('/cuentas-bancarias/{id}', [CuentaProveedorController::class, 'destroy']);
 
+    // ---------------------------------------------------------------------
     // Tesoreria - Bancos Propios y Conciliacion
+    // ---------------------------------------------------------------------
     Route::get('/tesoreria/bancos-catalogo', [BancoController::class, 'catalogo']);
     Route::get('/tesoreria/cuentas-propias', [BancoController::class, 'cuentasEmpresa']);
     Route::post('/tesoreria/cuentas-propias', [BancoController::class, 'storeCuenta']);
     Route::post('/tesoreria/conciliar/factura-compra', [ConciliacionController::class, 'pagarFacturaCompra']);
-    
+
     // Tesoreria - Bancos y Conciliacion
     Route::post('/banco/nomina/pagar', [BancoController::class, 'pagarNomina']);
     Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa']);
     Route::get('/banco/cuentas-imputables', [PlanCuentaController::class, 'imputables']);
-    
-    // Tesoreria - Mesa de Conciliacion
+    Route::post('/banco/ingreso-manual', [BancoController::class, 'ingresoManual']);
+    Route::post('/banco/importar', [BancoController::class, 'importarCartola']);
+
+    // Tesoreria - Movimientos
     Route::get('/banco/movimientos/pendientes/{idCuenta}', [ConciliacionController::class, 'movimientosPendientes']);
+    Route::get('/banco/movimientos/{id}/sugerencias', [ConciliacionController::class, 'sugerencias']);
+    Route::get('/banco/movimientos/{idCuenta}', [BancoController::class, 'movimientos']);
+
+    // Tesoreria - Mesa de Conciliacion
     Route::get('/banco/anticipos-pendientes', [ConciliacionController::class, 'anticiposPendientes']);
     Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliar']);
     Route::post('/banco/movimientos/conciliar-anticipo', [ConciliacionController::class, 'conciliarAnticipo']);
+    Route::post('/banco/movimientos/conciliar-facturas', [ConciliacionController::class, 'conciliarFacturas']);
 
-    // Contabilidad
+    // ---------------------------------------------------------------------
+    // Contabilidad - Plan de Cuentas
+    // ---------------------------------------------------------------------
     Route::get('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'index']);
     Route::post('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'store']);
     Route::put('/contabilidad/plan-cuentas/{id}', [PlanCuentaController::class, 'update']);
+    Route::delete('/contabilidad/plan-cuentas/{id}', [PlanCuentaController::class, 'destroy']);
+
+    // Contabilidad - Asientos Contables
     Route::get('/contabilidad/asientos', [AsientoContableController::class, 'index']);
     Route::post('/contabilidad/asientos', [AsientoContableController::class, 'store']);
+    Route::get('/contabilidad/asientos/{id}', [AsientoContableController::class, 'show']);
+    Route::post('/contabilidad/asientos/{id}/reversar', [AsientoContableController::class, 'reversar']);
+    Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado']);
+
+    // Contabilidad - Libros diarios y mayores
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario']);
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor']);
-    Route::get('/contabilidad/asientos/{id}', [AsientoContableController::class, 'show']);
-    Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado']);
 
     // Contabilidad - Formularios 29 y 22 (Renta)
     Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29']);
@@ -122,18 +165,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar']);
     Route::post('/anulacion/anular', [AnulacionController::class, 'anular']);
 
+    // ---------------------------------------------------------------------
     // Activos Fijos
+    // ---------------------------------------------------------------------
     Route::get('/activos', [ActivoFijoController::class, 'index']);
     Route::get('/activos/pendientes', [ActivoFijoController::class, 'pendientes']);
     Route::post('/activos', [ActivoFijoController::class, 'store']);
     Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros']);
     Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes']);
-    
-    // Rutas de Proyectos
+    Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja']);
+
+    // Activos Fijos - Proyectos
+    Route::get('/activos/proyectos/facturas-disponibles', [ActivoFijoController::class, 'facturasDisponibles']);
+    Route::post('/activos/proyectos/{id}/facturas', [ActivoFijoController::class, 'imputarFactura']);
+    Route::put('/activos/proyectos/{id}/activar', [ActivoFijoController::class, 'activarProyecto']);
+    Route::put('/activos/proyectos/{id}', [ActivoFijoController::class, 'updateProyecto']);
     Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos']);
     Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto']);
-  
-    // Rutas Inventario, Bodegas y movimientos
+    Route::get('/activos/proyectos/{id}/analisis', [ActivoFijoController::class, 'analisisProyecto']);
+
+    // ---------------------------------------------------------------------
+    // Inventario, Bodegas y Movimientos (de dev / Slados)
+    // ---------------------------------------------------------------------
     Route::prefix('inventario')->group(function () {
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
 

@@ -22,20 +22,30 @@ const DashboardRenta = () => {
             const res = await api.get(`/renta/pre-calculo/${anio}`);
             if (res.success) {
                 const data = res.data;
+                const vNetas = Number(data.ingresos.ventas_netas) || 0;
+                const oIngresos = Number(data.ingresos.otros_ingresos) || 0;
+                
+                const cDirectos = Number(data.gastos.costos_directos) || 0;
+                const dep = Number(data.gastos.depreciacion) || 0;
+                const rem = Number(data.gastos.remuneraciones) || 0;
+                
+                const bImponible = Number(data.resultado.base_imponible) || 0;
+                const iRenta = Number(data.resultado.impuesto_renta) || 0;
+
                 const adaptedData = {
                     ...data,
                     resumen: {
-                        total_ingresos: data.ingresos.ventas_netas + data.ingresos.otros_ingresos,
-                        total_egresos: data.gastos.costos_directos + data.gastos.depreciacion + data.gastos.remuneraciones,
-                        base_imponible: data.resultado.base_imponible,
-                        impuesto_determinado: data.resultado.impuesto_renta
+                        total_ingresos: vNetas + oIngresos,
+                        total_egresos: cDirectos + dep + rem,
+                        base_imponible: bImponible,
+                        impuesto_determinado: iRenta
                     },
                     desglose: {
-                        ingresos_giro: data.ingresos.ventas_netas,
-                        otros_ingresos: data.ingresos.otros_ingresos,
-                        compras: data.gastos.costos_directos,
-                        depreciacion: data.gastos.depreciacion,
-                        remuneraciones_pagadas: data.gastos.remuneraciones,
+                        ingresos_giro: vNetas,
+                        otros_ingresos: oIngresos,
+                        compras: cDirectos,
+                        depreciacion: dep,
+                        remuneraciones_pagadas: rem,
                         honorarios_pagados: 0,
                         arriendos_pagados: 0,
                         gastos_generales: 0

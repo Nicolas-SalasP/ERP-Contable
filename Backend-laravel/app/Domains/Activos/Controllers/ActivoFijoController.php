@@ -6,6 +6,9 @@ use App\Domains\Activos\Services\ActivoFijoService;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Exception;
 
 class ActivoFijoController
@@ -15,6 +18,13 @@ class ActivoFijoController
     public function __construct(ActivoFijoService $service)
     {
         $this->service = $service;
+    }
+
+    private function autorizarAccesoContable($user)
+    {
+        if (!Gate::forUser($user)->allows('gestionar-contabilidad-critica')) {
+            throw new Exception("Acceso denegado. Perfil no autorizado para operaciones contables críticas.", 403);
+        }
     }
 
     public function index(Request $request)
@@ -40,8 +50,10 @@ class ActivoFijoController
     public function store(Request $request)
     {
         try {
+            $this->autorizarAccesoContable($request->user());
+
             $datos = $request->validate([
-                'nombre' => 'required|string',
+                'nombre' => 'required|string|max:255',
                 'codigo' => 'nullable|string',
                 'descripcion' => 'nullable|string',
                 'cuenta_activo_codigo' => 'nullable|string',
@@ -50,18 +62,34 @@ class ActivoFijoController
                 'centro_costo_id' => 'nullable|integer',
                 'valor_adquisicion' => 'required|numeric|min:1',
                 'fecha_adquisicion' => 'required|date',
-                'vida_util_meses' => 'required|integer|min:1',
+                'vida_util_meses' => 'required|integer|min:1|max:1200',
                 'valor_residual' => 'nullable|numeric|min:1',
                 'estado' => 'nullable|string'
             ]);
 
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            if (isset($datos['valor_residual'])) {
+                $residual = (float) $datos['valor_residual'];
+                $adquisicion = (float) $datos['valor_adquisicion'];
 
+                if ($residual >= $adquisicion) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Datos inválidos',
+                        'errors' => ['valor_residual' => ['El valor residual no puede ser mayor o igual al valor de adquisición.']]
+                    ], 422);
+                }
+            }
+
+            $datos['empresa_id'] = $request->user()->empresa_id;
             $activo = $this->service->registrarActivo($datos);
 
             return response()->json(['success' => true, 'message' => 'Activo registrado exitosamente', 'data' => $activo], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            $status = $e->getCode() === 403 ? 403 : 400;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -74,11 +102,11 @@ class ActivoFijoController
                 ->get();
 
             $cuentasActivo = $planCuentas->filter(function ($c) {
-                return $c->tipo === 'ACTIVO' && !str_contains(strtolower($c->nombre), 'depreciacion');
+                return $c->tipo === 'ACTIVO' && !str_contains(strtolower($c->nombre), 'deprecia');
             })->values();
 
             $cuentasDepreciacion = $planCuentas->filter(function ($c) {
-                return $c->tipo === 'ACTIVO' && str_contains(strtolower($c->nombre), 'depreciacion');
+                return $c->tipo === 'ACTIVO' && str_contains(strtolower($c->nombre), 'deprecia');
             })->values();
 
             $cuentasGasto = $planCuentas->filter(function ($c) {
@@ -116,45 +144,154 @@ class ActivoFijoController
     public function storeProyecto(Request $request)
     {
         try {
+            $this->autorizarAccesoContable($request->user());
+
             $datos = $request->validate([
-                'nombre' => 'required|string',
+                'nombre' => 'required|string|max:255',
                 'tipo_activo_id' => 'required|integer',
                 'anio_fabricacion' => 'required|integer',
-                'vida_util_meses' => 'required|integer',
+                'vida_util_meses' => 'required|integer|min:1|max:1200',
                 'centro_costo_id' => 'nullable|integer',
                 'empleado_id' => 'nullable|integer'
             ]);
 
             $datos['empresa_id'] = $request->user()->empresa_id;
-
             $proyecto = $this->service->registrarProyecto($datos);
 
             return response()->json(['success' => true, 'message' => 'Proyecto creado exitosamente', 'data' => $proyecto], 201);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            $status = $e->getCode() === 403 ? 403 : 400;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
 
     public function depreciarMes(Request $request)
     {
         try {
-            $datos = $request->validate([
-                'mes_anio' => 'required|date_format:Y-m'
-            ]);
+            $this->autorizarAccesoContable($request->user());
+
+            $datos = $request->validate(['mes_anio' => 'required|date_format:Y-m']);
 
             $resultado = $this->service->depreciarMes(
-                $request->user()->empresa_id, 
-                $request->user()->id, 
+                $request->user()->empresa_id,
+                $request->user()->id,
                 $datos['mes_anio']
             );
 
+            return response()->json(['success' => true, 'message' => $resultado['mensaje'], 'data' => $resultado]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+        }
+    }
+
+    public function analisisProyecto(Request $request, $id)
+    {
+        try {
+            $analisis = $this->service->analizarProyecto($request->user()->empresa_id, (int) $id);
+            return response()->json(['success' => true, 'data' => $analisis]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'No se pudo cargar el análisis del proyecto. Es posible que no exista.'], 404);
+        }
+    }
+
+    public function facturasDisponibles(Request $request)
+    {
+        try {
+            $facturas = $this->service->listarFacturasDisponibles($request->user()->empresa_id);
+            return response()->json(['success' => true, 'data' => $facturas]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function imputarFactura(Request $request, $id)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $datos = $request->validate([
+                'factura_id' => 'required|integer',
+                'monto' => 'required|numeric|min:1'
+            ]);
+
+            $this->service->imputarFacturaAProyecto($request->user()->empresa_id, (int) $id, $datos);
+            return response()->json(['success' => true, 'message' => 'Costo imputado exitosamente']);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+        }
+    }
+
+    public function activarProyecto(Request $request, $id)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $activo = $this->service->activarProyecto($request->user()->empresa_id, $request->user()->id, (int) $id);
+            return response()->json(['success' => true, 'message' => 'Proyecto activado y capitalizado', 'data' => $activo]);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 403 ? 403 : 400;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+        }
+    }
+
+    public function updateProyecto(Request $request, $id)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $datos = $request->validate([
+                'tipo_activo_id' => 'nullable|integer',
+                'cuenta_depreciacion_id' => 'nullable|integer',
+                'cuenta_gasto_id' => 'nullable|integer',
+                'nombre' => 'nullable|string|max:255',
+                'vida_util_meses' => 'nullable|integer|min:1|max:1200'
+            ]);
+
+            $proyecto = $this->service->actualizarProyecto($request->user()->empresa_id, (int) $id, $datos);
+
             return response()->json([
-                'success' => true, 
-                'message' => $resultado['mensaje'],
-                'data' => $resultado
+                'success' => true,
+                'message' => 'Proyecto actualizado correctamente',
+                'data' => $proyecto
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'El proyecto no existe o no pertenece a su empresa.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function darDeBaja(Request $request, $id)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $datos = $request->validate([
+                'motivo' => 'nullable|string|max:255'
+            ]);
+
+            $resultado = $this->service->darDeBaja($request->user()->empresa_id, $request->user()->id, (int) $id, $datos);
+
+            return response()->json([
+                'success' => true,
+                'message' => $resultado['mensaje']
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 }

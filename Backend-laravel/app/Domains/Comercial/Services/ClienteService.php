@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Models\Cliente;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 class ClienteService
@@ -39,6 +40,46 @@ class ClienteService
     {
         $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($id);
         $cliente->update(['estado' => 'INACTIVO']);
+        return $cliente;
+    }
+    public function actualizarCliente($id, array $datos)
+    {
+        $cliente = Cliente::findOrFail($id); //
+
+        if (isset($datos['rut']) && $datos['rut'] !== $cliente->rut) {
+            $existe = Cliente::where('empresa_id', $cliente->empresa_id)
+                ->where('rut', $datos['rut'])
+                ->exists(); //
+
+            if ($existe) {
+                throw new Exception("El RUT ingresado ya está registrado para otro cliente en esta empresa."); //
+            }
+        }
+
+        return DB::transaction(function () use ($cliente, $datos) {
+            $cliente->update($datos); //
+            return $cliente;
+        });
+    }
+    
+    public function activarCliente(int $empresaId, int $id): Cliente
+    {
+        $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($id);
+        $cliente->update(['estado' => 'ACTIVO']);
+        return $cliente;
+    }
+
+    public function reactivarCliente(int $empresaId, int $clienteId)
+    {
+        $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($clienteId);
+
+        if ($cliente->estado === 'ACTIVO') {
+            throw new Exception("El cliente ya se encuentra activo.");
+        }
+
+        $cliente->estado = 'ACTIVO';
+        $cliente->save();
+
         return $cliente;
     }
 }

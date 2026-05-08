@@ -13,6 +13,8 @@ class ProyectoActivo extends Model
         'empresa_id',
         'nombre',
         'tipo_activo_id',
+        'cuenta_depreciacion_id',
+        'cuenta_gasto_id',
         'anio_fabricacion',
         'vida_util_meses',
         'centro_costo_id',

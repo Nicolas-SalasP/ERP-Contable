@@ -11,6 +11,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('asiento_id')->constrained('asientos_contables')->onDelete('cascade');
             $table->string('cuenta_contable', 100);
+            $table->foreignId('centro_costo_id')->nullable()->constrained('centros_costo');
+            $table->string('empleado_nombre', 150)->nullable();
             $table->date('fecha')->nullable();
             $table->string('tipo_operacion', 100)->nullable();
             $table->decimal('debe', 15, 2)->default(0.00);

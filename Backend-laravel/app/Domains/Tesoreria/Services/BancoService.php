@@ -61,7 +61,6 @@ class BancoService
             foreach ($facturas as $factura) {
                 /** @var Factura $factura */
                 $factura->estado = 'PAGADA'; 
-                // Se eliminó la línea de fecha_pago para evitar el error SQL
                 $factura->save();
 
                 $totalNomina += $factura->monto_bruto;
@@ -104,5 +103,212 @@ class BancoService
                 'total'      => $totalNomina
             ];
         });
+    }
+
+    public function registrarIngresoManual(int $empresaId, array $datos): array
+    {
+        $cuenta = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->find($datos['cuenta_bancaria_id']);
+        
+        if (!$cuenta) {
+            throw new Exception("Cuenta bancaria no encontrada o no pertenece a tu empresa.", 403);
+        }
+
+        $cargo = (isset($datos['tipo_movimiento']) && $datos['tipo_movimiento'] === 'EGRESO') ? $datos['monto'] : 0;
+        $abono = (isset($datos['tipo_movimiento']) && $datos['tipo_movimiento'] === 'INGRESO') ? $datos['monto'] : 0;
+
+        $movimientoId = DB::table('movimientos_bancarios')->insertGetId([
+            'empresa_id' => $empresaId,
+            'cuenta_bancaria_id' => $datos['cuenta_bancaria_id'],
+            'fecha' => $datos['fecha'],
+            'hora' => now()->format('H:i:s'),
+            'descripcion' => $datos['descripcion'],
+            'nro_documento' => $datos['nro_documento'] ?? null,
+            'cargo' => $cargo,
+            'abono' => $abono,
+            'estado' => 'PENDIENTE',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return [
+            'id' => $movimientoId,
+            'estado' => 'REGISTRADO', 
+            'mensaje' => 'Movimiento guardado y listo para conciliar.',
+            'datos_ingresados' => $datos
+        ];
+    }
+
+    public function procesarCartola(int $empresaId, int $usuarioId, int $cuentaBancariaId, string $cuentaContrapartida, $archivo): array
+    {
+        DB::beginTransaction();
+        
+        try {
+            $cuentaBanco = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->findOrFail($cuentaBancariaId);
+            $codigoCuentaBanco = $cuentaBanco->cuenta_contable_codigo ?? '1-1-01-01';
+
+            $gestor = fopen($archivo->getRealPath(), "r");
+            $esCabecera = true;
+            $importados = 0;
+            $ignorados = 0;
+
+            while (($fila = fgetcsv($gestor, 1000, ",")) !== FALSE) {
+                if ($esCabecera) {
+                    $esCabecera = false;
+                    continue;
+                }
+
+                if (count($fila) < 3) continue; 
+
+                $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $fila[0])));
+                $descripcion = substr(trim($fila[1]), 0, 255);
+                $monto = (float) $fila[2];
+
+                if ($monto == 0) continue;
+
+                $existeDuplicado = $this->asientoService->existeAsientoPorOrigen(
+                    $empresaId,
+                    'importacion_banco',
+                    $cuentaBancariaId,
+                    $fecha,
+                    $descripcion
+                );
+
+                if ($existeDuplicado) {
+                    $ignorados++;
+                    continue;
+                }
+
+                $detalles = [];
+                $montoAbsoluto = abs($monto);
+
+                if ($monto > 0) {
+                    $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => $montoAbsoluto, 'haber' => 0];
+                    $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => 0, 'haber' => $montoAbsoluto];
+                } else {
+                    $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => $montoAbsoluto, 'haber' => 0];
+                    $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $montoAbsoluto];
+                }
+
+                $cabeceraAsiento = [
+                    'empresa_id' => $empresaId,
+                    'usuario_id' => $usuarioId,
+                    'fecha' => $fecha,
+                    'glosa' => $descripcion,
+                    'tipo_asiento' => 'traspaso',
+                    'origen_modulo' => 'importacion_banco',
+                    'origen_id' => $cuentaBancariaId,
+                    'estado' => 'MAYORIZADO'
+                ];
+
+                $this->asientoService->registrarAsiento($cabeceraAsiento, $detalles);
+                $importados++;
+            }
+            fclose($gestor);
+
+            DB::commit();
+
+            return [
+                'importados' => $importados,
+                'ignorados' => $ignorados
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new Exception("El archivo contiene errores y la importación fue abortada. Error: " . $e->getMessage());
+        }
+    }
+
+    public function obtenerCuentaBancaria(int $empresaId, int $id)
+    {
+        $cuenta = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->find($id);
+        if (!$cuenta) throw new Exception("Cuenta bancaria no encontrada.");
+        return $cuenta;
+    }
+
+    public function obtenerCuentaContableDeBanco(int $empresaId, int $id)
+    {
+        $cuenta = $this->obtenerCuentaBancaria($empresaId, $id);
+        
+        if (empty($cuenta->cuenta_contable)) {
+            throw new Exception("La cuenta bancaria '{$cuenta->banco}' no tiene un código contable asignado en su configuración. Por favor, edite la cuenta y asígnele una.");
+        }
+        
+        return $cuenta->cuenta_contable;
+    }
+
+    public function obtenerMovimiento(int $empresaId, int $id)
+    {
+        $mov = DB::table('movimientos_bancarios')
+            ->where('empresa_id', $empresaId)
+            ->where('id', $id)
+            ->first();
+            
+        if (!$mov) throw new Exception("Movimiento bancario no encontrado.");
+        return $mov;
+    }
+
+    public function vincularAsientoAMovimiento(int $empresaId, int $movimientoId, int $asientoId)
+    {
+        DB::table('movimientos_bancarios')
+            ->where('empresa_id', $empresaId)
+            ->where('id', $movimientoId)
+            ->update([
+                'estado' => 'CONCILIADO',
+                'asiento_id' => $asientoId
+            ]);
+    }
+
+    public function obtenerMovimientosPendientes(int $empresaId, int $cuentaBancariaId)
+    {
+        $this->obtenerCuentaBancaria($empresaId, $cuentaBancariaId);
+        return DB::table('movimientos_bancarios')
+            ->where('empresa_id', $empresaId)
+            ->where('cuenta_bancaria_id', $cuentaBancariaId)
+            ->where('estado', 'PENDIENTE')
+            ->orderBy('fecha', 'asc')
+            ->get();
+    }
+
+    public function obtenerAnticiposPendientes(int $empresaId)
+    {
+        return DB::table('anticipos_proveedores')
+            ->where('empresa_id', $empresaId)
+            ->where('estado', 'PENDIENTE')
+            ->get();
+    }
+
+    public function vincularMovimientoAAnticipo(int $empresaId, int $movimientoId, int $anticipoId)
+    {
+        $this->obtenerMovimiento($empresaId, $movimientoId);
+        $anticipo = DB::table('anticipos_proveedores')
+            ->where('empresa_id', $empresaId)
+            ->where('id', $anticipoId)
+            ->first();
+
+        if (!$anticipo) {
+            throw new Exception("El anticipo no existe o no pertenece a tu empresa.");
+        }
+
+        DB::table('movimientos_bancarios')
+            ->where('empresa_id', $empresaId)
+            ->where('id', $movimientoId)
+            ->update(['estado' => 'CONCILIADO_ANTICIPO']);
+            
+        DB::table('anticipos_proveedores')
+            ->where('empresa_id', $empresaId)
+            ->where('id', $anticipoId)
+            ->update(['estado' => 'PAGADO', 'movimiento_id' => $movimientoId]);
+    }
+
+    public function obtenerMovimientosPorCuenta(int $empresaId, int $cuentaBancariaId)
+    {
+        $this->obtenerCuentaBancaria($empresaId, $cuentaBancariaId);
+
+        return DB::table('movimientos_bancarios')
+            ->where('empresa_id', $empresaId)
+            ->where('cuenta_bancaria_id', $cuentaBancariaId)
+            ->orderBy('fecha', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
     }
 }
