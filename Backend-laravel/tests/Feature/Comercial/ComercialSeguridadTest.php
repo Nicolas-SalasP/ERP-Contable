@@ -4,6 +4,7 @@ namespace Tests\Feature\Comercial;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
@@ -17,7 +18,7 @@ use App\Domains\Comercial\Models\EstadoCotizacion;
 
 class ComercialSeguridadTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, PreparaEntornoBase;
 
     protected $empresaA;
     protected $usuarioAdmin;
@@ -25,16 +26,13 @@ class ComercialSeguridadTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        EstadoSuscripcion::create(['id' => 1, 'nombre' => 'Activa']);
-        $rol = Rol::create(['id' => 1, 'nombre' => 'Admin', 'jerarquia' => 100]);
-        Pais::create(['iso' => 'CL', 'nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'etiqueta_id' => 'RUT', 'activo' => true]);
-
+        $this->prepararEntornoBase();
         EstadoCotizacion::insert([
             ['id' => 1, 'nombre' => 'Borrador'], ['id' => 2, 'nombre' => 'Enviada'], ['id' => 3, 'nombre' => 'Aprobada']
         ]);
 
         $this->empresaA = Empresa::create(['rut' => '77.777.777-7', 'razon_social' => 'Sur SpA', 'regimen_tributario' => '14_D3']);
-        $this->usuarioAdmin = User::create(['nombre' => 'Admin', 'email' => 'admin@sur.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresaA->id, 'rol_id' => $rol->id, 'estado_suscripcion_id' => 1]);
+        $this->usuarioAdmin = User::create(['nombre' => 'Admin', 'email' => 'admin@sur.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresaA->id, 'rol_id' => $this->rolSuperAdmin->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
     }
 
     public function test_rutas_comerciales_rechazan_usuarios_no_autenticados()
@@ -48,7 +46,7 @@ class ComercialSeguridadTest extends TestCase
     public function test_aislamiento_multitenant_en_clientes_y_proveedores()
     {
         $empresaB = Empresa::create(['rut' => '88.888.888-8', 'razon_social' => 'Competencia SpA']);
-        $hacker = User::create(['nombre' => 'Hacker', 'email' => 'hacker@comp.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => 1, 'estado_suscripcion_id' => 1]);
+        $hacker = User::create(['nombre' => 'Hacker', 'email' => 'hacker@comp.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolSuperAdmin->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
 
         Cliente::create(['empresa_id' => $this->empresaA->id, 'rut' => '11.111.111-1', 'razon_social' => 'Cliente Oro', 'estado' => 'ACTIVO']);
         Proveedor::create(['empresa_id' => $this->empresaA->id, 'codigo_interno' => 'PR-1', 'rut' => '22.222.222-2', 'razon_social' => 'Prov', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);

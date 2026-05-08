@@ -4,6 +4,7 @@ namespace Tests\Feature\Contabilidad;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\DB;
 
 class ContabilidadTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, PreparaEntornoBase;
 
     protected $empresaA;
     protected $usuarioContador;
@@ -31,8 +32,7 @@ class ContabilidadTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        EstadoSuscripcion::create(['id' => 1, 'nombre' => 'Activa']);
+        $this->prepararEntornoBase();
         $this->rolContador = Rol::create(['nombre' => 'Contador', 'jerarquia' => 50, 'permisos' => []]);
 
         $this->empresaA = Empresa::create([
@@ -46,7 +46,7 @@ class ContabilidadTest extends TestCase
             'password' => bcrypt('123'),
             'empresa_id' => $this->empresaA->id,
             'rol_id' => $this->rolContador->id,
-            'estado_suscripcion_id' => 1
+            'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id
         ]);
     }
 
@@ -55,7 +55,7 @@ class ContabilidadTest extends TestCase
     public function test_aislamiento_multitenant_en_plan_de_cuentas()
     {
         $empresaB = Empresa::create(['rut' => '88.888.888-8', 'razon_social' => 'Empresa B']);
-        $hacker = User::create(['nombre' => 'Hacker', 'email' => 'h@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => 1]);
+        $hacker = User::create(['nombre' => 'Hacker', 'email' => 'h@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
 
         PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '111', 'nombre' => 'Caja', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
 
@@ -254,7 +254,6 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
     // Protege contra la duplicación del asiento contable de impuestos. Si un mes ya se cerró, se bloquea.
     public function test_impuestos_bloquea_doble_cierre_de_f29()
     {
-        Pais::create(['iso' => 'CL', 'nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'activo' => true]);
         PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '152540', 'nombre' => 'IVA Crédito Fiscal', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
         PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', 'nombre' => 'IVA Débito Fiscal', 'tipo' => 'PASIVO', 'imputable' => true, 'activo' => true]);
         PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '152542', 'nombre' => 'Remanente IVA F29', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
@@ -635,7 +634,7 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
     public function test_cierre_f29_aislado_correctamente_por_empresa_multitenant()
     {
         $empresaB = Empresa::create(['rut' => '13.133.133-3', 'razon_social' => 'Empresa B']);
-        $contadorB = User::create(['nombre' => 'Conta B', 'email' => 'cb@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => 1]);
+        $contadorB = User::create(['nombre' => 'Conta B', 'email' => 'cb@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
 
         $this->actingAs($this->usuarioContador)->postJson('/api/impuestos/cierre-f29/ejecutar', ['mes' => 4, 'anio' => 2026]);
 
@@ -910,7 +909,7 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
             'password' => bcrypt('123'),
             'empresa_id' => $this->empresaA->id,
             'rol_id' => $this->rolContador->id,
-            'estado_suscripcion_id' => 1,
+            'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
             'estado' => 'INACTIVO'
         ]);
 
@@ -1297,7 +1296,7 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
     public function test_precalculo_renta_es_aislado_por_tenant()
     {
         $empresaB = Empresa::create(['rut' => '88.111.222-3', 'razon_social' => 'Empresa B']);
-        $contadorB = User::create(['nombre' => 'Conta B', 'email' => 'cb2@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => 1]);
+        $contadorB = User::create(['nombre' => 'Conta B', 'email' => 'cb2@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
 
         $response = $this->actingAs($contadorB)->getJson('/api/renta/pre-calculo/2026');
 
@@ -1324,7 +1323,7 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
         $empresaB = Empresa::create(['rut' => '12.111.111-1', 'razon_social' => 'B']);
         $cuentaB = PlanCuenta::create(['empresa_id' => $empresaB->id, 'codigo' => '4001', 'nombre' => 'V', 'tipo' => 'INGRESO', 'imputable' => true, 'activo' => true]);
 
-        $this->actingAs(User::create(['nombre' => 'Conta B', 'email' => 'cb3@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => 1]))
+        $this->actingAs(User::create(['nombre' => 'Conta B', 'email' => 'cb3@b.cl', 'password' => bcrypt('123'), 'empresa_id' => $empresaB->id, 'rol_id' => $this->rolContador->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]))
             ->postJson('/api/renta/mapeo', ['codigo_cuenta' => $cuentaB->codigo, 'concepto_sii' => 'INGRESOS_GIRO']);
 
         $mapeoB = DB::table('mapeo_cuentas_sii')->where('empresa_id', $empresaB->id)->first();
