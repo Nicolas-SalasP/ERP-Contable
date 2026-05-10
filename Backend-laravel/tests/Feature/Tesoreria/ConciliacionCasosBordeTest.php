@@ -11,17 +11,6 @@ use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Factura;
 use Laravel\Sanctum\Sanctum;
 
-/**
- * Tests de casos borde en conciliacion bancaria.
- *
- * Cubre escenarios de produccion donde un error en conciliacion
- * puede llevar a que una factura quede pagada dos veces, un
- * movimiento bancario quede mal asociado, o se genere un asiento
- * contable descuadrado.
- *
- * Estos son los flujos donde un cliente real podria perder dinero
- * o terminar con cuadres contables imposibles.
- */
 class ConciliacionCasosBordeTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
@@ -65,8 +54,11 @@ class ConciliacionCasosBordeTest extends TestCase
         ]);
 
         $this->assertContains($response->getStatusCode(), [400, 404, 422, 500]);
-        $this->assertNotEquals(200, $response->getStatusCode(),
-            'Conciliacion de factura inexistente no debe responder 200');
+        $this->assertNotEquals(
+            200,
+            $response->getStatusCode(),
+            'Conciliacion de factura inexistente no debe responder 200'
+        );
     }
 
     public function test_conciliar_factura_ya_pagada_no_la_paga_dos_veces()
@@ -90,15 +82,16 @@ class ConciliacionCasosBordeTest extends TestCase
             'cuenta_bancaria_id' => $this->cuenta->id,
         ]);
 
-        // Lo critico: NO debe permitir pagar dos veces
         $movimientos = DB::table('movimientos_bancarios')
             ->where('cuenta_bancaria_id', $this->cuenta->id)
             ->get();
 
-        $this->assertLessThanOrEqual(1, count($movimientos),
-            'Doble pago: factura ya PAGADA genero MULTIPLES movimientos bancarios');
+        $this->assertLessThanOrEqual(
+            1,
+            count($movimientos),
+            'Doble pago: factura ya PAGADA genero MULTIPLES movimientos bancarios'
+        );
 
-        // Tambien validar que el response sea congruente
         $this->assertTrue(
             in_array($response->getStatusCode(), [200, 400, 422, 500]),
             'Status code inesperado: ' . $response->getStatusCode()
@@ -118,7 +111,6 @@ class ConciliacionCasosBordeTest extends TestCase
         Sanctum::actingAs($this->usuario);
         $response = $this->postJson('/api/banco/movimientos/conciliar-anticipo', [
             'movimiento_id' => 999,
-            // falta anticipo_id
         ]);
 
         $this->assertContains($response->getStatusCode(), [400, 422, 500]);
@@ -126,7 +118,6 @@ class ConciliacionCasosBordeTest extends TestCase
 
     public function test_conciliar_anticipo_con_movimiento_de_otra_empresa_es_rechazado()
     {
-        // Crear empresa B con su propia cuenta y movimiento
         $empresaB = $this->crearEmpresa();
         $usuarioB = $this->crearUsuario($empresaB, $this->rolSuperAdmin);
         $cuentaB = CuentaBancariaEmpresa::create([
@@ -148,7 +139,6 @@ class ConciliacionCasosBordeTest extends TestCase
             'estado' => 'PENDIENTE',
         ]);
 
-        // Anticipo de empresa A (yo)
         $anticipoIdA = DB::table('anticipos_proveedores')->insertGetId([
             'empresa_id' => $this->empresa->id,
             'proveedor_id' => $this->proveedor->id,
@@ -158,15 +148,17 @@ class ConciliacionCasosBordeTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        Sanctum::actingAs($this->usuario); // soy usuario de A
+        Sanctum::actingAs($this->usuario);
         $response = $this->postJson('/api/banco/movimientos/conciliar-anticipo', [
-            'movimiento_id' => $movIdB, // movimiento de B
+            'movimiento_id' => $movIdB,
             'anticipo_id' => $anticipoIdA,
         ]);
 
-        // No debe permitir conciliar movimiento ajeno con anticipo propio
-        $this->assertNotContains($response->getStatusCode(), [200, 201],
-            'IDOR: usuario A pudo conciliar anticipo propio con movimiento de empresa B');
+        $this->assertNotContains(
+            $response->getStatusCode(),
+            [200, 201],
+            'IDOR: usuario A pudo conciliar anticipo propio con movimiento de empresa B'
+        );
     }
 
     public function test_movimiento_sugerencias_de_otra_empresa_falla()
@@ -194,8 +186,11 @@ class ConciliacionCasosBordeTest extends TestCase
         Sanctum::actingAs($this->usuario);
         $response = $this->getJson("/api/banco/movimientos/{$movIdB}/sugerencias");
 
-        $this->assertNotEquals(200, $response->getStatusCode(),
-            'IDOR: usuario A obtuvo sugerencias de movimiento de empresa B');
+        $this->assertNotEquals(
+            200,
+            $response->getStatusCode(),
+            'IDOR: usuario A obtuvo sugerencias de movimiento de empresa B'
+        );
     }
 
     public function test_conciliar_facturas_con_array_vacio_falla()
@@ -211,7 +206,6 @@ class ConciliacionCasosBordeTest extends TestCase
 
     public function test_conciliar_facturas_no_puede_mezclar_facturas_de_otra_empresa()
     {
-        // Setup empresa B con factura ajena
         $empresaB = $this->crearEmpresa();
         $proveedorB = Proveedor::create([
             'empresa_id' => $empresaB->id,
@@ -235,7 +229,6 @@ class ConciliacionCasosBordeTest extends TestCase
             'estado' => 'REGISTRADA',
         ]);
 
-        // Movimiento propio
         $movIdA = DB::table('movimientos_bancarios')->insertGetId([
             'empresa_id' => $this->empresa->id,
             'cuenta_bancaria_id' => $this->cuenta->id,
@@ -249,10 +242,13 @@ class ConciliacionCasosBordeTest extends TestCase
         Sanctum::actingAs($this->usuario);
         $response = $this->postJson('/api/banco/movimientos/conciliar-facturas', [
             'movimiento_id' => $movIdA,
-            'facturas_ids' => [$facturaB->id], // factura ajena!
+            'facturas_ids' => [$facturaB->id],
         ]);
 
-        $this->assertNotContains($response->getStatusCode(), [200, 201],
-            'IDOR: usuario A pudo conciliar movimiento propio con factura de empresa B');
+        $this->assertNotContains(
+            $response->getStatusCode(),
+            [200, 201],
+            'IDOR: usuario A pudo conciliar movimiento propio con factura de empresa B'
+        );
     }
 }

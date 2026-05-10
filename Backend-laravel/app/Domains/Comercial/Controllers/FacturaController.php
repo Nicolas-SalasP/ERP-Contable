@@ -102,16 +102,37 @@ class FacturaController
                 'tipo_documento' => 'required|string|in:FACTURA,NOTA_CREDITO,BOLETA,NOTA_DEBITO,COMPRA',
                 'monto_bruto' => 'required|numeric|gt:0',
                 'monto_neto' => 'required|numeric|gt:0',
-                'cuentaDestino' => 'required|string',
+                'cuentaDestino' => 'sometimes|string',
                 'cuentaIva' => 'nullable|string',   
                 'cuentaProveedor' => 'nullable|string',
                 'centro_costo_id' => 'nullable|integer',
                 'fecha_emision' => 'nullable|date',
                 'fecha_vencimiento' => 'nullable|date',
+                'factura_referencia_id' => 'nullable|integer',
             ], [
                 'monto_bruto.gt' => 'El monto bruto debe ser mayor a 0',
                 'monto_neto.gt' => 'El monto neto debe ser mayor a 0',
             ]);
+
+            if ($input['tipo_documento'] === 'NOTA_CREDITO' && !empty($input['factura_referencia_id'])) {
+                $facturaOriginal = \App\Domains\Comercial\Models\Factura::where('empresa_id', $request->user()->empresa_id)
+                    ->find($input['factura_referencia_id']);
+
+                if (!$facturaOriginal) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La factura referenciada no existe.'
+                    ], 422);
+                }
+
+                if ((float) $input['monto_bruto'] > (float) $facturaOriginal->monto_bruto) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El monto de la nota de credito no puede ser mayor a la factura original (' .
+                            $facturaOriginal->monto_bruto . ').'
+                    ], 422);
+                }
+            }
 
             $datos = [
                 'empresa_id' => $request->user()->empresa_id,
@@ -129,7 +150,8 @@ class FacturaController
                 'cuentaDestino' => $input['cuentaDestino'] ?? null,
                 'cuentaIva' => $input['cuentaIva'] ?? null,
                 'cuentaProveedor' => $input['cuentaProveedor'] ?? null,
-                'centro_costo_id' => $input['centro_costo_id'] ?? null
+                'centro_costo_id' => $input['centro_costo_id'] ?? null,
+                'factura_referencia_id' => $input['factura_referencia_id'] ?? null,
             ];
 
             $factura = $this->service->registrarFacturaCompra($datos);
@@ -283,6 +305,57 @@ class FacturaController
             ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function disponiblesProyectos(Request $request)
+    {
+        try {
+            $facturas = $this->service->obtenerFacturasDisponiblesParaProyectos(
+                $request->user()->empresa_id
+            );
+            return response()->json(['success' => true, 'data' => $facturas]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function vincularProyecto(Request $request, $id)
+    {
+        try {
+            $datos = $request->validate([
+                'proyecto_id' => 'sometimes|integer',
+                'proyecto_activo_id' => 'sometimes|integer',
+            ]);
+
+            $proyectoId = $datos['proyecto_activo_id'] ?? $datos['proyecto_id'] ?? null;
+            if (!$proyectoId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debes especificar proyecto_id o proyecto_activo_id.',
+                    'errors' => ['proyecto_id' => ['Campo requerido.']]
+                ], 422);
+            }
+
+            $this->service->vincularAProyecto(
+                $request->user()->empresa_id,
+                (int) $id,
+                (int) $proyectoId
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Factura vinculada al proyecto exitosamente.'
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : 400;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
 }

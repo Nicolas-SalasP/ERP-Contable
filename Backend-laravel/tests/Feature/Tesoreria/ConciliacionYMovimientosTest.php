@@ -38,7 +38,6 @@ class ConciliacionYMovimientosTest extends TestCase
         $this->empresaA = Empresa::create(['rut' => '11.111.111-1', 'razon_social' => 'Empresa A']);
         $this->empresaB = Empresa::create(['rut' => '22.222.222-2', 'razon_social' => 'Empresa B']);
 
-        // NUEVO: Crear el país para la llave foránea
         Pais::create(['iso' => 'CL', 'nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'activo' => true]);
 
         $this->adminA = User::create([
@@ -163,24 +162,24 @@ class ConciliacionYMovimientosTest extends TestCase
         ]);
 
         $facturaB = Factura::create([
-            'empresa_id' => $this->empresaB->id, 
-            'proveedor_id' => $proveedorB->id, 
-            'numero_factura' => '1', 
-            'monto_bruto' => 100, 
+            'empresa_id' => $this->empresaB->id,
+            'proveedor_id' => $proveedorB->id,
+            'numero_factura' => '1',
+            'monto_bruto' => 100,
             'monto_neto' => 81,
             'monto_impuesto' => 19,
             'estado' => 'REGISTRADA',
             'codigo_unico' => 99999001,
             'fecha_emision' => '2026-05-04'
         ]);
-        
+
         Sanctum::actingAs($this->adminA);
-        
+
         $response = $this->postJson('/api/banco/nomina/pagar', [
-            'facturas_ids' => [$facturaB->id], 
+            'facturas_ids' => [$facturaB->id],
             'cuenta_bancaria_id' => $this->cuentaA->id
         ]);
-        
+
         $this->assertTrue(in_array($response->getStatusCode(), [400, 403, 404, 500]));
     }
 

@@ -97,7 +97,7 @@ class BancoController
                 'cuenta_bancaria_id' => 'required|integer',
                 'fecha' => 'required|date',
                 'monto' => 'required|numeric|min:1',
-                'tipo_movimiento' => 'required|string',
+                'tipo_movimiento' => 'required|string|in:INGRESO,EGRESO,ABONO,CARGO',
                 'descripcion' => 'required|string|max:255',
             ]);
 

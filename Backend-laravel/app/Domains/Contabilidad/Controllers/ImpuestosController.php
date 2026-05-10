@@ -20,7 +20,24 @@ class ImpuestosController
     public function simularF29(Request $request, $mes, $anio)
     {
         try {
-            $resultado = $this->service->simularF29($request->user()->empresa_id, (int) $mes, (int) $anio);
+            $mesInt = (int) $mes;
+            $anioInt = (int) $anio;
+
+            if ($mesInt < 1 || $mesInt > 12) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El mes debe estar entre 1 y 12.'
+                ], 422);
+            }
+
+            if ($anioInt < 2000 || $anioInt > 2100) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El año debe estar entre 2000 y 2100.'
+                ], 422);
+            }
+
+            $resultado = $this->service->simularF29($request->user()->empresa_id, $mesInt, $anioInt);
             return response()->json(['success' => true, 'data' => $resultado]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);

@@ -8,15 +8,6 @@ use Tests\Concerns\PreparaEntornoBase;
 use Laravel\Sanctum\Sanctum;
 use App\Domains\Core\Models\User;
 
-/**
- * Tests focalizados de tokens, sesiones y autenticacion.
- *
- * Cubre escenarios realistas de seguridad de auth:
- * - Tokens generados por logout
- * - Multiples sesiones simultaneas
- * - Tokens reutilizados despues de logout
- * - Inyecciones varias
- */
 class TokensYAutenticacionTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
@@ -46,8 +37,11 @@ class TokensYAutenticacionTest extends TestCase
         $response->assertStatus(200);
 
         $tokensFinales = $this->usuario->fresh()->tokens()->count();
-        $this->assertEquals($tokensIniciales + 1, $tokensFinales,
-            'Login no genero un nuevo token');
+        $this->assertEquals(
+            $tokensIniciales + 1,
+            $tokensFinales,
+            'Login no genero un nuevo token'
+        );
     }
 
     public function test_dos_logins_consecutivos_generan_dos_tokens_distintos()
@@ -66,13 +60,15 @@ class TokensYAutenticacionTest extends TestCase
 
         $this->assertNotNull($token1);
         $this->assertNotNull($token2);
-        $this->assertNotEquals($token1, $token2,
-            'Dos logins consecutivos generaron el mismo token');
+        $this->assertNotEquals(
+            $token1,
+            $token2,
+            'Dos logins consecutivos generaron el mismo token'
+        );
     }
 
     public function test_logout_invalida_solo_el_token_actual_y_no_otros()
     {
-        // Login dos veces (dos sesiones, ej: PC y celular)
         $r1 = $this->postJson('/api/auth/login', [
             'email' => 'tokenstest@erp.cl',
             'password' => 'password123',
@@ -85,26 +81,27 @@ class TokensYAutenticacionTest extends TestCase
         ]);
         $tokenMobil = $r2->json('token');
 
-        // Logout en PC
         $this->withHeader('Authorization', 'Bearer ' . $tokenPC)
             ->postJson('/api/auth/logout')
             ->assertStatus(200);
 
-        // Validar a nivel de BD que el token de PC fue eliminado de personal_access_tokens
         $hashedPC = hash('sha256', explode('|', $tokenPC, 2)[1] ?? $tokenPC);
         $tokenPCEnBD = \DB::table('personal_access_tokens')
             ->where('token', $hashedPC)
             ->exists();
-        $this->assertFalse($tokenPCEnBD,
-            'Logout no elimino el token de la BD');
+        $this->assertFalse(
+            $tokenPCEnBD,
+            'Logout no elimino el token de la BD'
+        );
 
-        // El token mobil debe seguir presente en BD
         $hashedMobil = hash('sha256', explode('|', $tokenMobil, 2)[1] ?? $tokenMobil);
         $tokenMobilEnBD = \DB::table('personal_access_tokens')
             ->where('token', $hashedMobil)
             ->exists();
-        $this->assertTrue($tokenMobilEnBD,
-            'Logout elimino el token de OTRA sesion - bug critico');
+        $this->assertTrue(
+            $tokenMobilEnBD,
+            'Logout elimino el token de OTRA sesion - bug critico'
+        );
     }
 
     public function test_token_alterado_un_caracter_no_funciona()
@@ -115,7 +112,6 @@ class TokensYAutenticacionTest extends TestCase
         ]);
         $token = $r->json('token');
 
-        // Cambiar un caracter al final del token
         $tokenAlterado = substr($token, 0, -1) . 'X';
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $tokenAlterado)
@@ -126,7 +122,6 @@ class TokensYAutenticacionTest extends TestCase
 
     public function test_endpoints_protegidos_rechazan_token_de_usuario_eliminado()
     {
-        // Crear un segundo usuario para ser eliminado (asi nuestro $this->usuario admin no se borra)
         $usuarioAEliminar = $this->crearUsuario($this->empresa, $this->rolUsuarioBasico, [
             'email' => 'eliminar@erp.cl',
             'password' => bcrypt('password123'),
@@ -139,26 +134,26 @@ class TokensYAutenticacionTest extends TestCase
         $response = $r;
         $token = $response->json('token');
 
-        // Validar que existe en BD antes
-        $this->assertGreaterThan(0,
+        $this->assertGreaterThan(
+            0,
             \DB::table('personal_access_tokens')
                 ->where('tokenable_id', $usuarioAEliminar->id)
                 ->count()
         );
 
-        // Eliminar al usuario VIA SERVICE (flujo real de la app, no Eloquent directo)
-        Sanctum::actingAs($this->usuario); // soy admin
+        Sanctum::actingAs($this->usuario);
         $this->deleteJson("/api/usuarios/{$usuarioAEliminar->id}")
             ->assertStatus(200);
 
-        // Los tokens del usuario eliminado deben haber sido revocados por el service
         $existeDespues = \DB::table('personal_access_tokens')
             ->where('tokenable_id', $usuarioAEliminar->id)
             ->exists();
 
-        $this->assertFalse($existeDespues,
+        $this->assertFalse(
+            $existeDespues,
             'Tokens del usuario desvinculado no fueron revocados - VULNERABILIDAD: ' .
-            'el usuario puede seguir usando el sistema con su token hasta que expire');
+            'el usuario puede seguir usando el sistema con su token hasta que expire'
+        );
     }
 
     public function test_login_devuelve_estructura_user_sin_password()
@@ -174,9 +169,11 @@ class TokensYAutenticacionTest extends TestCase
         $this->assertArrayHasKey('user', $body);
         $userBody = $body['user'];
 
-        // Validar que NO se filtre el password hasheado
-        $this->assertArrayNotHasKey('password', $userBody,
-            'Endpoint login filtra el password hasheado');
+        $this->assertArrayNotHasKey(
+            'password',
+            $userBody,
+            'Endpoint login filtra el password hasheado'
+        );
         $this->assertArrayNotHasKey('remember_token', $userBody);
     }
 
@@ -188,7 +185,6 @@ class TokensYAutenticacionTest extends TestCase
         ]);
         $token = $r->json('token');
 
-        // Sin "Bearer " prefijo
         $response = $this->withHeader('Authorization', $token)
             ->getJson('/api/auth/me');
 

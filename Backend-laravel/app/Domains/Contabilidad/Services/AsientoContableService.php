@@ -3,13 +3,22 @@
 namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\DetalleAsiento;
 use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class AsientoContableService
 {
+    protected ContadorEmpresaService $contadorService;
+
+    public function __construct(ContadorEmpresaService $contadorService)
+    {
+        $this->contadorService = $contadorService;
+    }
+
     public function obtenerAsientosPaginados(int $empresaId)
     {
         return AsientoContable::where('empresa_id', $empresaId)
@@ -38,6 +47,35 @@ class AsientoContableService
 
         if ($mesCerrado) {
             throw new Exception("El periodo {$mes}/{$anio} ya está cerrado tributariamente.");
+        }
+    }
+
+    private function validarCentrosCosto(int $empresaId, array $detalles): void
+    {
+        $centroCostoIds = collect($detalles)
+            ->pluck('centro_costo_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($centroCostoIds)) {
+            return;
+        }
+
+        $centrosValidos = CentroCosto::whereIn('id', $centroCostoIds)
+            ->where('empresa_id', $empresaId)
+            ->where('activo', true)
+            ->pluck('id')
+            ->all();
+
+        $centrosInvalidos = array_diff($centroCostoIds, $centrosValidos);
+
+        if (!empty($centrosInvalidos)) {
+            throw new Exception(
+                "Centro(s) de costo invalido(s): " . implode(', ', $centrosInvalidos) .
+                ". Deben existir en la empresa y estar activos."
+            );
         }
     }
 
@@ -84,6 +122,8 @@ class AsientoContableService
             }
         }
 
+        $this->validarCentrosCosto($datosAsiento['empresa_id'], $detalles);
+
         return DB::transaction(function () use ($datosAsiento, $detalles) {
             if (empty($datosAsiento['numero_comprobante'])) {
                 $datosAsiento['numero_comprobante'] = 'T' . time() . rand(10, 99);
@@ -112,6 +152,7 @@ class AsientoContableService
     public function crearAsientoManual(array $datos)
     {
         $this->validarMesAbierto($datos['empresa_id'], $datos['fecha']);
+        $this->validarCentrosCosto($datos['empresa_id'], $datos['detalles']);
 
         return DB::transaction(function () use ($datos) {
             $tempNum = 'T' . time() . rand(10, 99);
@@ -162,7 +203,12 @@ class AsientoContableService
     {
         $anio = date('y', strtotime($asiento->fecha ?? date('Y-m-d')));
         $tipoCode = '10';
-        $secuencia = str_pad($asiento->id, 6, '0', STR_PAD_LEFT);
+        $correlativo = $this->contadorService->siguienteNumero(
+            $asiento->empresa_id,
+            'asiento_comprobante'
+        );
+
+        $secuencia = str_pad($correlativo, 6, '0', STR_PAD_LEFT);
 
         $asiento->update([
             'numero_comprobante' => $anio . $tipoCode . $secuencia

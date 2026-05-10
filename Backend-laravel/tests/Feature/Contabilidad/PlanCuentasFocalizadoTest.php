@@ -7,13 +7,6 @@ use Tests\TestCase;
 use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 
-/**
- * Tests focalizados de Plan de Cuentas.
- *
- * Cubre escenarios criticos del catalogo contable que son de alto
- * impacto: jerarquia de cuentas, validacion de codigos chilenos,
- * y prevenciones de inconsistencia.
- */
 class PlanCuentasFocalizadoTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
@@ -30,7 +23,6 @@ class PlanCuentasFocalizadoTest extends TestCase
 
     public function test_codigo_de_cuenta_chileno_acepta_formato_estandar_de_seis_digitos()
     {
-        // En Chile el formato comun es de 6 digitos: AABBCC donde AA=tipo, BB=grupo, CC=cuenta
         $codigosValidos = ['110101', '352105', '410101', '610105', '999999'];
 
         foreach ($codigosValidos as $codigo) {
@@ -50,7 +42,6 @@ class PlanCuentasFocalizadoTest extends TestCase
 
     public function test_codigo_de_cuenta_es_unico_por_empresa_pero_no_global()
     {
-        // El codigo '110101' debe poder existir en empresa A y B simultaneamente
         $empresaB = $this->crearEmpresa(['razon_social' => 'Empresa B']);
 
         PlanCuenta::create([
@@ -112,7 +103,6 @@ class PlanCuentasFocalizadoTest extends TestCase
 
     public function test_listado_imputables_excluye_cuentas_padre_no_imputables()
     {
-        // 11 (padre, no imputable)
         PlanCuenta::create([
             'empresa_id' => $this->empresa->id,
             'codigo' => '11',
@@ -122,7 +112,6 @@ class PlanCuentasFocalizadoTest extends TestCase
             'activo' => true,
         ]);
 
-        // 110101 (hija, imputable)
         PlanCuenta::create([
             'empresa_id' => $this->empresa->id,
             'codigo' => '110101',

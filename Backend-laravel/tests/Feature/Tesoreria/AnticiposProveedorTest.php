@@ -10,18 +10,6 @@ use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Comercial\Models\Proveedor;
 use Laravel\Sanctum\Sanctum;
 
-/**
- * Tests focalizados de Anticipos a Proveedores.
- *
- * Cubre:
- * - Estados de anticipos (PENDIENTE / APLICADO / ANULADO)
- * - Anticipos con multiples movimientos
- * - Validaciones de monto y proveedor
- * - Aislamiento multi-tenant
- *
- * Estos tests aseguran que el flujo de anticipos no genere fugas
- * contables ni permita reusar anticipos ya consumidos.
- */
 class AnticiposProveedorTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
@@ -85,8 +73,6 @@ class AnticiposProveedorTest extends TestCase
             'referencia' => 'Abono test',
         ]);
 
-        // El endpoint puede no estar implementado completo. Lo critico es que
-        // NO genere un 500 silencioso ni un 200 sin grabar nada.
         $this->assertContains($response->getStatusCode(), [200, 201, 400, 404, 422, 500]);
 
         if (in_array($response->getStatusCode(), [200, 201])) {
@@ -98,10 +84,8 @@ class AnticiposProveedorTest extends TestCase
         }
     }
 
-    public function test_no_puede_crearse_anticipo_a_proveedor_de_otra_empresa_via_db()
+    public function test_anticipo_via_endpoint_no_acepta_proveedor_de_otra_empresa()
     {
-        // FK cascade asegura que un anticipo apunte a un proveedor existente.
-        // Pero la validacion semantica (mismo empresa_id) es responsabilidad de la app.
         $empresaB = $this->crearEmpresa();
         $proveedorB = Proveedor::create([
             'empresa_id' => $empresaB->id,
@@ -112,32 +96,32 @@ class AnticiposProveedorTest extends TestCase
             'moneda_defecto' => 'CLP',
         ]);
 
-        // Intento crear anticipo en empresa A pero apuntando a proveedor de B.
-        // Esto seria un dato inconsistente que la app debe prevenir.
-        $idAnticipo = DB::table('anticipos_proveedores')->insertGetId([
-            'empresa_id' => $this->empresa->id, // empresa A
-            'proveedor_id' => $proveedorB->id,  // proveedor de B
+        Sanctum::actingAs($this->usuario);
+        $response = $this->postJson('/api/proveedores/anticipos', [
+            'proveedor_id' => $proveedorB->id, // proveedor ajeno!
+            'fecha' => '2026-05-01',
             'monto' => 100000,
-            'estado' => 'PENDIENTE',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'referencia' => 'Test IDOR',
         ]);
 
-        // La BD lo permite (no hay constraint compuesto). Esto es una vulnerabilidad
-        // semantica que debe ser cubierta por validaciones a nivel de Service.
-        $this->assertGreaterThan(0, $idAnticipo);
+        $this->assertNotContains(
+            $response->getStatusCode(),
+            [200, 201],
+            'IDOR: usuario de empresa A creo anticipo apuntando a proveedor de empresa B'
+        );
 
-        // Hallazgo: la app DEBE validar que proveedor.empresa_id == empresa_id en el insert.
-        // Por ahora documentamos este caso como riesgo conocido.
-        $this->markTestIncomplete(
-            'Hallazgo de seguridad: BD acepta anticipo con empresa_id != proveedor.empresa_id. ' .
-            'Agregar validacion en AnticipoService o ProveedorController::guardarAnticipo.'
+        $existeAnticipo = \DB::table('anticipos_proveedores')
+            ->where('proveedor_id', $proveedorB->id)
+            ->where('empresa_id', $this->empresa->id)
+            ->exists();
+        $this->assertFalse(
+            $existeAnticipo,
+            'Se creo un anticipo inconsistente (empresa_id != proveedor.empresa_id)'
         );
     }
 
     public function test_listado_anticipos_pendientes_solo_devuelve_los_de_la_empresa()
     {
-        // Crear anticipos en empresa A
         DB::table('anticipos_proveedores')->insert([
             'empresa_id' => $this->empresa->id,
             'proveedor_id' => $this->proveedor->id,
@@ -147,7 +131,6 @@ class AnticiposProveedorTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        // Crear empresa B con su anticipo
         $empresaB = $this->crearEmpresa();
         $provB = Proveedor::create([
             'empresa_id' => $empresaB->id,
@@ -179,7 +162,10 @@ class AnticiposProveedorTest extends TestCase
         $this->assertIsArray($anticipos);
 
         $idsExpuestos = array_map(fn($a) => $a['id'] ?? null, $anticipos);
-        $this->assertNotContains($anticipoIdB, $idsExpuestos,
-            'Filtracion: anticipo de empresa B aparecio en lista de empresa A');
+        $this->assertNotContains(
+            $anticipoIdB,
+            $idsExpuestos,
+            'Filtracion: anticipo de empresa B aparecio en lista de empresa A'
+        );
     }
 }

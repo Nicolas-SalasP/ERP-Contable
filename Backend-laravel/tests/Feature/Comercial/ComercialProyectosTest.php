@@ -101,6 +101,22 @@ class ComercialProyectosTest extends TestCase
     public function test_vincular_factura_a_proyecto_actualiza_el_registro_correctamente()
     {
         $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '2.2.2.2-2', 'razon_social' => 'Easy', 'codigo_interno' => 'P2', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        // Crear proyecto activo dinamico (mismo patron que otros tests del repo)
+        $tablaProyectos = Schema::hasTable('proyectos_activos') ? 'proyectos_activos' : 'proyectos';
+        $columnas = Schema::getColumnListing($tablaProyectos);
+        $pk = in_array('id_proyecto', $columnas) ? 'id_proyecto'
+            : (in_array('id', $columnas) ? 'id' : $columnas[0]);
+
+        $datosProyecto = [$pk => 777];
+        if (in_array('empresa_id', $columnas)) $datosProyecto['empresa_id'] = $this->empresa->id;
+        if (in_array('nombre', $columnas)) $datosProyecto['nombre'] = 'Proyecto 777';
+        if (in_array('estado', $columnas)) $datosProyecto['estado'] = 'EN_CONSTRUCCION';
+        if (in_array('vida_util_meses', $columnas)) $datosProyecto['vida_util_meses'] = 60;
+        if (in_array('valor_total_original', $columnas)) $datosProyecto['valor_total_original'] = 0;
+
+        DB::table($tablaProyectos)->insert($datosProyecto);
+
         $factura = new Factura();
         $factura->empresa_id = $this->empresa->id;
         $factura->proveedor_id = $prov->id;

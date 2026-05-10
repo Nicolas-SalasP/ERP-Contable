@@ -12,18 +12,6 @@ use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\AnticipoProveedor;
 use Laravel\Sanctum\Sanctum;
 
-/**
- * Tests avanzados de flujos de Tesoreria.
- *
- * Cubre escenarios complejos no testados aun:
- * - Anticipos pendientes y aplicacion parcial
- * - Movimientos bancarios con cargo/abono
- * - Aislamiento multi-tenant en endpoints de pago masivo
- * - Validacion de cuentas con saldo insuficiente
- *
- * Estos tests buscan capturar bugs que harian un cliente real
- * perder dinero por pagos mal registrados o anticipos duplicados.
- */
 class FlujosAvanzadosTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
@@ -89,7 +77,6 @@ class FlujosAvanzadosTest extends TestCase
 
     public function test_anticipos_pendientes_aisla_por_tenant()
     {
-        // Crear anticipos en ambas empresas
         AnticipoProveedor::create([
             'empresa_id' => $this->empresaA->id,
             'proveedor_id' => $this->proveedorA->id,
@@ -120,15 +107,16 @@ class FlujosAvanzadosTest extends TestCase
         $anticipos = $body['data'] ?? $body;
         $this->assertIsArray($anticipos);
 
-        // El anticipo de empresa B NO debe aparecer
         $idsExpuestos = array_map(fn($a) => $a['id'] ?? null, $anticipos);
-        $this->assertNotContains($anticipoB->id, $idsExpuestos,
-            'Filtracion: anticipo de empresa B aparecio en lista de empresa A');
+        $this->assertNotContains(
+            $anticipoB->id,
+            $idsExpuestos,
+            'Filtracion: anticipo de empresa B aparecio en lista de empresa A'
+        );
     }
 
     public function test_movimiento_bancario_persiste_cargo_y_abono_correctamente()
     {
-        // Crear movimiento con abono de $1.000.000 (caja entrante)
         $movId = DB::table('movimientos_bancarios')->insertGetId([
             'empresa_id' => $this->empresaA->id,
             'cuenta_bancaria_id' => $this->cuentaA->id,
@@ -146,7 +134,6 @@ class FlujosAvanzadosTest extends TestCase
 
     public function test_pagar_nomina_con_cuenta_de_otra_empresa_es_rechazado()
     {
-        // Factura de empresa A
         $facturaA = Factura::create([
             'empresa_id' => $this->empresaA->id,
             'proveedor_id' => $this->proveedorA->id,
@@ -163,12 +150,14 @@ class FlujosAvanzadosTest extends TestCase
         Sanctum::actingAs($this->usuarioA);
         $response = $this->postJson('/api/banco/nomina/pagar', [
             'facturas_ids' => [$facturaA->id],
-            'cuenta_bancaria_id' => $this->cuentaB->id, // cuenta de OTRA empresa
+            'cuenta_bancaria_id' => $this->cuentaB->id,
         ]);
 
-        // Debe rechazar con 4xx - jamas 200/201
-        $this->assertNotContains($response->getStatusCode(), [200, 201],
-            'IDOR CRITICO: usuario A pudo cargar pago contra cuenta de empresa B');
+        $this->assertNotContains(
+            $response->getStatusCode(),
+            [200, 201],
+            'IDOR CRITICO: usuario A pudo cargar pago contra cuenta de empresa B'
+        );
     }
 
     public function test_anticipo_no_puede_aplicarse_cuando_estado_esta_consumido()
@@ -177,7 +166,7 @@ class FlujosAvanzadosTest extends TestCase
             'empresa_id' => $this->empresaA->id,
             'proveedor_id' => $this->proveedorA->id,
             'monto' => 100000,
-            'saldo_disponible' => 0, // ya gastado
+            'saldo_disponible' => 0,
             'fecha' => '2026-05-01',
             'estado' => 'CONSUMIDO',
         ]);
@@ -188,75 +177,86 @@ class FlujosAvanzadosTest extends TestCase
             'monto_a_aplicar' => 50000,
         ]);
 
-        // Aceptamos 4xx (validacion correcta) o 404 (endpoint no implementado)
-        $this->assertNotContains($response->getStatusCode(), [200, 201],
-            'Bug: se aplico anticipo CONSUMIDO con saldo 0');
+        $this->assertNotContains(
+            $response->getStatusCode(),
+            [200, 201],
+            'Bug: se aplico anticipo CONSUMIDO con saldo 0'
+        );
     }
 
     public function test_ingreso_manual_con_monto_extremo_no_pierde_precision()
     {
         Sanctum::actingAs($this->usuarioA);
-        $monto = 999999999.99; // casi mil millones con centavos
+        $monto = 999999999.99;
 
         $response = $this->postJson('/api/banco/ingreso-manual', [
             'cuenta_bancaria_id' => $this->cuentaA->id,
             'fecha' => '2026-05-01',
             'descripcion' => 'Deposito grande',
             'monto' => $monto,
-            'tipo' => 'ABONO',
+            'tipo_movimiento' => 'ABONO',
         ]);
 
-        if (in_array($response->getStatusCode(), [404, 405])) {
-            $this->markTestSkipped('Endpoint /api/banco/ingreso-manual no implementado.');
-        }
+        $response->assertStatus(201);
 
-        if ($response->getStatusCode() === 422) {
-            // Si el endpoint valida campos diferentes, lo skipeamos sin marcar bug
-            $this->markTestSkipped('Endpoint con validaciones distintas a las asumidas: ' .
-                $response->getContent());
-        }
+        $mov = DB::table('movimientos_bancarios')
+            ->where('cuenta_bancaria_id', $this->cuentaA->id)
+            ->where('descripcion', 'Deposito grande')
+            ->first();
 
-        // Si paso, validar que el monto se guardo intacto
-        if ($response->getStatusCode() === 201) {
-            $mov = DB::table('movimientos_bancarios')
-                ->where('cuenta_bancaria_id', $this->cuentaA->id)
-                ->where('descripcion', 'Deposito grande')
-                ->first();
-            if ($mov) {
-                $this->assertEquals($monto, (float) $mov->abono);
-            }
-        }
-
-        // Aceptamos cualquier 2xx valido
-        $this->assertContains($response->getStatusCode(), [200, 201]);
+        $this->assertNotNull($mov, 'El movimiento no se persistio en BD');
+        $abonoGuardado = (float) $mov->abono;
+        $cargoGuardado = (float) $mov->cargo;
+        $totalGuardado = $abonoGuardado + $cargoGuardado;
+        $this->assertEquals(
+            $monto,
+            $totalGuardado,
+            "Perdida de precision: esperado {$monto}, guardado {$totalGuardado}"
+        );
     }
 
     public function test_movimiento_bancario_no_puede_tener_cargo_y_abono_simultaneos()
     {
-        // En contabilidad, un movimiento es entrada o salida, no ambos.
-        // Si algun dia esto se relaja, este test alerta el cambio.
-        $movId = DB::table('movimientos_bancarios')->insertGetId([
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        DB::table('movimientos_bancarios')->insert([
             'empresa_id' => $this->empresaA->id,
             'cuenta_bancaria_id' => $this->cuentaA->id,
             'fecha' => '2026-05-01',
             'descripcion' => 'Movimiento dudoso',
             'cargo' => 50000,
-            'abono' => 30000, // ambos!
+            'abono' => 30000,
+            'estado' => 'PENDIENTE',
+        ]);
+    }
+
+    public function test_movimiento_bancario_solo_con_cargo_es_aceptado()
+    {
+        $movId = DB::table('movimientos_bancarios')->insertGetId([
+            'empresa_id' => $this->empresaA->id,
+            'cuenta_bancaria_id' => $this->cuentaA->id,
+            'fecha' => '2026-05-01',
+            'descripcion' => 'Solo cargo',
+            'cargo' => 100000,
+            'abono' => 0,
             'estado' => 'PENDIENTE',
         ]);
 
-        $movInvalido = DB::table('movimientos_bancarios')->where('id', $movId)->first();
+        $this->assertGreaterThan(0, $movId);
+    }
 
-        // El test es informativo: actualmente la BD lo permite (no hay constraint).
-        // Esto es un POTENCIAL hallazgo: si en produccion alguien crea movs con
-        // cargo Y abono > 0, los reportes contables van a salir mal.
-        $this->assertGreaterThan(0, (float) $movInvalido->cargo);
-        $this->assertGreaterThan(0, (float) $movInvalido->abono);
+    public function test_movimiento_bancario_solo_con_abono_es_aceptado()
+    {
+        $movId = DB::table('movimientos_bancarios')->insertGetId([
+            'empresa_id' => $this->empresaA->id,
+            'cuenta_bancaria_id' => $this->cuentaA->id,
+            'fecha' => '2026-05-01',
+            'descripcion' => 'Solo abono',
+            'cargo' => 0,
+            'abono' => 100000,
+            'estado' => 'PENDIENTE',
+        ]);
 
-        // TODO: agregar validacion en BancoController para rechazar este caso.
-        $this->markTestIncomplete(
-            'Hallazgo: BD acepta movimientos con cargo Y abono simultaneos. '.
-            'Agregar validacion en BancoController.'
-        );
+        $this->assertGreaterThan(0, $movId);
     }
 }
