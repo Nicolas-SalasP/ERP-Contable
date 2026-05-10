@@ -58,11 +58,11 @@ class ActivoFijoEscenariosProduccionTest extends TestCase
         ]);
     }
 
-    public function test_codigo_de_activo_es_unique_globalmente_entre_empresas()
+    public function test_codigo_de_activo_puede_repetirse_entre_empresas_distintas()
     {
-        // Por el schema, `codigo` es unique sin scope de empresa.
-        // Esto significa que el codigo de un activo NO se puede repetir
-        // ni siquiera entre empresas distintas. Validamos ese comportamiento.
+        // Despues del fix multitenancy, el unique de `codigo` es compuesto
+        // (empresa_id, codigo). Ahora cada empresa puede tener AF-COMUN-001
+        // independientemente.
 
         ActivoFijo::create([
             'empresa_id' => $this->empresa->id,
@@ -80,37 +80,57 @@ class ActivoFijoEscenariosProduccionTest extends TestCase
 
         $empresaB = $this->crearEmpresa();
 
-        try {
-            ActivoFijo::create([
-                'empresa_id' => $empresaB->id,
-                'codigo' => 'AF-COMUN-001', // mismo codigo
-                'nombre' => 'Activo B',
-                'cuenta_activo_codigo' => '120101',
-                'cuenta_depreciacion_codigo' => '120151',
-                'cuenta_gasto_codigo' => '510101',
-                'valor_adquisicion' => 500000,
-                'fecha_adquisicion' => '2026-04-01',
-                'vida_util_meses' => 36,
-                'valor_residual' => 1,
-                'estado' => 'ACTIVO',
-            ]);
+        // Esto debe funcionar despues del fix
+        $activoB = ActivoFijo::create([
+            'empresa_id' => $empresaB->id,
+            'codigo' => 'AF-COMUN-001', // mismo codigo, otra empresa
+            'nombre' => 'Activo B',
+            'cuenta_activo_codigo' => '120101',
+            'cuenta_depreciacion_codigo' => '120151',
+            'cuenta_gasto_codigo' => '510101',
+            'valor_adquisicion' => 500000,
+            'fecha_adquisicion' => '2026-04-01',
+            'vida_util_meses' => 36,
+            'valor_residual' => 1,
+            'estado' => 'ACTIVO',
+        ]);
 
-            // Si llego aca, el unique no esta funcionando
-            $this->markTestIncomplete(
-                'Hallazgo: schema dice unique() pero permitio codigo duplicado entre empresas. ' .
-                'Decision de diseno: el unique global puede ser problematico en multi-tenant. ' .
-                'Considerar cambiar a unique compuesto (empresa_id, codigo).'
-            );
-        } catch (\Illuminate\Database\QueryException $e) {
-            // Esperado por schema actual.
-            // MySQL: "Duplicate entry"
-            // SQLite: "UNIQUE constraint failed"
-            $msg = $e->getMessage();
-            $this->assertTrue(
-                str_contains($msg, 'Duplicate') || str_contains($msg, 'UNIQUE'),
-                'Mensaje de error inesperado: ' . $msg
-            );
-        }
+        $this->assertNotNull($activoB->id,
+            'El codigo deberia poder repetirse entre empresas distintas (multitenancy)');
+    }
+
+    public function test_codigo_de_activo_no_puede_repetirse_dentro_de_la_misma_empresa()
+    {
+        ActivoFijo::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'AF-DUP-001',
+            'nombre' => 'Activo 1',
+            'cuenta_activo_codigo' => '120101',
+            'cuenta_depreciacion_codigo' => '120151',
+            'cuenta_gasto_codigo' => '510101',
+            'valor_adquisicion' => 1000000,
+            'fecha_adquisicion' => '2026-04-01',
+            'vida_util_meses' => 60,
+            'valor_residual' => 1,
+            'estado' => 'ACTIVO',
+        ]);
+
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        // Mismo codigo en la misma empresa: debe fallar
+        ActivoFijo::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'AF-DUP-001', // duplicado!
+            'nombre' => 'Activo 2',
+            'cuenta_activo_codigo' => '120101',
+            'cuenta_depreciacion_codigo' => '120151',
+            'cuenta_gasto_codigo' => '510101',
+            'valor_adquisicion' => 500000,
+            'fecha_adquisicion' => '2026-04-01',
+            'vida_util_meses' => 36,
+            'valor_residual' => 1,
+            'estado' => 'ACTIVO',
+        ]);
     }
 
     public function test_activo_con_valor_residual_igual_a_adquisicion_no_genera_depreciacion()
@@ -157,7 +177,7 @@ class ActivoFijoEscenariosProduccionTest extends TestCase
         $this->assertEquals(59999, $depreciacionMensual);
     }
 
-    public function test_activo_con_centro_costo_de_otra_empresa_se_rechaza_por_validacion()
+    public function test_activo_via_endpoint_rechaza_centro_costo_de_otra_empresa()
     {
         // Crear centro costo en empresa B
         $empresaB = $this->crearEmpresa();
@@ -168,9 +188,8 @@ class ActivoFijoEscenariosProduccionTest extends TestCase
             'activo' => true,
         ]);
 
-        // BD permite el insert (FK no valida empresa). La validacion debe ser semantica.
-        $activo = ActivoFijo::create([
-            'empresa_id' => $this->empresa->id, // empresa A
+        // Como usuario de empresa A, intentar crear activo con CC de B
+        $response = $this->actingAs($this->usuario)->postJson('/api/activos', [
             'codigo' => 'AF-CC-FOREIGN',
             'nombre' => 'Activo con CC ajeno',
             'centro_costo_id' => $ccB->id, // CC de OTRA empresa
@@ -181,22 +200,23 @@ class ActivoFijoEscenariosProduccionTest extends TestCase
             'fecha_adquisicion' => '2026-04-01',
             'vida_util_meses' => 60,
             'valor_residual' => 1,
-            'estado' => 'ACTIVO',
         ]);
 
-        // BD permitio el insert. Hallazgo de diseno: agregar validacion
-        $this->assertNotNull($activo->id);
-        $this->markTestIncomplete(
-            'Hallazgo: BD acepta activo con centro_costo_id de otra empresa. ' .
-            'Validar en ActivoFijoService::store() que centro_costo.empresa_id == empresa_id.'
-        );
+        // Despues del fix, el service rechaza con excepcion
+        $this->assertContains($response->getStatusCode(), [400, 422, 500],
+            'Activo con CC de otra empresa deberia ser rechazado');
+
+        // Validar que NO se creo el activo
+        $existe = ActivoFijo::where('codigo', 'AF-CC-FOREIGN')->exists();
+        $this->assertFalse($existe, 'Se creo activo con CC de empresa ajena');
     }
 
-    public function test_activo_con_depreciacion_acumulada_negativa_es_inconsistente()
+    public function test_activo_con_depreciacion_acumulada_negativa_es_rechazado_por_constraint()
     {
-        // La depreciacion no puede ser negativa nunca. Si lo es, hay un bug
-        // en logica de calculo. Validamos a nivel BD que se persiste como esta.
-        $activo = ActivoFijo::create([
+        // Despues del fix con CHECK constraint, intentar insertar dep negativa debe fallar.
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        ActivoFijo::create([
             'empresa_id' => $this->empresa->id,
             'codigo' => 'AF-NEG',
             'nombre' => 'Activo dep negativa',
@@ -210,14 +230,28 @@ class ActivoFijoEscenariosProduccionTest extends TestCase
             'estado' => 'ACTIVO',
             'depreciacion_acumulada' => -5000, // valor invalido!
         ]);
+    }
 
-        // BD lo permitio (no hay CHECK constraint).
-        // Hallazgo: agregar validacion que dep_acumulada >= 0.
-        $this->assertEquals(-5000, (float) $activo->depreciacion_acumulada);
-        $this->markTestIncomplete(
-            'Hallazgo: BD acepta depreciacion_acumulada negativa. ' .
-            'Agregar CHECK constraint o validacion en modelo.'
-        );
+    public function test_activo_con_depreciacion_acumulada_cero_es_aceptado()
+    {
+        // Cero es valido (es el default cuando un activo recien se crea)
+        $activo = ActivoFijo::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'AF-DEP-CERO',
+            'nombre' => 'Activo dep en cero',
+            'cuenta_activo_codigo' => '120101',
+            'cuenta_depreciacion_codigo' => '120151',
+            'cuenta_gasto_codigo' => '510101',
+            'valor_adquisicion' => 100000,
+            'fecha_adquisicion' => '2026-04-01',
+            'vida_util_meses' => 60,
+            'valor_residual' => 1,
+            'estado' => 'ACTIVO',
+            'depreciacion_acumulada' => 0,
+        ]);
+
+        $this->assertNotNull($activo->id);
+        $this->assertEquals(0, (float) $activo->depreciacion_acumulada);
     }
 
     public function test_activo_dado_de_baja_no_aparece_en_listado_activos()

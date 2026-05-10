@@ -117,7 +117,8 @@ class CotizacionService
         $cotizacion = Cotizacion::where('empresa_id', $empresaId)->find($id);
 
         if (!$cotizacion) {
-            throw new Exception("La cotización solicitada no existe o no pertenece a su empresa.");
+            $e = new Exception("La cotización solicitada no existe o no pertenece a su empresa.");
+            throw new Exception("La cotización solicitada no existe o no pertenece a su empresa.", 404);
         }
 
         $estado = EstadoCotizacion::where('nombre', $nombreEstado)->first();
@@ -179,6 +180,70 @@ class CotizacionService
             $cotizacion->save();
 
             return $cotizacion->load('detalles');
+        });
+    }
+
+    public function convertirEnFactura(int $empresaId, int $cotizacionId): \App\Domains\Comercial\Models\Factura
+    {
+        return DB::transaction(function () use ($empresaId, $cotizacionId) {
+            $cotizacion = Cotizacion::where('empresa_id', $empresaId)
+                ->with('estado', 'cliente')
+                ->find($cotizacionId);
+
+            if (!$cotizacion) {
+                throw new Exception("Cotizacion no encontrada.", 404);
+            }
+
+            $estadoAprobada = EstadoCotizacion::where('nombre', 'Aprobada')->first();
+            if (!$estadoAprobada || $cotizacion->estado_id !== $estadoAprobada->id) {
+                throw new Exception(
+                    "Solo cotizaciones APROBADAS pueden ser facturadas. " .
+                    "Estado actual: " . ($cotizacion->estado->nombre ?? '?')
+                );
+            }
+
+            $cliente = $cotizacion->cliente;
+            if (!$cliente) {
+                throw new Exception("Cotizacion no tiene cliente vinculado.");
+            }
+
+            $proveedor = \App\Domains\Comercial\Models\Proveedor::where('empresa_id', $empresaId)
+                ->where('rut', $cliente->rut)
+                ->first();
+
+            if (!$proveedor) {
+                $proveedor = \App\Domains\Comercial\Models\Proveedor::create([
+                    'empresa_id' => $empresaId,
+                    'rut' => $cliente->rut,
+                    'razon_social' => $cliente->razon_social,
+                    'codigo_interno' => 'CLI-' . $cliente->id,
+                    'pais_iso' => 'CL',
+                    'moneda_defecto' => 'CLP',
+                ]);
+            }
+
+            $codigoUnico = (int) (time() . rand(1000, 9999));
+            $factura = \App\Domains\Comercial\Models\Factura::create([
+                'empresa_id' => $empresaId,
+                'codigo_unico' => $codigoUnico,
+                'proveedor_id' => $proveedor->id,
+                'numero_factura' => 'FV-' . $cotizacion->numero_cotizacion,
+                'tipo' => 'VENTA',
+                'tipo_documento' => 'FACTURA',
+                'fecha_emision' => date('Y-m-d'),
+                'monto_neto' => $cotizacion->monto_neto,
+                'monto_iva' => $cotizacion->monto_iva,
+                'monto_bruto' => $cotizacion->monto_total ?? $cotizacion->total,
+                'estado' => 'REGISTRADA',
+            ]);
+
+            $estadoFacturada = EstadoCotizacion::where('nombre', 'Facturada')->first();
+            if ($estadoFacturada) {
+                $cotizacion->estado_id = $estadoFacturada->id;
+                $cotizacion->save();
+            }
+
+            return $factura;
         });
     }
 }

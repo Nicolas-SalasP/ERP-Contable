@@ -9,13 +9,6 @@ use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\User;
 use Laravel\Sanctum\Sanctum;
 
-/**
- * Tests focalizados de gestion de roles y permisos por jerarquia.
- *
- * El sistema implementa una jerarquia numerica donde un rol con
- * jerarquia mas baja no puede tocar a uno de jerarquia mas alta.
- * Estos tests validan que esa regla se respete en todos los flujos.
- */
 class RolesYPermisosTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
@@ -40,7 +33,7 @@ class RolesYPermisosTest extends TestCase
         $body = $response->json();
         $roles = $body['data'] ?? $body;
         $this->assertIsArray($roles);
-        $this->assertGreaterThanOrEqual(5, count($roles)); // Super Admin, Admin, Contador, Auditor, Usuario
+        $this->assertGreaterThanOrEqual(5, count($roles));
     }
 
     public function test_crear_rol_con_permisos_array_valido()
@@ -76,14 +69,11 @@ class RolesYPermisosTest extends TestCase
 
     public function test_solo_super_admin_jerarquia_100_puede_invitar_usuarios()
     {
-        // Diseno actual: el sistema solo permite invitar si jerarquia >= 100.
-        // Admin (jerarquia 80) NO puede invitar, solo Super Admin si.
-        $admin = $this->crearUsuario($this->empresa, $this->rolAdministrador); // 80
+        $admin = $this->crearUsuario($this->empresa, $this->rolAdministrador);
         $superAdmin = $this->crearUsuario($this->empresa, $this->rolSuperAdmin, [
             'email' => 'superadm@test.cl',
         ]);
 
-        // Admin no puede
         Sanctum::actingAs($admin);
         $r1 = $this->postJson('/api/usuarios/invitar', [
             'email' => 'nuevo1@test.cl',
@@ -91,7 +81,6 @@ class RolesYPermisosTest extends TestCase
         ]);
         $r1->assertStatus(403);
 
-        // Super Admin si puede
         Sanctum::actingAs($superAdmin);
         $r2 = $this->postJson('/api/usuarios/invitar', [
             'email' => 'nuevo2@test.cl',
@@ -109,12 +98,11 @@ class RolesYPermisosTest extends TestCase
 
         Sanctum::actingAs($admin);
         $response = $this->putJson("/api/usuarios/{$superAdmin->id}/rol", [
-            'rol_id' => $this->rolUsuarioBasico->id, // bajarlo a usuario basico
+            'rol_id' => $this->rolUsuarioBasico->id,
         ]);
 
         $this->assertContains($response->getStatusCode(), [400, 403, 422]);
 
-        // Validar que el super admin sigue con su rol original
         $this->assertEquals($this->rolSuperAdmin->id, $superAdmin->fresh()->rol_id);
     }
 
@@ -127,14 +115,12 @@ class RolesYPermisosTest extends TestCase
 
         Sanctum::actingAs($basico);
 
-        // Intentar invitar (solo admin)
         $invitar = $this->postJson('/api/usuarios/invitar', [
             'email' => 'nuevo-malo@test.cl',
             'rol_id' => $this->rolUsuarioBasico->id,
         ]);
         $this->assertContains($invitar->getStatusCode(), [400, 403, 422]);
 
-        // Intentar desvincular a otro usuario
         $desvincular = $this->deleteJson("/api/usuarios/{$otroUsuario->id}");
         $this->assertContains($desvincular->getStatusCode(), [400, 403, 422]);
     }
@@ -146,7 +132,7 @@ class RolesYPermisosTest extends TestCase
         Sanctum::actingAs($admin);
         $response = $this->postJson('/api/usuarios/invitar', [
             'email' => 'test@test.cl',
-            'rol_id' => 99999, // no existe
+            'rol_id' => 99999,
         ]);
 
         $this->assertContains($response->getStatusCode(), [400, 422, 500]);

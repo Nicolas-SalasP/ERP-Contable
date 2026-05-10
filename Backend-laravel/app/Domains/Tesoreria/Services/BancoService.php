@@ -123,8 +123,11 @@ class BancoService
             throw new Exception("Cuenta bancaria no encontrada o no pertenece a tu empresa.", 403);
         }
 
-        $cargo = (isset($datos['tipo_movimiento']) && $datos['tipo_movimiento'] === 'EGRESO') ? $datos['monto'] : 0;
-        $abono = (isset($datos['tipo_movimiento']) && $datos['tipo_movimiento'] === 'INGRESO') ? $datos['monto'] : 0;
+        $tipoMov = $datos['tipo_movimiento'] ?? '';
+        $esEntrada = in_array($tipoMov, ['INGRESO', 'ABONO']);
+        $esSalida = in_array($tipoMov, ['EGRESO', 'CARGO']);
+        $cargo = $esSalida ? $datos['monto'] : 0;
+        $abono = $esEntrada ? $datos['monto'] : 0;
 
         $movimientoId = DB::table('movimientos_bancarios')->insertGetId([
             'empresa_id' => $empresaId,

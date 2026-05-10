@@ -113,14 +113,35 @@ class CotizacionController
     public function actualizarEstado(Request $request, $id)
     {
         try {
-            $request->validate([
-                'estado' => 'required|string'
+            $datos = $request->validate([
+                'estado' => 'sometimes|string',
+                'estado_id' => 'sometimes|integer',
             ]);
+
+            $estadoNombre = $datos['estado'] ?? null;
+            if (!$estadoNombre && isset($datos['estado_id'])) {
+                $estadoModel = \App\Domains\Comercial\Models\EstadoCotizacion::find($datos['estado_id']);
+                if (!$estadoModel) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Estado con id {$datos['estado_id']} no existe."
+                    ], 422);
+                }
+                $estadoNombre = $estadoModel->nombre;
+            }
+
+            if (!$estadoNombre) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debes especificar estado o estado_id.',
+                    'errors' => ['estado' => ['Campo requerido.']]
+                ], 422);
+            }
 
             $cotizacion = $this->service->actualizarEstado(
                 $request->user()->empresa_id,
                 (int) $id,
-                $request->estado
+                $estadoNombre
             );
 
             return response()->json([
@@ -134,10 +155,11 @@ class CotizacionController
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], 400);
+            ], $status);
         }
     }
 
@@ -168,6 +190,28 @@ class CotizacionController
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function facturar(Request $request, $id)
+    {
+        try {
+            $factura = $this->service->convertirEnFactura(
+                $request->user()->empresa_id,
+                (int) $id
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Factura de venta creada exitosamente.',
+                'data' => $factura
+            ], 201);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : 400;
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], $status);
         }
     }
 }

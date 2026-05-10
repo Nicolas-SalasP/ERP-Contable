@@ -127,13 +127,23 @@ class FacturaService
                 'autorizador_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
             ]);
 
-            $codigoDestino = $datos['cuentaDestino'] ?? throw new Exception("Debe especificar la cuenta de destino/gasto.");
-            $codigoIva = $datos['cuentaIva'] ?? '353350';
-            $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
+            $esNotaCredito = ($datos['tipo_documento'] ?? '') === 'NOTA_CREDITO';
+            if ($esNotaCredito) {
+                $codigoDestino = $datos['cuentaDestino'] ?? null;
+                $codigoIva = $datos['cuentaIva'] ?? '353350';
+                $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
+            } else {
+                $codigoDestino = $datos['cuentaDestino'] ?? throw new Exception("Debe especificar la cuenta de destino/gasto.");
+                $codigoIva = $datos['cuentaIva'] ?? '353350';
+                $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
+            }
 
-            $cuentaIva = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoIva)->first();
-            $cuentaProveedor = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoProveedor)->first();
-            $cuentaGasto = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoDestino)->first();
+            $cuentaIva = $codigoIva ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoIva)->first() : null;
+            $cuentaProveedor = $codigoProveedor ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoProveedor)->first() : null;
+            $cuentaGasto = $codigoDestino ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoDestino)->first() : null;
+            if ($esNotaCredito && (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor)) {
+                return $factura;
+            }
 
             if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
                 throw new Exception("Configuración Contable Incompleta: Verifique que las cuentas de IVA ({$codigoIva}), Proveedor ({$codigoProveedor}) y Destino ({$codigoDestino}) existan en el plan de cuentas de esta empresa.");
@@ -293,7 +303,10 @@ class FacturaService
 
     public function vincularAProyecto(int $empresaId, int $facturaId, int $proyectoId): Factura
     {
-        $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+        $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
+        if (!$factura) {
+            throw new Exception("Factura no encontrada.", 404);
+        }
         $factura->update(['proyecto_activo_id' => $proyectoId]);
         return $factura;
     }

@@ -10,6 +10,7 @@ use App\Domains\Comercial\Controllers\ClienteController;
 use App\Domains\Comercial\Controllers\ProveedorController;
 use App\Domains\Comercial\Controllers\FacturaController;
 use App\Domains\Comercial\Controllers\CotizacionController;
+use App\Domains\Comercial\Controllers\AnticipoProveedorController;
 use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
 use App\Domains\Contabilidad\Controllers\ReporteController;
@@ -52,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Empresa - Centros de Costos
     Route::get('/empresas/centros-costo', [EmpresaController::class, 'listarCentros']);
+    Route::get('/centros-costo', [EmpresaController::class, 'listarCentros']);
     Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro']);
     Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro']);
     Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro']);
@@ -76,6 +78,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo']);
     Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha']);
     Route::post('/proveedores/anticipos', [ProveedorController::class, 'guardarAnticipo']);
+
+    // Endpoints dedicados de anticipos a proveedores (con saldo disponible)
+    Route::get('/anticipos-proveedores', [AnticipoProveedorController::class, 'index']);
+    Route::post('/anticipos-proveedores', [AnticipoProveedorController::class, 'store']);
+    Route::post('/anticipos-proveedores/{id}/aplicar', [AnticipoProveedorController::class, 'aplicar']);
     Route::post('/proveedores/{id}/cruzar-documentos', [ProveedorController::class, 'cruzarDocumentos']);
     Route::apiResource('proveedores', ProveedorController::class)->except(['show', 'destroy']);
 
@@ -86,18 +93,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/facturas/check', [FacturaController::class, 'check']);
     Route::get('/facturas/vencidas', [FacturaController::class, 'vencidas']);
     Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel']);
+    Route::get('/facturas/disponibles-proyectos', [FacturaController::class, 'disponiblesProyectos']);
     Route::apiResource('facturas', FacturaController::class)->except(['update']);
     Route::get('/facturas/{id}/asiento', [FacturaController::class, 'verAsiento']);
     Route::post('/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificarAsiento']);
     Route::get('/facturas/{id}/auditoria', [FacturaController::class, 'auditoria']);
     Route::post('/facturas/{id}/pagar', [FacturaController::class, 'pagar']);
     Route::post('/facturas/{id}/anular', [FacturaController::class, 'anular']);
+    Route::post('/facturas/{id}/vincular-proyecto', [FacturaController::class, 'vincularProyecto']);
 
     // ---------------------------------------------------------------------
     // Comercial - Cotizaciones
     // ---------------------------------------------------------------------
     Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);
     Route::put('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
+    Route::patch('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
+    Route::post('/cotizaciones/{id}/facturar', [CotizacionController::class, 'facturar']);
     Route::apiResource('cotizaciones', CotizacionController::class)->except(['show', 'update']);
     Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update']);
 
@@ -174,12 +185,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros']);
     Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes']);
     Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja']);
+    Route::put('/activos/{id}', [ActivoFijoController::class, 'update']);
 
     // Activos Fijos - Proyectos
     Route::get('/activos/proyectos/facturas-disponibles', [ActivoFijoController::class, 'facturasDisponibles']);
     Route::post('/activos/proyectos/{id}/facturas', [ActivoFijoController::class, 'imputarFactura']);
     Route::put('/activos/proyectos/{id}/activar', [ActivoFijoController::class, 'activarProyecto']);
     Route::put('/activos/proyectos/{id}', [ActivoFijoController::class, 'updateProyecto']);
+    Route::delete('/activos/proyectos/{id}', [ActivoFijoController::class, 'deleteProyecto']);
+    Route::delete('/activos/proyectos/{proyectoId}/facturas/{facturaId}', [ActivoFijoController::class, 'desvincularFactura']);
     Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos']);
     Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto']);
     Route::get('/activos/proyectos/{id}/analisis', [ActivoFijoController::class, 'analisisProyecto']);

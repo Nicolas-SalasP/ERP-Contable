@@ -4,9 +4,11 @@ namespace App\Domains\Activos\Services;
 
 use App\Domains\Activos\Models\ActivoFijo;
 use App\Domains\Activos\Models\ProyectoActivo;
+use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Contabilidad\Services\PlanCuentaService;
+use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -14,11 +16,16 @@ class ActivoFijoService
 {
     protected $facturaService;
     protected $planCuentaService;
+    protected ContadorEmpresaService $contadorService;
 
-    public function __construct(FacturaService $facturaService, PlanCuentaService $planCuentaService)
-    {
+    public function __construct(
+        FacturaService $facturaService,
+        PlanCuentaService $planCuentaService,
+        ContadorEmpresaService $contadorService
+    ) {
         $this->facturaService = $facturaService;
         $this->planCuentaService = $planCuentaService;
+        $this->contadorService = $contadorService;
     }
 
     public function listarActivos(int $empresaId)
@@ -29,6 +36,24 @@ class ActivoFijoService
             ->get();
     }
 
+    public function listarActivosFiltrado(int $empresaId, ?string $search, int $perPage = 15)
+    {
+        $perPage = max(1, min(100, $perPage)); // sanitizar
+
+        $query = ActivoFijo::where('empresa_id', $empresaId)
+            ->with(['cuenta'])
+            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA']);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nombre', 'like', "%{$search}%")
+                    ->orWhere('codigo', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderBy('id', 'desc')->paginate($perPage);
+    }
+
     public function listarPendientes(int $empresaId)
     {
         return ActivoFijo::where('empresa_id', $empresaId)
@@ -36,18 +61,67 @@ class ActivoFijoService
             ->get();
     }
 
+    private function validarCentroCosto(?int $centroCostoId, int $empresaId): void
+    {
+        if (empty($centroCostoId)) {
+            return;
+        }
+
+        $valido = CentroCosto::where('id', $centroCostoId)
+            ->where('empresa_id', $empresaId)
+            ->where('activo', true)
+            ->exists();
+
+        if (!$valido) {
+            throw new Exception(
+                "Centro de costo {$centroCostoId} invalido. " .
+                "Debe pertenecer a la empresa y estar activo."
+            );
+        }
+    }
+
     public function registrarActivo(array $datos): ActivoFijo
     {
+        $this->validarCentroCosto(
+            $datos['centro_costo_id'] ?? null,
+            $datos['empresa_id']
+        );
+
         return DB::transaction(function () use ($datos) {
             if (empty($datos['codigo'])) {
-                $ultimo = ActivoFijo::where('empresa_id', $datos['empresa_id'])->lockForUpdate()->orderBy('id', 'desc')->first();
-                $num = $ultimo ? $ultimo->id + 1 : 1;
-                $datos['codigo'] = 'AF-' . str_pad($num, 5, '0', STR_PAD_LEFT);
+                $correlativo = $this->contadorService->siguienteNumero(
+                    $datos['empresa_id'],
+                    'activo_codigo'
+                );
+                $datos['codigo'] = 'AF-' . str_pad($correlativo, 5, '0', STR_PAD_LEFT);
             }
 
             $datos['estado'] = $datos['estado'] ?? 'ACTIVO';
             return ActivoFijo::create($datos);
         });
+    }
+
+    public function actualizarActivo(int $empresaId, int $activoId, array $datos): ActivoFijo
+    {
+        $activo = ActivoFijo::where('empresa_id', $empresaId)->find($activoId);
+
+        if (!$activo) {
+            throw new Exception("Activo no encontrado.", 404);
+        }
+
+        if ($activo->estado === 'DADO_DE_BAJA' || $activo->estado === 'BAJA') {
+            throw new Exception("No se puede editar un activo dado de baja.", 400);
+        }
+
+        if (array_key_exists('centro_costo_id', $datos)) {
+            $this->validarCentroCosto($datos['centro_costo_id'], $empresaId);
+        }
+
+        $camposPermitidos = ['nombre', 'descripcion', 'centro_costo_id'];
+        $datosFiltrados = array_intersect_key($datos, array_flip($camposPermitidos));
+
+        $activo->update($datosFiltrados);
+        return $activo->fresh();
     }
 
     public function listarProyectos(int $empresaId)
@@ -198,6 +272,65 @@ class ActivoFijoService
     public function listarFacturasDisponibles(int $empresaId): array
     {
         return $this->facturaService->obtenerFacturasDisponiblesParaProyectos($empresaId);
+    }
+
+    public function eliminarProyecto(int $empresaId, int $proyectoId): void
+    {
+        $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->find($proyectoId);
+
+        if (!$proyecto) {
+            throw new Exception("Proyecto no encontrado.", 404);
+        }
+
+        if ($proyecto->estado !== 'EN_CONSTRUCCION') {
+            throw new Exception("Solo se pueden eliminar proyectos en construccion.", 400);
+        }
+
+        $facturasVinculadas = \App\Domains\Comercial\Models\Factura::where('empresa_id', $empresaId)
+            ->where('proyecto_activo_id', $proyectoId)
+            ->count();
+
+        if ($facturasVinculadas > 0) {
+            throw new Exception(
+                "No se puede eliminar: el proyecto tiene {$facturasVinculadas} factura(s) vinculada(s). " .
+                "Desvincule las facturas primero.",
+                400
+            );
+        }
+
+        $proyecto->delete();
+    }
+
+    public function desvincularFacturaDeProyecto(int $empresaId, int $proyectoId, int $facturaId): void
+    {
+        DB::transaction(function () use ($empresaId, $proyectoId, $facturaId) {
+            $proyecto = ProyectoActivo::where('empresa_id', $empresaId)
+                ->lockForUpdate()
+                ->find($proyectoId);
+
+            if (!$proyecto) {
+                throw new Exception("Proyecto no encontrado.", 404);
+            }
+
+            if ($proyecto->estado !== 'EN_CONSTRUCCION') {
+                throw new Exception("No se pueden desvincular facturas de un proyecto cerrado.", 400);
+            }
+
+            $factura = \App\Domains\Comercial\Models\Factura::where('empresa_id', $empresaId)
+                ->where('id', $facturaId)
+                ->where('proyecto_activo_id', $proyectoId)
+                ->first();
+
+            if (!$factura) {
+                throw new Exception("Factura no encontrada o no esta vinculada a este proyecto.", 404);
+            }
+
+            $monto = round((float) $factura->monto_neto, 2);
+
+            // Desvincular y descontar
+            $factura->update(['proyecto_activo_id' => null]);
+            $proyecto->decrement('valor_total_original', $monto);
+        });
     }
 
     public function imputarFacturaAProyecto(int $empresaId, int $proyectoId, array $datos)

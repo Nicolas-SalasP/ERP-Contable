@@ -139,7 +139,7 @@ class AsientosManualesProduccionTest extends TestCase
         $this->assertEquals(15000, (float) $totalDebe);
     }
 
-    public function test_asiento_con_centro_de_costo_inactivo_funcional_o_rechazado()
+    public function test_asiento_via_endpoint_no_acepta_centro_costo_inactivo()
     {
         $centroInactivo = CentroCosto::create([
             'empresa_id' => $this->empresa->id,
@@ -148,37 +148,67 @@ class AsientosManualesProduccionTest extends TestCase
             'activo' => false,
         ]);
 
-        // El detalle con centro_costo_id apuntando a centro inactivo
-        // El sistema deberia validar al crear el asiento via API.
-        // A nivel de BD se puede insertar (no hay constraint de "activo" en FK).
-
-        $asiento = AsientoContable::create([
-            'empresa_id' => $this->empresa->id,
+        // Intentamos crear un asiento via endpoint con CC inactivo.
+        // El service ahora valida que el CC este activo y pertenezca a la empresa.
+        $response = $this->actingAs($this->usuario)->postJson('/api/contabilidad/asientos', [
             'fecha' => '2026-05-01',
-            'glosa' => 'Test centro inactivo',
-            'numero_comprobante' => 'CC-OFF-001',
-            'estado' => 'CONTABILIZADO',
-            'codigo_unico' => 60000004,
+            'glosa' => 'Asiento con CC inactivo',
+            'detalles' => [
+                [
+                    'cuenta_contable' => '110101',
+                    'debe' => 1000,
+                    'haber' => 0,
+                    'centro_costo_id' => $centroInactivo->id, // INACTIVO!
+                    'tipo_operacion' => 'DEBE',
+                ],
+                [
+                    'cuenta_contable' => '410101',
+                    'debe' => 0,
+                    'haber' => 1000,
+                    'tipo_operacion' => 'HABER',
+                ],
+            ],
         ]);
 
-        $detalle = DetalleAsiento::create([
-            'asiento_id' => $asiento->id,
-            'cuenta_contable' => '110101',
-            'centro_costo_id' => $centroInactivo->id,
-            'tipo_operacion' => 'DEBE',
-            'debe' => 1000,
-            'haber' => 0,
+        // Debe rechazar (4xx) por validacion de CC
+        $this->assertContains($response->getStatusCode(), [400, 422, 500],
+            'Asiento con CC inactivo deberia ser rechazado');
+    }
+
+    public function test_asiento_via_endpoint_no_acepta_centro_costo_de_otra_empresa()
+    {
+        // CC activo pero de otra empresa
+        $empresaB = $this->crearEmpresa();
+        $ccAjeno = CentroCosto::create([
+            'empresa_id' => $empresaB->id,
+            'codigo' => 'CC-AJENO',
+            'nombre' => 'CC Ajeno',
+            'activo' => true,
         ]);
 
-        // BD lo permite. La validacion debe ser a nivel de Service.
-        $this->assertNotNull($detalle->id);
+        $response = $this->actingAs($this->usuario)->postJson('/api/contabilidad/asientos', [
+            'fecha' => '2026-05-01',
+            'glosa' => 'Asiento con CC ajeno',
+            'detalles' => [
+                [
+                    'cuenta_contable' => '110101',
+                    'debe' => 1000,
+                    'haber' => 0,
+                    'centro_costo_id' => $ccAjeno->id,
+                    'tipo_operacion' => 'DEBE',
+                ],
+                [
+                    'cuenta_contable' => '410101',
+                    'debe' => 0,
+                    'haber' => 1000,
+                    'tipo_operacion' => 'HABER',
+                ],
+            ],
+        ]);
 
-        // Hallazgo de diseno: agregar validacion en AsientoContableService que rechace
-        // detalles con centro_costo_id de centro inactivo.
-        $this->markTestIncomplete(
-            'Hallazgo: BD acepta detalles con centro_costo inactivo. ' .
-            'Validar en AsientoContableService::store() / storeAvanzado().'
-        );
+        // IDOR cruzado: el CC pertenece a otra empresa, debe rechazar
+        $this->assertContains($response->getStatusCode(), [400, 422, 500],
+            'IDOR: Asiento con CC de otra empresa deberia ser rechazado');
     }
 
     public function test_numero_comprobante_no_puede_ser_duplicado_dentro_de_la_misma_empresa()
@@ -192,30 +222,45 @@ class AsientosManualesProduccionTest extends TestCase
             'codigo_unico' => 60000005,
         ]);
 
-        // El segundo deberia fallar SI el sistema tiene la validacion correcta.
-        try {
-            AsientoContable::create([
-                'empresa_id' => $this->empresa->id,
-                'fecha' => '2026-05-01',
-                'glosa' => 'Segundo asiento (duplicado)',
-                'numero_comprobante' => 'COMP-DUP', // duplicado!
-                'estado' => 'CONTABILIZADO',
-                'codigo_unico' => 60000006,
-            ]);
+        // Despues del fix con unique compuesto, el segundo debe fallar
+        $this->expectException(\Illuminate\Database\QueryException::class);
 
-            // Si llego aca, no hay constraint. Es un hallazgo:
-            $this->markTestIncomplete(
-                'Hallazgo: BD permite numero_comprobante duplicado en la misma empresa. ' .
-                'Agregar unique compuesto (empresa_id, numero_comprobante) en migracion.'
-            );
-        } catch (\Illuminate\Database\QueryException $e) {
-            // Bien, fallo por unique constraint (MySQL: Duplicate, SQLite: UNIQUE)
-            $msg = $e->getMessage();
-            $this->assertTrue(
-                str_contains($msg, 'Duplicate') || str_contains($msg, 'UNIQUE'),
-                'Mensaje inesperado: ' . $msg
-            );
-        }
+        AsientoContable::create([
+            'empresa_id' => $this->empresa->id,
+            'fecha' => '2026-05-01',
+            'glosa' => 'Segundo asiento (duplicado)',
+            'numero_comprobante' => 'COMP-DUP', // duplicado!
+            'estado' => 'CONTABILIZADO',
+            'codigo_unico' => 60000006,
+        ]);
+    }
+
+    public function test_numero_comprobante_si_puede_repetirse_entre_empresas_distintas()
+    {
+        // El unique es compuesto (empresa_id, numero_comprobante).
+        // Por lo tanto debe permitir el mismo numero en empresas distintas.
+        AsientoContable::create([
+            'empresa_id' => $this->empresa->id,
+            'fecha' => '2026-05-01',
+            'glosa' => 'Comp empresa A',
+            'numero_comprobante' => 'COMP-001',
+            'estado' => 'CONTABILIZADO',
+            'codigo_unico' => 60000007,
+        ]);
+
+        $empresaB = $this->crearEmpresa();
+
+        $asientoB = AsientoContable::create([
+            'empresa_id' => $empresaB->id,
+            'fecha' => '2026-05-01',
+            'glosa' => 'Comp empresa B',
+            'numero_comprobante' => 'COMP-001', // mismo numero, otra empresa - OK
+            'estado' => 'CONTABILIZADO',
+            'codigo_unico' => 60000008,
+        ]);
+
+        $this->assertNotNull($asientoB->id,
+            'Unique compuesto incorrecto: bloqueo numero_comprobante repetido entre empresas');
     }
 
     public function test_codigo_unico_de_asiento_es_unico_globalmente_no_solo_por_empresa()

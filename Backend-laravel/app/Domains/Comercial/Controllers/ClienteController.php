@@ -25,6 +25,31 @@ class ClienteController
         ]);
     }
 
+    public function show(Request $request, $id)
+    {
+        try {
+            $cliente = \App\Domains\Comercial\Models\Cliente::where('empresa_id', $request->user()->empresa_id)
+                ->find($id);
+
+            if (!$cliente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cliente no encontrado.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $cliente
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {

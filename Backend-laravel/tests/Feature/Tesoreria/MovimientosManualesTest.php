@@ -9,12 +9,6 @@ use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use Laravel\Sanctum\Sanctum;
 
-/**
- * Tests focalizados de movimientos bancarios manuales.
- *
- * Cubre validaciones del endpoint /api/banco/ingreso-manual y casos
- * donde la entrada del usuario podria romper integridad contable.
- */
 class MovimientosManualesTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
@@ -47,7 +41,6 @@ class MovimientosManualesTest extends TestCase
             'fecha' => '2026-05-01',
             'monto' => 50000,
             'tipo_movimiento' => 'INGRESO',
-            // sin descripcion!
         ]);
 
         $this->assertContains($response->getStatusCode(), [400, 422]);
@@ -64,15 +57,7 @@ class MovimientosManualesTest extends TestCase
             'descripcion' => 'Test',
         ]);
 
-        // HALLAZGO: si devuelve 201, hay un bug de validacion en BancoController.
-        if ($response->getStatusCode() === 201) {
-            $this->markTestIncomplete(
-                'Bug encontrado: BancoController acepta tipo_movimiento invalido. ' .
-                'Debe validar contra enum [INGRESO, EGRESO] o similar.'
-            );
-        }
-
-        $this->assertContains($response->getStatusCode(), [400, 422, 500]);
+        $response->assertStatus(422);
     }
 
     public function test_ingreso_manual_con_descripcion_excesivamente_larga_es_rechazado()
@@ -127,7 +112,6 @@ class MovimientosManualesTest extends TestCase
 
         $this->assertNotNull($mov);
         $this->assertEquals('PENDIENTE', $mov->estado);
-        // INGRESO debe poblar el campo abono, no cargo
         $this->assertEquals(75000, (float) $mov->abono);
         $this->assertEquals(0, (float) $mov->cargo);
     }
@@ -147,13 +131,15 @@ class MovimientosManualesTest extends TestCase
         Sanctum::actingAs($this->usuario);
         $response = $this->getJson("/api/banco/movimientos/{$cuentaB->id}");
 
-        // No debe permitir ver movimientos de cuenta de otra empresa
         if ($response->getStatusCode() === 200) {
             $body = $response->json();
             $movs = $body['data'] ?? $body;
             $this->assertIsArray($movs);
-            $this->assertCount(0, $movs,
-                'IDOR: usuario A obtuvo movimientos de cuenta de empresa B');
+            $this->assertCount(
+                0,
+                $movs,
+                'IDOR: usuario A obtuvo movimientos de cuenta de empresa B'
+            );
         } else {
             $this->assertContains($response->getStatusCode(), [403, 404, 422, 500]);
         }
@@ -171,7 +157,6 @@ class MovimientosManualesTest extends TestCase
             'numero_cuenta' => '33445566',
         ]);
 
-        // Movimiento pendiente de empresa B
         DB::table('movimientos_bancarios')->insert([
             'empresa_id' => $empresaB->id,
             'cuenta_bancaria_id' => $cuentaB->id,
@@ -189,8 +174,11 @@ class MovimientosManualesTest extends TestCase
             $body = $response->json();
             $movs = $body['data'] ?? $body;
             $this->assertIsArray($movs);
-            $this->assertCount(0, $movs,
-                'IDOR: usuario A obtuvo movimientos pendientes de cuenta de empresa B');
+            $this->assertCount(
+                0,
+                $movs,
+                'IDOR: usuario A obtuvo movimientos pendientes de cuenta de empresa B'
+            );
         } else {
             $this->assertContains($response->getStatusCode(), [400, 403, 404, 422, 500]);
         }

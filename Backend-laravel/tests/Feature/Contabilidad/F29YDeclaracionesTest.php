@@ -9,15 +9,6 @@ use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Factura;
 
-/**
- * Tests focalizados de F29 y declaraciones tributarias.
- *
- * Cubre escenarios que generarian problemas con SII o reportes incorrectos:
- * - Periodos invalidos
- * - F29 en empresa sin movimientos
- * - F29 con notas de credito
- * - Aislamiento multi-tenant en simulacion
- */
 class F29YDeclaracionesTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
@@ -43,37 +34,36 @@ class F29YDeclaracionesTest extends TestCase
 
         // Cuentas necesarias para F29
         PlanCuenta::create([
-            'empresa_id' => $this->empresa->id, 'codigo' => '152540',
-            'nombre' => 'IVA Credito Fiscal', 'tipo' => 'ACTIVO',
-            'imputable' => true, 'activo' => true,
+            'empresa_id' => $this->empresa->id,
+            'codigo' => '152540',
+            'nombre' => 'IVA Credito Fiscal',
+            'tipo' => 'ACTIVO',
+            'imputable' => true,
+            'activo' => true,
         ]);
         PlanCuenta::create([
-            'empresa_id' => $this->empresa->id, 'codigo' => '353360',
-            'nombre' => 'IVA Debito Fiscal', 'tipo' => 'PASIVO',
-            'imputable' => true, 'activo' => true,
+            'empresa_id' => $this->empresa->id,
+            'codigo' => '353360',
+            'nombre' => 'IVA Debito Fiscal',
+            'tipo' => 'PASIVO',
+            'imputable' => true,
+            'activo' => true,
         ]);
         PlanCuenta::create([
-            'empresa_id' => $this->empresa->id, 'codigo' => '152542',
-            'nombre' => 'Remanente IVA F29', 'tipo' => 'ACTIVO',
-            'imputable' => true, 'activo' => true,
+            'empresa_id' => $this->empresa->id,
+            'codigo' => '152542',
+            'nombre' => 'Remanente IVA F29',
+            'tipo' => 'ACTIVO',
+            'imputable' => true,
+            'activo' => true,
         ]);
     }
 
     public function test_simulacion_f29_con_mes_invalido_es_rechazada()
     {
         $response = $this->actingAs($this->usuario)
-            ->getJson('/api/impuestos/cierre-f29/simular/13/2026'); // mes 13!
-
-        // HALLAZGO: si responde 200, el endpoint no valida el rango del mes.
-        // Esto puede generar reportes confusos si alguien clickea mal.
-        if ($response->getStatusCode() === 200) {
-            $this->markTestIncomplete(
-                'Bug: endpoint /api/impuestos/cierre-f29/simular/{mes}/{anio} no valida ' .
-                'que mes este en rango 1-12. Agregar validacion de ruta o controller.'
-            );
-        }
-
-        $this->assertContains($response->getStatusCode(), [400, 422, 500]);
+            ->getJson('/api/impuestos/cierre-f29/simular/13/2026');
+        $response->assertStatus(422);
     }
 
     public function test_simulacion_f29_con_mes_cero_es_rechazada()
@@ -81,25 +71,16 @@ class F29YDeclaracionesTest extends TestCase
         $response = $this->actingAs($this->usuario)
             ->getJson('/api/impuestos/cierre-f29/simular/0/2026');
 
-        if ($response->getStatusCode() === 200) {
-            $this->markTestIncomplete(
-                'Bug: endpoint acepta mes=0 sin validar. Mismo hallazgo de validacion de mes.'
-            );
-        }
-
-        $this->assertContains($response->getStatusCode(), [400, 422, 500]);
+        $response->assertStatus(422);
     }
 
     public function test_simulacion_f29_de_anio_demasiado_atras_es_rechazada()
     {
-        // 1900 no tiene sentido, deberia validar
         $response = $this->actingAs($this->usuario)
             ->getJson('/api/impuestos/cierre-f29/simular/1/1900');
 
-        // Aceptamos rechazo o respuesta vacia (sin movimientos)
         $this->assertContains($response->getStatusCode(), [200, 400, 422]);
         if ($response->getStatusCode() === 200) {
-            // Si responde, debe ser vacia
             $body = $response->json();
             $iva = $body['iva_credito'] ?? $body['data']['iva_credito'] ?? null;
             $this->assertTrue($iva === 0 || $iva === null || $iva === '0' || $iva === 0.0);
@@ -108,7 +89,6 @@ class F29YDeclaracionesTest extends TestCase
 
     public function test_simulacion_f29_solo_calcula_facturas_de_la_empresa_propia()
     {
-        // Factura propia
         Factura::create([
             'empresa_id' => $this->empresa->id,
             'proveedor_id' => $this->proveedor->id,
@@ -122,12 +102,14 @@ class F29YDeclaracionesTest extends TestCase
             'estado' => 'REGISTRADA',
         ]);
 
-        // Factura de empresa B (no debe contar)
         $empresaB = $this->crearEmpresa();
         $provB = Proveedor::create([
-            'empresa_id' => $empresaB->id, 'rut' => '99.111.222-3',
-            'razon_social' => 'Prov B', 'codigo_interno' => 'PB',
-            'pais_iso' => 'CL', 'moneda_defecto' => 'CLP',
+            'empresa_id' => $empresaB->id,
+            'rut' => '99.111.222-3',
+            'razon_social' => 'Prov B',
+            'codigo_interno' => 'PB',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP',
         ]);
         Factura::create([
             'empresa_id' => $empresaB->id,
@@ -142,17 +124,18 @@ class F29YDeclaracionesTest extends TestCase
             'estado' => 'REGISTRADA',
         ]);
 
-        // Simular F29 de abril 2026 como empresa A
         $response = $this->actingAs($this->usuario)
             ->getJson('/api/impuestos/cierre-f29/simular/4/2026');
 
         $response->assertStatus(200);
         $body = $response->json();
 
-        // El IVA credito debe corresponder a 19000 (de mi factura), NO a 189999 + 19000
         $ivaCredito = (int) ($body['iva_credito'] ?? $body['data']['iva_credito'] ?? 0);
-        $this->assertLessThanOrEqual(19000, $ivaCredito,
-            'IVA credito incluyo facturas de OTRA empresa - filtracion grave de datos');
+        $this->assertLessThanOrEqual(
+            19000,
+            $ivaCredito,
+            'IVA credito incluyo facturas de OTRA empresa - filtracion grave de datos'
+        );
     }
 
     public function test_ejecutar_f29_falta_un_parametro_es_rechazado()
@@ -160,7 +143,6 @@ class F29YDeclaracionesTest extends TestCase
         $response = $this->actingAs($this->usuario)
             ->postJson('/api/impuestos/cierre-f29/ejecutar', [
                 'mes' => 4,
-                // sin anio
             ]);
 
         $this->assertContains($response->getStatusCode(), [400, 422, 500]);
@@ -201,8 +183,10 @@ class F29YDeclaracionesTest extends TestCase
         $body = $response->json();
         $ivaCredito = (int) ($body['iva_credito'] ?? $body['data']['iva_credito'] ?? 0);
 
-        // Solo debe contar la factura valida (19000), no la anulada (95000)
-        $this->assertLessThan(95000, $ivaCredito,
-            'IVA credito incluye facturas ANULADAS - reporte SII incorrecto');
+        $this->assertLessThan(
+            95000,
+            $ivaCredito,
+            'IVA credito incluye facturas ANULADAS - reporte SII incorrecto'
+        );
     }
 }

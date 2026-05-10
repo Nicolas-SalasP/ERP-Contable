@@ -30,8 +30,30 @@ class ActivoFijoController
     public function index(Request $request)
     {
         try {
-            $activos = $this->service->listarActivos($request->user()->empresa_id);
-            return response()->json(['success' => true, 'data' => $activos]);
+            $search = $request->query('search');
+            $perPage = $request->query('per_page');
+
+            if (!$search && !$perPage) {
+                $activos = $this->service->listarActivos($request->user()->empresa_id);
+                return response()->json(['success' => true, 'data' => $activos]);
+            }
+
+            $resultado = $this->service->listarActivosFiltrado(
+                $request->user()->empresa_id,
+                $search,
+                $perPage ? (int) $perPage : 15
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado->items(),
+                'meta' => [
+                    'current_page' => $resultado->currentPage(),
+                    'per_page' => $resultado->perPage(),
+                    'total' => $resultado->total(),
+                    'last_page' => $resultado->lastPage(),
+                ]
+            ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -90,6 +112,44 @@ class ActivoFijoController
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $datos = $request->validate([
+                'nombre' => 'sometimes|required|string|max:255',
+                'descripcion' => 'sometimes|nullable|string',
+                'centro_costo_id' => 'sometimes|nullable|integer',
+            ]);
+
+            $activo = $this->service->actualizarActivo(
+                $request->user()->empresa_id,
+                (int) $id,
+                $datos
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Activo actualizado exitosamente',
+                'data' => $activo
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : ($e->getCode() === 403 ? 403 : 400);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], $status);
         }
     }
 
@@ -292,6 +352,44 @@ class ActivoFijoController
             ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function deleteProyecto(Request $request, $id)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $this->service->eliminarProyecto($request->user()->empresa_id, (int) $id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proyecto eliminado exitosamente.'
+            ]);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : ($e->getCode() === 403 ? 403 : 400);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+        }
+    }
+
+    public function desvincularFactura(Request $request, $proyectoId, $facturaId)
+    {
+        try {
+            $this->autorizarAccesoContable($request->user());
+
+            $this->service->desvincularFacturaDeProyecto(
+                $request->user()->empresa_id,
+                (int) $proyectoId,
+                (int) $facturaId
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Factura desvinculada exitosamente.'
+            ]);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : 400;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
 }

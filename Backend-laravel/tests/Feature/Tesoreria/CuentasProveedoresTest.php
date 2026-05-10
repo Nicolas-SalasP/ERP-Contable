@@ -34,7 +34,6 @@ class CuentasProveedoresTest extends TestCase
         $this->empresaA = Empresa::create(['rut' => '11.111.111-1', 'razon_social' => 'Empresa A']);
         $this->empresaB = Empresa::create(['rut' => '22.222.222-2', 'razon_social' => 'Empresa B']);
 
-        // NUEVO: Crear el país para cumplir con la restricción de llave foránea
         Pais::create(['iso' => 'CL', 'nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'activo' => true]);
 
         $this->adminA = User::create([
