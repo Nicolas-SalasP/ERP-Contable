@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { api } from '../../../Configuracion/api';
 import VisorProyectoActivo from './VisorProyectoActivo';
 
@@ -82,7 +83,10 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                         <i className="fas fa-tools"></i>
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-slate-800">Proyectos en Curso</h2>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3"><h2 className="text-xl font-black text-slate-800">Proyectos en Curso</h2><AyudaModulo moduloId="gestion-proyectos-activos" variante="claro" /></div>
+                            <AyudaModulo moduloId="proyectoActivo" size={24} />
+                        </div>
                         <p className="text-sm text-slate-500">{proyectos.length} proyectos gestionados</p>
                     </div>
                 </div>

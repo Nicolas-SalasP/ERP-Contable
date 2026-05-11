@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
 import ModalGenerico from '../../../Componentes/ModalGenerico';
 
@@ -261,7 +262,7 @@ const LibroMayor = () => {
             )}
 
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-slate-900">Libros Contables</h1>
+                <div className="flex items-center gap-3"><div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-900">Libros Contables</h1><AyudaModulo moduloId="libro-mayor" variante="claro" /></div><AyudaModulo moduloId="libroMayor" size={26} /></div>
                 <div className="flex bg-white rounded-lg shadow-sm border p-1">
                     <button onClick={() => setActiveTab('diario')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition ${activeTab === 'diario' ? 'bg-slate-800 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>Libro Diario / Mayor</button>
                     {activeTab === 'visor' && (

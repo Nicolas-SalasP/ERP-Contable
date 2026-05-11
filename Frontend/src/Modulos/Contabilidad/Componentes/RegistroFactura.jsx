@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import ModalGenerico from '../../../Componentes/ModalGenerico';
 import BuscadorCuentaContable from './BuscadorCuentaContable';
 import { api } from '../../../Configuracion/api';
@@ -309,7 +310,10 @@ const RegistroFactura = () => {
 
             <div className="bg-slate-900 rounded-t-xl px-8 py-6 flex flex-col md:flex-row justify-between items-center text-white">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Registro de Factura</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold tracking-tight">Registro de Factura</h2>
+                        <AyudaModulo moduloId="registro-factura" variante="oscuro" />
+                    </div>
                     <p className="text-slate-400 text-sm mt-1">Gestión de Compras e Inventario</p>
                 </div>
                 <div className="flex items-center gap-3 mt-4 md:mt-0">

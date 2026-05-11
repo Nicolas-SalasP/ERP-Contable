@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 
 const AdministradorCuentas = () => {
     const [cuentas, setCuentas] = useState([]);
@@ -139,7 +140,7 @@ const AdministradorCuentas = () => {
         <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans pb-10">
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Configuración: Plan de Cuentas</h2>
+                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900">Configuración: Plan de Cuentas</h2><AyudaModulo moduloId="planCuentas" size={26} /></div>
                     <p className="text-slate-500 text-sm mt-1">Administra la visibilidad, nombres y comportamiento de tus cuentas contables.</p>
                 </div>
                 <button

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import GestionProyectosActivos from './GestionProyectosActivos';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -97,7 +98,7 @@ const GestionActivos = () => {
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto bg-slate-50 min-h-screen pb-20">
             <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Activos Fijos</h1>
+                    <div className="flex items-center gap-3"><div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Activos Fijos</h1><AyudaModulo moduloId="gestion-activos" variante="claro" /></div><AyudaModulo moduloId="activoFijo" size={26} /></div>
                     <p className="text-slate-500 font-medium text-sm md:text-base mt-1">
                         Gestión patrimonial, depreciación y control de proyectos en construcción.
                     </p>

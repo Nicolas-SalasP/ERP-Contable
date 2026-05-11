@@ -138,6 +138,7 @@ const ValorizacionInventario = () => {
             <PageHeader
                 title="Valorización de Inventario"
                 description="Consulta de stock valorizado con base en PMP/costo promedio. Útil para reportes contables, auditoría y dashboard."
+                helpModuloId="inventario"
                 actions={(
                     <SecondaryButton onClick={cargarDatos}>
                         <i className="fas fa-rotate-right"></i>
