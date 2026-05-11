@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../Configuracion/api';
+import { api, API_BASE_URL } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 
 // --- VALIDADOR DE RUT CHILENO (Módulo 11) ---
@@ -64,8 +64,8 @@ const PerfilEmpresa = () => {
     const [centroEditado, setCentroEditado] = useState(null);
 
     // --- CONSTANTES DE URL ---
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-    const BASE_URL_IMG = API_BASE.replace('/api', '/storage/');
+    // BASE_URL_IMG sirve para construir URLs de logos guardados en /storage/
+    const BASE_URL_IMG = API_BASE_URL.replace('/api', '/storage/');
 
     // --- EFECTOS AL CARGAR ---
     useEffect(() => {
@@ -97,7 +97,7 @@ const PerfilEmpresa = () => {
                     rut_titular: res.data.rut
                 }));
             }
-        } catch (error) {
+        } catch {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -194,19 +194,11 @@ const PerfilEmpresa = () => {
 
             if (logoFile) formDataSend.append('logo', logoFile);
 
-            const token = localStorage.getItem('token') || sessionStorage.getItem('erp_token');
-            let parsedToken = token;
-            if (token && token.startsWith('"')) parsedToken = JSON.parse(token);
-
-            const response = await fetch(`${API_BASE}/empresas/perfil`, {
-                method: 'POST', 
-                headers: {
-                    'Authorization': `Bearer ${parsedToken}`,
-                    'Accept': 'application/json'
-                },
-                body: formDataSend
-            });
-            const res = await response.json();
+            // Usa api.upload() en lugar de fetch a mano: ahora maneja auth,
+            // retry, timeout y errores normalizados de forma uniforme.
+            // El { silent: true } evita el toast automatico porque ya manejamos
+            // el success/error a mano con Swal personalizado abajo.
+            const res = await api.upload('/empresas/perfil', formDataSend, { silent: true });
 
             if (res.success) {
                 Swal.fire({
