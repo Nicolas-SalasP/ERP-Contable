@@ -10,7 +10,7 @@ use Database\Seeders\PaisSeeder;
 use Database\Seeders\RolSeeder;
 use Database\Seeders\EstadoSuscripcionSeeder;
 
-trait PreparaInventarioTest
+trait PreparaInventarioTrait
 {
     protected function prepararUsuariosInventarioDemo(): void
     {
