@@ -318,6 +318,7 @@ class FacturaService
             ->get()
             ->map(function ($f) {
                 return [
+                    'id' => $f->id,
                     'numero' => $f->numero_factura,
                     'proveedor' => $f->proveedor->nombre_fantasia ?? $f->proveedor->razon_social ?? $f->proveedor->rut,
                     'monto' => (float) $f->monto_neto
