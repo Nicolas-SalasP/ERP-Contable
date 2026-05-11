@@ -84,7 +84,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                     </div>
                     <div>
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-3"><h2 className="text-xl font-black text-slate-800">Proyectos en Curso</h2><AyudaModulo moduloId="gestion-proyectos-activos" variante="claro" /></div>
+                            <h2 className="text-xl font-black text-slate-800">Proyectos en Curso</h2>
                             <AyudaModulo moduloId="proyectoActivo" size={24} />
                         </div>
                         <p className="text-sm text-slate-500">{proyectos.length} proyectos gestionados</p>

@@ -1,3 +1,25 @@
+/**
+ * Glosario centralizado de modulos.
+ *
+ * Cada entrada describe un modulo en lenguaje simple para usuarios que NO
+ * son contadores. Editar este archivo cambia el contenido en TODA la app
+ * sin necesidad de tocar componentes.
+ *
+ * Estructura de cada modulo:
+ *   id:        identificador unico (string)
+ *   titulo:    nombre amigable
+ *   icono:     emoji o caracter visual para la tarjeta del glosario
+ *   resumen:   1-2 lineas, lo que aparece en el header de la modal
+ *   queEs:     que es el modulo / concepto (parrafo)
+ *   conceptos: array de { termino, definicion } - conceptos clave
+ *   comoUsar:  array de pasos (strings) - como se usa el modulo
+ *   errores:   array de { problema, solucion } - errores comunes
+ *   tip:       (opcional) consejo destacado al final
+ *
+ * Tono: hablarle de tu, sin acentos argentinos (es-CL), simple y directo.
+ * Evitar jerga contable salvo que se explique en el momento.
+ */
+
 export const glosario = {
     // ================================================================
     // CONTABILIDAD
@@ -614,24 +636,339 @@ export const glosario = {
             'NO borres cuentas que ya tengan movimientos historicos. Si no las usas mas, desactivalas. ' +
             'Borrarlas romperia los reportes historicos.',
     },
+
+    // ================================================================
+    // MODULOS SECUNDARIOS
+    // ================================================================
+    anulacion: {
+        id: 'anulacion',
+        titulo: 'Anulacion de Documentos',
+        icono: '🚫',
+        resumen: 'Anula facturas y asientos contables manteniendo trazabilidad.',
+        queEs:
+            'Cuando una factura o un asiento se ingreso por error, NO se borra del sistema (eso romperia la auditoria). ' +
+            'En su lugar, se "anula": el sistema genera un asiento inverso que cancela el efecto contable, ' +
+            'pero el documento original queda en el historial para que el SII pueda auditarlo.',
+        conceptos: [
+            {
+                termino: 'Asiento inverso',
+                definicion:
+                    'Un asiento que tiene los mismos montos pero con Debe y Haber cambiados. ' +
+                    'Si el original era "Debe Caja 1000 / Haber Banco 1000", el inverso es "Debe Banco 1000 / Haber Caja 1000". ' +
+                    'Asi se "deshace" el efecto.',
+            },
+            {
+                termino: 'Documento anulado',
+                definicion:
+                    'Estado del documento despues de anular. Sigue visible en listados pero marcado claramente como anulado. ' +
+                    'No se puede pagar, modificar ni asociar a otros movimientos.',
+            },
+        ],
+        comoUsar: [
+            'Busca el documento que quieres anular (factura, asiento, etc).',
+            'Verifica que es el correcto, porque la anulacion deja huella.',
+            'Ingresa un motivo de anulacion claro (ej: "Factura duplicada por error").',
+            'Confirma. El sistema genera el asiento inverso y marca el documento como anulado.',
+        ],
+        errores: [
+            {
+                problema: 'No me deja anular porque ya esta pagada.',
+                solucion:
+                    'Las facturas pagadas necesitan que primero revertas el pago. Anula el pago, despues recien podes anular la factura.',
+            },
+        ],
+        tip:
+            'Antes de anular algo importante, descarga el PDF o saca un pantallazo. Aunque queda historial, ' +
+            'tener tu propia copia ayuda si despues hay que justificar el motivo.',
+    },
+
+    cartolaBancaria: {
+        id: 'cartolaBancaria',
+        titulo: 'Cartola Bancaria',
+        icono: '🧾',
+        resumen: 'Importa el detalle de movimientos del banco al sistema.',
+        queEs:
+            'La cartola es el listado de movimientos de tu cuenta corriente que descargas del sitio del banco. ' +
+            'Importarla al sistema te permite ver los movimientos lado a lado con los asientos contables, ' +
+            'y conciliar mas rapido (saber que movimiento del banco corresponde a que asiento del sistema).',
+        conceptos: [
+            {
+                termino: 'Formato de importacion',
+                definicion:
+                    'Cada banco entrega la cartola en un formato distinto (Excel, CSV, PDF). El sistema acepta los ' +
+                    'mas comunes (Excel y CSV). Si tu banco solo entrega PDF, hay que convertirlo o transcribirlo.',
+            },
+            {
+                termino: 'Movimiento de cargo / abono',
+                definicion:
+                    'Cargo: plata que SALE de tu cuenta (pago, transferencia que enviaste, comision). ' +
+                    'Abono: plata que ENTRA (cobro, transferencia que recibiste, intereses).',
+            },
+        ],
+        comoUsar: [
+            'Entra al sitio web de tu banco y descarga la cartola del mes en Excel.',
+            'En el sistema, ve a "Cartola Bancaria" y haz click en "Importar".',
+            'Selecciona la cuenta bancaria del sistema y el archivo descargado.',
+            'El sistema valida el formato y te muestra previsualizacion.',
+            'Confirma. Los movimientos quedan disponibles para conciliar.',
+        ],
+        errores: [
+            {
+                problema: 'El sistema dice que no reconoce el formato.',
+                solucion:
+                    'Verifica que el archivo sea Excel (.xlsx) o CSV. Si es PDF, abrilo en Excel y guarda como xlsx primero.',
+            },
+            {
+                problema: 'Aparecen movimientos duplicados.',
+                solucion:
+                    'Probablemente importaste el mismo periodo dos veces. El sistema deberia detectarlo, pero si paso, ' +
+                    'usa "Limpiar duplicados" en el modulo o contacta soporte.',
+            },
+        ],
+    },
+
+    crearCotizacion: {
+        id: 'crearCotizacion',
+        titulo: 'Crear Cotizacion',
+        icono: '📝',
+        resumen: 'Formulario paso a paso para armar una nueva propuesta comercial.',
+        queEs:
+            'Esta es la pantalla donde creas una cotizacion nueva desde cero. Tiene tres partes: ' +
+            'datos del cliente, productos/servicios cotizados, y condiciones (validez, descuento, observaciones). ' +
+            'Al guardar, queda en estado BORRADOR y podes seguir editandola hasta enviarla.',
+        conceptos: [
+            {
+                termino: 'Producto vs Servicio',
+                definicion:
+                    'Para el sistema, ambos son items con cantidad y precio. La diferencia es solo informativa. ' +
+                    'Si es producto, podes vincularlo al inventario para descontar stock al facturar.',
+            },
+            {
+                termino: 'Descuento global vs por linea',
+                definicion:
+                    'Descuento global: un porcentaje aplicado al total. ' +
+                    'Por linea: precio diferente para algunos items. Usa lo que sea mas claro para el cliente.',
+            },
+        ],
+        comoUsar: [
+            'Selecciona el cliente. Si no esta registrado, agregalo desde el modulo Clientes primero.',
+            'Agrega cada producto/servicio con cantidad y precio unitario.',
+            'Si necesitas, aplica descuento global o por linea.',
+            'Pon la fecha de validez (cuanto tiempo respetaras los precios).',
+            'Guarda como BORRADOR. Despues podes descargar el PDF y enviarlo al cliente.',
+        ],
+    },
+
+    dashboardRenta: {
+        id: 'dashboardRenta',
+        titulo: 'Dashboard de Renta',
+        icono: '📈',
+        resumen: 'Resumen del impuesto a la renta anual y proyecciones.',
+        queEs:
+            'El impuesto a la renta es lo que la empresa paga sobre sus utilidades cada año. ' +
+            'Este dashboard te muestra cuanto llevas pagado en PPM mensuales, cuanto seria la utilidad estimada del año, ' +
+            'y proyecciones del impuesto que tendras que pagar en abril.',
+        conceptos: [
+            {
+                termino: 'PPM (Pago Provisional Mensual)',
+                definicion:
+                    'Un anticipo del impuesto a la renta que se paga cada mes en el F29. ' +
+                    'Es un porcentaje sobre las ventas del mes. En abril, se descuenta de lo que toca pagar.',
+            },
+            {
+                termino: 'Utilidad antes de impuestos',
+                definicion:
+                    'La diferencia entre ingresos y gastos del año, antes de aplicar el impuesto a la renta. ' +
+                    'Es la base sobre la que se calcula el impuesto.',
+            },
+        ],
+        tip:
+            'Revisa este dashboard al menos cada trimestre. Si la utilidad esta creciendo, tu PPM puede ser muy bajo ' +
+            'y vas a tener una sorpresa grande en abril. Tu contador puede ajustar el porcentaje de PPM si conviene.',
+    },
+
+    gestionClientes: {
+        id: 'gestionClientes',
+        titulo: 'Gestion de Clientes',
+        icono: '👥',
+        resumen: 'Directorio de clientes con sus datos y movimientos historicos.',
+        queEs:
+            'El directorio de clientes guarda los datos de cada persona o empresa a la que le vendes. ' +
+            'Es el equivalente comercial de los proveedores. Cuando creas una cotizacion o emites una factura de venta, ' +
+            'eliges al cliente desde aqui en vez de tipear sus datos cada vez.',
+        conceptos: [
+            {
+                termino: 'RUT del cliente',
+                definicion:
+                    'Identificador tributario chileno. Es obligatorio para facturas electronicas. ' +
+                    'El sistema valida el digito verificador automaticamente.',
+            },
+            {
+                termino: 'Cliente activo / inactivo',
+                definicion:
+                    'Si dejaste de trabajar con un cliente, marcalo como inactivo (no lo borres). ' +
+                    'Asi mantienes su historial y no aparece en los selectores de cotizaciones nuevas.',
+            },
+        ],
+        comoUsar: [
+            'Agrega clientes nuevos con RUT, razon social, direccion y datos de contacto.',
+            'Para clientes recurrentes, completa email y telefono para futuros envios automaticos.',
+            'Al editar un cliente, los cambios NO afectan las cotizaciones o facturas historicas (mantienen los datos del momento).',
+        ],
+    },
+
+    gestionProveedores: {
+        id: 'gestionProveedores',
+        titulo: 'Gestion de Proveedores',
+        icono: '🏢',
+        resumen: 'Directorio de proveedores con sus datos y facturas asociadas.',
+        queEs:
+            'El directorio de proveedores guarda los datos de cada empresa o persona que te emite facturas. ' +
+            'Tener al proveedor cargado evita tipear su RUT y razon social cada vez que registras una factura. ' +
+            'Tambien permite ver el historial completo de compras a cada uno.',
+        conceptos: [
+            {
+                termino: 'Cuenta contable del proveedor',
+                definicion:
+                    'La cuenta del plan de cuentas donde se imputa la deuda con ese proveedor. ' +
+                    'Generalmente es 21XXXX. El sistema usa una por defecto si no especificas.',
+            },
+            {
+                termino: 'Visor 360',
+                definicion:
+                    'Una vista completa de un proveedor: sus datos, todas sus facturas, los pagos hechos, los anticipos pendientes, y el saldo actual.',
+            },
+        ],
+        tip:
+            'Antes de registrar la primera factura de un proveedor nuevo, dalo de alta aqui. Asi sus datos quedan ' +
+            'correctos desde el inicio y no tenes que corregirlos despues.',
+    },
+
+    historialFacturas: {
+        id: 'historialFacturas',
+        titulo: 'Historial de Facturas',
+        icono: '📂',
+        resumen: 'Listado completo de facturas con filtros y acciones rapidas.',
+        queEs:
+            'Este es el archivo de todas las facturas registradas en el sistema. Podes filtrar por fecha, ' +
+            'proveedor, estado, tipo de documento, y hacer acciones masivas. Cada factura tiene un link a su ' +
+            'asiento contable y al detalle de auditoria.',
+        conceptos: [
+            {
+                termino: 'Estados de la factura',
+                definicion:
+                    'REGISTRADA (cargada en sistema), PAGADA (ya se transferio al proveedor), ANULADA (anulada con asiento inverso), ' +
+                    'VENCIDA (paso la fecha de pago sin haberse pagado).',
+            },
+            {
+                termino: 'Exportar Excel',
+                definicion:
+                    'Te descarga las facturas filtradas en un archivo Excel. Util para enviar al contador o subir al SII.',
+            },
+        ],
+        tip:
+            'Si necesitas saber por que tu balance no cuadra, filtra el historial por el mes problematico y ' +
+            'mira que facturas tienen estado "REGISTRADA" pero sin asiento centralizado. Esas son las que faltan contabilizar.',
+    },
+
+    nominaPagos: {
+        id: 'nominaPagos',
+        titulo: 'Nomina de Pagos',
+        icono: '💸',
+        resumen: 'Agrupa facturas para pagarlas en bloque al banco.',
+        queEs:
+            'Una nomina de pagos es una lista de facturas que vas a pagar al mismo tiempo. ' +
+            'En vez de transferir una por una, agrupas las que vencen en una nomina y se lo mandas al banco como un solo archivo. ' +
+            'El banco procesa todos los pagos juntos y te ahorra tiempo.',
+        conceptos: [
+            {
+                termino: 'Archivo bancario',
+                definicion:
+                    'Un formato especial (cada banco tiene el suyo) que el banco entiende para procesar pagos masivos. ' +
+                    'El sistema lo genera automaticamente a partir de la nomina.',
+            },
+            {
+                termino: 'Estado de la nomina',
+                definicion:
+                    'BORRADOR (la estas armando), ENVIADA (le mandaste el archivo al banco), CONFIRMADA (el banco confirmo que pago).',
+            },
+        ],
+        comoUsar: [
+            'Crea una nomina nueva y selecciona la cuenta bancaria desde donde vas a pagar.',
+            'Agrega las facturas a pagar. El sistema valida que tengas saldo suficiente.',
+            'Genera el archivo bancario y descargalo.',
+            'Subi el archivo al portal de tu banco.',
+            'Cuando el banco confirme los pagos, marca la nomina como CONFIRMADA. El sistema genera los asientos.',
+        ],
+    },
+
+    perfilEmpresa: {
+        id: 'perfilEmpresa',
+        titulo: 'Perfil de Empresa',
+        icono: '⚙️',
+        resumen: 'Configuracion general y datos de tu empresa.',
+        queEs:
+            'Aqui se configuran los datos de tu empresa que se usan en TODO el sistema: ' +
+            'razon social, RUT, logo, colores, direccion, contacto. Lo que ponemos aqui aparece en facturas, cotizaciones, reportes.',
+        conceptos: [
+            {
+                termino: 'Logo de la empresa',
+                definicion:
+                    'Imagen que aparece en los PDFs de facturas y cotizaciones. ' +
+                    'Recomendado: PNG con fondo transparente, no muy grande (max 500x500 px).',
+            },
+            {
+                termino: 'Color principal',
+                definicion:
+                    'Define el color de los encabezados, botones y elementos destacados en el sistema. ' +
+                    'Se aplica a todos los usuarios de la empresa.',
+            },
+        ],
+        tip:
+            'Cambios en el logo o RUT NO afectan facturas ya emitidas. Asi que si cambias el logo, las facturas ' +
+            'historicas siguen mostrando el viejo (lo cual es lo correcto desde el punto de vista contable).',
+    },
+
+    reclasificadorAsiento: {
+        id: 'reclasificadorAsiento',
+        titulo: 'Reclasificar Asiento',
+        icono: '🔄',
+        resumen: 'Corrige el destino contable de un asiento sin anularlo.',
+        queEs:
+            'A veces un asiento se hizo correcto pero quedo en la cuenta equivocada. ' +
+            'En vez de anularlo y rehacerlo, se "reclasifica": el sistema mueve el monto de la cuenta original ' +
+            'a la cuenta correcta, manteniendo la fecha y la trazabilidad del cambio.',
+        conceptos: [
+            {
+                termino: 'Cuenta origen / destino',
+                definicion:
+                    'Origen: donde esta hoy el monto (cuenta equivocada). Destino: donde deberia estar (cuenta correcta).',
+            },
+            {
+                termino: 'Trazabilidad',
+                definicion:
+                    'Cada reclasificacion deja registro: quien lo hizo, cuando, motivo, y el asiento original sigue visible.',
+            },
+        ],
+        errores: [
+            {
+                problema: 'No puedo reclasificar porque el periodo esta cerrado.',
+                solucion:
+                    'Una vez cerrado un periodo (con F29), los movimientos quedan en piedra. Habla con tu contador para abrir el periodo o crear un ajuste en el periodo actual.',
+            },
+        ],
+        tip:
+            'Si tenes que reclasificar muchas cosas a la vez, mejor revisa el plan de cuentas: probablemente ' +
+            'esta mal configurado o falta capacitacion al equipo que registra.',
+    },
 };
 
-/**
- * Devuelve la lista completa de modulos como array (ordenada por titulo).
- */
 export const listarModulos = () => Object.values(glosario).sort((a, b) =>
     a.titulo.localeCompare(b.titulo, 'es')
 );
 
-/**
- * Busca un modulo por id. Si no existe, devuelve null.
- */
 export const obtenerModulo = (id) => glosario[id] || null;
 
-/**
- * Busca modulos por texto (busca en titulo, resumen, queEs).
- * Util para el buscador del modulo Glosario.
- */
 export const buscarModulos = (texto) => {
     if (!texto || texto.trim() === '') return listarModulos();
     const q = texto.toLowerCase().trim();

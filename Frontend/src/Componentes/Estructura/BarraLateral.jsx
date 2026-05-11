@@ -163,6 +163,12 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 { path: '/empresa/usuarios', label: 'Gestión de Equipo' },
                 { path: '/empresa/roles', label: 'Roles y Permisos' },
             ]
+        },
+        {
+            id: 'glosario',
+            label: 'Ayuda y Glosario',
+            icon: 'fas fa-book',
+            path: '/glosario',
         }
     ];
 

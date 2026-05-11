@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
@@ -114,7 +115,7 @@ const ReclasificadorAsiento = () => {
             <div className="max-w-6xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-2xl font-black text-slate-900">Panel de Reclasificaciones</h1>
+                        <div className="flex items-center gap-3"><h1 className="text-2xl font-black text-slate-900">Panel de Reclasificaciones</h1><AyudaModulo moduloId="reclasificadorAsiento" /></div>
                         <p className="text-slate-500">Asiento #{cabecera.numero_comprobante} | Factura Origen ID {id}</p>
                     </div>
                     <div className="flex gap-3">

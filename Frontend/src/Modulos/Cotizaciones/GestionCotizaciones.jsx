@@ -137,7 +137,7 @@ const GestionCotizaciones = () => {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <div className="flex items-center gap-3"><div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900">Historial de Cotizaciones</h2><AyudaModulo moduloId="gestion-cotizaciones" variante="claro" /></div><AyudaModulo moduloId="cotizacion" size={26} /></div>
+                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900">Historial de Cotizaciones</h2><AyudaModulo moduloId="cotizacion" size={26} /></div>
                     <p className="text-slate-500 text-sm mt-1">Gestiona y filtra tus propuestas comerciales</p>
                 </div>
                 <Link to="/cotizaciones/nueva" className="w-full sm:w-auto text-center bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold shadow hover:bg-emerald-700 transition-all active:scale-95">

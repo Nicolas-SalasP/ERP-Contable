@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../Componentes/AyudaModulo';
 import { api, API_BASE_URL } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 
@@ -369,7 +370,7 @@ const PerfilEmpresa = () => {
         <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 pb-10">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Mi Empresa</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Mi Empresa</h1><AyudaModulo moduloId="perfilEmpresa" /></div>
                     <p className="text-slate-500 font-medium mt-1">Configuración general, tributaria y contable</p>
                 </div>
             </div>

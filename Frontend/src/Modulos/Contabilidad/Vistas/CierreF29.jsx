@@ -83,7 +83,7 @@ const CierreF29 = () => {
                             Impuestos Mensuales
                         </span>
                     </div>
-                    <div className="flex items-center gap-3"><div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Cierre de IVA (F29)</h1><AyudaModulo moduloId="cierre-f29" variante="claro" /></div><AyudaModulo moduloId="cierreF29" size={28} /></div>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Cierre de IVA (F29)</h1><AyudaModulo moduloId="cierreF29" size={28} /></div>
                     <p className="text-slate-500 font-medium mt-1">Calcula y centraliza tus impuestos mensuales automáticamente.</p>
                 </div>
 

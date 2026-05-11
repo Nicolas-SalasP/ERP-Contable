@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import * as XLSX from "@e965/xlsx";
@@ -228,7 +229,7 @@ const NominaPagos = () => {
                             Tesorería y Finanzas
                         </span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Nómina de Pagos</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Nómina de Pagos</h1><AyudaModulo moduloId="nominaPagos" /></div>
                     <p className="text-slate-500 font-medium mt-1">
                         Agrupa facturas de proveedores y genera archivos para pago bancario.
                     </p>

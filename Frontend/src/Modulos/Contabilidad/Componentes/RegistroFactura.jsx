@@ -312,7 +312,7 @@ const RegistroFactura = () => {
                 <div>
                     <div className="flex items-center gap-3">
                         <h2 className="text-2xl font-bold tracking-tight">Registro de Factura</h2>
-                        <AyudaModulo moduloId="registro-factura" variante="oscuro" />
+                        <AyudaModulo moduloId="registroFactura" />
                     </div>
                     <p className="text-slate-400 text-sm mt-1">Gestión de Compras e Inventario</p>
                 </div>
@@ -425,6 +425,25 @@ const RegistroFactura = () => {
                                         <option value="NOTA_CREDITO">Nota de Crédito</option>
                                         <option value="NOTA_DEBITO">Nota de Débito</option>
                                     </select>
+                                    {/* AUDITORIA FE-BE: para NOTA_CREDITO el backend valida que monto <= factura original */}
+                                    {formData.tipoDocumento === 'NOTA_CREDITO' && (
+                                        <div className="mt-2">
+                                            <label className="block text-xs font-bold text-amber-700 mb-1">
+                                                ID de Factura Original (requerido para NC)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="factura_referencia_id"
+                                                value={formData.factura_referencia_id || ''}
+                                                onChange={handleChange}
+                                                placeholder="Ej: 123"
+                                                className="w-full border border-amber-300 rounded-lg py-2 px-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-amber-50"
+                                            />
+                                            <p className="text-[10px] text-amber-700 mt-1">
+                                                El monto de la NC no puede ser mayor al de la factura original.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">N° Documento</label>

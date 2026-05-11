@@ -178,7 +178,7 @@ const CrearEmpresa = () => {
                     </div>
                     <div className="flex items-center justify-center gap-3 mb-1">
                         <h1 className="text-3xl font-black tracking-tight text-white uppercase">Bienvenida</h1>
-                        <AyudaModulo moduloId="crear-empresa" variante="oscuro" />
+                        <AyudaModulo moduloId="crearEmpresa" />
                     </div>
                     <p className="text-slate-400 text-xs font-bold tracking-[0.2em]">PASO {paso} DE 3</p>
                     
