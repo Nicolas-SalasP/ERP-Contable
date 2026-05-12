@@ -108,7 +108,7 @@ class FacturaService
                 throw new Exception("La factura {$datos['numero_factura']} ya se encuentra registrada para este proveedor.");
             }
 
-            $codigoUnico = (int) (time() . rand(100, 999));
+            $codigoUnico = Factura::generarCodigoUnico();
 
             $factura = Factura::create([
                 'empresa_id' => $datos['empresa_id'],

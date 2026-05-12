@@ -6,6 +6,7 @@ use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\CotizacionDetalle;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\EstadoCotizacion;
+use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -183,7 +184,7 @@ class CotizacionService
         });
     }
 
-    public function convertirEnFactura(int $empresaId, int $cotizacionId): \App\Domains\Comercial\Models\Factura
+    public function convertirEnFactura(int $empresaId, int $cotizacionId): Factura
     {
         return DB::transaction(function () use ($empresaId, $cotizacionId) {
             $cotizacion = Cotizacion::where('empresa_id', $empresaId)
@@ -222,8 +223,8 @@ class CotizacionService
                 ]);
             }
 
-            $codigoUnico = (int) (time() . rand(1000, 9999));
-            $factura = \App\Domains\Comercial\Models\Factura::create([
+            $codigoUnico = Factura::generarCodigoUnico();
+            $factura = Factura::create([
                 'empresa_id' => $empresaId,
                 'codigo_unico' => $codigoUnico,
                 'proveedor_id' => $proveedor->id,
