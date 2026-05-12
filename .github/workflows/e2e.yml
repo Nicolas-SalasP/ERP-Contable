@@ -115,8 +115,6 @@ jobs:
         working-directory: ./Backend-laravel
         run: |
           php artisan migrate --force
-          # Si tenes un seeder de tests E2E, llamalo aca:
-          # php artisan db:seed --class=E2ESeeder --force
           php artisan db:seed --force
 
       - name: Levantar backend en background
@@ -140,7 +138,7 @@ jobs:
       - name: Setup Node + pnpm
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - uses: pnpm/action-setup@v3
         with:
@@ -177,14 +175,22 @@ jobs:
         working-directory: ./Frontend
         run: pnpm e2e:install
 
-      - name: Ejecutar tests E2E (${{ steps.scope.outputs.mode }})
+      - name: Ejecutar tests E2E
         working-directory: ./Frontend
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL || 'admin@test.cl' }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD || 'password' }}
           CI: 'true'
-        run: ${{ steps.scope.outputs.command }}
+        run: pnpm e2e
+
+      - name: Subir reporte HTML como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: Frontend/playwright-report/
+          retention-days: 7
 
       # -----------------------------------------------------------
       # DEBUGGING EN CASO DE FALLO

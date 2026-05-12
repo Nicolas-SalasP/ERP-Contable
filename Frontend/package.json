@@ -60,5 +60,6 @@
       "esbuild",
       "msw"
     ]
-  }
+  },
+  "packageManager": "pnpm@11.1.0"
 }
