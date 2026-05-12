@@ -136,20 +136,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Instalar pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11
 
       - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: Frontend/pnpm-lock.yaml
+          cache-dependency-path: './pnpm-lock.yaml'
 
       - name: Instalar dependencias
-        working-directory: Frontend
         run: pnpm install --frozen-lockfile
 
       - name: Ejecutar lint
@@ -195,17 +195,16 @@ jobs:
       - name: Instalar pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11
 
       - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: Frontend/pnpm-lock.yaml
+          cache-dependency-path: './pnpm-lock.yaml'
 
       - name: Instalar dependencias frontend
-        working-directory: Frontend
         run: pnpm install --frozen-lockfile
 
       - name: Build de produccion frontend
