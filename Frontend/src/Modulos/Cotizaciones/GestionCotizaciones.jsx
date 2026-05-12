@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import ModalGenerico from '../../Componentes/ModalGenerico';
 import Swal from 'sweetalert2';
+import AyudaModulo from '../../Componentes/AyudaModulo';
 
 const GestionCotizaciones = () => {
     const [cotizaciones, setCotizaciones] = useState([]);
@@ -75,41 +76,12 @@ const GestionCotizaciones = () => {
 
     const descargarPDF = async (id, nombreCliente) => {
         try {
-            let tokenRaw = localStorage.getItem('token') ||
-                localStorage.getItem('erp_token') ||
-                sessionStorage.getItem('erp_token');
-
-            if (!tokenRaw) {
-                Swal.fire('Sesión Expirada', 'No se encontró una sesión activa.', 'warning');
-                return;
-            }
-
-            const token = tokenRaw.startsWith('"') ? JSON.parse(tokenRaw) : tokenRaw;
-            const baseURL = api.defaults?.baseURL || window.location.origin + '/api';
-
-            const response = await fetch(`${baseURL}/cotizaciones/pdf/${id}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/pdf'
-                }
-            });
-
-            if (response.status === 401) throw new Error('Tu sesión ha expirado o el token es inválido.');
-            if (!response.ok) throw new Error('El servidor no pudo generar el archivo PDF.');
-
             const clienteSeguro = nombreCliente ? nombreCliente.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim() : 'Cliente';
             const nombreArchivo = `Cotizacion_${id} - ${clienteSeguro}.pdf`;
 
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', nombreArchivo);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            // api.download maneja auth, errores y dispara la descarga en el browser.
+            // { silent: true } porque ya manejamos el error a mano con Swal.
+            await api.download(`/cotizaciones/pdf/${id}`, nombreArchivo, { silent: true });
 
         } catch (error) {
             Swal.fire('Error de Descarga', error.message, 'error');
@@ -165,7 +137,7 @@ const GestionCotizaciones = () => {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Historial de Cotizaciones</h2>
+                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900">Historial de Cotizaciones</h2><AyudaModulo moduloId="cotizacion" size={26} /></div>
                     <p className="text-slate-500 text-sm mt-1">Gestiona y filtra tus propuestas comerciales</p>
                 </div>
                 <Link to="/cotizaciones/nueva" className="w-full sm:w-auto text-center bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold shadow hover:bg-emerald-700 transition-all active:scale-95">

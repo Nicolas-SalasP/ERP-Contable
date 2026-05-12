@@ -24,3 +24,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright outputs (no commitear)
+/playwright-report/
+/test-results/
+/playwright/.cache/

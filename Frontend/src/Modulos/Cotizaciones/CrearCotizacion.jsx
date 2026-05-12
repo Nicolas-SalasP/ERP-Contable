@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../Componentes/AyudaModulo';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import FilaItemCotizacion from './Componentes/FilaItemCotizacion';
@@ -110,7 +111,7 @@ const CrearCotizacion = () => {
         <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Nueva Cotización</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-900">Nueva Cotización</h1><AyudaModulo moduloId="crearCotizacion" /></div>
                     <p className="text-slate-500 text-sm">Vincule un cliente y detalle los productos o servicios</p>
                 </div>
             </div>

@@ -39,6 +39,7 @@ import ReservasInventario from './Modulos/Inventario/Vistas/ReservasInventario';
 import TomasFisicasInventario from './Modulos/Inventario/Vistas/TomasFisicasInventario';
 import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInventario';
 import VisorAsientoCompleto from './Modulos/Contabilidad/Vistas/VisorAsientoCompleto';
+import Glosario from './Modulos/Glosario/Glosario';
 import ReclasificadorAsiento from './Modulos/Contabilidad/Vistas/ReclasificadorAsiento';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
@@ -251,6 +252,13 @@ function App() {
               <RutaProtegida permiso="contabilidad.crear">
                 <LayoutPrincipal><AsientoManual /></LayoutPrincipal>
               </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          {/* Glosario es publico para todos los usuarios autenticados, no requiere permiso */}
+          <Route path="/glosario" element={
+            <RutaPrivada>
+              <LayoutPrincipal><Glosario /></LayoutPrincipal>
             </RutaPrivada>
           } />
 

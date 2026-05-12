@@ -1,4 +1,5 @@
 import React from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 
 export const formatNumber = (value, decimals = 0) => {
     const number = Number(value ?? 0);
@@ -73,7 +74,7 @@ export const EstadoBadge = ({ value }) => {
     );
 };
 
-export const PageHeader = ({ eyebrow = 'Inventario', title, description, actions }) => {
+export const PageHeader = ({ eyebrow = 'Inventario', title, description, actions, helpModuloId }) => {
     return (
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-8">
             <div>
@@ -82,9 +83,12 @@ export const PageHeader = ({ eyebrow = 'Inventario', title, description, actions
                     {eyebrow}
                 </span>
 
-                <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight mt-3">
-                    {title}
-                </h1>
+                <div className="flex items-center gap-3 mt-3">
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
+                        {title}
+                    </h1>
+                    {helpModuloId && <AyudaModulo moduloId={helpModuloId} size={28} />}
+                </div>
 
                 {description && (
                     <p className="text-slate-500 font-medium mt-2 max-w-3xl">

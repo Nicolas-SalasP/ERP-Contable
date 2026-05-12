@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../Configuracion/api';
+import AyudaModulo from '../../Componentes/AyudaModulo';
+import { api, API_BASE_URL } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 
 // --- VALIDADOR DE RUT CHILENO (Módulo 11) ---
@@ -64,8 +65,8 @@ const PerfilEmpresa = () => {
     const [centroEditado, setCentroEditado] = useState(null);
 
     // --- CONSTANTES DE URL ---
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-    const BASE_URL_IMG = API_BASE.replace('/api', '/storage/');
+    // BASE_URL_IMG sirve para construir URLs de logos guardados en /storage/
+    const BASE_URL_IMG = API_BASE_URL.replace('/api', '/storage/');
 
     // --- EFECTOS AL CARGAR ---
     useEffect(() => {
@@ -97,7 +98,7 @@ const PerfilEmpresa = () => {
                     rut_titular: res.data.rut
                 }));
             }
-        } catch (error) {
+        } catch {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -194,19 +195,11 @@ const PerfilEmpresa = () => {
 
             if (logoFile) formDataSend.append('logo', logoFile);
 
-            const token = localStorage.getItem('token') || sessionStorage.getItem('erp_token');
-            let parsedToken = token;
-            if (token && token.startsWith('"')) parsedToken = JSON.parse(token);
-
-            const response = await fetch(`${API_BASE}/empresas/perfil`, {
-                method: 'POST', 
-                headers: {
-                    'Authorization': `Bearer ${parsedToken}`,
-                    'Accept': 'application/json'
-                },
-                body: formDataSend
-            });
-            const res = await response.json();
+            // Usa api.upload() en lugar de fetch a mano: ahora maneja auth,
+            // retry, timeout y errores normalizados de forma uniforme.
+            // El { silent: true } evita el toast automatico porque ya manejamos
+            // el success/error a mano con Swal personalizado abajo.
+            const res = await api.upload('/empresas/perfil', formDataSend, { silent: true });
 
             if (res.success) {
                 Swal.fire({
@@ -377,7 +370,7 @@ const PerfilEmpresa = () => {
         <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 pb-10">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Mi Empresa</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Mi Empresa</h1><AyudaModulo moduloId="perfilEmpresa" /></div>
                     <p className="text-slate-500 font-medium mt-1">Configuración general, tributaria y contable</p>
                 </div>
             </div>

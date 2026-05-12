@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
@@ -412,9 +413,12 @@ const HistorialFacturas = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-                        {vistaActual === 3 ? 'Workbench de Reclasificación' : 'Historial de Compras'}
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+                            {vistaActual === 3 ? 'Workbench de Reclasificación' : 'Historial de Compras'}
+                        </h1>
+                        <AyudaModulo moduloId="historialFacturas" />
+                    </div>
                     <p className="text-slate-500 text-sm mt-1">
                         {vistaActual === 3 ? `Ajuste intra-asiento Doc. ${facturaActiva?.numero_factura}` : 'Cuenta Corriente y Auditoría Contable'}
                     </p>

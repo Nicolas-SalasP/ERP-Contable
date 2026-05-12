@@ -132,16 +132,25 @@ const VisorProveedor = () => {
         if (!formAnticipo.monto) return Swal.fire('Faltan Datos', 'El monto es obligatorio.', 'warning');
         try {
             Swal.fire({ title: 'Procesando...', didOpen: () => Swal.showLoading() });
-            const res = await api.post('/proveedores/anticipos', { ...formAnticipo, proveedor_id: id });
+            let res;
+            try {
+                res = await api.post('/anticipos-proveedores', { ...formAnticipo, proveedor_id: id }, { silent: true });
+            } catch (errNuevo) {
+                if (errNuevo.status === 404 || errNuevo.status === 405) {
+                    res = await api.post('/proveedores/anticipos', { ...formAnticipo, proveedor_id: id });
+                } else {
+                    throw errNuevo;
+                }
+            }
 
-            if (res.success) {
+            if (res?.success) {
                 Swal.fire('¡Solicitud Creada!', 'El anticipo ha sido registrado en la cuenta corriente.', 'success');
                 setModalAnticipoAbierto(false);
                 setFormAnticipo({ fecha: new Date().toISOString().split('T')[0], monto: '', referencia: '' });
                 cargarFicha(id);
             }
         } catch (error) {
-            Swal.fire('Error', error.response?.data?.mensaje || 'Error al guardar.', 'error');
+            Swal.fire('Error', error.message || error.response?.data?.mensaje || 'Error al guardar.', 'error');
         }
     };
 
@@ -471,12 +480,15 @@ const VisorProveedor = () => {
                                             </div>
                                         );
                                     })}
-                                    {/* Mostrar Anticipos */}
                                     {anticiposVigentes.map(ant => {
                                         const seleccionado = aFavorCruceSel.some(x => x.id === ant.id && x.tipo === 'ANTICIPO');
+                                        const saldoMostrar = parseFloat(ant.saldo_disponible ?? ant.monto);
+                                        const montoOriginal = parseFloat(ant.monto_original ?? ant.monto);
+                                        const tieneAplicacionParcial = ant.saldo_disponible != null && saldoMostrar < montoOriginal;
+
                                         return (
-                                            <div 
-                                                key={`ant-${ant.id}`} 
+                                            <div
+                                                key={`ant-${ant.id}`}
                                                 onClick={() => toggleSeleccionCruce(ant, 'ANTICIPO', true)}
                                                 className={`p-3 rounded border cursor-pointer transition-all flex items-center gap-3 ${seleccionado ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white border-slate-200 hover:border-blue-300'}`}
                                             >
@@ -487,10 +499,20 @@ const VisorProveedor = () => {
                                                     <p className="font-bold text-slate-800 text-sm leading-none flex items-center gap-2">
                                                         <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 px-1 py-0.5 rounded text-[10px] uppercase">ANT</span>
                                                         {ant.referencia || 'S/N'}
+                                                        {tieneAplicacionParcial && (
+                                                            <span className="bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded text-[9px] uppercase">PARCIAL</span>
+                                                        )}
                                                     </p>
-                                                    <p className="text-xs text-slate-500 font-mono mt-1">{new Date(ant.fecha || ant.created_at).toLocaleDateString()}</p>
+                                                    <p className="text-xs text-slate-500 font-mono mt-1">
+                                                        {new Date(ant.fecha || ant.created_at).toLocaleDateString()}
+                                                        {tieneAplicacionParcial && (
+                                                            <span className="ml-2 text-slate-400">
+                                                                de {formatCurrency(montoOriginal)} original
+                                                            </span>
+                                                        )}
+                                                    </p>
                                                 </div>
-                                                <p className="font-bold text-slate-800 text-base">{formatCurrency(ant.monto)}</p>
+                                                <p className="font-bold text-slate-800 text-base">{formatCurrency(saldoMostrar)}</p>
                                             </div>
                                         );
                                     })}

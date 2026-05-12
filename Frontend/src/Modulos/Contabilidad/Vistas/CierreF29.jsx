@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -82,7 +83,7 @@ const CierreF29 = () => {
                             Impuestos Mensuales
                         </span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Cierre de IVA (F29)</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Cierre de IVA (F29)</h1><AyudaModulo moduloId="cierreF29" size={28} /></div>
                     <p className="text-slate-500 font-medium mt-1">Calcula y centraliza tus impuestos mensuales automáticamente.</p>
                 </div>
 

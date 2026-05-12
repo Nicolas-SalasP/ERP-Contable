@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 
@@ -174,7 +175,7 @@ const CartolaBancaria = () => {
                             Tesorería y Finanzas
                         </span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Cartola y Movimientos</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Cartola y Movimientos</h1><AyudaModulo moduloId="cartolaBancaria" /></div>
                     <p className="text-slate-500 font-medium mt-1">Registra ingresos manuales o importa la cartola del banco.</p>
                 </div>
             </div>

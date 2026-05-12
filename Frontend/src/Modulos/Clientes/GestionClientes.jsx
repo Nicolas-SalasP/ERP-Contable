@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import AyudaModulo from '../../Componentes/AyudaModulo';
 import { api } from '../../Configuracion/api';
 import FormularioCliente from './Componentes/FormularioCliente';
 import HistorialCotizaciones from './Componentes/HistorialCotizaciones';
@@ -95,7 +96,7 @@ const GestionClientes = () => {
         <div className="max-w-6xl mx-auto p-4 md:p-6 font-sans text-gray-800">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Clientes</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-bold text-slate-900">Clientes</h1><AyudaModulo moduloId="gestionClientes" /></div>
                     <p className="text-slate-500 text-sm mt-1">Base de datos centralizada de clientes activos</p>
                 </div>
                 <button onClick={openCreate} className="w-full sm:w-auto bg-emerald-600 text-white px-5 py-2.5 rounded-lg shadow hover:bg-emerald-700 font-bold flex justify-center gap-2 items-center transition-transform active:scale-95">

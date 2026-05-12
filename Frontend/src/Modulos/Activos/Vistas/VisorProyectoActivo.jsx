@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import Swal from 'sweetalert2';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -7,7 +8,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
     const [proyecto, setProyecto] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // FIX: Guardamos los tres grupos de cuentas por separado tal como vienen del Backend
     const [cuentasActivo, setCuentasActivo] = useState([]);
     const [cuentasDepreciacion, setCuentasDepreciacion] = useState([]);
     const [cuentasGasto, setCuentasGasto] = useState([]);
@@ -20,11 +20,9 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
     const [modalActivacionAbierto, setModalActivacionAbierto] = useState(false);
     const [editandoCuenta, setEditandoCuenta] = useState(false);
 
-    // 1. CARGA DE DATOS
     const cargarProyecto = async () => {
         setLoading(true);
         try {
-            // Cargamos el análisis y los parámetros contables en paralelo
             const [resProj, resParams] = await Promise.all([
                 api.get(`/activos/proyectos/${proyectoId}/analisis`),
                 api.get('/activos/parametros')
@@ -32,7 +30,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
 
             if (resProj.success) setProyecto(resProj.data);
 
-            // FIX: Asignamos cada arreglo de la respuesta a su estado correspondiente
             if (resParams.success) {
                 setCuentasActivo(resParams.data.cuentas_activo || []);
                 setCuentasDepreciacion(resParams.data.cuentas_depreciacion || []);
@@ -50,10 +47,8 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
         cargarProyecto();
     }, [proyectoId]);
 
-    // 2. FUNCIONES DE GESTIÓN
     const handleCambiarCuenta = async (nuevaCuentaId, campo) => {
         try {
-            // Preparamos el payload dinámico según el selector que se modificó
             const payload = {};
             payload[campo] = nuevaCuentaId;
 
@@ -115,6 +110,38 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
         } catch (error) {
             const msg = error.response?.data?.message || "Error al imputar factura.";
             alert("⚠️ " + msg);
+        }
+    };
+
+    const handleDesvincularFactura = async (factura) => {
+        if (!factura?.id) {
+            onNotificar?.('error', 'No se pudo identificar la factura. Recarga la pagina.');
+            return;
+        }
+
+        const confirmResult = await Swal.fire({
+            title: '¿Desvincular esta factura?',
+            html: `<p>Factura <strong>${factura.numero}</strong> de <strong>${factura.proveedor}</strong>.</p>
+                   <p class="mt-2 text-sm">Se restara <strong>${formatCurrency(factura.monto)}</strong> del costo acumulado del proyecto.</p>
+                   <p class="text-slate-500 text-xs mt-2">La factura NO se elimina, solo se desvincula del proyecto.</p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Desvincular',
+            cancelButtonText: 'Cancelar',
+        });
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            const res = await api.delete(`/activos/proyectos/${proyectoId}/facturas/${factura.id}`, { silent: true });
+            if (res?.success) {
+                onNotificar?.('success', 'Factura desvinculada correctamente.');
+                cargarProyecto();   
+            }
+        } catch (error) {
+            Swal.fire('No se pudo desvincular', error.message || 'Error desconocido.', 'error');
         }
     };
 
@@ -276,6 +303,9 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                             <th className="px-6 py-3">N° Documento</th>
                             <th className="px-6 py-3">Proveedor</th>
                             <th className="px-6 py-3 text-right">Monto Neto</th>
+                            {proyecto.estado === 'EN_CONSTRUCCION' && (
+                                <th className="px-6 py-3 text-center w-32">Acciones</th>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
@@ -285,10 +315,21 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                     <td className="px-6 py-4 font-bold text-indigo-600">{f.numero}</td>
                                     <td className="px-6 py-4 text-slate-600">{f.proveedor}</td>
                                     <td className="px-6 py-4 font-black text-slate-800 text-right">{formatCurrency(f.monto)}</td>
+                                    {proyecto.estado === 'EN_CONSTRUCCION' && (
+                                        <td className="px-6 py-4 text-center">
+                                            <button
+                                                onClick={() => handleDesvincularFactura(f)}
+                                                className="text-rose-500 hover:text-white bg-rose-50 hover:bg-rose-500 p-2 rounded-lg transition-colors"
+                                                title="Desvincular factura del proyecto"
+                                            >
+                                                <i className="fas fa-unlink"></i>
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         ) : (
-                            <tr><td colSpan="3" className="px-6 py-10 text-center text-slate-400 italic">No hay facturas vinculadas.</td></tr>
+                            <tr><td colSpan={proyecto.estado === 'EN_CONSTRUCCION' ? 4 : 3} className="px-6 py-10 text-center text-slate-400 italic">No hay facturas vinculadas.</td></tr>
                         )}
                     </tbody>
                 </table>

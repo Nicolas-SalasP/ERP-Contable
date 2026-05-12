@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import GestionProyectosActivos from './GestionProyectosActivos';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -28,6 +29,12 @@ const GestionActivos = () => {
     const [modalBajaAbierto, setModalBajaAbierto] = useState(false);
     const [activoABajar, setActivoABajar] = useState(null);
     const [motivoBaja, setMotivoBaja] = useState('');
+
+    // Estados para la Edicion de Activos
+    const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
+    const [activoEditando, setActivoEditando] = useState(null);
+    const [formEditar, setFormEditar] = useState({ nombre: '', descripcion: '' });
+    const [guardandoEdicion, setGuardandoEdicion] = useState(false);
 
     const mostrarNotificacion = (tipo, mensaje) => {
         setNotificacion({ tipo, mensaje });
@@ -92,12 +99,50 @@ const GestionActivos = () => {
             alert("Error al dar de baja: " + (error.response?.data?.message || error.message));
         }
     };
+    const abrirModalEditar = (activo) => {
+        setActivoEditando(activo);
+        setFormEditar({
+            nombre: activo.nombre || '',
+            descripcion: activo.descripcion || ''
+        });
+        setModalEditarAbierto(true);
+    };
+
+    const cerrarModalEditar = () => {
+        setModalEditarAbierto(false);
+        setActivoEditando(null);
+        setFormEditar({ nombre: '', descripcion: '' });
+    };
+
+    const confirmarEdicionActivo = async (e) => {
+        e.preventDefault();
+        if (!formEditar.nombre.trim()) {
+            mostrarNotificacion('error', 'El nombre del activo es obligatorio.');
+            return;
+        }
+        setGuardandoEdicion(true);
+        try {
+            const res = await api.put(`/activos/${activoEditando.id}`, {
+                nombre: formEditar.nombre.trim(),
+                descripcion: formEditar.descripcion?.trim() || null,
+            });
+            if (res.success) {
+                mostrarNotificacion('success', 'Activo actualizado correctamente.');
+                cerrarModalEditar();
+                cargarDatos();
+            }
+        } catch (error) {
+            mostrarNotificacion('error', error.message || 'Error al guardar la edicion.');
+        } finally {
+            setGuardandoEdicion(false);
+        }
+    };
 
     return (
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto bg-slate-50 min-h-screen pb-20">
             <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Activos Fijos</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Activos Fijos</h1><AyudaModulo moduloId="activoFijo" size={26} /></div>
                     <p className="text-slate-500 font-medium text-sm md:text-base mt-1">
                         Gestión patrimonial, depreciación y control de proyectos en construcción.
                     </p>
@@ -228,13 +273,22 @@ const GestionActivos = () => {
                                                     <td className={`px-6 py-4 font-black text-right ${dadoDeBaja ? 'text-slate-400' : 'text-emerald-600'}`}>{formatCurrency(valorActual)}</td>
                                                     <td className="px-6 py-4 text-center">
                                                         {!dadoDeBaja ? (
-                                                            <button 
-                                                                onClick={() => abrirModalBaja(activo)}
-                                                                className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-rose-200"
-                                                                title="Dar de Baja el Activo"
-                                                            >
-                                                                <i className="fas fa-arrow-down"></i> Baja
-                                                            </button>
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <button
+                                                                    onClick={() => abrirModalEditar(activo)}
+                                                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-blue-200"
+                                                                    title="Editar nombre/descripcion"
+                                                                >
+                                                                    <i className="fas fa-pen"></i>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => abrirModalBaja(activo)}
+                                                                    className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-rose-200"
+                                                                    title="Dar de Baja el Activo"
+                                                                >
+                                                                    <i className="fas fa-arrow-down"></i> Baja
+                                                                </button>
+                                                            </div>
                                                         ) : (
                                                             <span className="text-[10px] font-black text-slate-400 bg-slate-200 px-2 py-1 rounded">RETIRADO</span>
                                                         )}
@@ -304,6 +358,75 @@ const GestionActivos = () => {
                                 </div>
                             </form>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL EDITAR ACTIVO */}
+            {modalEditarAbierto && activoEditando && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
+                        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 px-6 py-4 flex justify-between items-center">
+                            <div>
+                                <h3 className="font-black text-xl text-white">Editar Activo</h3>
+                                <p className="text-blue-100 text-xs mt-0.5">{activoEditando.codigo} · {activoEditando.cuenta?.nombre || 'Sin cuenta'}</p>
+                            </div>
+                            <button onClick={cerrarModalEditar} className="text-white/80 hover:text-white text-2xl leading-none" aria-label="Cerrar">×</button>
+                        </div>
+                        <form onSubmit={confirmarEdicionActivo} className="p-6 space-y-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+                                <strong>Importante:</strong> solo podes editar nombre y descripcion.
+                                Los valores contables (valor de adquisicion, vida util, depreciacion)
+                                no se modifican porque ya tienen movimientos calculados.
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
+                                    Nombre del activo
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formEditar.nombre}
+                                    onChange={(e) => setFormEditar({ ...formEditar, nombre: e.target.value })}
+                                    className="w-full border border-slate-300 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                    placeholder="Ej: Notebook Lenovo T14"
+                                    maxLength={255}
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
+                                    Descripcion (opcional)
+                                </label>
+                                <textarea
+                                    value={formEditar.descripcion}
+                                    onChange={(e) => setFormEditar({ ...formEditar, descripcion: e.target.value })}
+                                    className="w-full border border-slate-300 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
+                                    placeholder="Detalles adicionales del activo"
+                                    rows={3}
+                                />
+                            </div>
+
+                            <div className="flex gap-4 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={cerrarModalEditar}
+                                    disabled={guardandoEdicion}
+                                    className="w-1/2 py-3 bg-white border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all disabled:opacity-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={guardandoEdicion}
+                                    className="w-1/2 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50"
+                                >
+                                    {guardandoEdicion ? 'Guardando...' : 'Guardar Cambios'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

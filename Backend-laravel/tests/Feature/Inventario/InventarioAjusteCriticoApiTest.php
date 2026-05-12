@@ -12,13 +12,13 @@ use App\Domains\Inventario\Models\TipoAjusteCritico;
 use App\Domains\Inventario\Models\UnidadMedida;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
-use Tests\Concerns\PreparaInventarioTest;
+use Tests\Concerns\PreparaInventarioTrait;
 use Tests\TestCase;
 
 class InventarioAjusteCriticoApiTest extends TestCase
 {
     use RefreshDatabase;
-    use PreparaInventarioTest;
+    use PreparaInventarioTrait;
 
     protected bool $seed = true;
 

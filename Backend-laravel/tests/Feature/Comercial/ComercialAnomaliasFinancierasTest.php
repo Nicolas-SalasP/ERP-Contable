@@ -52,7 +52,7 @@ class ComercialAnomaliasFinancierasTest extends TestCase
             'proveedor_id' => $this->prov->id,
             'numero_factura' => 'F-FUTURO',
             'tipo_documento' => 'FACTURA',
-            'fecha_emision' => now()->addDays(5)->format('Y-m-d'), // Imposible emitir una factura mañana
+            'fecha_emision' => now()->addDays(5)->format('Y-m-d'),
             'monto_neto' => 1000,
             'monto_iva' => 190,
             'monto_bruto' => 1190, 
@@ -64,16 +64,13 @@ class ComercialAnomaliasFinancierasTest extends TestCase
 
     public function test_rechaza_pago_con_fecha_anterior_a_la_emision_de_la_factura()
     {
-        // Emitida HOY
         $factura = new Factura(); $factura->empresa_id = $this->empresa->id; $factura->proveedor_id = $this->prov->id; $factura->numero_factura = 'F-PAGO-TIEMPO'; $factura->monto_bruto = 100; $factura->monto_neto = 100; $factura->monto_iva = 0; $factura->tipo = 'COMPRA'; $factura->codigo_unico = 901; $factura->fecha_emision = now(); $factura->estado = 'REGISTRADA'; $factura->save();
 
-        // Intenta pagarla AYER
         $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/pagar", [
             'fechaPago' => now()->subDays(2)->format('Y-m-d'),
             'medioPago' => 'TRANSFERENCIA'
         ]);
 
-        // Dependiendo de la estrictez de tu backend, esto debe rebotar. Si aún no lo programas, será un 200, pero al menos el test existe para futuras refactorizaciones.
         $this->assertContains($response->getStatusCode(), [200, 400, 422]);
     }
 
@@ -85,16 +82,29 @@ class ComercialAnomaliasFinancierasTest extends TestCase
             'motivo' => 'Doble anulación'
         ]);
 
-        $response->assertStatus(400); // Tu servicio ya lanza Exception si el estado === 'ANULADA'
+        $response->assertStatus(400);
     }
 
     public function test_genera_codigos_unicos_diferentes_para_facturas_masivas()
     {
-        // Insertamos dos facturas en el mismo segundo exacto
-        $f1 = new Factura(); $f1->empresa_id = $this->empresa->id; $f1->proveedor_id = $this->prov->id; $f1->numero_factura = 'F-MAS-1'; $f1->monto_bruto = 100; $f1->monto_neto = 100; $f1->monto_iva = 0; $f1->tipo = 'COMPRA'; $f1->codigo_unico = (int)(time() . rand(10, 99)); $f1->fecha_emision = now(); $f1->estado = 'REGISTRADA'; $f1->save();
-        $f2 = new Factura(); $f2->empresa_id = $this->empresa->id; $f2->proveedor_id = $this->prov->id; $f2->numero_factura = 'F-MAS-2'; $f2->monto_bruto = 100; $f2->monto_neto = 100; $f2->monto_iva = 0; $f2->tipo = 'COMPRA'; $f2->codigo_unico = (int)(time() . rand(10, 99)); $f2->fecha_emision = now(); $f2->estado = 'REGISTRADA'; $f2->save();
+        $codigos = [];
+        for ($i = 0; $i < 20; $i++) {
+            $factura = new Factura();
+            $factura->empresa_id = $this->empresa->id;
+            $factura->proveedor_id = $this->prov->id;
+            $factura->numero_factura = "F-MAS-{$i}";
+            $factura->monto_bruto = 100;
+            $factura->monto_neto = 100;
+            $factura->monto_iva = 0;
+            $factura->tipo = 'COMPRA';
+            $factura->codigo_unico = Factura::generarCodigoUnico();
+            $factura->fecha_emision = now();
+            $factura->estado = 'REGISTRADA';
+            $factura->save();
 
-        // Validamos que el algoritmo que usaste (time + rand) realmente genera valores únicos y no choca la base de datos
-        $this->assertNotEquals($f1->codigo_unico, $f2->codigo_unico);
+            $codigos[] = $factura->codigo_unico;
+        }
+
+        $this->assertCount(20, array_unique($codigos), 'El generador produjo codigos duplicados');
     }
 }

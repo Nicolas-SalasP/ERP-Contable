@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import Select from 'react-select';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -147,7 +148,10 @@ const AsientoManual = () => {
 
             <div className="mb-6 flex justify-between items-end">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Asiento Manual</h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Asiento Manual</h1>
+                        <AyudaModulo moduloId="asientoManual" size={28} />
+                    </div>
                     <p className="text-slate-500 font-medium mt-1">Ingreso de traspasos y ajustes contables de partida doble.</p>
                 </div>
             </div>

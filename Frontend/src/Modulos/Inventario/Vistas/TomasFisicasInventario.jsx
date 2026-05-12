@@ -378,6 +378,7 @@ const TomasFisicasInventario = () => {
             <PageHeader
                 title="Tomas Físicas"
                 description="Conteo físico, comparación contra stock sistema y generación de ajustes auditables en Kardex."
+                helpModuloId="inventario"
                 actions={(
                     <>
                         <SecondaryButton onClick={cargarDatos}>

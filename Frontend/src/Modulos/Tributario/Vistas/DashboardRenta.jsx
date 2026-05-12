@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { api } from '../../../Configuracion/api';
 import ModalMapeoSII from './ModalMapeoSII';
 import jsPDF from 'jspdf';
@@ -189,7 +190,7 @@ const DashboardRenta = () => {
                         <i className="fas fa-landmark"></i>
                     </div>
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Operación Renta</h1>
+                        <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Operación Renta</h1><AyudaModulo moduloId="dashboardRenta" /></div>
                         <p className="text-slate-500 font-medium text-sm md:text-base mt-0.5">
                             Régimen {nombreRegimen} • Base {esFlujoCaja ? 'Percibida/Pagada' : 'Devengada'}
                         </p>

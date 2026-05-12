@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AyudaModulo from '../../Componentes/AyudaModulo';
 import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 
@@ -175,7 +176,10 @@ const CrearEmpresa = () => {
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500 shadow-lg shadow-emerald-500/40 mb-6 animate-bounce-slow">
                         <i className="fas fa-building text-2xl text-white"></i>
                     </div>
-                    <h1 className="text-3xl font-black tracking-tight text-white mb-1 uppercase">Bienvenida</h1>
+                    <div className="flex items-center justify-center gap-3 mb-1">
+                        <h1 className="text-3xl font-black tracking-tight text-white uppercase">Bienvenida</h1>
+                        <AyudaModulo moduloId="crearEmpresa" />
+                    </div>
                     <p className="text-slate-400 text-xs font-bold tracking-[0.2em]">PASO {paso} DE 3</p>
                     
                     <div className="w-full bg-slate-800/50 h-1.5 rounded-full mt-6 overflow-hidden">

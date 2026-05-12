@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 
@@ -146,7 +147,7 @@ const AnulacionGeneral = () => {
         <div className="max-w-5xl mx-auto font-sans text-slate-800 pb-10">
 
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-900">Anulación de Documentos</h1>
+                <div className="flex items-center gap-3"><h1 className="text-2xl font-bold text-slate-900">Anulación de Documentos</h1><AyudaModulo moduloId="anulacion" /></div>
                 <p className="text-slate-500 text-sm mt-1">Busque cualquier documento por su código único (Ej: 2626... o 2610...) para proceder con su reversa contable.</p>
             </div>
 

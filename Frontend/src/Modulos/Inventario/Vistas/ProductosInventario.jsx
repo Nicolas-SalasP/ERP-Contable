@@ -149,6 +149,7 @@ const ProductosInventario = () => {
             <PageHeader
                 title="Productos de Inventario"
                 description="Gestión demo-operativa del catálogo de productos utilizado por movimientos, Kardex, lotes, reservas y tomas físicas."
+                helpModuloId="inventario"
                 actions={(
                     <>
                         <SecondaryButton onClick={cargarDatos}>

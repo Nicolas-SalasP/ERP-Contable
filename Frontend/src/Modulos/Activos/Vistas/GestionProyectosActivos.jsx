@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { api } from '../../../Configuracion/api';
+import Swal from 'sweetalert2';
 import VisorProyectoActivo from './VisorProyectoActivo';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -59,6 +61,38 @@ const GestionProyectosActivos = ({ onNotificar }) => {
         }
     };
 
+    const handleEliminarProyecto = async (proyecto) => {
+        const proyectoId = proyecto.id || proyecto.id_proyecto;
+        const tieneCosto = (Number(proyecto.valor_total_original) || 0) > 0;
+        const confirmResult = await Swal.fire({
+            title: '¿Eliminar este proyecto?',
+            html: tieneCosto
+                ? `<p>El proyecto <strong>${proyecto.nombre}</strong> tiene facturas vinculadas por <strong>${formatCurrency(proyecto.valor_total_original)}</strong>.</p>
+                   <p class="text-amber-700 mt-2 text-sm">Solo se puede eliminar si NO tiene facturas. Tendras que desvincularlas primero desde el visor del proyecto.</p>`
+                : `<p>El proyecto <strong>${proyecto.nombre}</strong> sera eliminado permanentemente.</p>
+                   <p class="text-slate-500 text-sm mt-2">Esta accion no se puede deshacer.</p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Si, eliminar',
+            cancelButtonText: 'Cancelar',
+        });
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            const res = await api.delete(`/activos/proyectos/${proyectoId}`, { silent: true });
+            if (res?.success) {
+                onNotificar('success', 'Proyecto eliminado exitosamente.');
+                cargarDatos();
+            }
+        } catch (error) {
+            const mensaje = error.message || 'No se pudo eliminar el proyecto.';
+            Swal.fire('No se puede eliminar', mensaje, 'error');
+        }
+    };
+
     if (proyectoSeleccionado) {
         return <VisorProyectoActivo
             proyectoId={proyectoSeleccionado}
@@ -82,7 +116,10 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                         <i className="fas fa-tools"></i>
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-slate-800">Proyectos en Curso</h2>
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-black text-slate-800">Proyectos en Curso</h2>
+                            <AyudaModulo moduloId="proyectoActivo" size={24} />
+                        </div>
                         <p className="text-sm text-slate-500">{proyectos.length} proyectos gestionados</p>
                     </div>
                 </div>
@@ -112,12 +149,23 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                             </div>
                             <div className="px-5 py-4 border-t border-slate-100 flex justify-between items-center bg-white">
                                 {getEstadoBadge(p.estado)}
-                                <button
-                                    onClick={() => setProyectoSeleccionado(p.id || p.id_proyecto)}
-                                    className="text-indigo-600 text-sm font-bold hover:text-white bg-indigo-50 hover:bg-indigo-600 px-4 py-2 rounded-lg transition-colors shadow-sm"
-                                >
-                                    Analizar <i className="fas fa-arrow-right ml-1"></i>
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    {p.estado === 'EN_CONSTRUCCION' && (
+                                        <button
+                                            onClick={() => handleEliminarProyecto(p)}
+                                            className="text-rose-600 text-sm font-bold hover:text-white bg-rose-50 hover:bg-rose-600 p-2 rounded-lg transition-colors shadow-sm"
+                                            title="Eliminar proyecto (solo en construccion, sin facturas)"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setProyectoSeleccionado(p.id || p.id_proyecto)}
+                                        className="text-indigo-600 text-sm font-bold hover:text-white bg-indigo-50 hover:bg-indigo-600 px-4 py-2 rounded-lg transition-colors shadow-sm"
+                                    >
+                                        Analizar <i className="fas fa-arrow-right ml-1"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}

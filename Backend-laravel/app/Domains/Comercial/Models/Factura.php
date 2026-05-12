@@ -57,4 +57,22 @@ class Factura extends Model
     {
         return $this->belongsTo(CuentaBancariaProveedor::class, 'cuenta_bancaria_id');
     }
+
+    public static function generarCodigoUnico(): int
+    {
+        for ($intento = 0; $intento < 5; $intento++) {
+            $codigo = (int) (intval(microtime(true) * 10000) . random_int(1000, 9999));
+            $existeFactura = self::where('codigo_unico', $codigo)->exists();
+            if (!$existeFactura) {
+                return $codigo;
+            }
+
+            usleep(1000);
+        }
+
+        throw new \RuntimeException(
+            'No se pudo generar un codigo_unico despues de 5 intentos. ' .
+            'Esto indica un problema grave en la generacion de codigos.'
+        );
+    }
 }
