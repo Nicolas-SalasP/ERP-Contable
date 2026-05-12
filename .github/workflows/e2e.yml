@@ -2,8 +2,13 @@ name: E2E Tests (Playwright)
 
 on:
   workflow_dispatch:
+    inputs:
+      full_suite:
+        description: 'Correr suite completa (no solo smoke)'
+        type: boolean
+        default: true
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev", "NSalas-dev" ]
   schedule:
     - cron: '0 4 * * *'
 
@@ -30,6 +35,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # -----------------------------------------------------------
+      # DECIDIR SCOPE: smoke o suite completa
+      # -----------------------------------------------------------
+      - name: Decidir scope de tests
+        id: scope
+        run: |
+          # Push a main, cron diario, o trigger manual con full_suite=true: SUITE COMPLETA
+          # Push a dev/NSalas-dev: solo SMOKE
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "mode=full" >> $GITHUB_OUTPUT
+            echo "command=pnpm e2e" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.full_suite }}" = "true" ]; then
+            echo "mode=full" >> $GITHUB_OUTPUT
+            echo "command=pnpm e2e" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "mode=full" >> $GITHUB_OUTPUT
+            echo "command=pnpm e2e" >> $GITHUB_OUTPUT
+          else
+            echo "mode=smoke" >> $GITHUB_OUTPUT
+            echo "command=pnpm e2e:smoke" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Mostrar scope elegido
+        run: echo "Modo - ${{ steps.scope.outputs.mode }}; Comando - ${{ steps.scope.outputs.command }}"
 
       # -----------------------------------------------------------
       # BACKEND
@@ -107,19 +137,19 @@ jobs:
         working-directory: ./Frontend
         run: pnpm e2e:install
 
-      - name: Ejecutar tests E2E
+      - name: Ejecutar tests E2E (${{ steps.scope.outputs.mode }})
         working-directory: ./Frontend
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL || 'admin@test.cl' }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD || 'password' }}
           CI: 'true'
-        run: pnpm e2e
+        run: ${{ steps.scope.outputs.command }}
 
       - name: Subir reporte HTML como artefacto
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ steps.scope.outputs.mode }}-${{ github.run_id }}
           path: Frontend/playwright-report/
           retention-days: 7
