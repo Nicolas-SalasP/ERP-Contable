@@ -145,7 +145,7 @@ jobs:
           version: 11
 
       - name: Instalar dependencias frontend
-        working-directory: ./Frontend
+        # working-directory: ./Frontend
         run: pnpm install --frozen-lockfile
 
       - name: Build del frontend
@@ -179,10 +179,10 @@ jobs:
         working-directory: ./Frontend
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
-          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL || 'admin@test.cl' }}
-          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD || 'password' }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL || 'superadmin@tenri.cl' }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD || 'password123' }}
           CI: 'true'
-        run: pnpm e2e
+        run: ${{ steps.scope.outputs.command }}
 
       - name: Subir reporte HTML como artefacto
         if: always()
