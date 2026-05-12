@@ -42,8 +42,6 @@ jobs:
       - name: Decidir scope de tests
         id: scope
         run: |
-          # Push a main, cron diario, o trigger manual con full_suite=true: SUITE COMPLETA
-          # Push a dev/NSalas-dev: solo SMOKE
           if [ "${{ github.event_name }}" = "schedule" ]; then
             echo "mode=full" >> $GITHUB_OUTPUT
             echo "command=pnpm e2e" >> $GITHUB_OUTPUT
@@ -79,12 +77,39 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
-          # Apuntar a MySQL del runner
-          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
-          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=sistema_contable_e2e/' .env
-          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
-          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+
+          # Eliminar cualquier linea (comentada o no) que defina las variables DB
+          sed -i '/^#\? *DB_CONNECTION=/d' .env
+          sed -i '/^#\? *DB_HOST=/d' .env
+          sed -i '/^#\? *DB_PORT=/d' .env
+          sed -i '/^#\? *DB_DATABASE=/d' .env
+          sed -i '/^#\? *DB_USERNAME=/d' .env
+          sed -i '/^#\? *DB_PASSWORD=/d' .env
+
+          # Appendear configuracion correcta para el MySQL del runner
+          cat >> .env <<'ENVEOF'
+          DB_CONNECTION=mysql
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_DATABASE=sistema_contable_e2e
+          DB_USERNAME=root
+          DB_PASSWORD=root
+          ENVEOF
+
+          # Debug: mostrar las lineas DB efectivas (sin exponer secrets en prod)
+          echo "=== Config DB efectiva ==="
+          grep "^DB_" .env
+
+      - name: Esperar a que MySQL este listo
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
+              echo "MySQL listo"
+              break
+            fi
+            echo "Esperando MySQL... ($i/30)"
+            sleep 2
+          done
 
       - name: Migraciones + seeds del backend
         working-directory: ./Backend-laravel
@@ -92,15 +117,22 @@ jobs:
           php artisan migrate --force
           # Si tenes un seeder de tests E2E, llamalo aca:
           # php artisan db:seed --class=E2ESeeder --force
-          # Si no, usa el seeder por defecto:
           php artisan db:seed --force
 
       - name: Levantar backend en background
         working-directory: ./Backend-laravel
         run: |
-          php artisan serve --host=127.0.0.1 --port=8000 &
-          sleep 5
-          curl -f http://127.0.0.1:8000 || echo "Backend respondiendo"
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
+          # Esperar a que responda
+          for i in {1..15}; do
+            if curl -sf http://127.0.0.1:8000 > /dev/null 2>&1 || curl -sf http://127.0.0.1:8000/api > /dev/null 2>&1; then
+              echo "Backend respondiendo"
+              break
+            fi
+            echo "Esperando backend... ($i/15)"
+            sleep 2
+          done
 
       # -----------------------------------------------------------
       # FRONTEND
@@ -127,8 +159,16 @@ jobs:
       - name: Levantar frontend (preview server)
         working-directory: ./Frontend
         run: |
-          pnpm preview --port=3000 --host=127.0.0.1 &
-          sleep 3
+          pnpm preview --port=3000 --host=127.0.0.1 > /tmp/frontend.log 2>&1 &
+          echo $! > /tmp/frontend.pid
+          for i in {1..10}; do
+            if curl -sf http://127.0.0.1:3000 > /dev/null 2>&1; then
+              echo "Frontend respondiendo"
+              break
+            fi
+            echo "Esperando frontend... ($i/10)"
+            sleep 2
+          done
 
       # -----------------------------------------------------------
       # PLAYWRIGHT
@@ -146,10 +186,25 @@ jobs:
           CI: 'true'
         run: ${{ steps.scope.outputs.command }}
 
+      # -----------------------------------------------------------
+      # DEBUGGING EN CASO DE FALLO
+      # -----------------------------------------------------------
+      - name: Mostrar log del backend si fallo
+        if: failure()
+        run: |
+          echo "=== Backend log ==="
+          cat /tmp/backend.log 2>/dev/null | tail -50 || echo "Sin log de backend"
+          echo ""
+          echo "=== Frontend log ==="
+          cat /tmp/frontend.log 2>/dev/null | tail -30 || echo "Sin log de frontend"
+
       - name: Subir reporte HTML como artefacto
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ steps.scope.outputs.mode }}-${{ github.run_id }}
-          path: Frontend/playwright-report/
+          path: |
+            Frontend/playwright-report/
+            Frontend/test-results/
           retention-days: 7
+          if-no-files-found: warn
