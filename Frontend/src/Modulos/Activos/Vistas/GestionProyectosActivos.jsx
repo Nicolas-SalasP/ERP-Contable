@@ -4,6 +4,7 @@ import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import VisorProyectoActivo from './VisorProyectoActivo';
 
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const GestionProyectosActivos = ({ onNotificar }) => {
@@ -29,7 +30,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
             if (resProyectos.success) setProyectos(resProyectos.data);
             if (resParams.success) setTiposActivos(resParams.data.cuentas_activo || []);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         } finally {
             setLoading(false);
         }

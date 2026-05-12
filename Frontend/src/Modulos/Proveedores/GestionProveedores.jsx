@@ -4,6 +4,7 @@ import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { formatearIdentificador, validarIdentificador } from '../../Utilidades/identificadores';
 
+import { logger } from '../../Configuracion/logger';
 // LISTA DE BANCOS PARA EL AUTOCOMPLETADO
 const BANCOS_CHILE = [
     "Banco de Chile", "Banco Estado", "Banco Santander", "BCI", "Scotiabank", "Itaú",
@@ -26,7 +27,7 @@ const BankAccountsTab = ({ proveedorId }) => {
             const data = await api.get(`/cuentas-bancarias/proveedor/${proveedorId}`);
             if (data.success) setAccounts(data.data || []);
         } catch (err) {
-            console.error("Error cargando cuentas", err);
+            logger.error("Error cargando cuentas", err);
         } finally {
             setLoading(false);
         }
@@ -231,7 +232,7 @@ const GestionProveedores = () => {
                 setPaises([{ iso: 'CL', nombre: 'Chile', moneda_defecto: 'CLP', etiqueta_id: 'RUT' }]);
             }
         } catch (err) {
-            console.error("Error cargando datos:", err);
+            logger.error("Error cargando datos:", err);
             Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
         } finally {
             setLoading(false);
@@ -359,7 +360,7 @@ const GestionProveedores = () => {
                     if (nuevoId) {
                         setActiveTab('bank');
                     } else {
-                        console.error("No se pudo obtener el ID del backend para abrir la pestaña de bancos.");
+                        logger.error("No se pudo obtener el ID del backend para abrir la pestaña de bancos.");
                     }
                 } else {
                     Swal.fire('Error', data.message, 'error');

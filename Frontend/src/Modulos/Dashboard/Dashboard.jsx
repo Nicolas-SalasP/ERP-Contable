@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 
+import { logger } from '../../Configuracion/logger';
 const formatMoneda = (valor) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
 
 const Dashboard = () => {
@@ -56,7 +57,7 @@ const Dashboard = () => {
             setFacturasUrgentes(pendientesTop5);
 
         } catch (error) {
-            console.error("Error al cargar el dashboard:", error);
+            logger.error("Error al cargar el dashboard:", error);
         } finally {
             setLoading(false);
         }

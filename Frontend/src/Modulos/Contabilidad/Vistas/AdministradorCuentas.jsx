@@ -3,6 +3,7 @@ import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 
+import { logger } from '../../../Configuracion/logger';
 const AdministradorCuentas = () => {
     const [cuentas, setCuentas] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,7 +26,7 @@ const AdministradorCuentas = () => {
                 setCuentas(res.data || res);
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',

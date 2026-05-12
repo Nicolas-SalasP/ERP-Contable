@@ -3,6 +3,7 @@ import AyudaModulo from '../../../Componentes/AyudaModulo';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -40,7 +41,7 @@ const AnulacionGeneral = () => {
                 setError(res.mensaje || 'Documento no encontrado o código inválido.');
             }
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             setError(err.response?.data?.message || 'Error de conexión al buscar el documento.');
         } finally {
             setLoading(false);
@@ -124,7 +125,7 @@ const AnulacionGeneral = () => {
                 throw new Error(res.message || 'Error desconocido');
             }
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             let msgError = 'Error crítico al procesar la anulación.';
             if (err.response && err.response.data && err.response.data.message) {
                 msgError = err.response.data.message;

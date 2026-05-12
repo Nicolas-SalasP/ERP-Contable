@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import { useNavigate } from 'react-router-dom';
 
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const HistorialCotizaciones = ({ clienteId }) => {
@@ -21,7 +22,7 @@ const HistorialCotizaciones = ({ clienteId }) => {
                     setCotizaciones(res.data || []);
                 }
             } catch (error) {
-                console.error("Error cargando historial", error);
+                logger.error("Error cargando historial", error);
             } finally {
                 setLoading(false);
             }

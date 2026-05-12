@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
 import Select from 'react-select';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
@@ -36,7 +37,7 @@ const AsientoManual = () => {
             try {
                 const resCentros = await api.get('/empresas/centros-costo');
                 if (resCentros.success) setCentrosCosto(resCentros.data);
-            } catch (err) { console.warn("Sin centros de costo."); }
+            } catch (err) { logger.warn("Sin centros de costo."); }
         } catch (error) {
             Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudieron cargar los datos base.' });
         }

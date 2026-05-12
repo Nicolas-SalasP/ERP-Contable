@@ -5,6 +5,7 @@ import FormularioCliente from './Componentes/FormularioCliente';
 import HistorialCotizaciones from './Componentes/HistorialCotizaciones';
 import Swal from 'sweetalert2';
 
+import { logger } from '../../Configuracion/logger';
 const GestionClientes = () => {
     const [clientes, setClientes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,7 +21,7 @@ const GestionClientes = () => {
             const res = await api.get(`/clientes?search=${busqueda}`);
             if (res.success) setClientes(res.data || []);
         } catch (error) {
-            console.error("Error al cargar clientes", error);
+            logger.error("Error al cargar clientes", error);
             Swal.fire('Error', 'No se pudieron cargar los clientes', 'error');
         } finally {
             setLoading(false);

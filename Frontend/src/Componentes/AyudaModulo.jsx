@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { obtenerModulo } from '../Utilidades/glosario';
+import { logger } from '../Configuracion/logger';
 
 const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
     const [abierto, setAbierto] = useState(false);
@@ -27,9 +28,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
     }, [abierto]);
 
     if (!modulo) {
-        if (typeof window !== 'undefined' && window?.console) {
-            console.warn(`[AyudaModulo] moduloId "${moduloId}" no existe en el glosario.`);
-        }
+        logger.warn(`[AyudaModulo] moduloId "${moduloId}" no existe en el glosario.`);
         return null;
     }
 

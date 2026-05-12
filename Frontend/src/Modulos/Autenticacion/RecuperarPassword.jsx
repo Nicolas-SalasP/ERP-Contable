@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
+import { logger } from '../../Configuracion/logger';
 
 const RecuperarPassword = () => {
     const navigate = useNavigate();
-    const [step, setStep] = useState(1); // 1: Pedir Email, 2: Poner Código y Nuevo Pass
+    const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     
     const [email, setEmail] = useState('');
@@ -13,14 +14,11 @@ const RecuperarPassword = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    // PASO 1: Enviar correo
     const handleSolicitarCodigo = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
             await api.post('/auth/recuperar', { email });
-            // Pasamos al paso 2 independiente del resultado (por seguridad)
-            // Pero avisamos al usuario
             Swal.fire({
                 icon: 'info',
                 title: 'Revisa tu correo',
@@ -28,14 +26,13 @@ const RecuperarPassword = () => {
             });
             setStep(2);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             Swal.fire('Error', 'Hubo un problema de conexión', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    // PASO 2: Resetear
     const handleResetear = async (e) => {
         e.preventDefault();
         if (password !== confirmPassword) {

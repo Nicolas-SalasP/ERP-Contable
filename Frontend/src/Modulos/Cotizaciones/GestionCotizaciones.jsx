@@ -5,6 +5,7 @@ import ModalGenerico from '../../Componentes/ModalGenerico';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 
+import { logger } from '../../Configuracion/logger';
 const GestionCotizaciones = () => {
     const [cotizaciones, setCotizaciones] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -42,7 +43,7 @@ const GestionCotizaciones = () => {
             const res = await api.get('/cotizaciones');
             if (res.success) setCotizaciones(res.data);
         } catch (err) {
-            console.error("Error al cargar cotizaciones:", err);
+            logger.error("Error al cargar cotizaciones:", err);
             Swal.fire('Error', 'No se pudieron cargar las cotizaciones', 'error');
         } finally {
             setLoading(false);

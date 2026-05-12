@@ -4,6 +4,7 @@ import ModalGenerico from '../../../Componentes/ModalGenerico';
 import BuscadorCuentaContable from './BuscadorCuentaContable';
 import { api } from '../../../Configuracion/api';
 
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (value) => {
     if (!value && value !== 0) return '';
     return new Intl.NumberFormat('es-CL').format(value.toString().replace(/\D/g, ''));
@@ -97,7 +98,7 @@ const RegistroFactura = () => {
             .then(res => {
                 if (res.success) setListaProveedores(res.data);
             })
-            .catch(err => console.error("Error cargando proveedores:", err))
+            .catch(err => logger.error("Error cargando proveedores:", err))
             .finally(() => setLoading(false));
 
         const handleClickOutside = (event) => {
@@ -115,7 +116,7 @@ const RegistroFactura = () => {
                 .then(data => {
                     if (data.success) setCuentasDisponibles(data.data);
                 })
-                .catch(err => console.error(err));
+                .catch(err => logger.error(err));
         }
     }, [currentStep, formData.proveedorId]);
 
@@ -208,7 +209,7 @@ const RegistroFactura = () => {
                     setCurrentStep(prev => prev + 1);
                 }
             } catch (error) {
-                console.error(error);
+                logger.error(error);
                 alert("Error validando factura. Verifique conexión.");
             } finally {
                 setCheckingDuplicate(false);
@@ -255,8 +256,7 @@ const RegistroFactura = () => {
                         codigo: facturaGuardada.comprobante_contable || facturaGuardada.codigo_interno || 'N/A'
                     });
                 } else {
-                    console.error("Errores:", data.errors);
-                    // Manejo visual de errores del 422
+                    logger.error("Errores:", data.errors);
                     const errorMsgs = data.errors ? Object.values(data.errors).flat().join('\n') : data.message;
                     alert('❌ Error de Validación:\n' + errorMsgs);
                 }

@@ -3,6 +3,7 @@ import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import GestionProyectosActivos from './GestionProyectosActivos';
 
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const calcularVidaUtilRestante = (activo) => {
@@ -46,12 +47,12 @@ const GestionActivos = () => {
         try {
             const resPendientes = await api.get('/activos/pendientes');
             if (resPendientes.success) setActivosPendientes(resPendientes.data);
-        } catch (error) { console.error(error); }
+        } catch (error) { logger.error(error); }
 
         try {
             const resRegistrados = await api.get('/activos');
             if (resRegistrados.success) setActivosRegistrados(resRegistrados.data);
-        } catch (error) { console.error(error); }
+        } catch (error) { logger.error(error); }
 
         setLoading(false);
     };

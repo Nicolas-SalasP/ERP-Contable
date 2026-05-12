@@ -1,30 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import { api, API_BASE_URL } from '../../Configuracion/api';
+import { logger } from '../../Configuracion/logger';
+import { validarIdentificador } from '../../Utilidades/identificadores';
 import Swal from 'sweetalert2';
 
-// --- VALIDADOR DE RUT CHILENO (Módulo 11) ---
-const validarRutChileno = (rut) => {
-    if (!rut) return false;
-    const cleanRut = rut.replace(/[^0-9kK]/ig, '').toUpperCase();
-    if (cleanRut.length < 2) return false;
-
-    const cuerpo = cleanRut.slice(0, -1);
-    const dv = cleanRut.slice(-1);
-
-    let suma = 0;
-    let multiplo = 2;
-    for (let i = 1; i <= cuerpo.length; i++) {
-        let index = multiplo * cuerpo.charAt(cuerpo.length - i);
-        suma = suma + index;
-        if (multiplo < 7) { multiplo = multiplo + 1; } else { multiplo = 2; }
-    }
-
-    const dvEsperado = 11 - (suma % 11);
-    const dvCalculado = (dvEsperado === 11) ? '0' : (dvEsperado === 10) ? 'K' : dvEsperado.toString();
-
-    return dv === dvCalculado;
-};
+// Helper local que delega en la utilidad centralizada para mantener
+// compatibilidad con el codigo existente. En el futuro se puede inline.
+const validarRutChileno = (rut) => validarIdentificador(rut, 'CL');
 
 const PerfilEmpresa = () => {
     // --- ESTADOS GENERALES ---
@@ -116,7 +99,7 @@ const PerfilEmpresa = () => {
             const res = await api.get('/empresas/catalogo-bancos');
             if (res.success) setListaBancos(res.data);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
+import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
 import ModalPagoFactura from '../Componentes/ModalPagoFactura';
 
@@ -214,7 +215,7 @@ const HistorialFacturas = () => {
     useEffect(() => {
         api.get('/proveedores/catalogo')
             .then(res => { if (res.success) setListaProveedores(res.data); })
-            .catch(err => console.error("Error", err));
+            .catch(err => logger.error("Error", err));
 
         api.get('/contabilidad/plan-cuentas')
             .then(res => {
@@ -224,7 +225,7 @@ const HistorialFacturas = () => {
                         setCuentasPlan(cuentasImputables);
                     }
                 }
-            }).catch(err => console.log("Usando cuentas fallback", err));
+            }).catch(err => logger.log("Usando cuentas fallback", err));
 
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) setMostrarSugerencias(false);
@@ -277,7 +278,7 @@ const HistorialFacturas = () => {
             } else {
                 setFacturas([]);
             }
-        } catch (error) { console.error(error); }
+        } catch (error) { logger.error(error); }
         finally { setLoading(false); }
     };
 

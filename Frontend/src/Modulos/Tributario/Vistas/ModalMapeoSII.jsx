@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 
+import { logger } from '../../../Configuracion/logger';
 const ModalMapeoSII = ({ onClose }) => {
     const [mapeadas, setMapeadas] = useState([]);
     const [disponibles, setDisponibles] = useState([]);
@@ -19,7 +20,7 @@ const ModalMapeoSII = ({ onClose }) => {
                 setConceptos(res.data.conceptos);
             }
         } catch (error) {
-            console.error("Error cargando mapeo:", error);
+            logger.error("Error cargando mapeo:", error);
             Swal.fire('Error', 'No se pudieron cargar las cuentas', 'error');
         } finally {
             setLoading(false);

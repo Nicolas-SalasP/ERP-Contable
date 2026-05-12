@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 
+import { logger } from '../../../Configuracion/logger';
 const VisorAuditoriaFactura = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -36,7 +37,7 @@ const VisorAuditoriaFactura = () => {
                 throw new Error("No se pudo obtener la información");
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error de Carga',
