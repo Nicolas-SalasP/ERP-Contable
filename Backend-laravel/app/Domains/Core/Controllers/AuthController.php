@@ -128,6 +128,30 @@ class AuthController
         return response()->json(['message' => 'Sesión cerrada correctamente']);
     }
 
+    public function refresh(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $tokenActual = $request->user()->currentAccessToken();
+            $nuevoToken = $user->createToken('react-spa-token')->plainTextToken;
+            if ($tokenActual) {
+                $tokenActual->delete();
+            }
+
+            return response()->json([
+                'success' => true,
+                'token' => $nuevoToken,
+                'issued_at' => now()->toIso8601String(),
+            ]);
+        } catch (Throwable $e) {
+            Log::error('Error en refresh token: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo refrescar el token. Inicia sesion nuevamente.'
+            ], 500);
+        }
+    }
+
     public function me(Request $request)
     {
         $user = $request->user()->load(['empresa', 'rol']);
