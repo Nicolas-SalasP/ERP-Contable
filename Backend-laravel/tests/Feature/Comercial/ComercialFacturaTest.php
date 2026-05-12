@@ -193,4 +193,84 @@ class ComercialFacturaTest extends TestCase
         $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/anular", ['motivo' => 'Me arrepenti']);
         $response->assertStatus(400)->assertSee('pagos aplicados en Tesorer');
     }
+
+    /**
+     * AUDITORIA FE-BE: el frontend Dashboard, NominaPagos y ModalPagoFactura
+     * leen `fac.nombre_proveedor` directo. Sin el accessor del modelo, este
+     * campo viene undefined y la celda PROVEEDOR en "Atencion Requerida"
+     * del dashboard queda vacia.
+     */
+    public function test_factura_expone_nombre_proveedor_en_json()
+    {
+        $prov = Proveedor::create([
+            'empresa_id' => $this->empresa->id,
+            'rut' => '99.999.999-9',
+            'razon_social' => 'Proveedor de Auditoria SpA',
+            'codigo_interno' => 'PROV-AUD',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP',
+        ]);
+
+        $factura = Factura::create([
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $prov->id,
+            'numero_factura' => 'F-NOMBRE-PROV',
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'fecha_emision' => now(),
+            'monto_bruto' => 119000,
+            'monto_neto' => 100000,
+            'monto_iva' => 19000,
+            'tipo' => 'COMPRA',
+            'estado' => 'REGISTRADA',
+        ]);
+
+        $response = $this->actingAs($this->usuario)
+            ->getJson('/api/facturas/historial?estado=REGISTRADA');
+
+        $response->assertStatus(200);
+
+        // Encontrar la factura recien creada en la respuesta
+        $facturas = $response->json('data');
+        $facturaEnRespuesta = collect($facturas)->firstWhere('id', $factura->id);
+
+        $this->assertNotNull($facturaEnRespuesta, 'La factura recien creada no aparece en el historial');
+        $this->assertArrayHasKey('nombre_proveedor', $facturaEnRespuesta,
+            'El campo nombre_proveedor NO esta en la respuesta JSON (el FE lo necesita)');
+        $this->assertEquals('Proveedor de Auditoria SpA', $facturaEnRespuesta['nombre_proveedor'],
+            'El nombre_proveedor no coincide con razon_social del proveedor');
+    }
+
+    /**
+     * Edge case: si el proveedor tiene razon_social vacia, el accessor
+     * devuelve string vacio (no null) para no romper el FE.
+     */
+    public function test_factura_con_proveedor_sin_razon_social_devuelve_string_vacio()
+    {
+        $prov = Proveedor::create([
+            'empresa_id' => $this->empresa->id,
+            'rut' => '11.111.111-1',
+            'razon_social' => '',
+            'codigo_interno' => 'PROV-VACIO',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP',
+        ]);
+
+        $factura = Factura::create([
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $prov->id,
+            'numero_factura' => 'F-NF',
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'fecha_emision' => now(),
+            'monto_bruto' => 1000,
+            'monto_neto' => 840,
+            'monto_iva' => 160,
+            'tipo' => 'COMPRA',
+            'estado' => 'REGISTRADA',
+        ]);
+
+        // Acceder via fresh() para forzar reload del modelo
+        $nombre = $factura->fresh()->nombre_proveedor;
+        $this->assertIsString($nombre, 'nombre_proveedor SIEMPRE debe ser string, nunca null');
+        $this->assertEquals('', $nombre, 'Si razon_social esta vacio, nombre_proveedor debe ser string vacio');
+    }
 }

@@ -123,30 +123,63 @@ describe('GestionCotizaciones - estados', () => {
 });
 
 describe('GestionCotizaciones - cambio de estado', () => {
-    it('al cambiar a APROBADA, llama PUT /cotizaciones/{id}/estado con estado correcto', async () => {
+    it('muestra los botones Aceptar/Rechazar solo en cotizaciones Borrador o Enviada', async () => {
+        setupMocks();
+        renderWithRouter(<GestionCotizaciones />);
+        await waitForList();
+        const botonesAceptar = screen.getAllByRole('button', { name: /^Aceptar$/i });
+        const botonesRechazar = screen.getAllByRole('button', { name: /^Rechazar$/i });
+        expect(botonesAceptar.length).toBeGreaterThanOrEqual(1);
+        expect(botonesRechazar.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('al hacer click en "Aceptar" y confirmar el modal, llama PUT /cotizaciones/{id}/estado', async () => {
         const fetchMock = setupMocks({
-            'PUT /cotizaciones/1/estado': (body) =>
+            'PUT /cotizaciones/1/estado': () =>
                 mockJsonResponse(200, { success: true, message: 'OK' }),
         });
 
         renderWithRouter(<GestionCotizaciones />);
         await waitForList();
-        const botones = screen.getAllByRole('button');
-        const botonAprobar = botones.find((b) =>
-            /aprobar|aprobada/i.test(b.textContent + ' ' + (b.title || ''))
-        );
-
-        if (!botonAprobar) {
-            console.warn('No encontre boton de aprobar, omitiendo verificacion de PUT');
-            return;
-        }
-
-        fireEvent.click(botonAprobar);
+        const botonAceptar = screen.getAllByRole('button', { name: /^Aceptar$/i })[0];
+        fireEvent.click(botonAceptar);
+        const botonConfirmar = await screen.findByRole('button', { name: /Sí, Confirmar/i });
+        fireEvent.click(botonConfirmar);
         await waitFor(() => {
             const putCalls = fetchMock.mock.calls.filter(
-                ([url, init]) => init?.method === 'PUT' && url.includes('/cotizaciones/1/estado')
+                ([url, init]) =>
+                    init?.method === 'PUT' && url.includes('/cotizaciones/1/estado')
             );
-            expect(putCalls.length >= 0).toBe(true);
+            expect(putCalls.length).toBe(1);
+            const body = JSON.parse(putCalls[0][1].body);
+            expect(body.estado).toBe('Aceptada');
+        });
+    });
+
+    it('al hacer click en "Rechazar" y confirmar, llama PUT con estado=Rechazada', async () => {
+        const fetchMock = setupMocks({
+            'PUT /cotizaciones/1/estado': () =>
+                mockJsonResponse(200, { success: true, message: 'OK' }),
+        });
+
+        renderWithRouter(<GestionCotizaciones />);
+        await waitForList();
+
+        const botonRechazar = screen.getAllByRole('button', { name: /^Rechazar$/i })[0];
+        fireEvent.click(botonRechazar);
+
+        const botonConfirmar = await screen.findByRole('button', { name: /Sí, Confirmar/i });
+        fireEvent.click(botonConfirmar);
+
+        await waitFor(() => {
+            const putCalls = fetchMock.mock.calls.filter(
+                ([url, init]) =>
+                    init?.method === 'PUT' && url.includes('/cotizaciones/1/estado')
+            );
+            expect(putCalls.length).toBe(1);
+
+            const body = JSON.parse(putCalls[0][1].body);
+            expect(body.estado).toBe('Rechazada');
         });
     });
 });

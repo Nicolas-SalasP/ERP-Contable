@@ -1,46 +1,55 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Contextos/AuthContext';
 import { usePermisos } from './Contextos/Permisos';
 import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
-
 import Login from './Modulos/Autenticacion/Login';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
 import Dashboard from './Modulos/Dashboard/Dashboard';
-import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
-import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
-import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
-import LibroMayor from './Modulos/Contabilidad/Vistas/LibroMayor';
-import AnulacionGeneral from './Modulos/Contabilidad/Vistas/AnulacionGeneral';
-import GestionCotizaciones from './Modulos/Cotizaciones/GestionCotizaciones';
-import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
-import GestionClientes from './Modulos/Clientes/GestionClientes';
-import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
-import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
-import VisorAuditoriaFactura from './Modulos/Contabilidad/Vistas/VisorAuditoriaFactura';
-import AdministradorCuentas from './Modulos/Contabilidad/Vistas/AdministradorCuentas';
-import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
-import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
-import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
-import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
-import CierreF29 from './Modulos/Contabilidad/Vistas/CierreF29';
-import AsientoManual from './Modulos/Contabilidad/Vistas/AsientoManual';
-import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
-import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
-import GestionUsuarios from './Modulos/Administrador/GestionUsuarios';
-import GestionRoles from './Modulos/Administrador/GestionRoles';
-import InventarioDashboard from './Modulos/Inventario/Vistas/InventarioDashboard';
-import ProductosInventario from './Modulos/Inventario/Vistas/ProductosInventario';
-import BodegasInventario from './Modulos/Inventario/Vistas/BodegasInventario';
-import MovimientosInventario from './Modulos/Inventario/Vistas/MovimientosInventario';
-import KardexInventario from './Modulos/Inventario/Vistas/KardexInventario';
-import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
-import ReservasInventario from './Modulos/Inventario/Vistas/ReservasInventario';
-import TomasFisicasInventario from './Modulos/Inventario/Vistas/TomasFisicasInventario';
-import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInventario';
-import VisorAsientoCompleto from './Modulos/Contabilidad/Vistas/VisorAsientoCompleto';
-import Glosario from './Modulos/Glosario/Glosario';
-import ReclasificadorAsiento from './Modulos/Contabilidad/Vistas/ReclasificadorAsiento';
+
+const RegistroFactura = lazy(() => import('./Modulos/Contabilidad/Componentes/RegistroFactura'));
+const HistorialFacturas = lazy(() => import('./Modulos/Contabilidad/Vistas/HistorialFacturas'));
+const GestionProveedores = lazy(() => import('./Modulos/Proveedores/GestionProveedores'));
+const LibroMayor = lazy(() => import('./Modulos/Contabilidad/Vistas/LibroMayor'));
+const AnulacionGeneral = lazy(() => import('./Modulos/Contabilidad/Vistas/AnulacionGeneral'));
+const GestionCotizaciones = lazy(() => import('./Modulos/Cotizaciones/GestionCotizaciones'));
+const CrearCotizacion = lazy(() => import('./Modulos/Cotizaciones/CrearCotizacion'));
+const GestionClientes = lazy(() => import('./Modulos/Clientes/GestionClientes'));
+const PerfilEmpresa = lazy(() => import('./Modulos/Empresa/PerfilEmpresa'));
+const GestionActivos = lazy(() => import('./Modulos/Activos/Vistas/GestionActivos'));
+const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
+const AdministradorCuentas = lazy(() => import('./Modulos/Contabilidad/Vistas/AdministradorCuentas'));
+const DashboardRenta = lazy(() => import('./Modulos/Tributario/Vistas/DashboardRenta'));
+const NominaPagos = lazy(() => import('./Modulos/Banco/Vistas/NominaPagos'));
+const CartolaBancaria = lazy(() => import('./Modulos/Banco/Vistas/CartolaBancaria'));
+const MesaConciliacion = lazy(() => import('./Modulos/Banco/Vistas/MesaConciliacion'));
+const CierreF29 = lazy(() => import('./Modulos/Contabilidad/Vistas/CierreF29'));
+const AsientoManual = lazy(() => import('./Modulos/Contabilidad/Vistas/AsientoManual'));
+const VisorProveedor = lazy(() => import('./Modulos/Proveedores/VisorProveedor'));
+const CrearEmpresa = lazy(() => import('./Modulos/Bienvenida/CrearEmpresa'));
+const GestionUsuarios = lazy(() => import('./Modulos/Administrador/GestionUsuarios'));
+const GestionRoles = lazy(() => import('./Modulos/Administrador/GestionRoles'));
+const InventarioDashboard = lazy(() => import('./Modulos/Inventario/Vistas/InventarioDashboard'));
+const ProductosInventario = lazy(() => import('./Modulos/Inventario/Vistas/ProductosInventario'));
+const BodegasInventario = lazy(() => import('./Modulos/Inventario/Vistas/BodegasInventario'));
+const MovimientosInventario = lazy(() => import('./Modulos/Inventario/Vistas/MovimientosInventario'));
+const KardexInventario = lazy(() => import('./Modulos/Inventario/Vistas/KardexInventario'));
+const LotesInventario = lazy(() => import('./Modulos/Inventario/Vistas/LotesInventario'));
+const ReservasInventario = lazy(() => import('./Modulos/Inventario/Vistas/ReservasInventario'));
+const TomasFisicasInventario = lazy(() => import('./Modulos/Inventario/Vistas/TomasFisicasInventario'));
+const ValorizacionInventario = lazy(() => import('./Modulos/Inventario/Vistas/ValorizacionInventario'));
+const VisorAsientoCompleto = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAsientoCompleto'));
+const Glosario = lazy(() => import('./Modulos/Glosario/Glosario'));
+const ReclasificadorAsiento = lazy(() => import('./Modulos/Contabilidad/Vistas/ReclasificadorAsiento'));
+
+const CargandoModulo = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      <p className="text-sm text-slate-500 font-medium">Cargando modulo...</p>
+    </div>
+  </div>
+);
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -96,7 +105,8 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
+        <Suspense fallback={<CargandoModulo />}>
+          <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
           <Route path="/crear-empresa" element={
@@ -390,7 +400,8 @@ function App() {
           } />
 
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

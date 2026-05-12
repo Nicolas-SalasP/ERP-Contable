@@ -157,7 +157,8 @@ describe('GestionProyectosActivos - eliminar proyecto', () => {
     });
 
     it('el Swal advierte cuando el proyecto tiene facturas vinculadas', async () => {
-        setupMocks();
+        swalMock.fire.mockResolvedValueOnce({ isConfirmed: false });
+        const fetchMock = setupMocks();
         renderWithRouter(<GestionProyectosActivos onNotificar={vi.fn()} />);
 
         await waitForCards();
@@ -169,6 +170,10 @@ describe('GestionProyectosActivos - eliminar proyecto', () => {
 
         const swalArg = swalMock.fire.mock.calls[0][0];
         expect(swalArg.html).toContain('facturas vinculadas');
+        const deleteCalls = fetchMock.mock.calls.filter(
+            ([, init]) => init?.method === 'DELETE'
+        );
+        expect(deleteCalls.length).toBe(0);
     });
 
     it('si el backend rechaza con 400, muestra el mensaje en Swal de error', async () => {
