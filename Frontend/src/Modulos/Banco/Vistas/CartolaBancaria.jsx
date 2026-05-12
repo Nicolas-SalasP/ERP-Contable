@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { logger } from '../../../Configuracion/logger';
-
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const CartolaBancaria = () => {
@@ -14,6 +14,7 @@ const CartolaBancaria = () => {
     const [archivo, setArchivo] = useState(null);
     const fileInputRef = useRef(null);
 
+    // FIX: Ahora el formulario controla el tipo de movimiento (INGRESO o EGRESO)
     const [formManual, setFormManual] = useState({ 
         fecha: new Date().toISOString().split('T')[0], 
         descripcion: '', 
@@ -58,6 +59,7 @@ const CartolaBancaria = () => {
         }
     };
 
+    // --- MANEJO DEL EXCEL ---
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv'))) {
@@ -121,6 +123,7 @@ const CartolaBancaria = () => {
         }
     };
 
+    // --- REGISTRO MANUAL DE MOVIMIENTO ---
     const guardarIngresoManual = async () => {
         if (!formManual.monto || !formManual.descripcion || !formManual.fecha) {
             return Swal.fire('Faltan Datos', 'Complete todos los campos obligatorios.', 'warning');
@@ -128,6 +131,8 @@ const CartolaBancaria = () => {
 
         try {
             Swal.fire({ title: 'Registrando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            // FIX: Enviamos el payload completo al backend
             const payload = { ...formManual, cuenta_bancaria_id: cuentaActiva };
             const res = await api.post('/banco/ingreso-manual', payload);
 
@@ -137,6 +142,7 @@ const CartolaBancaria = () => {
                 cargarMovimientos();
             }
         } catch (error) {
+            // FIX: Interceptamos y formateamos los errores de validación (422) que devuelve Laravel
             let mensajeError = "No se pudo registrar el movimiento.";
             
             if (error.response?.data?.errors) {
@@ -263,6 +269,8 @@ const CartolaBancaria = () => {
 
                     <div className="space-y-4 flex-1 flex flex-col justify-between">
                         <div className="space-y-4">
+                            
+                            {/* FIX: Selector visual de INGRESO vs EGRESO */}
                             <div className="bg-slate-100 p-1 rounded-xl flex gap-1 mb-2">
                                 <button
                                     onClick={() => setFormManual({ ...formManual, tipo_movimiento: 'INGRESO' })}
@@ -338,10 +346,12 @@ const CartolaBancaria = () => {
             {/* TABLA DE MOVIMIENTOS RECIENTES */}
             <div className="mt-8">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-4 border-indigo-500 mb-3"></div>
-                        <p className="font-bold text-sm">Cargando cartola...</p>
-                    </div>
+                    <EstadoCarga
+                        cargando={true}
+                        mensajeCargando="Cargando cartola..."
+                        tamano="compacto"
+                        color="indigo"
+                    />
                 ) : (
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">

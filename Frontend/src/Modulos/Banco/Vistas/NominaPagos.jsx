@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import * as XLSX from "@e965/xlsx";
@@ -267,10 +268,12 @@ const NominaPagos = () => {
             </div>
 
             {loading ? (
-                 <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-500 mb-4"></div>
-                    <p className="font-bold">Analizando cuentas por pagar...</p>
-                 </div>
+                <EstadoCarga
+                    cargando={true}
+                    mensajeCargando="Analizando cuentas por pagar..."
+                    tamano="compacto"
+                    color="blue"
+                />
             ) : paso === 1 ? (
                 /* PASO 1: SELECCIÓN DE FACTURAS */
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
