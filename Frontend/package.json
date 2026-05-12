@@ -54,12 +54,5 @@
   "overrides": {
     "serialize-javascript": "^7.0.3"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "core-js",
-      "esbuild",
-      "msw"
-    ]
-  },
   "packageManager": "pnpm@11.1.0"
 }

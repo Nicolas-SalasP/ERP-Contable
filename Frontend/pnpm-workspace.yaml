@@ -1,0 +1,6 @@
+allowBuilds:
+  esbuild: true
+  msw: true
+  core-js: true
+  
+autoInstallPeers: true
