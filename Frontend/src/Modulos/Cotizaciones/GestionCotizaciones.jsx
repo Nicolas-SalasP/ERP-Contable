@@ -4,7 +4,7 @@ import { api } from '../../Configuracion/api';
 import ModalGenerico from '../../Componentes/ModalGenerico';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../Componentes/AyudaModulo';
-
+import EstadoCarga from '../../Componentes/EstadoCarga';
 import { logger } from '../../Configuracion/logger';
 const GestionCotizaciones = () => {
     const [cotizaciones, setCotizaciones] = useState([]);
@@ -196,15 +196,17 @@ const GestionCotizaciones = () => {
                 </div>
             </div>
 
-            {loading ? (
-                <div className="p-10 text-center text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-3"></div>
-                    <p className="font-medium">Cargando cotizaciones...</p>
-                </div>
-            ) : cotizacionesFiltradas.length === 0 ? (
-                <div className="p-10 text-center text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <p className="font-medium">No se encontraron resultados para tu búsqueda.</p>
+            {loading || cotizacionesFiltradas.length === 0 ? (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && cotizacionesFiltradas.length === 0}
+                        mensajeCargando="Cargando cotizaciones..."
+                        mensajeVacio="No se encontraron resultados para tu búsqueda."
+                        iconoVacio="📋"
+                        tamano="compacto"
+                        color="emerald"
+                    />
                 </div>
             ) : (
                 <>

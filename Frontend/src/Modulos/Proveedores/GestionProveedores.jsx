@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
+import EstadoCarga from '../../Componentes/EstadoCarga';
 import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { formatearIdentificador, validarIdentificador } from '../../Utilidades/identificadores';
-
 import { logger } from '../../Configuracion/logger';
 // LISTA DE BANCOS PARA EL AUTOCOMPLETADO
 const BANCOS_CHILE = [
@@ -100,10 +100,16 @@ const BankAccountsTab = ({ proveedorId }) => {
                     Cuentas Registradas
                 </h3>
 
-                {loading ? (
-                    <div className="p-8 text-center text-slate-400"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500 mx-auto"></div></div>
-                ) : accounts.length === 0 ? (
-                    <div className="p-6 text-center text-slate-400 italic bg-slate-50 rounded-xl border border-slate-100">Sin cuentas asociadas</div>
+                {loading || accounts.length === 0 ? (
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && accounts.length === 0}
+                        mensajeCargando=""
+                        mensajeVacio="Sin cuentas asociadas"
+                        iconoVacio="🏦"
+                        tamano="inline"
+                        color="emerald"
+                    />
                 ) : (
                     <>
                         <div className="grid grid-cols-1 gap-3 md:hidden">
@@ -384,16 +390,16 @@ const GestionProveedores = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                {loading ? (
-                    <div className="p-10 text-center text-slate-400">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-3"></div>
-                        <p className="font-medium">Cargando datos...</p>
-                    </div>
-                ) : proveedores.length === 0 ? (
-                    <div className="p-10 text-center text-slate-400">
-                        <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                        <p className="font-medium">No hay proveedores registrados.</p>
-                    </div>
+                {loading || proveedores.length === 0 ? (
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && proveedores.length === 0}
+                        mensajeCargando="Cargando datos..."
+                        mensajeVacio="No hay proveedores registrados."
+                        iconoVacio="🏢"
+                        tamano="compacto"
+                        color="emerald"
+                    />
                 ) : (
                     <>
                         <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50">

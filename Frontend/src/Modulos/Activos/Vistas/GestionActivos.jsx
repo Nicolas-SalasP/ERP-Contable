@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import GestionProyectosActivos from './GestionProyectosActivos';
-
 import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -173,9 +173,12 @@ const GestionActivos = () => {
             </div>
 
             {loading ? (
-                <div className="py-12 flex justify-center items-center text-slate-400">
-                    <i className="fas fa-circle-notch fa-spin text-3xl"></i>
-                </div>
+                <EstadoCarga
+                    cargando={true}
+                    mensajeCargando="Cargando activos..."
+                    tamano="compacto"
+                    color="emerald"
+                />
             ) : (
                 <div className="transition-all duration-300">
                     {/* TAB: PENDIENTES */}

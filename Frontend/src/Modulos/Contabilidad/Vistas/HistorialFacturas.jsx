@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
@@ -515,15 +516,19 @@ const HistorialFacturas = () => {
 
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible flex flex-col">
                         {!searched && facturas.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                                <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                <p className="text-base font-medium">Usa los filtros para buscar documentos.</p>
-                            </div>
+                            <EstadoCarga
+                                vacio={true}
+                                mensajeVacio="Usa los filtros para buscar documentos."
+                                iconoVacio="🔍"
+                                tamano="compacto"
+                            />
                         ) : facturas.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                                <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                                <p className="text-base font-medium">No se encontraron documentos.</p>
-                            </div>
+                            <EstadoCarga
+                                vacio={true}
+                                mensajeVacio="No se encontraron documentos."
+                                iconoVacio="📄"
+                                tamano="compacto"
+                            />
                         ) : (
                             <>
                                 <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
