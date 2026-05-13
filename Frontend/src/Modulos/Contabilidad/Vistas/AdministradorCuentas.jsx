@@ -3,6 +3,7 @@ import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import BotonAccion from '../../../Componentes/BotonAccion';
 import { logger } from '../../../Configuracion/logger';
 
 const AdministradorCuentas = () => {
@@ -399,16 +400,21 @@ const AdministradorCuentas = () => {
                             <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-bold transition-all text-center">
                                 Cancelar
                             </button>
-                            <button onClick={guardarCambios} disabled={saving} className="w-full sm:w-auto px-8 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
-                                {saving ? (
-                                    <><i className="fas fa-spinner fa-spin"></i> Guardando...</>
-                                ) : (
-                                    <>
-                                        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                                        {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}
-                                    </>
-                                )}
-                            </button>
+                            <BotonAccion
+                                onClick={guardarCambios}
+                                cargando={saving}
+                                color="slate"
+                                tamano="md"
+                                textoCargando="Guardando..."
+                                icono={
+                                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                }
+                                className="w-full sm:w-auto"
+                            >
+                                {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}
+                            </BotonAccion>
                         </div>
                     </div>
                 </div>

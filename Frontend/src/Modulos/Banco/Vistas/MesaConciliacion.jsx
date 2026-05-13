@@ -431,10 +431,12 @@ const MesaConciliacion = () => {
 
                                     {modoFacturas === 'SUGERENCIAS' ? (
                                         cargandoSugerencias ? (
-                                            <div className="py-12 text-center text-slate-400">
-                                                <i className="fas fa-circle-notch fa-spin text-3xl mb-3"></i>
-                                                <p className="text-sm font-bold">Buscando match exacto...</p>
-                                            </div>
+                                            <EstadoCarga
+                                                cargando={true}
+                                                mensajeCargando="Buscando match exacto..."
+                                                tamano="compacto"
+                                                color="blue"
+                                            />
                                         ) : sugerenciasFacturas.length > 0 ? (
                                             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                                                 <table className="w-full text-left text-sm">

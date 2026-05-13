@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
+import BotonAccion from '../../../Componentes/BotonAccion';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -184,15 +185,18 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                     >
                         Cancelar
                     </button>
-                    <button
+                    <BotonAccion
                         type="submit"
                         form="form-pago-factura"
-                        disabled={loading}
-                        className="w-full md:w-auto px-8 py-3 bg-emerald-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/30 hover:bg-emerald-700 hover:shadow-emerald-600/40 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                        cargando={loading}
+                        color="emerald"
+                        tamano="lg"
+                        textoCargando="Procesando..."
+                        icono="fas fa-check-double"
+                        className="w-full md:w-auto"
                     >
-                        {loading ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-check-double"></i>}
-                        {loading ? 'Procesando...' : 'Confirmar Egreso'}
-                    </button>
+                        Confirmar Egreso
+                    </BotonAccion>
                 </div>
 
             </div>

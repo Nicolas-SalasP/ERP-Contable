@@ -4,6 +4,7 @@ import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
 import Select from 'react-select';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import BotonAccion from '../../../Componentes/BotonAccion';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -349,18 +350,22 @@ const AsientoManual = () => {
 
                 {filas.length >= 2 && (
                     <div className="flex justify-end mt-8 animate-fade-in">
-                        <button
-                            onClick={guardarAsiento} disabled={!estaCuadrado || loading}
-                            className={`font-black py-4 px-10 rounded-xl flex items-center gap-3 transition-all duration-300 text-lg ${estaCuadrado ? 'bg-slate-900 hover:bg-black text-white shadow-xl hover:-translate-y-1' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                }`}
+                        <BotonAccion
+                            onClick={guardarAsiento}
+                            cargando={loading}
+                            disabled={!estaCuadrado}
+                            color="slate"
+                            tamano="lg"
+                            textoCargando="Contabilizando..."
+                            icono={
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                </svg>
+                            }
+                            className="font-black"
                         >
-                            {loading ? (
-                                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            ) : (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                            )}
                             CONTABILIZAR ASIENTO
-                        </button>
+                        </BotonAccion>
                     </div>
                 )}
 

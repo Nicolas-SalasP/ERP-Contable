@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import BotonAccion from '../../../Componentes/BotonAccion';
 import ModalGenerico from '../../../Componentes/ModalGenerico';
 import BuscadorCuentaContable from './BuscadorCuentaContable';
 import { api } from '../../../Configuracion/api';
-
 import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (value) => {
     if (!value && value !== 0) return '';
@@ -688,35 +688,36 @@ const RegistroFactura = () => {
                 </button>
 
                 {currentStep < 3 ? (
-                    <button
+                    <BotonAccion
                         onClick={handleNextStep}
+                        cargando={checkingDuplicate}
                         disabled={
                             !formData.montoBruto ||
                             !formData.proveedorId ||
                             !formData.fechaContable ||
-                            (currentStep === 2 && (!formData.fechaVencimiento || fechaInvalida)) ||
-                            checkingDuplicate
+                            (currentStep === 2 && (!formData.fechaVencimiento || fechaInvalida))
                         }
-                        className="w-full md:w-auto px-10 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 min-w-[160px]"
+                        color="slate"
+                        tamano="lg"
+                        textoCargando="Verificando"
+                        icono={<i className="fas fa-arrow-right"></i>}
+                        className="w-full md:w-auto min-w-[160px]"
                     >
-                        {checkingDuplicate ? (
-                            <><i className="fas fa-circle-notch fa-spin"></i> Verificando</>
-                        ) : (
-                            <>Siguiente <i className="fas fa-arrow-right"></i></>
-                        )}
-                    </button>
+                        Siguiente
+                    </BotonAccion>
                 ) : (
-                    <button
+                    <BotonAccion
                         onClick={handlePreSave}
-                        disabled={saving || ivaInvalido}
-                        className="w-full md:w-auto px-10 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 min-w-[160px]"
+                        cargando={saving}
+                        disabled={ivaInvalido}
+                        color="blue"
+                        tamano="lg"
+                        textoCargando="Guardando..."
+                        icono={<i className="fas fa-check"></i>}
+                        className="w-full md:w-auto min-w-[160px]"
                     >
-                        {saving ? (
-                            <><i className="fas fa-circle-notch fa-spin"></i> Guardando...</>
-                        ) : (
-                            <>Confirmar y Guardar <i className="fas fa-check"></i></>
-                        )}
-                    </button>
+                        Confirmar y Guardar
+                    </BotonAccion>
                 )}
             </div>
         </div>
