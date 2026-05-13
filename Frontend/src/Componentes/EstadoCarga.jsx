@@ -58,11 +58,13 @@ const EstadoCarga = ({
     onReintentar = null,
     children,
     mensajeCargando = 'Cargando...',
+    tituloVacio = null,
     mensajeVacio = 'No hay datos para mostrar.',
     iconoVacio = '📭',
     tamano = 'completo',
     color = 'emerald',
     className = '',
+    classNameVacio = '',
 }) => {
     const colorClases = COLORES[color] || COLORES.emerald;
     const tamanoClases = TAMANOS[tamano] || TAMANOS.completo;
@@ -116,12 +118,17 @@ const EstadoCarga = ({
     if (vacio) {
         return (
             <div
-                className={`flex flex-col items-center justify-center text-center text-slate-400 ${tamanoClases.contenedor} ${className}`}
+                className={`flex flex-col items-center justify-center text-center text-slate-400 ${tamanoClases.contenedor} ${className} ${classNameVacio}`}
             >
                 <div className={`${tamanoClases.icono} mb-3`} aria-hidden="true">
                     {iconoVacio}
                 </div>
-                <p className={`${tamanoClases.texto} text-slate-500`}>
+                {tituloVacio && (
+                    <h3 className={`${tamanoClases.texto} text-slate-700 mb-1`}>
+                        {tituloVacio}
+                    </h3>
+                )}
+                <p className={`${tituloVacio ? 'text-sm' : tamanoClases.texto} text-slate-500`}>
                     {mensajeVacio}
                 </p>
             </div>

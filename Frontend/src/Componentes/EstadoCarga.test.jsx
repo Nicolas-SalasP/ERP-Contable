@@ -103,6 +103,27 @@ describe('EstadoCarga - estado vacio', () => {
         expect(screen.getByText('🔍')).toBeDefined();
         expect(screen.getByText('No encontramos resultados.')).toBeDefined();
     });
+
+    it('si se pasa tituloVacio, muestra titulo + descripcion (empty state rico)', () => {
+        render(
+            <EstadoCarga
+                vacio={true}
+                tituloVacio="Sin productos"
+                mensajeVacio="Agrega tu primer producto al inventario."
+                iconoVacio="📦"
+            />
+        );
+        expect(screen.getByText('Sin productos')).toBeDefined();
+        expect(screen.getByText('Agrega tu primer producto al inventario.')).toBeDefined();
+        expect(screen.getByText('📦')).toBeDefined();
+    });
+
+    it('sin tituloVacio, no se renderiza un h3 vacio', () => {
+        const { container } = render(
+            <EstadoCarga vacio={true} mensajeVacio="Sin datos" />
+        );
+        expect(container.querySelector('h3')).toBeNull();
+    });
 });
 
 describe('EstadoCarga - estado error', () => {
