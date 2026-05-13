@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { useNavigate } from 'react-router-dom';
@@ -7,8 +7,9 @@ import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
 import ModalPagoFactura from '../Componentes/ModalPagoFactura';
 import ModalAsiento from '../Componentes/ModalAsiento';
-import BuscadorCuentasReclasificar from '../Componentes/BuscadorCuentasReclasificar';
 import HistorialFiltros from '../Componentes/HistorialFiltros';
+import WorkbenchReclasificacion from '../Componentes/WorkbenchReclasificacion';
+import { useFacturasHistorial } from '../Hooks/useFacturasHistorial';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 const formatDate = (dateString) => {
@@ -21,24 +22,6 @@ const HistorialFacturas = () => {
     const navigate = useNavigate();
     const [modalPagoOpen, setModalPagoOpen] = useState(false);
     const [facturaSeleccionada, setFacturaSeleccionada] = useState(null);
-
-    const abrirModalPago = (factura) => {
-        setMenuAbiertoId(null);
-        setFacturaSeleccionada(factura);
-        setModalPagoOpen(true);
-    };
-
-    const [busqueda, setBusqueda] = useState('');
-    const [filtroNumero, setFiltroNumero] = useState('');
-    const [filtroEstado, setFiltroEstado] = useState('');
-    const [facturas, setFacturas] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [searched, setSearched] = useState(false);
-    const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
-    const [listaProveedores, setListaProveedores] = useState([]);
-    const [sugerencias, setSugerencias] = useState([]);
-    const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
-    const searchRef = useRef(null);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [asientoData, setAsientoData] = useState(null);
@@ -59,11 +42,35 @@ const HistorialFacturas = () => {
 
     const [cuentasPlan, setCuentasPlan] = useState([]);
 
-    useEffect(() => {
-        api.get('/proveedores/catalogo')
-            .then(res => { if (res.success) setListaProveedores(res.data); })
-            .catch(err => logger.error("Error", err));
+    // Click outside del menu de acciones - se ejecuta junto al click outside del autocomplete
+    const handleMenuClickOutside = useCallback((event) => {
+        if (!event.target.closest('.menu-acciones-container')) setMenuAbiertoId(null);
+    }, []);
 
+    // Hook con toda la logica de filtros + paginacion + fetching
+    const {
+        busqueda,
+        filtroNumero, setFiltroNumero,
+        filtroEstado, setFiltroEstado,
+        facturas,
+        loading,
+        searched,
+        pagination, setPagination,
+        sugerencias,
+        mostrarSugerencias, setMostrarSugerencias,
+        searchRef,
+        handleBusquedaChange,
+        ejecutarBusqueda,
+        seleccionarProveedor,
+    } = useFacturasHistorial({ vistaActual, onMenuClickOutside: handleMenuClickOutside });
+
+    const abrirModalPago = (factura) => {
+        setMenuAbiertoId(null);
+        setFacturaSeleccionada(factura);
+        setModalPagoOpen(true);
+    };
+
+    React.useEffect(() => {
         api.get('/contabilidad/plan-cuentas')
             .then(res => {
                 if (res.success && res.data) {
@@ -73,66 +80,7 @@ const HistorialFacturas = () => {
                     }
                 }
             }).catch(err => logger.log("Usando cuentas fallback", err));
-
-        const handleClickOutside = (event) => {
-            if (searchRef.current && !searchRef.current.contains(event.target)) setMostrarSugerencias(false);
-            if (!event.target.closest('.menu-acciones-container')) setMenuAbiertoId(null);
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
-
-    useEffect(() => {
-        if (vistaActual !== 3) ejecutarBusqueda();
-    }, [pagination.page, vistaActual]);
-
-    const handleBusquedaChange = (e) => {
-        const termino = e.target.value;
-        setBusqueda(termino);
-        if (termino.length > 0) {
-            const matches = listaProveedores.filter(p =>
-                p.razon_social.toLowerCase().includes(termino.toLowerCase()) ||
-                (p.rut && p.rut.toLowerCase().includes(termino.toLowerCase())) ||
-                p.codigo_interno.toString().includes(termino)
-            );
-            setSugerencias(matches);
-            setMostrarSugerencias(true);
-        } else {
-            setSugerencias([]);
-            setMostrarSugerencias(false);
-        }
-    };
-
-    const ejecutarBusqueda = async (resetPage = false) => {
-        setLoading(true);
-        setSearched(true);
-        setMostrarSugerencias(false);
-
-        if (resetPage) setPagination(prev => ({ ...prev, page: 1 }));
-
-        const params = new URLSearchParams();
-        if (busqueda) params.append('search', busqueda);
-        if (filtroNumero) params.append('num', filtroNumero);
-        if (filtroEstado) params.append('estado', filtroEstado);
-        params.append('page', resetPage ? 1 : pagination.page);
-        params.append('limit', pagination.limit);
-
-        try {
-            const res = await api.get(`/facturas/historial?${params.toString()}`);
-            if (res.success) {
-                setFacturas(res.data);
-                setPagination(prev => ({ ...prev, total: res.pagination.total, totalPages: res.pagination.totalPages }));
-            } else {
-                setFacturas([]);
-            }
-        } catch (error) { logger.error(error); }
-        finally { setLoading(false); }
-    };
-
-    const seleccionarProveedor = (prov) => {
-        setBusqueda(prov.razon_social);
-        setMostrarSugerencias(false);
-    };
 
     const verAsientoContable = async (facturaId) => {
         setMenuAbiertoId(null);
@@ -590,134 +538,17 @@ const HistorialFacturas = () => {
                     </div>
                 </>
             ) : (
-                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-visible animate-fade-in flex flex-col">
-                    <div className="bg-slate-50 p-4 md:p-8 border-b border-slate-200 rounded-t-2xl">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-800">Asiento Contable N° {facturaActiva?.codigo_asiento}</h2>
-                                <p className="text-sm text-slate-500 font-medium">{facturaActiva?.tipo_documento === 'NOTA_CREDITO' ? 'NC' : 'Factura'} N° {facturaActiva?.numero_factura} - {facturaActiva?.proveedor?.razon_social}</p>
-                            </div>
-                            <button onClick={() => setVistaActual(1)} className="w-full md:w-auto text-slate-500 hover:text-red-500 transition-colors px-4 py-2.5 bg-white rounded-lg border border-slate-200 shadow-sm font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg> Cancelar
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-white p-4 md:p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Fecha del Ajuste</label>
-                                <input
-                                    type="date"
-                                    className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 transition-all text-sm"
-                                    value={formCambio.fechaContableCambio}
-                                    min={facturaActiva?.fecha_emision}
-                                    onChange={e => setFormCambio({ ...formCambio, fechaContableCambio: e.target.value })}
-                                />
-                                <span className="text-[10px] text-slate-400 mt-1.5 block leading-tight">El reverso y el cargo quedarán en esta fecha.</span>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Glosa de Auditoría</label>
-                                <input
-                                    type="text"
-                                    className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 transition-all text-sm"
-                                    value={formCambio.nuevaGlosa}
-                                    onChange={e => setFormCambio({ ...formCambio, nuevaGlosa: e.target.value })}
-                                    placeholder="Motivo del cambio..."
-                                />
-                                <span className="text-[10px] text-slate-400 mt-1.5 block leading-tight">Justificación obligatoria para el historial.</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-4 md:p-8 flex-1 bg-white">
-                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4">Líneas del Asiento Original</h3>
-
-                        {loadingReclasificacion ? (
-                            <div className="text-center p-10 text-slate-400">
-                                <svg className="animate-spin w-8 h-8 mx-auto mb-3 text-blue-500" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <p>Cargando detalles...</p>
-                            </div>
-                        ) : (
-                            <div className="border border-slate-200 rounded-xl overflow-visible shadow-sm">
-                                <div className="hidden md:block overflow-visible pb-24">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-900 text-white text-xs uppercase tracking-wider font-bold">
-                                            <tr>
-                                                <th className="p-4 w-1/3 first:rounded-tl-xl">Cuenta Original</th>
-                                                <th className="p-4 text-right w-32">Debe</th>
-                                                <th className="p-4 text-right w-32 border-r border-slate-700">Haber</th>
-                                                <th className="p-4 bg-slate-800 last:rounded-tr-xl">Nueva Imputación (Buscador)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm font-medium">
-                                            {asientoReclasificacion?.detalles?.map((linea, index) => {
-                                                const isBloqueada = linea.cuenta_contable === '110001' || linea.cuenta_contable === '210101' || linea.cuenta_contable === '210102';
-                                                return (
-                                                    <tr key={index} className={isBloqueada ? 'bg-slate-50 opacity-80' : 'bg-white hover:bg-blue-50/20'}>
-                                                        <td className="p-4">
-                                                            <div className="text-slate-800 font-bold">{linea.nombre_cuenta}</div>
-                                                            <div className="text-xs text-slate-500 font-mono mt-0.5 bg-white border border-slate-200 px-2 py-0.5 rounded w-max">{linea.cuenta_contable}</div>
-                                                        </td>
-                                                        <td className="p-4 text-right font-mono text-emerald-600">{parseFloat(linea.debe) > 0 ? formatCurrency(linea.debe) : '-'}</td>
-                                                        <td className="p-4 text-right font-mono text-red-600 border-r border-slate-100">{parseFloat(linea.haber) > 0 ? formatCurrency(linea.haber) : '-'}</td>
-                                                        <td className="p-4">
-                                                            {isBloqueada ? (
-                                                                <div onClick={intentarCambioProhibido} className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer hover:text-red-500 transition-colors bg-slate-100 border border-slate-200 w-fit px-3 py-2 rounded-lg">
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Cuenta Restringida
-                                                                </div>
-                                                            ) : (
-                                                                <BuscadorCuentasReclasificar cuentas={cuentasPlan} valor={formCambio.nuevaCuenta} onChange={(val) => setFormCambio({ ...formCambio, nuevaCuenta: val })} />
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div className="md:hidden flex flex-col divide-y divide-slate-100 pb-10">
-                                    {asientoReclasificacion?.detalles?.map((linea, index) => {
-                                        const isBloqueada = linea.cuenta_contable === '110001' || linea.cuenta_contable === '210101' || linea.cuenta_contable === '210102';
-                                        return (
-                                            <div key={index} className={`p-4 flex flex-col gap-3 ${isBloqueada ? 'bg-slate-50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <div className="text-slate-800 font-bold text-sm">{linea.nombre_cuenta}</div>
-                                                        <div className="text-xs text-slate-500 font-mono mt-1">{linea.cuenta_contable}</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        {parseFloat(linea.debe) > 0 && <div className="text-emerald-600 font-mono font-bold text-sm">+{formatCurrency(linea.debe)}</div>}
-                                                        {parseFloat(linea.haber) > 0 && <div className="text-red-600 font-mono font-bold text-sm">-{formatCurrency(linea.haber)}</div>}
-                                                    </div>
-                                                </div>
-                                                <div className="pt-2 border-t border-slate-100 overflow-visible relative">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Mover a cuenta:</p>
-                                                    {isBloqueada ? (
-                                                        <div onClick={intentarCambioProhibido} className="flex items-center justify-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer bg-slate-100 border border-slate-200 w-full py-2.5 rounded-lg">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Restringida
-                                                        </div>
-                                                    ) : (
-                                                        <BuscadorCuentasReclasificar cuentas={cuentasPlan} valor={formCambio.nuevaCuenta} onChange={(val) => setFormCambio({ ...formCambio, nuevaCuenta: val })} />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="bg-slate-50 p-4 md:p-6 border-t border-slate-200 mt-auto rounded-b-2xl">
-                        <button
-                            onClick={ejecutarReclasificacion}
-                            disabled={!formCambio.nuevaCuenta}
-                            className="w-full md:w-auto md:float-right px-6 md:px-10 py-3.5 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 hover:shadow-emerald-600/40 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg> Confirmar Ajuste
-                        </button>
-                        <div className="clear-both"></div>
-                    </div>
-                </div>
+                <WorkbenchReclasificacion
+                    facturaActiva={facturaActiva}
+                    asientoReclasificacion={asientoReclasificacion}
+                    loadingReclasificacion={loadingReclasificacion}
+                    cuentasPlan={cuentasPlan}
+                    formCambio={formCambio}
+                    onFormCambioChange={setFormCambio}
+                    onCancelar={() => setVistaActual(1)}
+                    onConfirmar={ejecutarReclasificacion}
+                    onIntentarBloqueada={intentarCambioProhibido}
+                />
             )}
 
             <ModalPagoFactura

@@ -5,7 +5,9 @@ namespace App\Domains\Contabilidad\Controllers;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Log;
 use Exception;
 
 class AsientoContableController
@@ -137,6 +139,25 @@ class AsientoContableController
                 'message' => 'Errores de validación',
                 'errors' => $e->errors()
             ], 422);
+
+        } catch (QueryException $e) {
+            Log::error('Error de BD en storeAvanzado: ' . $e->getMessage(), [
+                'sql_state' => $e->errorInfo[0] ?? null,
+                'code' => $e->getCode(),
+            ]);
+
+            $sqlState = $e->errorInfo[0] ?? null;
+            if ($sqlState === '42S02') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de configuracion del sistema: faltan migraciones por aplicar en la base de datos. Contacta al administrador para que ejecute "php artisan migrate".',
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error tecnico al guardar el asiento. Si persiste, contacta soporte.',
+            ], 500);
 
         } catch (Exception $e) {
             return response()->json([
