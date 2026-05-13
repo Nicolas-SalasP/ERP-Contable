@@ -6,106 +6,51 @@ import { api, API_BASE_URL } from '../../Configuracion/api';
 import { logger } from '../../Configuracion/logger';
 import { validarIdentificador } from '../../Utilidades/identificadores';
 import Swal from 'sweetalert2';
+import ModalBancoEdicion from './Componentes/ModalBancoEdicion';
+import ModalCentroEdicion from './Componentes/ModalCentroEdicion';
+import PerfilEmpresaBancos from './Componentes/PerfilEmpresaBancos';
+import PerfilEmpresaCentros from './Componentes/PerfilEmpresaCentros';
+import { usePerfilEmpresa } from './Hooks/usePerfilEmpresa';
 
-// Helper local que delega en la utilidad centralizada para mantener
-// compatibilidad con el codigo existente. En el futuro se puede inline.
 const validarRutChileno = (rut) => validarIdentificador(rut, 'CL');
 
 const PerfilEmpresa = () => {
-    // --- ESTADOS GENERALES ---
-    const [loading, setLoading] = useState(true);
+    const {
+        formData, setFormData,
+        bancos, setBancos,
+        centros, setCentros,
+        listaBancos,
+        loading,
+        recargar: cargarPerfil,
+    } = usePerfilEmpresa();
+
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
 
-    // --- ESTADOS DE IMAGEN ---
     const [logoPreview, setLogoPreview] = useState(null);
     const [logoFile, setLogoFile] = useState(null);
 
-    // --- ESTADOS DE FORMULARIOS ---
-    const [formData, setFormData] = useState({
-        rut: '',
-        razon_social: '',
-        direccion: '',
-        email: '',
-        telefono: '',
-        logo_path: '',
-        color_primario: '#10b981',
-        regimen_tributario: '14_D3'
-    });
-
-    const [bancos, setBancos] = useState([]);
-    const [listaBancos, setListaBancos] = useState([]);
     const [nuevoBanco, setNuevoBanco] = useState({
         banco: '', tipo_cuenta: 'Corriente', numero_cuenta: '', titular: '', rut_titular: '', email_notificacion: ''
     });
 
-    const [centros, setCentros] = useState([]);
+    useEffect(() => {
+        if (formData.razon_social || formData.rut) {
+            setNuevoBanco(prev => ({
+                ...prev,
+                titular: formData.razon_social,
+                rut_titular: formData.rut,
+            }));
+        }
+    }, [formData.razon_social, formData.rut]);
+
     const [formCentro, setFormCentro] = useState({ codigo: '', nombre: '' });
 
-    // --- ESTADOS PARA MODALES DE EDICIÓN ---
     const [modalBancoOpen, setModalBancoOpen] = useState(false);
     const [bancoEditado, setBancoEditado] = useState(null);
-    
     const [modalCentroOpen, setModalCentroOpen] = useState(false);
     const [centroEditado, setCentroEditado] = useState(null);
-
-    // --- CONSTANTES DE URL ---
-    // BASE_URL_IMG sirve para construir URLs de logos guardados en /storage/
     const BASE_URL_IMG = API_BASE_URL.replace('/api', '/storage/');
-
-    // --- EFECTOS AL CARGAR ---
-    useEffect(() => {
-        cargarPerfil();
-        cargarCatalogoBancos();
-    }, []);
-
-    const cargarPerfil = async () => {
-        setLoading(true);
-        try {
-            const res = await api.get('/empresas/perfil');
-            if (res.success && res.data) {
-                setFormData({
-                    rut: res.data.rut || '',
-                    razon_social: res.data.razon_social || '',
-                    direccion: res.data.direccion || '',
-                    email: res.data.email || '',
-                    telefono: res.data.telefono || '',
-                    logo_path: res.data.logo_path || '',
-                    color_primario: res.data.color_primario || '#10b981',
-                    regimen_tributario: res.data.regimen_tributario || '14_D3'
-                });
-                setBancos(res.data.bancos || []);
-                setCentros(res.data.centros_costo || []);
-
-                setNuevoBanco(prev => ({
-                    ...prev,
-                    titular: res.data.razon_social,
-                    rut_titular: res.data.rut
-                }));
-            }
-        } catch {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudo cargar la información.',
-                buttonsStyling: false,
-                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const cargarCatalogoBancos = async () => {
-        try {
-            const res = await api.get('/empresas/catalogo-bancos');
-            if (res.success) setListaBancos(res.data);
-        } catch (error) {
-            logger.error(error);
-        }
-    };
-
-    // --- HANDLERS Y FORMATEADORES ---
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleSeleccionarLogo = (e) => {
@@ -150,7 +95,6 @@ const PerfilEmpresa = () => {
         setFormData({ ...formData, telefono: cleaned });
     };
 
-    // --- GUARDAR PERFIL (Texto + Logo) ---
     const handleGuardarDatos = async (e) => {
         e.preventDefault();
         
@@ -179,11 +123,6 @@ const PerfilEmpresa = () => {
             formDataSend.append('_method', 'PUT');
 
             if (logoFile) formDataSend.append('logo', logoFile);
-
-            // Usa api.upload() en lugar de fetch a mano: ahora maneja auth,
-            // retry, timeout y errores normalizados de forma uniforme.
-            // El { silent: true } evita el toast automatico porque ya manejamos
-            // el success/error a mano con Swal personalizado abajo.
             const res = await api.upload('/empresas/perfil', formDataSend, { silent: true });
 
             if (res.success) {
@@ -214,7 +153,6 @@ const PerfilEmpresa = () => {
         }
     };
 
-    // --- LÓGICA DE BANCOS ---
     const handleAgregarBanco = async (e) => {
         e.preventDefault();
         if (!nuevoBanco.banco || !nuevoBanco.numero_cuenta) {
@@ -281,7 +219,6 @@ const PerfilEmpresa = () => {
         }
     };
 
-    // --- LÓGICA DE CENTROS DE COSTO ---
     const agregarCentro = async (e) => {
         e.preventDefault();
         if (!formCentro.codigo || !formCentro.nombre) {
@@ -325,7 +262,6 @@ const PerfilEmpresa = () => {
                 setCentroEditado(null);
             }
         } catch (error) {
-            // Lee el error personalizado si viene desde el backend (ej. "código ya está en uso")
             Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.error || error.message, buttonsStyling: false, customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' } });
         }
     };
@@ -528,239 +464,46 @@ const PerfilEmpresa = () => {
                     </div>
                 )}
 
-                {/* --- PESTAÑA: BANCOS --- */}
                 {activeTab === 'bancos' && (
-                    <div className="p-6 md:p-8 animate-fade-in">
-                        <div className="mb-6">
-                            <h3 className="text-xl font-black text-slate-800">Cuentas Bancarias</h3>
-                            <p className="text-sm text-slate-500">Administra las cuentas utilizadas para pagos y conciliación.</p>
-                        </div>
-                        
-                        <form onSubmit={handleAgregarBanco} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
-                            <div className="flex-1 w-full">
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Institución</label>
-                                <select className="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white cursor-pointer outline-none focus:ring-2 focus:ring-emerald-500 font-medium" value={nuevoBanco.banco} onChange={e => setNuevoBanco({ ...nuevoBanco, banco: e.target.value })}>
-                                    <option value="">Seleccione banco...</option>
-                                    {listaBancos.map((banco) => (<option key={banco.id} value={banco.nombre}>{banco.nombre}</option>))}
-                                </select>
-                            </div>
-                            <div className="w-full md:w-48">
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tipo</label>
-                                <select className="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white cursor-pointer outline-none focus:ring-2 focus:ring-emerald-500 font-medium" value={nuevoBanco.tipo_cuenta} onChange={e => setNuevoBanco({ ...nuevoBanco, tipo_cuenta: e.target.value })}>
-                                    <option value="Corriente">Cta. Corriente</option>
-                                    <option value="Vista">Cta. Vista / RUT</option>
-                                    <option value="Ahorro">Cta. Ahorro</option>
-                                </select>
-                            </div>
-                            <div className="flex-1 w-full">
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">N° Cuenta</label>
-                                <input placeholder="123456789" className="w-full border border-slate-200 rounded-xl p-3 text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500" value={nuevoBanco.numero_cuenta} onChange={e => setNuevoBanco({ ...nuevoBanco, numero_cuenta: e.target.value })} />
-                            </div>
-
-                            <button type="submit" className="w-full md:w-auto bg-emerald-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-emerald-500 transition-colors text-sm shadow-lg shadow-emerald-600/30 whitespace-nowrap">
-                                Agregar Cuenta
-                            </button>
-                        </form>
-
-                        <div className="overflow-hidden border border-slate-200 rounded-2xl">
-                            <table className="min-w-full text-left bg-white">
-                                <thead className="bg-slate-50 border-b border-slate-200">
-                                    <tr>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Banco</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">N° Cuenta</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {bancos.length === 0 ? (
-                                        <tr><td colSpan="3" className="p-8 text-center text-slate-400 font-medium">No hay cuentas registradas.</td></tr>
-                                    ) : (
-                                        bancos.map(b => (
-                                            <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4 font-bold text-slate-800">{b.banco}</td>
-                                                <td className="px-6 py-4 text-slate-600 font-mono text-sm">{b.tipo_cuenta} • {b.numero_cuenta}</td>
-                                                <td className="px-6 py-4 text-center flex justify-center gap-2">
-                                                    <button onClick={() => iniciarEdicionBanco(b)} className="text-blue-500 bg-blue-50 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition-colors" title="Editar">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                                    </button>
-                                                    <button onClick={() => handleEliminarBanco(b.id)} className="text-rose-500 bg-rose-50 hover:bg-rose-600 hover:text-white p-2 rounded-lg transition-colors" title="Eliminar">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <PerfilEmpresaBancos
+                        bancos={bancos}
+                        listaBancos={listaBancos}
+                        nuevoBanco={nuevoBanco}
+                        onNuevoBancoChange={setNuevoBanco}
+                        onAgregarBanco={handleAgregarBanco}
+                        onEditarBanco={iniciarEdicionBanco}
+                        onEliminarBanco={handleEliminarBanco}
+                    />
                 )}
 
-                {/* --- PESTAÑA: CENTROS DE COSTO --- */}
                 {activeTab === 'centros' && (
-                    <div className="p-6 md:p-8 animate-fade-in">
-                        <div className="mb-6">
-                            <h3 className="text-xl font-black text-slate-800">Centros de Costo</h3>
-                            <p className="text-sm text-slate-500">Clasifica tus ingresos y gastos para mejorar la analítica contable.</p>
-                        </div>
-
-                        <form onSubmit={agregarCentro} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
-                            <div className="w-full md:w-32">
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Código</label>
-                                <input
-                                    type="text"
-                                    value={formCentro.codigo}
-                                    onChange={e => setFormCentro({ ...formCentro, codigo: e.target.value.toUpperCase() })}
-                                    placeholder="ADM01"
-                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm font-mono uppercase outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                            </div>
-                            <div className="flex-1 w-full">
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Nombre del Departamento / Proyecto</label>
-                                <input
-                                    type="text"
-                                    value={formCentro.nombre}
-                                    onChange={e => setFormCentro({ ...formCentro, nombre: e.target.value })}
-                                    placeholder="Ej: Administración Central"
-                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                            </div>
-                            <button type="submit" className="w-full md:w-auto bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-500 transition-colors text-sm shadow-lg shadow-indigo-600/30 whitespace-nowrap">
-                                Crear Centro
-                            </button>
-                        </form>
-
-                        <div className="overflow-hidden border border-slate-200 rounded-2xl">
-                            <table className="min-w-full text-left bg-white">
-                                <thead className="bg-slate-50 border-b border-slate-200">
-                                    <tr>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Código</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-24">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {centros.length === 0 ? (
-                                        <tr><td colSpan="3" className="p-8 text-center text-slate-400 font-medium">No hay centros de costo registrados.</td></tr>
-                                    ) : (
-                                        centros.map(cc => (
-                                            <tr key={cc.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <span className="bg-slate-200 text-slate-700 font-mono text-xs px-2.5 py-1 rounded-md font-bold">{cc.codigo}</span>
-                                                </td>
-                                                <td className="px-6 py-4 font-bold text-slate-800">{cc.nombre}</td>
-                                                <td className="px-6 py-4 text-center flex justify-center gap-2">
-                                                    <button onClick={() => iniciarEdicionCentro(cc)} className="text-blue-500 bg-blue-50 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition-colors" title="Editar">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                                    </button>
-                                                    <button onClick={() => eliminarCentro(cc.id)} className="text-rose-500 bg-rose-50 hover:bg-rose-600 hover:text-white p-2 rounded-lg transition-colors" title="Eliminar">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <PerfilEmpresaCentros
+                        centros={centros}
+                        formCentro={formCentro}
+                        onFormCentroChange={setFormCentro}
+                        onAgregarCentro={agregarCentro}
+                        onEditarCentro={iniciarEdicionCentro}
+                        onEliminarCentro={eliminarCentro}
+                    />
                 )}
             </div>
 
-            {/* --- MODAL PARA EDITAR BANCO --- */}
-            {modalBancoOpen && bancoEditado && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-                                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                Editar Cuenta Bancaria
-                            </h3>
-                            <button onClick={() => setModalBancoOpen(false)} className="text-slate-400 hover:text-rose-500 transition-colors">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
+            <ModalBancoEdicion
+                isOpen={modalBancoOpen}
+                banco={bancoEditado}
+                listaBancos={listaBancos}
+                onChange={setBancoEditado}
+                onClose={() => setModalBancoOpen(false)}
+                onSubmit={handleActualizarBanco}
+            />
 
-                        <form onSubmit={handleActualizarBanco} className="p-6 space-y-5">
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Institución</label>
-                                <select className="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white cursor-pointer outline-none focus:ring-2 focus:ring-blue-500 font-medium" value={bancoEditado.banco} onChange={e => setBancoEditado({...bancoEditado, banco: e.target.value})}>
-                                    <option value="">Seleccione banco...</option>
-                                    {listaBancos.map((banco) => (<option key={banco.id} value={banco.nombre}>{banco.nombre}</option>))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tipo de Cuenta</label>
-                                <select className="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white cursor-pointer outline-none focus:ring-2 focus:ring-blue-500 font-medium" value={bancoEditado.tipo_cuenta} onChange={e => setBancoEditado({...bancoEditado, tipo_cuenta: e.target.value})}>
-                                    <option value="Corriente">Cta. Corriente</option>
-                                    <option value="Vista">Cta. Vista / RUT</option>
-                                    <option value="Ahorro">Cta. Ahorro</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">N° Cuenta</label>
-                                <input className="w-full border border-slate-200 rounded-xl p-3 text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500" value={bancoEditado.numero_cuenta} onChange={e => setBancoEditado({...bancoEditado, numero_cuenta: e.target.value})} />
-                            </div>
-
-                            <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
-                                <button type="button" onClick={() => setModalBancoOpen(false)} className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
-                                    Cancelar
-                                </button>
-                                <button type="submit" className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition-colors">
-                                    Guardar Cambios
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* --- MODAL PARA EDITAR CENTRO DE COSTO --- */}
-            {modalCentroOpen && centroEditado && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-                                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                Editar Centro de Costo
-                            </h3>
-                            <button onClick={() => setModalCentroOpen(false)} className="text-slate-400 hover:text-rose-500 transition-colors">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleActualizarCentro} className="p-6 space-y-5">
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Código</label>
-                                <input
-                                    type="text"
-                                    value={centroEditado.codigo}
-                                    onChange={e => setCentroEditado({ ...centroEditado, codigo: e.target.value.toUpperCase() })}
-                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm font-mono uppercase outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Nombre del Departamento / Proyecto</label>
-                                <input
-                                    type="text"
-                                    value={centroEditado.nombre}
-                                    onChange={e => setCentroEditado({ ...centroEditado, nombre: e.target.value })}
-                                    className="w-full border border-slate-200 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                            </div>
-
-                            <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
-                                <button type="button" onClick={() => setModalCentroOpen(false)} className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
-                                    Cancelar
-                                </button>
-                                <button type="submit" className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition-colors">
-                                    Guardar Cambios
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <ModalCentroEdicion
+                isOpen={modalCentroOpen}
+                centro={centroEditado}
+                onChange={setCentroEditado}
+                onClose={() => setModalCentroOpen(false)}
+                onSubmit={handleActualizarCentro}
+            />
         </div>
     );
 };
