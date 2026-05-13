@@ -321,3 +321,137 @@ describe('refresh - sessionStorage (login sin "Recordarme")', () => {
         expect(window.localStorage.getItem('erp_token')).toBeNull();
     });
 });
+
+/**
+ * Tests del multi-tab sync via storage events.
+ *
+ * El browser dispara 'storage' events cuando otra tab modifica localStorage
+ * (no sessionStorage - eso es por tab). Estos tests simulan esos eventos
+ * para verificar que:
+ * 1. Si otra tab hace login/refresh, esta tab se entera y limpia su flight
+ * 2. Si otra tab hace logout, esta tab tambien hace logout
+ */
+describe('multi-tab sync (storage events)', () => {
+    /**
+     * Helper para disparar un StorageEvent simulando que otra tab cambio
+     * localStorage. JSDOM no lo hace automaticamente, hay que dispatcharlo.
+     */
+    const dispararStorageEvent = (key, oldValue, newValue) => {
+        const event = new StorageEvent('storage', {
+            key,
+            oldValue,
+            newValue,
+            storageArea: window.localStorage,
+        });
+        window.dispatchEvent(event);
+    };
+
+    it('si otra tab hace logout (erp_token -> null), esta tab tambien hace logout', async () => {
+        // Setup: esta tab tiene sesion activa en localStorage
+        window.localStorage.setItem('erp_token', 'tok-activo');
+        markTokenIssued();
+
+        // Mock de window.location
+        const originalLocation = window.location;
+        delete window.location;
+        window.location = { ...originalLocation, href: '/dashboard', pathname: '/dashboard' };
+        const locationHrefSetter = vi.fn();
+        Object.defineProperty(window.location, 'href', {
+            set: locationHrefSetter,
+            get: () => '/dashboard',
+            configurable: true,
+        });
+
+        // Re-importamos api para que el listener de storage se registre
+        vi.resetModules();
+        await import('./api');
+
+        // Simulamos: otra tab hizo logout (puso erp_token a null)
+        dispararStorageEvent('erp_token', 'tok-activo', null);
+
+        // Esta tab debe haber:
+        // 1. Limpiado su propio storage (clearAuth)
+        // 2. Redirigido a /login (locationHrefSetter llamado)
+        expect(window.localStorage.getItem('erp_token')).toBeNull();
+        expect(locationHrefSetter).toHaveBeenCalledWith('/login');
+
+        window.location = originalLocation;
+    });
+
+    it('si otra tab refresca el token (newValue != null), NO se hace logout', async () => {
+        window.localStorage.setItem('erp_token', 'tok-viejo');
+        markTokenIssued();
+
+        const originalLocation = window.location;
+        delete window.location;
+        window.location = { ...originalLocation, href: '/dashboard', pathname: '/dashboard' };
+        const locationHrefSetter = vi.fn();
+        Object.defineProperty(window.location, 'href', {
+            set: locationHrefSetter,
+            get: () => '/dashboard',
+            configurable: true,
+        });
+
+        vi.resetModules();
+        await import('./api');
+
+        // Otra tab actualizo a un token nuevo (refresh)
+        dispararStorageEvent('erp_token', 'tok-viejo', 'tok-nuevo-de-otra-tab');
+
+        // NO debe haber hecho logout
+        expect(locationHrefSetter).not.toHaveBeenCalled();
+
+        window.location = originalLocation;
+    });
+
+    it('cambios en claves NO relacionadas a auth se ignoran', async () => {
+        window.localStorage.setItem('erp_token', 'tok-activo');
+        markTokenIssued();
+
+        const originalLocation = window.location;
+        delete window.location;
+        window.location = { ...originalLocation, href: '/dashboard', pathname: '/dashboard' };
+        const locationHrefSetter = vi.fn();
+        Object.defineProperty(window.location, 'href', {
+            set: locationHrefSetter,
+            get: () => '/dashboard',
+            configurable: true,
+        });
+
+        vi.resetModules();
+        await import('./api');
+
+        // Otra tab cambio algo no relacionado (ej: tema, preferencias)
+        dispararStorageEvent('user_theme', 'dark', 'light');
+
+        // Esta tab NO debe haberse inmutado
+        expect(window.localStorage.getItem('erp_token')).toBe('tok-activo');
+        expect(locationHrefSetter).not.toHaveBeenCalled();
+
+        window.location = originalLocation;
+    });
+
+    it('si esta en /login y otra tab hace logout, NO redirige (ya esta ahi)', async () => {
+        window.localStorage.setItem('erp_token', 'tok-activo');
+
+        const originalLocation = window.location;
+        delete window.location;
+        window.location = { ...originalLocation, href: '/login', pathname: '/login' };
+        const locationHrefSetter = vi.fn();
+        Object.defineProperty(window.location, 'href', {
+            set: locationHrefSetter,
+            get: () => '/login',
+            configurable: true,
+        });
+
+        vi.resetModules();
+        await import('./api');
+
+        dispararStorageEvent('erp_token', 'tok-activo', null);
+
+        // No debe haber redirect (ya estamos en /login)
+        expect(locationHrefSetter).not.toHaveBeenCalled();
+
+        window.location = originalLocation;
+    });
+});

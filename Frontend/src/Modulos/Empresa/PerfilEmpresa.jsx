@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
+import BotonAccion from '../../Componentes/BotonAccion';
+import EstadoCarga from '../../Componentes/EstadoCarga';
 import { api, API_BASE_URL } from '../../Configuracion/api';
 import { logger } from '../../Configuracion/logger';
 import { validarIdentificador } from '../../Utilidades/identificadores';
@@ -347,7 +349,16 @@ const PerfilEmpresa = () => {
 
     const imagenMostrada = logoPreview || (formData.logo_path ? (formData.logo_path.startsWith('http') ? formData.logo_path : `${BASE_URL_IMG}${formData.logo_path}`) : null);
 
-    if (loading) return <div className="p-10 text-center text-slate-400 font-bold">Cargando perfil...</div>;
+    if (loading) {
+        return (
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Cargando perfil..."
+                tamano="compacto"
+                color="emerald"
+            />
+        );
+    }
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 pb-10">
@@ -498,13 +509,20 @@ const PerfilEmpresa = () => {
                             </div>
 
                             <div className="pt-4 border-t border-slate-100 flex justify-end">
-                                <button type="submit" disabled={saving} className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all disabled:opacity-50 flex items-center gap-2 text-sm">
-                                    {saving ? (
-                                        <><svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</>
-                                    ) : (
-                                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg> Guardar Cambios</>
-                                    )}
-                                </button>
+                                <BotonAccion
+                                    type="submit"
+                                    cargando={saving}
+                                    color="slate"
+                                    tamano="lg"
+                                    textoCargando="Guardando..."
+                                    icono={
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    }
+                                >
+                                    Guardar Cambios
+                                </BotonAccion>
                             </div>
                         </form>
                     </div>

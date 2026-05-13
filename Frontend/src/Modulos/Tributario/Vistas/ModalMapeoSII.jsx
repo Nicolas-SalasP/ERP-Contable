@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import Swal from 'sweetalert2';
-
 import { logger } from '../../../Configuracion/logger';
 const ModalMapeoSII = ({ onClose }) => {
     const [mapeadas, setMapeadas] = useState([]);
@@ -163,7 +163,12 @@ const ModalMapeoSII = ({ onClose }) => {
                             <h4 className="font-bold text-slate-700">Cuentas Mapeadas Actualmente</h4>
                         </div>
                         {loading ? (
-                            <div className="p-8 text-center text-slate-400"><i className="fas fa-spinner fa-spin text-2xl"></i></div>
+                            <EstadoCarga
+                                cargando={true}
+                                mensajeCargando=""
+                                tamano="inline"
+                                color="indigo"
+                            />
                         ) : (
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-white border-b border-slate-100 text-slate-500 uppercase text-xs">

@@ -380,6 +380,55 @@ const ensureTokenFresh = async () => {
     }
 };
 
+// =====================================================================
+// MULTI-TAB SYNC (sin window.localStorage event como sessionStorage,
+// pero localStorage si dispara storage events entre tabs)
+// =====================================================================
+//
+// Si la app esta abierta en 2 tabs y una hace refresh:
+// - El token nuevo se guarda en storage (local o session segun "Recordarme")
+// - Si es localStorage: la otra tab recibe automaticamente el cambio via
+//   el evento 'storage' del browser (nativo, no requiere libreria)
+// - Si es sessionStorage: cada tab tiene su propio sessionStorage, asi
+//   que no hay sync automatico. Cada tab refresca por su cuenta cuando
+//   le toque. Sin race condition porque el backend acepta refrescos
+//   sucesivos (cada uno revoca el anterior).
+//
+// Aca implementamos UN listener basico para localStorage que:
+// 1. Detecta cuando otra tab cambio erp_token (login/refresh/logout)
+// 2. Limpia el refreshInFlight si esta en curso (la otra tab ya lo hizo)
+// 3. Si erp_token quedo null (logout en otra tab), aca tambien hace logout
+//
+// Para sessionStorage no hay sync porque cada tab tiene la suya. Eso
+// es comportamiento esperado: 2 tabs sin "Recordarme" son sesiones
+// independientes desde el punto de vista del browser.
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('storage', (event) => {
+        // Solo nos interesan cambios en las claves de auth
+        if (event.key !== 'erp_token' && event.key !== 'erp_token_issued_at') {
+            return;
+        }
+
+        // Si el token cambio (otra tab hizo refresh o login), descartamos
+        // cualquier refresh en flight aca - el resultado de la otra tab
+        // ya esta guardado y es lo que vamos a usar.
+        if (event.key === 'erp_token') {
+            refreshInFlight = null;
+
+            // Si erp_token quedo en null (otra tab hizo logout), hacemos
+            // logout aca tambien para mantener consistencia.
+            // event.newValue es null cuando se ejecuto removeItem en otra tab.
+            if (event.newValue === null && window.location.pathname !== '/login') {
+                // No llamamos handle401 directamente porque eso intenta hacer
+                // cleanup que ya hizo la otra tab. Solo redirigimos.
+                clearAuth();
+                window.location.href = '/login';
+            }
+        }
+    });
+}
+
 const request = async (endpoint, method, body, options = {}) => {
     const esEndpointAuth = endpoint.startsWith('/auth/');
     if (!esEndpointAuth) {

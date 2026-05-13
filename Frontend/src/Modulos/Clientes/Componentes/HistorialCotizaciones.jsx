@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { useNavigate } from 'react-router-dom';
-
 import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -42,19 +42,23 @@ const HistorialCotizaciones = ({ clienteId }) => {
 
     if (loading) {
         return (
-            <div className="p-10 text-center text-slate-400">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-3"></div>
-                <p className="font-medium">Cargando historial...</p>
-            </div>
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Cargando historial..."
+                tamano="compacto"
+                color="emerald"
+            />
         );
     }
 
     if (cotizaciones.length === 0) {
         return (
-            <div className="p-10 text-center text-slate-400">
-                <i className="fas fa-folder-open text-4xl mb-3 text-slate-300"></i>
-                <p className="font-medium">Este cliente aún no tiene cotizaciones registradas.</p>
-            </div>
+            <EstadoCarga
+                vacio={true}
+                mensajeVacio="Este cliente aún no tiene cotizaciones registradas."
+                iconoVacio="📋"
+                tamano="compacto"
+            />
         );
     }
 

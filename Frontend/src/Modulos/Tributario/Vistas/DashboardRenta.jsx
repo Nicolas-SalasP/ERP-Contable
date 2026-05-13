@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import ModalMapeoSII from './ModalMapeoSII';
 import jsPDF from 'jspdf';
@@ -163,20 +164,23 @@ const DashboardRenta = () => {
 
     if (loading && !datosRenta) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[60vh] text-slate-400">
-                <i className="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
-                <p className="font-medium">Calculando Base Imponible Tributaria...</p>
-            </div>
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Calculando Base Imponible Tributaria..."
+                tamano="completo"
+                color="indigo"
+            />
         );
     }
 
     if (error) {
         return (
-            <div className="p-8 text-center bg-rose-50 border border-rose-200 rounded-xl m-6">
-                <i className="fas fa-exclamation-triangle text-3xl text-rose-500 mb-3"></i>
-                <h3 className="text-lg font-bold text-rose-800">{error}</h3>
-                <button onClick={cargarPreRenta} className="mt-4 px-4 py-2 bg-white text-rose-600 font-bold border border-rose-200 rounded-lg hover:bg-rose-50">Reintentar</button>
-            </div>
+            <EstadoCarga
+                error={error}
+                onReintentar={cargarPreRenta}
+                tamano="completo"
+                color="rose"
+            />
         );
     }
 
