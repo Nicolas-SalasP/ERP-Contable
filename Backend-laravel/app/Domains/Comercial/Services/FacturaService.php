@@ -290,7 +290,7 @@ class FacturaService
             ->with('proveedor')
             ->get()
             ->map(function ($f) {
-                $nombreProv = $f->proveedor->nombre_fantasia ?? $f->proveedor->razon_social ?? 'Proveedor sin nombre';
+                $nombreProv = $f->proveedor->razon_social ?? 'Proveedor sin nombre';
                 return [
                     'factura_id' => $f->id,
                     'numero_factura' => $f->numero_factura,
@@ -320,7 +320,7 @@ class FacturaService
                 return [
                     'id' => $f->id,
                     'numero' => $f->numero_factura,
-                    'proveedor' => $f->proveedor->nombre_fantasia ?? $f->proveedor->razon_social ?? $f->proveedor->rut,
+                    'proveedor' => $f->proveedor->razon_social ?? $f->proveedor->rut,
                     'monto' => (float) $f->monto_neto
                 ];
             })

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
-
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const CartolaBancaria = () => {
@@ -52,7 +53,7 @@ const CartolaBancaria = () => {
                 setMovimientos(res.data);
             }
         } catch (error) {
-            console.error("Error cargando movimientos:", error);
+            logger.error("Error cargando movimientos:", error);
         } finally {
             setLoading(false);
         }
@@ -345,10 +346,12 @@ const CartolaBancaria = () => {
             {/* TABLA DE MOVIMIENTOS RECIENTES */}
             <div className="mt-8">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-4 border-indigo-500 mb-3"></div>
-                        <p className="font-bold text-sm">Cargando cartola...</p>
-                    </div>
+                    <EstadoCarga
+                        cargando={true}
+                        mensajeCargando="Cargando cartola..."
+                        tamano="compacto"
+                        color="indigo"
+                    />
                 ) : (
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">

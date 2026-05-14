@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import VisorProyectoActivo from './VisorProyectoActivo';
-
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const GestionProyectosActivos = ({ onNotificar }) => {
@@ -29,7 +30,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
             if (resProyectos.success) setProyectos(resProyectos.data);
             if (resParams.success) setTiposActivos(resParams.data.cuentas_activo || []);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         } finally {
             setLoading(false);
         }
@@ -101,7 +102,16 @@ const GestionProyectosActivos = ({ onNotificar }) => {
         />;
     }
 
-    if (loading) return <div className="text-center py-8"><i className="fas fa-spinner fa-spin text-2xl text-slate-400"></i></div>;
+    if (loading) {
+        return (
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Cargando proyectos..."
+                tamano="compacto"
+                color="emerald"
+            />
+        );
+    }
 
     const getEstadoBadge = (estado) => {
         if (estado === 'EN_CONSTRUCCION') return <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold border border-amber-200">En Construcción</span>;

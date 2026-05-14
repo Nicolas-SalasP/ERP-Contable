@@ -349,6 +349,7 @@ describe('GestionActivos - modal de baja', () => {
 
 describe('GestionActivos - manejo de errores', () => {
     it('si el GET /activos falla, no rompe el render', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         setupFetchRouter({
             'GET /activos/pendientes': () =>
                 mockJsonResponse(500, { success: false, message: 'Error server' }),
@@ -360,5 +361,7 @@ describe('GestionActivos - manejo de errores', () => {
 
         await waitForLoad();
         expect(screen.getByText('Activos Fijos')).toBeDefined();
+        expect(errorSpy).toHaveBeenCalled();
+        errorSpy.mockRestore();
     });
 });

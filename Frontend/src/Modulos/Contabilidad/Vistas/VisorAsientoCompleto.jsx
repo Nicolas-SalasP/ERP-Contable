@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import Swal from 'sweetalert2';
 
 const VisorAsientoCompleto = () => {
@@ -31,7 +32,14 @@ const VisorAsientoCompleto = () => {
     }, [id]);
 
     if (loading) {
-        return <div className="p-10 text-center text-slate-500 font-medium animate-pulse">Cargando información del asiento...</div>;
+        return (
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Cargando información del asiento..."
+                tamano="compacto"
+                color="indigo"
+            />
+        );
     }
 
     if (error) {

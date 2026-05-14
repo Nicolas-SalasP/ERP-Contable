@@ -4,6 +4,7 @@ import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
 import ModalGenerico from '../../../Componentes/ModalGenerico';
 
+import { logger } from '../../../Configuracion/logger';
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -84,7 +85,7 @@ const LibroMayor = () => {
             const res = await api.get('/contabilidad/plan-cuentas');
             if (res.success) setPlanCuentas(res.data);
         } catch (error) {
-            console.error("Error plan cuentas", error);
+            logger.error("Error plan cuentas", error);
         }
     };
 
@@ -167,7 +168,7 @@ const LibroMayor = () => {
                 });
             }
         } catch (error) {
-            console.error("Error cargando diario", error);
+            logger.error("Error cargando diario", error);
             setAsientos([]);
         } finally {
             setLoading(false);

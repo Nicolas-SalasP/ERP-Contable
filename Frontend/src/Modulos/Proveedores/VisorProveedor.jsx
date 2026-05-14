@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
+import EstadoCarga from '../../Componentes/EstadoCarga';
 import Swal from 'sweetalert2';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -281,10 +282,12 @@ const VisorProveedor = () => {
 
     if (loading && !datos) {
         return (
-            <div className="flex flex-col items-center justify-center h-[80vh] text-slate-500">
-                <i className="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
-                <p className="font-bold tracking-wide uppercase text-xs">Cargando Datos...</p>
-            </div>
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Cargando datos del proveedor..."
+                tamano="completo"
+                color="emerald"
+            />
         );
     }
 
@@ -417,7 +420,12 @@ const VisorProveedor = () => {
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-white">
                             {facturasDeuda.length === 0 ? (
-                                <p className="text-center text-slate-400 text-sm py-10 italic">No hay facturas pendientes.</p>
+                                <EstadoCarga
+                                    vacio={true}
+                                    mensajeVacio="No hay facturas pendientes."
+                                    iconoVacio="📄"
+                                    tamano="inline"
+                                />
                             ) : (
                                 <div className="space-y-2">
                                     {facturasDeuda.map(fac => {
@@ -454,7 +462,12 @@ const VisorProveedor = () => {
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-white">
                             {(ncVigentes.length === 0 && anticiposVigentes.length === 0) ? (
-                                <p className="text-center text-slate-400 text-sm py-10 italic">No hay notas de crédito ni anticipos disponibles.</p>
+                                <EstadoCarga
+                                    vacio={true}
+                                    mensajeVacio="No hay notas de crédito ni anticipos disponibles."
+                                    iconoVacio="📋"
+                                    tamano="inline"
+                                />
                             ) : (
                                 <div className="space-y-2">
                                     {/* Mostrar Notas de Crédito */}

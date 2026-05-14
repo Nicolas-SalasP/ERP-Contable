@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
 
+import { logger } from '../../../Configuracion/logger';
 const BuscadorCuentaContable = ({
-    // Props Nuevas (Optimizadas para Reclasificador)
     cuentas = [],
     valor,
     onChange,
-    // Props Antiguas (Para compatibilidad con RegistroFactura)
     cuentaSeleccionada,
     setCuentaSeleccionada
 }) => {
@@ -15,13 +14,10 @@ const BuscadorCuentaContable = ({
     const [abierto, setAbierto] = useState(false);
     const [cargando, setCargando] = useState(false);
     const ref = useRef(null);
-
-    // DETERMINAR QUÉ PROPS USAR DINÁMICAMENTE
     const activeValue = valor !== undefined ? valor : cuentaSeleccionada;
     const activeOnChange = onChange || setCuentaSeleccionada;
     const activeCuentas = cuentas.length > 0 ? cuentas : localCuentas;
 
-    // 1. MODO ANTIGUO: Si no le pasan cuentas, las busca en la API automáticamente
     useEffect(() => {
         if (cuentas.length === 0) {
             const fetchCuentas = async () => {
@@ -32,7 +28,6 @@ const BuscadorCuentaContable = ({
                         const lista = res.data.filter(c => c.imputable);
                         setLocalCuentas(lista);
 
-                        // Auto-seleccionar cuenta "Puente" si no hay valor (Lógica antigua)
                         if (!activeValue && activeOnChange) {
                             const cuentaPuente = lista.find(c =>
                                 c.codigo === '690199' ||
@@ -47,7 +42,7 @@ const BuscadorCuentaContable = ({
                         }
                     }
                 } catch (error) {
-                    console.error("Error cargando plan de cuentas:", error);
+                    logger.error("Error cargando plan de cuentas:", error);
                 } finally {
                     setCargando(false);
                 }
@@ -56,7 +51,6 @@ const BuscadorCuentaContable = ({
         }
     }, [cuentas.length]);
 
-    // 2. Cierra el menú al hacer clic afuera
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (ref.current && !ref.current.contains(e.target)) setAbierto(false);
@@ -65,7 +59,6 @@ const BuscadorCuentaContable = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // 3. Sincronizar el texto del input si el valor cambia desde afuera
     useEffect(() => {
         if (activeValue && !abierto && activeCuentas.length > 0) {
             const cuenta = activeCuentas.find(c => c.codigo === activeValue);
@@ -73,7 +66,6 @@ const BuscadorCuentaContable = ({
         }
     }, [activeValue, activeCuentas, abierto]);
 
-    // Lógica de filtrado
     const filtradas = activeCuentas.filter(c =>
         `${c.codigo} ${c.nombre}`.toLowerCase().includes(busqueda.toLowerCase())
     );

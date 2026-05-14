@@ -1,5 +1,6 @@
 import React from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 
 export const formatNumber = (value, decimals = 0) => {
     const number = Number(value ?? 0);
@@ -178,12 +179,13 @@ export const Panel = ({ title, subtitle, children, actions, className = '' }) =>
 
 export const LoadingState = ({ text = 'Cargando información...' }) => {
     return (
-        <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm">
-            <div className="w-12 h-12 rounded-full border-4 border-emerald-100 border-t-emerald-500 animate-spin mx-auto"></div>
-
-            <p className="mt-4 text-slate-500 font-bold">
-                {text}
-            </p>
+        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm">
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando={text}
+                tamano="compacto"
+                color="emerald"
+            />
         </div>
     );
 };
@@ -194,19 +196,14 @@ export const EmptyState = ({
     icon = 'fas fa-inbox',
 }) => {
     return (
-        <div className="text-center py-12 text-slate-400">
-            <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mx-auto mb-4">
-                <i className={`${icon} text-2xl`}></i>
-            </div>
-
-            <h3 className="text-lg font-black text-slate-700">
-                {title}
-            </h3>
-
-            <p className="text-sm text-slate-500 mt-1">
-                {description}
-            </p>
-        </div>
+        <EstadoCarga
+            vacio={true}
+            tituloVacio={title}
+            mensajeVacio={description}
+            iconoVacio={<i className={`${icon} text-slate-400`}></i>}
+            tamano="compacto"
+            color="emerald"
+        />
     );
 };
 

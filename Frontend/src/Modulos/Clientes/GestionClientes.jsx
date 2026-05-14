@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
+import EstadoCarga from '../../Componentes/EstadoCarga';
 import { api } from '../../Configuracion/api';
 import FormularioCliente from './Componentes/FormularioCliente';
 import HistorialCotizaciones from './Componentes/HistorialCotizaciones';
 import Swal from 'sweetalert2';
+import { logger } from '../../Configuracion/logger';
 
 const GestionClientes = () => {
     const [clientes, setClientes] = useState([]);
@@ -20,7 +22,7 @@ const GestionClientes = () => {
             const res = await api.get(`/clientes?search=${busqueda}`);
             if (res.success) setClientes(res.data || []);
         } catch (error) {
-            console.error("Error al cargar clientes", error);
+            logger.error("Error al cargar clientes", error);
             Swal.fire('Error', 'No se pudieron cargar los clientes', 'error');
         } finally {
             setLoading(false);
@@ -119,15 +121,17 @@ const GestionClientes = () => {
                 </div>
             </div>
 
-            {loading ? (
-                <div className="p-10 text-center text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-3"></div>
-                    <p className="font-medium">Cargando clientes...</p>
-                </div>
-            ) : clientes.length === 0 ? (
-                <div className="p-10 text-center text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    <p className="font-medium">No hay registros coincidentes.</p>
+            {loading || clientes.length === 0 ? (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && clientes.length === 0}
+                        mensajeCargando="Cargando clientes..."
+                        mensajeVacio="No hay registros coincidentes."
+                        iconoVacio="👥"
+                        tamano="compacto"
+                        color="emerald"
+                    />
                 </div>
             ) : (
                 <>

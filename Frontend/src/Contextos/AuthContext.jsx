@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { api } from '../Configuracion/api';
+import { api, markTokenIssued } from '../Configuracion/api';
 
 const AuthContext = createContext(null);
 
@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
                     localStorage.removeItem('erp_token');
                     localStorage.removeItem('erp_user');
                 }
+                markTokenIssued();
 
                 return { success: true };
             } else {
@@ -57,8 +58,10 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         localStorage.removeItem('erp_token');
         localStorage.removeItem('erp_user');
+        localStorage.removeItem('erp_token_issued_at');
         sessionStorage.removeItem('erp_token');
         sessionStorage.removeItem('erp_user');
+        sessionStorage.removeItem('erp_token_issued_at');
 
         setUser(null);
     };

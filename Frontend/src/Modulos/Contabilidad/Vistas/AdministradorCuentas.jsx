@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
+import BotonAccion from '../../../Componentes/BotonAccion';
+import { logger } from '../../../Configuracion/logger';
 
 const AdministradorCuentas = () => {
     const [cuentas, setCuentas] = useState([]);
@@ -25,7 +28,7 @@ const AdministradorCuentas = () => {
                 setCuentas(res.data || res);
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -195,16 +198,16 @@ const AdministradorCuentas = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                {loading ? (
-                    <div className="p-10 text-center text-slate-400">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
-                        <p className="font-medium">Cargando plan maestro...</p>
-                    </div>
-                ) : cuentasFiltradas.length === 0 ? (
-                    <div className="p-10 text-center text-slate-400">
-                        <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        <p className="font-medium">No se encontraron cuentas contables con esos filtros.</p>
-                    </div>
+                {loading || cuentasFiltradas.length === 0 ? (
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && cuentasFiltradas.length === 0}
+                        mensajeCargando="Cargando plan maestro..."
+                        mensajeVacio="No se encontraron cuentas contables con esos filtros."
+                        iconoVacio="🔍"
+                        tamano="compacto"
+                        color="blue"
+                    />
                 ) : (
                     <>
                         <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50">
@@ -397,16 +400,21 @@ const AdministradorCuentas = () => {
                             <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-bold transition-all text-center">
                                 Cancelar
                             </button>
-                            <button onClick={guardarCambios} disabled={saving} className="w-full sm:w-auto px-8 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
-                                {saving ? (
-                                    <><i className="fas fa-spinner fa-spin"></i> Guardando...</>
-                                ) : (
-                                    <>
-                                        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                                        {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}
-                                    </>
-                                )}
-                            </button>
+                            <BotonAccion
+                                onClick={guardarCambios}
+                                cargando={saving}
+                                color="slate"
+                                tamano="md"
+                                textoCargando="Guardando..."
+                                icono={
+                                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                }
+                                className="w-full sm:w-auto"
+                            >
+                                {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}
+                            </BotonAccion>
                         </div>
                     </div>
                 </div>

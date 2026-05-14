@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import Select from 'react-select';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -325,10 +326,12 @@ const MesaConciliacion = () => {
             </div>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-500 mb-4"></div>
-                    <p className="font-bold">Cargando movimientos bancarios...</p>
-                </div>
+                <EstadoCarga
+                    cargando={true}
+                    mensajeCargando="Cargando movimientos bancarios..."
+                    tamano="completo"
+                    color="blue"
+                />
             ) : movimientos.length === 0 ? (
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-16 text-center">
                     <div className="bg-emerald-50 text-emerald-500 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -428,10 +431,12 @@ const MesaConciliacion = () => {
 
                                     {modoFacturas === 'SUGERENCIAS' ? (
                                         cargandoSugerencias ? (
-                                            <div className="py-12 text-center text-slate-400">
-                                                <i className="fas fa-circle-notch fa-spin text-3xl mb-3"></i>
-                                                <p className="text-sm font-bold">Buscando match exacto...</p>
-                                            </div>
+                                            <EstadoCarga
+                                                cargando={true}
+                                                mensajeCargando="Buscando match exacto..."
+                                                tamano="compacto"
+                                                color="blue"
+                                            />
                                         ) : sugerenciasFacturas.length > 0 ? (
                                             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                                                 <table className="w-full text-left text-sm">

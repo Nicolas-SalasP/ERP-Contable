@@ -1,46 +1,18 @@
 import React, { useState } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import { api } from '../../Configuracion/api';
+import { logger } from '../../Configuracion/logger';
+import { validarIdentificador, formatearIdentificador } from '../../Utilidades/identificadores';
 import Swal from 'sweetalert2';
 
-// =============================================================================
-// --- UTILIDADES DE VALIDACIÓN Y FORMATEO ---
-// =============================================================================
+const validarRutChile = (valor) => validarIdentificador(valor, 'CL');
+const formatearRutChile = (numero) => formatearIdentificador(numero, 'CL');
 
-const validarRutChile = (valor) => {
-    const limpio = valor.replace(/[^0-9kK]/g, '').toUpperCase();
-    if (limpio.length < 2) return false;
-    const cuerpo = limpio.slice(0, -1);
-    const dv = limpio.slice(-1);
-    let suma = 0, multiplo = 2;
-    for (let i = cuerpo.length - 1; i >= 0; i--) {
-        suma += multiplo * cuerpo.charAt(i);
-        multiplo = (multiplo + 1 === 8) ? 2 : multiplo + 1;
-    }
-    const res = 11 - (suma % 11);
-    let dvCalc = res === 11 ? '0' : res === 10 ? 'K' : res.toString();
-    return dvCalc === dv;
-};
-
-const formatearRutChile = (numero) => {
-    const limpio = numero.replace(/[^0-9kK]/g, '').toUpperCase();
-    if (!limpio) return '';
-    if (limpio.length <= 1) return limpio;
-    const cuerpo = limpio.slice(0, -1);
-    const dv = limpio.slice(-1);
-    return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}-${dv}`;
-};
-
-// Formatea el teléfono para WhatsApp (+569XXXXXXXX) eliminando espacios
 const formatearTelefonoChile = (valor) => {
-    let limpio = valor.replace(/[^\d+]/g, ''); // Solo deja números y el '+'
-    
-    // Autocompletar si el usuario empieza solo con '9' o '569'
+    let limpio = valor.replace(/[^\d+]/g, '');
     if (limpio.startsWith('9')) limpio = '+56' + limpio;
     if (limpio.startsWith('569')) limpio = '+' + limpio;
     if (limpio.startsWith('56') && !limpio.startsWith('569')) limpio = '+' + limpio;
-
-    // Limitar a 12 caracteres (+569 + 8 dígitos)
     return limpio.slice(0, 12);
 };
 
@@ -52,8 +24,7 @@ const CrearEmpresa = () => {
     const [paso, setPaso] = useState(1);
     const [loading, setLoading] = useState(false);
     const [verificandoRut, setVerificandoRut] = useState(false);
-    
-    // Estado para manejar los errores en línea (UX)
+
     const [errores, setErrores] = useState({});
 
     const [formData, setFormData] = useState({
@@ -67,8 +38,7 @@ const CrearEmpresa = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
-        // Limpiamos el error de este campo apenas el usuario empiece a escribir
+
         if (errores[name]) {
             setErrores({ ...errores, [name]: null });
         }
@@ -82,7 +52,6 @@ const CrearEmpresa = () => {
         }
     };
 
-    // Validación Silenciosa al salir del input del RUT
     const handleBlurRut = async () => {
         const rut = formData.empresa_rut;
         if (!rut) return;
@@ -99,7 +68,7 @@ const CrearEmpresa = () => {
                 setErrores(prev => ({ ...prev, empresa_rut: 'Este RUT ya está registrado en el ERP.' }));
             }
         } catch (error) {
-            console.error("Error al verificar RUT");
+            logger.error("Error al verificar RUT");
         } finally {
             setVerificandoRut(false);
         }
@@ -114,7 +83,6 @@ const CrearEmpresa = () => {
             
             if (!formData.empresa_razon_social) nuevosErrores.empresa_razon_social = 'La razón social es obligatoria.';
             
-            // Si el RUT ya tiene error por duplicado desde el onBlur, lo mantenemos
             if (errores.empresa_rut) nuevosErrores.empresa_rut = errores.empresa_rut;
         }
 
@@ -124,7 +92,6 @@ const CrearEmpresa = () => {
             }
         }
 
-        // Si hay errores, los mostramos en los inputs y detenemos el avance
         if (Object.keys(nuevosErrores).length > 0) {
             setErrores(nuevosErrores);
             return;

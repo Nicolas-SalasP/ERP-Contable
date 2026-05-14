@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
+import BotonAccion from '../../../Componentes/BotonAccion';
 import GestionProyectosActivos from './GestionProyectosActivos';
-
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const calcularVidaUtilRestante = (activo) => {
@@ -46,12 +48,12 @@ const GestionActivos = () => {
         try {
             const resPendientes = await api.get('/activos/pendientes');
             if (resPendientes.success) setActivosPendientes(resPendientes.data);
-        } catch (error) { console.error(error); }
+        } catch (error) { logger.error(error); }
 
         try {
             const resRegistrados = await api.get('/activos');
             if (resRegistrados.success) setActivosRegistrados(resRegistrados.data);
-        } catch (error) { console.error(error); }
+        } catch (error) { logger.error(error); }
 
         setLoading(false);
     };
@@ -172,9 +174,12 @@ const GestionActivos = () => {
             </div>
 
             {loading ? (
-                <div className="py-12 flex justify-center items-center text-slate-400">
-                    <i className="fas fa-circle-notch fa-spin text-3xl"></i>
-                </div>
+                <EstadoCarga
+                    cargando={true}
+                    mensajeCargando="Cargando activos..."
+                    tamano="compacto"
+                    color="emerald"
+                />
             ) : (
                 <div className="transition-all duration-300">
                     {/* TAB: PENDIENTES */}
@@ -226,14 +231,18 @@ const GestionActivos = () => {
                                         className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all bg-white"
                                     />
                                 </div>
-                                <button 
+                                <BotonAccion
                                     onClick={handleEjecutarDepreciacion}
-                                    disabled={depreciando || !mesDepreciacion}
-                                    className="px-4 py-2 mt-4 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-sm font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 h-10"
+                                    cargando={depreciando}
+                                    disabled={!mesDepreciacion}
+                                    color="slate"
+                                    tamano="sm"
+                                    textoCargando="Calculando..."
+                                    icono="fas fa-calculator"
+                                    className="mt-4 h-10"
                                 >
-                                    {depreciando ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-calculator"></i>}
-                                    <span>{depreciando ? 'Calculando...' : 'Ejecutar Depreciación'}</span>
-                                </button>
+                                    Ejecutar Depreciación
+                                </BotonAccion>
                             </div>
                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                                 <table className="w-full text-left border-collapse">

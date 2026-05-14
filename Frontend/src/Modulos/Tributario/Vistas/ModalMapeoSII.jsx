@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
+import BotonAccion from '../../../Componentes/BotonAccion';
 import Swal from 'sweetalert2';
-
+import { logger } from '../../../Configuracion/logger';
 const ModalMapeoSII = ({ onClose }) => {
     const [mapeadas, setMapeadas] = useState([]);
     const [disponibles, setDisponibles] = useState([]);
@@ -19,7 +21,7 @@ const ModalMapeoSII = ({ onClose }) => {
                 setConceptos(res.data.conceptos);
             }
         } catch (error) {
-            console.error("Error cargando mapeo:", error);
+            logger.error("Error cargando mapeo:", error);
             Swal.fire('Error', 'No se pudieron cargar las cuentas', 'error');
         } finally {
             setLoading(false);
@@ -147,13 +149,16 @@ const ModalMapeoSII = ({ onClose }) => {
                                     ))}
                                 </select>
                             </div>
-                            <button type="submit" disabled={saving} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-sm transition-colors whitespace-nowrap flex items-center justify-center min-w-[160px]">
-                                {saving ? (
-                                    <><i className="fas fa-spinner fa-spin mr-2"></i> Procesando...</>
-                                ) : (
-                                    'Agregar Mapeo'
-                                )}
-                            </button>
+                            <BotonAccion
+                                type="submit"
+                                cargando={saving}
+                                color="indigo"
+                                tamano="md"
+                                textoCargando="Procesando..."
+                                className="whitespace-nowrap min-w-[160px]"
+                            >
+                                Agregar Mapeo
+                            </BotonAccion>
                         </form>
                     </div>
 
@@ -162,7 +167,12 @@ const ModalMapeoSII = ({ onClose }) => {
                             <h4 className="font-bold text-slate-700">Cuentas Mapeadas Actualmente</h4>
                         </div>
                         {loading ? (
-                            <div className="p-8 text-center text-slate-400"><i className="fas fa-spinner fa-spin text-2xl"></i></div>
+                            <EstadoCarga
+                                cargando={true}
+                                mensajeCargando=""
+                                tamano="inline"
+                                color="indigo"
+                            />
                         ) : (
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-white border-b border-slate-100 text-slate-500 uppercase text-xs">

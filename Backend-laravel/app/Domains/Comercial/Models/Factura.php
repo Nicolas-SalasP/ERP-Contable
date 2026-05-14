@@ -43,6 +43,8 @@ class Factura extends Model
         'monto_iva' => 'decimal:2',
     ];
 
+    protected $appends = ['nombre_proveedor'];
+
     public function empresa()
     {
         return $this->belongsTo(Empresa::class);
@@ -51,6 +53,15 @@ class Factura extends Model
     public function proveedor()
     {
         return $this->belongsTo(Proveedor::class);
+    }
+
+    public function getNombreProveedorAttribute(): string
+    {
+        if (!$this->relationLoaded('proveedor') && $this->proveedor_id) {
+            $this->load('proveedor');
+        }
+
+        return trim((string) ($this->proveedor?->razon_social ?? ''));
     }
 
     public function cuentaBancaria()

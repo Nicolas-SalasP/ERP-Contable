@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import BotonAccion from '../../../Componentes/BotonAccion';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
-
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -40,7 +41,7 @@ const AnulacionGeneral = () => {
                 setError(res.mensaje || 'Documento no encontrado o código inválido.');
             }
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             setError(err.response?.data?.message || 'Error de conexión al buscar el documento.');
         } finally {
             setLoading(false);
@@ -124,7 +125,7 @@ const AnulacionGeneral = () => {
                 throw new Error(res.message || 'Error desconocido');
             }
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             let msgError = 'Error crítico al procesar la anulación.';
             if (err.response && err.response.data && err.response.data.message) {
                 msgError = err.response.data.message;
@@ -168,17 +169,17 @@ const AnulacionGeneral = () => {
                             />
                         </div>
                     </div>
-                    <button
+                    <BotonAccion
                         type="submit"
-                        disabled={loading || !codigo}
-                        className="w-full md:w-auto px-8 py-3 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 shadow-lg disabled:opacity-70 transition-all flex justify-center items-center gap-2"
+                        cargando={loading}
+                        disabled={!codigo}
+                        color="slate"
+                        tamano="lg"
+                        textoCargando="Buscando..."
+                        className="w-full md:w-auto"
                     >
-                        {loading ? (
-                            <><i className="fas fa-circle-notch fa-spin"></i> Buscando...</>
-                        ) : (
-                            <>Buscar Documento</>
-                        )}
-                    </button>
+                        Buscar Documento
+                    </BotonAccion>
                 </form>
 
                 {error && (

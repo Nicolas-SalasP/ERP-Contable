@@ -184,7 +184,8 @@ describe('VisorProyectoActivo - desvincular factura', () => {
     });
 
     it('confirmacion menciona el monto que se restara y el numero de factura', async () => {
-        setupMocks(proyectoEnConstruccion);
+        swalMock.fire.mockResolvedValueOnce({ isConfirmed: false });
+        const fetchMock = setupMocks(proyectoEnConstruccion);
         renderWithRouter(
             <VisorProyectoActivo proyectoId={5} onVolver={vi.fn()} onNotificar={vi.fn()} />
         );
@@ -196,5 +197,9 @@ describe('VisorProyectoActivo - desvincular factura', () => {
         const swalArg = swalMock.fire.mock.calls[0][0];
         expect(swalArg.html).toContain('FAC-001');
         expect(swalArg.html).toContain('Cemento SA');
+        const deleteCalls = fetchMock.mock.calls.filter(
+            ([, init]) => init?.method === 'DELETE'
+        );
+        expect(deleteCalls.length).toBe(0);
     });
 });

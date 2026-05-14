@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import Swal from 'sweetalert2';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -163,7 +164,16 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
         }
     };
 
-    if (loading || !proyecto) return <div className="text-center py-12"><i className="fas fa-spinner fa-spin text-3xl text-slate-400"></i></div>;
+    if (loading || !proyecto) {
+        return (
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Cargando proyecto..."
+                tamano="compacto"
+                color="emerald"
+            />
+        );
+    }
 
     const valorOriginal = Number(proyecto.valor_total_original) || 0;
     const depreciacion = Number(proyecto.depreciacion_acumulada) || 0;

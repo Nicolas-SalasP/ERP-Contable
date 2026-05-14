@@ -5,6 +5,7 @@ import { api } from '../../Configuracion/api';
 import FilaItemCotizacion from './Componentes/FilaItemCotizacion';
 import ModalGenerico from '../../Componentes/ModalGenerico';
 
+import { logger } from '../../Configuracion/logger';
 const CrearCotizacion = () => {
     const navigate = useNavigate();
     const [clientes, setClientes] = useState([]);
@@ -24,7 +25,7 @@ const CrearCotizacion = () => {
             try {
                 const res = await api.get('/clientes');
                 if (res.success) setClientes(res.data);
-            } catch (error) { console.error("Error cargando clientes:", error); }
+            } catch (error) { logger.error("Error cargando clientes:", error); }
         };
         fetchClientes();
     }, []);
@@ -95,7 +96,7 @@ const CrearCotizacion = () => {
                 });
             }
         } catch (error) {
-            console.error("Error del backend:", error.response?.data || error);
+            logger.error("Error del backend:", error.response?.data || error);
             const mensajeError = error.response?.data?.message || 'No se pudo guardar la cotización.';
             setModal({ show: true, title: 'Error', message: mensajeError, type: 'danger' });
         }
