@@ -9,11 +9,59 @@ use App\Domains\Core\Models\User;
 use Illuminate\Validation\ValidationException;
 use App\Domains\Core\Services\ProvisionUserService;
 use App\Domains\Core\Services\WebAuthClient;
-use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class AuthController
 {
+    private const MODULE_PERMISSIONS_MAP = [
+        'dashboard' => ['dashboard.ver'],
+        'clientes' => ['ventas.ver', 'clientes.ver', 'clientes.crear'],
+        'cotizaciones' => ['ventas.ver', 'ventas.crear'],
+        'facturas.manual' => ['compras.ver', 'compras.crear'],
+        'facturas.historial' => ['compras.ver'],
+        'facturas.auditoria' => ['compras.ver'],
+        'dte.emision' => ['ventas.ver', 'ventas.crear'],
+        'documentos.anulacion' => ['ventas.ver', 'compras.ver'],
+        'contabilidad.plan_cuentas' => ['contabilidad.ver', 'contabilidad.crear'],
+        'contabilidad.libro_mayor' => ['contabilidad.ver'],
+        'contabilidad.asientos' => ['contabilidad.ver', 'contabilidad.crear'],
+        'contabilidad.visor' => ['contabilidad.ver'],
+        'contabilidad.reclasificador' => ['contabilidad.ver', 'contabilidad.crear'],
+        'proveedores' => ['compras.ver', 'proveedores.ver', 'proveedores.crear'],
+        'tesoreria.cartola' => ['tesoreria.ver'],
+        'tesoreria.conciliacion' => ['tesoreria.ver', 'tesoreria.crear'],
+        'tesoreria.nomina' => ['tesoreria.ver', 'tesoreria.crear'],
+        'inventario.productos' => ['inventario.productos.ver', 'inventario.productos.crear', 'inventario.productos.editar'],
+        'inventario.bodegas' => ['inventario.bodegas.ver', 'inventario.bodegas.crear'],
+        'inventario.movimientos' => ['inventario.movimientos.ver', 'inventario.movimientos.entrada', 'inventario.movimientos.salida', 'inventario.movimientos.traspaso', 'inventario.movimientos.ajuste'],
+        'inventario.kardex' => ['inventario.kardex.ver'],
+        'inventario.lotes' => ['inventario.lotes.ver', 'inventario.lotes.crear', 'inventario.lotes.editar'],
+        'inventario.reservas' => ['inventario.reservas.ver', 'inventario.reservas.crear', 'inventario.reservas.cancelar', 'inventario.reservas.liberar', 'inventario.reservas.consumir'],
+        'inventario.valorizacion' => ['inventario.valorizacion.ver'],
+        'inventario.tomas_fisicas' => ['inventario.tomas_fisicas.ver', 'inventario.tomas_fisicas.crear', 'inventario.tomas_fisicas.contar', 'inventario.tomas_fisicas.cerrar', 'inventario.tomas_fisicas.ajustar', 'inventario.tomas_fisicas.cancelar'],
+        'activos_fijos' => ['activos.ver', 'activos.crear'],
+        'tributario.renta' => ['tributario.ver'],
+        'tributario.mapeo_sii' => ['tributario.ver'],
+        'tributario.f29' => ['tributario.ver', 'tributario.crear'],
+        'usuarios.gestion' => ['usuarios.ver', 'usuarios.gestionar'],
+        'roles.gestion' => ['usuarios.ver', 'usuarios.gestionar'],
+        'empresa.perfil' => [],
+        'glosario' => [],
+        'integraciones.api' => [],
+        'dashboard.ejecutivo' => ['contabilidad.ver', 'tesoreria.ver', 'ventas.ver'],
+        'white_label' => [],
+        'modulos.custom' => [],
+    ];
+
+    private function permisosDesdeModulos(array $moduleKeys): array
+    {
+        $permisos = [];
+        foreach ($moduleKeys as $key) {
+            $permisos = array_merge($permisos, self::MODULE_PERMISSIONS_MAP[$key] ?? []);
+        }
+        return array_values(array_unique($permisos));
+    }
+
     public function __construct(
         private readonly WebAuthClient $webClient,
         private readonly ProvisionUserService $provisioner,
@@ -30,41 +78,11 @@ class AuthController
 
             $user = User::with(['rol', 'estadoSuscripcion'])->where('email', $request->email)->first();
 
-            $webResult = $this->webClient->validateLogin($request->email, $request->password);
-
-            if ($webResult !== null) {
-                if (!($webResult['valid'] ?? false)) {
-                    return response()->json(['success' => false, 'message' => 'Credenciales inválidas'], 401);
-                }
-
-                if (!$user) {
-                    $provisioned = $this->provisioner->provision([
-                        'tenri_user_id' => $webResult['tenri_user_id'],
-                        'email'         => $request->email,
-                        'name'          => $webResult['name'] ?? $request->email,
-                        'rut'           => null,
-                        'password_hash' => $webResult['password_hash'],
-                        'plan_slug'     => $webResult['plan_slug'] ?? 'erp-starter',
-                        'module_keys'   => $webResult['module_keys'] ?? [],
-                        'rol_erp'       => $webResult['rol_erp'] ?? 'Administrador',
-                    ]);
-                    $user = User::with(['rol', 'estadoSuscripcion'])->find($provisioned->id);
-                } else {
-                    DB::table('usuarios')->where('id', $user->id)->update([
-                        'plan_slug'       => $webResult['plan_slug'],
-                        'module_keys'     => json_encode($webResult['module_keys'] ?? []),
-                        'tenri_synced_at' => now(),
-                    ]);
-                    if (!empty($webResult['password_hash'])) {
-                        DB::table('usuarios')->where('id', $user->id)
-                            ->update(['password' => $webResult['password_hash']]);
-                    }
-                    $user = User::with(['rol', 'estadoSuscripcion'])->find($user->id);
-                }
-            } else {
-                if (!$user || !Hash::check($request->password, $user->password)) {
-                    return response()->json(['success' => false, 'message' => 'Credenciales inválidas'], 401);
-                }
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Credenciales incorrectas'
+                ], 401);
             }
 
             // Validar contra el nombre del estado (no contra id hardcodeado).
@@ -78,58 +96,12 @@ class AuthController
 
             $user->update(['ultimo_acceso' => now()]);
 
-            $permisos = $user->rol->permisos ?? [];
-
-            if ($user->rol && $user->rol->jerarquia >= 100) {
-                $permisos = [
-                    'ventas.ver',
-                    'ventas.crear',
-                    'clientes.ver',
-                    'clientes.crear',
-                    'compras.ver',
-                    'compras.crear',
-                    'proveedores.ver',
-                    'proveedores.crear',
-                    'tesoreria.ver',
-                    'tesoreria.crear',
-                    'contabilidad.ver',
-                    'contabilidad.crear',
-                    'activos.ver',
-                    'activos.crear',
-                    'tributario.ver',
-                    'tributario.crear',
-                    'usuarios.ver',
-                    'usuarios.gestionar',
-                    'inventario.productos.ver',
-                    'inventario.productos.crear',
-                    'inventario.productos.editar',
-                    'inventario.bodegas.ver',
-                    'inventario.bodegas.crear',
-                    'inventario.movimientos.ver',
-                    'inventario.movimientos.entrada',
-                    'inventario.movimientos.salida',
-                    'inventario.movimientos.traspaso',
-                    'inventario.movimientos.ajuste',
-                    'inventario.kardex.ver',
-                    'inventario.valorizacion.ver',
-                    'inventario.ajustes_criticos.ver',
-                    'inventario.ajustes_criticos.crear',
-                    'inventario.lotes.ver',
-                    'inventario.lotes.crear',
-                    'inventario.lotes.editar',
-                    'inventario.reservas.ver',
-                    'inventario.reservas.crear',
-                    'inventario.reservas.cancelar',
-                    'inventario.reservas.liberar',
-                    'inventario.reservas.consumir',
-                    'inventario.disponibilidad.ver',
-                    'inventario.tomas_fisicas.ver',
-                    'inventario.tomas_fisicas.crear',
-                    'inventario.tomas_fisicas.contar',
-                    'inventario.tomas_fisicas.cerrar',
-                    'inventario.tomas_fisicas.ajustar',
-                    'inventario.tomas_fisicas.cancelar',
-                ];
+            if (!empty($user->module_keys)) {
+                $permisos = $this->permisosDesdeModulos($user->module_keys);
+            } elseif ($user->rol && $user->rol->jerarquia >= 100) {
+                $permisos = $this->permisosDesdeModulos(array_keys(self::MODULE_PERMISSIONS_MAP));
+            } else {
+                $permisos = $user->rol->permisos ?? [];
             }
 
             $token = $user->createToken('react-spa-token')->plainTextToken;
@@ -143,6 +115,7 @@ class AuthController
                     'email' => $user->email,
                     'empresa_id' => $user->empresa_id,
                     'rol_id' => $user->rol_id,
+                    'plan_slug' => $user->plan_slug,
                     'permisos' => $permisos
                 ]
             ]);
@@ -194,126 +167,18 @@ class AuthController
     public function me(Request $request)
     {
         $user = $request->user()->load(['empresa', 'rol']);
-        $permisos = $user->rol->permisos ?? [];
 
-        if ($user->rol && $user->rol->jerarquia >= 100) {
-            $permisos = [
-                'ventas.ver',
-                'ventas.crear',
-                'clientes.ver',
-                'clientes.crear',
-                'compras.ver',
-                'compras.crear',
-                'proveedores.ver',
-                'proveedores.crear',
-                'tesoreria.ver',
-                'tesoreria.crear',
-                'contabilidad.ver',
-                'contabilidad.crear',
-                'activos.ver',
-                'activos.crear',
-                'tributario.ver',
-                'tributario.crear',
-                'usuarios.ver',
-                'usuarios.gestionar',
-                'inventario.productos.ver',
-                'inventario.productos.crear',
-                'inventario.productos.editar',
-                'inventario.bodegas.ver',
-                'inventario.bodegas.crear',
-                'inventario.movimientos.ver',
-                'inventario.movimientos.entrada',
-                'inventario.movimientos.salida',
-                'inventario.movimientos.traspaso',
-                'inventario.movimientos.ajuste',
-                'inventario.kardex.ver',
-                'inventario.valorizacion.ver',
-                'inventario.ajustes_criticos.ver',
-                'inventario.ajustes_criticos.crear',
-                'inventario.lotes.ver',
-                'inventario.lotes.crear',
-                'inventario.lotes.editar',
-                'inventario.reservas.ver',
-                'inventario.reservas.crear',
-                'inventario.reservas.cancelar',
-                'inventario.reservas.liberar',
-                'inventario.reservas.consumir',
-                'inventario.disponibilidad.ver',
-                'inventario.tomas_fisicas.ver',
-                'inventario.tomas_fisicas.crear',
-                'inventario.tomas_fisicas.contar',
-                'inventario.tomas_fisicas.cerrar',
-                'inventario.tomas_fisicas.ajustar',
-                'inventario.tomas_fisicas.cancelar',
-            ];
+        if (!empty($user->module_keys)) {
+            $permisos = $this->permisosDesdeModulos($user->module_keys);
+        } elseif ($user->rol && $user->rol->jerarquia >= 100) {
+            $permisos = $this->permisosDesdeModulos(array_keys(self::MODULE_PERMISSIONS_MAP));
+        } else {
+            $permisos = $user->rol->permisos ?? [];
         }
 
         $userData = $user->toArray();
         $userData['permisos'] = $permisos;
 
         return response()->json($userData);
-    }
-
-    public function tokenLogin(\Illuminate\Http\Request $request)
-    {
-        try {
-            $request->validate(['sso_token' => 'required|string']);
-
-            $webResult = $this->webClient->validateToken($request->sso_token);
-
-            if (!$webResult) {
-                return response()->json(['success' => false, 'message' => 'Token SSO inválido o expirado.'], 401);
-            }
-
-            $user = User::with(['rol', 'estadoSuscripcion'])
-                ->where('email', $webResult['email'])
-                ->first();
-
-            if (!$user) {
-                $provisioned = $this->provisioner->provision([
-                    'tenri_user_id' => $webResult['tenri_user_id'],
-                    'email'         => $webResult['email'],
-                    'name'          => $webResult['name'] ?? $webResult['email'],
-                    'rut'           => null,
-                    'password_hash' => $webResult['password_hash'],
-                    'plan_slug'     => $webResult['plan_slug'] ?? 'erp-starter',
-                    'module_keys'   => $webResult['module_keys'] ?? [],
-                    'rol_erp'       => $webResult['rol_erp'] ?? 'Administrador',
-                ]);
-                $user = User::with(['rol', 'estadoSuscripcion'])->find($provisioned->id);
-            } else {
-                DB::table('usuarios')->where('id', $user->id)->update([
-                    'plan_slug'       => $webResult['plan_slug'],
-                    'module_keys'     => json_encode($webResult['module_keys'] ?? []),
-                    'tenri_synced_at' => now(),
-                ]);
-                $user = $user->fresh(['rol', 'estadoSuscripcion']);
-            }
-
-            if (!$user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
-                return response()->json(['success' => false, 'message' => 'Cuenta inactiva.'], 403);
-            }
-
-            $user->update(['ultimo_acceso' => now()]);
-            $token = $user->createToken('react-spa-token')->plainTextToken;
-
-            return response()->json([
-                'success' => true,
-                'token'   => $token,
-                'user'    => [
-                    'id'         => $user->id,
-                    'nombre'     => $user->nombre,
-                    'email'      => $user->email,
-                    'empresa_id' => $user->empresa_id,
-                    'rol_id'     => $user->rol_id,
-                    'permisos'   => $user->rol->permisos ?? [],
-                    'plan_slug'  => $user->plan_slug,
-                    'module_keys' => $user->module_keys ?? [],
-                ],
-            ]);
-        } catch (Throwable $e) {
-            Log::error('Error en tokenLogin SSO: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Error interno.'], 500);
-        }
     }
 }

@@ -18,20 +18,14 @@ return new class extends Migration {
             $table->index('plan_slug');
         });
 
-        Schema::table('usuarios', function (Blueprint $table) {
-            $table->dropForeign(['empresa_id']);
-        });
-
-        Schema::table('usuarios', function (Blueprint $table) {
+        if (DB::getDriverName() === 'mysql') {
             DB::statement('ALTER TABLE usuarios MODIFY empresa_id BIGINT UNSIGNED NULL');
-            $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
-        });
+        }
     }
 
     public function down(): void
     {
         Schema::table('usuarios', function (Blueprint $table) {
-            $table->dropForeign(['empresa_id']);
             $table->dropUnique(['tenri_user_id']);
             $table->dropIndex(['plan_slug']);
             $table->dropColumn([
@@ -40,9 +34,10 @@ return new class extends Migration {
                 'module_keys',
                 'tenri_synced_at',
             ]);
-
-            DB::statement('ALTER TABLE usuarios MODIFY empresa_id BIGINT UNSIGNED NOT NULL DEFAULT 1');
-            $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
         });
+
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE usuarios MODIFY empresa_id BIGINT UNSIGNED NOT NULL DEFAULT 1');
+        }
     }
 };
