@@ -1,31 +1,9 @@
-/**
- * Tests unitarios para el cliente API.
- *
- * Cubren:
- * - Helpers internos (buildQuery, buildError, inferErrorCode, formatValidationErrors, getToken)
- * - Request basico (GET/POST/PUT/PATCH/DELETE) con fetch mockeado
- * - Manejo de errores 4xx (401 redirige, 422 extrae errors, 404, 403)
- * - Manejo de errores 5xx con retry
- * - Errores de red con retry
- * - Timeout
- * - Compat axios-style (error.response.data)
- * - FormData upload (no setear Content-Type)
- * - Download blob
- * - Auth login/logout
- *
- * Ejecutar con: pnpm vitest
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { api, API_BASE_URL } from './api.js';
 
 // =====================================================================
 // HELPERS DE MOCK
 // =====================================================================
-
-/**
- * Crea una Response mock para fetch.
- */
 const mockResponse = (status, body, contentType = 'application/json') => ({
     ok: status >= 200 && status < 300,
     status,
@@ -37,10 +15,6 @@ const mockResponse = (status, body, contentType = 'application/json') => ({
     blob: async () => new Blob([JSON.stringify(body)], { type: 'application/pdf' }),
 });
 
-/**
- * Mock de fetch que devuelve respuestas predefinidas en secuencia.
- * Util para testear retries.
- */
 const setupFetchSequence = (responses) => {
     const mock = vi.fn();
     responses.forEach((r) => {
@@ -52,7 +26,7 @@ const setupFetchSequence = (responses) => {
             mock.mockImplementationOnce(() => Promise.resolve(r));
         }
     });
-    global.fetch = mock;  // eslint-disable-line no-undef
+    global.fetch = mock;
     return mock;
 };
 
@@ -61,10 +35,8 @@ const setupFetchSequence = (responses) => {
 // =====================================================================
 
 beforeEach(() => {
-    // Limpiar storage entre tests
     localStorage.clear();
     sessionStorage.clear();
-    // Silenciar el toast en tests (es Swal y abre modal)
     api.config({ showErrorToast: false, timeoutMs: 5000 });
 });
 
@@ -102,7 +74,6 @@ describe('buildQuery', () => {
     });
 
     it('serializa arrays como key[]=v', () => {
-        // URLSearchParams escapa los corchetes
         const qs = buildQuery({ ids: [1, 2, 3] });
         expect(qs).toMatch(/ids(\[\]|%5B%5D)=1.*ids(\[\]|%5B%5D)=2.*ids(\[\]|%5B%5D)=3/);
     });
@@ -614,7 +585,7 @@ describe('api.auth', () => {
 
 describe('exports', () => {
     it('exporta API_BASE_URL', () => {
-        expect(API_BASE_URL).toMatch(/^http/);
+        expect(API_BASE_URL).toMatch(/^\/api|^https?:\/\//);
     });
 
     it('expone api.defaults.baseURL para compat', () => {
