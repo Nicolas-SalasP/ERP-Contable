@@ -43,8 +43,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol']);
 
     // Empresa - Perfil
-    Route::get('/empresas/verificar-rut', [EmpresaController::class, 'verificarRut']);
-    Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
     Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil']);
     Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo']);
@@ -261,5 +259,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
-    Route::post('/provision-user', [WebProvisioningController::class, 'provisionUser']);
+    Route::post('/provision-user',  [WebProvisioningController::class, 'provisionUser']);
+    Route::post('/sync-plan',       [WebProvisioningController::class, 'syncPlan']);
+    Route::get('/online-users',     [WebProvisioningController::class, 'onlineUsers']);
 });
