@@ -12,11 +12,8 @@ class ProvisionUserService
     public function provision(array $payload): User
     {
         return DB::transaction(function () use ($payload) {
-            $rol = Rol::where('nombre', $payload['rol_erp'] ?? 'Administrador')->first();
-
-            if (!$rol) {
-                $rol = Rol::where('nombre', 'Administrador')->firstOrFail();
-            }
+            $rol = Rol::where('nombre', $payload['rol_erp'] ?? 'Administrador')->first()
+                ?? Rol::where('nombre', 'Administrador')->firstOrFail();
 
             $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
 
@@ -36,18 +33,17 @@ class ProvisionUserService
 
             if ($user) {
                 $user->forceFill($attributes)->save();
-                DB::table('usuarios')
-                    ->where('id', $user->id)
-                    ->update(['password' => $payload['password_hash']]);
             } else {
                 $user = new User();
                 $user->forceFill($attributes);
                 $user->empresa_id = null;
+                $user->password = 'placeholder';
                 $user->save();
-                DB::table('usuarios')
-                    ->where('id', $user->id)
-                    ->update(['password' => $payload['password_hash']]);
             }
+
+            DB::table('usuarios')
+                ->where('id', $user->id)
+                ->update(['password' => $payload['password_hash']]);
 
             return $user->fresh();
         });
