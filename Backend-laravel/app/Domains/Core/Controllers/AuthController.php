@@ -7,10 +7,19 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Domains\Core\Models\User;
 use Illuminate\Validation\ValidationException;
+use App\Domains\Core\Services\ProvisionUserService;
+use App\Domains\Core\Services\WebAuthClient;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class AuthController
 {
+    public function __construct(
+        private readonly WebAuthClient $webClient,
+        private readonly ProvisionUserService $provisioner,
+    ) {
+    }
+
     public function login(Request $request)
     {
         try {
@@ -21,11 +30,41 @@ class AuthController
 
             $user = User::with(['rol', 'estadoSuscripcion'])->where('email', $request->email)->first();
 
-            if (!$user || !Hash::check($request->password, $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Credenciales incorrectas'
-                ], 401);
+            $webResult = $this->webClient->validateLogin($request->email, $request->password);
+
+            if ($webResult !== null) {
+                if (!($webResult['valid'] ?? false)) {
+                    return response()->json(['success' => false, 'message' => 'Credenciales inválidas'], 401);
+                }
+
+                if (!$user) {
+                    $provisioned = $this->provisioner->provision([
+                        'tenri_user_id' => $webResult['tenri_user_id'],
+                        'email'         => $request->email,
+                        'name'          => $webResult['name'] ?? $request->email,
+                        'rut'           => null,
+                        'password_hash' => $webResult['password_hash'],
+                        'plan_slug'     => $webResult['plan_slug'] ?? 'erp-starter',
+                        'module_keys'   => $webResult['module_keys'] ?? [],
+                        'rol_erp'       => $webResult['rol_erp'] ?? 'Administrador',
+                    ]);
+                    $user = User::with(['rol', 'estadoSuscripcion'])->find($provisioned->id);
+                } else {
+                    DB::table('usuarios')->where('id', $user->id)->update([
+                        'plan_slug'       => $webResult['plan_slug'],
+                        'module_keys'     => json_encode($webResult['module_keys'] ?? []),
+                        'tenri_synced_at' => now(),
+                    ]);
+                    if (!empty($webResult['password_hash'])) {
+                        DB::table('usuarios')->where('id', $user->id)
+                            ->update(['password' => $webResult['password_hash']]);
+                    }
+                    $user = User::with(['rol', 'estadoSuscripcion'])->find($user->id);
+                }
+            } else {
+                if (!$user || !Hash::check($request->password, $user->password)) {
+                    return response()->json(['success' => false, 'message' => 'Credenciales inválidas'], 401);
+                }
             }
 
             // Validar contra el nombre del estado (no contra id hardcodeado).
@@ -213,5 +252,68 @@ class AuthController
         $userData['permisos'] = $permisos;
 
         return response()->json($userData);
+    }
+
+    public function tokenLogin(\Illuminate\Http\Request $request)
+    {
+        try {
+            $request->validate(['sso_token' => 'required|string']);
+
+            $webResult = $this->webClient->validateToken($request->sso_token);
+
+            if (!$webResult) {
+                return response()->json(['success' => false, 'message' => 'Token SSO inválido o expirado.'], 401);
+            }
+
+            $user = User::with(['rol', 'estadoSuscripcion'])
+                ->where('email', $webResult['email'])
+                ->first();
+
+            if (!$user) {
+                $provisioned = $this->provisioner->provision([
+                    'tenri_user_id' => $webResult['tenri_user_id'],
+                    'email'         => $webResult['email'],
+                    'name'          => $webResult['name'] ?? $webResult['email'],
+                    'rut'           => null,
+                    'password_hash' => $webResult['password_hash'],
+                    'plan_slug'     => $webResult['plan_slug'] ?? 'erp-starter',
+                    'module_keys'   => $webResult['module_keys'] ?? [],
+                    'rol_erp'       => $webResult['rol_erp'] ?? 'Administrador',
+                ]);
+                $user = User::with(['rol', 'estadoSuscripcion'])->find($provisioned->id);
+            } else {
+                DB::table('usuarios')->where('id', $user->id)->update([
+                    'plan_slug'       => $webResult['plan_slug'],
+                    'module_keys'     => json_encode($webResult['module_keys'] ?? []),
+                    'tenri_synced_at' => now(),
+                ]);
+                $user = $user->fresh(['rol', 'estadoSuscripcion']);
+            }
+
+            if (!$user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
+                return response()->json(['success' => false, 'message' => 'Cuenta inactiva.'], 403);
+            }
+
+            $user->update(['ultimo_acceso' => now()]);
+            $token = $user->createToken('react-spa-token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'token'   => $token,
+                'user'    => [
+                    'id'         => $user->id,
+                    'nombre'     => $user->nombre,
+                    'email'      => $user->email,
+                    'empresa_id' => $user->empresa_id,
+                    'rol_id'     => $user->rol_id,
+                    'permisos'   => $user->rol->permisos ?? [],
+                    'plan_slug'  => $user->plan_slug,
+                    'module_keys' => $user->module_keys ?? [],
+                ],
+            ]);
+        } catch (Throwable $e) {
+            Log::error('Error en tokenLogin SSO: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno.'], 500);
+        }
     }
 }
