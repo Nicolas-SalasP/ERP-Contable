@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
+import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     AlertBox,
     EmptyState,
@@ -39,10 +40,18 @@ const ReservasInventario = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
+    const {
+        productos,
+        bodegas,
+        lotes,
+        cargarProductosCache,
+        cargarBodegasCache,
+        cargarLotesCache,
+        invalidarProductos,
+        invalidarLotes,
+    } = useInventarioData();
+
     const [reservas, setReservas] = useState([]);
-    const [productos, setProductos] = useState([]);
-    const [bodegas, setBodegas] = useState([]);
-    const [lotes, setLotes] = useState([]);
     const [disponibilidad, setDisponibilidad] = useState([]);
 
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -50,39 +59,24 @@ const ReservasInventario = () => {
     const [estadoFiltro, setEstadoFiltro] = useState('');
     const [busqueda, setBusqueda] = useState('');
 
-    const cargarDatos = async () => {
+    const cargarDatos = async (force = false) => {
         try {
             setLoading(true);
             setError(null);
 
             const [
                 reservasResponse,
-                productosResponse,
-                bodegasResponse,
-                lotesResponse,
                 disponibilidadResponse,
             ] = await Promise.allSettled([
                 inventarioApi.reservas.listar(),
-                inventarioApi.productos.listar(),
-                inventarioApi.bodegas.listar(),
-                inventarioApi.lotes.listar(),
                 inventarioApi.disponibilidad.listar(),
+                cargarProductosCache({ force }),
+                cargarBodegasCache({ force }),
+                cargarLotesCache({ force }),
             ]);
 
             if (reservasResponse.status === 'fulfilled') {
                 setReservas(reservasResponse.value.data || []);
-            }
-
-            if (productosResponse.status === 'fulfilled') {
-                setProductos(productosResponse.value.data || []);
-            }
-
-            if (bodegasResponse.status === 'fulfilled') {
-                setBodegas(bodegasResponse.value.data || []);
-            }
-
-            if (lotesResponse.status === 'fulfilled') {
-                setLotes(lotesResponse.value.data || []);
             }
 
             if (disponibilidadResponse.status === 'fulfilled') {
@@ -178,9 +172,11 @@ const ReservasInventario = () => {
                 confirmButtonColor: '#10b981',
             });
 
+            invalidarProductos();
+            invalidarLotes();
             limpiarFormulario();
             setMostrarFormulario(false);
-            await cargarDatos();
+            await cargarDatos(true);
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -251,7 +247,9 @@ const ReservasInventario = () => {
                 confirmButtonColor: '#10b981',
             });
 
-            await cargarDatos();
+            invalidarProductos();
+            invalidarLotes();
+            await cargarDatos(true);
         } catch (err) {
             await Swal.fire({
                 icon: 'error',
@@ -273,7 +271,7 @@ const ReservasInventario = () => {
                 description="Control de stock físico separado de stock comprometido. Crear una reserva no descuenta stock real; solo compromete disponibilidad."
                 actions={(
                     <>
-                        <SecondaryButton onClick={cargarDatos}>
+                        <SecondaryButton onClick={() => cargarDatos(true)}>
                             <i className="fas fa-rotate-right"></i>
                             Actualizar
                         </SecondaryButton>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
+import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     EmptyState,
     ErrorNotice,
@@ -94,31 +95,28 @@ const LotesInventario = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
-    const [productos, setProductos] = useState([]);
-    const [lotes, setLotes] = useState([]);
+    const {
+        productos,
+        lotes,
+        cargarProductosCache,
+        cargarLotesCache,
+        invalidarLotes,
+    } = useInventarioData();
 
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
     const [form, setForm] = useState(initialForm);
     const [productoFiltro, setProductoFiltro] = useState('');
     const [busqueda, setBusqueda] = useState('');
 
-    const cargarDatos = async () => {
+    const cargarDatos = async (force = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            const [productosResponse, lotesResponse] = await Promise.allSettled([
-                inventarioApi.productos.listar(),
-                inventarioApi.lotes.listar(),
+            await Promise.allSettled([
+                cargarProductosCache({ force }),
+                cargarLotesCache({ force }),
             ]);
-
-            if (productosResponse.status === 'fulfilled') {
-                setProductos(productosResponse.value.data || []);
-            }
-
-            if (lotesResponse.status === 'fulfilled') {
-                setLotes(lotesResponse.value.data || []);
-            }
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -189,9 +187,10 @@ const LotesInventario = () => {
                 confirmButtonColor: '#10b981',
             });
 
+            invalidarLotes();
             limpiarFormulario();
             setMostrarFormulario(false);
-            await cargarDatos();
+            await cargarDatos(true);
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -210,7 +209,7 @@ const LotesInventario = () => {
                 description="Control granular para productos que manejan trazabilidad por lote y fecha de vencimiento."
                 actions={(
                     <>
-                        <SecondaryButton onClick={cargarDatos}>
+                        <SecondaryButton onClick={() => cargarDatos(true)}>
                             <i className="fas fa-rotate-right"></i>
                             Actualizar
                         </SecondaryButton>

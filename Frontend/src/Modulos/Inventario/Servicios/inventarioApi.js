@@ -37,6 +37,10 @@ const put = async (endpoint, payload = {}) => {
 };
 
 export const inventarioApi = {
+    dashboard: {
+        obtener: () => get('/inventario/dashboard'),
+    },
+
     catalogos: () => get('/inventario/catalogos'),
 
     productos: {

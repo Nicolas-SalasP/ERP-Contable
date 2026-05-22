@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
+import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     EmptyState,
     ErrorNotice,
@@ -34,27 +35,27 @@ const ProductosInventario = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
-    const [productos, setProductos] = useState([]);
-    const [catalogos, setCatalogos] = useState({
-        unidades_medida: [],
-    });
+    const {
+        productos,
+        catalogos,
+        cargarProductosCache,
+        cargarCatalogosCache,
+        invalidarProductos,
+    } = useInventarioData();
 
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
     const [form, setForm] = useState(initialForm);
     const [busqueda, setBusqueda] = useState('');
 
-    const cargarDatos = async () => {
+    const cargarDatos = async (force = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            const [productosResponse, catalogosResponse] = await Promise.all([
-                inventarioApi.productos.listar(),
-                inventarioApi.catalogos(),
+            await Promise.all([
+                cargarProductosCache({ force }),
+                cargarCatalogosCache({ force }),
             ]);
-
-            setProductos(productosResponse.data || []);
-            setCatalogos(catalogosResponse.data || catalogosResponse || { unidades_medida: [] });
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -132,7 +133,8 @@ const ProductosInventario = () => {
 
             limpiarFormulario();
             setMostrarFormulario(false);
-            await cargarDatos();
+            invalidarProductos();
+            await cargarDatos(true);
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -149,9 +151,10 @@ const ProductosInventario = () => {
             <PageHeader
                 title="Productos de Inventario"
                 description="Gestión demo-operativa del catálogo de productos utilizado por movimientos, Kardex, lotes, reservas y tomas físicas."
+                helpModuloId="inventario"
                 actions={(
                     <>
-                        <SecondaryButton onClick={cargarDatos}>
+                        <SecondaryButton onClick={() => cargarDatos(true)}>
                             <i className="fas fa-rotate-right"></i>
                             Actualizar
                         </SecondaryButton>

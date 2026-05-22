@@ -17,72 +17,47 @@ import {
     Th,
 } from '../Componentes/InventarioUI';
 
+const emptyDashboard = {
+    resumen: {
+        productos: 0,
+        bodegas: 0,
+        reservas_activas: 0,
+        tomas_abiertas: 0,
+        stock_valorizado: 0,
+    },
+    ultimos_movimientos: [],
+    tomas_recientes: [],
+};
+
 const InventarioDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
-    const [productos, setProductos] = useState([]);
-    const [bodegas, setBodegas] = useState([]);
-    const [movimientos, setMovimientos] = useState([]);
-    const [reservas, setReservas] = useState([]);
-    const [tomasFisicas, setTomasFisicas] = useState([]);
-    const [valorizacion, setValorizacion] = useState([]);
+    const [dashboard, setDashboard] = useState(emptyDashboard);
 
     const cargarDashboard = async () => {
         try {
             setLoading(true);
             setError(null);
 
-            const [
-                productosResponse,
-                bodegasResponse,
-                movimientosResponse,
-                reservasResponse,
-                tomasFisicasResponse,
-                valorizacionResponse,
-            ] = await Promise.allSettled([
-                inventarioApi.productos.listar(),
-                inventarioApi.bodegas.listar(),
-                inventarioApi.movimientos.listar(),
-                inventarioApi.reservas.listar(),
-                inventarioApi.tomasFisicas.listar(),
-                inventarioApi.valorizacion.listar(),
-            ]);
+            const response = await inventarioApi.dashboard.obtener();
+            const data = response?.data || {};
 
-            if (productosResponse.status === 'fulfilled') {
-                setProductos(productosResponse.value.data || []);
-            }
-
-            if (bodegasResponse.status === 'fulfilled') {
-                setBodegas(bodegasResponse.value.data || []);
-            }
-
-            if (movimientosResponse.status === 'fulfilled') {
-                setMovimientos(movimientosResponse.value.data || []);
-            }
-
-            if (reservasResponse.status === 'fulfilled') {
-                setReservas(reservasResponse.value.data || []);
-            }
-
-            if (tomasFisicasResponse.status === 'fulfilled') {
-                setTomasFisicas(tomasFisicasResponse.value.data || []);
-            }
-
-            if (valorizacionResponse.status === 'fulfilled') {
-                setValorizacion(valorizacionResponse.value.data || []);
-            }
-
-            const falloCritico = [
-                productosResponse,
-                bodegasResponse,
-            ].some((response) => response.status === 'rejected');
-
-            if (falloCritico) {
-                setError('No se pudieron cargar algunos datos principales del dashboard.');
-            }
+            setDashboard({
+                ...emptyDashboard,
+                ...data,
+                resumen: {
+                    ...emptyDashboard.resumen,
+                    ...(data.resumen || {}),
+                },
+                ultimos_movimientos: Array.isArray(data.ultimos_movimientos)
+                    ? data.ultimos_movimientos
+                    : [],
+                tomas_recientes: Array.isArray(data.tomas_recientes)
+                    ? data.tomas_recientes
+                    : [],
+            });
         } catch (err) {
-            setError(err?.message || 'No se pudo cargar el dashboard de inventario.');
+            setError(err?.response?.data || err?.message || 'No se pudo cargar el dashboard de inventario.');
         } finally {
             setLoading(false);
         }
@@ -92,27 +67,15 @@ const InventarioDashboard = () => {
         cargarDashboard();
     }, []);
 
-    const totalValorizado = useMemo(() => {
-        return valorizacion.reduce((total, item) => {
-            return total + Number(item?.valor_total ?? item?.total_valorizado ?? item?.valor_stock ?? 0);
-        }, 0);
-    }, [valorizacion]);
-
-    const tomasAbiertas = useMemo(() => {
-        return tomasFisicas.filter((toma) => ['BORRADOR', 'EN_CONTEO', 'CERRADA'].includes(toma.estado)).length;
-    }, [tomasFisicas]);
-
-    const reservasActivas = useMemo(() => {
-        return reservas.filter((reserva) => ['ACTIVA', 'PARCIAL', 'ACTIVA_RESERVA'].includes(reserva.estado)).length;
-    }, [reservas]);
+    const resumen = dashboard.resumen || emptyDashboard.resumen;
 
     const ultimosMovimientos = useMemo(() => {
-        return [...movimientos].slice(0, 6);
-    }, [movimientos]);
+        return dashboard.ultimos_movimientos || [];
+    }, [dashboard]);
 
     const ultimasTomas = useMemo(() => {
-        return [...tomasFisicas].slice(0, 6);
-    }, [tomasFisicas]);
+        return dashboard.tomas_recientes || [];
+    }, [dashboard]);
 
     if (loading) {
         return <LoadingState text="Cargando dashboard de inventario..." />;
@@ -122,7 +85,7 @@ const InventarioDashboard = () => {
         <div className="space-y-8">
             <PageHeader
                 title="Dashboard de Inventario"
-                description="Resumen demo-operativo del módulo de inventario: productos, bodegas, movimientos, valorización, reservas y tomas físicas."
+                description="Resumen demo-operativo optimizado del módulo de inventario: productos, bodegas, reservas, tomas físicas, movimientos recientes y valorización."
                 actions={(
                     <button
                         type="button"
@@ -137,14 +100,14 @@ const InventarioDashboard = () => {
 
             {error && (
                 <AlertBox tone="amber">
-                    {error}
+                    {typeof error === 'string' ? error : error?.message || 'No se pudieron cargar algunos datos del dashboard.'}
                 </AlertBox>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                 <StatCard
                     title="Productos"
-                    value={formatNumber(productos.length)}
+                    value={formatNumber(resumen.productos)}
                     helper="Catálogo activo del módulo"
                     icon="fas fa-box"
                     tone="emerald"
@@ -152,7 +115,7 @@ const InventarioDashboard = () => {
 
                 <StatCard
                     title="Bodegas"
-                    value={formatNumber(bodegas.length)}
+                    value={formatNumber(resumen.bodegas)}
                     helper="Ubicaciones operativas"
                     icon="fas fa-warehouse"
                     tone="blue"
@@ -160,7 +123,7 @@ const InventarioDashboard = () => {
 
                 <StatCard
                     title="Reservas activas"
-                    value={formatNumber(reservasActivas)}
+                    value={formatNumber(resumen.reservas_activas)}
                     helper="Stock comprometido"
                     icon="fas fa-lock"
                     tone="amber"
@@ -168,7 +131,7 @@ const InventarioDashboard = () => {
 
                 <StatCard
                     title="Tomas abiertas"
-                    value={formatNumber(tomasAbiertas)}
+                    value={formatNumber(resumen.tomas_abiertas)}
                     helper="Borrador, en conteo o cerradas"
                     icon="fas fa-clipboard-check"
                     tone="indigo"
@@ -178,7 +141,7 @@ const InventarioDashboard = () => {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <Panel
                     title="Valorización referencial"
-                    subtitle="Valor consolidado según la respuesta del backend"
+                    subtitle="Valor consolidado calculado desde backend"
                     className="xl:col-span-1"
                 >
                     <div className="rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-6 shadow-lg shadow-emerald-100">
@@ -187,11 +150,11 @@ const InventarioDashboard = () => {
                         </p>
 
                         <h3 className="text-4xl font-black mt-3">
-                            {formatCurrency(totalValorizado)}
+                            {formatCurrency(resumen.stock_valorizado)}
                         </h3>
 
                         <p className="mt-3 text-emerald-50 font-semibold text-sm">
-                            Este valor depende de los endpoints de PMP y valorización implementados en backend.
+                            Este valor se obtiene desde un endpoint agregado para evitar múltiples llamadas desde el dashboard.
                         </p>
                     </div>
                 </Panel>
@@ -228,14 +191,14 @@ const InventarioDashboard = () => {
                                             </span>
                                         </Td>
 
-                                       <Td className="font-bold text-slate-700">
-                                        <span
-                                            className="block max-w-[220px] truncate"
-                                            title={getProductoNombre(movimiento)}
-                                        >
-                                            {getProductoNombre(movimiento)}
-                                        </span>
-                                    </Td>
+                                        <Td className="font-bold text-slate-700">
+                                            <span
+                                                className="block max-w-[220px] truncate"
+                                                title={getProductoNombre(movimiento)}
+                                            >
+                                                {getProductoNombre(movimiento)}
+                                            </span>
+                                        </Td>
 
                                         <Td className="text-slate-500 font-semibold">
                                             {getBodegaNombre(movimiento)}
@@ -246,13 +209,13 @@ const InventarioDashboard = () => {
                                         </Td>
 
                                         <Td className="text-slate-500">
-                                        <span
-                                            className="block max-w-[180px] truncate"
-                                            title={movimiento.referencia || '-'}
-                                        >
-                                            {movimiento.referencia || '-'}
-                                        </span>
-                                    </Td>
+                                            <span
+                                                className="block max-w-[180px] truncate"
+                                                title={movimiento.referencia || '-'}
+                                            >
+                                                {movimiento.referencia || '-'}
+                                            </span>
+                                        </Td>
                                     </tr>
                                 ))}
                             </tbody>
