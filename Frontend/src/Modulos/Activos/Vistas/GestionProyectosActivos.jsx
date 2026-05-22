@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
+import Swal from 'sweetalert2';
 import VisorProyectoActivo from './VisorProyectoActivo';
-
+import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const GestionProyectosActivos = ({ onNotificar }) => {
     const [proyectos, setProyectos] = useState([]);
     const [tiposActivos, setTiposActivos] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
     const [modalAbierto, setModalAbierto] = useState(false);
-    
+
     const [nuevoProyecto, setNuevoProyecto] = useState({
         nombre: '', tipo_activo_id: '', anio_fabricacion: new Date().getFullYear(), vida_util_meses: 60, centro_costo_id: 1, empleado_id: 1
     });
@@ -21,24 +24,31 @@ const GestionProyectosActivos = ({ onNotificar }) => {
         try {
             const [resProyectos, resParams] = await Promise.all([
                 api.get('/activos/proyectos'),
-                api.get('/activos/parametros') 
+                api.get('/activos/parametros')
             ]);
-            
+
             if (resProyectos.success) setProyectos(resProyectos.data);
             if (resParams.success) setTiposActivos(resParams.data.cuentas_activo || []);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { 
-        cargarDatos(); 
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const handleCrearProyecto = async (e) => {
         e.preventDefault();
+
+        // FIX: Validación de seguridad para que el Backend no arroje Error 500 al activar
+        if (!nuevoProyecto.tipo_activo_id) {
+            alert("Error: Debe seleccionar una 'Cuenta de Activo' para que el proyecto pueda ser capitalizado contablemente.");
+            return;
+        }
+
         try {
             const res = await api.post('/activos/proyectos', nuevoProyecto);
             if (res.success) {
@@ -48,19 +58,60 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                 cargarDatos();
             }
         } catch (error) {
-            onNotificar('error', error.message || 'Error al crear proyecto.');
+            onNotificar('error', error.response?.data?.message || 'Error al crear proyecto.');
+        }
+    };
+
+    const handleEliminarProyecto = async (proyecto) => {
+        const proyectoId = proyecto.id || proyecto.id_proyecto;
+        const tieneCosto = (Number(proyecto.valor_total_original) || 0) > 0;
+        const confirmResult = await Swal.fire({
+            title: '¿Eliminar este proyecto?',
+            html: tieneCosto
+                ? `<p>El proyecto <strong>${proyecto.nombre}</strong> tiene facturas vinculadas por <strong>${formatCurrency(proyecto.valor_total_original)}</strong>.</p>
+                   <p class="text-amber-700 mt-2 text-sm">Solo se puede eliminar si NO tiene facturas. Tendras que desvincularlas primero desde el visor del proyecto.</p>`
+                : `<p>El proyecto <strong>${proyecto.nombre}</strong> sera eliminado permanentemente.</p>
+                   <p class="text-slate-500 text-sm mt-2">Esta accion no se puede deshacer.</p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Si, eliminar',
+            cancelButtonText: 'Cancelar',
+        });
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            const res = await api.delete(`/activos/proyectos/${proyectoId}`, { silent: true });
+            if (res?.success) {
+                onNotificar('success', 'Proyecto eliminado exitosamente.');
+                cargarDatos();
+            }
+        } catch (error) {
+            const mensaje = error.message || 'No se pudo eliminar el proyecto.';
+            Swal.fire('No se puede eliminar', mensaje, 'error');
         }
     };
 
     if (proyectoSeleccionado) {
-        return <VisorProyectoActivo 
-            proyectoId={proyectoSeleccionado} 
-            onVolver={() => { setProyectoSeleccionado(null); cargarDatos(); }} 
-            onNotificar={onNotificar} 
+        return <VisorProyectoActivo
+            proyectoId={proyectoSeleccionado}
+            onVolver={() => { setProyectoSeleccionado(null); cargarDatos(); }}
+            onNotificar={onNotificar}
         />;
     }
 
-    if (loading) return <div className="text-center py-8"><i className="fas fa-spinner fa-spin text-2xl text-slate-400"></i></div>;
+    if (loading) {
+        return (
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Cargando proyectos..."
+                tamano="compacto"
+                color="emerald"
+            />
+        );
+    }
 
     const getEstadoBadge = (estado) => {
         if (estado === 'EN_CONSTRUCCION') return <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold border border-amber-200">En Construcción</span>;
@@ -75,7 +126,10 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                         <i className="fas fa-tools"></i>
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-slate-800">Proyectos en Curso</h2>
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-black text-slate-800">Proyectos en Curso</h2>
+                            <AyudaModulo moduloId="proyectoActivo" size={24} />
+                        </div>
                         <p className="text-sm text-slate-500">{proyectos.length} proyectos gestionados</p>
                     </div>
                 </div>
@@ -92,7 +146,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {proyectos.map((p) => (
-                        <div key={p.id_proyecto} className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all flex flex-col relative overflow-hidden group">
+                        <div key={p.id || p.id_proyecto} className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all flex flex-col relative overflow-hidden group">
                             <div className={`h-1.5 w-full ${p.estado === 'EN_CONSTRUCCION' ? 'bg-amber-400' : 'bg-emerald-500'}`}></div>
                             <div className="p-5 flex-grow">
                                 <h3 className="font-bold text-slate-800 text-lg mb-4">{p.nombre}</h3>
@@ -105,9 +159,23 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                             </div>
                             <div className="px-5 py-4 border-t border-slate-100 flex justify-between items-center bg-white">
                                 {getEstadoBadge(p.estado)}
-                                <button onClick={() => setProyectoSeleccionado(p.id_proyecto)} className="text-indigo-600 text-sm font-bold hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded transition-colors opacity-0 group-hover:opacity-100">
-                                    Analizar <i className="fas fa-arrow-right ml-1"></i>
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    {p.estado === 'EN_CONSTRUCCION' && (
+                                        <button
+                                            onClick={() => handleEliminarProyecto(p)}
+                                            className="text-rose-600 text-sm font-bold hover:text-white bg-rose-50 hover:bg-rose-600 p-2 rounded-lg transition-colors shadow-sm"
+                                            title="Eliminar proyecto (solo en construccion, sin facturas)"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setProyectoSeleccionado(p.id || p.id_proyecto)}
+                                        className="text-indigo-600 text-sm font-bold hover:text-white bg-indigo-50 hover:bg-indigo-600 px-4 py-2 rounded-lg transition-colors shadow-sm"
+                                    >
+                                        Analizar <i className="fas fa-arrow-right ml-1"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -131,33 +199,34 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                             <form onSubmit={handleCrearProyecto} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre del Proyecto</label>
-                                    <input 
-                                        type="text" required 
-                                        value={nuevoProyecto.nombre} 
-                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, nombre: e.target.value})} 
-                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium" 
+                                    <input
+                                        type="text" required
+                                        value={nuevoProyecto.nombre}
+                                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, nombre: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium"
                                         placeholder="Ej: Maquinaria Industrial"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Cuenta de Activo</label>
-                                    <select 
-                                        required 
-                                        value={nuevoProyecto.tipo_activo_id} 
-                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, tipo_activo_id: e.target.value})} 
+                                    <select
+                                        required
+                                        value={nuevoProyecto.tipo_activo_id}
+                                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, tipo_activo_id: e.target.value })}
                                         className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium bg-white"
                                     >
                                         <option value="">Seleccione Cuenta...</option>
                                         {tiposActivos?.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
                                     </select>
+                                    <p className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-wider">* Obligatorio para capitalización contable</p>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Vida Útil (Meses)</label>
-                                    <input 
+                                    <input
                                         type="number" required min="1"
-                                        value={nuevoProyecto.vida_util_meses} 
-                                        onChange={(e) => setNuevoProyecto({...nuevoProyecto, vida_util_meses: e.target.value})} 
-                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium" 
+                                        value={nuevoProyecto.vida_util_meses}
+                                        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, vida_util_meses: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium"
                                     />
                                 </div>
                                 <div className="flex gap-3 pt-4 border-t border-slate-200 mt-6">

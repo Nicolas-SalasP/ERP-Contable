@@ -48,6 +48,11 @@ const GestionRoles = () => {
             'inventario.tomas_fisicas.cerrar',
             'inventario.tomas_fisicas.ajustar',
             'inventario.tomas_fisicas.cancelar',
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
+            'inventario.reglas_reposicion.crear',
+            'inventario.reglas_reposicion.editar',
+            'inventario.reglas_reposicion.eliminar',
 
 
         ],

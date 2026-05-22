@@ -7,6 +7,7 @@ use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
+use \Carbon\Carbon;
 use Exception;
 
 class FacturaService
@@ -50,6 +51,14 @@ class FacturaService
             });
         }
 
+        if (!empty($filtros['fecha_desde'])) {
+            $query->whereDate('fecha_emision', '>=', $filtros['fecha_desde']);
+        }
+
+        if (!empty($filtros['fecha_hasta'])) {
+            $query->whereDate('fecha_emision', '<=', $filtros['fecha_hasta']);
+        }
+
         $limit = $filtros['limit'] ?? 10;
         return $query->orderBy('fecha_emision', 'desc')->paginate($limit);
     }
@@ -67,8 +76,11 @@ class FacturaService
         return $factura;
     }
 
-    public function verificarDuplicado(int $empresaId, int $proveedorId, string $numero): bool
+    public function verificarDuplicado(int $empresaId, ?int $proveedorId, string $numero): bool
     {
+        if (!$proveedorId)
+            return false;
+
         return Factura::where('empresa_id', $empresaId)
             ->where('proveedor_id', $proveedorId)
             ->where('numero_factura', $numero)
@@ -96,10 +108,12 @@ class FacturaService
                 throw new Exception("La factura {$datos['numero_factura']} ya se encuentra registrada para este proveedor.");
             }
 
-            $codigoUnico = (int) (time() . rand(100, 999));
+            $codigoUnico = Factura::generarCodigoUnico();
 
             $factura = Factura::create([
                 'empresa_id' => $datos['empresa_id'],
+                'tipo' => 'COMPRA',
+                'tipo_documento' => $datos['tipo_documento'] ?? 'FACTURA',
                 'codigo_unico' => $codigoUnico,
                 'proveedor_id' => $datos['proveedor_id'],
                 'cuenta_bancaria_id' => $datos['cuenta_bancaria_id'] ?? null,
@@ -113,74 +127,358 @@ class FacturaService
                 'autorizador_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
             ]);
 
-            $anio = date('y', strtotime($factura->fecha_emision));
-            $tipo = '26';
-            $secuencia = str_pad($factura->id, 6, '0', STR_PAD_LEFT);
-            $comprobanteEstructurado = $anio . $tipo . $secuencia;
+            $esNotaCredito = ($datos['tipo_documento'] ?? '') === 'NOTA_CREDITO';
+            if ($esNotaCredito) {
+                $codigoDestino = $datos['cuentaDestino'] ?? null;
+                $codigoIva = $datos['cuentaIva'] ?? '353350';
+                $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
+            } else {
+                $codigoDestino = $datos['cuentaDestino'] ?? throw new Exception("Debe especificar la cuenta de destino/gasto.");
+                $codigoIva = $datos['cuentaIva'] ?? '353350';
+                $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
+            }
 
-            $factura->update([
-                'codigo_interno' => 'FAC-' . str_pad($factura->id, 5, '0', STR_PAD_LEFT),
-                'comprobante_contable' => $comprobanteEstructurado
-            ]);
-
-            $codigoDestino = $datos['cuentaDestino'] ?? '352130';
-
-            $cuentaIva = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '353350')->first();
-            $cuentaProveedor = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', '352105')->first();
-            $cuentaGasto = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoDestino)->first();
+            $cuentaIva = $codigoIva ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoIva)->first() : null;
+            $cuentaProveedor = $codigoProveedor ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoProveedor)->first() : null;
+            $cuentaGasto = $codigoDestino ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoDestino)->first() : null;
+            if ($esNotaCredito && (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor)) {
+                return $factura;
+            }
 
             if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
-                throw new Exception("Centralización fallida: Verifique que las cuentas 353350 (IVA Crédito), 352105 (Cuentas por Pagar) y {$codigoDestino} (Destino) existan.");
+                throw new Exception("Configuración Contable Incompleta: Verifique que las cuentas de IVA ({$codigoIva}), Proveedor ({$codigoProveedor}) y Destino ({$codigoDestino}) existan en el plan de cuentas de esta empresa.");
             }
 
             $fechaOperacion = $datos['fechaContable'] ?? $datos['fecha_emision'];
 
-            $datosAsiento = [
+            $cabeceraAsiento = [
                 'empresa_id' => $datos['empresa_id'],
-                'numero_comprobante' => $comprobanteEstructurado,
                 'fecha' => $fechaOperacion,
                 'glosa' => "Centralización Automática Factura Compra N° " . $datos['numero_factura'],
                 'tipo_asiento' => 'traspaso',
-                'estado' => 'MAYORIZADO',
                 'origen_modulo' => 'compras',
                 'origen_id' => $factura->id,
                 'usuario_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
             ];
 
-            $asiento = AsientoContable::create($datosAsiento);
+            $detallesAsiento = [];
 
-            // 1. DEBE: El Gasto (Monto Neto)
-            $asiento->detalles()->create([
+            // 1. DEBE: El Gasto
+            $detallesAsiento[] = [
                 'cuenta_contable' => $cuentaGasto->codigo,
                 'debe' => $neto,
                 'haber' => 0,
-                'fecha' => $fechaOperacion,
-                'tipo_operacion' => 'DEBE'
-            ]);
+                'glosa_detalle' => "Gasto Factura N° {$datos['numero_factura']}",
+                'centro_costo_id' => $datos['centro_costo_id'] ?? null
+            ];
 
             // 2. DEBE: IVA
             if ($iva > 0) {
-                $asiento->detalles()->create([
+                $detallesAsiento[] = [
                     'cuenta_contable' => $cuentaIva->codigo,
                     'debe' => $iva,
                     'haber' => 0,
-                    'fecha' => $fechaOperacion,
-                    'tipo_operacion' => 'DEBE'
-                ]);
+                    'glosa_detalle' => "IVA CF Factura N° {$datos['numero_factura']}"
+                ];
             }
 
-            // 3. HABER: La cuenta de Pasivo (Cuentas por Pagar - Bruto)
-            $asiento->detalles()->create([
+            // 3. HABER: Cuenta por Pagar (Bruto)
+            $detallesAsiento[] = [
                 'cuenta_contable' => $cuentaProveedor->codigo,
                 'debe' => 0,
                 'haber' => $bruto,
-                'fecha' => $fechaOperacion,
-                'tipo_operacion' => 'HABER'
-            ]);
+                'glosa_detalle' => "CxP Proveedor Factura N° {$datos['numero_factura']}"
+            ];
 
-            $factura->refresh();
+            $asiento = $this->asientoService->registrarAsiento($cabeceraAsiento, $detallesAsiento);
+
+            $factura->update([
+                'codigo_interno' => 'FAC-' . str_pad($factura->id, 5, '0', STR_PAD_LEFT),
+                'comprobante_contable' => $asiento->numero_comprobante
+            ]);
 
             return $factura;
         });
+    }
+
+    public function obtenerAsientoDeFactura(int $empresaId, int $facturaId): array
+    {
+        $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+
+        if (!$factura->comprobante_contable) {
+            throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
+        }
+
+        $asiento = AsientoContable::with(['detalles.cuenta', 'usuario'])
+            ->where('empresa_id', $empresaId)
+            ->where('numero_comprobante', $factura->comprobante_contable)
+            ->first();
+
+        if (!$asiento) {
+            throw new Exception('El asiento asociado no fue encontrado en la base de datos.');
+        }
+
+        return [
+            'cabecera' => $asiento,
+            'detalles' => $asiento->detalles->map(function ($d) {
+                return [
+                    'id' => $d->id,
+                    'cuenta_contable' => $d->cuenta_contable,
+                    'cuenta_nombre' => $d->cuenta->nombre ?? 'Sin nombre',
+                    'debe' => $d->debe,
+                    'haber' => $d->haber,
+                    'glosa_detalle' => $d->descripcion_extensa
+                ];
+            })
+        ];
+    }
+
+    public function reclasificarAsiento(int $empresaId, int $usuarioId, int $facturaId, array $datos): void
+    {
+        DB::transaction(function () use ($empresaId, $usuarioId, $facturaId, $datos) {
+            $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+
+            if (!$factura->comprobante_contable) {
+                throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
+            }
+
+            $asiento = AsientoContable::with('detalles')
+                ->where('empresa_id', $empresaId)
+                ->where('numero_comprobante', $factura->comprobante_contable)
+                ->firstOrFail();
+
+            $glosaCabeceraOriginal = $asiento->glosa;
+            $asiento->update([
+                'fecha' => $datos['fecha'],
+                'usuario_id' => $usuarioId
+            ]);
+
+            foreach ($datos['cambios'] as $detalleId => $nuevoCodigoCuenta) {
+                $lineaOriginal = $asiento->detalles->firstWhere('id', $detalleId);
+
+                if ($lineaOriginal) {
+                    $glosaLineaOriginal = $lineaOriginal->descripcion_extensa ?: $glosaCabeceraOriginal;
+
+                    $asiento->detalles()->create([
+                        'cuenta_contable' => $lineaOriginal->cuenta_contable,
+                        'debe' => $lineaOriginal->haber,
+                        'haber' => $lineaOriginal->debe,
+                        'descripcion_extensa' => "Reverso: " . $glosaLineaOriginal,
+                        'centro_costo_id' => $lineaOriginal->centro_costo_id,
+                        'empleado_nombre' => $lineaOriginal->empleado_nombre
+                    ]);
+
+                    $asiento->detalles()->create([
+                        'cuenta_contable' => $nuevoCodigoCuenta,
+                        'debe' => $lineaOriginal->debe,
+                        'haber' => $lineaOriginal->haber,
+                        'descripcion_extensa' => $datos['glosa'],
+                        'centro_costo_id' => $lineaOriginal->centro_costo_id,
+                        'empleado_nombre' => $lineaOriginal->empleado_nombre
+                    ]);
+                }
+            }
+        });
+    }
+
+    public function obtenerFacturasDisponiblesParaProyectos(int $empresaId): array
+    {
+        return Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
+            ->where('estado', '!=', 'ANULADA')
+            ->whereNull('proyecto_activo_id')
+            ->with('proveedor')
+            ->get()
+            ->map(function ($f) {
+                $nombreProv = $f->proveedor->razon_social ?? 'Proveedor sin nombre';
+                return [
+                    'factura_id' => $f->id,
+                    'numero_factura' => $f->numero_factura,
+                    'proveedor' => $nombreProv,
+                    'monto' => (float) $f->monto_neto
+                ];
+            })
+            ->toArray();
+    }
+
+    public function vincularAProyecto(int $empresaId, int $facturaId, int $proyectoId): Factura
+    {
+        $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
+        if (!$factura) {
+            throw new Exception("Factura no encontrada.", 404);
+        }
+        $factura->update(['proyecto_activo_id' => $proyectoId]);
+        return $factura;
+    }
+
+    public function obtenerPorProyecto(int $proyectoId): array
+    {
+        return Factura::where('proyecto_activo_id', $proyectoId)
+            ->with('proveedor')
+            ->get()
+            ->map(function ($f) {
+                return [
+                    'id' => $f->id,
+                    'numero' => $f->numero_factura,
+                    'proveedor' => $f->proveedor->razon_social ?? $f->proveedor->rut,
+                    'monto' => (float) $f->monto_neto
+                ];
+            })
+            ->toArray();
+    }
+
+    public function obtenerAuditoriaCompleta(int $id): array
+    {
+        $factura = Factura::with('proveedor')->findOrFail($id);
+
+        $historial = DB::table('auditorias')
+            ->where('auditable_type', Factura::class)
+            ->where('auditable_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'usuario' => $log->nombre_usuario,
+                    'fecha' => Carbon::parse($log->created_at)->format('Y-m-d H:i:s'),
+                    'operacion' => $log->operacion,
+                    'estado_ant' => $log->estado_anterior ?? '-',
+                    'estado_nue' => $log->estado_nuevo ?? '-',
+                    'detalle' => $log->detalle,
+                    'asiento' => $log->referencia_cruzada
+                ];
+            })->toArray();
+
+        if (empty($historial)) {
+            $historial = [
+                [
+                    'id' => 0,
+                    'usuario' => 'Sistema',
+                    'fecha' => $factura->created_at ? $factura->created_at->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s'),
+                    'operacion' => 'CREACIÓN',
+                    'estado_ant' => '-',
+                    'estado_nue' => $factura->estado,
+                    'detalle' => 'Registro original migrado/creado en el sistema.',
+                    'asiento' => $factura->codigo_asiento ?? null
+                ]
+            ];
+        }
+
+        return [
+            'factura' => [
+                'id' => $factura->id,
+                'numero_factura' => $factura->numero_factura,
+                'proveedor' => $factura->proveedor->razon_social ?? 'Proveedor Desconocido',
+                'estado' => $factura->estado
+            ],
+            'historial' => $historial
+        ];
+    }
+
+    public function registrarPago(int $empresaId, int $facturaId, array $datos)
+    {
+        $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+
+        if ($factura->estado === 'PAGADA') {
+            throw new Exception("Esta factura ya se encuentra pagada.");
+        }
+
+        $factura->estado = 'PAGADA';
+        $factura->fecha_pago = $datos['fechaPago'] ?? now()->format('Y-m-d');
+        $factura->medio_pago = $datos['medioPago'] ?? 'TRANSFERENCIA';
+        $factura->save();
+
+        return $factura;
+    }
+
+    public function obtenerFacturasPorIds(int $empresaId, array $ids)
+    {
+        return Factura::where('empresa_id', $empresaId)
+            ->whereIn('id', $ids)
+            ->get();
+    }
+
+    public function cambiarEstado(int $empresaId, int $id, string $estado)
+    {
+        $factura = $this->obtenerFacturaPorId($empresaId, $id);
+        $factura->update(['estado' => $estado]);
+        return $factura;
+    }
+
+    public function obtenerFacturasImpagasPorMontoExacto(int $empresaId, string $tipo, float $monto)
+    {
+        return Factura::with(['proveedor', 'cliente'])
+            ->where('empresa_id', $empresaId)
+            ->where('tipo', $tipo)
+            ->where('estado', '!=', 'PAGADA')
+            ->where('monto_bruto', $monto)
+            ->get();
+    }
+
+    public function anularFactura(int $empresaId, int $userId, int $facturaId, string $motivo)
+    {
+        return DB::transaction(function () use ($empresaId, $userId, $facturaId, $motivo) {
+
+            $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
+
+            if ($factura->estado === 'ANULADA') {
+                throw new Exception("Esta factura ya fue anulada anteriormente.");
+            }
+
+            if ($factura->estado === 'PAGADA') {
+                throw new Exception("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.");
+            }
+
+            if ($factura->comprobante_contable) {
+                $this->asientoService->reversarAsiento(
+                    $empresaId,
+                    $userId,
+                    $factura->comprobante_contable,
+                    "Reversa automática por anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}"
+                );
+            }
+            
+            $factura->estado = 'ANULADA';
+
+            if ($factura->proyecto_activo_id) {
+                $factura->proyecto_activo_id = null;
+            }
+
+            $factura->save();
+
+            return $factura;
+        });
+    }
+
+    public function obtenerVencidas(int $empresaId)
+    {
+        return Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->whereNotNull('fecha_vencimiento')
+            ->whereDate('fecha_vencimiento', '<', now()->toDateString())
+            ->with('proveedor')
+            ->orderBy('fecha_vencimiento', 'asc')
+            ->get();
+    }
+
+    public function generarCsvExportacion(int $empresaId): string
+    {
+        $facturas = Factura::where('empresa_id', $empresaId)
+            ->with('proveedor')
+            ->orderBy('fecha_emision', 'desc')
+            ->get();
+
+        $csvData = "ID,Numero Factura,Proveedor,RUT,Fecha Emision,Fecha Vencimiento,Monto Neto,IVA,Monto Bruto,Estado\n";
+
+        foreach ($facturas as $f) {
+            $provNombre = $f->proveedor->razon_social ?? 'Sin Proveedor';
+            $provRut = $f->proveedor->rut ?? 'N/A';
+            $emision = $f->fecha_emision ? $f->fecha_emision->format('Y-m-d') : '';
+            $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
+            $csvData .= "{$f->id},{$f->numero_factura},\"{$provNombre}\",{$provRut},{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
+        }
+
+        return $csvData;
     }
 }

@@ -17,11 +17,8 @@ use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
-use App\Domains\Core\Controllers\EmpresaController;
-use App\Domains\Core\Controllers\AnulacionController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
-use App\Domains\Core\Controllers\UsuarioController;
 use App\Domains\Inventario\Controllers\InventarioController;
 
 Route::prefix('auth')->group(function () {
@@ -170,6 +167,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad']);
         Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto']);
+
+
+        Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion']);
+        Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion']);
+        Route::get('/reglas-reposicion/{id}', [InventarioController::class, 'showReglaReposicion']);
+        Route::put('/reglas-reposicion/{id}', [InventarioController::class, 'updateReglaReposicion']);
+        Route::delete('/reglas-reposicion/{id}', [InventarioController::class, 'destroyReglaReposicion']);
+        Route::get('/alertas', [InventarioController::class, 'alertas']);
+        Route::get('/reposicion/sugerencias', [InventarioController::class, 'sugerenciasReposicion']);
 
         Route::get('/reservas', [InventarioController::class, 'reservas']);
         Route::post('/reservas', [InventarioController::class, 'storeReserva']);

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Services\EmpresaService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Exception;
 
 class EmpresaController extends Controller
@@ -42,7 +43,15 @@ class EmpresaController extends Controller
     public function actualizarPerfil(Request $request)
     {
         try {
-            $datos = $request->except('logo');
+            $request->validate([
+                'razon_social' => 'nullable|string|max:150',
+                'direccion' => 'nullable|string|max:255',
+                'telefono' => 'nullable|string|max:50',
+                'email' => 'nullable|email|max:100',
+            ]);
+
+            $datos = $request->except(['logo', 'rut', 'empresa_id', 'id']);
+
             $empresa = $this->empresaService->actualizarDatos($request->user()->empresa_id, $datos);
 
             if ($request->hasFile('logo')) {
@@ -54,6 +63,12 @@ class EmpresaController extends Controller
                 'message' => 'Perfil actualizado.',
                 'data' => $empresa->fresh()
             ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -67,6 +82,13 @@ class EmpresaController extends Controller
             $path = $this->empresaService->actualizarLogo($request->user()->empresa_id, $request->file('logo'));
 
             return response()->json(['success' => true, 'logo_url' => $path]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
@@ -75,8 +97,19 @@ class EmpresaController extends Controller
     public function agregarBanco(Request $request)
     {
         try {
-            $cuenta = $this->empresaService->agregarBanco($request->user()->empresa_id, $request->all());
-            return response()->json(['success' => true, 'data' => $cuenta]);
+            $datos = $request->validate([
+                'banco' => 'required|string|max:100',
+                'tipo_cuenta' => 'required|string|max:50',
+                'numero_cuenta' => 'required|string|max:50',
+                'titular' => 'required|string|max:150',
+                'rut_titular' => 'required|string|max:20',
+                'email_notificacion' => 'nullable|email|max:100'
+            ]);
+
+            $cuenta = $this->empresaService->agregarBanco($request->user()->empresa_id, $datos);
+            return response()->json(['success' => true, 'data' => $cuenta], 201);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -120,8 +153,15 @@ class EmpresaController extends Controller
     public function agregarCentro(Request $request)
     {
         try {
-            $centro = $this->empresaService->agregarCentroCosto($request->user()->empresa_id, $request->all());
+            $datos = $request->validate([
+                'codigo' => 'required|string|max:20',
+                'nombre' => 'required|string|max:100'
+            ]);
+
+            $centro = $this->empresaService->agregarCentroCosto($request->user()->empresa_id, $datos);
             return response()->json(['success' => true, 'data' => $centro]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
         }
@@ -145,5 +185,91 @@ class EmpresaController extends Controller
         } catch (Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
         }
+    }
+
+    public function verificarRut(Request $request)
+    {
+        $rut = trim($request->query('rut', ''));
+
+        if (!$rut) {
+            return response()->json(['existe' => false]);
+        }
+
+        $existe = Empresa::where('rut', $rut)->exists();
+
+        return response()->json(['existe' => $existe]);
+    }
+
+    public function onboarding(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado.'], 401);
+        }
+
+        if ($user->empresa_id) {
+            return response()->json(['success' => false, 'message' => 'Este usuario ya tiene una empresa asignada.'], 422);
+        }
+
+        $request->validate([
+            'empresa_rut'          => ['required', 'string', 'max:20'],
+            'empresa_razon_social' => ['required', 'string', 'max:150'],
+            'giro'                 => ['nullable', 'string', 'max:255'],
+            'direccion'            => ['nullable', 'string', 'max:255'],
+            'telefono'             => ['nullable', 'string', 'max:50'],
+            'regimen_tributario'   => ['nullable', 'in:14_D3,14_D8,14_A'],
+        ]);
+
+        return DB::transaction(function () use ($request, $user) {
+            $empresa = Empresa::create([
+                'rut'                => $request->empresa_rut,
+                'razon_social'       => $request->empresa_razon_social,
+                'direccion'          => $request->direccion,
+                'telefono'           => $request->telefono,
+                'regimen_tributario' => $request->regimen_tributario ?? '14_D3',
+            ]);
+
+            $user->empresa_id = $empresa->id;
+            $user->save();
+
+            $user->currentAccessToken()->delete();
+            $token = $user->createToken('react-spa-token')->plainTextToken;
+
+            $user->load(['empresa', 'rol']);
+
+            $permisos = $user->rol->permisos ?? [];
+            if ($user->rol && $user->rol->jerarquia >= 100) {
+                $permisos = [
+                    'ventas.ver', 'ventas.crear', 'clientes.ver', 'clientes.crear',
+                    'compras.ver', 'compras.crear', 'proveedores.ver', 'proveedores.crear',
+                    'tesoreria.ver', 'tesoreria.crear', 'contabilidad.ver', 'contabilidad.crear',
+                    'activos.ver', 'activos.crear', 'tributario.ver', 'tributario.crear',
+                    'usuarios.ver', 'usuarios.gestionar',
+                    'inventario.productos.ver', 'inventario.productos.crear', 'inventario.productos.editar',
+                    'inventario.bodegas.ver', 'inventario.bodegas.crear',
+                    'inventario.movimientos.ver', 'inventario.movimientos.entrada',
+                    'inventario.movimientos.salida', 'inventario.movimientos.traspaso',
+                    'inventario.movimientos.ajuste', 'inventario.kardex.ver',
+                    'inventario.valorizacion.ver', 'inventario.lotes.ver', 'inventario.lotes.crear',
+                    'inventario.reservas.ver', 'inventario.reservas.crear',
+                    'inventario.tomas_fisicas.ver', 'inventario.tomas_fisicas.crear',
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'token'   => $token,
+                'user'    => [
+                    'id'         => $user->id,
+                    'nombre'     => $user->nombre,
+                    'email'      => $user->email,
+                    'empresa_id' => $user->empresa_id,
+                    'rol_id'     => $user->rol_id,
+                    'plan_slug'  => $user->plan_slug,
+                    'permisos'   => $permisos,
+                ],
+            ]);
+        });
     }
 }

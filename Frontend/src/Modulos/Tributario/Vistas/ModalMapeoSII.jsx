@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
+import BotonAccion from '../../../Componentes/BotonAccion';
 import Swal from 'sweetalert2';
-
+import { logger } from '../../../Configuracion/logger';
 const ModalMapeoSII = ({ onClose }) => {
     const [mapeadas, setMapeadas] = useState([]);
     const [disponibles, setDisponibles] = useState([]);
     const [conceptos, setConceptos] = useState({});
     const [loading, setLoading] = useState(true);
-
     const [nuevoMapeo, setNuevoMapeo] = useState({ codigo_cuenta: '', concepto_sii: '' });
-
+    const [saving, setSaving] = useState(false);
     const cargarDatos = async () => {
         setLoading(true);
         try {
@@ -20,7 +21,7 @@ const ModalMapeoSII = ({ onClose }) => {
                 setConceptos(res.data.conceptos);
             }
         } catch (error) {
-            console.error("Error cargando mapeo:", error);
+            logger.error("Error cargando mapeo:", error);
             Swal.fire('Error', 'No se pudieron cargar las cuentas', 'error');
         } finally {
             setLoading(false);
@@ -33,6 +34,7 @@ const ModalMapeoSII = ({ onClose }) => {
 
     const handleGuardar = async (e) => {
         e.preventDefault();
+        setSaving(true);
         try {
             const res = await api.post('/renta/mapeo', nuevoMapeo);
             if (res.success) {
@@ -48,21 +50,27 @@ const ModalMapeoSII = ({ onClose }) => {
                 cargarDatos(); 
             }
         } catch (error) {
-            Swal.fire('Error', error.message || 'Error al guardar el mapeo', 'error');
+            const mensajeError = error.response?.data?.message || error.message || 'Error al guardar el mapeo';
+            Swal.fire({
+                icon: 'error',
+                title: 'No se pudo vincular',
+                text: mensajeError,
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' },
+                buttonsStyling: false
+            });
+        } finally {
+            setSaving(false);
         }
     };
 
-    // Actualizamos la función para recibir nombre y código
     const handleEliminar = async (id, nombre, codigo) => {
         const confirm = await Swal.fire({
             title: '¿Desvincular cuenta?',
-            // Usamos HTML para poner en negrita la cuenta específica
             html: `La cuenta <br/><strong>${codigo} - ${nombre}</strong><br/> dejará de sumar o restar en tu cálculo de impuestos.`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Sí, desvincular',
             cancelButtonText: 'Cancelar',
-            // Desactivamos los estilos de SweetAlert para usar los de Tailwind
             buttonsStyling: false,
             customClass: {
                 confirmButton: 'bg-rose-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-rose-700 mx-2 transition-colors',
@@ -84,7 +92,14 @@ const ModalMapeoSII = ({ onClose }) => {
                     cargarDatos();
                 }
             } catch (error) {
-                Swal.fire('Error', error.message || 'Error al eliminar', 'error');
+                const mensajeError = error.response?.data?.message || error.message || 'Error al eliminar';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Acción Rechazada',
+                    text: mensajeError,
+                    customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' },
+                    buttonsStyling: false
+                });
             }
         }
     };
@@ -134,9 +149,16 @@ const ModalMapeoSII = ({ onClose }) => {
                                     ))}
                                 </select>
                             </div>
-                            <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-colors whitespace-nowrap">
+                            <BotonAccion
+                                type="submit"
+                                cargando={saving}
+                                color="indigo"
+                                tamano="md"
+                                textoCargando="Procesando..."
+                                className="whitespace-nowrap min-w-[160px]"
+                            >
                                 Agregar Mapeo
-                            </button>
+                            </BotonAccion>
                         </form>
                     </div>
 
@@ -145,7 +167,12 @@ const ModalMapeoSII = ({ onClose }) => {
                             <h4 className="font-bold text-slate-700">Cuentas Mapeadas Actualmente</h4>
                         </div>
                         {loading ? (
-                            <div className="p-8 text-center text-slate-400"><i className="fas fa-spinner fa-spin text-2xl"></i></div>
+                            <EstadoCarga
+                                cargando={true}
+                                mensajeCargando=""
+                                tamano="inline"
+                                color="indigo"
+                            />
                         ) : (
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-white border-b border-slate-100 text-slate-500 uppercase text-xs">

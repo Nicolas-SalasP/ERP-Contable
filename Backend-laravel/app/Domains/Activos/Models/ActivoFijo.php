@@ -4,6 +4,7 @@ namespace App\Domains\Activos\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Domains\Contabilidad\Models\CentroCosto;
+use App\Domains\Contabilidad\Models\PlanCuenta;
 
 class ActivoFijo extends Model
 {
@@ -29,5 +30,10 @@ class ActivoFijo extends Model
     public function centroCosto()
     {
         return $this->belongsTo(CentroCosto::class, 'centro_costo_id');
+    }
+
+    public function cuenta()
+    {
+        return $this->belongsTo(PlanCuenta::class, 'cuenta_activo_codigo', 'codigo');
     }
 }

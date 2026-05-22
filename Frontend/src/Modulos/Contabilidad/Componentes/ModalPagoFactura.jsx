@@ -1,56 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { api } from '../../../Configuracion/api'; // Ajusta la ruta a tu api
+import { api } from '../../../Configuracion/api';
+import BotonAccion from '../../../Componentes/BotonAccion';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
     const [loading, setLoading] = useState(false);
     const [formPago, setFormPago] = useState({
-        fecha_pago: new Date().toISOString().split('T')[0],
-        monto_pagado: '',
-        cuenta_bancaria_empresa_id: '1', // ID 1 = Scotiabank en tu BD
-        cuenta_contable_banco: '110107', // Código contable del Scotiabank
-        numero_operacion: ''
+        fechaPago: new Date().toISOString().split('T')[0],
+        medioPago: 'TRANSFERENCIA',
+        numeroOperacion: '',
+        cuentaOrigen: '1'
     });
 
-    // Cuando se abre el modal, seteamos el monto por defecto al total de la factura
     useEffect(() => {
-        if (factura) {
-            setFormPago(prev => ({ ...prev, monto_pagado: factura.monto_bruto }));
+        if (isOpen && factura) {
+            setFormPago({
+                fechaPago: new Date().toISOString().split('T')[0],
+                medioPago: 'TRANSFERENCIA',
+                numeroOperacion: '',
+                cuentaOrigen: '1'
+            });
         }
-    }, [factura]);
+    }, [isOpen, factura]);
 
     if (!isOpen || !factura) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        if (formPago.monto_pagado <= 0) {
-            return Swal.fire('Error', 'El monto a pagar debe ser mayor a cero.', 'error');
-        }
 
         setLoading(true);
         try {
             const res = await api.post(`/facturas/${factura.id}/pagar`, formPago);
-            
+
             if (res.success) {
                 Swal.fire({
                     icon: 'success',
-                    title: '¡Pago Registrado!',
-                    text: `El pago ha sido contabilizado con éxito. (Asiento N° ${res.asiento_codigo})`,
-                    customClass: { confirmButton: 'bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg' },
-                    buttonsStyling: false
+                    title: '¡Pago Contabilizado!',
+                    html: `La factura <b>#${factura.numero_factura}</b> ha sido marcada como pagada.<br/><span class="text-sm text-slate-500">Fecha de egreso: ${new Date(formPago.fechaPago).toLocaleDateString('es-CL')}</span>`,
+                    customClass: { confirmButton: 'bg-emerald-600 text-white font-bold py-2.5 px-6 rounded-lg shadow-md' },
+                    buttonsStyling: false,
+                    timer: 3000
                 });
-                onPagoExitoso(); // Recarga la tabla en el componente padre
-                onClose(); // Cierra el modal
+                onPagoExitoso();
+                onClose();
             }
         } catch (error) {
             Swal.fire({
                 icon: 'error',
-                title: 'Error al procesar el pago',
-                text: error.response?.data?.mensaje || 'Hubo un problema de conexión.',
-                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' },
+                title: 'Error al procesar el egreso',
+                text: error.response?.data?.message || 'Hubo un problema de conexión con el servidor.',
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2.5 px-6 rounded-lg' },
                 buttonsStyling: false
             });
         } finally {
@@ -59,78 +60,145 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
-                <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white">
-                    <div>
-                        <h2 className="text-lg font-bold">Pagar Factura N° {factura.numero_factura}</h2>
-                        <p className="text-xs text-slate-400 mt-1">{factura.nombre_proveedor}</p>
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+                <div className="bg-slate-900 px-6 py-5 flex justify-between items-center text-white shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+                            <i className="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black tracking-tight">Ejecutar Pago de Factura</h2>
+                            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mt-0.5">Comprobante de Egreso</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-                        <i className="fas fa-times text-xl"></i>
+                    <button onClick={onClose} className="text-slate-400 hover:text-rose-400 transition-colors bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center">
+                        <i className="fas fa-times"></i>
                     </button>
                 </div>
-                
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    {/* Resumen de la Deuda */}
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex justify-between items-center">
-                        <div>
-                            <p className="text-xs font-bold text-emerald-700 uppercase">Total a Pagar</p>
-                            <p className="text-2xl font-black text-emerald-900">{formatCurrency(factura.monto_bruto)}</p>
-                        </div>
-                        <i className="fas fa-file-invoice-dollar text-3xl text-emerald-300"></i>
-                    </div>
 
-                    {/* Banco de Origen */}
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Banco de Origen (Empresa)</label>
-                        <select 
-                            className="w-full border border-slate-300 rounded-lg p-3 font-medium text-slate-800 outline-none bg-slate-50 cursor-not-allowed"
-                            value={formPago.cuenta_bancaria_empresa_id}
-                            disabled
-                        >
-                            <option value="1">Scotiabank - Cta Corriente (...0431)</option>
-                        </select>
-                        <p className="text-[10px] text-slate-400 mt-1">* Por ahora usando tu cuenta principal registrada.</p>
-                    </div>
+                <div className="overflow-y-auto custom-scrollbar">
+                    <form id="form-pago-factura" onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8">
+                        <section>
+                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <i className="fas fa-file-invoice"></i> Resumen de la Deuda
+                            </h3>
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div className="w-full md:w-auto">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Proveedor</p>
+                                    <p className="font-bold text-slate-800 text-lg truncate max-w-[250px]">{factura.nombre_proveedor}</p>
+                                    <p className="text-sm font-mono text-slate-500">Factura N° {factura.numero_factura}</p>
+                                </div>
+                                <div className="w-full md:w-auto text-left md:text-right border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-6">
+                                    <p className="text-[10px] font-bold text-emerald-600 uppercase">Monto Total a Pagar</p>
+                                    <p className="text-3xl font-black text-emerald-600 tracking-tight">{formatCurrency(factura.monto_bruto)}</p>
+                                </div>
+                            </div>
+                        </section>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Fecha de Pago</label>
-                            <input 
-                                type="date" 
-                                required
-                                value={formPago.fecha_pago}
-                                onChange={e => setFormPago({...formPago, fecha_pago: e.target.value})}
-                                className="w-full border border-slate-300 rounded-lg p-3 font-bold text-slate-800 outline-none focus:border-emerald-500 transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">N° Transf. / Cheque</label>
-                            <input 
-                                type="text" 
-                                placeholder="Opcional"
-                                value={formPago.numero_operacion}
-                                onChange={e => setFormPago({...formPago, numero_operacion: e.target.value})}
-                                className="w-full border border-slate-300 rounded-lg p-3 font-bold text-slate-800 outline-none focus:border-emerald-500 transition-all"
-                            />
-                        </div>
-                    </div>
+                        <section>
+                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <i className="fas fa-sliders-h"></i> Parámetros de Egreso
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                    <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
-                        <button type="button" onClick={onClose} className="px-5 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold transition-all">
-                            Cancelar
-                        </button>
-                        <button 
-                            type="submit" 
-                            disabled={loading}
-                            className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-bold shadow-lg hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center"
-                        >
-                            {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-check-circle mr-2"></i>}
-                            Procesar Pago
-                        </button>
-                    </div>
-                </form>
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Medio de Pago</label>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {['TRANSFERENCIA', 'CHEQUE', 'EFECTIVO', 'TARJETA'].map((medio) => (
+                                            <label
+                                                key={medio}
+                                                className={`cursor-pointer border rounded-xl p-3 text-center transition-all ${formPago.medioPago === medio ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="medioPago"
+                                                    value={medio}
+                                                    checked={formPago.medioPago === medio}
+                                                    onChange={e => setFormPago({ ...formPago, medioPago: e.target.value })}
+                                                    className="hidden"
+                                                />
+                                                <i className={`text-xl mb-1 block ${formPago.medioPago === medio ? 'text-indigo-600' : 'text-slate-400'} 
+                                                    ${medio === 'TRANSFERENCIA' ? 'fas fa-exchange-alt' :
+                                                        medio === 'CHEQUE' ? 'fas fa-money-check-alt' :
+                                                            medio === 'EFECTIVO' ? 'fas fa-coins' : 'fas fa-credit-card'}`}>
+                                                </i>
+                                                <span className={`text-xs font-bold ${formPago.medioPago === medio ? 'text-indigo-800' : 'text-slate-600'}`}>
+                                                    {medio.charAt(0) + medio.slice(1).toLowerCase()}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Fecha Exacta del Egreso</label>
+                                    <div className="relative">
+                                        <i className="fas fa-calendar-alt absolute left-4 top-3.5 text-slate-400"></i>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={formPago.fechaPago}
+                                            onChange={e => setFormPago({ ...formPago, fechaPago: e.target.value })}
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">N° Ref. / Operación</label>
+                                    <div className="relative">
+                                        <i className="fas fa-hashtag absolute left-4 top-3.5 text-slate-400"></i>
+                                        <input
+                                            type="text"
+                                            placeholder="Ej: 884721"
+                                            value={formPago.numeroOperacion}
+                                            onChange={e => setFormPago({ ...formPago, numeroOperacion: e.target.value })}
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl font-mono font-bold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Cuenta Contable / Banco de Origen</label>
+                                    <div className="relative">
+                                        <i className="fas fa-university absolute left-4 top-3.5 text-slate-400"></i>
+                                        <select
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium text-slate-600 outline-none bg-slate-50 cursor-not-allowed appearance-none"
+                                            value={formPago.cuentaOrigen}
+                                            disabled
+                                        >
+                                            <option value="1">Banco Scotiabank - Cta Corriente (...0431)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </form>
+                </div>
+
+                <div className="bg-slate-50 px-6 py-4 flex flex-col-reverse md:flex-row justify-end gap-3 border-t border-slate-200 shrink-0">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="w-full md:w-auto px-6 py-3 text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-sm font-bold transition-all"
+                    >
+                        Cancelar
+                    </button>
+                    <BotonAccion
+                        type="submit"
+                        form="form-pago-factura"
+                        cargando={loading}
+                        color="emerald"
+                        tamano="lg"
+                        textoCargando="Procesando..."
+                        icono="fas fa-check-double"
+                        className="w-full md:w-auto"
+                    >
+                        Confirmar Egreso
+                    </BotonAccion>
+                </div>
+
             </div>
         </div>
     );

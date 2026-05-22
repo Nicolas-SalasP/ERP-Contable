@@ -21,6 +21,10 @@ class User extends Authenticatable
         'rol_id',
         'estado_suscripcion_id',
         'ultimo_acceso',
+        'tenri_user_id',
+        'plan_slug',
+        'module_keys',
+        'tenri_synced_at',
     ];
 
     protected $hidden = [
@@ -32,6 +36,8 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'module_keys' => 'array',
+            'tenri_synced_at' => 'datetime',
         ];
     }
 

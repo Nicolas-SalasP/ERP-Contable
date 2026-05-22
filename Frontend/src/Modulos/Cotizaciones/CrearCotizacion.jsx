@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../Componentes/AyudaModulo';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import FilaItemCotizacion from './Componentes/FilaItemCotizacion';
 import ModalGenerico from '../../Componentes/ModalGenerico';
 
+import { logger } from '../../Configuracion/logger';
 const CrearCotizacion = () => {
     const navigate = useNavigate();
-
     const [clientes, setClientes] = useState([]);
     const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
     const [busquedaCliente, setBusquedaCliente] = useState('');
     const [mostrarDropdown, setMostrarDropdown] = useState(false);
-
     const [items, setItems] = useState([{ productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
     const [validez, setValidez] = useState(15);
@@ -25,12 +25,11 @@ const CrearCotizacion = () => {
             try {
                 const res = await api.get('/clientes');
                 if (res.success) setClientes(res.data);
-            } catch (error) { console.error("Error cargando clientes:", error); }
+            } catch (error) { logger.error("Error cargando clientes:", error); }
         };
         fetchClientes();
     }, []);
 
-    // BUSCADOR MEJORADO: Filtra por RUT y Razón Social
     const clientesFiltrados = clientes.filter(c =>
         c.razon_social.toLowerCase().includes(busquedaCliente.toLowerCase()) ||
         c.rut.toLowerCase().includes(busquedaCliente.toLowerCase())
@@ -38,7 +37,6 @@ const CrearCotizacion = () => {
 
     const handleItemChange = (index, name, value) => {
         const nuevosItems = [...items];
-        // Convertimos a número si es cantidad o precio para evitar errores de cálculo
         nuevosItems[index][name] = (name === 'cantidad' || name === 'precioUnitario') ? Number(value) : value;
         setItems(nuevosItems);
     };
@@ -63,13 +61,29 @@ const CrearCotizacion = () => {
         }
 
         try {
+            const detallesMapeados = items.map(item => ({
+                producto_nombre: item.productoNombre,
+                descripcion: item.descripcion,
+                cantidad: Number(item.cantidad),
+                precio_unitario: Number(item.precioUnitario)
+            }));
+
             const res = await api.post('/cotizaciones', {
+                cliente_id: clienteSeleccionado.id,
                 clienteId: clienteSeleccionado.id,
+                
+                fecha_emision: fecha,
                 fechaEmision: fecha,
+                
+                validez_dias: validez,
                 validezDias: validez,
+                
+                es_afecta: esAfecta ? 1 : 0,
                 esAfecta: esAfecta ? 1 : 0,
+ 
+                porcentaje_iva: ivaPorcentaje,
                 porcentajeIva: ivaPorcentaje,
-                items: items
+                detalles: detallesMapeados 
             });
 
             if (res.success) {
@@ -82,7 +96,9 @@ const CrearCotizacion = () => {
                 });
             }
         } catch (error) {
-            setModal({ show: true, title: 'Error', message: 'No se pudo guardar la cotización.', type: 'danger' });
+            logger.error("Error del backend:", error.response?.data || error);
+            const mensajeError = error.response?.data?.message || 'No se pudo guardar la cotización.';
+            setModal({ show: true, title: 'Error', message: mensajeError, type: 'danger' });
         }
     };
 
@@ -96,7 +112,7 @@ const CrearCotizacion = () => {
         <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Nueva Cotización</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-900">Nueva Cotización</h1><AyudaModulo moduloId="crearCotizacion" /></div>
                     <p className="text-slate-500 text-sm">Vincule un cliente y detalle los productos o servicios</p>
                 </div>
             </div>

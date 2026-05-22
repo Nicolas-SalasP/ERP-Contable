@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import ModalGenerico from '../../Componentes/ModalGenerico';
 import Swal from 'sweetalert2';
-
+import AyudaModulo from '../../Componentes/AyudaModulo';
+import EstadoCarga from '../../Componentes/EstadoCarga';
+import { logger } from '../../Configuracion/logger';
 const GestionCotizaciones = () => {
     const [cotizaciones, setCotizaciones] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const GestionCotizaciones = () => {
             const res = await api.get('/cotizaciones');
             if (res.success) setCotizaciones(res.data);
         } catch (err) {
-            console.error("Error al cargar cotizaciones:", err);
+            logger.error("Error al cargar cotizaciones:", err);
             Swal.fire('Error', 'No se pudieron cargar las cotizaciones', 'error');
         } finally {
             setLoading(false);
@@ -69,48 +71,18 @@ const GestionCotizaciones = () => {
             }
         } catch (error) {
             setConfirmarAccion({ ...confirmarAccion, show: false });
-            Swal.fire('Error', 'No se pudo actualizar el estado de la cotización.', 'error');
+            Swal.fire('Error', error.response?.data?.message || 'No se pudo actualizar el estado de la cotización.', 'error');
         }
     };
 
     const descargarPDF = async (id, nombreCliente) => {
         try {
-            let tokenRaw = localStorage.getItem('token') ||
-                localStorage.getItem('erp_token') ||
-                sessionStorage.getItem('erp_token');
-
-            if (!tokenRaw) {
-                Swal.fire('Sesión Expirada', 'No se encontró una sesión activa. Por favor, reingrese al sistema.', 'warning');
-                return;
-            }
-
-            const token = tokenRaw.startsWith('"') ? JSON.parse(tokenRaw) : tokenRaw;
-
-            const baseURL = api.defaults?.baseURL || window.location.origin + '/api';
-
-            const response = await fetch(`${baseURL}/cotizaciones/pdf/${id}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/pdf'
-                }
-            });
-
-            if (response.status === 401) throw new Error('Tu sesión ha expirado o el token es inválido.');
-            if (!response.ok) throw new Error('El servidor no pudo generar el archivo PDF.');
-
             const clienteSeguro = nombreCliente ? nombreCliente.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim() : 'Cliente';
             const nombreArchivo = `Cotizacion_${id} - ${clienteSeguro}.pdf`;
 
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', nombreArchivo);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            // api.download maneja auth, errores y dispara la descarga en el browser.
+            // { silent: true } porque ya manejamos el error a mano con Swal.
+            await api.download(`/cotizaciones/pdf/${id}`, nombreArchivo, { silent: true });
 
         } catch (error) {
             Swal.fire('Error de Descarga', error.message, 'error');
@@ -121,9 +93,10 @@ const GestionCotizaciones = () => {
         const matchBusqueda =
             c.nombre_cliente?.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
             c.id?.toString().includes(filtros.busqueda) ||
-            c.folio?.toString().includes(filtros.busqueda);
+            c.numero_cotizacion?.toString().toLowerCase().includes(filtros.busqueda.toLowerCase());
 
-        const matchEstado = filtros.estado === '' || c.estado_nombre === filtros.estado;
+        const nombreEstado = c.estado?.nombre || 'Borrador';
+        const matchEstado = filtros.estado === '' || nombreEstado === filtros.estado;
 
         const matchFecha = (!filtros.fechaInicio || c.fecha_emision >= filtros.fechaInicio) &&
             (!filtros.fechaFin || c.fecha_emision <= filtros.fechaFin);
@@ -133,11 +106,10 @@ const GestionCotizaciones = () => {
 
     const getEstadoStyle = (estado) => {
         switch (estado?.toUpperCase()) {
-            case 'ACEPTADA':
-            case 'APROBADA': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-            case 'ANULADA':
-            case 'RECHAZADA': return 'bg-red-50 text-red-700 border-red-200';
-            default: return 'bg-amber-50 text-amber-700 border-amber-200';
+            case 'ACEPTADA': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            case 'RECHAZADA': return 'bg-rose-50 text-rose-700 border-rose-200';
+            case 'ENVIADA': return 'bg-blue-50 text-blue-700 border-blue-200';
+            default: return 'bg-amber-50 text-amber-700 border-amber-200'; // Borrador
         }
     };
 
@@ -166,7 +138,7 @@ const GestionCotizaciones = () => {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Historial de Cotizaciones</h2>
+                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900">Historial de Cotizaciones</h2><AyudaModulo moduloId="cotizacion" size={26} /></div>
                     <p className="text-slate-500 text-sm mt-1">Gestiona y filtra tus propuestas comerciales</p>
                 </div>
                 <Link to="/cotizaciones/nueva" className="w-full sm:w-auto text-center bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold shadow hover:bg-emerald-700 transition-all active:scale-95">
@@ -198,9 +170,10 @@ const GestionCotizaciones = () => {
                         onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
                     >
                         <option value="">Todos los estados</option>
-                        <option value="PENDIENTE">Pendientes</option>
-                        <option value="ACEPTADA">Aceptadas / Aprobadas</option>
-                        <option value="ANULADA">Anuladas / Rechazadas</option>
+                        <option value="Borrador">Borrador</option>
+                        <option value="Enviada">Enviada</option>
+                        <option value="Aceptada">Aceptadas</option>
+                        <option value="Rechazada">Rechazadas</option>
                     </select>
                 </div>
                 <div>
@@ -223,37 +196,41 @@ const GestionCotizaciones = () => {
                 </div>
             </div>
 
-            {loading ? (
-                <div className="p-10 text-center text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-3"></div>
-                    <p className="font-medium">Cargando cotizaciones...</p>
-                </div>
-            ) : cotizacionesFiltradas.length === 0 ? (
-                <div className="p-10 text-center text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <p className="font-medium">No se encontraron resultados para tu búsqueda.</p>
+            {loading || cotizacionesFiltradas.length === 0 ? (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && cotizacionesFiltradas.length === 0}
+                        mensajeCargando="Cargando cotizaciones..."
+                        mensajeVacio="No se encontraron resultados para tu búsqueda."
+                        iconoVacio="📋"
+                        tamano="compacto"
+                        color="emerald"
+                    />
                 </div>
             ) : (
                 <>
                     <div className="grid grid-cols-1 gap-4 md:hidden">
-                        {cotizacionesFiltradas.map(c => (
+                        {cotizacionesFiltradas.map(c => {
+                            const nombreEstado = c.estado?.nombre || 'Borrador';
+                            return (
                             <div key={c.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">
-                                <div className={`absolute top-0 left-0 w-1.5 h-full ${c.estado_nombre === 'ACEPTADA' ? 'bg-emerald-500' : c.estado_nombre === 'ANULADA' ? 'bg-red-400' : 'bg-amber-400'}`}></div>
+                                <div className={`absolute top-0 left-0 w-1.5 h-full ${nombreEstado === 'ACEPTADA' ? 'bg-emerald-500' : nombreEstado === 'Rechazada' ? 'bg-rose-400' : 'bg-amber-400'}`}></div>
 
                                 <div className="flex justify-between items-start mb-2 pl-2">
                                     <div>
-                                        <div className="text-xs font-bold text-slate-400 font-mono mb-0.5">#{c.id.toString().padStart(5, '0')}</div>
+                                        <div className="text-xs font-bold text-slate-400 font-mono mb-0.5">{c.numero_cotizacion}</div>
                                         <h3 className="font-bold text-slate-800 leading-tight">{c.nombre_cliente}</h3>
                                     </div>
-                                    <span className={`inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full uppercase border ${getEstadoStyle(c.estado_nombre)}`}>
-                                        {c.estado_nombre}
+                                    <span className={`inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full uppercase border ${getEstadoStyle(nombreEstado)}`}>
+                                        {nombreEstado}
                                     </span>
                                 </div>
 
                                 <div className="pl-2 space-y-1.5 mb-4">
                                     <div className="text-sm text-slate-600 flex items-center gap-2">
                                         <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        {c.fecha_emision}
+                                        {formatearFecha(c.fecha_emision)}
                                     </div>
                                     <div className="text-lg font-black text-slate-800 flex items-center gap-2">
                                         <span className="text-emerald-500 font-bold">$</span>
@@ -262,13 +239,13 @@ const GestionCotizaciones = () => {
                                 </div>
 
                                 <div className="flex gap-2 pt-3 border-t border-slate-100 pl-2">
-                                    {c.estado_nombre === 'PENDIENTE' && (
+                                    {['Borrador', 'Enviada'].includes(nombreEstado) && (
                                         <>
-                                            <button onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'ACEPTADA', tipo: 'success' })} className="flex-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-xs py-2 rounded-lg transition-colors border border-emerald-100">
+                                            <button onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Aceptada', tipo: 'success' })} className="flex-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-xs py-2 rounded-lg transition-colors border border-emerald-100">
                                                 Aceptar
                                             </button>
-                                            <button onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'ANULADA', tipo: 'danger' })} className="flex-1 bg-red-50 text-red-500 hover:bg-red-100 font-bold text-xs py-2 rounded-lg transition-colors border border-red-100">
-                                                Anular
+                                            <button onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Rechazada', tipo: 'danger' })} className="flex-1 bg-rose-50 text-rose-500 hover:bg-rose-100 font-bold text-xs py-2 rounded-lg transition-colors border border-rose-100">
+                                                Rechazar
                                             </button>
                                         </>
                                     )}
@@ -278,7 +255,7 @@ const GestionCotizaciones = () => {
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                        )})}
                     </div>
 
                     <div className="hidden md:block bg-white shadow-sm rounded-xl overflow-hidden border border-slate-200">
@@ -295,11 +272,11 @@ const GestionCotizaciones = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {cotizacionesFiltradas.map(c => {
-                                    const nombreEstado = c.estado?.nombre || c.estado_nombre || 'PENDIENTE';
+                                    const nombreEstado = c.estado?.nombre || 'Borrador';
 
                                     return (
                                         <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="p-4 text-slate-500 font-mono text-sm">#{c.id.toString().padStart(5, '0')}</td>
+                                            <td className="p-4 text-slate-500 font-mono text-sm">{c.numero_cotizacion || `#${c.id.toString().padStart(5, '0')}`}</td>
                                             <td className="p-4 text-slate-900 font-bold">{c.nombre_cliente}</td>
                                             <td className="p-4 text-slate-600 text-sm text-center">
                                                 {formatearFecha(c.fecha_emision)}
@@ -312,19 +289,19 @@ const GestionCotizaciones = () => {
                                             </td>
                                             <td className="p-4 text-right">
                                                 <div className="flex justify-end gap-2 items-center">
-                                                    {nombreEstado === 'PENDIENTE' && (
+                                                    {['Borrador', 'Enviada'].includes(nombreEstado) && (
                                                         <>
                                                             <button
-                                                                onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'ACEPTADA', tipo: 'success' })}
+                                                                onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Aceptada', tipo: 'success' })}
                                                                 className="p-2 bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg transition-all"
                                                                 title="Aceptar Cotización"
                                                             >
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
                                                             </button>
                                                             <button
-                                                                onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'ANULADA', tipo: 'danger' })}
-                                                                className="p-2 bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 hover:text-red-600 rounded-lg transition-all"
-                                                                title="Anular Cotización"
+                                                                onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Rechazada', tipo: 'danger' })}
+                                                                className="p-2 bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-100 hover:text-rose-600 rounded-lg transition-all"
+                                                                title="Rechazar Cotización"
                                                             >
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                                                             </button>

@@ -85,6 +85,8 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 'inventario.reservas.ver',
                 'inventario.disponibilidad.ver',
                 'inventario.tomas_fisicas.ver',
+                'inventario.alertas.ver',
+                'inventario.reglas_reposicion.ver',
             ],
             subItems: [
                 {
@@ -100,6 +102,8 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                         'inventario.reservas.ver',
                         'inventario.disponibilidad.ver',
                         'inventario.tomas_fisicas.ver',
+                        'inventario.alertas.ver',
+                        'inventario.reglas_reposicion.ver',
                     ],
                 },
                 {
@@ -141,6 +145,11 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     path: '/inventario/valorizacion',
                     label: 'Valorización',
                     permisosRequeridos: ['inventario.valorizacion.ver'],
+                },
+                {
+                    path: '/inventario/alertas',
+                    label: 'Alertas y Reposición',
+                    permisosRequeridos: ['inventario.alertas.ver'],
                 },
             ]
         },

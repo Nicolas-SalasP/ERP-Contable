@@ -17,6 +17,8 @@ class DetalleAsiento extends Model
         'debe',
         'haber',
         'descripcion_extensa',
+        'centro_costo_id',
+        'empleado_nombre',
     ];
 
     protected $casts = [

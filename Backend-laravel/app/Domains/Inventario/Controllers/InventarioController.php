@@ -10,6 +10,8 @@ use App\Domains\Inventario\Services\InventarioDisponibilidadService;
 use App\Domains\Inventario\Services\InventarioLoteService;
 use App\Domains\Inventario\Services\InventarioMovimientoService;
 use App\Domains\Inventario\Services\InventarioPermisoService;
+use App\Domains\Inventario\Services\InventarioReposicionService;
+use App\Domains\Inventario\Services\InventarioAlertaService;
 use App\Domains\Inventario\Services\InventarioReservaService;
 use App\Domains\Inventario\Services\InventarioService;
 use App\Domains\Inventario\Services\InventarioValorizacionService;
@@ -32,6 +34,8 @@ class InventarioController
     protected InventarioReservaService $reservaService;
     protected InventarioDisponibilidadService $disponibilidadService;
     protected InventarioTomaFisicaService $tomaFisicaService;
+    protected InventarioReposicionService $reposicionService;
+    protected InventarioAlertaService $alertaService;
 
 public function __construct(
     InventarioService $service,
@@ -41,7 +45,9 @@ public function __construct(
     InventarioLoteService $loteService,
     InventarioReservaService $reservaService,
     InventarioDisponibilidadService $disponibilidadService,
-    InventarioTomaFisicaService $tomaFisicaService
+    InventarioTomaFisicaService $tomaFisicaService,
+    InventarioReposicionService $reposicionService,
+    InventarioAlertaService $alertaService
 ) {
     $this->service = $service;
     $this->movimientoService = $movimientoService;
@@ -51,6 +57,8 @@ public function __construct(
     $this->reservaService = $reservaService;
     $this->disponibilidadService = $disponibilidadService;
     $this->tomaFisicaService = $tomaFisicaService;
+    $this->reposicionService = $reposicionService;
+    $this->alertaService = $alertaService;
 }
 
     public function catalogos(Request $request): JsonResponse
@@ -1157,6 +1165,154 @@ public function cancelarTomaFisica(Request $request, $id): JsonResponse
         return $this->respuestaError($e);
     }
 }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fase 8 - Reglas de reposición y alertas
+    |--------------------------------------------------------------------------
+    */
+
+    public function reglasReposicion(Request $request): JsonResponse
+    {
+        try {
+            $filtros = $request->validate([
+                'producto_id' => ['nullable', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+                'activo' => ['nullable'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
+
+            return response()->json($this->respuestaPaginada(
+                $this->reposicionService->listar($request->user(), $filtros)
+            ));
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function storeReglaReposicion(Request $request): JsonResponse
+    {
+        try {
+            $datos = $request->validate([
+                'producto_id' => ['required', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+                'stock_minimo' => ['required', 'numeric', 'min:0'],
+                'stock_objetivo' => ['required', 'numeric', 'min:0'],
+                'punto_reorden' => ['nullable', 'numeric', 'min:0'],
+                'dias_alerta_vencimiento' => ['nullable', 'integer', 'min:0', 'max:3650'],
+                'activo' => ['nullable', 'boolean'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->reposicionService->crear($request->user(), $datos),
+                'message' => 'Regla de reposición creada correctamente.',
+            ], 201);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function showReglaReposicion(Request $request, $id): JsonResponse
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => $this->reposicionService->obtener($request->user(), (int) $id),
+            ]);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function updateReglaReposicion(Request $request, $id): JsonResponse
+    {
+        try {
+            $datos = $request->validate([
+                'producto_id' => ['required', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+                'stock_minimo' => ['required', 'numeric', 'min:0'],
+                'stock_objetivo' => ['required', 'numeric', 'min:0'],
+                'punto_reorden' => ['nullable', 'numeric', 'min:0'],
+                'dias_alerta_vencimiento' => ['nullable', 'integer', 'min:0', 'max:3650'],
+                'activo' => ['nullable', 'boolean'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->reposicionService->actualizar($request->user(), (int) $id, $datos),
+                'message' => 'Regla de reposición actualizada correctamente.',
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function destroyReglaReposicion(Request $request, $id): JsonResponse
+    {
+        try {
+            $this->reposicionService->eliminar($request->user(), (int) $id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Regla de reposición eliminada correctamente.',
+            ]);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function alertas(Request $request): JsonResponse
+    {
+        try {
+            $filtros = $request->validate([
+                'tipo' => ['nullable', 'string', 'max:80'],
+                'severidad' => ['nullable', 'in:baja,media,alta,critica'],
+                'producto_id' => ['nullable', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+                'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
+            ]);
+
+            $resultado = $this->alertaService->listar($request->user(), $filtros);
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado['data'],
+                'resumen' => $resultado['resumen'],
+                'metadata' => $resultado['metadata'],
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function sugerenciasReposicion(Request $request): JsonResponse
+    {
+        try {
+            $filtros = $request->validate([
+                'producto_id' => ['nullable', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->reposicionService->sugerencias($request->user(), $filtros),
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
 
 
     /*

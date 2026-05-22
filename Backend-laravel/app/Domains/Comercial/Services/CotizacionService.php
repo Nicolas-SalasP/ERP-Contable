@@ -5,6 +5,8 @@ namespace App\Domains\Comercial\Services;
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\CotizacionDetalle;
 use App\Domains\Comercial\Models\Cliente;
+use App\Domains\Comercial\Models\EstadoCotizacion;
+use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -23,6 +25,19 @@ class CotizacionService
         return DB::transaction(function () use ($datos, $detalles) {
 
             $cliente = Cliente::find($datos['cliente_id']);
+
+            if (!$cliente || $cliente->estado === 'INACTIVO') {
+                throw new Exception("No se puede emitir una cotización a un cliente inactivo.");
+            }
+
+            if (!empty($datos['numero_cotizacion'])) {
+                $existe = Cotizacion::where('empresa_id', $datos['empresa_id'])
+                    ->where('numero_cotizacion', $datos['numero_cotizacion'])
+                    ->exists();
+                if ($existe) {
+                    throw new Exception("El número de cotización {$datos['numero_cotizacion']} ya existe.");
+                }
+            }
 
             $subtotalCalculado = 0;
             foreach ($detalles as $det) {
@@ -96,5 +111,140 @@ class CotizacionService
         }
 
         return $cotizacion;
+    }
+
+    public function actualizarEstado(int $empresaId, int $id, string $nombreEstado)
+    {
+        $cotizacion = Cotizacion::where('empresa_id', $empresaId)->find($id);
+
+        if (!$cotizacion) {
+            $e = new Exception("La cotización solicitada no existe o no pertenece a su empresa.");
+            throw new Exception("La cotización solicitada no existe o no pertenece a su empresa.", 404);
+        }
+
+        $estado = EstadoCotizacion::where('nombre', $nombreEstado)->first();
+
+        if (!$estado) {
+            throw new Exception("El estado '$nombreEstado' no es válido en el sistema.");
+        }
+
+        $cotizacion->estado_id = $estado->id;
+        $cotizacion->save();
+
+        return $cotizacion->load(['cliente', 'estado']);
+    }
+
+    public function actualizarCotizacion(int $empresaId, int $cotiId, array $datos)
+    {
+        return DB::transaction(function () use ($empresaId, $cotiId, $datos) {
+            $cotizacion = Cotizacion::where('empresa_id', $empresaId)->findOrFail($cotiId);
+
+            if (in_array($cotizacion->estado_id, [3, 5])) {
+                throw new Exception("No se puede editar una cotización que ya ha sido aprobada o facturada.");
+            }
+
+            if (isset($datos['fecha_validez'])) {
+                $cotizacion->fecha_validez = $datos['fecha_validez'];
+            }
+            if (isset($datos['porcentaje_descuento'])) {
+                $cotizacion->porcentaje_descuento = $datos['porcentaje_descuento'];
+            }
+
+            if (isset($datos['detalles'])) {
+                $cotizacion->detalles()->delete();
+
+                $subtotal = 0;
+                foreach ($datos['detalles'] as $item) {
+                    $lineSubtotal = $item['cantidad'] * $item['precio_unitario'];
+                    $subtotal += $lineSubtotal;
+
+                    $cotizacion->detalles()->create([
+                        'producto_nombre' => $item['producto_nombre'],
+                        'cantidad' => $item['cantidad'],
+                        'precio_unitario' => $item['precio_unitario'],
+                        'subtotal' => $lineSubtotal
+                    ]);
+                }
+
+                $descuento = $subtotal * (($cotizacion->porcentaje_descuento ?? 0) / 100);
+                $neto = $subtotal - $descuento;
+                $iva = $cotizacion->es_afecta ? ($neto * 0.19) : 0;
+
+                $cotizacion->subtotal = $subtotal;
+                $cotizacion->monto_descuento = $descuento;
+                $cotizacion->monto_neto = $neto;
+                $cotizacion->monto_iva = $iva;
+                $cotizacion->monto_total = $neto + $iva;
+                $cotizacion->total = $neto + $iva;
+            }
+
+            $cotizacion->save();
+
+            return $cotizacion->load('detalles');
+        });
+    }
+
+    public function convertirEnFactura(int $empresaId, int $cotizacionId): Factura
+    {
+        return DB::transaction(function () use ($empresaId, $cotizacionId) {
+            $cotizacion = Cotizacion::where('empresa_id', $empresaId)
+                ->with('estado', 'cliente')
+                ->find($cotizacionId);
+
+            if (!$cotizacion) {
+                throw new Exception("Cotizacion no encontrada.", 404);
+            }
+
+            $estadoAprobada = EstadoCotizacion::where('nombre', 'Aprobada')->first();
+            if (!$estadoAprobada || $cotizacion->estado_id !== $estadoAprobada->id) {
+                throw new Exception(
+                    "Solo cotizaciones APROBADAS pueden ser facturadas. " .
+                    "Estado actual: " . ($cotizacion->estado->nombre ?? '?')
+                );
+            }
+
+            $cliente = $cotizacion->cliente;
+            if (!$cliente) {
+                throw new Exception("Cotizacion no tiene cliente vinculado.");
+            }
+
+            $proveedor = \App\Domains\Comercial\Models\Proveedor::where('empresa_id', $empresaId)
+                ->where('rut', $cliente->rut)
+                ->first();
+
+            if (!$proveedor) {
+                $proveedor = \App\Domains\Comercial\Models\Proveedor::create([
+                    'empresa_id' => $empresaId,
+                    'rut' => $cliente->rut,
+                    'razon_social' => $cliente->razon_social,
+                    'codigo_interno' => 'CLI-' . $cliente->id,
+                    'pais_iso' => 'CL',
+                    'moneda_defecto' => 'CLP',
+                ]);
+            }
+
+            $codigoUnico = Factura::generarCodigoUnico();
+            $factura = Factura::create([
+                'empresa_id' => $empresaId,
+                'codigo_unico' => $codigoUnico,
+                'proveedor_id' => $proveedor->id,
+                'numero_factura' => 'FV-' . $cotizacion->numero_cotizacion,
+                'tipo' => 'VENTA',
+                'tipo_documento' => 'FACTURA',
+                'fecha_emision' => date('Y-m-d'),
+                'monto_neto' => $cotizacion->monto_neto,
+                'monto_iva' => $cotizacion->monto_iva,
+                'monto_bruto' => $cotizacion->monto_total ?? $cotizacion->total,
+                'estado' => 'REGISTRADA',
+            ]);
+
+            $estadoFacturada = EstadoCotizacion::where('nombre', 'Facturada')->first();
+            if ($estadoFacturada) {
+                $cotizacion->estado_id = $estadoFacturada->id;
+                $cotizacion->save();
+            }
+
+            return $factura;
+        });
     }
 }

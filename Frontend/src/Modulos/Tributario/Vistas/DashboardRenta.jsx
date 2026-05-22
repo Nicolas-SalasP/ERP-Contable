@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import ModalMapeoSII from './ModalMapeoSII';
 import jsPDF from 'jspdf';
@@ -22,20 +24,30 @@ const DashboardRenta = () => {
             const res = await api.get(`/renta/pre-calculo/${anio}`);
             if (res.success) {
                 const data = res.data;
+                const vNetas = Number(data.ingresos.ventas_netas) || 0;
+                const oIngresos = Number(data.ingresos.otros_ingresos) || 0;
+                
+                const cDirectos = Number(data.gastos.costos_directos) || 0;
+                const dep = Number(data.gastos.depreciacion) || 0;
+                const rem = Number(data.gastos.remuneraciones) || 0;
+                
+                const bImponible = Number(data.resultado.base_imponible) || 0;
+                const iRenta = Number(data.resultado.impuesto_renta) || 0;
+
                 const adaptedData = {
                     ...data,
                     resumen: {
-                        total_ingresos: data.ingresos.ventas_netas + data.ingresos.otros_ingresos,
-                        total_egresos: data.gastos.costos_directos + data.gastos.depreciacion + data.gastos.remuneraciones,
-                        base_imponible: data.resultado.base_imponible,
-                        impuesto_determinado: data.resultado.impuesto_renta
+                        total_ingresos: vNetas + oIngresos,
+                        total_egresos: cDirectos + dep + rem,
+                        base_imponible: bImponible,
+                        impuesto_determinado: iRenta
                     },
                     desglose: {
-                        ingresos_giro: data.ingresos.ventas_netas,
-                        otros_ingresos: data.ingresos.otros_ingresos,
-                        compras: data.gastos.costos_directos,
-                        depreciacion: data.gastos.depreciacion,
-                        remuneraciones_pagadas: data.gastos.remuneraciones,
+                        ingresos_giro: vNetas,
+                        otros_ingresos: oIngresos,
+                        compras: cDirectos,
+                        depreciacion: dep,
+                        remuneraciones_pagadas: rem,
                         honorarios_pagados: 0,
                         arriendos_pagados: 0,
                         gastos_generales: 0
@@ -152,20 +164,23 @@ const DashboardRenta = () => {
 
     if (loading && !datosRenta) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[60vh] text-slate-400">
-                <i className="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
-                <p className="font-medium">Calculando Base Imponible Tributaria...</p>
-            </div>
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Calculando Base Imponible Tributaria..."
+                tamano="completo"
+                color="indigo"
+            />
         );
     }
 
     if (error) {
         return (
-            <div className="p-8 text-center bg-rose-50 border border-rose-200 rounded-xl m-6">
-                <i className="fas fa-exclamation-triangle text-3xl text-rose-500 mb-3"></i>
-                <h3 className="text-lg font-bold text-rose-800">{error}</h3>
-                <button onClick={cargarPreRenta} className="mt-4 px-4 py-2 bg-white text-rose-600 font-bold border border-rose-200 rounded-lg hover:bg-rose-50">Reintentar</button>
-            </div>
+            <EstadoCarga
+                error={error}
+                onReintentar={cargarPreRenta}
+                tamano="completo"
+                color="rose"
+            />
         );
     }
 
@@ -179,7 +194,7 @@ const DashboardRenta = () => {
                         <i className="fas fa-landmark"></i>
                     </div>
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Operación Renta</h1>
+                        <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Operación Renta</h1><AyudaModulo moduloId="dashboardRenta" /></div>
                         <p className="text-slate-500 font-medium text-sm md:text-base mt-0.5">
                             Régimen {nombreRegimen} • Base {esFlujoCaja ? 'Percibida/Pagada' : 'Devengada'}
                         </p>

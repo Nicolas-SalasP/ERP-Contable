@@ -36,6 +36,10 @@ const put = async (endpoint, payload = {}) => {
     return normalize(await api.put(endpoint, payload));
 };
 
+const del = async (endpoint) => {
+    return normalize(await api.delete(endpoint));
+};
+
 export const inventarioApi = {
     dashboard: {
         obtener: () => get('/inventario/dashboard'),
@@ -92,6 +96,23 @@ export const inventarioApi = {
     disponibilidad: {
         listar: (params = {}) => get('/inventario/disponibilidad', params),
         producto: (id, params = {}) => get(`/inventario/productos/${id}/disponibilidad`, params),
+    },
+
+
+    alertas: {
+        listar: (params = {}) => get('/inventario/alertas', params),
+    },
+
+    reposicion: {
+        sugerencias: (params = {}) => get('/inventario/reposicion/sugerencias', params),
+    },
+
+    reglasReposicion: {
+        listar: (params = {}) => get('/inventario/reglas-reposicion', params),
+        crear: (payload) => post('/inventario/reglas-reposicion', payload),
+        obtener: (id) => get(`/inventario/reglas-reposicion/${id}`),
+        actualizar: (id, payload) => put(`/inventario/reglas-reposicion/${id}`, payload),
+        eliminar: (id) => del(`/inventario/reglas-reposicion/${id}`),
     },
 
     tomasFisicas: {

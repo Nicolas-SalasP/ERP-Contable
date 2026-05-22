@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
+import { logger } from '../../Configuracion/logger';
+import EstadoCarga from '../../Componentes/EstadoCarga';
 
 const formatMoneda = (valor) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
 
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [metricas, setMetricas] = useState({
         cotizacionesAprobadas: 0,
         facturasPendientesMonto: 0,
@@ -20,6 +23,7 @@ const Dashboard = () => {
 
     const cargarDatosReales = async () => {
         setLoading(true);
+        setError(null);
         try {
             // 1. Obtener Clientes (Para contar cuántos hay)
             const resClientes = await api.get('/clientes');
@@ -55,19 +59,27 @@ const Dashboard = () => {
             });
             setFacturasUrgentes(pendientesTop5);
 
-        } catch (error) {
-            console.error("Error al cargar el dashboard:", error);
+        } catch (err) {
+            logger.error("Error al cargar el dashboard:", err);
+            // Antes solo loggeaba al console. Ahora el usuario ve el error
+            // en la UI con boton Reintentar.
+            setError(err);
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading) {
+    // Si cargando o error, EstadoCarga toma el control de la pantalla completa.
+    // Si todo OK, renderiza el dashboard normal.
+    if (loading || error) {
         return (
-            <div className="h-[70vh] flex flex-col items-center justify-center text-slate-400">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-emerald-500 mb-4"></div>
-                <h2 className="text-xl font-bold">Calculando métricas del sistema...</h2>
-            </div>
+            <EstadoCarga
+                cargando={loading}
+                error={error}
+                onReintentar={cargarDatosReales}
+                mensajeCargando="Calculando métricas del sistema..."
+                color="emerald"
+            />
         );
     }
 
