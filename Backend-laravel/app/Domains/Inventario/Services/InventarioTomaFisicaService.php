@@ -3,6 +3,7 @@
 namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Events\TomaFisicaConfirmada;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
@@ -303,6 +304,8 @@ class InventarioTomaFisicaService
                 ->lockForUpdate()
                 ->get();
 
+            $movimientosGenerados = 0;
+
             foreach ($detalles as $detalle) {
                 if (!$detalle->requiereMovimientoAjuste()) {
                     continue;
@@ -318,6 +321,8 @@ class InventarioTomaFisicaService
                 $detalle->update([
                     'movimiento_ajuste_id' => $movimiento->id,
                 ]);
+
+                $movimientosGenerados++;
             }
 
             $toma->update([
@@ -326,6 +331,15 @@ class InventarioTomaFisicaService
                 'fecha_ajuste' => now(),
                 'observacion' => $this->normalizarTextoNullable($datos['observacion'] ?? $toma->observacion),
             ]);
+
+            DB::afterCommit(function () use ($empresaId, $toma, $usuario, $movimientosGenerados) {
+                event(new TomaFisicaConfirmada(
+                    empresaId: $empresaId,
+                    tomaFisicaId: (int) $toma->id,
+                    usuarioId: (int) $usuario->id,
+                    movimientosGenerados: $movimientosGenerados
+                ));
+            });
 
             return $this->cargarRelacionesToma($toma->fresh());
         });

@@ -4,9 +4,14 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Event;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Rol;
 use App\Observers\EmpresaObserver;
+use App\Domains\Inventario\Events\LoteVencidoDetectado;
+use App\Domains\Inventario\Events\StockMinimoPerforado;
+use App\Domains\Inventario\Events\TomaFisicaConfirmada;
+use App\Domains\Inventario\Listeners\RegistrarEventoInventarioListener;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,6 +23,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Empresa::observe(EmpresaObserver::class);
+
+        Event::listen(StockMinimoPerforado::class, RegistrarEventoInventarioListener::class);
+        Event::listen(LoteVencidoDetectado::class, RegistrarEventoInventarioListener::class);
+        Event::listen(TomaFisicaConfirmada::class, RegistrarEventoInventarioListener::class);
         Gate::define('gestionar-contabilidad-critica', function ($user) {
             $rol = Rol::find($user->rol_id);
 

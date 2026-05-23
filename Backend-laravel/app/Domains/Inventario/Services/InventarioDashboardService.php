@@ -5,6 +5,7 @@ namespace App\Domains\Inventario\Services;
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioAlertaEstado;
 use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
@@ -15,7 +16,6 @@ use App\Domains\Inventario\Models\StockProducto;
 use App\Domains\Inventario\Models\TomaFisicaDetalleInventario;
 use App\Domains\Inventario\Models\TomaFisicaInventario;
 use Carbon\CarbonImmutable;
-use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -54,7 +54,7 @@ class InventarioDashboardService
         $productosBajoMinimo = $this->productosBajoMinimo($empresaId);
         $productosSinStock = $this->productosSinStock($empresaId);
 
-        $alertas = $this->alertasEjecutivas($usuario);
+        $alertas = $this->alertasEjecutivas($empresaId);
         $sugerenciasReposicion = $this->sugerenciasReposicion($empresaId);
 
         return [
@@ -346,37 +346,88 @@ class InventarioDashboardService
             ->values();
     }
 
-    private function alertasEjecutivas(User $usuario): array
+    private function alertasEjecutivas(int $empresaId): array
     {
-        try {
-            $resultado = $this->alertaService->listar($usuario, [
-                'limit' => 8,
-            ]);
+        $query = InventarioAlertaEstado::query()
+            ->where('empresa_id', $empresaId);
 
-            $items = collect($resultado['data'] ?? [])->values();
+        $total = (clone $query)->count();
+        $criticas = (clone $query)->where('severidad', 'critica')->count();
 
-            return [
-                'total' => (int) ($resultado['resumen']['total'] ?? $items->count()),
-                'criticas' => (int) ($resultado['resumen']['por_severidad']['critica'] ?? $items->where('severidad', 'critica')->count()),
-                'items' => $items,
-            ];
-        } catch (Exception) {
-            return [
-                'total' => 0,
-                'criticas' => 0,
-                'items' => collect(),
-            ];
-        }
+        $items = (clone $query)
+            ->with([
+                'producto:id,empresa_id,sku,nombre,activo',
+                'bodega:id,empresa_id,codigo,nombre,estado',
+                'lote:id,empresa_id,producto_id,codigo_lote,fecha_vencimiento,activo,estado_operativo',
+            ])
+            ->orderByRaw("CASE severidad WHEN 'critica' THEN 1 WHEN 'alta' THEN 2 WHEN 'media' THEN 3 WHEN 'baja' THEN 4 ELSE 5 END")
+            ->orderBy('fecha_referencia')
+            ->limit(8)
+            ->get()
+            ->map(fn (InventarioAlertaEstado $alerta) => [
+                'id' => (int) $alerta->id,
+                'tipo' => $alerta->tipo,
+                'severidad' => $alerta->severidad,
+                'titulo' => $alerta->titulo,
+                'descripcion' => $alerta->descripcion,
+                'producto_id' => $alerta->producto_id,
+                'producto_nombre' => $alerta->producto?->nombre,
+                'producto_sku' => $alerta->producto?->sku,
+                'bodega_id' => $alerta->bodega_id,
+                'bodega_nombre' => $alerta->bodega?->nombre,
+                'lote_id' => $alerta->lote_id,
+                'lote_codigo' => $alerta->lote?->codigo_lote,
+                'cantidad_actual' => $alerta->cantidad_actual !== null ? (float) $alerta->cantidad_actual : null,
+                'stock_minimo' => $alerta->stock_minimo !== null ? (float) $alerta->stock_minimo : null,
+                'stock_objetivo' => $alerta->stock_objetivo !== null ? (float) $alerta->stock_objetivo : null,
+                'cantidad_sugerida' => $alerta->cantidad_sugerida !== null ? (float) $alerta->cantidad_sugerida : null,
+                'fecha_referencia' => $alerta->fecha_referencia?->toDateString(),
+                'referencia' => $alerta->referencia,
+                'metadata' => $alerta->metadata ?? [],
+                'calculado_en' => $alerta->calculado_en?->toISOString(),
+            ])
+            ->values();
+
+        return [
+            'total' => $total,
+            'criticas' => $criticas,
+            'items' => $items,
+        ];
     }
 
     private function sugerenciasReposicion(int $empresaId): array
     {
-        $items = collect($this->reposicionService->sugerenciasParaEmpresa($empresaId, []))
-            ->take(8)
+        $query = InventarioAlertaEstado::query()
+            ->where('empresa_id', $empresaId)
+            ->where('tipo', 'REPOSICION_SUGERIDA');
+
+        $total = (clone $query)->count();
+
+        $items = (clone $query)
+            ->with([
+                'producto:id,empresa_id,sku,nombre,activo',
+                'bodega:id,empresa_id,codigo,nombre,estado',
+            ])
+            ->orderByDesc('cantidad_sugerida')
+            ->limit(8)
+            ->get()
+            ->map(fn (InventarioAlertaEstado $alerta) => [
+                'producto_id' => $alerta->producto_id,
+                'producto_nombre' => $alerta->producto?->nombre,
+                'producto_sku' => $alerta->producto?->sku,
+                'bodega_id' => $alerta->bodega_id,
+                'bodega_nombre' => $alerta->bodega?->nombre,
+                'stock_actual' => $alerta->cantidad_actual !== null ? (float) $alerta->cantidad_actual : null,
+                'stock_minimo' => $alerta->stock_minimo !== null ? (float) $alerta->stock_minimo : null,
+                'stock_objetivo' => $alerta->stock_objetivo !== null ? (float) $alerta->stock_objetivo : null,
+                'cantidad_sugerida' => $alerta->cantidad_sugerida !== null ? (float) $alerta->cantidad_sugerida : null,
+                'referencia' => $alerta->referencia,
+                'metadata' => $alerta->metadata ?? [],
+            ])
             ->values();
 
         return [
-            'total' => $items->count(),
+            'total' => $total,
             'items' => $items,
         ];
     }

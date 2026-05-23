@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import inventarioApi from '../Servicios/inventarioApi';
+import { suscribirInventarioEmpresa } from '../Servicios/inventarioRealtime';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -206,6 +207,51 @@ export const InventarioDataProvider = ({ children }) => {
         invalidarCatalogos();
         invalidarLotes();
     }, [invalidarBodegas, invalidarCatalogos, invalidarLotes, invalidarProductos]);
+
+
+    useEffect(() => {
+        let unsubscribe = () => {};
+        let cancelled = false;
+
+        const rawUser = getStorageValue('erp_user');
+        let empresaId = 0;
+
+        try {
+            empresaId = rawUser ? Number(JSON.parse(rawUser)?.empresa_id || 0) : 0;
+        } catch {
+            empresaId = 0;
+        }
+
+        if (!empresaId) {
+            return unsubscribe;
+        }
+
+        suscribirInventarioEmpresa(empresaId, {
+            onAlertasActualizadas: (event) => {
+                invalidarTodoInventario();
+                window.dispatchEvent(new CustomEvent('inventario:actualizado', { detail: event }));
+            },
+            onStockCritico: (event) => {
+                invalidarProductos();
+                window.dispatchEvent(new CustomEvent('inventario:stock-critico', { detail: event }));
+            },
+        }).then((cleanup) => {
+            if (cancelled) {
+                cleanup?.();
+                return;
+            }
+
+            unsubscribe = cleanup;
+        }).catch(() => {
+            // El realtime es progresivo: si Reverb/Pusher no está configurado,
+            // el módulo sigue funcionando con lectura HTTP tradicional.
+        });
+
+        return () => {
+            cancelled = true;
+            unsubscribe?.();
+        };
+    }, [invalidarProductos, invalidarTodoInventario]);
 
     const value = useMemo(() => ({
         productos: store.productos.data,

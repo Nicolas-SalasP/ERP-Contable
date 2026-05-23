@@ -3,7 +3,10 @@
 namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Events\AlertasInventarioActualizadas;
+use App\Domains\Inventario\Events\LoteVencidoDetectado;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
+use App\Domains\Inventario\Models\InventarioAlertaEstado;
 use App\Domains\Inventario\Models\ReglaReposicion;
 use App\Domains\Inventario\Models\ReservaDetalleInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
@@ -12,6 +15,7 @@ use App\Domains\Inventario\Models\TomaFisicaDetalleInventario;
 use App\Domains\Inventario\Models\TomaFisicaInventario;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class InventarioAlertaService
 {
@@ -32,26 +36,14 @@ class InventarioAlertaService
         $this->permisos->exigir($usuario, 'inventario.alertas.ver');
 
         $empresaId = (int) $usuario->empresa_id;
-
-        $alertas = array_merge(
-            $this->alertasStockYReposicion($empresaId, $filtros),
-            $this->alertasVencimientos($empresaId, $filtros),
-            $this->alertasReservasCriticas($empresaId, $filtros),
-            $this->alertasTomasFisicasPendientes($empresaId, $filtros),
-            $this->alertasAjustesCriticosRecientes($empresaId, $filtros)
-        );
-
-        $alertas = $this->aplicarFiltros($alertas, $filtros);
-        $alertas = $this->ordenarAlertas($alertas);
-
-        $limit = $this->normalizarLimit($filtros['limit'] ?? 100);
-        $alertas = array_slice($alertas, 0, $limit);
+        $alertas = $this->listarPersistidasParaEmpresa($empresaId, $filtros);
 
         return [
             'data' => array_values($alertas),
             'resumen' => $this->resumen($alertas),
             'metadata' => [
                 'generado_en' => now()->toISOString(),
+                'fuente' => 'inventario_alertas_estado',
                 'criterios' => [
                     'dias_default_vencimiento' => self::DEFAULT_DIAS_VENCIMIENTO,
                     'dias_reserva_critica' => self::DIAS_RESERVA_CRITICA,
@@ -60,6 +52,112 @@ class InventarioAlertaService
                 ],
             ],
         ];
+    }
+
+    public function recalcularPersistidasParaEmpresa(int $empresaId, array $filtros = []): array
+    {
+        $alertas = $this->ordenarAlertas($this->aplicarFiltros(
+            $this->calcularDinamicasParaEmpresa($empresaId, $filtros),
+            $filtros
+        ));
+
+        $calculadoEn = now();
+
+        $referenciasExistentes = InventarioAlertaEstado::query()
+            ->where('empresa_id', $empresaId)
+            ->get(['tipo', 'referencia'])
+            ->mapWithKeys(fn (InventarioAlertaEstado $alerta) => [$alerta->tipo . '|' . $alerta->referencia => true]);
+
+        DB::transaction(function () use ($empresaId, $alertas, $calculadoEn) {
+            InventarioAlertaEstado::query()
+                ->where('empresa_id', $empresaId)
+                ->delete();
+
+            foreach ($alertas as $alerta) {
+                InventarioAlertaEstado::create($this->normalizarAlertaPersistida($empresaId, $alerta, $calculadoEn));
+            }
+        });
+
+        $resumen = $this->resumen($alertas);
+
+        DB::afterCommit(function () use ($empresaId, $alertas, $referenciasExistentes, $resumen, $calculadoEn) {
+            event(new AlertasInventarioActualizadas(
+                empresaId: $empresaId,
+                total: (int) $resumen['total'],
+                criticas: (int) $resumen['criticas'],
+                calculadoEn: $calculadoEn->toISOString()
+            ));
+
+            foreach ($alertas as $alerta) {
+                $referencia = (string) ($alerta['referencia'] ?? '');
+                $key = ($alerta['tipo'] ?? '') . '|' . $referencia;
+
+                if (($alerta['tipo'] ?? null) !== 'LOTE_VENCIDO' || $referenciasExistentes->has($key)) {
+                    continue;
+                }
+
+                if (empty($alerta['producto_id']) || empty($alerta['bodega_id']) || empty($alerta['lote_id']) || empty($alerta['fecha_referencia'])) {
+                    continue;
+                }
+
+                event(new LoteVencidoDetectado(
+                    empresaId: $empresaId,
+                    productoId: (int) $alerta['producto_id'],
+                    bodegaId: (int) $alerta['bodega_id'],
+                    loteId: (int) $alerta['lote_id'],
+                    stockActual: (float) ($alerta['cantidad_actual'] ?? 0),
+                    fechaVencimiento: (string) $alerta['fecha_referencia'],
+                    referencia: $referencia
+                ));
+            }
+        });
+
+        return [
+            'data' => array_values($alertas),
+            'resumen' => $resumen,
+            'metadata' => [
+                'calculado_en' => $calculadoEn->toISOString(),
+                'persistidas' => true,
+            ],
+        ];
+    }
+
+    public function calcularDinamicasParaEmpresa(int $empresaId, array $filtros = []): array
+    {
+        return array_merge(
+            $this->alertasStockYReposicion($empresaId, $filtros),
+            $this->alertasVencimientos($empresaId, $filtros),
+            $this->alertasReservasCriticas($empresaId, $filtros),
+            $this->alertasTomasFisicasPendientes($empresaId, $filtros),
+            $this->alertasAjustesCriticosRecientes($empresaId, $filtros)
+        );
+    }
+
+    public function listarPersistidasParaEmpresa(int $empresaId, array $filtros = []): array
+    {
+        $limit = $this->normalizarLimit($filtros['limit'] ?? 100);
+
+        return InventarioAlertaEstado::query()
+            ->where('empresa_id', $empresaId)
+            ->with([
+                'producto:id,empresa_id,sku,nombre,activo',
+                'bodega:id,empresa_id,codigo,nombre,estado',
+                'lote:id,empresa_id,producto_id,codigo_lote,fecha_vencimiento,activo,estado_operativo',
+            ])
+            ->when(!empty($filtros['tipo']), fn (Builder $query) => $query->where('tipo', (string) $filtros['tipo']))
+            ->when(!empty($filtros['severidad']), fn (Builder $query) => $query->where('severidad', (string) $filtros['severidad']))
+            ->when(!empty($filtros['producto_id']), fn (Builder $query) => $query->where('producto_id', (int) $filtros['producto_id']))
+            ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where(function (Builder $subQuery) use ($filtros) {
+                $subQuery->where('bodega_id', (int) $filtros['bodega_id'])->orWhereNull('bodega_id');
+            }))
+            ->orderByRaw("CASE severidad WHEN 'critica' THEN 1 WHEN 'alta' THEN 2 WHEN 'media' THEN 3 WHEN 'baja' THEN 4 ELSE 5 END")
+            ->orderBy('fecha_referencia')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (InventarioAlertaEstado $alerta) => $this->mapearAlertaPersistida($alerta))
+            ->values()
+            ->all();
     }
 
     private function alertasStockYReposicion(int $empresaId, array $filtros): array
@@ -435,6 +533,67 @@ class InventarioAlertaService
             ->values()
             ->all();
     }
+
+    private function normalizarAlertaPersistida(int $empresaId, array $alerta, $calculadoEn): array
+    {
+        $referencia = $alerta['referencia'] ?? null;
+
+        if (!$referencia) {
+            $referencia = sha1(json_encode([
+                $alerta['tipo'] ?? null,
+                $alerta['producto_id'] ?? null,
+                $alerta['bodega_id'] ?? null,
+                $alerta['lote_id'] ?? null,
+                $alerta['fecha_referencia'] ?? null,
+            ]));
+        }
+
+        return [
+            'empresa_id' => $empresaId,
+            'tipo' => (string) ($alerta['tipo'] ?? 'GENERAL'),
+            'severidad' => (string) ($alerta['severidad'] ?? 'media'),
+            'titulo' => (string) ($alerta['titulo'] ?? 'Alerta de inventario'),
+            'descripcion' => $alerta['descripcion'] ?? null,
+            'producto_id' => $alerta['producto_id'] ?? null,
+            'bodega_id' => $alerta['bodega_id'] ?? null,
+            'lote_id' => $alerta['lote_id'] ?? null,
+            'cantidad_actual' => $alerta['cantidad_actual'] ?? null,
+            'stock_minimo' => $alerta['stock_minimo'] ?? null,
+            'stock_objetivo' => $alerta['stock_objetivo'] ?? null,
+            'cantidad_sugerida' => $alerta['cantidad_sugerida'] ?? null,
+            'fecha_referencia' => $alerta['fecha_referencia'] ?? null,
+            'referencia' => (string) $referencia,
+            'metadata' => $alerta['metadata'] ?? [],
+            'calculado_en' => $calculadoEn,
+        ];
+    }
+
+    private function mapearAlertaPersistida(InventarioAlertaEstado $alerta): array
+    {
+        return [
+            'id' => (int) $alerta->id,
+            'tipo' => $alerta->tipo,
+            'severidad' => $alerta->severidad,
+            'titulo' => $alerta->titulo,
+            'descripcion' => $alerta->descripcion,
+            'producto_id' => $alerta->producto_id,
+            'producto_nombre' => $alerta->producto?->nombre,
+            'producto_sku' => $alerta->producto?->sku,
+            'bodega_id' => $alerta->bodega_id,
+            'bodega_nombre' => $alerta->bodega?->nombre,
+            'lote_id' => $alerta->lote_id,
+            'lote_codigo' => $alerta->lote?->codigo_lote,
+            'cantidad_actual' => $alerta->cantidad_actual !== null ? (float) $alerta->cantidad_actual : null,
+            'stock_minimo' => $alerta->stock_minimo !== null ? (float) $alerta->stock_minimo : null,
+            'stock_objetivo' => $alerta->stock_objetivo !== null ? (float) $alerta->stock_objetivo : null,
+            'cantidad_sugerida' => $alerta->cantidad_sugerida !== null ? (float) $alerta->cantidad_sugerida : null,
+            'fecha_referencia' => $alerta->fecha_referencia?->toDateString(),
+            'referencia' => $alerta->referencia,
+            'metadata' => $alerta->metadata ?? [],
+            'calculado_en' => $alerta->calculado_en?->toISOString(),
+        ];
+    }
+
 
     private function diasAlertaVencimiento(int $empresaId, int $productoId, int $bodegaId): int
     {

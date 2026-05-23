@@ -2,7 +2,9 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Events\StockMinimoPerforado;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockProducto;
@@ -15,7 +17,8 @@ class InventarioMovimientoService
 {
     public function __construct(
         private readonly InventarioValorizacionService $valorizacionService,
-        private readonly InventarioLoteService $loteService
+        private readonly InventarioLoteService $loteService,
+        private readonly InventarioReposicionService $reposicionService
     ) {
     }
 
@@ -48,11 +51,13 @@ class InventarioMovimientoService
 
         $stockDestino = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaDestino->id, $empresaId);
 
-        $valorizacion = $this->valorizacionService->calcularEntradaPmp(
+        $valorizacion = $this->valorizacionService->calcularEntrada(
             stock: $stockDestino,
             producto: $producto,
             cantidad: $cantidad,
-            costoUnitario: $costoUnitarioEntrada
+            costoUnitario: $costoUnitarioEntrada,
+            loteId: $lote?->id,
+            fechaMovimiento: $data['fecha_movimiento'] ?? null
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -92,6 +97,7 @@ class InventarioMovimientoService
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
 
         $lote = $this->loteService->resolverLoteParaSalida($producto, $data, $empresaId);
+        $this->validarLoteMovibleParaSalida($lote);
 
         $stockOrigen = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaOrigen->id, $empresaId);
         $stockAntes = $this->toFloat($stockOrigen->stock_actual);
@@ -102,10 +108,11 @@ class InventarioMovimientoService
             ]);
         }
 
-        $valorizacion = $this->valorizacionService->calcularSalidaPmp(
+        $valorizacion = $this->valorizacionService->calcularSalida(
             stock: $stockOrigen,
             producto: $producto,
-            cantidad: $cantidad
+            cantidad: $cantidad,
+            loteId: $lote?->id
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -135,6 +142,14 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        $this->dispararEventoStockMinimoSiCorresponde(
+            empresaId: $empresaId,
+            productoId: (int) $producto->id,
+            bodegaId: (int) $bodegaOrigen->id,
+            stockActual: (float) $valorizacion['stock_despues'],
+            movimientoId: (int) $movimiento->id
+        );
+
         return $this->cargarRelacionesMovimiento($movimiento);
     }
 
@@ -153,6 +168,7 @@ class InventarioMovimientoService
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
 
         $lote = $this->loteService->resolverLoteParaTraspaso($producto, $data, $empresaId);
+        $this->validarLoteMovibleParaSalida($lote);
 
         $stocks = $this->obtenerStocksTraspasoBloqueados(
             $producto->id,
@@ -171,11 +187,13 @@ class InventarioMovimientoService
             ]);
         }
 
-        $valorizacion = $this->valorizacionService->calcularTraspasoPmp(
+        $valorizacion = $this->valorizacionService->calcularTraspaso(
             stockOrigen: $stockOrigen,
             stockDestino: $stockDestino,
             producto: $producto,
-            cantidad: $cantidad
+            cantidad: $cantidad,
+            loteId: $lote?->id,
+            fechaMovimiento: $data['fecha_movimiento'] ?? null
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -206,6 +224,14 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        $this->dispararEventoStockMinimoSiCorresponde(
+            empresaId: $empresaId,
+            productoId: (int) $producto->id,
+            bodegaId: (int) $bodegaOrigen->id,
+            stockActual: (float) $valorizacion['origen']['stock_despues'],
+            movimientoId: (int) $movimiento->id
+        );
+
         return $this->cargarRelacionesMovimiento($movimiento);
     }
 
@@ -220,11 +246,13 @@ class InventarioMovimientoService
 
         $stockDestino = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaDestino->id, $empresaId);
 
-        $valorizacion = $this->valorizacionService->calcularEntradaPmp(
+        $valorizacion = $this->valorizacionService->calcularEntrada(
             stock: $stockDestino,
             producto: $producto,
             cantidad: $cantidad,
-            costoUnitario: $costoUnitarioEntrada
+            costoUnitario: $costoUnitarioEntrada,
+            loteId: $lote?->id,
+            fechaMovimiento: $data['fecha_movimiento'] ?? null
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -264,6 +292,7 @@ class InventarioMovimientoService
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
 
         $lote = $this->loteService->resolverLoteParaSalida($producto, $data, $empresaId);
+        $this->validarLoteMovibleParaSalida($lote);
 
         $stockOrigen = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaOrigen->id, $empresaId);
         $stockAntes = $this->toFloat($stockOrigen->stock_actual);
@@ -274,10 +303,11 @@ class InventarioMovimientoService
             ]);
         }
 
-        $valorizacion = $this->valorizacionService->calcularSalidaPmp(
+        $valorizacion = $this->valorizacionService->calcularSalida(
             stock: $stockOrigen,
             producto: $producto,
-            cantidad: $cantidad
+            cantidad: $cantidad,
+            loteId: $lote?->id
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -305,6 +335,14 @@ class InventarioMovimientoService
             cantidad: $cantidad,
             lote: $lote,
             empresaId: $empresaId
+        );
+
+        $this->dispararEventoStockMinimoSiCorresponde(
+            empresaId: $empresaId,
+            productoId: (int) $producto->id,
+            bodegaId: (int) $bodegaOrigen->id,
+            stockActual: (float) $valorizacion['stock_despues'],
+            movimientoId: (int) $movimiento->id
         );
 
         return $this->cargarRelacionesMovimiento($movimiento);
@@ -548,6 +586,50 @@ class InventarioMovimientoService
             'origen' => $stockOrigen,
             'destino' => $stockDestino,
         ];
+    }
+
+    private function validarLoteMovibleParaSalida(?LoteInventario $lote): void
+    {
+        if (!$lote) {
+            return;
+        }
+
+        if ($lote->estaVencido()) {
+            throw ValidationException::withMessages([
+                'lote_id' => 'No se permite salida, traspaso ni ajuste negativo desde un lote vencido.',
+            ]);
+        }
+
+        if ($lote->estaBloqueadoOperativamente()) {
+            throw ValidationException::withMessages([
+                'lote_id' => 'No se permite mover stock desde un lote en cuarentena o bloqueado.',
+            ]);
+        }
+    }
+
+    private function dispararEventoStockMinimoSiCorresponde(
+        int $empresaId,
+        int $productoId,
+        int $bodegaId,
+        float $stockActual,
+        int $movimientoId
+    ): void {
+        $stockMinimo = $this->reposicionService->umbralMinimoPara($empresaId, $productoId, $bodegaId);
+
+        if ($stockMinimo <= 0 || $stockActual > $stockMinimo) {
+            return;
+        }
+
+        DB::afterCommit(function () use ($empresaId, $productoId, $bodegaId, $stockActual, $stockMinimo, $movimientoId) {
+            event(new StockMinimoPerforado(
+                empresaId: $empresaId,
+                productoId: $productoId,
+                bodegaId: $bodegaId,
+                stockActual: $this->redondearCantidad($stockActual),
+                stockMinimo: $this->redondearCantidad($stockMinimo),
+                movimientoId: $movimientoId
+            ));
+        });
     }
 
     private function validarCantidadPositiva(mixed $cantidad): float

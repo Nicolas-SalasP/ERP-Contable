@@ -133,6 +133,18 @@ const InventarioDashboard = () => {
         cargarDashboard();
     }, []);
 
+    useEffect(() => {
+        const handler = () => cargarDashboard();
+
+        window.addEventListener('inventario:actualizado', handler);
+        window.addEventListener('inventario:stock-critico', handler);
+
+        return () => {
+            window.removeEventListener('inventario:actualizado', handler);
+            window.removeEventListener('inventario:stock-critico', handler);
+        };
+    }, []);
+
     const resumen = dashboard.resumen || emptyDashboard.resumen;
 
     const valorInventario = resumen.valor_total_inventario ?? resumen.stock_valorizado;

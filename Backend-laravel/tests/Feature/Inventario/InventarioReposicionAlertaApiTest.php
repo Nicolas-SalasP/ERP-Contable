@@ -3,6 +3,7 @@
 namespace Tests\Feature\Inventario;
 
 use App\Domains\Core\Models\Empresa;
+use App\Domains\Inventario\Jobs\CalcularAlertasInventarioJob;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\Producto;
@@ -223,6 +224,8 @@ class InventarioReposicionAlertaApiTest extends TestCase
             'activo' => true,
         ]);
 
+        CalcularAlertasInventarioJob::dispatchSync($empresa->id);
+
         Sanctum::actingAs($usuario);
 
         $alertas = $this->getJson('/api/inventario/alertas')
@@ -230,8 +233,15 @@ class InventarioReposicionAlertaApiTest extends TestCase
             ->assertJsonPath('success', true)
             ->json('data');
 
-        $this->assertTrue(collect($alertas)->contains('tipo', 'STOCK_BAJO'));
-        $this->assertTrue(collect($alertas)->contains('tipo', 'REPOSICION_SUGERIDA'));
+        $this->assertTrue(
+            collect($alertas)->contains('tipo', 'STOCK_BAJO'),
+            'No se encontró la alerta persistida STOCK_BAJO.'
+        );
+
+        $this->assertTrue(
+            collect($alertas)->contains('tipo', 'REPOSICION_SUGERIDA'),
+            'No se encontró la alerta persistida REPOSICION_SUGERIDA.'
+        );
 
         $this->getJson('/api/inventario/reposicion/sugerencias')
             ->assertOk()
@@ -243,12 +253,18 @@ class InventarioReposicionAlertaApiTest extends TestCase
     {
         [$empresa, $usuario] = $this->usuarioContadorConPermisos($this->permisosInventarioReposicionCompleto());
 
-        $producto = $this->crearProducto($empresa, ['maneja_lotes' => true, 'requiere_fecha_vencimiento' => true]);
+        $producto = $this->crearProducto($empresa, [
+            'maneja_lotes' => true,
+            'requiere_fecha_vencimiento' => true,
+        ]);
+
         $bodega = $this->crearBodega($empresa);
+
         $lotePorVencer = $this->crearLote($empresa, $producto, [
             'codigo_lote' => 'LOT-POR-VENCER',
             'fecha_vencimiento' => now()->addDays(5)->toDateString(),
         ]);
+
         $loteVencido = $this->crearLote($empresa, $producto, [
             'codigo_lote' => 'LOT-VENCIDO',
             'fecha_vencimiento' => now()->subDay()->toDateString(),
@@ -274,14 +290,24 @@ class InventarioReposicionAlertaApiTest extends TestCase
             'activo' => true,
         ]);
 
+        CalcularAlertasInventarioJob::dispatchSync($empresa->id);
+
         Sanctum::actingAs($usuario);
 
         $alertas = $this->getJson('/api/inventario/alertas')
             ->assertOk()
+            ->assertJsonPath('success', true)
             ->json('data');
 
-        $this->assertTrue(collect($alertas)->contains('tipo', 'LOTE_POR_VENCER'));
-        $this->assertTrue(collect($alertas)->contains('tipo', 'LOTE_VENCIDO'));
+        $this->assertTrue(
+            collect($alertas)->contains('tipo', 'LOTE_POR_VENCER'),
+            'No se encontró la alerta persistida LOTE_POR_VENCER.'
+        );
+
+        $this->assertTrue(
+            collect($alertas)->contains('tipo', 'LOTE_VENCIDO'),
+            'No se encontró la alerta persistida LOTE_VENCIDO.'
+        );
     }
 
     public function test_respuesta_no_incorpora_campos_dte_sii(): void
@@ -289,6 +315,7 @@ class InventarioReposicionAlertaApiTest extends TestCase
         [$empresa, $usuario] = $this->usuarioContadorConPermisos($this->permisosInventarioReposicionCompleto());
 
         $producto = $this->crearProducto($empresa);
+
         ReglaReposicion::create([
             'empresa_id' => $empresa->id,
             'producto_id' => $producto->id,
@@ -298,9 +325,14 @@ class InventarioReposicionAlertaApiTest extends TestCase
             'activo' => true,
         ]);
 
+        CalcularAlertasInventarioJob::dispatchSync($empresa->id);
+
         Sanctum::actingAs($usuario);
 
-        $payload = json_encode($this->getJson('/api/inventario/alertas')->assertOk()->json(), JSON_THROW_ON_ERROR);
+        $payload = json_encode(
+            $this->getJson('/api/inventario/alertas')->assertOk()->json(),
+            JSON_THROW_ON_ERROR
+        );
 
         $this->assertStringNotContainsString('codigo_dte', $payload);
         $this->assertStringNotContainsString('codigo_sii', $payload);
@@ -369,6 +401,7 @@ class InventarioReposicionAlertaApiTest extends TestCase
             'fecha_fabricacion' => null,
             'fecha_vencimiento' => null,
             'observacion' => 'Lote creado por test de reposición',
+            'estado_operativo' => 'DISPONIBLE',
             'activo' => true,
         ], $overrides));
     }
