@@ -135,6 +135,18 @@ Route::middleware('auth:sanctum')->group(function () {
   
     // Rutas Inventario, Bodegas y movimientos
     Route::prefix('inventario')->group(function () {
+        Route::get('/dashboard', [InventarioController::class, 'dashboard']);
+
+        Route::get('/reportes/stock', [InventarioController::class, 'reporteStock']);
+        Route::get('/reportes/movimientos', [InventarioController::class, 'reporteMovimientos']);
+        Route::get('/reportes/valorizacion', [InventarioController::class, 'reporteValorizacion']);
+        Route::get('/reportes/lotes', [InventarioController::class, 'reporteLotes']);
+        Route::get('/reportes/reservas', [InventarioController::class, 'reporteReservas']);
+        Route::get('/reportes/tomas-fisicas', [InventarioController::class, 'reporteTomasFisicas']);
+        Route::get('/reportes/ajustes', [InventarioController::class, 'reporteAjustes']);
+        Route::get('/reportes/reposicion-alertas', [InventarioController::class, 'reporteReposicionAlertas']);
+        Route::get('/reportes/{tipo}/exportar-csv', [InventarioController::class, 'exportarReporteCsv']);
+
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
 
         Route::get('/productos', [InventarioController::class, 'index']);

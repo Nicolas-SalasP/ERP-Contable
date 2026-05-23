@@ -45,6 +45,18 @@ export const inventarioApi = {
         obtener: () => get('/inventario/dashboard'),
     },
 
+    reportes: {
+        stock: (params = {}) => get('/inventario/reportes/stock', params),
+        movimientos: (params = {}) => get('/inventario/reportes/movimientos', params),
+        valorizacion: (params = {}) => get('/inventario/reportes/valorizacion', params),
+        lotes: (params = {}) => get('/inventario/reportes/lotes', params),
+        reservas: (params = {}) => get('/inventario/reportes/reservas', params),
+        tomasFisicas: (params = {}) => get('/inventario/reportes/tomas-fisicas', params),
+        ajustes: (params = {}) => get('/inventario/reportes/ajustes', params),
+        reposicionAlertas: (params = {}) => get('/inventario/reportes/reposicion-alertas', params),
+        exportarCsvUrl: (tipo, params = {}) => `/inventario/reportes/${tipo}/exportar-csv${toQuery(params)}`,
+    },
+
     catalogos: () => get('/inventario/catalogos'),
 
     productos: {
