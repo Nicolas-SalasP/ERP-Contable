@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
+import { usePermisos } from '../../../Contextos/Permisos';
 import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     AlertBox,
@@ -218,11 +219,11 @@ const reportes = [
     {
         key: 'reposicion-alertas',
         apiMethod: 'reposicionAlertas',
-        exportKey: null,
+        exportKey: 'reposicion-alertas',
         label: 'Reposición y alertas',
         icon: 'fas fa-bell',
         description: 'Alertas operativas y sugerencias calculadas por reglas de reposición.',
-        exportable: false,
+        exportable: true,
         filters: ['producto_id', 'bodega_id', 'limit'],
         dataPath: 'alertas',
         secondaryTables: [
@@ -413,6 +414,8 @@ const ReportesInventario = () => {
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [error, setError] = useState(null);
+    const { tienePermiso } = usePermisos();
+    const puedeExportarCsv = tienePermiso('inventario.reportes.exportar');
 
     const {
         productos,
@@ -487,7 +490,17 @@ const ReportesInventario = () => {
             await Swal.fire({
                 icon: 'info',
                 title: 'Exportación no disponible',
-                text: 'Este reporte consolidado no tiene exportación CSV habilitada en backend todavía.',
+                text: 'Este reporte no tiene exportación CSV habilitada.',
+                confirmButtonColor: '#10b981',
+            });
+            return;
+        }
+
+        if (!puedeExportarCsv) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Sin permiso de exportación',
+                text: 'Tu rol puede consultar reportes, pero no tiene permiso inventario.reportes.exportar.',
                 confirmButtonColor: '#10b981',
             });
             return;
@@ -630,9 +643,9 @@ const ReportesInventario = () => {
                             <i className="fas fa-rotate-right"></i>
                             Recargar
                         </SecondaryButton>
-                        <PrimaryButton type="button" onClick={exportarCsv} disabled={exporting || loading}>
+                        <PrimaryButton type="button" onClick={exportarCsv} disabled={exporting || loading || !puedeExportarCsv}>
                             <i className="fas fa-file-csv"></i>
-                            {exporting ? 'Exportando...' : 'Exportar CSV'}
+                            {exporting ? 'Exportando...' : puedeExportarCsv ? 'Exportar CSV' : 'CSV sin permiso'}
                         </PrimaryButton>
                     </>
                 )}
@@ -654,7 +667,7 @@ const ReportesInventario = () => {
                             </span>
                             <div>
                                 <p className="font-black text-sm">{item.label}</p>
-                                <p className="text-[11px] font-bold opacity-70 mt-0.5">{item.exportable ? 'CSV disponible' : 'Consolidado sin CSV'}</p>
+                                <p className="text-[11px] font-bold opacity-70 mt-0.5">{item.exportable ? 'CSV disponible' : 'Consolidado'}</p>
                             </div>
                         </div>
                     </button>
@@ -685,9 +698,9 @@ const ReportesInventario = () => {
 
             <ErrorNotice error={error} />
 
-            {!reporte.exportable && (
-                <AlertBox tone="slate">
-                    Este reporte consolida alertas y sugerencias desde dos servicios. El backend actual no expone CSV para este tipo; los reportes exportables son stock, movimientos, valorización, lotes, reservas, tomas físicas y ajustes.
+            {!puedeExportarCsv && (
+                <AlertBox tone="amber">
+                    Tu rol puede consultar esta vista, pero la descarga CSV requiere el permiso inventario.reportes.exportar.
                 </AlertBox>
             )}
 

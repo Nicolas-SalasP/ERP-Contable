@@ -510,10 +510,16 @@ const request = async (endpoint, method, body, options = {}) => {
 // =====================================================================
 
 const downloadBlob = async (endpoint, filename, options = {}) => {
+    const esEndpointAuth = endpoint.startsWith('/auth/');
+    if (!esEndpointAuth) {
+        await ensureTokenFresh();
+    }
+
     const url = `${API_BASE_URL}${endpoint}`;
     const silent = options.silent === true;
 
     const headers = {
+        Accept: options.accept || 'text/csv,application/octet-stream,*/*',
         ...getAuthHeaders(),
         ...(options.headers || {}),
     };

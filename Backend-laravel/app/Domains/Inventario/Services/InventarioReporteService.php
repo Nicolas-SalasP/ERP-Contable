@@ -585,6 +585,8 @@ class InventarioReporteService
 
     public function exportarCsv(User $usuario, string $tipo, array $filtros = []): array
     {
+        $this->permisos->exigir($usuario, 'inventario.reportes.exportar');
+
         $resultado = match ($tipo) {
             'stock' => $this->stock($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
             'movimientos' => $this->movimientos($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
@@ -593,6 +595,7 @@ class InventarioReporteService
             'reservas' => $this->reservas($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
             'tomas-fisicas' => $this->tomasFisicas($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
             'ajustes' => $this->ajustes($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
+            'reposicion-alertas' => $this->reposicionAlertas($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
             default => throw new Exception('El tipo de reporte no es válido para exportación CSV.'),
         };
 
@@ -608,10 +611,7 @@ class InventarioReporteService
 
     private function exigirPermisoReportes(User $usuario, array $permisosAlternativos = []): void
     {
-        $this->permisos->exigirAlguno($usuario, array_values(array_unique(array_merge([
-            'inventario.reportes.ver',
-            'inventario.dashboard.ver',
-        ], $permisosAlternativos))));
+        $this->permisos->exigir($usuario, 'inventario.reportes.ver');
     }
 
     private function aplicarFiltrosMovimientos(Builder $query, array $filtros): void
@@ -684,6 +684,22 @@ class InventarioReporteService
     {
         if ($tipo === 'valorizacion') {
             return collect($data['por_producto'] ?? [])->map(fn ($row) => $this->aplanarFila($row));
+        }
+
+        if ($tipo === 'reposicion-alertas') {
+            $alertas = collect($data['alertas'] ?? [])->map(function ($row) {
+                $fila = $this->aplanarFila($row);
+                $fila['origen_reporte'] = 'alerta';
+                return $fila;
+            });
+
+            $sugerencias = collect($data['sugerencias_reposicion'] ?? [])->map(function ($row) {
+                $fila = $this->aplanarFila($row);
+                $fila['origen_reporte'] = 'sugerencia_reposicion';
+                return $fila;
+            });
+
+            return $alertas->concat($sugerencias)->values();
         }
 
         return collect($data)->map(fn ($row) => $this->aplanarFila($row));

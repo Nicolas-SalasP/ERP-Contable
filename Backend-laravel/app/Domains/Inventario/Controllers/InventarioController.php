@@ -72,10 +72,21 @@ public function __construct(
 
     public function catalogos(Request $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->service->catalogos($request->user()->empresa_id),
-        ]);
+        try {
+            $this->permisos->exigirAlguno($request->user(), [
+                'inventario.productos.ver',
+                'inventario.bodegas.ver',
+                'inventario.dashboard.ver',
+                'inventario.reportes.ver',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->service->catalogos($request->user()->empresa_id),
+            ]);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
     }
 
 
@@ -315,6 +326,7 @@ public function __construct(
                 'lote_id' => ['nullable', 'integer'],
                 'tipo' => ['nullable', 'string', 'max:80'],
                 'estado' => ['nullable', 'string', 'max:80'],
+                'severidad' => ['nullable', Rule::in(['baja', 'media', 'alta', 'critica'])],
                 'estado_stock' => ['nullable', Rule::in(['ok', 'sin_stock', 'bajo_minimo'])],
                 'estado_lote' => ['nullable', Rule::in(['vigente', 'por_vencer', 'vencido', 'sin_vencimiento', 'inactivo'])],
                 'dias_vencimiento' => ['nullable', 'integer', 'min:0', 'max:365'],

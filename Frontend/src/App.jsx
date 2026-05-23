@@ -375,9 +375,9 @@ function App() {
 
           <Route path="/inventario/reportes" element={
             <RutaPrivada>
-              <RutaProtegidaAlgunPermiso permisos={permisosLecturaInventario}>
+              <RutaProtegida permiso="inventario.reportes.ver">
                 <InventarioLayout><ReportesInventario /></InventarioLayout>
-              </RutaProtegidaAlgunPermiso>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 

@@ -21,7 +21,9 @@ const normalize = (response) => ({
     data: response?.data ?? [],
     pagination: response?.pagination ?? null,
     resumen: response?.resumen ?? null,
+    metadata: response?.metadata ?? null,
     message: response?.message ?? null,
+    errors: response?.errors ?? null,
 });
 
 const get = async (endpoint, params = {}) => {

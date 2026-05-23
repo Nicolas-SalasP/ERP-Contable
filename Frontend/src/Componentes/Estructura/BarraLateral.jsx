@@ -113,19 +113,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 {
                     path: '/inventario/reportes',
                     label: 'Reportes',
-                    permisosRequeridos: [
-                        'inventario.reportes.ver',
-                        'inventario.dashboard.ver',
-                        'inventario.productos.ver',
-                        'inventario.bodegas.ver',
-                        'inventario.movimientos.ver',
-                        'inventario.kardex.ver',
-                        'inventario.valorizacion.ver',
-                        'inventario.lotes.ver',
-                        'inventario.reservas.ver',
-                        'inventario.tomas_fisicas.ver',
-                        'inventario.alertas.ver',
-                    ],
+                    permisosRequeridos: ['inventario.reportes.ver'],
                 },
                 {
                     path: '/inventario/productos',

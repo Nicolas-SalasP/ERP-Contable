@@ -90,6 +90,9 @@ trait PreparaInventarioTrait
 
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',
+            'inventario.dashboard.ver',
+            'inventario.reportes.ver',
+            'inventario.reportes.exportar',
 
             'inventario.ajustes_criticos.ver',
             'inventario.ajustes_criticos.crear',
@@ -111,6 +114,12 @@ trait PreparaInventarioTrait
             'inventario.tomas_fisicas.cerrar',
             'inventario.tomas_fisicas.ajustar',
             'inventario.tomas_fisicas.cancelar',
+
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
+            'inventario.reglas_reposicion.crear',
+            'inventario.reglas_reposicion.editar',
+            'inventario.reglas_reposicion.eliminar',
         ];
     }
 
@@ -122,11 +131,16 @@ trait PreparaInventarioTrait
             'inventario.movimientos.ver',
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',
+            'inventario.dashboard.ver',
+            'inventario.reportes.ver',
+            'inventario.reportes.exportar',
             'inventario.ajustes_criticos.ver',
             'inventario.lotes.ver',
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',
             'inventario.tomas_fisicas.ver',
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
         ];
     }
 
