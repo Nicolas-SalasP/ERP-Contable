@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
+import { usePermisos } from '../../../Contextos/Permisos';
 import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     EmptyState,
@@ -90,6 +91,13 @@ const AlertasInventario = () => {
         cargarBodegasCache,
     } = useInventarioData();
 
+    const { tienePermiso } = usePermisos();
+    const puedeVerReglas = tienePermiso('inventario.reglas_reposicion.ver');
+    const puedeCrearReglas = tienePermiso('inventario.reglas_reposicion.crear');
+    const puedeEditarReglas = tienePermiso('inventario.reglas_reposicion.editar');
+    const puedeEliminarReglas = tienePermiso('inventario.reglas_reposicion.eliminar');
+    const puedeGestionarReglas = puedeEditarReglas || puedeEliminarReglas;
+
     const cargarDatos = async (force = false) => {
         try {
             setLoading(true);
@@ -103,13 +111,17 @@ const AlertasInventario = () => {
                 limit: 150,
             };
 
+            const reglasPromise = puedeVerReglas
+                ? inventarioApi.reglasReposicion.listar({ per_page: 100 })
+                : Promise.resolve({ data: [] });
+
             const [alertasResponse, sugerenciasResponse, reglasResponse] = await Promise.allSettled([
                 inventarioApi.alertas.listar(params),
                 inventarioApi.reposicion.sugerencias({
                     producto_id: productoFiltro || undefined,
                     bodega_id: bodegaFiltro || undefined,
                 }),
-                inventarioApi.reglasReposicion.listar({ per_page: 100 }),
+                reglasPromise,
                 cargarProductosCache({ force }),
                 cargarBodegasCache({ force }),
             ]);
@@ -188,6 +200,10 @@ const AlertasInventario = () => {
     };
 
     const editarRegla = (regla) => {
+        if (!puedeEditarReglas) {
+            return;
+        }
+
         setForm({
             id: regla.id,
             producto_id: regla.producto_id || '',
@@ -203,6 +219,28 @@ const AlertasInventario = () => {
 
     const guardarRegla = async (event) => {
         event.preventDefault();
+
+        const tienePermisoOperacion = form.id ? puedeEditarReglas : puedeCrearReglas;
+
+        if (!tienePermisoOperacion) {
+            const permisoRequerido = form.id
+                ? 'inventario.reglas_reposicion.editar'
+                : 'inventario.reglas_reposicion.crear';
+
+            setError({
+                message: `No tienes permiso para ${form.id ? 'editar' : 'crear'} reglas de reposición.`,
+                permiso_requerido: permisoRequerido,
+            });
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Acción no permitida',
+                text: 'Tu rol no tiene permiso para realizar esta operación.',
+                confirmButtonColor: '#f59e0b',
+            });
+
+            return;
+        }
 
         try {
             setSaving(true);
@@ -247,6 +285,10 @@ const AlertasInventario = () => {
     };
 
     const eliminarRegla = async (regla) => {
+        if (!puedeEliminarReglas) {
+            return;
+        }
+
         const confirm = await Swal.fire({
             icon: 'warning',
             title: 'Eliminar regla de reposición',
@@ -293,10 +335,12 @@ const AlertasInventario = () => {
                             <i className="fas fa-rotate-right"></i>
                             Actualizar
                         </SecondaryButton>
-                        <PrimaryButton onClick={() => setMostrarFormulario(true)}>
-                            <i className="fas fa-plus"></i>
-                            Nueva regla
-                        </PrimaryButton>
+                        {puedeCrearReglas && (
+                            <PrimaryButton onClick={() => setMostrarFormulario(true)}>
+                                <i className="fas fa-plus"></i>
+                                Nueva regla
+                            </PrimaryButton>
+                        )}
                     </>
                 )}
             />
@@ -307,7 +351,9 @@ const AlertasInventario = () => {
                 <StatCard title="Alertas" value={formatNumber(resumenLocal.total)} helper="Registros detectados" icon="fas fa-bell" tone="blue" />
                 <StatCard title="Críticas" value={formatNumber(resumenLocal.criticas)} helper="Requieren revisión inmediata" icon="fas fa-triangle-exclamation" tone="rose" />
                 <StatCard title="Altas" value={formatNumber(resumenLocal.altas)} helper="Riesgo operativo" icon="fas fa-arrow-trend-down" tone="amber" />
-                <StatCard title="Reglas" value={formatNumber(resumenLocal.reglas)} helper="Configuraciones activas/inactivas" icon="fas fa-sliders" tone="indigo" />
+                {puedeVerReglas && (
+                    <StatCard title="Reglas" value={formatNumber(resumenLocal.reglas)} helper="Configuraciones activas/inactivas" icon="fas fa-sliders" tone="indigo" />
+                )}
                 <StatCard title="Reposición sugerida" value={formatNumber(resumenLocal.reposicionTotal, 2)} helper="Unidades acumuladas" icon="fas fa-boxes-packing" tone="emerald" />
             </div>
 
@@ -373,7 +419,7 @@ const AlertasInventario = () => {
                 </div>
             </Panel>
 
-            {mostrarFormulario && (
+            {mostrarFormulario && (puedeCrearReglas || puedeEditarReglas) && (
                 <Panel title={form.id ? 'Editar regla de reposición' : 'Nueva regla de reposición'} subtitle="Define mínimos, objetivos y días de alerta por vencimiento. Puede ser global por producto o específica por bodega.">
                     <form onSubmit={guardarRegla} className="space-y-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -475,7 +521,8 @@ const AlertasInventario = () => {
                 )}
             </Panel>
 
-            <Panel title="Reglas de reposición" subtitle="Configuraciones usadas por el motor de alertas y sugerencias.">
+            {puedeVerReglas && (
+                <Panel title="Reglas de reposición" subtitle="Configuraciones usadas por el motor de alertas y sugerencias.">
                 {reglas.length === 0 ? (
                     <EmptyState title="Sin reglas" description="Crea una regla para activar alertas de stock y reposición sugerida." icon="fas fa-sliders" />
                 ) : (
@@ -489,7 +536,7 @@ const AlertasInventario = () => {
                                 <Th align="right">Reorden</Th>
                                 <Th align="right">Días venc.</Th>
                                 <Th>Estado</Th>
-                                <Th align="right">Acciones</Th>
+                                {puedeGestionarReglas && <Th align="right">Acciones</Th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -509,22 +556,29 @@ const AlertasInventario = () => {
                                             {regla.activo ? 'Activa' : 'Inactiva'}
                                         </span>
                                     </Td>
-                                    <Td align="right">
-                                        <div className="flex justify-end gap-2">
-                                            <SecondaryButton type="button" onClick={() => editarRegla(regla)} className="px-3 py-2">
-                                                Editar
-                                            </SecondaryButton>
-                                            <button type="button" onClick={() => eliminarRegla(regla)} className="inline-flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black py-2 px-3 rounded-xl transition-all text-xs">
-                                                Eliminar
-                                            </button>
-                                        </div>
-                                    </Td>
+                                    {puedeGestionarReglas && (
+                                        <Td align="right">
+                                            <div className="flex justify-end gap-2">
+                                                {puedeEditarReglas && (
+                                                    <SecondaryButton type="button" onClick={() => editarRegla(regla)} className="px-3 py-2">
+                                                        Editar
+                                                    </SecondaryButton>
+                                                )}
+                                                {puedeEliminarReglas && (
+                                                    <button type="button" onClick={() => eliminarRegla(regla)} className="inline-flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black py-2 px-3 rounded-xl transition-all text-xs">
+                                                        Eliminar
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </Td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
                     </TableShell>
                 )}
-            </Panel>
+                </Panel>
+            )}
         </div>
     );
 };
