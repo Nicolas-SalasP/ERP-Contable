@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Domains\Core\Controllers\AuthController;
+use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
 use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\AnulacionController;
@@ -255,4 +256,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tomas-fisicas/{id}/ajustar', [InventarioController::class, 'ajustarTomaFisica']);
         Route::post('/tomas-fisicas/{id}/cancelar', [InventarioController::class, 'cancelarTomaFisica']);
     });
+});
+
+Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
+    Route::post('/provision-user',  [WebProvisioningController::class, 'provisionUser']);
+    Route::post('/sync-plan',       [WebProvisioningController::class, 'syncPlan']);
+    Route::get('/online-users',     [WebProvisioningController::class, 'onlineUsers']);
 });
