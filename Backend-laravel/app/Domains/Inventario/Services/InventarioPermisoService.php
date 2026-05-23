@@ -13,9 +13,7 @@ class InventarioPermisoService
             $usuario->load('rol');
         }
 
-        $nombreRol = strtolower((string) ($usuario->rol->nombre ?? ''));
-
-        if ($nombreRol === 'administrador') {
+        if ($this->esAdministradorInventario($usuario)) {
             return;
         }
 
@@ -32,9 +30,7 @@ class InventarioPermisoService
             $usuario->load('rol');
         }
 
-        $nombreRol = strtolower((string) ($usuario->rol->nombre ?? ''));
-
-        if ($nombreRol === 'administrador') {
+        if ($this->esAdministradorInventario($usuario)) {
             return;
         }
 
@@ -47,6 +43,25 @@ class InventarioPermisoService
         }
 
         throw new Exception('No tienes permisos para ejecutar esta operación de inventario.');
+    }
+
+    private function esAdministradorInventario(User $usuario): bool
+    {
+        $rol = $usuario->rol;
+
+        if (!$rol) {
+            return false;
+        }
+
+        $jerarquia = (int) ($rol->jerarquia ?? 0);
+        $nombreRol = strtolower(trim((string) ($rol->nombre ?? '')));
+
+        return $jerarquia >= 80 || in_array($nombreRol, [
+            'administrador',
+            'admin',
+            'super admin',
+            'superadmin',
+        ], true);
     }
 
     private function normalizarPermisos(mixed $permisos): array

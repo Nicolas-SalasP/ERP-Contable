@@ -76,6 +76,8 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             label: 'Inventario',
             icon: 'fas fa-boxes-stacked',
             permisosRequeridos: [
+                'inventario.dashboard.ver',
+                'inventario.reportes.ver',
                 'inventario.productos.ver',
                 'inventario.bodegas.ver',
                 'inventario.movimientos.ver',
@@ -93,6 +95,8 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     path: '/inventario/dashboard',
                     label: 'Dashboard Inventario',
                     permisosRequeridos: [
+                        'inventario.dashboard.ver',
+                        'inventario.reportes.ver',
                         'inventario.productos.ver',
                         'inventario.bodegas.ver',
                         'inventario.movimientos.ver',
@@ -104,6 +108,23 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                         'inventario.tomas_fisicas.ver',
                         'inventario.alertas.ver',
                         'inventario.reglas_reposicion.ver',
+                    ],
+                },
+                {
+                    path: '/inventario/reportes',
+                    label: 'Reportes',
+                    permisosRequeridos: [
+                        'inventario.reportes.ver',
+                        'inventario.dashboard.ver',
+                        'inventario.productos.ver',
+                        'inventario.bodegas.ver',
+                        'inventario.movimientos.ver',
+                        'inventario.kardex.ver',
+                        'inventario.valorizacion.ver',
+                        'inventario.lotes.ver',
+                        'inventario.reservas.ver',
+                        'inventario.tomas_fisicas.ver',
+                        'inventario.alertas.ver',
                     ],
                 },
                 {
@@ -256,7 +277,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
 
                                     {/* SUBMENÚ DESPLEGABLE */}
                                     {group.subItems && (
-                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
+                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[900px] opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                                             <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
                                              {group.subItems
                                                 .filter((subItem) => !subItem.permisosRequeridos || tieneAlgunPermiso(subItem.permisosRequeridos))

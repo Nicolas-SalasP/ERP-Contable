@@ -105,6 +105,11 @@ class RolSeeder extends Seeder
             // PMP y valorizacion
             'inventario.valorizacion.ver',
 
+            // Dashboard y reportes gerenciales
+            'inventario.dashboard.ver',
+            'inventario.reportes.ver',
+            'inventario.reportes.exportar',
+
             // Mermas y ajustes criticos
             'inventario.ajustes_criticos.ver',
             'inventario.ajustes_criticos.crear',
@@ -113,6 +118,13 @@ class RolSeeder extends Seeder
             'inventario.lotes.ver',
             'inventario.lotes.crear',
             'inventario.lotes.editar',
+
+            // Alertas y reglas de reposicion
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
+            'inventario.reglas_reposicion.crear',
+            'inventario.reglas_reposicion.editar',
+            'inventario.reglas_reposicion.eliminar',
 
             // Reservas y disponibilidad
             'inventario.reservas.ver',
@@ -140,7 +152,12 @@ class RolSeeder extends Seeder
             'inventario.movimientos.ver',
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',
+            'inventario.dashboard.ver',
+            'inventario.reportes.ver',
+            'inventario.reportes.exportar',
             'inventario.ajustes_criticos.ver',
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
             'inventario.lotes.ver',
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',

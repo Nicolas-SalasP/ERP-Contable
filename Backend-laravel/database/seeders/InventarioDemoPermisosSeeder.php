@@ -27,6 +27,7 @@ class InventarioDemoPermisosSeeder extends Seeder
         |
         */
 
+        $this->asignarPermisos('Super Admin', $this->permisosAdministradorInventario());
         $this->asignarPermisos('Administrador', $this->permisosAdministradorInventario());
         $this->asignarPermisos('Contador', $this->permisosContadorInventario());
         $this->asignarPermisos('Auditor', $this->permisosAuditorInventario());
@@ -132,6 +133,15 @@ class InventarioDemoPermisosSeeder extends Seeder
 
             /*
             |--------------------------------------------------------------------------
+            | Fase 9/10 - Dashboard y reportes
+            |--------------------------------------------------------------------------
+            */
+            'inventario.dashboard.ver',
+            'inventario.reportes.ver',
+            'inventario.reportes.exportar',
+
+            /*
+            |--------------------------------------------------------------------------
             | Fase 4 - Mermas y ajustes críticos
             |--------------------------------------------------------------------------
             */
@@ -158,6 +168,18 @@ class InventarioDemoPermisosSeeder extends Seeder
             'inventario.reservas.liberar',
             'inventario.reservas.consumir',
             'inventario.disponibilidad.ver',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 8 - Reposición y alertas
+            |--------------------------------------------------------------------------
+            */
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
+            'inventario.reglas_reposicion.crear',
+            'inventario.reglas_reposicion.editar',
+            'inventario.reglas_reposicion.eliminar',
+
             /*
             |--------------------------------------------------------------------------
             | Fase 7 - Toma física e inventario cíclico
@@ -208,6 +230,15 @@ class InventarioDemoPermisosSeeder extends Seeder
 
             /*
             |--------------------------------------------------------------------------
+            | Fase 9/10 - Consulta dashboard y reportes
+            |--------------------------------------------------------------------------
+            */
+            'inventario.dashboard.ver',
+            'inventario.reportes.ver',
+            'inventario.reportes.exportar',
+
+            /*
+            |--------------------------------------------------------------------------
             | Fase 4 - Consulta de ajustes críticos
             |--------------------------------------------------------------------------
             */
@@ -227,6 +258,14 @@ class InventarioDemoPermisosSeeder extends Seeder
             */
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 8 - Consulta de alertas y reposición
+            |--------------------------------------------------------------------------
+            */
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
             
             /*
             |--------------------------------------------------------------------------

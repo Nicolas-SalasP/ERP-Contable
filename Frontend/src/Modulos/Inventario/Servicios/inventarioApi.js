@@ -54,6 +54,10 @@ export const inventarioApi = {
         tomasFisicas: (params = {}) => get('/inventario/reportes/tomas-fisicas', params),
         ajustes: (params = {}) => get('/inventario/reportes/ajustes', params),
         reposicionAlertas: (params = {}) => get('/inventario/reportes/reposicion-alertas', params),
+        exportarCsv: (tipo, params = {}) => api.download(
+            `/inventario/reportes/${tipo}/exportar-csv${toQuery(params)}`,
+            `inventario_reporte_${String(tipo).replaceAll('-', '_')}.csv`,
+        ),
         exportarCsvUrl: (tipo, params = {}) => `/inventario/reportes/${tipo}/exportar-csv${toQuery(params)}`,
     },
 

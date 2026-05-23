@@ -39,6 +39,7 @@ import ReservasInventario from './Modulos/Inventario/Vistas/ReservasInventario';
 import TomasFisicasInventario from './Modulos/Inventario/Vistas/TomasFisicasInventario';
 import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInventario';
 import AlertasInventario from './Modulos/Inventario/Vistas/AlertasInventario';
+import ReportesInventario from './Modulos/Inventario/Vistas/ReportesInventario';
 import InventarioProviderWrapper from './Modulos/Inventario/InventarioProviderWrapper';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
@@ -80,6 +81,8 @@ const RutaProtegidaAlgunPermiso = ({ permisos = [], children }) => {
 };
 
 const permisosLecturaInventario = [
+  'inventario.dashboard.ver',
+  'inventario.reportes.ver',
   'inventario.productos.ver',
   'inventario.bodegas.ver',
   'inventario.movimientos.ver',
@@ -370,6 +373,13 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/inventario/reportes" element={
+            <RutaPrivada>
+              <RutaProtegidaAlgunPermiso permisos={permisosLecturaInventario}>
+                <InventarioLayout><ReportesInventario /></InventarioLayout>
+              </RutaProtegidaAlgunPermiso>
+            </RutaPrivada>
+          } />
 
           <Route path="/inventario/alertas" element={
             <RutaPrivada>
