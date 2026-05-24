@@ -6,8 +6,10 @@ use App\Domains\Sii\Exceptions\DteEstadoInvalidoException;
 use App\Domains\Sii\Exceptions\DteIncompletoException;
 use App\Domains\Sii\Models\SiiCaf;
 use App\Domains\Sii\Models\SiiDteEmitido;
+use App\Domains\Sii\Models\SiiDteEmitidoEvento;
 use App\Domains\Sii\Services\Caf\CafService;
 use App\Domains\Sii\Services\Certificado\CertificadoService;
+use App\Domains\Sii\Services\Validators\CuadraturaMontosValidator;
 use App\Domains\Sii\Services\Xml\DteSigner;
 use App\Domains\Sii\Services\Xml\DteXmlBuilder;
 use App\Domains\Sii\Services\Xml\SetDte\SetDteBuilder;
@@ -56,7 +58,8 @@ class EmitirDteService
         private readonly DteXmlBuilder $dteXmlBuilder,
         private readonly DteSigner $dteSigner,
         private readonly SetDteBuilder $setDteBuilder,
-        private readonly SetDteSigner $setDteSigner
+        private readonly SetDteSigner $setDteSigner,
+        private readonly CuadraturaMontosValidator $cuadraturaValidator
     ) {
     }
 
@@ -143,6 +146,10 @@ class EmitirDteService
 
                 $this->cafService->marcarFolioUsado($folioUso->id, $dteLock->id);
 
+                // R4 (HARDENING-1): persistir evento BORRADOR -> FIRMADO en
+                // la misma transaccion para garantizar atomicidad event-sourcing.
+                SiiDteEmitidoEvento::registrarFirma($dteLock, (int) $folioUso->folio, $hashSha256);
+
                 return $dteLock;
             });
 
@@ -205,6 +212,11 @@ class EmitirDteService
                 sprintf('DTE %d no tiene detalles (al menos 1 linea requerida)', $dte->id)
             );
         }
+
+        // R3 (HARDENING-1): cuadratura aritmetica de montos al centavo ANTES
+        // de reservar folio CAF. Si la suma de detalles no coincide con los
+        // totales del DTE, fallar duro sin consumir folio.
+        $this->cuadraturaValidator->validar($dte);
     }
 
     /**

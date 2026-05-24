@@ -115,6 +115,67 @@ class SiiDteEmitido extends Model
     }
 
     /**
+     * HARDENING-1 R1 — Inmutabilidad tecnica del snapshot DTE post-firma.
+     *
+     * Solo estos campos pueden modificarse cuando el DTE esta en un estado
+     * "post-firma" (FIRMADO, ENVIADO_SII, ACEPTADO, etc.). Cualquier intento
+     * de modificar otros campos lanza LogicException, preservando el snapshot
+     * legal del documento (exigencia SII: el DTE emitido es inmutable).
+     */
+    private const CAMPOS_PERMITIDOS_POST_FIRMADO = [
+        'estado',
+        'fecha_firma',
+        'fecha_envio_sii',
+        'fecha_aceptacion_sii',
+        'fecha_rechazo_sii',
+        'track_id',
+        'codigo_respuesta_sii',
+        'glosa_sii',
+        'xml_path',
+        'xml_hash_sha256',
+        'xml_completo_cifrado',
+        'pdf_path',
+        'updated_at',
+    ];
+
+    /** Estados en los que el DTE se considera firmado y persistido (R1). */
+    private const ESTADOS_INMUTABLES = [
+        self::ESTADO_FIRMADO,
+        self::ESTADO_ENVIADO_SII,
+        self::ESTADO_EN_PROCESO_SII,
+        self::ESTADO_ACEPTADO,
+        self::ESTADO_ACEPTADO_CON_REPAROS,
+        self::ESTADO_RECHAZADO,
+        self::ESTADO_REEMITIDO,
+        self::ESTADO_ANULADO_CON_NC,
+        self::ESTADO_ANULADO_FALLO_INTERNO,
+    ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (SiiDteEmitido $dte) {
+            $estadoOriginal = $dte->getOriginal('estado');
+
+            // BORRADOR (y nulls) son libremente editables.
+            if (! in_array($estadoOriginal, self::ESTADOS_INMUTABLES, true)) {
+                return;
+            }
+
+            $camposModificados  = array_keys($dte->getDirty());
+            $camposNoPermitidos = array_diff($camposModificados, self::CAMPOS_PERMITIDOS_POST_FIRMADO);
+
+            if ($camposNoPermitidos !== []) {
+                throw new \LogicException(sprintf(
+                    'DTE %d en estado "%s" es inmutable; campos no permitidos: %s.',
+                    $dte->id ?? 0,
+                    $estadoOriginal,
+                    implode(', ', $camposNoPermitidos)
+                ));
+            }
+        });
+    }
+
+    /**
      * Mapea el codigo numerico de tipo DTE a su nombre humano.
      * Centralizado aqui para no duplicar en controllers, vistas y reportes.
      */
@@ -177,6 +238,15 @@ class SiiDteEmitido extends Model
     public function impuestosAdicionales(): HasMany
     {
         return $this->hasMany(SiiDteEmitidoImpuestoAdicional::class, 'dte_emitido_id');
+    }
+
+    /**
+     * HARDENING-1 R4: audit log de transiciones de estado.
+     */
+    public function eventos(): HasMany
+    {
+        return $this->hasMany(SiiDteEmitidoEvento::class, 'dte_emitido_id')
+            ->orderBy('created_at');
     }
 
     // -------- SCOPES --------

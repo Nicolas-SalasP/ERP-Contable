@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Sii\Services\Xml\DteXmlBuilder;
@@ -30,6 +33,25 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Empresa::observe(EmpresaObserver::class);
+
+        // HARDENING-1 R6 — Rate limiters por empresa para endpoints SII.
+        //
+        // 'sii-empresa': baseline 60 req/min por empresa (60 req/min por IP
+        // si no hay usuario autenticado). Aplica a todas las rutas /api/sii.
+        //
+        // 'sii-uploads-pesados': 10 req/hora para uploads de certificado y
+        // CAF (operaciones costosas y poco frecuentes en operacion real).
+        //
+        // El bucket por empresa garantiza aislamiento multi-tenant: una
+        // empresa A excediendo su limite NO afecta a la empresa B.
+        RateLimiter::for('sii-empresa', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->empresa_id ?? $request->ip());
+        });
+
+        RateLimiter::for('sii-uploads-pesados', function (Request $request) {
+            return Limit::perHour(10)->by($request->user()?->empresa_id ?? $request->ip());
+        });
+
         Gate::define('gestionar-contabilidad-critica', function ($user) {
             $rol = Rol::find($user->rol_id);
 

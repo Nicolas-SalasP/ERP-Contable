@@ -24,7 +24,10 @@ class SiiServiceProvider extends ServiceProvider
 
         $this->mergeConfigFrom(__DIR__ . '/../../../config/sii.php', 'sii');
 
-        Route::middleware(['api', 'auth:sanctum'])
+        // HARDENING-1 R6: throttle por empresa (60 req/min) en TODAS las rutas SII.
+        // El throttle 'sii-uploads-pesados' (10/h) se aplica adicionalmente a
+        // endpoints especificos dentro de Routes/api.php (cert + caf store).
+        Route::middleware(['api', 'auth:sanctum', 'throttle:sii-empresa'])
             ->prefix('api/sii')
             ->group(__DIR__ . '/Routes/api.php');
 

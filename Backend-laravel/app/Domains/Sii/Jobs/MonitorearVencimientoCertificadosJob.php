@@ -44,6 +44,7 @@ class MonitorearVencimientoCertificadosJob implements ShouldQueue
     public function handle(): void
     {
         $contador = ['enviadas' => 0, 'fallidas' => 0, 'skipped' => 0];
+        $erroresAislados = [];
 
         $certificados = SiiCertificadoEmpresa::query()
             ->activos()
@@ -51,31 +52,27 @@ class MonitorearVencimientoCertificadosJob implements ShouldQueue
             ->get();
 
         foreach ($certificados as $cert) {
-            $nivel = $cert->nivelAlerta();
-
-            if ($nivel === SiiCertificadoEmpresa::ALERTA_SIN_ALERTA) {
-                $contador['skipped']++;
-                continue;
-            }
-
-            $destinatario = $this->resolverDestinatario($cert);
-            if ($destinatario === null) {
-                Log::channel('sii')->warning('Cert sin email destinatario; skip envio de alerta.', [
+            // HARDENING-1 R7: aislamiento cross-tenant. Una empresa con cert
+            // corrupto o cualquier excepcion inesperada NO debe abortar el
+            // procesamiento de las demas empresas. Capturamos por certificado.
+            try {
+                $resultado = $this->procesarCertificado($cert);
+                $contador[$resultado]++;
+            } catch (Throwable $e) {
+                $erroresAislados[] = [
                     'certificado_id' => $cert->id,
                     'empresa_id'     => $cert->empresa_id,
-                    'nivel'          => $nivel,
+                    'exception'      => $e::class,
+                    'message'        => $e->getMessage(),
+                    'trace_hash'     => substr(sha1($e->getTraceAsString()), 0, 8),
+                ];
+                Log::channel('sii')->error('Falla aislada procesando certificado en monitor.', [
+                    'certificado_id' => $cert->id,
+                    'empresa_id'     => $cert->empresa_id,
+                    'exception'      => $e::class,
+                    'message'        => $e->getMessage(),
                 ]);
-                $contador['skipped']++;
-                continue;
             }
-
-            if (! $this->debeEnviar($cert, $nivel)) {
-                $contador['skipped']++;
-                continue;
-            }
-
-            $resultado = $this->enviar($cert, $nivel, $destinatario);
-            $contador[$resultado]++;
         }
 
         Log::channel('sii')->info('MonitorearVencimientoCertificadosJob finalizado.', [
@@ -83,7 +80,40 @@ class MonitorearVencimientoCertificadosJob implements ShouldQueue
             'enviadas'           => $contador['enviadas'],
             'fallidas'           => $contador['fallidas'],
             'skipped'            => $contador['skipped'],
+            'con_error_aislado'  => count($erroresAislados),
+            'errores_aislados'   => $erroresAislados,
         ]);
+    }
+
+    /**
+     * Procesa un certificado individual. Aislado de otros certificados via
+     * try/catch en handle() para garantizar que una falla no aborte el loop.
+     *
+     * @return 'enviadas'|'fallidas'|'skipped'
+     */
+    private function procesarCertificado(SiiCertificadoEmpresa $cert): string
+    {
+        $nivel = $cert->nivelAlerta();
+
+        if ($nivel === SiiCertificadoEmpresa::ALERTA_SIN_ALERTA) {
+            return 'skipped';
+        }
+
+        $destinatario = $this->resolverDestinatario($cert);
+        if ($destinatario === null) {
+            Log::channel('sii')->warning('Cert sin email destinatario; skip envio de alerta.', [
+                'certificado_id' => $cert->id,
+                'empresa_id'     => $cert->empresa_id,
+                'nivel'          => $nivel,
+            ]);
+            return 'skipped';
+        }
+
+        if (! $this->debeEnviar($cert, $nivel)) {
+            return 'skipped';
+        }
+
+        return $this->enviar($cert, $nivel, $destinatario);
     }
 
     private function resolverDestinatario(SiiCertificadoEmpresa $cert): ?string

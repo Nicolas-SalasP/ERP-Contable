@@ -36,7 +36,9 @@ Route::put('configuracion', [SiiConfiguracionController::class, 'update']);
 // Certificado digital .pfx (F2.1)
 // ---------------------------------------------------------------------
 Route::get('certificado', [SiiCertificadoController::class, 'show']);
-Route::post('certificado', [SiiCertificadoController::class, 'store']);
+// HARDENING-1 R6: throttle adicional 10/h en upload de cert (operacion costosa).
+Route::post('certificado', [SiiCertificadoController::class, 'store'])
+    ->middleware('throttle:sii-uploads-pesados');
 Route::post('certificado/verificar', [SiiCertificadoController::class, 'verificar']);
 Route::delete('certificado/{id}', [SiiCertificadoController::class, 'destroy']);
 
@@ -48,7 +50,9 @@ Route::delete('certificado/{id}', [SiiCertificadoController::class, 'destroy']);
 Route::prefix('caf')->group(function () {
     Route::get('saldos',  [SiiCafController::class, 'saldos']);
     Route::get('/',       [SiiCafController::class, 'index']);
-    Route::post('/',      [SiiCafController::class, 'store']);
+    // HARDENING-1 R6: throttle adicional 10/h en upload de CAF.
+    Route::post('/',      [SiiCafController::class, 'store'])
+        ->middleware('throttle:sii-uploads-pesados');
     Route::get('{id}',    [SiiCafController::class, 'show'])->whereNumber('id');
     Route::delete('{id}', [SiiCafController::class, 'destroy'])->whereNumber('id');
 });
