@@ -103,6 +103,29 @@ class SiiDteEmitido extends Model
         return SiiDteEmitidoFactory::new();
     }
 
+    /**
+     * Mapea el codigo numerico de tipo DTE a su nombre humano.
+     * Centralizado aqui para no duplicar en controllers, vistas y reportes.
+     */
+    public static function nombreTipo(int $tipo): string
+    {
+        return match ($tipo) {
+            self::TIPO_FACTURA                  => 'Factura Electronica',
+            self::TIPO_FACTURA_EXENTA           => 'Factura Exenta',
+            self::TIPO_BOLETA                   => 'Boleta Electronica',
+            self::TIPO_BOLETA_EXENTA            => 'Boleta Exenta',
+            self::TIPO_LIQUIDACION_FACTURA      => 'Liquidacion Factura',
+            self::TIPO_FACTURA_COMPRA           => 'Factura de Compra',
+            self::TIPO_GUIA_DESPACHO            => 'Guia de Despacho',
+            self::TIPO_NOTA_DEBITO              => 'Nota de Debito',
+            self::TIPO_NOTA_CREDITO             => 'Nota de Credito',
+            self::TIPO_FACTURA_EXPORTACION      => 'Factura de Exportacion',
+            self::TIPO_NOTA_DEBITO_EXPORTACION  => 'Nota de Debito Exportacion',
+            self::TIPO_NOTA_CREDITO_EXPORTACION => 'Nota de Credito Exportacion',
+            default                              => "Tipo {$tipo}",
+        };
+    }
+
     // -------- RELACIONES --------
 
     public function empresa(): BelongsTo

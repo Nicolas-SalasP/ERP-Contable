@@ -218,6 +218,51 @@ class CafService
         return Crypt::decryptString($caf->rsa_sk_cifrada);
     }
 
+    /**
+     * Revoca un CAF, liberando todos los folios RESERVADOS como HUERFANO.
+     *
+     * Los folios en estado USADO permanecen intactos (regla SII: lo emitido
+     * es legalmente inmutable). Los folios RESERVADOS pasan a HUERFANO con
+     * la razon "CAF revocado: {motivo}". El CAF mismo cambia a estado
+     * 'revocado' (no se elimina, auditoria preservada).
+     *
+     * @throws \LogicException si el CAF ya estaba revocado
+     */
+    public function revocar(SiiCaf $caf, string $motivo): void
+    {
+        if ($caf->estado === SiiCaf::ESTADO_REVOCADO) {
+            throw new \LogicException('El CAF ya estaba revocado.');
+        }
+
+        $foliosLiberados = 0;
+
+        DB::transaction(function () use ($caf, $motivo, &$foliosLiberados) {
+            $reservados = $caf->folios()
+                ->where('estado', SiiCafFolioUso::ESTADO_RESERVADO)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($reservados as $folioUso) {
+                $this->liberarFolioHuerfano(
+                    $folioUso->id,
+                    sprintf('CAF revocado: %s', $motivo)
+                );
+            }
+
+            $caf->update(['estado' => SiiCaf::ESTADO_REVOCADO]);
+
+            $foliosLiberados = $reservados->count();
+        });
+
+        Log::channel('sii')->info('CAF revocado', [
+            'caf_id'                          => $caf->id,
+            'empresa_id'                      => $caf->empresa_id,
+            'tipo_dte'                        => $caf->tipo_dte,
+            'motivo'                          => $motivo,
+            'folios_liberados_como_huerfano'  => $foliosLiberados,
+        ]);
+    }
+
     private function normalizarRutEmpresa(string $rut): string
     {
         try {
