@@ -5,6 +5,7 @@ namespace App\Domains\Sii;
 use App\Domains\Sii\Console\Commands\CargarCafCommand;
 use App\Domains\Sii\Console\Commands\EmitirDtePruebaCommand;
 use App\Domains\Sii\Console\Commands\EnviarDtePruebaCommand;
+use App\Domains\Sii\Console\Commands\FlujoCompletoPruebaCommand;
 use App\Domains\Sii\Console\Commands\GenerarXmlPruebaCommand;
 use App\Domains\Sii\Console\Commands\ListarEnviosFallidosCommand;
 use App\Domains\Sii\Console\Commands\MonitorearCertificadosCommand;
@@ -48,6 +49,7 @@ class SiiServiceProvider extends ServiceProvider
                 ObtenerTokenPruebaCommand::class,
                 EnviarDtePruebaCommand::class,
                 ListarEnviosFallidosCommand::class,
+                FlujoCompletoPruebaCommand::class,
             ]);
         }
 
