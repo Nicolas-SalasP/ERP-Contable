@@ -70,3 +70,52 @@ describe('siiApi.certificado', () => {
         expect(api.delete).toHaveBeenCalledWith('/sii/certificado/42');
     });
 });
+
+describe('siiApi.caf', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('listar sin filtro llama a GET /sii/caf sin params', async () => {
+        api.get.mockResolvedValue({ data: [] });
+        await siiApi.caf.listar();
+        expect(api.get).toHaveBeenCalledWith('/sii/caf', {});
+    });
+
+    it('listar con filtro pasa tipo_dte como param', async () => {
+        api.get.mockResolvedValue({ data: [] });
+        await siiApi.caf.listar(33);
+        expect(api.get).toHaveBeenCalledWith('/sii/caf', { tipo_dte: 33 });
+    });
+
+    it('saldos llama a GET /sii/caf/saldos', async () => {
+        api.get.mockResolvedValue({ data: {} });
+        await siiApi.caf.saldos();
+        expect(api.get).toHaveBeenCalledWith('/sii/caf/saldos');
+    });
+
+    it('subir construye FormData con key "archivo"', async () => {
+        api.upload.mockResolvedValue({ id: 1 });
+
+        const fakeXml = new File(['<AUTORIZACION/>'], 'caf.xml', { type: 'application/xml' });
+        await siiApi.caf.subir(fakeXml);
+
+        expect(api.upload).toHaveBeenCalledTimes(1);
+        const [endpoint, fd] = api.upload.mock.calls[0];
+        expect(endpoint).toBe('/sii/caf');
+        expect(fd).toBeInstanceOf(FormData);
+        expect(fd.get('archivo')).toBe(fakeXml);
+    });
+
+    it('revocar envia motivo en body de DELETE /sii/caf/{id}', async () => {
+        api.delete.mockResolvedValue(null);
+        await siiApi.caf.revocar(99, 'razon valida de prueba');
+        expect(api.delete).toHaveBeenCalledWith('/sii/caf/99', { motivo: 'razon valida de prueba' });
+    });
+
+    it('mostrar llama a GET /sii/caf/{id}', async () => {
+        api.get.mockResolvedValue({ id: 7 });
+        await siiApi.caf.mostrar(7);
+        expect(api.get).toHaveBeenCalledWith('/sii/caf/7');
+    });
+});

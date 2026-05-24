@@ -26,6 +26,35 @@ import { api } from '../../../Configuracion/api';
  * @property {'activo'|'cuarentena'|'revocado'} estado
  */
 
+/**
+ * @typedef {Object} CafResumen
+ * @property {number} id
+ * @property {number} tipo_dte
+ * @property {number} folio_desde
+ * @property {number} folio_hasta
+ * @property {number} folio_actual
+ * @property {number} folios_usados
+ * @property {number} folios_huerfanos
+ * @property {string} fecha_autorizacion   - ISO date
+ * @property {string|null} fecha_vencimiento
+ * @property {string} rut_empresa_caf
+ * @property {string} razon_social_caf
+ * @property {string} sii_idk
+ * @property {'activo'|'agotado'|'vencido'|'revocado'} estado
+ */
+
+/**
+ * @typedef {Object} SaldoPorTipo
+ * @property {number} tipo_dte
+ * @property {string} nombre               - nombre humano del tipo (backend lo provee)
+ * @property {number} total_autorizado
+ * @property {number} disponibles
+ * @property {number} usados
+ * @property {number} huerfanos
+ * @property {number} cafs_activos
+ * @property {number} cafs_agotados
+ */
+
 const siiApi = {
     configuracion: {
         /** @returns {Promise<ConfiguracionSii>} */
@@ -62,6 +91,41 @@ const siiApi = {
          * @returns {Promise<void>}
          */
         revocar: (id) => api.delete(`/sii/certificado/${id}`),
+    },
+
+    caf: {
+        /**
+         * @param {number|null} tipoDte filtro opcional
+         * @returns {Promise<{data: CafResumen[]}>}
+         */
+        listar: (tipoDte = null) =>
+            api.get('/sii/caf', tipoDte ? { tipo_dte: tipoDte } : {}),
+
+        /** @returns {Promise<{data: Record<string, SaldoPorTipo>}>} */
+        saldos: () => api.get('/sii/caf/saldos'),
+
+        /**
+         * @param {number} id
+         * @returns {Promise<CafResumen>}
+         */
+        mostrar: (id) => api.get(`/sii/caf/${id}`),
+
+        /**
+         * @param {File} archivo XML del CAF
+         * @returns {Promise<CafResumen>}
+         */
+        subir: (archivo) => {
+            const fd = new FormData();
+            fd.append('archivo', archivo);
+            return api.upload('/sii/caf', fd);
+        },
+
+        /**
+         * @param {number} id
+         * @param {string} motivo min 5 max 200 chars
+         * @returns {Promise<void>}
+         */
+        revocar: (id, motivo) => api.delete(`/sii/caf/${id}`, { motivo }),
     },
 };
 

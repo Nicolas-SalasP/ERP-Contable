@@ -162,6 +162,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             // autenticado con empresa_id ve el modulo. Granularidad fina llega en F8/F9.
             subItems: [
                 { path: '/sii/configuracion', label: 'Configuración' },
+                { path: '/sii/caf', label: 'Folios CAF' },
                 { path: '/sii/certificado', label: 'Certificado Digital' },
             ]
         },
