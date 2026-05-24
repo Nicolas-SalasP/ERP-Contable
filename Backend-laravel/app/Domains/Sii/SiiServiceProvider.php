@@ -2,6 +2,8 @@
 
 namespace App\Domains\Sii;
 
+use App\Domains\Sii\Console\Commands\MonitorearCertificadosCommand;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,5 +24,25 @@ class SiiServiceProvider extends ServiceProvider
         Route::middleware(['api', 'auth:sanctum'])
             ->prefix('api/sii')
             ->group(__DIR__ . '/Routes/api.php');
+
+        // Views del modulo (namespace 'sii::')
+        $this->loadViewsFrom(__DIR__ . '/Resources/views', 'sii');
+
+        // Comandos artisan
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                MonitorearCertificadosCommand::class,
+            ]);
+        }
+
+        // Schedule: monitoreo diario de vencimiento de certificados a las 09:00 hora Chile.
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
+            $schedule->command('sii:monitorear-certificados')
+                ->dailyAt('09:00')
+                ->timezone('America/Santiago')
+                ->withoutOverlapping()
+                ->onOneServer()
+                ->name('sii-monitorear-certificados-vencimiento');
+        });
     }
 }
