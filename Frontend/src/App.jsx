@@ -32,6 +32,7 @@ import GestionRoles from './Modulos/Administrador/GestionRoles';
 import InventarioDashboard from './Modulos/Inventario/Vistas/InventarioDashboard';
 import ProductosInventario from './Modulos/Inventario/Vistas/ProductosInventario';
 import BodegasInventario from './Modulos/Inventario/Vistas/BodegasInventario';
+import UbicacionesInventario from './Modulos/Inventario/Vistas/UbicacionesInventario';
 import MovimientosInventario from './Modulos/Inventario/Vistas/MovimientosInventario';
 import KardexInventario from './Modulos/Inventario/Vistas/KardexInventario';
 import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
@@ -85,6 +86,8 @@ const permisosLecturaInventario = [
   'inventario.reportes.ver',
   'inventario.productos.ver',
   'inventario.bodegas.ver',
+  'inventario.ubicaciones.ver',
+  'inventario.stock_ubicaciones.ver',
   'inventario.movimientos.ver',
   'inventario.kardex.ver',
   'inventario.valorizacion.ver',
@@ -321,6 +324,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="inventario.bodegas.ver">
                 <InventarioLayout><BodegasInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/ubicaciones" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.ubicaciones.ver">
+                <InventarioLayout><UbicacionesInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />

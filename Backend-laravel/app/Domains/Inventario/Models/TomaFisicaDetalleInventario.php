@@ -17,7 +17,9 @@ class TomaFisicaDetalleInventario extends Model
         'toma_fisica_id',
         'producto_id',
         'bodega_id',
+        'ubicacion_id',
         'lote_id',
+        'estado_stock',
         'stock_sistema',
         'stock_contado',
         'diferencia',
@@ -32,6 +34,7 @@ class TomaFisicaDetalleInventario extends Model
         'toma_fisica_id' => 'integer',
         'producto_id' => 'integer',
         'bodega_id' => 'integer',
+        'ubicacion_id' => 'integer',
         'lote_id' => 'integer',
         'movimiento_ajuste_id' => 'integer',
         'contado_por' => 'integer',
@@ -74,6 +77,11 @@ class TomaFisicaDetalleInventario extends Model
         return $this->belongsTo(LoteInventario::class, 'lote_id');
     }
 
+    public function ubicacion(): BelongsTo
+    {
+        return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_id');
+    }
+
     public function movimientoAjuste(): BelongsTo
     {
         return $this->belongsTo(MovimientoInventario::class, 'movimiento_ajuste_id');
@@ -113,6 +121,11 @@ class TomaFisicaDetalleInventario extends Model
     public function scopeLote(Builder $query, int $loteId): Builder
     {
         return $query->where('lote_id', $loteId);
+    }
+
+    public function scopeUbicacion(Builder $query, int $ubicacionId): Builder
+    {
+        return $query->where('ubicacion_id', $ubicacionId);
     }
 
     public function scopeSinLote(Builder $query): Builder

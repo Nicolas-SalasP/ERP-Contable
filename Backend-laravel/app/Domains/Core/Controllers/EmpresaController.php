@@ -248,6 +248,8 @@ class EmpresaController extends Controller
                     'usuarios.ver', 'usuarios.gestionar',
                     'inventario.productos.ver', 'inventario.productos.crear', 'inventario.productos.editar',
                     'inventario.bodegas.ver', 'inventario.bodegas.crear',
+                    'inventario.ubicaciones.ver', 'inventario.ubicaciones.crear', 'inventario.ubicaciones.editar',
+                    'inventario.stock_ubicaciones.ver', 'inventario.stock_ubicaciones.mover', 'inventario.putaway.ejecutar',
                     'inventario.movimientos.ver', 'inventario.movimientos.entrada',
                     'inventario.movimientos.salida', 'inventario.movimientos.traspaso',
                     'inventario.movimientos.ajuste', 'inventario.kardex.ver',

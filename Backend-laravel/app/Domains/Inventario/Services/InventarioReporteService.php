@@ -109,6 +109,8 @@ class InventarioReporteService
                 'producto:id,empresa_id,sku,nombre,activo',
                 'bodegaOrigen:id,empresa_id,codigo,nombre,estado',
                 'bodegaDestino:id,empresa_id,codigo,nombre,estado',
+                'ubicacionOrigen:id,empresa_id,bodega_id,codigo,nombre,tipo,activo',
+                'ubicacionDestino:id,empresa_id,bodega_id,codigo,nombre,tipo,activo',
             ]);
 
         $this->aplicarFiltrosMovimientos($query, $filtros);
@@ -129,6 +131,14 @@ class InventarioReporteService
                 'bodega_origen_nombre' => $movimiento->bodegaOrigen?->nombre,
                 'bodega_destino_id' => $movimiento->bodega_destino_id ? (int) $movimiento->bodega_destino_id : null,
                 'bodega_destino_nombre' => $movimiento->bodegaDestino?->nombre,
+                'ubicacion_origen_id' => $movimiento->ubicacion_origen_id ? (int) $movimiento->ubicacion_origen_id : null,
+                'ubicacion_origen_codigo' => $movimiento->ubicacionOrigen?->codigo,
+                'ubicacion_origen_nombre' => $movimiento->ubicacionOrigen?->nombre,
+                'ubicacion_destino_id' => $movimiento->ubicacion_destino_id ? (int) $movimiento->ubicacion_destino_id : null,
+                'ubicacion_destino_codigo' => $movimiento->ubicacionDestino?->codigo,
+                'ubicacion_destino_nombre' => $movimiento->ubicacionDestino?->nombre,
+                'estado_stock_origen' => $movimiento->estado_stock_origen,
+                'estado_stock_destino' => $movimiento->estado_stock_destino,
                 'cantidad' => $this->redondear((float) $movimiento->cantidad),
                 'costo_unitario' => $this->redondear((float) $movimiento->costo_unitario),
                 'costo_total' => $this->redondear((float) $movimiento->costo_total),
@@ -621,6 +631,10 @@ class InventarioReporteService
             ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where(function (Builder $subQuery) use ($filtros) {
                 $bodegaId = (int) $filtros['bodega_id'];
                 $subQuery->where('bodega_origen_id', $bodegaId)->orWhere('bodega_destino_id', $bodegaId);
+            }))
+            ->when(!empty($filtros['ubicacion_id']), fn (Builder $query) => $query->where(function (Builder $subQuery) use ($filtros) {
+                $ubicacionId = (int) $filtros['ubicacion_id'];
+                $subQuery->where('ubicacion_origen_id', $ubicacionId)->orWhere('ubicacion_destino_id', $ubicacionId);
             }))
             ->when(!empty($filtros['tipo']), fn (Builder $query) => $query->where('tipo', $filtros['tipo']))
             ->when(!empty($filtros['desde']), fn (Builder $query) => $query->whereDate('fecha_movimiento', '>=', $filtros['desde']))

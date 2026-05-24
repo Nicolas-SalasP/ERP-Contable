@@ -15,9 +15,13 @@ use App\Domains\Inventario\Services\InventarioAlertaService;
 use App\Domains\Inventario\Services\InventarioDashboardService;
 use App\Domains\Inventario\Services\InventarioReporteService;
 use App\Domains\Inventario\Services\InventarioReservaService;
+use App\Domains\Inventario\Services\InventarioUbicacionService;
+use App\Domains\Inventario\Services\InventarioStockUbicacionService;
 use App\Domains\Inventario\Services\InventarioService;
 use App\Domains\Inventario\Services\InventarioValorizacionService;
 use App\Domains\Inventario\Models\TomaFisicaInventario;
+use App\Domains\Inventario\Models\InventarioUbicacion;
+use App\Domains\Inventario\Models\StockUbicacionInventario;
 use App\Domains\Inventario\Services\InventarioTomaFisicaService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -41,6 +45,8 @@ class InventarioController
     protected InventarioAlertaService $alertaService;
     protected InventarioDashboardService $dashboardService;
     protected InventarioReporteService $reporteService;
+    protected InventarioUbicacionService $ubicacionService;
+    protected InventarioStockUbicacionService $stockUbicacionService;
 
 public function __construct(
     InventarioService $service,
@@ -54,7 +60,9 @@ public function __construct(
     InventarioReposicionService $reposicionService,
     InventarioAlertaService $alertaService,
     InventarioDashboardService $dashboardService,
-    InventarioReporteService $reporteService
+    InventarioReporteService $reporteService,
+    InventarioUbicacionService $ubicacionService,
+    InventarioStockUbicacionService $stockUbicacionService
 ) {
     $this->service = $service;
     $this->movimientoService = $movimientoService;
@@ -68,6 +76,8 @@ public function __construct(
     $this->alertaService = $alertaService;
     $this->dashboardService = $dashboardService;
     $this->reporteService = $reporteService;
+    $this->ubicacionService = $ubicacionService;
+    $this->stockUbicacionService = $stockUbicacionService;
 }
 
     public function catalogos(Request $request): JsonResponse
@@ -78,6 +88,8 @@ public function __construct(
                 'inventario.bodegas.ver',
                 'inventario.dashboard.ver',
                 'inventario.reportes.ver',
+                'inventario.ubicaciones.ver',
+                'inventario.stock_ubicaciones.ver',
             ]);
 
             return response()->json([
@@ -87,6 +99,178 @@ public function __construct(
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fase 13 - Ubicaciones físicas, stock por ubicación y putaway
+    |--------------------------------------------------------------------------
+    */
+
+    public function ubicaciones(Request $request): JsonResponse
+    {
+        try {
+            $filtros = $request->validate([
+                'bodega_id' => ['nullable', 'integer'],
+                'tipo' => ['nullable', Rule::in(InventarioUbicacion::tiposPermitidos())],
+                'activo' => ['nullable'],
+                'search' => ['nullable', 'string', 'max:120'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
+            ]);
+
+            return response()->json($this->respuestaPaginada(
+                $this->ubicacionService->listar($request->user(), $filtros)
+            ));
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function storeUbicacion(Request $request): JsonResponse
+    {
+        try {
+            $datos = $request->validate([
+                'bodega_id' => ['required', 'integer'],
+                'ubicacion_padre_id' => ['nullable', 'integer'],
+                'codigo' => ['required', 'string', 'max:80'],
+                'nombre' => ['required', 'string', 'max:160'],
+                'tipo' => ['nullable', Rule::in(InventarioUbicacion::tiposPermitidos())],
+                'pasillo' => ['nullable', 'string', 'max:40'],
+                'estante' => ['nullable', 'string', 'max:40'],
+                'nivel' => ['nullable', 'string', 'max:40'],
+                'posicion' => ['nullable', 'string', 'max:40'],
+                'capacidad_maxima' => ['nullable', 'numeric', 'min:0'],
+                'activo' => ['nullable', 'boolean'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->ubicacionService->crear($request->user(), $datos),
+                'message' => 'Ubicación de inventario creada correctamente.',
+            ], 201);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function showUbicacion(Request $request, $id): JsonResponse
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => $this->ubicacionService->obtener($request->user(), (int) $id),
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function updateUbicacion(Request $request, $id): JsonResponse
+    {
+        try {
+            $datos = $request->validate([
+                'bodega_id' => ['nullable', 'integer'],
+                'ubicacion_padre_id' => ['nullable', 'integer'],
+                'codigo' => ['nullable', 'string', 'max:80'],
+                'nombre' => ['nullable', 'string', 'max:160'],
+                'tipo' => ['nullable', Rule::in(InventarioUbicacion::tiposPermitidos())],
+                'pasillo' => ['nullable', 'string', 'max:40'],
+                'estante' => ['nullable', 'string', 'max:40'],
+                'nivel' => ['nullable', 'string', 'max:40'],
+                'posicion' => ['nullable', 'string', 'max:40'],
+                'capacidad_maxima' => ['nullable', 'numeric', 'min:0'],
+                'activo' => ['nullable', 'boolean'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->ubicacionService->actualizar($request->user(), (int) $id, $datos),
+                'message' => 'Ubicación de inventario actualizada correctamente.',
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function stockUbicacion(Request $request, $id): JsonResponse
+    {
+        try {
+            $filtros = $request->validate([
+                'producto_id' => ['nullable', 'integer'],
+                'lote_id' => ['nullable', 'integer'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
+
+            return response()->json($this->respuestaPaginada(
+                $this->ubicacionService->stock($request->user(), (int) $id, $filtros)
+            ));
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function stockUbicaciones(Request $request): JsonResponse
+    {
+        try {
+            $filtros = $request->validate([
+                'producto_id' => ['nullable', 'integer'],
+                'bodega_id' => ['nullable', 'integer'],
+                'ubicacion_id' => ['nullable', 'integer'],
+                'lote_id' => ['nullable', 'integer'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            ]);
+
+            return response()->json($this->respuestaPaginada(
+                $this->stockUbicacionService->listar($request->user(), $filtros)
+            ));
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function moverStockUbicacion(Request $request): JsonResponse
+    {
+        try {
+            $datos = $request->validate([
+                'producto_id' => ['required', 'integer'],
+                'bodega_origen_id' => ['required', 'integer'],
+                'bodega_destino_id' => ['required', 'integer'],
+                'ubicacion_origen_id' => ['required', 'integer'],
+                'ubicacion_destino_id' => ['required', 'integer'],
+                'lote_id' => ['nullable', 'integer'],
+                'cantidad' => ['required', 'numeric', 'gt:0'],
+                'estado_stock_origen' => ['nullable', Rule::in(StockUbicacionInventario::estadosPermitidos())],
+                'estado_stock_destino' => ['nullable', Rule::in(StockUbicacionInventario::estadosPermitidos())],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->stockUbicacionService->moverStock($request->user(), $datos),
+                'message' => 'Stock movido entre ubicaciones correctamente.',
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respuestaValidacion($e);
+        } catch (Exception $e) {
+            return $this->respuestaError($e);
+        }
+    }
+
+    public function confirmarPutaway(Request $request): JsonResponse
+    {
+        return $this->moverStockUbicacion($request);
     }
 
 
@@ -139,6 +323,7 @@ public function __construct(
             $filtros = $request->validate([
                 'producto_id' => ['nullable', 'integer'],
                 'bodega_id' => ['nullable', 'integer'],
+                'ubicacion_id' => ['nullable', 'integer'],
                 'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
                 'desde' => ['nullable', 'date'],
                 'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
@@ -324,6 +509,7 @@ public function __construct(
                 'producto_id' => ['nullable', 'integer'],
                 'bodega_id' => ['nullable', 'integer'],
                 'lote_id' => ['nullable', 'integer'],
+                'ubicacion_id' => ['nullable', 'integer'],
                 'tipo' => ['nullable', 'string', 'max:80'],
                 'estado' => ['nullable', 'string', 'max:80'],
                 'severidad' => ['nullable', Rule::in(['baja', 'media', 'alta', 'critica'])],
@@ -505,6 +691,7 @@ public function __construct(
                 'producto_id' => ['nullable', 'integer'],
                 'bodega_id' => ['nullable', 'integer'],
                 'lote_id' => ['nullable', 'integer'],
+                'ubicacion_id' => ['nullable', 'integer'],
                 'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
                 'desde' => ['nullable', 'date'],
                 'hasta' => ['nullable', 'date'],
@@ -534,6 +721,10 @@ public function __construct(
                 'producto_id' => ['required', 'integer'],
                 'bodega_origen_id' => ['nullable', 'integer'],
                 'bodega_destino_id' => ['nullable', 'integer'],
+                'ubicacion_origen_id' => ['nullable', 'integer'],
+                'ubicacion_destino_id' => ['nullable', 'integer'],
+                'estado_stock_origen' => ['nullable', Rule::in(StockUbicacionInventario::estadosPermitidos())],
+                'estado_stock_destino' => ['nullable', Rule::in(StockUbicacionInventario::estadosPermitidos())],
                 'cantidad' => ['required', 'numeric', 'gt:0'],
                 'costo_unitario' => ['nullable', 'numeric', 'min:0'],
 
@@ -589,6 +780,7 @@ public function __construct(
                 'producto_id' => ['nullable', 'integer'],
                 'bodega_id' => ['nullable', 'integer'],
                 'lote_id' => ['nullable', 'integer'],
+                'ubicacion_id' => ['nullable', 'integer'],
                 'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
                 'desde' => ['nullable', 'date'],
                 'hasta' => ['nullable', 'date'],
@@ -1021,6 +1213,7 @@ public function reservas(Request $request): JsonResponse
             'origen_id' => ['nullable', 'integer'],
             'producto_id' => ['nullable', 'integer'],
             'bodega_id' => ['nullable', 'integer'],
+            'ubicacion_id' => ['nullable', 'integer'],
             'lote_id' => ['nullable', 'integer'],
             'desde' => ['nullable', 'date'],
             'hasta' => ['nullable', 'date'],
@@ -1057,8 +1250,10 @@ public function storeReserva(Request $request): JsonResponse
             'detalles' => ['required', 'array', 'min:1'],
             'detalles.*.producto_id' => ['required', 'integer'],
             'detalles.*.bodega_id' => ['required', 'integer'],
+            'detalles.*.ubicacion_id' => ['nullable', 'integer'],
             'detalles.*.lote_id' => ['nullable', 'integer'],
             'detalles.*.cantidad' => ['required', 'numeric', 'gt:0'],
+            'detalles.*.estado_stock' => ['nullable', Rule::in(StockUbicacionInventario::estadosPermitidos())],
         ]);
 
         $reserva = $this->reservaService->crearReserva(
@@ -1193,6 +1388,7 @@ public function disponibilidad(Request $request): JsonResponse
         $filtros = $request->validate([
             'producto_id' => ['nullable', 'integer'],
             'bodega_id' => ['nullable', 'integer'],
+            'ubicacion_id' => ['nullable', 'integer'],
             'incluir_lotes' => ['nullable', 'boolean'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -1216,6 +1412,7 @@ public function disponibilidadProducto(Request $request, $id): JsonResponse
     try {
         $filtros = $request->validate([
             'bodega_id' => ['nullable', 'integer'],
+            'ubicacion_id' => ['nullable', 'integer'],
             'incluir_lotes' => ['nullable', 'boolean'],
         ]);
 

@@ -150,6 +150,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
 
+        Route::get('/ubicaciones', [InventarioController::class, 'ubicaciones']);
+        Route::post('/ubicaciones', [InventarioController::class, 'storeUbicacion']);
+        Route::get('/ubicaciones/{id}/stock', [InventarioController::class, 'stockUbicacion']);
+        Route::get('/ubicaciones/{id}', [InventarioController::class, 'showUbicacion']);
+        Route::put('/ubicaciones/{id}', [InventarioController::class, 'updateUbicacion']);
+        Route::get('/stock-ubicaciones', [InventarioController::class, 'stockUbicaciones']);
+        Route::post('/stock-ubicaciones/mover', [InventarioController::class, 'moverStockUbicacion']);
+        Route::post('/putaway/confirmar', [InventarioController::class, 'confirmarPutaway']);
+
         Route::get('/productos', [InventarioController::class, 'index']);
         Route::post('/productos', [InventarioController::class, 'store']);
 

@@ -34,6 +34,8 @@ final class ModuloPermisos
         'inventario.reportes' => ['inventario.reportes.ver', 'inventario.reportes.exportar'],
         'inventario.productos' => ['inventario.productos.ver', 'inventario.productos.crear', 'inventario.productos.editar'],
         'inventario.bodegas' => ['inventario.bodegas.ver', 'inventario.bodegas.crear'],
+        'inventario.ubicaciones' => ['inventario.ubicaciones.ver', 'inventario.ubicaciones.crear', 'inventario.ubicaciones.editar'],
+        'inventario.stock_ubicaciones' => ['inventario.stock_ubicaciones.ver', 'inventario.stock_ubicaciones.mover', 'inventario.putaway.ejecutar'],
         'inventario.movimientos' => ['inventario.movimientos.ver', 'inventario.movimientos.entrada', 'inventario.movimientos.salida', 'inventario.movimientos.traspaso', 'inventario.movimientos.ajuste'],
         'inventario.kardex' => ['inventario.kardex.ver'],
         'inventario.ajustes_criticos' => ['inventario.ajustes_criticos.ver', 'inventario.ajustes_criticos.crear'],

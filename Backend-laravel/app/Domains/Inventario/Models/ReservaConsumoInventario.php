@@ -19,7 +19,9 @@ class ReservaConsumoInventario extends Model
         'movimiento_inventario_id',
         'producto_id',
         'bodega_id',
+        'ubicacion_id',
         'lote_id',
+        'estado_stock',
         'cantidad_consumida',
         'consumido_por',
         'fecha_consumo',
@@ -32,6 +34,7 @@ class ReservaConsumoInventario extends Model
         'movimiento_inventario_id' => 'integer',
         'producto_id' => 'integer',
         'bodega_id' => 'integer',
+        'ubicacion_id' => 'integer',
         'lote_id' => 'integer',
         'consumido_por' => 'integer',
 
@@ -78,6 +81,11 @@ class ReservaConsumoInventario extends Model
     public function lote(): BelongsTo
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');
+    }
+
+    public function ubicacion(): BelongsTo
+    {
+        return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_id');
     }
 
     public function consumidoPor(): BelongsTo

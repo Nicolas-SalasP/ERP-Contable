@@ -71,7 +71,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 { path: '/activos', label: 'Inventario Activos' },
             ]
         },
-                {
+        {
             id: 'inventario',
             label: 'Inventario',
             icon: 'fas fa-boxes-stacked',
@@ -80,6 +80,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 'inventario.reportes.ver',
                 'inventario.productos.ver',
                 'inventario.bodegas.ver',
+                'inventario.ubicaciones.ver',
                 'inventario.movimientos.ver',
                 'inventario.kardex.ver',
                 'inventario.valorizacion.ver',
@@ -99,6 +100,8 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                         'inventario.reportes.ver',
                         'inventario.productos.ver',
                         'inventario.bodegas.ver',
+                        'inventario.ubicaciones.ver',
+                'inventario.ubicaciones.ver',
                         'inventario.movimientos.ver',
                         'inventario.kardex.ver',
                         'inventario.valorizacion.ver',
@@ -124,6 +127,11 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     path: '/inventario/bodegas',
                     label: 'Bodegas',
                     permisosRequeridos: ['inventario.bodegas.ver'],
+                },
+                {
+                    path: '/inventario/ubicaciones',
+                    label: 'Ubicaciones',
+                    permisosRequeridos: ['inventario.ubicaciones.ver'],
                 },
                 {
                     path: '/inventario/movimientos',

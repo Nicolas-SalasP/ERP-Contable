@@ -22,6 +22,7 @@ const createInitialStore = () => ({
     scopeKey: null,
     productos: createResource([]),
     bodegas: createResource([]),
+    ubicaciones: createResource([]),
     catalogos: createResource(emptyCatalogos),
     lotes: createResource([]),
 });
@@ -172,6 +173,10 @@ export const InventarioDataProvider = ({ children }) => {
         return cargarRecurso('catalogos', () => inventarioApi.catalogos(), options);
     }, [cargarRecurso]);
 
+    const cargarUbicaciones = useCallback((options = {}) => {
+        return cargarRecurso('ubicaciones', () => inventarioApi.ubicaciones.listar({ per_page: 200 }), options);
+    }, [cargarRecurso]);
+
     const cargarLotes = useCallback((options = {}) => {
         return cargarRecurso('lotes', () => inventarioApi.lotes.listar({ per_page: 100 }), options);
     }, [cargarRecurso]);
@@ -181,9 +186,10 @@ export const InventarioDataProvider = ({ children }) => {
             cargarProductos(options),
             cargarBodegas(options),
             cargarCatalogos(options),
+            cargarUbicaciones(options),
             cargarLotes(options),
         ]);
-    }, [cargarBodegas, cargarCatalogos, cargarLotes, cargarProductos]);
+    }, [cargarBodegas, cargarCatalogos, cargarLotes, cargarProductos, cargarUbicaciones]);
 
     const invalidarRecurso = useCallback((resourceName) => {
         const fallbackData = resourceName === 'catalogos' ? emptyCatalogos : [];
@@ -199,14 +205,16 @@ export const InventarioDataProvider = ({ children }) => {
     const invalidarProductos = useCallback(() => invalidarRecurso('productos'), [invalidarRecurso]);
     const invalidarBodegas = useCallback(() => invalidarRecurso('bodegas'), [invalidarRecurso]);
     const invalidarCatalogos = useCallback(() => invalidarRecurso('catalogos'), [invalidarRecurso]);
+    const invalidarUbicaciones = useCallback(() => invalidarRecurso('ubicaciones'), [invalidarRecurso]);
     const invalidarLotes = useCallback(() => invalidarRecurso('lotes'), [invalidarRecurso]);
 
     const invalidarTodoInventario = useCallback(() => {
         invalidarProductos();
         invalidarBodegas();
         invalidarCatalogos();
+        invalidarUbicaciones();
         invalidarLotes();
-    }, [invalidarBodegas, invalidarCatalogos, invalidarLotes, invalidarProductos]);
+    }, [invalidarBodegas, invalidarCatalogos, invalidarLotes, invalidarProductos, invalidarUbicaciones]);
 
 
     useEffect(() => {
@@ -256,40 +264,47 @@ export const InventarioDataProvider = ({ children }) => {
     const value = useMemo(() => ({
         productos: store.productos.data,
         bodegas: store.bodegas.data,
+        ubicaciones: store.ubicaciones.data,
         catalogos: store.catalogos.data,
         lotes: store.lotes.data,
 
         loadingProductos: store.productos.loading,
         loadingBodegas: store.bodegas.loading,
+        loadingUbicaciones: store.ubicaciones.loading,
         loadingCatalogos: store.catalogos.loading,
         loadingLotes: store.lotes.loading,
 
         errorProductos: store.productos.error,
         errorBodegas: store.bodegas.error,
+        errorUbicaciones: store.ubicaciones.error,
         errorCatalogos: store.catalogos.error,
         errorLotes: store.lotes.error,
 
         timestamps: {
             productos: store.productos.loadedAt,
             bodegas: store.bodegas.loadedAt,
+            ubicaciones: store.ubicaciones.loadedAt,
             catalogos: store.catalogos.loadedAt,
             lotes: store.lotes.loadedAt,
         },
 
         cargarProductos,
         cargarBodegas,
+        cargarUbicaciones,
         cargarCatalogos,
         cargarLotes,
         cargarDatosBase,
 
         cargarProductosCache: cargarProductos,
         cargarBodegasCache: cargarBodegas,
+        cargarUbicacionesCache: cargarUbicaciones,
         cargarCatalogosCache: cargarCatalogos,
         cargarLotesCache: cargarLotes,
         cargarDatosBaseCache: cargarDatosBase,
 
         invalidarProductos,
         invalidarBodegas,
+        invalidarUbicaciones,
         invalidarCatalogos,
         invalidarLotes,
         invalidarTodoInventario,
@@ -299,10 +314,12 @@ export const InventarioDataProvider = ({ children }) => {
         cargarDatosBase,
         cargarLotes,
         cargarProductos,
+        cargarUbicaciones,
         invalidarBodegas,
         invalidarCatalogos,
         invalidarLotes,
         invalidarProductos,
+        invalidarUbicaciones,
         invalidarTodoInventario,
         store,
     ]);

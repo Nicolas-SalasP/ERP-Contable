@@ -82,6 +82,13 @@ trait PreparaInventarioTrait
             'inventario.bodegas.ver',
             'inventario.bodegas.crear',
 
+            'inventario.ubicaciones.ver',
+            'inventario.ubicaciones.crear',
+            'inventario.ubicaciones.editar',
+            'inventario.stock_ubicaciones.ver',
+            'inventario.stock_ubicaciones.mover',
+            'inventario.putaway.ejecutar',
+
             'inventario.movimientos.ver',
             'inventario.movimientos.entrada',
             'inventario.movimientos.salida',
@@ -128,6 +135,8 @@ trait PreparaInventarioTrait
         return [
             'inventario.productos.ver',
             'inventario.bodegas.ver',
+            'inventario.ubicaciones.ver',
+            'inventario.stock_ubicaciones.ver',
             'inventario.movimientos.ver',
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',

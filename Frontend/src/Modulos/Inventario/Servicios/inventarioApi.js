@@ -81,6 +81,23 @@ export const inventarioApi = {
         crear: (payload) => post('/inventario/bodegas', payload),
     },
 
+    ubicaciones: {
+        listar: (params = {}) => get('/inventario/ubicaciones', params),
+        crear: (payload) => post('/inventario/ubicaciones', payload),
+        obtener: (id) => get(`/inventario/ubicaciones/${id}`),
+        actualizar: (id, payload) => put(`/inventario/ubicaciones/${id}`, payload),
+        stock: (id, params = {}) => get(`/inventario/ubicaciones/${id}/stock`, params),
+    },
+
+    stockUbicaciones: {
+        listar: (params = {}) => get('/inventario/stock-ubicaciones', params),
+        mover: (payload) => post('/inventario/stock-ubicaciones/mover', payload),
+    },
+
+    putaway: {
+        confirmar: (payload) => post('/inventario/putaway/confirmar', payload),
+    },
+
     movimientos: {
         listar: (params = {}) => get('/inventario/movimientos', params),
         registrar: (payload) => post('/inventario/movimientos', payload),

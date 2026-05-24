@@ -10,6 +10,8 @@ use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\ReservaConsumoInventario;
 use App\Domains\Inventario\Models\ReservaDetalleInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
+use App\Domains\Inventario\Models\StockUbicacionInventario;
+use App\Domains\Inventario\Models\InventarioUbicacion;
 use App\Domains\Inventario\Models\StockLoteInventario;
 use App\Domains\Inventario\Models\StockProducto;
 use Exception;
@@ -23,7 +25,8 @@ class InventarioReservaService
     public function __construct(
         private readonly InventarioPermisoService $permisos,
         private readonly InventarioMovimientoService $movimientoService,
-        private readonly InventarioDisponibilidadService $disponibilidadService
+        private readonly InventarioDisponibilidadService $disponibilidadService,
+        private readonly InventarioStockUbicacionService $stockUbicacionService
     ) {
     }
 
@@ -38,6 +41,7 @@ class InventarioReservaService
                 'reservadoPor:id,nombre,email',
                 'detalles.producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
                 'detalles.bodega:id,empresa_id,codigo,nombre,estado',
+                'detalles.ubicacion:id,empresa_id,bodega_id,codigo,nombre,tipo,activo',
                 'detalles.lote:id,empresa_id,producto_id,codigo_lote,fecha_fabricacion,fecha_vencimiento,activo',
             ])
             ->when(!empty($filtros['estado']), function (Builder $query) use ($filtros) {
@@ -60,6 +64,11 @@ class InventarioReservaService
             ->when(!empty($filtros['bodega_id']), function (Builder $query) use ($filtros) {
                 $query->whereHas('detalles', function (Builder $subQuery) use ($filtros) {
                     $subQuery->where('bodega_id', (int) $filtros['bodega_id']);
+                });
+            })
+            ->when(!empty($filtros['ubicacion_id']), function (Builder $query) use ($filtros) {
+                $query->whereHas('detalles', function (Builder $subQuery) use ($filtros) {
+                    $subQuery->where('ubicacion_id', (int) $filtros['ubicacion_id']);
                 });
             })
             ->when(!empty($filtros['lote_id']), function (Builder $query) use ($filtros) {
@@ -123,11 +132,25 @@ class InventarioReservaService
                     'reserva_id' => $reserva->id,
                     'producto_id' => $detalle['producto']->id,
                     'bodega_id' => $detalle['bodega']->id,
+                    'ubicacion_id' => $detalle['ubicacion']?->id,
                     'lote_id' => $detalle['lote']?->id,
+                    'estado_stock' => $detalle['estado_stock'],
                     'cantidad_reservada' => $detalle['cantidad'],
                     'cantidad_consumida' => 0,
                     'cantidad_liberada' => 0,
                 ]);
+
+                if ($detalle['ubicacion'] !== null) {
+                    $this->stockUbicacionService->reservar(
+                        empresaId: $empresaId,
+                        productoId: (int) $detalle['producto']->id,
+                        bodegaId: (int) $detalle['bodega']->id,
+                        ubicacionId: (int) $detalle['ubicacion']->id,
+                        loteId: $detalle['lote']?->id,
+                        cantidad: $detalle['cantidad'],
+                        campo: 'detalles'
+                    );
+                }
             }
 
             return $this->cargarRelacionesReserva($reserva->refresh());
@@ -141,6 +164,26 @@ class InventarioReservaService
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
             $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
             $this->validarReservaOperable($reserva, 'cancelar');
+
+            $detalles = ReservaDetalleInventario::where('empresa_id', $reserva->empresa_id)
+                ->where('reserva_id', $reserva->id)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($detalles as $detalle) {
+                $pendiente = $detalle->cantidadPendiente();
+
+                if ($pendiente > 0 && $detalle->ubicacion_id !== null) {
+                    $this->stockUbicacionService->liberarReserva(
+                        empresaId: (int) $detalle->empresa_id,
+                        productoId: (int) $detalle->producto_id,
+                        bodegaId: (int) $detalle->bodega_id,
+                        ubicacionId: (int) $detalle->ubicacion_id,
+                        loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
+                        cantidad: $pendiente
+                    );
+                }
+            }
 
             $reserva->update([
                 'estado' => ReservaInventario::ESTADO_CANCELADA,
@@ -182,6 +225,17 @@ class InventarioReservaService
                 $detalle->update([
                     'cantidad_liberada' => $this->redondearCantidad((float) $detalle->cantidad_liberada + $cantidad),
                 ]);
+
+                if ($detalle->ubicacion_id !== null) {
+                    $this->stockUbicacionService->liberarReserva(
+                        empresaId: (int) $detalle->empresa_id,
+                        productoId: (int) $detalle->producto_id,
+                        bodegaId: (int) $detalle->bodega_id,
+                        ubicacionId: (int) $detalle->ubicacion_id,
+                        loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
+                        cantidad: $cantidad
+                    );
+                }
             }
 
             if (array_key_exists('observacion', $datos)) {
@@ -227,6 +281,17 @@ class InventarioReservaService
                     'cantidad_consumida' => $this->redondearCantidad((float) $detalle->cantidad_consumida + $cantidad),
                 ]);
 
+                if ($detalle->ubicacion_id !== null) {
+                    $this->stockUbicacionService->consumirReserva(
+                        empresaId: (int) $detalle->empresa_id,
+                        productoId: (int) $detalle->producto_id,
+                        bodegaId: (int) $detalle->bodega_id,
+                        ubicacionId: (int) $detalle->ubicacion_id,
+                        loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
+                        cantidad: $cantidad
+                    );
+                }
+
                 ReservaConsumoInventario::create([
                     'empresa_id' => (int) $usuario->empresa_id,
                     'reserva_id' => $reserva->id,
@@ -234,7 +299,9 @@ class InventarioReservaService
                     'movimiento_inventario_id' => $movimiento->id,
                     'producto_id' => $detalle->producto_id,
                     'bodega_id' => $detalle->bodega_id,
+                    'ubicacion_id' => $detalle->ubicacion_id,
                     'lote_id' => $detalle->lote_id,
+                    'estado_stock' => $detalle->estado_stock,
                     'cantidad_consumida' => $cantidad,
                     'consumido_por' => $usuario->id,
                     'fecha_consumo' => $datos['fecha_movimiento'] ?? now(),
@@ -255,11 +322,42 @@ class InventarioReservaService
 
     public function marcarReservasExpiradas(int $empresaId): int
     {
-        return ReservaInventario::where('empresa_id', $empresaId)
-            ->whereIn('estado', ReservaInventario::estadosQueComprometenDisponibilidad())
-            ->whereNotNull('fecha_expiracion')
-            ->whereDate('fecha_expiracion', '<', now()->toDateString())
-            ->update(['estado' => ReservaInventario::ESTADO_EXPIRADA]);
+        return DB::transaction(function () use ($empresaId) {
+            $reservas = ReservaInventario::where('empresa_id', $empresaId)
+                ->whereIn('estado', ReservaInventario::estadosQueComprometenDisponibilidad())
+                ->whereNotNull('fecha_expiracion')
+                ->whereDate('fecha_expiracion', '<', now()->toDateString())
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($reservas as $reserva) {
+                $detalles = ReservaDetalleInventario::where('empresa_id', $empresaId)
+                    ->where('reserva_id', $reserva->id)
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($detalles as $detalle) {
+                    $pendiente = $detalle->cantidadPendiente();
+
+                    if ($pendiente > 0 && $detalle->ubicacion_id !== null) {
+                        $this->stockUbicacionService->liberarReserva(
+                            empresaId: (int) $detalle->empresa_id,
+                            productoId: (int) $detalle->producto_id,
+                            bodegaId: (int) $detalle->bodega_id,
+                            ubicacionId: (int) $detalle->ubicacion_id,
+                            loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
+                            cantidad: $pendiente
+                        );
+                    }
+                }
+
+                $reserva->update([
+                    'estado' => ReservaInventario::ESTADO_EXPIRADA,
+                ]);
+            }
+
+            return $reservas->count();
+        });
     }
 
     private function normalizarDetallesReserva(array $detalles, int $empresaId): array
@@ -275,6 +373,30 @@ class InventarioReservaService
         foreach ($detalles as $indice => $detalle) {
             $producto = $this->obtenerProductoActivoEmpresa((int) ($detalle['producto_id'] ?? 0), $empresaId, "detalles.{$indice}.producto_id");
             $bodega = $this->obtenerBodegaActivaEmpresa((int) ($detalle['bodega_id'] ?? 0), $empresaId, "detalles.{$indice}.bodega_id");
+            $ubicacion = null;
+            $estadoStock = $detalle['estado_stock'] ?? StockUbicacionInventario::ESTADO_DISPONIBLE;
+
+            if (!in_array($estadoStock, StockUbicacionInventario::estadosPermitidos(), true)) {
+                throw ValidationException::withMessages([
+                    "detalles.{$indice}.estado_stock" => 'El estado de stock informado no es válido.',
+                ]);
+            }
+
+            if ($estadoStock !== StockUbicacionInventario::ESTADO_DISPONIBLE) {
+                throw ValidationException::withMessages([
+                    "detalles.{$indice}.estado_stock" => 'Solo el stock DISPONIBLE puede reservarse.',
+                ]);
+            }
+
+            if (!empty($detalle['ubicacion_id'])) {
+                $ubicacion = $this->stockUbicacionService->validarUbicacionActivaEmpresaBodega(
+                    (int) $detalle['ubicacion_id'],
+                    $empresaId,
+                    (int) $bodega->id,
+                    "detalles.{$indice}.ubicacion_id"
+                );
+            }
+
             $cantidad = $this->validarCantidadPositiva($detalle['cantidad'] ?? null, "detalles.{$indice}.cantidad");
             $lote = null;
 
@@ -300,7 +422,9 @@ class InventarioReservaService
             $normalizados[] = [
                 'producto' => $producto,
                 'bodega' => $bodega,
+                'ubicacion' => $ubicacion,
                 'lote' => $lote,
+                'estado_stock' => $estadoStock,
                 'cantidad' => $cantidad,
             ];
         }
@@ -316,6 +440,7 @@ class InventarioReservaService
             $key = implode(':', [
                 $detalle['producto']->id,
                 $detalle['bodega']->id,
+                $detalle['ubicacion']?->id ?? 'sin_ubicacion',
                 $detalle['lote']?->id ?? 'sin_lote',
             ]);
 
@@ -323,6 +448,7 @@ class InventarioReservaService
                 $grupos[$key] = [
                     'producto' => $detalle['producto'],
                     'bodega' => $detalle['bodega'],
+                    'ubicacion' => $detalle['ubicacion'],
                     'lote' => $detalle['lote'],
                     'cantidad' => 0.0,
                 ];
@@ -482,6 +608,12 @@ class InventarioReservaService
 
         if ($detalle->lote_id !== null) {
             $payload['lote_id'] = (int) $detalle->lote_id;
+        }
+
+        if ($detalle->ubicacion_id !== null) {
+            $payload['ubicacion_origen_id'] = (int) $detalle->ubicacion_id;
+            $payload['estado_stock_origen'] = StockUbicacionInventario::ESTADO_DISPONIBLE;
+            $payload['_ubicacion_reserva_ya_controlada'] = true;
         }
 
         return $payload;

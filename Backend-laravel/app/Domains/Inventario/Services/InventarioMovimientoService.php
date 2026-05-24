@@ -18,7 +18,8 @@ class InventarioMovimientoService
     public function __construct(
         private readonly InventarioValorizacionService $valorizacionService,
         private readonly InventarioLoteService $loteService,
-        private readonly InventarioReposicionService $reposicionService
+        private readonly InventarioReposicionService $reposicionService,
+        private readonly InventarioStockUbicacionService $stockUbicacionService
     ) {
     }
 
@@ -87,6 +88,18 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        if (!empty($data['ubicacion_destino_id'])) {
+            $this->stockUbicacionService->aplicarEntrada(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaDestino->id,
+                ubicacionId: (int) $data['ubicacion_destino_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad,
+                estadoDestino: $data['estado_stock_destino'] ?? null
+            );
+        }
+
         return $this->cargarRelacionesMovimiento($movimiento);
     }
 
@@ -141,6 +154,17 @@ class InventarioMovimientoService
             lote: $lote,
             empresaId: $empresaId
         );
+
+        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+            $this->stockUbicacionService->aplicarSalida(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaOrigen->id,
+                ubicacionId: (int) $data['ubicacion_origen_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad
+            );
+        }
 
         $this->dispararEventoStockMinimoSiCorresponde(
             empresaId: $empresaId,
@@ -224,6 +248,29 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+            $this->stockUbicacionService->aplicarSalida(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaOrigen->id,
+                ubicacionId: (int) $data['ubicacion_origen_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad
+            );
+        }
+
+        if (!empty($data['ubicacion_destino_id'])) {
+            $this->stockUbicacionService->aplicarEntrada(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaDestino->id,
+                ubicacionId: (int) $data['ubicacion_destino_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad,
+                estadoDestino: $data['estado_stock_destino'] ?? null
+            );
+        }
+
         $this->dispararEventoStockMinimoSiCorresponde(
             empresaId: $empresaId,
             productoId: (int) $producto->id,
@@ -282,6 +329,18 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        if (!empty($data['ubicacion_destino_id'])) {
+            $this->stockUbicacionService->aplicarEntrada(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaDestino->id,
+                ubicacionId: (int) $data['ubicacion_destino_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad,
+                estadoDestino: $data['estado_stock_destino'] ?? null
+            );
+        }
+
         return $this->cargarRelacionesMovimiento($movimiento);
     }
 
@@ -337,6 +396,17 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+            $this->stockUbicacionService->aplicarSalida(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaOrigen->id,
+                ubicacionId: (int) $data['ubicacion_origen_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad
+            );
+        }
+
         $this->dispararEventoStockMinimoSiCorresponde(
             empresaId: $empresaId,
             productoId: (int) $producto->id,
@@ -374,6 +444,13 @@ class InventarioMovimientoService
             ->when(!empty($filtros['lote_id']), function ($query) use ($filtros) {
                 $query->whereHas('lotes', function ($loteQuery) use ($filtros) {
                     $loteQuery->where('lote_id', (int) $filtros['lote_id']);
+                });
+            })
+            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+                $query->where(function ($subQuery) use ($filtros) {
+                    $subQuery
+                        ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
+                        ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
                 });
             })
             ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
@@ -414,6 +491,13 @@ class InventarioMovimientoService
             ->when(!empty($filtros['tipo']), function ($query) use ($filtros) {
                 $query->tipo($filtros['tipo']);
             })
+            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+                $query->where(function ($subQuery) use ($filtros) {
+                    $subQuery
+                        ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
+                        ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
+                });
+            })
             ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
                 $query->desde($filtros['desde']);
             })
@@ -451,6 +535,13 @@ class InventarioMovimientoService
             })
             ->when(!empty($filtros['tipo']), function ($query) use ($filtros) {
                 $query->tipo($filtros['tipo']);
+            })
+            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+                $query->where(function ($subQuery) use ($filtros) {
+                    $subQuery
+                        ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
+                        ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
+                });
             })
             ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
                 $query->desde($filtros['desde']);
@@ -670,6 +761,10 @@ class InventarioMovimientoService
         return [
             'costo_unitario' => $this->redondearCantidad($costoUnitario),
             'costo_total' => $this->redondearCantidad($costoTotal),
+            'ubicacion_origen_id' => $data['ubicacion_origen_id'] ?? null,
+            'ubicacion_destino_id' => $data['ubicacion_destino_id'] ?? null,
+            'estado_stock_origen' => $data['estado_stock_origen'] ?? null,
+            'estado_stock_destino' => $data['estado_stock_destino'] ?? null,
             'referencia' => $data['referencia'] ?? null,
             'motivo' => $data['motivo'] ?? null,
             'observacion' => $data['observacion'] ?? null,
@@ -711,6 +806,8 @@ class InventarioMovimientoService
             'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
             'bodegaOrigen:id,empresa_id,codigo,nombre,estado',
             'bodegaDestino:id,empresa_id,codigo,nombre,estado',
+            'ubicacionOrigen:id,empresa_id,bodega_id,codigo,nombre,tipo,activo',
+            'ubicacionDestino:id,empresa_id,bodega_id,codigo,nombre,tipo,activo',
             'lotes.lote:id,empresa_id,producto_id,codigo_lote,fecha_fabricacion,fecha_vencimiento,activo',
             'lotes.bodegaOrigen:id,empresa_id,codigo,nombre,estado',
             'lotes.bodegaDestino:id,empresa_id,codigo,nombre,estado',
