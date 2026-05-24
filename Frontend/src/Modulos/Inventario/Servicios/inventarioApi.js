@@ -56,6 +56,8 @@ export const inventarioApi = {
         tomasFisicas: (params = {}) => get('/inventario/reportes/tomas-fisicas', params),
         ajustes: (params = {}) => get('/inventario/reportes/ajustes', params),
         reposicionAlertas: (params = {}) => get('/inventario/reportes/reposicion-alertas', params),
+        picking: (params = {}) => get('/inventario/reportes/picking', params),
+        packing: (params = {}) => get('/inventario/reportes/packing', params),
         exportarCsv: (tipo, params = {}) => api.download(
             `/inventario/reportes/${tipo}/exportar-csv${toQuery(params)}`,
             `inventario_reporte_${String(tipo).replaceAll('-', '_')}.csv`,
@@ -96,6 +98,25 @@ export const inventarioApi = {
 
     putaway: {
         confirmar: (payload) => post('/inventario/putaway/confirmar', payload),
+    },
+
+    picking: {
+        listar: (params = {}) => get('/inventario/picking', params),
+        crear: (payload) => post('/inventario/picking', payload),
+        obtener: (id) => get(`/inventario/picking/${id}`),
+        asignar: (id) => post(`/inventario/picking/${id}/asignar`),
+        iniciar: (id) => post(`/inventario/picking/${id}/iniciar`),
+        confirmar: (id, payload = {}) => post(`/inventario/picking/${id}/confirmar`, payload),
+        cancelar: (id, payload = {}) => post(`/inventario/picking/${id}/cancelar`, payload),
+    },
+
+    packing: {
+        listar: (params = {}) => get('/inventario/packing', params),
+        crear: (payload) => post('/inventario/packing', payload),
+        obtener: (id) => get(`/inventario/packing/${id}`),
+        iniciar: (id) => post(`/inventario/packing/${id}/iniciar`),
+        confirmar: (id, payload = {}) => post(`/inventario/packing/${id}/confirmar`, payload),
+        cancelar: (id, payload = {}) => post(`/inventario/packing/${id}/cancelar`, payload),
     },
 
     movimientos: {

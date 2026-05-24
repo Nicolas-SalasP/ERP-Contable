@@ -33,6 +33,8 @@ import InventarioDashboard from './Modulos/Inventario/Vistas/InventarioDashboard
 import ProductosInventario from './Modulos/Inventario/Vistas/ProductosInventario';
 import BodegasInventario from './Modulos/Inventario/Vistas/BodegasInventario';
 import UbicacionesInventario from './Modulos/Inventario/Vistas/UbicacionesInventario';
+import PickingInventario from './Modulos/Inventario/Vistas/PickingInventario';
+import PackingInventario from './Modulos/Inventario/Vistas/PackingInventario';
 import MovimientosInventario from './Modulos/Inventario/Vistas/MovimientosInventario';
 import KardexInventario from './Modulos/Inventario/Vistas/KardexInventario';
 import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
@@ -88,6 +90,8 @@ const permisosLecturaInventario = [
   'inventario.bodegas.ver',
   'inventario.ubicaciones.ver',
   'inventario.stock_ubicaciones.ver',
+  'inventario.picking.ver',
+  'inventario.packing.ver',
   'inventario.movimientos.ver',
   'inventario.kardex.ver',
   'inventario.valorizacion.ver',
@@ -332,6 +336,24 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="inventario.ubicaciones.ver">
                 <InventarioLayout><UbicacionesInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+
+
+          <Route path="/inventario/picking" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.picking.ver">
+                <InventarioLayout><PickingInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/packing" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.packing.ver">
+                <InventarioLayout><PackingInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />
