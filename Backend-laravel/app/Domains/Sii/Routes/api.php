@@ -1,5 +1,7 @@
 <?php
 
+use App\Domains\Sii\Http\Controllers\SiiCertificadoController;
+use App\Domains\Sii\Http\Controllers\SiiConfiguracionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,3 +24,17 @@ Route::get('ping', function () {
         'timestamp' => now()->toIso8601String(),
     ]);
 });
+
+// ---------------------------------------------------------------------
+// Configuracion SII por empresa (F2.1)
+// ---------------------------------------------------------------------
+Route::get('configuracion', [SiiConfiguracionController::class, 'show']);
+Route::put('configuracion', [SiiConfiguracionController::class, 'update']);
+
+// ---------------------------------------------------------------------
+// Certificado digital .pfx (F2.1)
+// ---------------------------------------------------------------------
+Route::get('certificado', [SiiCertificadoController::class, 'show']);
+Route::post('certificado', [SiiCertificadoController::class, 'store']);
+Route::post('certificado/verificar', [SiiCertificadoController::class, 'verificar']);
+Route::delete('certificado/{id}', [SiiCertificadoController::class, 'destroy']);
