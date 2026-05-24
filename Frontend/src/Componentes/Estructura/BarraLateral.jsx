@@ -101,7 +101,6 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                         'inventario.productos.ver',
                         'inventario.bodegas.ver',
                         'inventario.ubicaciones.ver',
-                'inventario.ubicaciones.ver',
                         'inventario.movimientos.ver',
                         'inventario.kardex.ver',
                         'inventario.valorizacion.ver',
