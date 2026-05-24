@@ -69,11 +69,21 @@ class SiiDteEmitido extends Model
         'estado', 'track_id', 'codigo_respuesta_sii', 'glosa_sii',
         'fecha_envio_sii', 'fecha_aceptacion_sii', 'fecha_rechazo_sii',
         // archivos
-        'xml_path', 'xml_hash_sha256', 'pdf_path', 'ted_xml',
+        'xml_path', 'xml_hash_sha256', 'xml_completo_cifrado', 'fecha_firma',
+        'pdf_path', 'ted_xml',
         // indicadores
         'es_cedible', 'indicador_servicio',
         // auditoria
         'usuario_emisor_id',
+    ];
+
+    /**
+     * SEGURIDAD: xml_completo_cifrado contiene el EnvioDTE firmado cifrado con
+     * APP_KEY. No debe aparecer en respuestas JSON (defensa en profundidad,
+     * aunque ya esta cifrado el contenido).
+     */
+    protected $hidden = [
+        'xml_completo_cifrado',
     ];
 
     protected $casts = [
@@ -82,6 +92,7 @@ class SiiDteEmitido extends Model
         'fecha_envio_sii'          => 'datetime',
         'fecha_aceptacion_sii'     => 'datetime',
         'fecha_rechazo_sii'        => 'datetime',
+        'fecha_firma'              => 'datetime',
         'monto_neto'               => 'decimal:2',
         'monto_exento'             => 'decimal:2',
         'iva'                      => 'decimal:2',
