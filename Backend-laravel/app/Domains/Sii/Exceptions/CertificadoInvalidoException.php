@@ -11,6 +11,7 @@ class CertificadoInvalidoException extends RuntimeException
     public const MOTIVO_PFX_CORRUPTO        = 'pfx_corrupto';
     public const MOTIVO_RUT_NO_ENCONTRADO   = 'rut_no_encontrado';
     public const MOTIVO_VENCIDO             = 'vencido';
+    public const MOTIVO_SIN_CERT_ACTIVO     = 'sin_cert_activo';
 
     public readonly string $motivo;
 
@@ -51,6 +52,14 @@ class CertificadoInvalidoException extends RuntimeException
         return new self(
             'El certificado vencio el ' . $validoHasta->toDateString() . '. Cargue uno vigente.',
             self::MOTIVO_VENCIDO
+        );
+    }
+
+    public static function sinCertActivo(int $empresaId): self
+    {
+        return new self(
+            "La empresa {$empresaId} no tiene un certificado en estado 'activo'. Cargue uno antes de firmar DTE.",
+            self::MOTIVO_SIN_CERT_ACTIVO
         );
     }
 }

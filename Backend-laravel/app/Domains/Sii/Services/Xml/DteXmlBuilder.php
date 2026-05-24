@@ -75,8 +75,11 @@ class DteXmlBuilder
         $dom->formatOutput       = false;
 
         $root = $dom->createElementNS(self::NS_SII, 'DTE');
-        $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:ds', self::NS_DSIG);
         $root->setAttribute('version', '1.0');
+        // NO declaramos xmlns:ds aqui: la <ds:Signature> (placeholder F4.1 o
+        // real F4.3) lo declara en su propio elemento, evitando que la
+        // canonicalizacion inclusiva la incluya como atributo heredado y
+        // rompa la verificacion round-trip de xmlseclibs.
         $dom->appendChild($root);
 
         $documento = $dom->createElement('Documento');

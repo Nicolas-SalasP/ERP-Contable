@@ -126,6 +126,71 @@ class CertificadoService
     }
 
     /**
+     * Conveniencia para F4.3: localiza el cert activo de la empresa y retorna
+     * el par PEM listo para firmar XMLDSig (cert X.509 + privKey RSA).
+     *
+     * NUNCA persistir lo retornado por este metodo.
+     *
+     * @return array{cert: string, privKey: string}
+     *
+     * @throws CertificadoInvalidoException si la empresa no tiene cert activo
+     *         o si el .pfx no se puede descifrar.
+     */
+    public function extraerParPemDeEmpresa(Empresa $empresa): array
+    {
+        $cert = SiiCertificadoEmpresa::activos()
+            ->porEmpresa($empresa->id)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($cert === null) {
+            throw CertificadoInvalidoException::sinCertActivo($empresa->id);
+        }
+
+        $plano = $this->extraerPlano($cert);
+
+        return [
+            'cert'    => $plano['cert_pem'],
+            'privKey' => $plano['private_key_pem'],
+        ];
+    }
+
+    /**
+     * Conveniencia para F4.3 (Caratula.RutEnvia): retorna el RUT extraido del
+     * subject del certificado activo de la empresa, parseando CN/serialNumber
+     * en formato chileno (12345678-9).
+     *
+     * @throws CertificadoInvalidoException si no hay cert activo o si el
+     *         subject no contiene un RUT parseable.
+     */
+    public function extraerRutDelSujeto(Empresa $empresa): string
+    {
+        $cert = SiiCertificadoEmpresa::activos()
+            ->porEmpresa($empresa->id)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($cert === null) {
+            throw CertificadoInvalidoException::sinCertActivo($empresa->id);
+        }
+
+        if ($cert->subject_rut !== null && $cert->subject_rut !== '') {
+            return $cert->subject_rut;
+        }
+
+        // Fallback: re-parsear el cert (caso en que se cargo antes de F4.3).
+        $plano  = $this->extraerPlano($cert);
+        $parsed = openssl_x509_parse($plano['cert_pem']);
+        $rut    = is_array($parsed) ? $this->extraerRut($parsed) : null;
+
+        if ($rut === null || $rut === '') {
+            throw CertificadoInvalidoException::rutNoEncontrado();
+        }
+
+        return $rut;
+    }
+
+    /**
      * Re-descifra y re-lee el .pfx con APP_KEY actual. Util tras rotacion
      * de APP_KEY o ante sospecha de corrupcion del registro.
      */
