@@ -99,8 +99,16 @@ trait PreparaInventarioTrait
             'inventario.packing.editar',
             'inventario.packing.confirmar',
             'inventario.packing.cancelar',
+
+            'inventario.despachos.ver',
+            'inventario.despachos.crear',
+            'inventario.despachos.editar',
+            'inventario.despachos.confirmar',
+            'inventario.despachos.cancelar',
+
             'inventario.reportes.picking',
             'inventario.reportes.packing',
+            'inventario.reportes.despachos',
 
             'inventario.movimientos.ver',
             'inventario.movimientos.entrada',
@@ -152,8 +160,10 @@ trait PreparaInventarioTrait
             'inventario.stock_ubicaciones.ver',
             'inventario.picking.ver',
             'inventario.packing.ver',
+            'inventario.despachos.ver',
             'inventario.reportes.picking',
             'inventario.reportes.packing',
+            'inventario.reportes.despachos',
             'inventario.movimientos.ver',
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',

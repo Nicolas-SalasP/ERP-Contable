@@ -22,6 +22,7 @@ use App\Domains\Contabilidad\Controllers\ImpuestosController;
 use App\Domains\Inventario\Controllers\InventarioController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
+use App\Domains\Inventario\Controllers\InventarioDespachoController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -150,6 +151,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reportes/reposicion-alertas', [InventarioController::class, 'reporteReposicionAlertas']);
         Route::get('/reportes/picking', [InventarioPickingController::class, 'reporte']);
         Route::get('/reportes/packing', [InventarioPackingController::class, 'reporte']);
+        Route::get('/reportes/despachos', [InventarioDespachoController::class, 'reporte']);
         Route::get('/reportes/{tipo}/exportar-csv', [InventarioController::class, 'exportarReporteCsv']);
 
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
@@ -177,6 +179,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/packing/{id}/iniciar', [InventarioPackingController::class, 'iniciar']);
         Route::post('/packing/{id}/confirmar', [InventarioPackingController::class, 'confirmar']);
         Route::post('/packing/{id}/cancelar', [InventarioPackingController::class, 'cancelar']);
+
+        Route::get('/despachos', [InventarioDespachoController::class, 'index']);
+        Route::post('/despachos', [InventarioDespachoController::class, 'store']);
+        Route::get('/despachos/{id}', [InventarioDespachoController::class, 'show']);
+        Route::post('/despachos/{id}/iniciar', [InventarioDespachoController::class, 'iniciar']);
+        Route::post('/despachos/{id}/confirmar', [InventarioDespachoController::class, 'confirmar']);
+        Route::post('/despachos/{id}/cancelar', [InventarioDespachoController::class, 'cancelar']);
 
         Route::get('/productos', [InventarioController::class, 'index']);
         Route::post('/productos', [InventarioController::class, 'store']);
