@@ -10,8 +10,11 @@ use App\Domains\Sii\Console\Commands\GenerarXmlPruebaCommand;
 use App\Domains\Sii\Console\Commands\ListarEnviosFallidosCommand;
 use App\Domains\Sii\Console\Commands\MonitorearCertificadosCommand;
 use App\Domains\Sii\Console\Commands\ObtenerTokenPruebaCommand;
+use App\Domains\Sii\Events\FacturaListaParaEmitirEvent;
 use App\Domains\Sii\Jobs\PollearEnviosPendientesJob;
+use App\Domains\Sii\Listeners\ProcesarFacturaParaSiiListener;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -69,5 +72,14 @@ class SiiServiceProvider extends ServiceProvider
                 ->onOneServer()
                 ->withoutOverlapping(10);
         });
+
+        // F6.2 — Puerto de entrada desde Comercial. El evento dispara el
+        // listener async (queue=sii) que orquesta map -> emit -> send.
+        // ShouldDispatchAfterCommit del evento garantiza que jobs solo se
+        // encolan si la transaccion contenedora commitea.
+        Event::listen(
+            FacturaListaParaEmitirEvent::class,
+            [ProcesarFacturaParaSiiListener::class, 'handle']
+        );
     }
 }
