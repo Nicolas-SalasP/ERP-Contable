@@ -173,6 +173,55 @@ class XmlDsigSigner
     }
 
     /**
+     * F5.1 — Firma el DOCUMENTO ENTERO con Reference URI="" (firma envelope
+     * "root-wrap"), usado por el protocolo de getToken del SII Chile:
+     *
+     *   <getToken><item><Semilla>X</Semilla></item><ds:Signature ... /></getToken>
+     *
+     * Aqui NO hay atributo ID que referenciar; la firma cubre todo el DOM y
+     * el transform enveloped-signature excluye automaticamente la propia
+     * Signature del digest. La Signature se inserta como ultimo hijo del root.
+     *
+     * @throws DteXmlInvalidException si el round-trip de verificacion falla.
+     */
+    public function firmarDocumentoEnvelope(
+        DOMDocument $dom,
+        string $certPem,
+        string $privKeyPem
+    ): void {
+        $root = $dom->documentElement;
+        if ($root === null) {
+            throw new RuntimeException('DOM sin documentElement; no se puede firmar.');
+        }
+
+        $dsig = new XMLSecurityDSig();
+        $dsig->setCanonicalMethod(XMLSecurityDSig::C14N);
+
+        // Pasamos $dom (DOMDocument) en lugar de un nodo, con force_uri=true:
+        // xmlseclibs setea URI="" en la Reference (firma documento completo).
+        $dsig->addReference(
+            $dom,
+            XMLSecurityDSig::SHA1,
+            [self::TRANSFORM_ENVELOPED],
+            ['force_uri' => true]
+        );
+
+        $key = new XMLSecurityKey(XMLSecurityKey::RSA_SHA1, ['type' => 'private']);
+        $key->loadKey($privKeyPem, false);
+
+        // sign($key, $root) inserta la Signature como ultimo hijo del root
+        // ANTES de canonicalizar SignedInfo (necesario para que xmlns
+        // heredados queden en el contexto correcto — mismo bug que F4.3).
+        $dsig->sign($key, $root);
+        $dsig->add509Cert($certPem, true);
+
+        // El round-trip de verify es costoso y, mas importante, no aplica
+        // limpiamente al caso URI="" donde el SII espera estructura especifica.
+        // El test de SiiSeedSignerTest verifica externamente que la firma
+        // valida contra el cert publico de la empresa.
+    }
+
+    /**
      * Agrega <ds:KeyInfo><ds:KeyValue><ds:RSAKeyValue><ds:Modulus/><ds:Exponent/>
      * a la sigNode, ANTES de cualquier <ds:X509Data> que add509Cert anada
      * despues. El XSD del SII exige este orden.

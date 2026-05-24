@@ -6,6 +6,7 @@ use App\Domains\Sii\Console\Commands\CargarCafCommand;
 use App\Domains\Sii\Console\Commands\EmitirDtePruebaCommand;
 use App\Domains\Sii\Console\Commands\GenerarXmlPruebaCommand;
 use App\Domains\Sii\Console\Commands\MonitorearCertificadosCommand;
+use App\Domains\Sii\Console\Commands\ObtenerTokenPruebaCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -41,6 +42,7 @@ class SiiServiceProvider extends ServiceProvider
                 CargarCafCommand::class,
                 GenerarXmlPruebaCommand::class,
                 EmitirDtePruebaCommand::class,
+                ObtenerTokenPruebaCommand::class,
             ]);
         }
 
