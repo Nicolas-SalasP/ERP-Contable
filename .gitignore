@@ -1,1 +1,4 @@
 node_modules
+
+# Metadatos locales del IDE Claude Code
+.claude/
