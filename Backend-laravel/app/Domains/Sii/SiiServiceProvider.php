@@ -4,6 +4,7 @@ namespace App\Domains\Sii;
 
 use App\Domains\Sii\Console\Commands\CargarCafCommand;
 use App\Domains\Sii\Console\Commands\EmitirDtePruebaCommand;
+use App\Domains\Sii\Console\Commands\EnviarDtePruebaCommand;
 use App\Domains\Sii\Console\Commands\GenerarXmlPruebaCommand;
 use App\Domains\Sii\Console\Commands\MonitorearCertificadosCommand;
 use App\Domains\Sii\Console\Commands\ObtenerTokenPruebaCommand;
@@ -43,6 +44,7 @@ class SiiServiceProvider extends ServiceProvider
                 GenerarXmlPruebaCommand::class,
                 EmitirDtePruebaCommand::class,
                 ObtenerTokenPruebaCommand::class,
+                EnviarDtePruebaCommand::class,
             ]);
         }
 

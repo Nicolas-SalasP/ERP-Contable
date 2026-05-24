@@ -65,20 +65,23 @@ class SiiDteEmitidoEvento extends Model
     }
 
     /**
-     * Registra el envio al SII (uso futuro F5). Se invoca cuando el WS
-     * acepta el upload y devuelve un track_id.
+     * Registra el envio al SII (F5.2). Se invoca cuando DTEUpload acepta el
+     * archivo y devuelve un track_id.
+     *
+     * @param array<string, mixed> $payloadExtra contexto adicional del envio
+     *        (envio_id, ambiente, sesion_id, intentos_envio, etc.)
      */
-    public static function registrarEnvio(SiiDteEmitido $dte, string $trackId): self
+    public static function registrarEnvio(SiiDteEmitido $dte, string $trackId, array $payloadExtra = []): self
     {
         return self::create([
             'dte_emitido_id'  => $dte->id,
             'estado_anterior' => SiiDteEmitido::ESTADO_FIRMADO,
             'estado_nuevo'    => SiiDteEmitido::ESTADO_ENVIADO_SII,
             'glosa'           => "Enviado al SII; track_id={$trackId}",
-            'payload'         => [
+            'payload'         => array_merge([
                 'track_id' => $trackId,
                 'folio'    => (int) $dte->folio,
-            ],
+            ], $payloadExtra),
         ]);
     }
 
