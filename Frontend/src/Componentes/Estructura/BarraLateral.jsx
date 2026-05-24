@@ -155,6 +155,17 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             ]
         },
         {
+            id: 'sii',
+            label: 'Facturación Electrónica (SII)',
+            icon: 'fas fa-file-invoice',
+            // permisosRequeridos intencionalmente omitido en F2.2: cualquier usuario
+            // autenticado con empresa_id ve el modulo. Granularidad fina llega en F8/F9.
+            subItems: [
+                { path: '/sii/configuracion', label: 'Configuración' },
+                { path: '/sii/certificado', label: 'Certificado Digital' },
+            ]
+        },
+        {
             id: 'administracion',
             label: 'Administración',
             icon: 'fas fa-cogs',

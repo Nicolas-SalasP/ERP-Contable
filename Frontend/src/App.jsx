@@ -41,6 +41,8 @@ const ValorizacionInventario = lazy(() => import('./Modulos/Inventario/Vistas/Va
 const VisorAsientoCompleto = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAsientoCompleto'));
 const Glosario = lazy(() => import('./Modulos/Glosario/Glosario'));
 const ReclasificadorAsiento = lazy(() => import('./Modulos/Contabilidad/Vistas/ReclasificadorAsiento'));
+const ConfiguracionSii = lazy(() => import('./Modulos/Sii/Vistas/ConfiguracionSii'));
+const CertificadoSii = lazy(() => import('./Modulos/Sii/Vistas/CertificadoSii'));
 
 const CargandoModulo = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -396,6 +398,18 @@ function App() {
               <RutaProtegida permiso="inventario.valorizacion.ver">
                 <LayoutPrincipal><ValorizacionInventario /></LayoutPrincipal>
               </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/configuracion" element={
+            <RutaPrivada>
+              <LayoutPrincipal><ConfiguracionSii /></LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/certificado" element={
+            <RutaPrivada>
+              <LayoutPrincipal><CertificadoSii /></LayoutPrincipal>
             </RutaPrivada>
           } />
 
