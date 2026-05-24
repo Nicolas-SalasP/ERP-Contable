@@ -2,6 +2,7 @@
 
 namespace App\Domains\Sii;
 
+use App\Domains\Sii\Console\Commands\CargarCafCommand;
 use App\Domains\Sii\Console\Commands\MonitorearCertificadosCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,7 @@ class SiiServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 MonitorearCertificadosCommand::class,
+                CargarCafCommand::class,
             ]);
         }
 
