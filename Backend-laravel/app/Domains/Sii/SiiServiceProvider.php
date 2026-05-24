@@ -6,8 +6,10 @@ use App\Domains\Sii\Console\Commands\CargarCafCommand;
 use App\Domains\Sii\Console\Commands\EmitirDtePruebaCommand;
 use App\Domains\Sii\Console\Commands\EnviarDtePruebaCommand;
 use App\Domains\Sii\Console\Commands\GenerarXmlPruebaCommand;
+use App\Domains\Sii\Console\Commands\ListarEnviosFallidosCommand;
 use App\Domains\Sii\Console\Commands\MonitorearCertificadosCommand;
 use App\Domains\Sii\Console\Commands\ObtenerTokenPruebaCommand;
+use App\Domains\Sii\Jobs\PollearEnviosPendientesJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -45,10 +47,12 @@ class SiiServiceProvider extends ServiceProvider
                 EmitirDtePruebaCommand::class,
                 ObtenerTokenPruebaCommand::class,
                 EnviarDtePruebaCommand::class,
+                ListarEnviosFallidosCommand::class,
             ]);
         }
 
         // Schedule: monitoreo diario de vencimiento de certificados a las 09:00 hora Chile.
+        // F5.3: polling de envios pendientes cada 5 minutos.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             $schedule->command('sii:monitorear-certificados')
                 ->dailyAt('09:00')
@@ -56,6 +60,12 @@ class SiiServiceProvider extends ServiceProvider
                 ->withoutOverlapping()
                 ->onOneServer()
                 ->name('sii-monitorear-certificados-vencimiento');
+
+            $schedule->job(new PollearEnviosPendientesJob())
+                ->everyFiveMinutes()
+                ->name('sii-pollear-envios-pendientes')
+                ->onOneServer()
+                ->withoutOverlapping(10);
         });
     }
 }
