@@ -6,13 +6,25 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Rol;
+use App\Domains\Sii\Services\Xml\DteXmlBuilder;
+use App\Domains\Sii\Services\Xml\DteXsdValidator;
+use App\Domains\Sii\Services\Xml\Ted\TedBuilder;
 use App\Observers\EmpresaObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // El container no auto-resuelve dependencias tipadas nullable con default null.
+        // Bind explicito para que app(DteXmlBuilder::class) reciba TedBuilder y pueda
+        // generar TED firmado (F4.2). Sin este bind, build($dte, $caf) lanza
+        // LogicException porque tedBuilder llega como null.
+        $this->app->bind(DteXmlBuilder::class, function ($app) {
+            return new DteXmlBuilder(
+                $app->make(DteXsdValidator::class),
+                $app->make(TedBuilder::class)
+            );
+        });
     }
 
     public function boot(): void

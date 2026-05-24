@@ -6,10 +6,12 @@ use RuntimeException;
 
 class CafInvalidoException extends RuntimeException
 {
-    public const MOTIVO_XML_MALFORMADO     = 'xml_malformado';
-    public const MOTIVO_ESTRUCTURA_INVALIDA = 'estructura_invalida';
-    public const MOTIVO_RUT_NO_COINCIDE    = 'rut_no_coincide';
-    public const MOTIVO_YA_EXISTE          = 'ya_existe';
+    public const MOTIVO_XML_MALFORMADO       = 'xml_malformado';
+    public const MOTIVO_ESTRUCTURA_INVALIDA  = 'estructura_invalida';
+    public const MOTIVO_RUT_NO_COINCIDE      = 'rut_no_coincide';
+    public const MOTIVO_YA_EXISTE            = 'ya_existe';
+    public const MOTIVO_RSA_SK_NO_LEGIBLE    = 'rsa_sk_no_legible';
+    public const MOTIVO_BLOQUE_CAF_AUSENTE   = 'bloque_caf_ausente';
 
     public readonly string $motivo;
 
@@ -48,6 +50,24 @@ class CafInvalidoException extends RuntimeException
         return new self(
             "Ya existe un CAF cargado con sii_idk={$siiIdk} para la empresa {$empresaId}.",
             self::MOTIVO_YA_EXISTE
+        );
+    }
+
+    public static function rsaSkNoLegible(string $detalleOpenssl = ''): self
+    {
+        $msg = 'La clave privada RSA del CAF no se puede cargar (openssl_pkey_get_private fallo).';
+        if ($detalleOpenssl !== '') {
+            $msg .= ' Detalle: ' . $detalleOpenssl;
+        }
+
+        return new self($msg, self::MOTIVO_RSA_SK_NO_LEGIBLE);
+    }
+
+    public static function bloqueCafAusente(int $cafId): self
+    {
+        return new self(
+            "El XML cifrado del CAF {$cafId} no contiene el bloque <CAF> esperado.",
+            self::MOTIVO_BLOQUE_CAF_AUSENTE
         );
     }
 }

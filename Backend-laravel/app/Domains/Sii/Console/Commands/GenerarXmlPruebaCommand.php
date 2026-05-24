@@ -2,20 +2,24 @@
 
 namespace App\Domains\Sii\Console\Commands;
 
+use App\Domains\Sii\Exceptions\CafInvalidoException;
 use App\Domains\Sii\Exceptions\DteIncompletoException;
 use App\Domains\Sii\Exceptions\DteXmlInvalidException;
+use App\Domains\Sii\Models\SiiCaf;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Xml\DteXmlBuilder;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use LogicException;
 
 class GenerarXmlPruebaCommand extends Command
 {
     protected $signature = 'sii:generar-xml-prueba
                             {dte_id : ID de SiiDteEmitido}
-                            {--out= : Path opcional para volcar el XML al disco}';
+                            {--out= : Path opcional para volcar el XML al disco}
+                            {--caf= : ID opcional de SiiCaf para inyectar TED firmado}';
 
-    protected $description = 'Genera el XML del DTE (sin firmar) y lo valida contra el XSD oficial.';
+    protected $description = 'Genera el XML del DTE y lo valida contra el XSD oficial. Si se provee --caf, inyecta TED firmado con RSA-SHA1.';
 
     public function handle(DteXmlBuilder $builder): int
     {
@@ -30,14 +34,32 @@ class GenerarXmlPruebaCommand extends Command
             return self::FAILURE;
         }
 
+        $caf = null;
+        $cafOption = $this->option('caf');
+        if ($cafOption !== null && $cafOption !== '') {
+            try {
+                $caf = SiiCaf::findOrFail((int) $cafOption);
+            } catch (ModelNotFoundException) {
+                $this->error("SiiCaf con ID {$cafOption} no encontrado.");
+                return self::FAILURE;
+            }
+        }
+
         try {
-            $xml = $builder->build($dte);
+            $xml = $builder->build($dte, $caf);
         } catch (DteIncompletoException $e) {
             $this->error('DTE incompleto: ' . $e->getMessage());
             $this->line('Motivo: ' . $e->motivo);
             return self::FAILURE;
         } catch (DteXmlInvalidException $e) {
             $this->error('XML invalido contra XSD: ' . $e->getMessage());
+            return self::FAILURE;
+        } catch (CafInvalidoException $e) {
+            $this->error('CAF invalido: ' . $e->getMessage());
+            $this->line('Motivo: ' . $e->motivo);
+            return self::FAILURE;
+        } catch (LogicException $e) {
+            $this->error('Inconsistencia DTE/CAF: ' . $e->getMessage());
             return self::FAILURE;
         }
 
