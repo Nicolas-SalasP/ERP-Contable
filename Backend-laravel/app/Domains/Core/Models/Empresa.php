@@ -5,7 +5,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Empresa extends Model
 {
-    public const UPDATED_AT = null; 
+    use \App\Domains\Sii\Concerns\HasSiiAttributesEmpresa;
+
+    public const UPDATED_AT = null;
 
     protected $fillable = [
         'rut', 
