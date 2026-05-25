@@ -34,6 +34,24 @@ class InventarioAuditoriaService
         '.env',
     ];
 
+    /**
+     * Inventario opera como WMS/logística. Estas claves se bloquean en la
+     * auditoría para evitar que payloads externos ensucien la separación con
+     * DTE/SII o documentos tributarios.
+     */
+    private const CLAVES_TRIBUTARIAS_BLOQUEADAS = [
+        'codigo_dte',
+        'codigo_sii',
+        'folio_dte',
+        'xml_dte',
+        'track_id_sii',
+        'guia_despacho_electronica',
+        'factura_electronica',
+        'boleta_electronica',
+        'emitir_dte',
+        'estado_sii',
+    ];
+
     public function __construct(private readonly InventarioPermisoService $permisos)
     {
     }
@@ -228,7 +246,7 @@ class InventarioAuditoriaService
         }
 
         if (!is_array($valor)) {
-            return $valor;
+            return is_scalar($valor) ? $valor : null;
         }
 
         return $this->sanearArray($valor);
@@ -240,8 +258,14 @@ class InventarioAuditoriaService
 
         foreach ($datos as $clave => $valor) {
             $claveNormalizada = strtolower(str_replace(['-', '_'], '', (string) $clave));
+            $claveOriginal = strtolower((string) $clave);
 
-            if (in_array($claveNormalizada, self::CLAVES_SENSIBLES, true) || in_array(strtolower((string) $clave), self::CLAVES_SENSIBLES, true)) {
+            if (
+                in_array($claveNormalizada, $this->normalizarClavesBloqueadas(self::CLAVES_SENSIBLES), true)
+                || in_array($claveOriginal, self::CLAVES_SENSIBLES, true)
+                || in_array($claveNormalizada, $this->normalizarClavesBloqueadas(self::CLAVES_TRIBUTARIAS_BLOQUEADAS), true)
+                || in_array($claveOriginal, self::CLAVES_TRIBUTARIAS_BLOQUEADAS, true)
+            ) {
                 continue;
             }
 
@@ -266,6 +290,14 @@ class InventarioAuditoriaService
         }
 
         return $limpio;
+    }
+
+    private function normalizarClavesBloqueadas(array $claves): array
+    {
+        return array_map(
+            static fn (string $clave): string => strtolower(str_replace(['-', '_'], '', $clave)),
+            $claves
+        );
     }
 
     private function texto(mixed $valor, int $max): ?string

@@ -99,6 +99,7 @@ const permisosLecturaInventario = [
   'inventario.despachos.ver',
   'inventario.devoluciones.ver',
   'inventario.auditoria.ver',
+  'inventario.eventos_integracion.ver',
   'inventario.movimientos.ver',
   'inventario.kardex.ver',
   'inventario.valorizacion.ver',

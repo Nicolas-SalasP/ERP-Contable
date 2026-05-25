@@ -43,8 +43,17 @@ class InventarioDashboardService
             'inventario.lotes.ver',
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',
+            'inventario.ubicaciones.ver',
+            'inventario.stock_ubicaciones.ver',
+            'inventario.picking.ver',
+            'inventario.packing.ver',
+            'inventario.despachos.ver',
+            'inventario.devoluciones.ver',
+            'inventario.auditoria.ver',
+            'inventario.eventos_integracion.ver',
             'inventario.tomas_fisicas.ver',
             'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
         ]);
 
         $empresaId = (int) $usuario->empresa_id;

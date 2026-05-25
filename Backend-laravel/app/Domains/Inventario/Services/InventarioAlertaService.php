@@ -7,6 +7,7 @@ use App\Domains\Inventario\Events\AlertasInventarioActualizadas;
 use App\Domains\Inventario\Events\LoteVencidoDetectado;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
 use App\Domains\Inventario\Models\InventarioAlertaEstado;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\ReglaReposicion;
 use App\Domains\Inventario\Models\ReservaDetalleInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
@@ -27,7 +28,8 @@ class InventarioAlertaService
     public function __construct(
         private readonly InventarioPermisoService $permisos,
         private readonly InventarioReposicionService $reposicionService,
-        private readonly InventarioDisponibilidadService $disponibilidadService
+        private readonly InventarioDisponibilidadService $disponibilidadService,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -92,23 +94,31 @@ class InventarioAlertaService
                 $referencia = (string) ($alerta['referencia'] ?? '');
                 $key = ($alerta['tipo'] ?? '') . '|' . $referencia;
 
-                if (($alerta['tipo'] ?? null) !== 'LOTE_VENCIDO' || $referenciasExistentes->has($key)) {
+                if ($referenciasExistentes->has($key)) {
                     continue;
                 }
 
-                if (empty($alerta['producto_id']) || empty($alerta['bodega_id']) || empty($alerta['lote_id']) || empty($alerta['fecha_referencia'])) {
+                if (($alerta['tipo'] ?? null) === 'LOTE_VENCIDO') {
+                    if (empty($alerta['producto_id']) || empty($alerta['bodega_id']) || empty($alerta['lote_id']) || empty($alerta['fecha_referencia'])) {
+                        continue;
+                    }
+
+                    event(new LoteVencidoDetectado(
+                        empresaId: $empresaId,
+                        productoId: (int) $alerta['producto_id'],
+                        bodegaId: (int) $alerta['bodega_id'],
+                        loteId: (int) $alerta['lote_id'],
+                        stockActual: (float) ($alerta['cantidad_actual'] ?? 0),
+                        fechaVencimiento: (string) $alerta['fecha_referencia'],
+                        referencia: $referencia
+                    ));
+
                     continue;
                 }
 
-                event(new LoteVencidoDetectado(
-                    empresaId: $empresaId,
-                    productoId: (int) $alerta['producto_id'],
-                    bodegaId: (int) $alerta['bodega_id'],
-                    loteId: (int) $alerta['lote_id'],
-                    stockActual: (float) ($alerta['cantidad_actual'] ?? 0),
-                    fechaVencimiento: (string) $alerta['fecha_referencia'],
-                    referencia: $referencia
-                ));
+                if (($alerta['tipo'] ?? null) === 'STOCK_BAJO') {
+                    $this->publicarEventoStockBajo($empresaId, $alerta, $referencia);
+                }
             }
         });
 
@@ -532,6 +542,47 @@ class InventarioAlertaService
             })
             ->values()
             ->all();
+    }
+
+    private function publicarEventoStockBajo(int $empresaId, array $alerta, string $referencia): void
+    {
+        if (empty($alerta['producto_id']) || empty($alerta['bodega_id'])) {
+            return;
+        }
+
+        $this->eventosIntegracion->publicarDesdeOperacion(null, InventarioEventoIntegracion::EVENTO_STOCK_BAJO_DETECTADO, [
+            'empresa_id' => $empresaId,
+            'entidad_tipo' => InventarioAlertaEstado::class,
+            'entidad_id' => null,
+            'prioridad' => $this->prioridadEventoParaSeveridad((string) ($alerta['severidad'] ?? 'media')),
+            'payload_json' => [
+                'tipo' => $alerta['tipo'] ?? 'STOCK_BAJO',
+                'producto_id' => (int) $alerta['producto_id'],
+                'bodega_id' => (int) $alerta['bodega_id'],
+                'cantidad_actual' => $alerta['cantidad_actual'] ?? null,
+                'stock_minimo' => $alerta['stock_minimo'] ?? null,
+                'stock_objetivo' => $alerta['stock_objetivo'] ?? null,
+                'cantidad_sugerida' => $alerta['cantidad_sugerida'] ?? null,
+                'referencia' => $referencia,
+            ],
+            'metadata_json' => [
+                'fuente' => 'inventario_alertas_estado',
+                'severidad' => $alerta['severidad'] ?? null,
+                'titulo' => $alerta['titulo'] ?? null,
+            ],
+            'correlacion_id' => 'alerta-stock-bajo-' . $empresaId . '-' . sha1($referencia),
+            'origen_modulo' => 'inventario.alertas',
+        ], true);
+    }
+
+    private function prioridadEventoParaSeveridad(string $severidad): string
+    {
+        return match (strtolower($severidad)) {
+            'critica' => InventarioEventoIntegracion::PRIORIDAD_CRITICA,
+            'alta' => InventarioEventoIntegracion::PRIORIDAD_ALTA,
+            'baja' => InventarioEventoIntegracion::PRIORIDAD_BAJA,
+            default => InventarioEventoIntegracion::PRIORIDAD_NORMAL,
+        };
     }
 
     private function normalizarAlertaPersistida(int $empresaId, array $alerta, $calculadoEn): array

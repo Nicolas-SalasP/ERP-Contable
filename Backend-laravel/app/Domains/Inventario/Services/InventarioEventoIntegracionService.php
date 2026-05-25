@@ -4,6 +4,7 @@ namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Integracion\Contratos\InventarioEventoIntegracionContrato;
+use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -48,8 +49,10 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
         'estado_sii',
     ];
 
-    public function __construct(private readonly InventarioPermisoService $permisos)
-    {
+    public function __construct(
+        private readonly InventarioPermisoService $permisos,
+        private readonly InventarioAuditoriaService $auditoria
+    ) {
     }
 
     public function publicarEvento(?User $usuario, array $datos, bool $silencioso = false): ?InventarioEventoIntegracion
@@ -171,7 +174,10 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
             'error_mensaje' => null,
         ]);
 
-        return $evento->refresh();
+        $evento = $evento->refresh();
+        $this->auditarGestion($usuario, $evento, InventarioAuditoriaEvento::ACCION_EVENTO_INTEGRACION_PROCESADO);
+
+        return $evento;
     }
 
     public function marcarIgnorado(User $usuario, int $id, ?string $motivo = null): InventarioEventoIntegracion
@@ -190,7 +196,10 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
             'error_mensaje' => null,
         ]);
 
-        return $evento->refresh();
+        $evento = $evento->refresh();
+        $this->auditarGestion($usuario, $evento, InventarioAuditoriaEvento::ACCION_EVENTO_INTEGRACION_IGNORADO);
+
+        return $evento;
     }
 
     public function marcarError(User $usuario, int $id, string $mensaje): InventarioEventoIntegracion
@@ -203,7 +212,32 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
             'error_mensaje' => $this->texto($mensaje, 2000),
         ]);
 
-        return $evento->refresh();
+        $evento = $evento->refresh();
+        $this->auditarGestion($usuario, $evento, InventarioAuditoriaEvento::ACCION_EVENTO_INTEGRACION_ERROR);
+
+        return $evento;
+    }
+
+    private function auditarGestion(User $usuario, InventarioEventoIntegracion $evento, string $accion): void
+    {
+        $this->auditoria->registrarEvento($usuario, [
+            'empresa_id' => $evento->empresa_id,
+            'accion' => $accion,
+            'entidad_tipo' => InventarioEventoIntegracion::class,
+            'entidad_id' => $evento->id,
+            'severidad' => $accion === InventarioAuditoriaEvento::ACCION_EVENTO_INTEGRACION_ERROR
+                ? InventarioAuditoriaEvento::SEVERIDAD_WARNING
+                : InventarioAuditoriaEvento::SEVERIDAD_INFO,
+            'descripcion' => 'Gestión administrativa de evento interno de integración de inventario.',
+            'metadata_json' => [
+                'evento' => $evento->evento,
+                'estado' => $evento->estado,
+                'prioridad' => $evento->prioridad,
+                'correlacion_id' => $evento->correlacion_id,
+            ],
+            'origen_modulo' => 'inventario.eventos_integracion',
+            'origen_id' => $evento->id,
+        ], true);
     }
 
     private function obtenerGestionable(User $usuario, int $id): InventarioEventoIntegracion
