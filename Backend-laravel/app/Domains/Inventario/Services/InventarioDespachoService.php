@@ -4,6 +4,7 @@ namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\InventarioDespachoDetalle;
+use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\InventarioDespachoOrden;
 use App\Domains\Inventario\Models\InventarioPackingDetalle;
 use App\Domains\Inventario\Models\InventarioPackingOrden;
@@ -24,7 +25,8 @@ class InventarioDespachoService
     public function __construct(
         private readonly InventarioPermisoService $permisos,
         private readonly InventarioMovimientoService $movimientoService,
-        private readonly InventarioStockUbicacionService $stockUbicacionService
+        private readonly InventarioStockUbicacionService $stockUbicacionService,
+        private readonly InventarioAuditoriaService $auditoria
     ) {
     }
 
@@ -169,6 +171,12 @@ class InventarioDespachoService
                 ]);
             }
 
+            $this->auditarDespacho($usuario, InventarioAuditoriaEvento::ACCION_DESPACHO_CREADO, $orden, 'Orden de despacho creada desde packing empacado.', [
+                'packing_orden_id' => $packing->id,
+                'picking_orden_id' => $picking->id,
+                'total_detalles' => $detallesPacking->count(),
+            ]);
+
             return $this->cargarOrden($orden->refresh());
         });
     }
@@ -192,6 +200,8 @@ class InventarioDespachoService
                 'estado' => InventarioDespachoOrden::ESTADO_EN_DESPACHO,
                 'fecha_inicio' => $orden->fecha_inicio ?? now(),
             ]);
+
+            $this->auditarDespacho($usuario, InventarioAuditoriaEvento::ACCION_DESPACHO_INICIADO, $orden, 'Orden de despacho iniciada.');
 
             return $this->cargarOrden($orden->refresh());
         });
@@ -292,6 +302,11 @@ class InventarioDespachoService
                 }
             }
 
+            $this->auditarDespacho($usuario, InventarioAuditoriaEvento::ACCION_DESPACHO_CONFIRMADO, $orden, 'Orden de despacho confirmada con impacto de stock.', [
+                'hay_diferencias' => $hayDiferencias,
+                'detalles_confirmados' => count($operaciones),
+            ], InventarioAuditoriaEvento::SEVERIDAD_CRITICAL);
+
             return $this->cargarOrden($orden->refresh());
         });
     }
@@ -323,6 +338,10 @@ class InventarioDespachoService
                     ? $this->textoOpcional($datos['observacion'], 2000)
                     : $orden->observacion,
             ]);
+
+            $this->auditarDespacho($usuario, InventarioAuditoriaEvento::ACCION_DESPACHO_CANCELADO, $orden, 'Orden de despacho cancelada.', [
+                'observacion_cancelacion' => $datos['observacion'] ?? null,
+            ], InventarioAuditoriaEvento::SEVERIDAD_WARNING);
 
             return $this->cargarOrden($orden->refresh());
         });
@@ -376,6 +395,7 @@ class InventarioDespachoService
             'observacion' => $observacionDetalle
                 ?: 'Salida logística interna no tributaria asociada al despacho ' . $orden->codigo,
             'fecha_movimiento' => now(),
+            '_origen_operativo' => 'inventario_despacho',
         ];
 
         if ($detalle->lote_id !== null) {
@@ -587,6 +607,37 @@ class InventarioDespachoService
             'detalles.lote:id,empresa_id,producto_id,codigo_lote,fecha_vencimiento,estado_operativo,activo',
             'detalles.packingDetalle:id,empresa_id,packing_orden_id,cantidad_pickeada,cantidad_empacada,estado',
             'detalles.movimiento:id,empresa_id,tipo,cantidad,referencia,motivo,fecha_movimiento',
+        ]);
+    }
+
+    private function auditarDespacho(
+        User $usuario,
+        string $accion,
+        InventarioDespachoOrden $orden,
+        string $descripcion,
+        array $metadata = [],
+        string $severidad = InventarioAuditoriaEvento::SEVERIDAD_INFO
+    ): void {
+        $this->auditoria->registrarEvento($usuario, [
+            'empresa_id' => (int) $orden->empresa_id,
+            'accion' => $accion,
+            'entidad_tipo' => InventarioDespachoOrden::class,
+            'entidad_id' => (int) $orden->id,
+            'severidad' => $severidad,
+            'descripcion' => $descripcion,
+            'referencia' => $orden->referencia ?? $orden->codigo,
+            'motivo' => $orden->motivo,
+            'observacion' => $orden->observacion,
+            'origen_modulo' => $orden->origen_modulo,
+            'origen_id' => $orden->origen_id,
+            'metadata_json' => array_merge([
+                'codigo' => $orden->codigo,
+                'estado' => $orden->estado,
+                'bodega_id' => $orden->bodega_id,
+                'packing_orden_id' => $orden->packing_orden_id,
+                'picking_orden_id' => $orden->picking_orden_id,
+                'reserva_id' => $orden->reserva_id,
+            ], $metadata),
         ]);
     }
 

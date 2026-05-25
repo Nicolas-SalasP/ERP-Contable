@@ -24,6 +24,7 @@ use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
+use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -141,6 +142,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rutas Inventario, Bodegas y movimientos
     Route::prefix('inventario')->group(function () {
         Route::get('/dashboard', [InventarioController::class, 'dashboard']);
+
+        Route::get('/auditoria', [InventarioAuditoriaController::class, 'index']);
+        Route::get('/auditoria/resumen', [InventarioAuditoriaController::class, 'resumen']);
+        Route::get('/auditoria/{id}', [InventarioAuditoriaController::class, 'show']);
 
         Route::get('/reportes/stock', [InventarioController::class, 'reporteStock']);
         Route::get('/reportes/movimientos', [InventarioController::class, 'reporteMovimientos']);

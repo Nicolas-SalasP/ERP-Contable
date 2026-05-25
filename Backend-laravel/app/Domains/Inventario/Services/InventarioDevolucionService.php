@@ -3,6 +3,7 @@
 namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\InventarioDespachoDetalle;
 use App\Domains\Inventario\Models\InventarioDespachoOrden;
 use App\Domains\Inventario\Models\InventarioDevolucionDetalle;
@@ -19,7 +20,8 @@ class InventarioDevolucionService
 {
     public function __construct(
         private readonly InventarioPermisoService $permisos,
-        private readonly InventarioMovimientoService $movimientoService
+        private readonly InventarioMovimientoService $movimientoService,
+        private readonly InventarioAuditoriaService $auditoria
     ) {
     }
 
@@ -204,6 +206,12 @@ class InventarioDevolucionService
                 ]);
             }
 
+            $this->auditarDevolucion($usuario, InventarioAuditoriaEvento::ACCION_DEVOLUCION_CREADA, $orden, 'Devolución/reversa post-despacho creada.', [
+                'tipo' => $orden->tipo,
+                'despacho_orden_id' => $despacho->id,
+                'total_detalles' => count($payloadDetalles),
+            ], $tipo === InventarioDevolucionOrden::TIPO_DIFERENCIA_POST_DESPACHO ? InventarioAuditoriaEvento::SEVERIDAD_WARNING : InventarioAuditoriaEvento::SEVERIDAD_INFO);
+
             return $this->cargarOrden($orden->refresh());
         });
     }
@@ -311,6 +319,14 @@ class InventarioDevolucionService
                 'observacion' => $this->textoOpcional($datos['observacion'] ?? $orden->observacion, 2000),
             ]);
 
+            $this->auditarDevolucion($usuario, $this->accionConfirmacion($orden), $orden, 'Devolución/reversa post-despacho confirmada.', [
+                'tipo' => $orden->tipo,
+                'despacho_orden_id' => $despacho->id,
+                'hay_diferencias' => $hayDiferencias,
+                'total_detalles' => $detalles->count(),
+                'cantidad_aceptada_total' => $this->redondearCantidad((float) $detalles->sum('cantidad_aceptada')),
+            ], InventarioAuditoriaEvento::SEVERIDAD_CRITICAL);
+
             return $this->cargarOrden($orden->refresh());
         });
     }
@@ -342,6 +358,11 @@ class InventarioDevolucionService
                 'fecha_cancelacion' => now(),
                 'observacion' => $this->textoOpcional($datos['observacion'] ?? $orden->observacion, 2000),
             ]);
+
+            $this->auditarDevolucion($usuario, InventarioAuditoriaEvento::ACCION_DEVOLUCION_CANCELADA, $orden, 'Devolución/reversa post-despacho cancelada.', [
+                'tipo' => $orden->tipo,
+                'observacion_cancelacion' => $datos['observacion'] ?? null,
+            ], InventarioAuditoriaEvento::SEVERIDAD_WARNING);
 
             return $this->cargarOrden($orden->refresh());
         });
@@ -392,6 +413,46 @@ class InventarioDevolucionService
             'cantidad_rechazada' => $this->redondearCantidad((float) ($totales->cantidad_rechazada ?? 0)),
             'ultimas' => (clone $base)->with($this->relacionesListado())->orderByDesc('fecha_creacion')->limit(20)->get(),
         ];
+    }
+
+    private function accionConfirmacion(InventarioDevolucionOrden $orden): string
+    {
+        return match ($orden->tipo) {
+            InventarioDevolucionOrden::TIPO_REVERSA_TOTAL => InventarioAuditoriaEvento::ACCION_REVERSA_TOTAL_CONFIRMADA,
+            InventarioDevolucionOrden::TIPO_REVERSA_PARCIAL => InventarioAuditoriaEvento::ACCION_REVERSA_PARCIAL_CONFIRMADA,
+            InventarioDevolucionOrden::TIPO_DIFERENCIA_POST_DESPACHO => InventarioAuditoriaEvento::ACCION_DIFERENCIA_POST_DESPACHO_REGISTRADA,
+            default => InventarioAuditoriaEvento::ACCION_DEVOLUCION_CONFIRMADA,
+        };
+    }
+
+    private function auditarDevolucion(
+        User $usuario,
+        string $accion,
+        InventarioDevolucionOrden $orden,
+        string $descripcion,
+        array $metadata = [],
+        string $severidad = InventarioAuditoriaEvento::SEVERIDAD_INFO
+    ): void {
+        $this->auditoria->registrarEvento($usuario, [
+            'empresa_id' => (int) $orden->empresa_id,
+            'accion' => $accion,
+            'entidad_tipo' => InventarioDevolucionOrden::class,
+            'entidad_id' => (int) $orden->id,
+            'severidad' => $severidad,
+            'descripcion' => $descripcion,
+            'referencia' => $orden->referencia ?? $orden->codigo,
+            'motivo' => $orden->motivo,
+            'observacion' => $orden->observacion,
+            'origen_modulo' => $orden->origen_modulo,
+            'origen_id' => $orden->origen_id,
+            'metadata_json' => array_merge([
+                'codigo' => $orden->codigo,
+                'estado' => $orden->estado,
+                'tipo' => $orden->tipo,
+                'despacho_orden_id' => $orden->despacho_orden_id,
+                'bodega_id' => $orden->bodega_id,
+            ], $metadata),
+        ]);
     }
 
     private function cargarOrden(InventarioDevolucionOrden $orden): InventarioDevolucionOrden
@@ -619,6 +680,7 @@ class InventarioDevolucionService
                 (string) ($observacionDetalle ?: $detalle->observacion ?: $orden->observacion ?: '')
             )),
             'fecha_movimiento' => now(),
+            '_origen_operativo' => 'inventario_devolucion',
         ], (int) $usuario->empresa_id, (int) $usuario->id);
     }
 

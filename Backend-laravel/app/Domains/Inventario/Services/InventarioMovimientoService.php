@@ -2,8 +2,10 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Events\StockMinimoPerforado;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
@@ -19,7 +21,8 @@ class InventarioMovimientoService
         private readonly InventarioValorizacionService $valorizacionService,
         private readonly InventarioLoteService $loteService,
         private readonly InventarioReposicionService $reposicionService,
-        private readonly InventarioStockUbicacionService $stockUbicacionService
+        private readonly InventarioStockUbicacionService $stockUbicacionService,
+        private readonly InventarioAuditoriaService $auditoria
     ) {
     }
 
@@ -28,7 +31,7 @@ class InventarioMovimientoService
         return DB::transaction(function () use ($data, $empresaId, $userId) {
             $tipo = $data['tipo'] ?? null;
 
-            return match ($tipo) {
+            $movimiento = match ($tipo) {
                 MovimientoInventario::TIPO_ENTRADA => $this->registrarEntrada($data, $empresaId, $userId),
                 MovimientoInventario::TIPO_SALIDA => $this->registrarSalida($data, $empresaId, $userId),
                 MovimientoInventario::TIPO_TRASPASO => $this->registrarTraspaso($data, $empresaId, $userId),
@@ -38,6 +41,10 @@ class InventarioMovimientoService
                     'tipo' => 'El tipo de movimiento no es válido.',
                 ]),
             };
+
+            $this->auditarMovimiento($movimiento, $data, $userId);
+
+            return $movimiento;
         });
     }
 
@@ -696,6 +703,41 @@ class InventarioMovimientoService
                 'lote_id' => 'No se permite mover stock desde un lote en cuarentena o bloqueado.',
             ]);
         }
+    }
+
+    private function auditarMovimiento(MovimientoInventario $movimiento, array $data, ?int $userId): void
+    {
+        $usuario = $userId ? User::find($userId) : null;
+        $esCritico = in_array($movimiento->tipo, [
+            MovimientoInventario::TIPO_SALIDA,
+            MovimientoInventario::TIPO_AJUSTE_POSITIVO,
+            MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
+        ], true);
+
+        $this->auditoria->registrarEvento($usuario, [
+            'empresa_id' => (int) $movimiento->empresa_id,
+            'usuario_id' => $userId,
+            'accion' => InventarioAuditoriaEvento::ACCION_MOVIMIENTO_CREADO,
+            'entidad_tipo' => MovimientoInventario::class,
+            'entidad_id' => (int) $movimiento->id,
+            'severidad' => $esCritico ? InventarioAuditoriaEvento::SEVERIDAD_WARNING : InventarioAuditoriaEvento::SEVERIDAD_INFO,
+            'descripcion' => 'Movimiento de inventario registrado en kardex operativo.',
+            'referencia' => $movimiento->referencia,
+            'motivo' => $movimiento->motivo,
+            'observacion' => $movimiento->observacion,
+            'metadata_json' => [
+                'tipo' => $movimiento->tipo,
+                'producto_id' => $movimiento->producto_id,
+                'bodega_origen_id' => $movimiento->bodega_origen_id,
+                'bodega_destino_id' => $movimiento->bodega_destino_id,
+                'ubicacion_origen_id' => $movimiento->ubicacion_origen_id,
+                'ubicacion_destino_id' => $movimiento->ubicacion_destino_id,
+                'cantidad' => $movimiento->cantidad,
+                'costo_unitario' => $movimiento->costo_unitario,
+                'costo_total' => $movimiento->costo_total,
+                'origen_operativo' => $data['_origen_operativo'] ?? null,
+            ],
+        ]);
     }
 
     private function dispararEventoStockMinimoSiCorresponde(

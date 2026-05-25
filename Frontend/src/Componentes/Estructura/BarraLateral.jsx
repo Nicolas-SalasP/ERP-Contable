@@ -161,6 +161,11 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     permisosRequeridos: ['inventario.devoluciones.ver'],
                 },
                 {
+                    path: '/inventario/auditoria',
+                    label: 'Auditoría Operativa',
+                    permisosRequeridos: ['inventario.auditoria.ver'],
+                },
+                {
                     path: '/inventario/movimientos',
                     label: 'Movimientos',
                     permisosRequeridos: ['inventario.movimientos.ver'],

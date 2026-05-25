@@ -111,6 +111,11 @@ trait PreparaInventarioTrait
             'inventario.devoluciones.confirmar',
             'inventario.devoluciones.cancelar',
 
+            'inventario.auditoria.ver',
+            'inventario.auditoria.detalle',
+            'inventario.auditoria.resumen',
+            'inventario.seguridad.ver',
+
             'inventario.reportes.picking',
             'inventario.reportes.packing',
             'inventario.reportes.despachos',
@@ -168,6 +173,9 @@ trait PreparaInventarioTrait
             'inventario.packing.ver',
             'inventario.despachos.ver',
             'inventario.devoluciones.ver',
+            'inventario.auditoria.ver',
+            'inventario.auditoria.detalle',
+            'inventario.auditoria.resumen',
             'inventario.reportes.picking',
             'inventario.reportes.packing',
             'inventario.reportes.despachos',

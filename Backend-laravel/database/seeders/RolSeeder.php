@@ -102,6 +102,43 @@ class RolSeeder extends Seeder
             'inventario.movimientos.ajuste',
             'inventario.kardex.ver',
 
+            // Ubicaciones, stock por ubicación, picking, packing, despachos y devoluciones
+            'inventario.ubicaciones.ver',
+            'inventario.ubicaciones.crear',
+            'inventario.ubicaciones.editar',
+            'inventario.stock_ubicaciones.ver',
+            'inventario.stock_ubicaciones.mover',
+            'inventario.putaway.ejecutar',
+            'inventario.picking.ver',
+            'inventario.picking.crear',
+            'inventario.picking.editar',
+            'inventario.picking.confirmar',
+            'inventario.picking.cancelar',
+            'inventario.packing.ver',
+            'inventario.packing.crear',
+            'inventario.packing.editar',
+            'inventario.packing.confirmar',
+            'inventario.packing.cancelar',
+            'inventario.despachos.ver',
+            'inventario.despachos.crear',
+            'inventario.despachos.editar',
+            'inventario.despachos.confirmar',
+            'inventario.despachos.cancelar',
+            'inventario.devoluciones.ver',
+            'inventario.devoluciones.crear',
+            'inventario.devoluciones.confirmar',
+            'inventario.devoluciones.cancelar',
+            'inventario.reportes.picking',
+            'inventario.reportes.packing',
+            'inventario.reportes.despachos',
+            'inventario.reportes.devoluciones',
+
+            // Auditoría y seguridad operativa Fase 17
+            'inventario.auditoria.ver',
+            'inventario.auditoria.detalle',
+            'inventario.auditoria.resumen',
+            'inventario.seguridad.ver',
+
             // PMP y valorizacion
             'inventario.valorizacion.ver',
 
@@ -149,6 +186,12 @@ class RolSeeder extends Seeder
         return [
             'inventario.productos.ver',
             'inventario.bodegas.ver',
+            'inventario.ubicaciones.ver',
+            'inventario.stock_ubicaciones.ver',
+            'inventario.picking.ver',
+            'inventario.packing.ver',
+            'inventario.despachos.ver',
+            'inventario.devoluciones.ver',
             'inventario.movimientos.ver',
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',
@@ -162,6 +205,13 @@ class RolSeeder extends Seeder
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',
             'inventario.tomas_fisicas.ver',
+            'inventario.reportes.picking',
+            'inventario.reportes.packing',
+            'inventario.reportes.despachos',
+            'inventario.reportes.devoluciones',
+            'inventario.auditoria.ver',
+            'inventario.auditoria.detalle',
+            'inventario.auditoria.resumen',
         ];
     }
 }

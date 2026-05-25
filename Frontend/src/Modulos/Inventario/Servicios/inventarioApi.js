@@ -69,6 +69,12 @@ export const inventarioApi = {
 
     catalogos: () => get('/inventario/catalogos'),
 
+    auditoria: {
+        listar: (params = {}) => get('/inventario/auditoria', params),
+        obtener: (id) => get(`/inventario/auditoria/${id}`),
+        resumen: (params = {}) => get('/inventario/auditoria/resumen', params),
+    },
+
     productos: {
         listar: (params = {}) => get('/inventario/productos', params),
         crear: (payload) => post('/inventario/productos', payload),

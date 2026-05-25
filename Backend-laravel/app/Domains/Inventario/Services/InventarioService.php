@@ -4,6 +4,7 @@ namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockProducto;
 use App\Domains\Inventario\Models\UnidadMedida;
@@ -13,10 +14,12 @@ use Illuminate\Support\Facades\DB;
 class InventarioService
 {
     protected InventarioPermisoService $permisos;
+    protected InventarioAuditoriaService $auditoria;
 
-    public function __construct(InventarioPermisoService $permisos)
+    public function __construct(InventarioPermisoService $permisos, InventarioAuditoriaService $auditoria)
     {
         $this->permisos = $permisos;
+        $this->auditoria = $auditoria;
     }
 
     public function catalogos(int $empresaId): array
@@ -111,6 +114,8 @@ class InventarioService
                 );
             }
 
+            $this->auditarProducto($usuario, InventarioAuditoriaEvento::ACCION_PRODUCTO_CREADO, $producto, 'Producto creado en catálogo de inventario.');
+
             return $producto->load(['unidadMedida', 'bodegaDefecto']);
         });
     }
@@ -126,6 +131,12 @@ class InventarioService
         }
 
         $this->validarProducto($usuario->empresa_id, $datos, $id);
+
+        $antes = $producto->only([
+            'sku', 'nombre', 'descripcion', 'tipo_producto', 'unidad_medida_id', 'metodo_valorizacion',
+            'precio_venta_neto', 'afecto_iva', 'codigo_barra', 'stock_minimo', 'bodega_defecto_id',
+            'permite_merma', 'maneja_lotes', 'requiere_fecha_vencimiento', 'activo',
+        ]);
 
         $producto->update([
             'sku' => strtoupper(trim($datos['sku'])),
@@ -144,6 +155,15 @@ class InventarioService
             'requiere_fecha_vencimiento' => $datos['requiere_fecha_vencimiento'] ?? false,
             'activo' => $datos['activo'] ?? true,
         ]);
+
+        $this->auditoria->registrarCambio(
+            $usuario,
+            InventarioAuditoriaEvento::ACCION_PRODUCTO_ACTUALIZADO,
+            $producto,
+            $antes,
+            $producto->only(array_keys($antes)),
+            ['sku' => $producto->sku, 'nombre' => $producto->nombre]
+        );
 
         return $producto->load(['unidadMedida', 'bodegaDefecto']);
     }
@@ -177,6 +197,25 @@ class InventarioService
             'nombre' => trim($datos['nombre']),
             'direccion' => $datos['direccion'] ?? null,
             'estado' => $datos['estado'] ?? 'ACTIVA',
+        ]);
+    }
+
+    private function auditarProducto(User $usuario, string $accion, Producto $producto, string $descripcion): void
+    {
+        $this->auditoria->registrarEvento($usuario, [
+            'empresa_id' => (int) $producto->empresa_id,
+            'accion' => $accion,
+            'entidad_tipo' => Producto::class,
+            'entidad_id' => (int) $producto->id,
+            'severidad' => InventarioAuditoriaEvento::SEVERIDAD_INFO,
+            'descripcion' => $descripcion,
+            'referencia' => $producto->sku,
+            'metadata_json' => [
+                'sku' => $producto->sku,
+                'nombre' => $producto->nombre,
+                'tipo_producto' => $producto->tipo_producto,
+                'bodega_defecto_id' => $producto->bodega_defecto_id,
+            ],
         ]);
     }
 

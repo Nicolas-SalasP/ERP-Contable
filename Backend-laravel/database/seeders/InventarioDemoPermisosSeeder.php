@@ -113,6 +113,51 @@ class InventarioDemoPermisosSeeder extends Seeder
 
             /*
             |--------------------------------------------------------------------------
+            | Fase 13 a 16 - Ubicaciones, WMS, despachos y devoluciones
+            |--------------------------------------------------------------------------
+            */
+            'inventario.ubicaciones.ver',
+            'inventario.ubicaciones.crear',
+            'inventario.ubicaciones.editar',
+            'inventario.stock_ubicaciones.ver',
+            'inventario.stock_ubicaciones.mover',
+            'inventario.putaway.ejecutar',
+            'inventario.picking.ver',
+            'inventario.picking.crear',
+            'inventario.picking.editar',
+            'inventario.picking.confirmar',
+            'inventario.picking.cancelar',
+            'inventario.packing.ver',
+            'inventario.packing.crear',
+            'inventario.packing.editar',
+            'inventario.packing.confirmar',
+            'inventario.packing.cancelar',
+            'inventario.despachos.ver',
+            'inventario.despachos.crear',
+            'inventario.despachos.editar',
+            'inventario.despachos.confirmar',
+            'inventario.despachos.cancelar',
+            'inventario.devoluciones.ver',
+            'inventario.devoluciones.crear',
+            'inventario.devoluciones.confirmar',
+            'inventario.devoluciones.cancelar',
+            'inventario.reportes.picking',
+            'inventario.reportes.packing',
+            'inventario.reportes.despachos',
+            'inventario.reportes.devoluciones',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 17 - Auditoría y seguridad operativa
+            |--------------------------------------------------------------------------
+            */
+            'inventario.auditoria.ver',
+            'inventario.auditoria.detalle',
+            'inventario.auditoria.resumen',
+            'inventario.seguridad.ver',
+
+            /*
+            |--------------------------------------------------------------------------
             | Fase 2 - Movimientos de inventario y Kardex
             |--------------------------------------------------------------------------
             */
@@ -212,6 +257,25 @@ class InventarioDemoPermisosSeeder extends Seeder
             */
             'inventario.productos.ver',
             'inventario.bodegas.ver',
+            'inventario.ubicaciones.ver',
+            'inventario.stock_ubicaciones.ver',
+            'inventario.picking.ver',
+            'inventario.packing.ver',
+            'inventario.despachos.ver',
+            'inventario.devoluciones.ver',
+            'inventario.reportes.picking',
+            'inventario.reportes.packing',
+            'inventario.reportes.despachos',
+            'inventario.reportes.devoluciones',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Fase 17 - Consulta de auditoría operativa
+            |--------------------------------------------------------------------------
+            */
+            'inventario.auditoria.ver',
+            'inventario.auditoria.detalle',
+            'inventario.auditoria.resumen',
 
             /*
             |--------------------------------------------------------------------------
