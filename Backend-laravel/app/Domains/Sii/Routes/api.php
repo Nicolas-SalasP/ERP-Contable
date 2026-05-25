@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Sii\Http\Controllers\FacturaSiiController;
 use App\Domains\Sii\Http\Controllers\SiiCafController;
 use App\Domains\Sii\Http\Controllers\SiiCertificadoController;
 use App\Domains\Sii\Http\Controllers\SiiConfiguracionController;
@@ -55,4 +56,15 @@ Route::prefix('caf')->group(function () {
         ->middleware('throttle:sii-uploads-pesados');
     Route::get('{id}',    [SiiCafController::class, 'show'])->whereNumber('id');
     Route::delete('{id}', [SiiCafController::class, 'destroy'])->whereNumber('id');
+});
+
+// ---------------------------------------------------------------------
+// Facturas — visibilidad de estado SII (F6.3)
+// ---------------------------------------------------------------------
+// Solo GET (lectura). Las acciones (emitir, reintentar) vienen en F6.4.
+// throttle:sii-empresa heredado del grupo padre en SiiServiceProvider.
+Route::prefix('facturas')->group(function () {
+    Route::get('/',                   [FacturaSiiController::class, 'index']);
+    Route::get('{factura_id}/estado', [FacturaSiiController::class, 'estado'])->whereNumber('factura_id');
+    Route::get('{factura_id}',        [FacturaSiiController::class, 'mostrar'])->whereNumber('factura_id');
 });

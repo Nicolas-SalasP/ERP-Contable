@@ -93,6 +93,25 @@ const siiApi = {
         revocar: (id) => api.delete(`/sii/certificado/${id}`),
     },
 
+    facturas: {
+        /**
+         * F6.3 - Listado paginado de facturas con estado SII basico.
+         * @param {{ por_pagina?: number, pagina?: number }} params
+         */
+        listar: (params = {}) => api.get('/sii/facturas', params),
+
+        /**
+         * F6.3 - Payload liviano para polling de estado.
+         * Shape data: { factura_id, tiene_dte, dte_id?, estado?, estado_glosa_humana?,
+         *   es_terminal, es_pollable, tipo_dte?, folio?, track_id?, fecha_emision?,
+         *   fecha_envio_sii?, ambiente?, glosa_sii?, ultimo_evento? }
+         */
+        obtenerEstado: (facturaId) => api.get(`/sii/facturas/${facturaId}/estado`),
+
+        /** F6.3 - Vista completa: cliente, detalles, DTE con eventos+envios. */
+        obtener: (facturaId) => api.get(`/sii/facturas/${facturaId}`),
+    },
+
     caf: {
         /**
          * @param {number|null} tipoDte filtro opcional

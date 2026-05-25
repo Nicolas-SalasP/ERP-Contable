@@ -44,6 +44,7 @@ const ReclasificadorAsiento = lazy(() => import('./Modulos/Contabilidad/Vistas/R
 const ConfiguracionSii = lazy(() => import('./Modulos/Sii/Vistas/ConfiguracionSii'));
 const CertificadoSii = lazy(() => import('./Modulos/Sii/Vistas/CertificadoSii'));
 const FoliosCaf = lazy(() => import('./Modulos/Sii/Vistas/FoliosCaf'));
+const FacturasSii = lazy(() => import('./Modulos/Sii/Vistas/FacturasSii'));
 
 const CargandoModulo = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -417,6 +418,12 @@ function App() {
           <Route path="/sii/certificado" element={
             <RutaPrivada>
               <LayoutPrincipal><CertificadoSii /></LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/facturas" element={
+            <RutaPrivada>
+              <LayoutPrincipal><FacturasSii /></LayoutPrincipal>
             </RutaPrivada>
           } />
 

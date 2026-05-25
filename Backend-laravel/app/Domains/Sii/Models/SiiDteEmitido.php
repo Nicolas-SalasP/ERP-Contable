@@ -249,6 +249,17 @@ class SiiDteEmitido extends Model
             ->orderBy('created_at');
     }
 
+    /**
+     * F6.3: envios al WS DTEUpload. Un DTE puede tener varios envios si
+     * hubo reintentos manuales (uno por intento). El mas reciente se
+     * obtiene con ->envios->last() o ->envios()->latest()->first().
+     */
+    public function envios(): HasMany
+    {
+        return $this->hasMany(SiiEnvioDte::class, 'dte_emitido_id')
+            ->orderBy('created_at');
+    }
+
     // -------- SCOPES --------
 
     public function scopeAceptados(Builder $query): Builder
