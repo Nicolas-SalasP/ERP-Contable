@@ -23,6 +23,7 @@ use App\Domains\Inventario\Controllers\InventarioController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
+use App\Domains\Inventario\Controllers\InventarioDevolucionController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -152,6 +153,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reportes/picking', [InventarioPickingController::class, 'reporte']);
         Route::get('/reportes/packing', [InventarioPackingController::class, 'reporte']);
         Route::get('/reportes/despachos', [InventarioDespachoController::class, 'reporte']);
+        Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
         Route::get('/reportes/{tipo}/exportar-csv', [InventarioController::class, 'exportarReporteCsv']);
 
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
@@ -182,10 +184,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/despachos', [InventarioDespachoController::class, 'index']);
         Route::post('/despachos', [InventarioDespachoController::class, 'store']);
+        Route::get('/despachos/{id}/reversable', [InventarioDevolucionController::class, 'reversable']);
         Route::get('/despachos/{id}', [InventarioDespachoController::class, 'show']);
         Route::post('/despachos/{id}/iniciar', [InventarioDespachoController::class, 'iniciar']);
         Route::post('/despachos/{id}/confirmar', [InventarioDespachoController::class, 'confirmar']);
         Route::post('/despachos/{id}/cancelar', [InventarioDespachoController::class, 'cancelar']);
+
+        Route::get('/devoluciones', [InventarioDevolucionController::class, 'index']);
+        Route::post('/devoluciones', [InventarioDevolucionController::class, 'store']);
+        Route::get('/devoluciones/{id}', [InventarioDevolucionController::class, 'show']);
+        Route::post('/devoluciones/{id}/confirmar', [InventarioDevolucionController::class, 'confirmar']);
+        Route::post('/devoluciones/{id}/cancelar', [InventarioDevolucionController::class, 'cancelar']);
 
         Route::get('/productos', [InventarioController::class, 'index']);
         Route::post('/productos', [InventarioController::class, 'store']);

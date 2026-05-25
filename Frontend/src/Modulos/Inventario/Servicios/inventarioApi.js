@@ -59,6 +59,7 @@ export const inventarioApi = {
         picking: (params = {}) => get('/inventario/reportes/picking', params),
         packing: (params = {}) => get('/inventario/reportes/packing', params),
         despachos: (params = {}) => get('/inventario/reportes/despachos', params),
+        devoluciones: (params = {}) => get('/inventario/reportes/devoluciones', params),
         exportarCsv: (tipo, params = {}) => api.download(
             `/inventario/reportes/${tipo}/exportar-csv${toQuery(params)}`,
             `inventario_reporte_${String(tipo).replaceAll('-', '_')}.csv`,
@@ -127,6 +128,17 @@ export const inventarioApi = {
         iniciar: (id) => post(`/inventario/despachos/${id}/iniciar`),
         confirmar: (id, payload = {}) => post(`/inventario/despachos/${id}/confirmar`, payload),
         cancelar: (id, payload = {}) => post(`/inventario/despachos/${id}/cancelar`, payload),
+        reversable: (id) => get(`/inventario/despachos/${id}/reversable`),
+    },
+
+    devoluciones: {
+        listar: (params = {}) => get('/inventario/devoluciones', params),
+        crear: (payload) => post('/inventario/devoluciones', payload),
+        obtener: (id) => get(`/inventario/devoluciones/${id}`),
+        confirmar: (id, payload = {}) => post(`/inventario/devoluciones/${id}/confirmar`, payload),
+        cancelar: (id, payload = {}) => post(`/inventario/devoluciones/${id}/cancelar`, payload),
+        reversable: (despachoId) => get(`/inventario/despachos/${despachoId}/reversable`),
+        reporte: (params = {}) => get('/inventario/reportes/devoluciones', params),
     },
 
     movimientos: {

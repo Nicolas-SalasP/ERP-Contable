@@ -84,6 +84,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 'inventario.picking.ver',
                 'inventario.packing.ver',
                 'inventario.despachos.ver',
+                'inventario.devoluciones.ver',
                 'inventario.movimientos.ver',
                 'inventario.kardex.ver',
                 'inventario.valorizacion.ver',
@@ -107,6 +108,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                         'inventario.picking.ver',
                         'inventario.packing.ver',
                         'inventario.despachos.ver',
+                        'inventario.devoluciones.ver',
                         'inventario.movimientos.ver',
                         'inventario.kardex.ver',
                         'inventario.valorizacion.ver',
@@ -152,6 +154,11 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     path: '/inventario/despachos',
                     label: 'Despachos',
                     permisosRequeridos: ['inventario.despachos.ver'],
+                },
+                {
+                    path: '/inventario/devoluciones',
+                    label: 'Devoluciones/Reversas',
+                    permisosRequeridos: ['inventario.devoluciones.ver'],
                 },
                 {
                     path: '/inventario/movimientos',

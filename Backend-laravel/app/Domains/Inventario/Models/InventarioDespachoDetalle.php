@@ -6,6 +6,7 @@ use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventarioDespachoDetalle extends Model
 {
@@ -108,6 +109,11 @@ class InventarioDespachoDetalle extends Model
     public function lote(): BelongsTo
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');
+    }
+
+    public function devolucionDetalles(): HasMany
+    {
+        return $this->hasMany(InventarioDevolucionDetalle::class, 'despacho_detalle_id');
     }
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder

@@ -101,6 +101,11 @@ class InventarioDespachoOrden extends Model
         return $this->hasMany(InventarioDespachoDetalle::class, 'despacho_orden_id');
     }
 
+    public function devoluciones(): HasMany
+    {
+        return $this->hasMany(InventarioDevolucionOrden::class, 'despacho_orden_id');
+    }
+
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
         return $query->where('empresa_id', $empresaId);
