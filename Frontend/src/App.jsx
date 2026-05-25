@@ -20,6 +20,7 @@ const GestionActivos = lazy(() => import('./Modulos/Activos/Vistas/GestionActivo
 const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
 const AdministradorCuentas = lazy(() => import('./Modulos/Contabilidad/Vistas/AdministradorCuentas'));
 const DashboardRenta = lazy(() => import('./Modulos/Tributario/Vistas/DashboardRenta'));
+const CorreccionMonetaria = lazy(() => import('./Modulos/CorreccionMonetaria/CorreccionMonetaria'));
 const NominaPagos = lazy(() => import('./Modulos/Banco/Vistas/NominaPagos'));
 const CartolaBancaria = lazy(() => import('./Modulos/Banco/Vistas/CartolaBancaria'));
 const MesaConciliacion = lazy(() => import('./Modulos/Banco/Vistas/MesaConciliacion'));
@@ -213,6 +214,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
                 <LayoutPrincipal><DashboardRenta /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/correccion-monetaria" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><CorreccionMonetaria /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
