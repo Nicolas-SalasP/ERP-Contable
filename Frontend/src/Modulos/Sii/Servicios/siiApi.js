@@ -110,6 +110,20 @@ const siiApi = {
 
         /** F6.3 - Vista completa: cliente, detalles, DTE con eventos+envios. */
         obtener: (facturaId) => api.get(`/sii/facturas/${facturaId}`),
+
+        /**
+         * F6.4 - Reintento manual de emision. Encola job async; el endpoint
+         * responde 202 con { factura_id, accion_encolada, mensaje }.
+         *
+         * En caso de 422 (estado no reintentable), el cliente recibe
+         * payload { error: { razon, mensaje, estado_actual } }.
+         *
+         * @param {number} facturaId
+         * @param {{ razon?: string }} payload  razon opcional, max 200 chars.
+         */
+        reintentar: (facturaId, payload = {}) =>
+            // silent: el modal maneja inline 422 + errores; sin toast global.
+            api.post(`/sii/facturas/${facturaId}/reintentar`, payload, { silent: true }),
     },
 
     caf: {

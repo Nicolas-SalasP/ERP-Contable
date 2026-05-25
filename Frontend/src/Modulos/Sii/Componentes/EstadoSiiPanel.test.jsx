@@ -6,6 +6,7 @@ vi.mock('../Servicios/siiApi', () => ({
     default: {
         facturas: {
             obtenerEstado: vi.fn(),
+            reintentar: vi.fn(),
         },
     },
 }));
@@ -125,5 +126,131 @@ describe('EstadoSiiPanel', () => {
             expect(screen.getByTestId('estado-sii-panel-error')).toBeDefined();
         });
         expect(screen.getByTestId('estado-sii-panel-reintentar')).toBeDefined();
+    });
+
+    // ====================================================================
+    // F6.4 — boton condicional "Reintentar emision"
+    // ====================================================================
+
+    it('F6.4: boton reintentar visible si estado=BORRADOR', async () => {
+        siiApi.facturas.obtenerEstado.mockResolvedValue({
+            data: {
+                factura_id: 1, tiene_dte: true, estado: 'BORRADOR',
+                estado_glosa_humana: 'Borrador',
+                tipo_dte: 33, folio: 1, track_id: 'T',
+                fecha_emision: '2026-05-10', fecha_envio_sii: null,
+                ambiente: 'certificacion', glosa_sii: null, ultimo_evento: null,
+                ultimo_envio_estado: null, ultimo_envio_estado_error: false,
+                es_terminal: false, es_pollable: true,
+            },
+        });
+        render(<EstadoSiiPanel facturaId={1} />);
+        await waitFor(() => {
+            expect(screen.getByTestId('estado-sii-panel-btn-reintentar')).toBeDefined();
+        });
+    });
+
+    it('F6.4: boton reintentar visible si estado=FIRMADO', async () => {
+        siiApi.facturas.obtenerEstado.mockResolvedValue({
+            data: {
+                factura_id: 1, tiene_dte: true, estado: 'FIRMADO',
+                estado_glosa_humana: 'Firmado', tipo_dte: 33, folio: 1, track_id: 'T',
+                fecha_emision: '2026-05-10', fecha_envio_sii: null,
+                ambiente: 'certificacion', glosa_sii: null, ultimo_evento: null,
+                ultimo_envio_estado: null, ultimo_envio_estado_error: false,
+                es_terminal: false, es_pollable: true,
+            },
+        });
+        render(<EstadoSiiPanel facturaId={1} />);
+        await waitFor(() => {
+            expect(screen.getByTestId('estado-sii-panel-btn-reintentar')).toBeDefined();
+        });
+    });
+
+    it('F6.4: boton reintentar visible si ENVIADO_SII y ultimo_envio_estado_error=true', async () => {
+        siiApi.facturas.obtenerEstado.mockResolvedValue({
+            data: {
+                factura_id: 1, tiene_dte: true, estado: 'ENVIADO_SII',
+                estado_glosa_humana: 'Enviado al SII',
+                tipo_dte: 33, folio: 99, track_id: 'TX',
+                fecha_emision: '2026-05-10', fecha_envio_sii: '2026-05-10T15:30:00Z',
+                ambiente: 'certificacion', glosa_sii: null, ultimo_evento: null,
+                ultimo_envio_estado: 'ERROR_TRANSPORTE',
+                ultimo_envio_estado_error: true,
+                es_terminal: false, es_pollable: true,
+            },
+        });
+        render(<EstadoSiiPanel facturaId={1} />);
+        await waitFor(() => {
+            expect(screen.getByTestId('estado-sii-panel-btn-reintentar')).toBeDefined();
+        });
+    });
+
+    it('F6.4: boton reintentar OCULTO si estado=ACEPTADO (terminal)', async () => {
+        siiApi.facturas.obtenerEstado.mockResolvedValue({
+            data: {
+                factura_id: 1, tiene_dte: true, estado: 'ACEPTADO',
+                estado_glosa_humana: 'Aceptado', tipo_dte: 33, folio: 1, track_id: 'T',
+                fecha_emision: '2026-05-10', fecha_envio_sii: null,
+                ambiente: 'certificacion', glosa_sii: null, ultimo_evento: null,
+                ultimo_envio_estado: null, ultimo_envio_estado_error: false,
+                es_terminal: true, es_pollable: false,
+            },
+        });
+        render(<EstadoSiiPanel facturaId={1} />);
+        await waitFor(() => {
+            expect(screen.getByTestId('estado-sii-panel-ACEPTADO')).toBeDefined();
+        });
+        expect(screen.queryByTestId('estado-sii-panel-btn-reintentar')).toBeNull();
+    });
+
+    it('F6.4: boton reintentar OCULTO si ENVIADO_SII en proceso normal (sin error)', async () => {
+        siiApi.facturas.obtenerEstado.mockResolvedValue({
+            data: {
+                factura_id: 1, tiene_dte: true, estado: 'ENVIADO_SII',
+                estado_glosa_humana: 'En proceso',
+                tipo_dte: 33, folio: 1, track_id: 'T',
+                fecha_emision: '2026-05-10', fecha_envio_sii: '2026-05-10T15:30:00Z',
+                ambiente: 'certificacion', glosa_sii: null, ultimo_evento: null,
+                ultimo_envio_estado: 'ENVIADO', ultimo_envio_estado_error: false,
+                es_terminal: false, es_pollable: true,
+            },
+        });
+        render(<EstadoSiiPanel facturaId={1} />);
+        await waitFor(() => {
+            expect(screen.getByTestId('estado-sii-panel-ENVIADO_SII')).toBeDefined();
+        });
+        expect(screen.queryByTestId('estado-sii-panel-btn-reintentar')).toBeNull();
+    });
+
+    it('F6.4: boton reintentar visible en rama sin DTE (factura sin emitir)', async () => {
+        siiApi.facturas.obtenerEstado.mockResolvedValue({
+            data: { factura_id: 1, tiene_dte: false, es_pollable: false, es_terminal: false },
+        });
+        render(<EstadoSiiPanel facturaId={1} />);
+        await waitFor(() => {
+            expect(screen.getByTestId('estado-sii-panel-sin-dte')).toBeDefined();
+        });
+        expect(screen.getByTestId('estado-sii-panel-btn-reintentar')).toBeDefined();
+    });
+
+    it('F6.4: click en boton reintentar abre el modal', async () => {
+        siiApi.facturas.obtenerEstado.mockResolvedValue({
+            data: {
+                factura_id: 1, tiene_dte: true, estado: 'BORRADOR',
+                estado_glosa_humana: 'Borrador',
+                tipo_dte: 33, folio: 1, track_id: 'T',
+                fecha_emision: '2026-05-10', fecha_envio_sii: null,
+                ambiente: 'certificacion', glosa_sii: null, ultimo_evento: null,
+                ultimo_envio_estado: null, ultimo_envio_estado_error: false,
+                es_terminal: false, es_pollable: true,
+            },
+        });
+        render(<EstadoSiiPanel facturaId={1} />);
+        const boton = await screen.findByTestId('estado-sii-panel-btn-reintentar');
+        fireEvent.click(boton);
+        await waitFor(() => {
+            expect(screen.getByTestId('modal-reintentar-sii')).toBeDefined();
+        });
     });
 });

@@ -59,12 +59,12 @@ Route::prefix('caf')->group(function () {
 });
 
 // ---------------------------------------------------------------------
-// Facturas — visibilidad de estado SII (F6.3)
+// Facturas — visibilidad de estado SII (F6.3) + reintento manual (F6.4)
 // ---------------------------------------------------------------------
-// Solo GET (lectura). Las acciones (emitir, reintentar) vienen en F6.4.
 // throttle:sii-empresa heredado del grupo padre en SiiServiceProvider.
 Route::prefix('facturas')->group(function () {
-    Route::get('/',                   [FacturaSiiController::class, 'index']);
-    Route::get('{factura_id}/estado', [FacturaSiiController::class, 'estado'])->whereNumber('factura_id');
-    Route::get('{factura_id}',        [FacturaSiiController::class, 'mostrar'])->whereNumber('factura_id');
+    Route::get('/',                            [FacturaSiiController::class, 'index']);
+    Route::get('{factura_id}/estado',          [FacturaSiiController::class, 'estado'])->whereNumber('factura_id');
+    Route::post('{factura_id}/reintentar',     [FacturaSiiController::class, 'reintentar'])->whereNumber('factura_id');
+    Route::get('{factura_id}',                 [FacturaSiiController::class, 'mostrar'])->whereNumber('factura_id');
 });

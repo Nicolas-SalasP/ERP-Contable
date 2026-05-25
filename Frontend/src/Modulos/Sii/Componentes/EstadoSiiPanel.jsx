@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useEstadoSii from '../Hooks/useEstadoSii';
+import ModalReintentarSii from './ModalReintentarSii';
 
 const ESTILO_POR_ESTADO = {
     BORRADOR:              'bg-gray-100 text-gray-800 border-gray-300',
@@ -42,13 +43,22 @@ function Fila({ etiqueta, valor, testid }) {
 
 /**
  * F6.3 — Panel expandible con TODOS los detalles del estado SII de una factura.
- * Sin acciones (reenviar/firmar/etc. quedan para F6.4). Usa useEstadoSii con
- * polling automatico si el estado es pollable.
+ * F6.4 — Suma boton "Reintentar emision" + modal de confirmacion.
  *
  * @param {{ facturaId: number }} props
  */
 export function EstadoSiiPanel({ facturaId }) {
     const { data, cargando, error, recargar } = useEstadoSii(facturaId);
+    const [modalReintentarAbierto, setModalReintentarAbierto] = useState(false);
+
+    const esElegibleReintento = (estadoData) => {
+        if (!estadoData) return false;
+        if (estadoData.tiene_dte === false) return true;
+        if (estadoData.estado === 'BORRADOR') return true;
+        if (estadoData.estado === 'FIRMADO') return true;
+        if (estadoData.estado === 'ENVIADO_SII' && estadoData.ultimo_envio_estado_error === true) return true;
+        return false;
+    };
 
     if (cargando) {
         return (
@@ -90,12 +100,31 @@ export function EstadoSiiPanel({ facturaId }) {
 
     if (!data?.tiene_dte) {
         return (
-            <div
-                className="p-4 border border-slate-200 rounded bg-slate-50 text-slate-600 text-sm"
-                data-testid="estado-sii-panel-sin-dte"
-            >
-                Esta factura aun no ha sido emitida al SII (sin DTE asociado).
-            </div>
+            <>
+                <div
+                    className="p-4 border border-slate-200 rounded bg-slate-50 text-slate-600 text-sm flex flex-wrap items-center justify-between gap-3"
+                    data-testid="estado-sii-panel-sin-dte"
+                >
+                    <span>Esta factura aun no ha sido emitida al SII (sin DTE asociado).</span>
+                    {esElegibleReintento(data) && (
+                        <button
+                            type="button"
+                            onClick={() => setModalReintentarAbierto(true)}
+                            className="px-3 py-1 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-md"
+                            data-testid="estado-sii-panel-btn-reintentar"
+                        >
+                            <i className="fas fa-redo mr-1" /> Emitir / Reintentar
+                        </button>
+                    )}
+                </div>
+                <ModalReintentarSii
+                    abierto={modalReintentarAbierto}
+                    facturaId={facturaId}
+                    resumenEstado={null}
+                    onCerrar={() => setModalReintentarAbierto(false)}
+                    onReintentoExitoso={() => recargar()}
+                />
+            </>
         );
     }
 
@@ -200,7 +229,32 @@ export function EstadoSiiPanel({ facturaId }) {
                         </span>
                     </div>
                 )}
+
+                {esElegibleReintento(data) && (
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => setModalReintentarAbierto(true)}
+                            className="px-3 py-1 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-md inline-flex items-center gap-1"
+                            data-testid="estado-sii-panel-btn-reintentar"
+                        >
+                            <i className="fas fa-redo" />
+                            Reintentar emision
+                        </button>
+                    </div>
+                )}
             </div>
+
+            <ModalReintentarSii
+                abierto={modalReintentarAbierto}
+                facturaId={facturaId}
+                resumenEstado={{
+                    estado: data.estado,
+                    ultimo_envio_estado: data.ultimo_envio_estado,
+                }}
+                onCerrar={() => setModalReintentarAbierto(false)}
+                onReintentoExitoso={() => recargar()}
+            />
         </div>
     );
 }

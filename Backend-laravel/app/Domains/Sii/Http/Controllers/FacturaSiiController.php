@@ -3,7 +3,12 @@
 namespace App\Domains\Sii\Http\Controllers;
 
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Sii\Exceptions\FacturaNoEmisibleException;
+use App\Domains\Sii\Exceptions\ReintentoNoAplicableException;
+use App\Domains\Sii\Http\Requests\ReintentarRequest;
 use App\Domains\Sii\Models\SiiDteEmitido;
+use App\Domains\Sii\Models\SiiEnvioDte;
+use App\Domains\Sii\Services\Integracion\ReintentarEmisionFacturaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -33,6 +38,16 @@ class FacturaSiiController
         SiiDteEmitido::ESTADO_FIRMADO,
         SiiDteEmitido::ESTADO_ENVIADO_SII,
         SiiDteEmitido::ESTADO_EN_PROCESO_SII,
+    ];
+
+    /**
+     * F6.4 — Estados del ultimo envio que el frontend interpreta como
+     * "error reintentable" para mostrar el boton condicional.
+     */
+    private const ESTADOS_ENVIO_ERROR_REINTENTABLES = [
+        SiiEnvioDte::ESTADO_ERROR_TRANSPORTE,
+        SiiEnvioDte::ESTADO_ERROR_TIMEOUT,
+        SiiEnvioDte::ESTADO_ERROR_PERMANENTE,
     ];
 
     /** Glosas humanas en espanol para mostrar al operador. */
@@ -94,10 +109,64 @@ class FacturaSiiController
                 $q->with(['eventos' => function ($qq) {
                     $qq->orderByDesc('created_at')->limit(1);
                 }]);
+                // F6.4: necesario para derivar ultimo_envio_estado_error.
+                $q->with(['envios' => function ($qq) {
+                    $qq->orderByDesc('created_at');
+                }]);
             }])
             ->findOrFail($facturaId);
 
         return response()->json(['data' => $this->formatoEstado($factura)]);
+    }
+
+    /**
+     * POST /api/sii/facturas/{facturaId}/reintentar  (F6.4)
+     *
+     * Encola la accion correcta segun el estado actual y retorna 202 con la
+     * accion programada. NO ejecuta nada sincronamente. La UI debe refrescar
+     * el estado tras este endpoint.
+     */
+    public function reintentar(
+        ReintentarRequest $request,
+        int $facturaId,
+        ReintentarEmisionFacturaService $service
+    ): JsonResponse {
+        $empresaId = (int) $request->user()->empresa_id;
+        $factura   = Factura::query()
+            ->where('empresa_id', $empresaId)
+            ->findOrFail($facturaId);
+
+        try {
+            $accion = $service->reintentar(
+                $factura,
+                $request->input('razon'),
+                $request->user()->id
+            );
+
+            return response()->json([
+                'data' => [
+                    'factura_id'      => $factura->id,
+                    'accion_encolada' => $accion,
+                    'mensaje'         => 'Reintento encolado, monitoreando estado...',
+                ],
+            ], 202);
+        } catch (ReintentoNoAplicableException $e) {
+            return response()->json([
+                'error' => [
+                    'razon'         => $e->razon,
+                    'mensaje'       => $e->getMessage(),
+                    'estado_actual' => $e->estadoActual,
+                ],
+            ], 422);
+        } catch (FacturaNoEmisibleException $e) {
+            return response()->json([
+                'error' => [
+                    'razon'         => $e->razon,
+                    'mensaje'       => $e->getMessage(),
+                    'estado_actual' => null,
+                ],
+            ], 422);
+        }
     }
 
     /**
@@ -159,46 +228,54 @@ class FacturaSiiController
 
         if ($dte === null) {
             return [
-                'factura_id'          => $f->id,
-                'tiene_dte'           => false,
-                'dte_id'              => null,
-                'estado'              => null,
-                'estado_glosa_humana' => null,
-                'es_terminal'         => false,
-                'es_pollable'         => false,
-                'tipo_dte'            => null,
-                'folio'               => null,
-                'track_id'            => null,
-                'fecha_emision'       => $f->fecha_emision?->toDateString(),
-                'fecha_envio_sii'     => null,
-                'ambiente'            => null,
-                'glosa_sii'           => null,
-                'ultimo_evento'       => null,
+                'factura_id'                => $f->id,
+                'tiene_dte'                 => false,
+                'dte_id'                    => null,
+                'estado'                    => null,
+                'estado_glosa_humana'       => null,
+                'es_terminal'               => false,
+                'es_pollable'               => false,
+                'tipo_dte'                  => null,
+                'folio'                     => null,
+                'track_id'                  => null,
+                'fecha_emision'             => $f->fecha_emision?->toDateString(),
+                'fecha_envio_sii'           => null,
+                'ambiente'                  => null,
+                'glosa_sii'                 => null,
+                'ultimo_evento'             => null,
+                'ultimo_envio_estado'       => null,
+                'ultimo_envio_estado_error' => false,
             ];
         }
 
         $ultimoEvento = $dte->eventos->first();
+        // F6.4: envios viene cargado desc por created_at (ver controller::estado).
+        $ultimoEnvio  = $dte->relationLoaded('envios') ? $dte->envios->first() : null;
+        $ultimoEnvioEstado = $ultimoEnvio?->estado_envio;
 
         return [
-            'factura_id'          => $f->id,
-            'tiene_dte'           => true,
-            'dte_id'              => (int) $dte->id,
-            'estado'              => $dte->estado,
-            'estado_glosa_humana' => $this->glosaHumana($dte->estado),
-            'es_terminal'         => $this->esTerminal($dte->estado),
-            'es_pollable'         => $this->esPollable($dte->estado),
-            'tipo_dte'            => $dte->tipo_dte !== null ? (int) $dte->tipo_dte : null,
-            'folio'               => $dte->folio,
-            'track_id'            => $dte->track_id,
-            'fecha_emision'       => $dte->fecha_emision?->toDateString(),
-            'fecha_envio_sii'     => $dte->fecha_envio_sii?->toIso8601String(),
-            'ambiente'            => $f->empresa?->ambiente_sii,
-            'glosa_sii'           => $dte->glosa_sii,
-            'ultimo_evento'       => $ultimoEvento ? [
+            'factura_id'                => $f->id,
+            'tiene_dte'                 => true,
+            'dte_id'                    => (int) $dte->id,
+            'estado'                    => $dte->estado,
+            'estado_glosa_humana'       => $this->glosaHumana($dte->estado),
+            'es_terminal'               => $this->esTerminal($dte->estado),
+            'es_pollable'               => $this->esPollable($dte->estado),
+            'tipo_dte'                  => $dte->tipo_dte !== null ? (int) $dte->tipo_dte : null,
+            'folio'                     => $dte->folio,
+            'track_id'                  => $dte->track_id,
+            'fecha_emision'             => $dte->fecha_emision?->toDateString(),
+            'fecha_envio_sii'           => $dte->fecha_envio_sii?->toIso8601String(),
+            'ambiente'                  => $f->empresa?->ambiente_sii,
+            'glosa_sii'                 => $dte->glosa_sii,
+            'ultimo_evento'             => $ultimoEvento ? [
                 'estado_anterior' => $ultimoEvento->estado_anterior,
                 'estado_nuevo'    => $ultimoEvento->estado_nuevo,
                 'fecha'           => $ultimoEvento->created_at?->toIso8601String(),
             ] : null,
+            'ultimo_envio_estado'       => $ultimoEnvioEstado,
+            'ultimo_envio_estado_error' => $ultimoEnvioEstado !== null
+                && in_array($ultimoEnvioEstado, self::ESTADOS_ENVIO_ERROR_REINTENTABLES, true),
         ];
     }
 

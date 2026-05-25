@@ -8,6 +8,7 @@ vi.mock('../Servicios/siiApi', () => ({
             listar: vi.fn(),
             obtenerEstado: vi.fn(),
             obtener: vi.fn(),
+            reintentar: vi.fn(),
         },
     },
 }));
