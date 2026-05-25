@@ -6,6 +6,7 @@ use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Events\StockMinimoPerforado;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
@@ -22,7 +23,8 @@ class InventarioMovimientoService
         private readonly InventarioLoteService $loteService,
         private readonly InventarioReposicionService $reposicionService,
         private readonly InventarioStockUbicacionService $stockUbicacionService,
-        private readonly InventarioAuditoriaService $auditoria
+        private readonly InventarioAuditoriaService $auditoria,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -714,6 +716,19 @@ class InventarioMovimientoService
             MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
         ], true);
 
+        $metadataMovimiento = [
+            'tipo' => $movimiento->tipo,
+            'producto_id' => $movimiento->producto_id,
+            'bodega_origen_id' => $movimiento->bodega_origen_id,
+            'bodega_destino_id' => $movimiento->bodega_destino_id,
+            'ubicacion_origen_id' => $movimiento->ubicacion_origen_id,
+            'ubicacion_destino_id' => $movimiento->ubicacion_destino_id,
+            'cantidad' => $movimiento->cantidad,
+            'costo_unitario' => $movimiento->costo_unitario,
+            'costo_total' => $movimiento->costo_total,
+            'origen_operativo' => $data['_origen_operativo'] ?? null,
+        ];
+
         $this->auditoria->registrarEvento($usuario, [
             'empresa_id' => (int) $movimiento->empresa_id,
             'usuario_id' => $userId,
@@ -725,19 +740,24 @@ class InventarioMovimientoService
             'referencia' => $movimiento->referencia,
             'motivo' => $movimiento->motivo,
             'observacion' => $movimiento->observacion,
-            'metadata_json' => [
-                'tipo' => $movimiento->tipo,
-                'producto_id' => $movimiento->producto_id,
-                'bodega_origen_id' => $movimiento->bodega_origen_id,
-                'bodega_destino_id' => $movimiento->bodega_destino_id,
-                'ubicacion_origen_id' => $movimiento->ubicacion_origen_id,
-                'ubicacion_destino_id' => $movimiento->ubicacion_destino_id,
-                'cantidad' => $movimiento->cantidad,
-                'costo_unitario' => $movimiento->costo_unitario,
-                'costo_total' => $movimiento->costo_total,
-                'origen_operativo' => $data['_origen_operativo'] ?? null,
-            ],
+            'metadata_json' => $metadataMovimiento,
         ]);
+
+        $this->eventosIntegracion->publicarDesdeOperacion($usuario, InventarioEventoIntegracion::EVENTO_MOVIMIENTO_CREADO, [
+            'empresa_id' => (int) $movimiento->empresa_id,
+            'usuario_id' => $userId,
+            'entidad_tipo' => MovimientoInventario::class,
+            'entidad_id' => (int) $movimiento->id,
+            'prioridad' => $esCritico ? InventarioEventoIntegracion::PRIORIDAD_ALTA : InventarioEventoIntegracion::PRIORIDAD_NORMAL,
+            'payload_json' => $metadataMovimiento,
+            'metadata_json' => [
+                'referencia' => $movimiento->referencia,
+                'motivo' => $movimiento->motivo,
+                'observacion' => $movimiento->observacion,
+            ],
+            'origen_modulo' => $movimiento->origen_modulo ?? ($data['origen_modulo'] ?? null),
+            'origen_id' => $movimiento->origen_id ?? ($data['origen_id'] ?? null),
+        ], true);
     }
 
     private function dispararEventoStockMinimoSiCorresponde(

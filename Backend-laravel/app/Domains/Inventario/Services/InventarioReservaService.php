@@ -12,6 +12,7 @@ use App\Domains\Inventario\Models\ReservaDetalleInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Models\StockUbicacionInventario;
 use App\Domains\Inventario\Models\InventarioUbicacion;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\StockLoteInventario;
 use App\Domains\Inventario\Models\StockProducto;
 use Exception;
@@ -26,7 +27,8 @@ class InventarioReservaService
         private readonly InventarioPermisoService $permisos,
         private readonly InventarioMovimientoService $movimientoService,
         private readonly InventarioDisponibilidadService $disponibilidadService,
-        private readonly InventarioStockUbicacionService $stockUbicacionService
+        private readonly InventarioStockUbicacionService $stockUbicacionService,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -153,7 +155,12 @@ class InventarioReservaService
                 }
             }
 
-            return $this->cargarRelacionesReserva($reserva->refresh());
+            $reserva = $this->cargarRelacionesReserva($reserva->refresh());
+            $this->publicarEventoReserva($usuario, InventarioEventoIntegracion::EVENTO_RESERVA_CREADA, $reserva, [
+                'total_detalles' => count($detallesNormalizados),
+            ]);
+
+            return $reserva;
         });
     }
 
@@ -192,7 +199,12 @@ class InventarioReservaService
                     : $reserva->observacion,
             ]);
 
-            return $this->cargarRelacionesReserva($reserva->refresh());
+            $reserva = $this->cargarRelacionesReserva($reserva->refresh());
+            $this->publicarEventoReserva($usuario, InventarioEventoIntegracion::EVENTO_RESERVA_CANCELADA, $reserva, [
+                'observacion_cancelacion' => $datos['observacion'] ?? null,
+            ], InventarioEventoIntegracion::PRIORIDAD_ALTA);
+
+            return $reserva;
         });
     }
 
@@ -246,7 +258,12 @@ class InventarioReservaService
 
             $this->actualizarEstadoReserva($reserva->refresh());
 
-            return $this->cargarRelacionesReserva($reserva->refresh());
+            $reserva = $this->cargarRelacionesReserva($reserva->refresh());
+            $this->publicarEventoReserva($usuario, InventarioEventoIntegracion::EVENTO_RESERVA_LIBERADA, $reserva, [
+                'total_operaciones' => count($liberaciones),
+            ], InventarioEventoIntegracion::PRIORIDAD_ALTA);
+
+            return $reserva;
         });
     }
 
@@ -316,7 +333,12 @@ class InventarioReservaService
 
             $this->actualizarEstadoReserva($reserva->refresh());
 
-            return $this->cargarRelacionesReserva($reserva->refresh());
+            $reserva = $this->cargarRelacionesReserva($reserva->refresh());
+            $this->publicarEventoReserva($usuario, InventarioEventoIntegracion::EVENTO_RESERVA_CONSUMIDA, $reserva, [
+                'total_operaciones' => count($consumos),
+            ], InventarioEventoIntegracion::PRIORIDAD_ALTA);
+
+            return $reserva;
         });
     }
 
@@ -752,6 +774,36 @@ class InventarioReservaService
         }
 
         return $cantidad;
+    }
+
+    private function publicarEventoReserva(
+        User $usuario,
+        string $evento,
+        ReservaInventario $reserva,
+        array $metadata = [],
+        string $prioridad = InventarioEventoIntegracion::PRIORIDAD_NORMAL
+    ): void {
+        $this->eventosIntegracion->publicarDesdeOperacion($usuario, $evento, [
+            'empresa_id' => (int) $reserva->empresa_id,
+            'entidad_tipo' => ReservaInventario::class,
+            'entidad_id' => (int) $reserva->id,
+            'prioridad' => $prioridad,
+            'payload_json' => array_merge([
+                'codigo_reserva' => $reserva->codigo_reserva,
+                'estado' => $reserva->estado,
+                'referencia' => $reserva->referencia,
+                'motivo' => $reserva->motivo,
+                'origen_modulo' => $reserva->origen_modulo,
+                'origen_id' => $reserva->origen_id,
+            ], $metadata),
+            'metadata_json' => [
+                'referencia' => $reserva->referencia,
+                'motivo' => $reserva->motivo,
+                'observacion' => $reserva->observacion,
+            ],
+            'origen_modulo' => $reserva->origen_modulo,
+            'origen_id' => $reserva->origen_id,
+        ], true);
     }
 
     private function generarCodigoReserva(int $empresaId): string

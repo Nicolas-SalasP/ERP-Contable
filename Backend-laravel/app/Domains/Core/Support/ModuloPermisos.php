@@ -41,6 +41,7 @@ final class ModuloPermisos
         'inventario.despachos' => ['inventario.despachos.ver', 'inventario.despachos.crear', 'inventario.despachos.editar', 'inventario.despachos.confirmar', 'inventario.despachos.cancelar'],
         'inventario.devoluciones' => ['inventario.devoluciones.ver', 'inventario.devoluciones.crear', 'inventario.devoluciones.confirmar', 'inventario.devoluciones.cancelar'],
         'inventario.auditoria' => ['inventario.auditoria.ver', 'inventario.auditoria.detalle', 'inventario.auditoria.resumen', 'inventario.seguridad.ver'],
+        'inventario.eventos_integracion' => ['inventario.eventos_integracion.ver', 'inventario.eventos_integracion.detalle', 'inventario.eventos_integracion.resumen', 'inventario.eventos_integracion.procesar', 'inventario.eventos_integracion.gestionar'],
         'inventario.reportes_operacion_bodega' => ['inventario.reportes.picking', 'inventario.reportes.packing', 'inventario.reportes.despachos', 'inventario.reportes.devoluciones'],
         'inventario.movimientos' => ['inventario.movimientos.ver', 'inventario.movimientos.entrada', 'inventario.movimientos.salida', 'inventario.movimientos.traspaso', 'inventario.movimientos.ajuste'],
         'inventario.kardex' => ['inventario.kardex.ver'],

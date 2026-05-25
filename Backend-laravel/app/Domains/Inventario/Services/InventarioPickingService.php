@@ -4,6 +4,7 @@ namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioPickingAsignacion;
 use App\Domains\Inventario\Models\InventarioPickingDetalle;
 use App\Domains\Inventario\Models\InventarioPickingOrden;
@@ -24,7 +25,8 @@ class InventarioPickingService
     public function __construct(
         private readonly InventarioPermisoService $permisos,
         private readonly InventarioPickingAsignacionService $asignacionService,
-        private readonly InventarioStockUbicacionService $stockUbicacionService
+        private readonly InventarioStockUbicacionService $stockUbicacionService,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -119,7 +121,12 @@ class InventarioPickingService
                 ]);
             }
 
-            return $this->cargarOrden($orden->refresh());
+            $orden = $this->cargarOrden($orden->refresh());
+            $this->publicarEventoPicking($usuario, InventarioEventoIntegracion::EVENTO_PICKING_CREADO, $orden, [
+                'total_detalles' => count($detalles),
+            ]);
+
+            return $orden;
         });
     }
 
@@ -381,7 +388,13 @@ class InventarioPickingService
                     : $orden->observacion,
             ]);
 
-            return $this->cargarOrden($orden->refresh());
+            $orden = $this->cargarOrden($orden->refresh());
+            $this->publicarEventoPicking($usuario, InventarioEventoIntegracion::EVENTO_PICKING_CONFIRMADO, $orden, [
+                'hay_diferencias' => $hayDiferencias,
+                'total_operaciones' => count($operaciones),
+            ], $hayDiferencias ? InventarioEventoIntegracion::PRIORIDAD_ALTA : InventarioEventoIntegracion::PRIORIDAD_NORMAL);
+
+            return $orden;
         });
     }
 
@@ -464,7 +477,12 @@ class InventarioPickingService
                     : $orden->observacion,
             ]);
 
-            return $this->cargarOrden($orden->refresh());
+            $orden = $this->cargarOrden($orden->refresh());
+            $this->publicarEventoPicking($usuario, InventarioEventoIntegracion::EVENTO_PICKING_CANCELADO, $orden, [
+                'observacion_cancelacion' => $datos['observacion'] ?? null,
+            ], InventarioEventoIntegracion::PRIORIDAD_ALTA);
+
+            return $orden;
         });
     }
 
@@ -785,6 +803,37 @@ class InventarioPickingService
         }
 
         return $cantidad;
+    }
+
+    private function publicarEventoPicking(
+        User $usuario,
+        string $evento,
+        InventarioPickingOrden $orden,
+        array $metadata = [],
+        string $prioridad = InventarioEventoIntegracion::PRIORIDAD_NORMAL
+    ): void {
+        $this->eventosIntegracion->publicarDesdeOperacion($usuario, $evento, [
+            'empresa_id' => (int) $orden->empresa_id,
+            'entidad_tipo' => InventarioPickingOrden::class,
+            'entidad_id' => (int) $orden->id,
+            'prioridad' => $prioridad,
+            'payload_json' => array_merge([
+                'codigo' => $orden->codigo,
+                'estado' => $orden->estado,
+                'bodega_id' => $orden->bodega_id,
+                'reserva_id' => $orden->reserva_id,
+                'referencia' => $orden->referencia,
+                'origen_modulo' => $orden->origen_modulo,
+                'origen_id' => $orden->origen_id,
+            ], $metadata),
+            'metadata_json' => [
+                'referencia' => $orden->referencia,
+                'motivo' => $orden->motivo,
+                'observacion' => $orden->observacion,
+            ],
+            'origen_modulo' => $orden->origen_modulo,
+            'origen_id' => $orden->origen_id,
+        ], true);
     }
 
     private function generarCodigo(int $empresaId): string

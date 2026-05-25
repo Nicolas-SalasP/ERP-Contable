@@ -75,6 +75,15 @@ export const inventarioApi = {
         resumen: (params = {}) => get('/inventario/auditoria/resumen', params),
     },
 
+    eventosIntegracion: {
+        listar: (params = {}) => get('/inventario/eventos-integracion', params),
+        obtener: (id) => get(`/inventario/eventos-integracion/${id}`),
+        resumen: (params = {}) => get('/inventario/eventos-integracion/resumen', params),
+        procesar: (id) => post(`/inventario/eventos-integracion/${id}/procesar`),
+        ignorar: (id, payload = {}) => post(`/inventario/eventos-integracion/${id}/ignorar`, payload),
+        error: (id, payload = {}) => post(`/inventario/eventos-integracion/${id}/error`, payload),
+    },
+
     productos: {
         listar: (params = {}) => get('/inventario/productos', params),
         crear: (payload) => post('/inventario/productos', payload),

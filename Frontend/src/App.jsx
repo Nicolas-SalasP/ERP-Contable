@@ -38,6 +38,7 @@ import PackingInventario from './Modulos/Inventario/Vistas/PackingInventario';
 import DespachosInventario from './Modulos/Inventario/Vistas/DespachosInventario';
 import DevolucionesInventario from './Modulos/Inventario/Vistas/DevolucionesInventario';
 import AuditoriaInventario from './Modulos/Inventario/Vistas/AuditoriaInventario';
+import EventosIntegracionInventario from './Modulos/Inventario/Vistas/EventosIntegracionInventario';
 import MovimientosInventario from './Modulos/Inventario/Vistas/MovimientosInventario';
 import KardexInventario from './Modulos/Inventario/Vistas/KardexInventario';
 import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
@@ -384,6 +385,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="inventario.auditoria.ver">
                 <InventarioLayout><AuditoriaInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/eventos-integracion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.eventos_integracion.ver">
+                <InventarioLayout><EventosIntegracionInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />

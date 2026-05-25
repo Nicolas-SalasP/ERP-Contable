@@ -25,6 +25,7 @@ use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
+use App\Domains\Inventario\Controllers\InventarioEventoIntegracionController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -146,6 +147,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auditoria', [InventarioAuditoriaController::class, 'index']);
         Route::get('/auditoria/resumen', [InventarioAuditoriaController::class, 'resumen']);
         Route::get('/auditoria/{id}', [InventarioAuditoriaController::class, 'show']);
+
+        Route::get('/eventos-integracion', [InventarioEventoIntegracionController::class, 'index']);
+        Route::get('/eventos-integracion/resumen', [InventarioEventoIntegracionController::class, 'resumen']);
+        Route::get('/eventos-integracion/{id}', [InventarioEventoIntegracionController::class, 'show']);
+        Route::post('/eventos-integracion/{id}/procesar', [InventarioEventoIntegracionController::class, 'procesar']);
+        Route::post('/eventos-integracion/{id}/ignorar', [InventarioEventoIntegracionController::class, 'ignorar']);
+        Route::post('/eventos-integracion/{id}/error', [InventarioEventoIntegracionController::class, 'error']);
 
         Route::get('/reportes/stock', [InventarioController::class, 'reporteStock']);
         Route::get('/reportes/movimientos', [InventarioController::class, 'reporteMovimientos']);

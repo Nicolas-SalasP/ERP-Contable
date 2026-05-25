@@ -89,6 +89,11 @@ const GestionRoles = () => {
             'inventario.auditoria.detalle',
             'inventario.auditoria.resumen',
             'inventario.seguridad.ver',
+            'inventario.eventos_integracion.ver',
+            'inventario.eventos_integracion.detalle',
+            'inventario.eventos_integracion.resumen',
+            'inventario.eventos_integracion.procesar',
+            'inventario.eventos_integracion.gestionar',
 
 
         ],

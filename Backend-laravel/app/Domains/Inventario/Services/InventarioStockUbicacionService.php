@@ -4,6 +4,7 @@ namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioUbicacion;
 use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\Producto;
@@ -17,7 +18,8 @@ use Illuminate\Validation\ValidationException;
 class InventarioStockUbicacionService
 {
     public function __construct(
-        private readonly InventarioPermisoService $permisos
+        private readonly InventarioPermisoService $permisos,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -91,10 +93,35 @@ class InventarioStockUbicacionService
                 estadoDestino: $datos['estado_stock_destino'] ?? StockUbicacionInventario::ESTADO_DISPONIBLE
             );
 
-            return [
+            $resultado = [
                 'origen' => $origen->fresh(['producto', 'bodega', 'ubicacion', 'lote']),
                 'destino' => $destino->fresh(['producto', 'bodega', 'ubicacion', 'lote']),
             ];
+
+            $this->eventosIntegracion->publicarDesdeOperacion($usuario, InventarioEventoIntegracion::EVENTO_STOCK_UBICACION_AJUSTADO, [
+                'empresa_id' => $empresaId,
+                'entidad_tipo' => StockUbicacionInventario::class,
+                'entidad_id' => (int) $destino->id,
+                'prioridad' => InventarioEventoIntegracion::PRIORIDAD_ALTA,
+                'payload_json' => [
+                    'producto_id' => (int) $producto->id,
+                    'bodega_origen_id' => (int) $bodegaOrigen->id,
+                    'bodega_destino_id' => (int) $bodegaDestino->id,
+                    'ubicacion_origen_id' => (int) $ubicacionOrigen->id,
+                    'ubicacion_destino_id' => (int) $ubicacionDestino->id,
+                    'lote_id' => $loteId,
+                    'cantidad' => $cantidad,
+                    'estado_stock_origen' => $datos['estado_stock_origen'] ?? StockUbicacionInventario::ESTADO_DISPONIBLE,
+                    'estado_stock_destino' => $datos['estado_stock_destino'] ?? StockUbicacionInventario::ESTADO_DISPONIBLE,
+                ],
+                'metadata_json' => [
+                    'operacion' => 'mover_stock_ubicacion',
+                ],
+                'origen_modulo' => $datos['origen_modulo'] ?? 'inventario_stock_ubicacion',
+                'origen_id' => $datos['origen_id'] ?? null,
+            ], true);
+
+            return $resultado;
         });
     }
 

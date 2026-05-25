@@ -109,6 +109,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                         'inventario.packing.ver',
                         'inventario.despachos.ver',
                         'inventario.devoluciones.ver',
+                        'inventario.eventos_integracion.ver',
                         'inventario.movimientos.ver',
                         'inventario.kardex.ver',
                         'inventario.valorizacion.ver',
@@ -164,6 +165,11 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     path: '/inventario/auditoria',
                     label: 'Auditoría Operativa',
                     permisosRequeridos: ['inventario.auditoria.ver'],
+                },
+                {
+                    path: '/inventario/eventos-integracion',
+                    label: 'Eventos Integración',
+                    permisosRequeridos: ['inventario.eventos_integracion.ver'],
                 },
                 {
                     path: '/inventario/movimientos',

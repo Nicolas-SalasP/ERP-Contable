@@ -155,6 +155,11 @@ class InventarioDemoPermisosSeeder extends Seeder
             'inventario.auditoria.detalle',
             'inventario.auditoria.resumen',
             'inventario.seguridad.ver',
+            'inventario.eventos_integracion.ver',
+            'inventario.eventos_integracion.detalle',
+            'inventario.eventos_integracion.resumen',
+            'inventario.eventos_integracion.procesar',
+            'inventario.eventos_integracion.gestionar',
 
             /*
             |--------------------------------------------------------------------------
@@ -276,6 +281,9 @@ class InventarioDemoPermisosSeeder extends Seeder
             'inventario.auditoria.ver',
             'inventario.auditoria.detalle',
             'inventario.auditoria.resumen',
+            'inventario.eventos_integracion.ver',
+            'inventario.eventos_integracion.detalle',
+            'inventario.eventos_integracion.resumen',
 
             /*
             |--------------------------------------------------------------------------

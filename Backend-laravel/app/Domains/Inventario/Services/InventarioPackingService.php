@@ -3,6 +3,7 @@
 namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioPackingDetalle;
 use App\Domains\Inventario\Models\InventarioPackingOrden;
 use App\Domains\Inventario\Models\InventarioPickingAsignacion;
@@ -17,7 +18,8 @@ use Illuminate\Validation\ValidationException;
 class InventarioPackingService
 {
     public function __construct(
-        private readonly InventarioPermisoService $permisos
+        private readonly InventarioPermisoService $permisos,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -130,7 +132,13 @@ class InventarioPackingService
                 ]);
             }
 
-            return $this->cargarOrden($orden->refresh());
+            $orden = $this->cargarOrden($orden->refresh());
+            $this->publicarEventoPacking($usuario, InventarioEventoIntegracion::EVENTO_PACKING_CREADO, $orden, [
+                'picking_orden_id' => $picking->id,
+                'total_detalles' => $asignacionesPicking->count(),
+            ]);
+
+            return $orden;
         });
     }
 
@@ -222,7 +230,13 @@ class InventarioPackingService
                     : $orden->observacion,
             ]);
 
-            return $this->cargarOrden($orden->refresh());
+            $orden = $this->cargarOrden($orden->refresh());
+            $this->publicarEventoPacking($usuario, InventarioEventoIntegracion::EVENTO_PACKING_CONFIRMADO, $orden, [
+                'hay_diferencias' => $hayDiferencias,
+                'total_operaciones' => count($operaciones),
+            ], $hayDiferencias ? InventarioEventoIntegracion::PRIORIDAD_ALTA : InventarioEventoIntegracion::PRIORIDAD_NORMAL);
+
+            return $orden;
         });
     }
 
@@ -253,7 +267,12 @@ class InventarioPackingService
                     : $orden->observacion,
             ]);
 
-            return $this->cargarOrden($orden->refresh());
+            $orden = $this->cargarOrden($orden->refresh());
+            $this->publicarEventoPacking($usuario, InventarioEventoIntegracion::EVENTO_PACKING_CANCELADO, $orden, [
+                'observacion_cancelacion' => $datos['observacion'] ?? null,
+            ], InventarioEventoIntegracion::PRIORIDAD_ALTA);
+
+            return $orden;
         });
     }
 
@@ -341,6 +360,30 @@ class InventarioPackingService
             'detalles.lote:id,empresa_id,producto_id,codigo_lote,fecha_vencimiento,estado_operativo,activo',
             'detalles.pickingAsignacion:id,empresa_id,picking_detalle_id,ubicacion_origen_id,lote_id,cantidad_asignada,cantidad_pickeada,estado',
         ]);
+    }
+
+    private function publicarEventoPacking(
+        User $usuario,
+        string $evento,
+        InventarioPackingOrden $orden,
+        array $metadata = [],
+        string $prioridad = InventarioEventoIntegracion::PRIORIDAD_NORMAL
+    ): void {
+        $this->eventosIntegracion->publicarDesdeOperacion($usuario, $evento, [
+            'empresa_id' => (int) $orden->empresa_id,
+            'entidad_tipo' => InventarioPackingOrden::class,
+            'entidad_id' => (int) $orden->id,
+            'prioridad' => $prioridad,
+            'payload_json' => array_merge([
+                'codigo' => $orden->codigo,
+                'estado' => $orden->estado,
+                'bodega_id' => $orden->bodega_id,
+                'picking_orden_id' => $orden->picking_orden_id,
+            ], $metadata),
+            'metadata_json' => [
+                'observacion' => $orden->observacion,
+            ],
+        ], true);
     }
 
     private function generarCodigo(int $empresaId): string

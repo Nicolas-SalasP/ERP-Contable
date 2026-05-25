@@ -5,6 +5,7 @@ namespace App\Domains\Inventario\Services;
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\InventarioDespachoDetalle;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioDespachoOrden;
 use App\Domains\Inventario\Models\InventarioPackingDetalle;
 use App\Domains\Inventario\Models\InventarioPackingOrden;
@@ -26,7 +27,8 @@ class InventarioDespachoService
         private readonly InventarioPermisoService $permisos,
         private readonly InventarioMovimientoService $movimientoService,
         private readonly InventarioStockUbicacionService $stockUbicacionService,
-        private readonly InventarioAuditoriaService $auditoria
+        private readonly InventarioAuditoriaService $auditoria,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -618,6 +620,15 @@ class InventarioDespachoService
         array $metadata = [],
         string $severidad = InventarioAuditoriaEvento::SEVERIDAD_INFO
     ): void {
+        $metadataBase = array_merge([
+            'codigo' => $orden->codigo,
+            'estado' => $orden->estado,
+            'bodega_id' => $orden->bodega_id,
+            'packing_orden_id' => $orden->packing_orden_id,
+            'picking_orden_id' => $orden->picking_orden_id,
+            'reserva_id' => $orden->reserva_id,
+        ], $metadata);
+
         $this->auditoria->registrarEvento($usuario, [
             'empresa_id' => (int) $orden->empresa_id,
             'accion' => $accion,
@@ -630,15 +641,35 @@ class InventarioDespachoService
             'observacion' => $orden->observacion,
             'origen_modulo' => $orden->origen_modulo,
             'origen_id' => $orden->origen_id,
-            'metadata_json' => array_merge([
-                'codigo' => $orden->codigo,
-                'estado' => $orden->estado,
-                'bodega_id' => $orden->bodega_id,
-                'packing_orden_id' => $orden->packing_orden_id,
-                'picking_orden_id' => $orden->picking_orden_id,
-                'reserva_id' => $orden->reserva_id,
-            ], $metadata),
+            'metadata_json' => $metadataBase,
         ]);
+
+        $eventoIntegracion = match ($accion) {
+            InventarioAuditoriaEvento::ACCION_DESPACHO_CREADO => InventarioEventoIntegracion::EVENTO_DESPACHO_CREADO,
+            InventarioAuditoriaEvento::ACCION_DESPACHO_INICIADO => InventarioEventoIntegracion::EVENTO_DESPACHO_INICIADO,
+            InventarioAuditoriaEvento::ACCION_DESPACHO_CONFIRMADO => InventarioEventoIntegracion::EVENTO_DESPACHO_CONFIRMADO,
+            InventarioAuditoriaEvento::ACCION_DESPACHO_CANCELADO => InventarioEventoIntegracion::EVENTO_DESPACHO_CANCELADO,
+            default => null,
+        };
+
+        if ($eventoIntegracion !== null) {
+            $this->eventosIntegracion->publicarDesdeOperacion($usuario, $eventoIntegracion, [
+                'empresa_id' => (int) $orden->empresa_id,
+                'entidad_tipo' => InventarioDespachoOrden::class,
+                'entidad_id' => (int) $orden->id,
+                'prioridad' => $severidad === InventarioAuditoriaEvento::SEVERIDAD_CRITICAL
+                    ? InventarioEventoIntegracion::PRIORIDAD_CRITICA
+                    : InventarioEventoIntegracion::PRIORIDAD_ALTA,
+                'payload_json' => $metadataBase,
+                'metadata_json' => [
+                    'descripcion' => $descripcion,
+                    'referencia' => $orden->referencia ?? $orden->codigo,
+                    'motivo' => $orden->motivo,
+                ],
+                'origen_modulo' => $orden->origen_modulo,
+                'origen_id' => $orden->origen_id,
+            ], true);
+        }
     }
 
     private function generarCodigo(int $empresaId): string
