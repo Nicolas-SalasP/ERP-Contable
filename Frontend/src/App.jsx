@@ -456,9 +456,12 @@ function App() {
 
           <Route path="/inventario/alertas" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.alertas.ver">
+              <RutaProtegidaAlgunPermiso permisos={[
+                'inventario.alertas.ver',
+                'inventario.reglas_reposicion.ver',
+              ]}>
                 <InventarioLayout><AlertasInventario /></InventarioLayout>
-              </RutaProtegida>
+              </RutaProtegidaAlgunPermiso>
             </RutaPrivada>
           } />
           
