@@ -356,6 +356,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
     Route::post('/provision-user', [WebProvisioningController::class, 'provisionUser']);
-    Route::post('/sync-plan', [WebProvisioningController::class, 'syncPlan']);
-    Route::get('/online-users', [WebProvisioningController::class, 'onlineUsers']);
+    Route::post('/sync-plan',      [WebProvisioningController::class, 'syncPlan']);
+    Route::post('/sync-password',  [WebProvisioningController::class, 'syncPassword']);
+    Route::get('/online-users',    [WebProvisioningController::class, 'onlineUsers']);
 });

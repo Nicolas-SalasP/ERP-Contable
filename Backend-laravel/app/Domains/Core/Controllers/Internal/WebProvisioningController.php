@@ -86,6 +86,34 @@ class WebProvisioningController
         }
     }
 
+    public function syncPassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'tenri_user_id' => ['required', 'integer'],
+            'password_hash' => ['required', 'string'],
+        ]);
+
+        $updated = DB::table('usuarios')
+            ->where('tenri_user_id', $data['tenri_user_id'])
+            ->update([
+                'password' => $data['password_hash'],
+                'tenri_synced_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            Log::warning('WebProvisioning: syncPassword sin usuario', [
+                'tenri_user_id' => $data['tenri_user_id'],
+            ]);
+            return response()->json(['success' => false, 'message' => 'Usuario no encontrado en ERP.'], 404);
+        }
+
+        Log::info('WebProvisioning: password sincronizada', [
+            'tenri_user_id' => $data['tenri_user_id'],
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function onlineUsers(Request $request): JsonResponse
     {
         $threshold = now()->subMinutes(30);
