@@ -169,7 +169,7 @@ jobs:
       - name: 🏗️ Build
         working-directory: Frontend
         env:
-          VITE_API_URL: https://erp.tenri.cl
+          VITE_API_URL: https://erp.tenri.cl/api
         run: pnpm run build
 
   # ══════════════════════════════════════════════
@@ -204,7 +204,7 @@ jobs:
       - name: 🏗️ Build frontend
         working-directory: Frontend
         env:
-          VITE_API_URL: https://erp.tenri.cl
+          VITE_API_URL: https://erp.tenri.cl/api
         run: pnpm run build
 
       - name: 🚀 Subir frontend a public_html
