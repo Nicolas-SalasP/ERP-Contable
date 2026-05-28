@@ -152,6 +152,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
             subItems: [
                 { path: '/contabilidad/cierre-f29', label: 'Cierre de IVA (F29)' },
                 { path: '/tributario/renta', label: 'Operación Renta' },
+                { path: '/tributario/correccion-monetaria', label: 'Corrección Monetaria' },
             ]
         },
         {

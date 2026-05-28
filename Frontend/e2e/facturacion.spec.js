@@ -56,7 +56,7 @@ test.describe('Flujo de Compras y Facturación', () => {
             expect(hayDesconocido).toBe(0);
         } else {
             const emptyState = page.getByText(/No hay facturas|sin facturas|nada que mostrar/i);
-            const tieneEmptyState = await emptyState.isVisible({ timeout: 1_000 }).catch(() => false);
+            await emptyState.isVisible({ timeout: 1_000 }).catch(() => false);
             expect(true).toBe(true);
         }
     });

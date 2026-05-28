@@ -106,7 +106,7 @@ const CrearEmpresa = () => {
             const res = await api.post('/empresas/onboarding', formData);
 
             if (res.success) {
-                const storage = !!localStorage.getItem('erp_token') ? localStorage : sessionStorage;
+                const storage = localStorage.getItem('erp_token') ? localStorage : sessionStorage;
                 storage.setItem('erp_token', res.token);
                 storage.setItem('erp_user', JSON.stringify(res.user));
 

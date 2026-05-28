@@ -177,7 +177,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
 
     const valorOriginal = Number(proyecto.valor_total_original) || 0;
     const depreciacion = Number(proyecto.depreciacion_acumulada) || 0;
-    const valorLibro = valorOriginal - depreciacion;
+    const _valorLibro = valorOriginal - depreciacion;
 
     // FIX: Constantes para evaluar las 3 cuentas usando sus arreglos específicos
     const cuentaAsignada = cuentasActivo.find(t => t.id === proyecto.tipo_activo_id);

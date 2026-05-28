@@ -1,24 +1,24 @@
-name: ERP Contable CI/CD Pipeline
+name: Deploy Tenri ERP
 
 on:
   push:
-    branches: [ "main", "dev", "NSalas-dev" ]
+    branches: ['**']
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [main, dev]
 
 jobs:
-  # ============================================================
-  # FASE 1A: TESTS BACKEND CONTRA SQLITE (rapido)
-  # ============================================================
+  # ══════════════════════════════════════════════
+  # JOB 1A — TESTS BACKEND (SQLite, rápido)
+  # ══════════════════════════════════════════════
   test-backend-sqlite:
-    name: Tests Backend (SQLite)
+    name: 🧪 Tests Backend (SQLite)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar PHP 8.2
+      - name: ⚙️ Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -26,32 +26,32 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Cachear dependencias de Composer
+      - name: 📦 Cachear Composer
         uses: actions/cache@v4
         with:
           path: Backend-laravel/vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('Backend-laravel/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: Instalar dependencias de Composer
+      - name: 📦 Instalar dependencias
         working-directory: Backend-laravel
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Preparar archivo .env de testing
+      - name: 🔧 Preparar .env de testing
         working-directory: Backend-laravel
         run: |
           cp .env.example .env
           php artisan key:generate
 
-      - name: Ejecutar suite de tests contra SQLite
+      - name: 🧪 Correr tests (SQLite)
         working-directory: Backend-laravel
-        run: php artisan test
+        run: php artisan test --stop-on-failure
 
-  # ============================================================
-  # FASE 1B: TESTS BACKEND CONTRA MYSQL (validacion produccion)
-  # ============================================================
+  # ══════════════════════════════════════════════
+  # JOB 1B — TESTS BACKEND (MySQL, valida prod)
+  # ══════════════════════════════════════════════
   test-backend-mysql:
-    name: Tests Backend (MySQL - validacion produccion)
+    name: 🧪 Tests Backend (MySQL)
     runs-on: ubuntu-latest
 
     services:
@@ -59,7 +59,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: sistema_contable_testing
+          MYSQL_DATABASE: erp_testing
         ports:
           - 3306:3306
         options: >-
@@ -69,10 +69,10 @@ jobs:
           --health-retries=10
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar PHP 8.2
+      - name: ⚙️ Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -80,24 +80,24 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Cachear dependencias de Composer
+      - name: 📦 Cachear Composer
         uses: actions/cache@v4
         with:
           path: Backend-laravel/vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('Backend-laravel/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: Instalar dependencias de Composer
+      - name: 📦 Instalar dependencias
         working-directory: Backend-laravel
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Preparar archivo .env de testing
+      - name: 🔧 Preparar .env de testing
         working-directory: Backend-laravel
         run: |
           cp .env.example .env
           php artisan key:generate
 
-      - name: Esperar que MySQL este listo
+      - name: ⏳ Esperar MySQL
         run: |
           for i in {1..30}; do
             if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
@@ -108,134 +108,185 @@ jobs:
             sleep 2
           done
 
-      - name: Configurar collation utf8mb4_unicode_ci en BD de testing
+      - name: 🔧 Configurar charset BD de testing
         run: |
           mysql -h 127.0.0.1 -uroot -proot -e "
-            ALTER DATABASE sistema_contable_testing
+            ALTER DATABASE erp_testing
             CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
           "
 
-      - name: Ejecutar suite de tests contra MySQL
+      - name: 🧪 Correr tests (MySQL)
         working-directory: Backend-laravel
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
-          DB_DATABASE: sistema_contable_testing
+          DB_DATABASE: erp_testing
           DB_USERNAME: root
           DB_PASSWORD: root
-        run: php artisan test tests
+        run: php artisan test --stop-on-failure
 
-  # ============================================================
-  # FASE 2: LINT + BUILD DEL FRONTEND
-  # ============================================================
+  # ══════════════════════════════════════════════
+  # JOB 2 — LINT + BUILD FRONTEND
+  # ══════════════════════════════════════════════
   test-frontend:
-    name: Lint y Build Frontend (React + Vite)
+    name: 🧪 Tests Frontend (lint + build)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout
         uses: actions/checkout@v4
-      
-      - name: Instalar pnpm
+
+      - name: ⚙️ Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 11
 
-      - name: Configurar Node.js 22
+      - name: ⚙️ Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
           cache-dependency-path: './pnpm-lock.yaml'
 
-      - name: Instalar dependencias
+      - name: 📦 Instalar dependencias
         run: pnpm install --frozen-lockfile
 
-      - name: Ejecutar lint
+      - name: 🔍 Lint
         working-directory: Frontend
         run: pnpm run lint
-        continue-on-error: true
 
-      - name: Ejecutar build de produccion
+      - name: 🏗️ Build
         working-directory: Frontend
+        env:
+          VITE_API_URL: https://erp.tenri.cl
         run: pnpm run build
 
-      - name: Subir artifact del build
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: Frontend/dist
-          retention-days: 7
-
-  # ============================================================
-  # FASE 3: DEPLOY A HOSTING (SOLO EN MAIN)
-  # ============================================================
-  deploy-produccion:
-    name: Deploy a Hosting Produccion
+  # ══════════════════════════════════════════════
+  # JOB 3 — DEPLOY (solo main + todos los tests OK)
+  # ══════════════════════════════════════════════
+  deploy:
+    name: 🚀 Deploy
     runs-on: ubuntu-latest
     needs: [test-backend-sqlite, test-backend-mysql, test-frontend]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar PHP 8.2
+      # ── Frontend ──
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: ⚙️ Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: './pnpm-lock.yaml'
+
+      - name: 📦 Instalar dependencias frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: 🏗️ Build frontend
+        working-directory: Frontend
+        env:
+          VITE_API_URL: https://erp.tenri.cl
+        run: pnpm run build
+
+      - name: 🚀 Subir frontend a public_html
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./Frontend/dist/
+          server-dir: /erp.tenri.cl/public_html/
+          dangerous-clean-slate: false
+
+      # ── Backend ──
+      - name: ⚙️ Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: pdo, pdo_mysql, mbstring, json, bcmath, intl, gd, zip
           tools: composer:v2
 
-      - name: Instalar dependencias de Composer (sin dev)
+      - name: 📦 Instalar dependencias backend
         working-directory: Backend-laravel
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Instalar pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11
+      - name: 🗜️ Comprimir backend
+        run: |
+          cd Backend-laravel
+          zip -r ../backend.zip . \
+            -x "*.git*" \
+            -x "tests/*" \
+            -x "node_modules/*" \
+            -x ".env*" \
+            -x "storage/logs/*" \
+            -x "storage/framework/cache/*" \
+            -x "storage/framework/sessions/*" \
+            -x "storage/framework/views/*"
 
-      - name: Configurar Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: './pnpm-lock.yaml'
-
-      - name: Instalar dependencias frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Build de produccion frontend
-        working-directory: Frontend
-        run: pnpm run build
-
-      - name: Subir backend al hosting via FTP
+      - name: 🚀 Subir backend comprimido
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./Backend-laravel/
-          server-dir: /backend/
+          local-dir: ./
+          server-dir: /erp.tenri.cl/
           exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/tests/**
-            **/.env
-            **/.env.example
-            **/storage/logs/*
-            **/storage/framework/cache/*
-            **/storage/framework/sessions/*
-            **/storage/framework/views/*
+            **/*
+            !backend.zip
 
-      - name: Subir frontend al hosting via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      # ── Servidor ──
+      - name: 🛠️ Descomprimir y configurar Laravel
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./Frontend/dist/
-          server-dir: /public_html/
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            # El FTP (tipo Dominio) sube a ~/domains/erp.tenri.cl/
+            FTP_ROOT=~/domains/erp.tenri.cl
+            LARAVEL_ROOT=~/erp_backend
+            ERP_PUBLIC=~/domains/erp.tenri.cl/public_html
+
+            # Mover zip al directorio real de Laravel
+            if [ -f "$FTP_ROOT/backend.zip" ]; then
+              mv "$FTP_ROOT/backend.zip" "$LARAVEL_ROOT/backend.zip"
+            fi
+
+            cd $LARAVEL_ROOT
+            unzip -o backend.zip
+            rm backend.zip
+
+            chmod -R 775 storage bootstrap/cache
+            mkdir -p storage/framework/sessions
+            mkdir -p storage/framework/views
+            mkdir -p storage/framework/cache
+            mkdir -p storage/logs
+
+            # Copiar public/ al subdominio (sin symlinks — LiteSpeed no los sigue)
+            cp public/index.php  $ERP_PUBLIC/index.php
+            cp public/.htaccess  $ERP_PUBLIC/.htaccess
+            cp public/favicon.ico $ERP_PUBLIC/favicon.ico 2>/dev/null || true
+            cp public/robots.txt  $ERP_PUBLIC/robots.txt  2>/dev/null || true
+
+            php artisan optimize:clear
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan event:cache
+            php artisan storage:link --force 2>/dev/null || true
+
+            echo "✅ Deploy ERP completado"

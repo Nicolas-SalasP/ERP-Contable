@@ -9,7 +9,6 @@ import {
     formatCurrency,
     formatDate,
     formatNumber,
-    getBodegaNombre,
     getProductoNombre,
     LoadingState,
     PageHeader,

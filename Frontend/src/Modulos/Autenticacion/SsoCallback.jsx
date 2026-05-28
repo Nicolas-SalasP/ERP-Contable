@@ -6,7 +6,7 @@ import { api } from '../../Configuracion/api';
 const SsoCallback = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { login: setSession } = useAuth();
+    const { login: _setSession } = useAuth();
     const [error, setError] = useState(null);
 
     useEffect(() => {

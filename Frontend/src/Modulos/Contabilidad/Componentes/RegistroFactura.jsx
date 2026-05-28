@@ -55,9 +55,7 @@ const RegistroFactura = () => {
     });
 
     const {
-        listaProveedores,
         cuentasDisponibles,
-        loading,
         busqueda, setBusqueda,
         sugerencias,
         mostrarSugerencias, setMostrarSugerencias,
@@ -120,7 +118,6 @@ const RegistroFactura = () => {
             tieneIva: p.pais_iso === 'CL'
         }));
         setBusqueda('');
-        setSugerencias([]);
         setMostrarSugerencias(false);
     };
 
