@@ -214,7 +214,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./Frontend/dist/
-          server-dir: /erp.tenri.cl/public_html/
+          server-dir: /public_html/
           dangerous-clean-slate: false
 
       # ── Backend ──
@@ -249,7 +249,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
-          server-dir: /erp.tenri.cl/
+          server-dir: /
           exclude: |
             **/*
             !backend.zip
