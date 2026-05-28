@@ -50,9 +50,14 @@ trait GeneraParRsaParaTests
             return $env;
         }
 
+        // Ruta relativa al openssl.cnf incluido en el proyecto (funciona en cualquier OS)
+        $proyectoCnf = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'openssl.cnf';
+
         $candidatos = [
+            $proyectoCnf,
             'C:\\xampp\\php\\extras\\openssl\\openssl.cnf',
             'C:\\xampp\\apache\\conf\\openssl.cnf',
+            'C:\\laragon\\bin\\php\\php8.2.26\\extras\\ssl\\openssl.cnf',
             '/etc/ssl/openssl.cnf',
             '/usr/lib/ssl/openssl.cnf',
         ];
