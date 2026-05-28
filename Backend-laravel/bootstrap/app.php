@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\CheckSubscription;
+use App\Http\Middleware\VerifyWebApiKey;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'web.api.key'        => VerifyWebApiKey::class,
+            'check.subscription' => CheckSubscription::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

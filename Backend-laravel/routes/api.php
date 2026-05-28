@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Domains\Core\Controllers\AuthController;
+use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
 use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\AnulacionController;
@@ -15,6 +16,7 @@ use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
 use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
+use App\Domains\CorreccionMonetaria\Controllers\CorreccionMonetariaController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
@@ -173,6 +175,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/renta/mapeo', [ImpuestosController::class, 'guardarMapeo']);
     Route::delete('/renta/mapeo/{id}', [ImpuestosController::class, 'eliminarMapeo']);
 
+    // Correccion Monetaria
+    Route::prefix('correccion-monetaria')->group(function () {
+        Route::get('/indices/{anio}', [CorreccionMonetariaController::class, 'indices']);
+        Route::post('/indices', [CorreccionMonetariaController::class, 'guardarIndice']);
+        Route::get('/configuracion', [CorreccionMonetariaController::class, 'configuracion']);
+        Route::put('/configuracion', [CorreccionMonetariaController::class, 'actualizarConfiguracion']);
+        Route::get('/cuentas', [CorreccionMonetariaController::class, 'cuentasConfiguracion']);
+        Route::put('/cuentas', [CorreccionMonetariaController::class, 'actualizarCuentasConfiguracion']);
+        Route::post('/cuentas', [CorreccionMonetariaController::class, 'agregarCuenta']);
+        Route::get('/estado/{mes}/{anio}', [CorreccionMonetariaController::class, 'estadoPeriodo']);
+        Route::get('/simular/{mes}/{anio}', [CorreccionMonetariaController::class, 'simular']);
+        Route::post('/ejecutar', [CorreccionMonetariaController::class, 'ejecutar']);
+        Route::get('/historial', [CorreccionMonetariaController::class, 'historial']);
+    });
+
     // Contabilidad - Anulaciones
     Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar']);
     Route::post('/anulacion/anular', [AnulacionController::class, 'anular']);
@@ -255,4 +272,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tomas-fisicas/{id}/ajustar', [InventarioController::class, 'ajustarTomaFisica']);
         Route::post('/tomas-fisicas/{id}/cancelar', [InventarioController::class, 'cancelarTomaFisica']);
     });
+});
+
+Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
+    Route::post('/provision-user', [WebProvisioningController::class, 'provisionUser']);
+    Route::post('/sync-plan', [WebProvisioningController::class, 'syncPlan']);
+    Route::get('/online-users', [WebProvisioningController::class, 'onlineUsers']);
 });

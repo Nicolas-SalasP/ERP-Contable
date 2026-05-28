@@ -9,7 +9,7 @@ const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 
 export const API_BASE_URL =
     (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
-    (isLocal ? 'http://127.0.0.1:8000/api' : 'https://erp.tenri.cl/api');
+    (isLocal ? '/api' : 'https://erp.tenri.cl/api');
 
 const DEFAULT_TIMEOUT_MS = 30000;
 const RETRY_STATUSES = new Set([0, 502, 503, 504]);

@@ -7,12 +7,21 @@ use Illuminate\Support\Facades\Gate;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Rol;
 use App\Observers\EmpresaObserver;
+use App\Domains\CorreccionMonetaria\Providers\IpcProviderInterface;
+use App\Domains\CorreccionMonetaria\Providers\ManualIpcProvider;
+use App\Domains\CorreccionMonetaria\Providers\IneApiIpcProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->bind(IpcProviderInterface::class, function () {
+            $proveedor = config('correccion_monetaria.ipc_provider', 'manual');
+            return match ($proveedor) {
+                'api_ine' => new IneApiIpcProvider(),
+                default => new ManualIpcProvider(),
+            };
+        });
     }
 
     public function boot(): void
