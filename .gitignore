@@ -1,1 +1,8 @@
 node_modules
+
+# Metadatos locales del IDE Claude Code
+.claude/
+
+# Artefactos de OpenSSL en Windows (PRNG entropy file)
+Backend-laravel/.rnd
+*.rnd
