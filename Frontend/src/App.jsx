@@ -49,6 +49,10 @@ import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInve
 import AlertasInventario from './Modulos/Inventario/Vistas/AlertasInventario';
 import ReportesInventario from './Modulos/Inventario/Vistas/ReportesInventario';
 import InventarioProviderWrapper from './Modulos/Inventario/InventarioProviderWrapper';
+import ConfiguracionSii from './Modulos/Sii/Vistas/ConfiguracionSii';
+import CertificadoSii from './Modulos/Sii/Vistas/CertificadoSii';
+import FoliosCaf from './Modulos/Sii/Vistas/FoliosCaf';
+import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -466,6 +470,39 @@ function App() {
             </RutaPrivada>
           } />
           
+          {/* ── SII ──────────────────────────────────────────────── */}
+          <Route path="/sii/configuracion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.configuracion.ver">
+                <LayoutPrincipal><ConfiguracionSii /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/certificado" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.certificado.ver">
+                <LayoutPrincipal><CertificadoSii /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/folios-caf" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.caf.ver">
+                <LayoutPrincipal><FoliosCaf /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/facturas" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.dte.ver">
+                <LayoutPrincipal><FacturasSii /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
