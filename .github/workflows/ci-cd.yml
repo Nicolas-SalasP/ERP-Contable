@@ -18,11 +18,14 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v4
 
+      - name: ⚙️ Instalar OpenSSL dev
+        run: sudo apt-get update -qq && sudo apt-get install -y openssl libssl-dev
+
       - name: ⚙️ Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: pdo, pdo_sqlite, pdo_mysql, mbstring, json, bcmath, intl, gd, zip
+          extensions: pdo, pdo_sqlite, pdo_mysql, mbstring, json, bcmath, intl, gd, zip, openssl
           coverage: none
           tools: composer:v2
 
@@ -42,6 +45,9 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+
+      - name: 🔧 Configurar OPENSSL_CONF
+        run: echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
       - name: 🧪 Correr tests (SQLite)
         working-directory: Backend-laravel

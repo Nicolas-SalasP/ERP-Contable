@@ -20,9 +20,11 @@ return new class extends Migration
                 ->constrained('sii_dte_emitido')
                 ->cascadeOnDelete();
 
+            // Nombre explícito: el autogenerado tiene 65 chars, límite MySQL es 64.
+            // sii_dte_emitido_impuesto_adicional_dte_emitido_detalle_id_foreign = 65 chars
             $table->foreignId('dte_emitido_detalle_id')
                 ->nullable()
-                ->constrained('sii_dte_emitido_detalle')
+                ->constrained('sii_dte_emitido_detalle', 'id', 'sii_dte_imp_adic_detalle_fk')
                 ->cascadeOnDelete();
 
             $table->unsignedSmallInteger('codigo_impuesto'); // FK logica a sii_cat_impuestos.codigo
