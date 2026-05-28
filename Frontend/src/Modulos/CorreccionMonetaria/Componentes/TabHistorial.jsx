@@ -15,7 +15,7 @@ const BADGE_TIPO = {
 };
 
 const TabHistorial = ({ anioInicial }) => {
-    const [anio, setAnio]           = useState(null);
+    const [anio, setAnio]           = useState(anioInicial ?? null);
     const [ejecuciones, setEjecuciones] = useState([]);
     const [loading, setLoading]     = useState(true);
     const [expandido, setExpandido] = useState(null);

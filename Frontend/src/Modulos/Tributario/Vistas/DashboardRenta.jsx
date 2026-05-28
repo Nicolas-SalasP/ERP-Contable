@@ -360,7 +360,7 @@ const DashboardRenta = () => {
                             </span>
                         ) : (
                             <span className="sm:ml-auto text-xs text-amber-700 font-bold">
-                                Sin CM ejecutada para {anio_comercial ?? datosRenta.anio_comercial}. Base imponible no incluye ajuste por inflación.
+                                Sin CM ejecutada para {datosRenta.anio_comercial}. Base imponible no incluye ajuste por inflación.
                             </span>
                         )}
                     </div>
