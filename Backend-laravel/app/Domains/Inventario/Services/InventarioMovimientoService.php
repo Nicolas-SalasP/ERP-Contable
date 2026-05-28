@@ -2,7 +2,12 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Events\StockMinimoPerforado;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
+use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockProducto;
@@ -15,7 +20,11 @@ class InventarioMovimientoService
 {
     public function __construct(
         private readonly InventarioValorizacionService $valorizacionService,
-        private readonly InventarioLoteService $loteService
+        private readonly InventarioLoteService $loteService,
+        private readonly InventarioReposicionService $reposicionService,
+        private readonly InventarioStockUbicacionService $stockUbicacionService,
+        private readonly InventarioAuditoriaService $auditoria,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -24,7 +33,7 @@ class InventarioMovimientoService
         return DB::transaction(function () use ($data, $empresaId, $userId) {
             $tipo = $data['tipo'] ?? null;
 
-            return match ($tipo) {
+            $movimiento = match ($tipo) {
                 MovimientoInventario::TIPO_ENTRADA => $this->registrarEntrada($data, $empresaId, $userId),
                 MovimientoInventario::TIPO_SALIDA => $this->registrarSalida($data, $empresaId, $userId),
                 MovimientoInventario::TIPO_TRASPASO => $this->registrarTraspaso($data, $empresaId, $userId),
@@ -34,6 +43,10 @@ class InventarioMovimientoService
                     'tipo' => 'El tipo de movimiento no es válido.',
                 ]),
             };
+
+            $this->auditarMovimiento($movimiento, $data, $userId);
+
+            return $movimiento;
         });
     }
 
@@ -48,11 +61,13 @@ class InventarioMovimientoService
 
         $stockDestino = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaDestino->id, $empresaId);
 
-        $valorizacion = $this->valorizacionService->calcularEntradaPmp(
+        $valorizacion = $this->valorizacionService->calcularEntrada(
             stock: $stockDestino,
             producto: $producto,
             cantidad: $cantidad,
-            costoUnitario: $costoUnitarioEntrada
+            costoUnitario: $costoUnitarioEntrada,
+            loteId: $lote?->id,
+            fechaMovimiento: $data['fecha_movimiento'] ?? null
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -82,6 +97,18 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        if (!empty($data['ubicacion_destino_id'])) {
+            $this->stockUbicacionService->aplicarEntrada(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaDestino->id,
+                ubicacionId: (int) $data['ubicacion_destino_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad,
+                estadoDestino: $data['estado_stock_destino'] ?? null
+            );
+        }
+
         return $this->cargarRelacionesMovimiento($movimiento);
     }
 
@@ -92,6 +119,7 @@ class InventarioMovimientoService
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
 
         $lote = $this->loteService->resolverLoteParaSalida($producto, $data, $empresaId);
+        $this->validarLoteMovibleParaSalida($lote);
 
         $stockOrigen = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaOrigen->id, $empresaId);
         $stockAntes = $this->toFloat($stockOrigen->stock_actual);
@@ -102,10 +130,11 @@ class InventarioMovimientoService
             ]);
         }
 
-        $valorizacion = $this->valorizacionService->calcularSalidaPmp(
+        $valorizacion = $this->valorizacionService->calcularSalida(
             stock: $stockOrigen,
             producto: $producto,
-            cantidad: $cantidad
+            cantidad: $cantidad,
+            loteId: $lote?->id
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -135,6 +164,25 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+            $this->stockUbicacionService->aplicarSalida(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaOrigen->id,
+                ubicacionId: (int) $data['ubicacion_origen_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad
+            );
+        }
+
+        $this->dispararEventoStockMinimoSiCorresponde(
+            empresaId: $empresaId,
+            productoId: (int) $producto->id,
+            bodegaId: (int) $bodegaOrigen->id,
+            stockActual: (float) $valorizacion['stock_despues'],
+            movimientoId: (int) $movimiento->id
+        );
+
         return $this->cargarRelacionesMovimiento($movimiento);
     }
 
@@ -153,6 +201,7 @@ class InventarioMovimientoService
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
 
         $lote = $this->loteService->resolverLoteParaTraspaso($producto, $data, $empresaId);
+        $this->validarLoteMovibleParaSalida($lote);
 
         $stocks = $this->obtenerStocksTraspasoBloqueados(
             $producto->id,
@@ -171,11 +220,13 @@ class InventarioMovimientoService
             ]);
         }
 
-        $valorizacion = $this->valorizacionService->calcularTraspasoPmp(
+        $valorizacion = $this->valorizacionService->calcularTraspaso(
             stockOrigen: $stockOrigen,
             stockDestino: $stockDestino,
             producto: $producto,
-            cantidad: $cantidad
+            cantidad: $cantidad,
+            loteId: $lote?->id,
+            fechaMovimiento: $data['fecha_movimiento'] ?? null
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -206,6 +257,37 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+            $this->stockUbicacionService->aplicarSalida(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaOrigen->id,
+                ubicacionId: (int) $data['ubicacion_origen_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad
+            );
+        }
+
+        if (!empty($data['ubicacion_destino_id'])) {
+            $this->stockUbicacionService->aplicarEntrada(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaDestino->id,
+                ubicacionId: (int) $data['ubicacion_destino_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad,
+                estadoDestino: $data['estado_stock_destino'] ?? null
+            );
+        }
+
+        $this->dispararEventoStockMinimoSiCorresponde(
+            empresaId: $empresaId,
+            productoId: (int) $producto->id,
+            bodegaId: (int) $bodegaOrigen->id,
+            stockActual: (float) $valorizacion['origen']['stock_despues'],
+            movimientoId: (int) $movimiento->id
+        );
+
         return $this->cargarRelacionesMovimiento($movimiento);
     }
 
@@ -220,11 +302,13 @@ class InventarioMovimientoService
 
         $stockDestino = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaDestino->id, $empresaId);
 
-        $valorizacion = $this->valorizacionService->calcularEntradaPmp(
+        $valorizacion = $this->valorizacionService->calcularEntrada(
             stock: $stockDestino,
             producto: $producto,
             cantidad: $cantidad,
-            costoUnitario: $costoUnitarioEntrada
+            costoUnitario: $costoUnitarioEntrada,
+            loteId: $lote?->id,
+            fechaMovimiento: $data['fecha_movimiento'] ?? null
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -254,6 +338,18 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
+        if (!empty($data['ubicacion_destino_id'])) {
+            $this->stockUbicacionService->aplicarEntrada(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaDestino->id,
+                ubicacionId: (int) $data['ubicacion_destino_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad,
+                estadoDestino: $data['estado_stock_destino'] ?? null
+            );
+        }
+
         return $this->cargarRelacionesMovimiento($movimiento);
     }
 
@@ -264,6 +360,7 @@ class InventarioMovimientoService
         $cantidad = $this->validarCantidadPositiva($data['cantidad']);
 
         $lote = $this->loteService->resolverLoteParaSalida($producto, $data, $empresaId);
+        $this->validarLoteMovibleParaSalida($lote);
 
         $stockOrigen = $this->obtenerOCrearStockBloqueado($producto->id, $bodegaOrigen->id, $empresaId);
         $stockAntes = $this->toFloat($stockOrigen->stock_actual);
@@ -274,10 +371,11 @@ class InventarioMovimientoService
             ]);
         }
 
-        $valorizacion = $this->valorizacionService->calcularSalidaPmp(
+        $valorizacion = $this->valorizacionService->calcularSalida(
             stock: $stockOrigen,
             producto: $producto,
-            cantidad: $cantidad
+            cantidad: $cantidad,
+            loteId: $lote?->id
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -305,6 +403,25 @@ class InventarioMovimientoService
             cantidad: $cantidad,
             lote: $lote,
             empresaId: $empresaId
+        );
+
+        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+            $this->stockUbicacionService->aplicarSalida(
+                empresaId: $empresaId,
+                productoId: (int) $producto->id,
+                bodegaId: (int) $bodegaOrigen->id,
+                ubicacionId: (int) $data['ubicacion_origen_id'],
+                loteId: $lote?->id,
+                cantidad: $cantidad
+            );
+        }
+
+        $this->dispararEventoStockMinimoSiCorresponde(
+            empresaId: $empresaId,
+            productoId: (int) $producto->id,
+            bodegaId: (int) $bodegaOrigen->id,
+            stockActual: (float) $valorizacion['stock_despues'],
+            movimientoId: (int) $movimiento->id
         );
 
         return $this->cargarRelacionesMovimiento($movimiento);
@@ -336,6 +453,13 @@ class InventarioMovimientoService
             ->when(!empty($filtros['lote_id']), function ($query) use ($filtros) {
                 $query->whereHas('lotes', function ($loteQuery) use ($filtros) {
                     $loteQuery->where('lote_id', (int) $filtros['lote_id']);
+                });
+            })
+            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+                $query->where(function ($subQuery) use ($filtros) {
+                    $subQuery
+                        ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
+                        ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
                 });
             })
             ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
@@ -376,6 +500,13 @@ class InventarioMovimientoService
             ->when(!empty($filtros['tipo']), function ($query) use ($filtros) {
                 $query->tipo($filtros['tipo']);
             })
+            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+                $query->where(function ($subQuery) use ($filtros) {
+                    $subQuery
+                        ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
+                        ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
+                });
+            })
             ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
                 $query->desde($filtros['desde']);
             })
@@ -413,6 +544,13 @@ class InventarioMovimientoService
             })
             ->when(!empty($filtros['tipo']), function ($query) use ($filtros) {
                 $query->tipo($filtros['tipo']);
+            })
+            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+                $query->where(function ($subQuery) use ($filtros) {
+                    $subQuery
+                        ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
+                        ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
+                });
             })
             ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
                 $query->desde($filtros['desde']);
@@ -550,6 +688,103 @@ class InventarioMovimientoService
         ];
     }
 
+    private function validarLoteMovibleParaSalida(?LoteInventario $lote): void
+    {
+        if (!$lote) {
+            return;
+        }
+
+        if ($lote->estaVencido()) {
+            throw ValidationException::withMessages([
+                'lote_id' => 'No se permite salida, traspaso ni ajuste negativo desde un lote vencido.',
+            ]);
+        }
+
+        if ($lote->estaBloqueadoOperativamente()) {
+            throw ValidationException::withMessages([
+                'lote_id' => 'No se permite mover stock desde un lote en cuarentena o bloqueado.',
+            ]);
+        }
+    }
+
+    private function auditarMovimiento(MovimientoInventario $movimiento, array $data, ?int $userId): void
+    {
+        $usuario = $userId ? User::find($userId) : null;
+        $esCritico = in_array($movimiento->tipo, [
+            MovimientoInventario::TIPO_SALIDA,
+            MovimientoInventario::TIPO_AJUSTE_POSITIVO,
+            MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
+        ], true);
+
+        $metadataMovimiento = [
+            'tipo' => $movimiento->tipo,
+            'producto_id' => $movimiento->producto_id,
+            'bodega_origen_id' => $movimiento->bodega_origen_id,
+            'bodega_destino_id' => $movimiento->bodega_destino_id,
+            'ubicacion_origen_id' => $movimiento->ubicacion_origen_id,
+            'ubicacion_destino_id' => $movimiento->ubicacion_destino_id,
+            'cantidad' => $movimiento->cantidad,
+            'costo_unitario' => $movimiento->costo_unitario,
+            'costo_total' => $movimiento->costo_total,
+            'origen_operativo' => $data['_origen_operativo'] ?? null,
+        ];
+
+        $this->auditoria->registrarEvento($usuario, [
+            'empresa_id' => (int) $movimiento->empresa_id,
+            'usuario_id' => $userId,
+            'accion' => InventarioAuditoriaEvento::ACCION_MOVIMIENTO_CREADO,
+            'entidad_tipo' => MovimientoInventario::class,
+            'entidad_id' => (int) $movimiento->id,
+            'severidad' => $esCritico ? InventarioAuditoriaEvento::SEVERIDAD_WARNING : InventarioAuditoriaEvento::SEVERIDAD_INFO,
+            'descripcion' => 'Movimiento de inventario registrado en kardex operativo.',
+            'referencia' => $movimiento->referencia,
+            'motivo' => $movimiento->motivo,
+            'observacion' => $movimiento->observacion,
+            'metadata_json' => $metadataMovimiento,
+        ]);
+
+        $this->eventosIntegracion->publicarDesdeOperacion($usuario, InventarioEventoIntegracion::EVENTO_MOVIMIENTO_CREADO, [
+            'empresa_id' => (int) $movimiento->empresa_id,
+            'usuario_id' => $userId,
+            'entidad_tipo' => MovimientoInventario::class,
+            'entidad_id' => (int) $movimiento->id,
+            'prioridad' => $esCritico ? InventarioEventoIntegracion::PRIORIDAD_ALTA : InventarioEventoIntegracion::PRIORIDAD_NORMAL,
+            'payload_json' => $metadataMovimiento,
+            'metadata_json' => [
+                'referencia' => $movimiento->referencia,
+                'motivo' => $movimiento->motivo,
+                'observacion' => $movimiento->observacion,
+            ],
+            'origen_modulo' => $movimiento->origen_modulo ?? ($data['origen_modulo'] ?? null),
+            'origen_id' => $movimiento->origen_id ?? ($data['origen_id'] ?? null),
+        ], true);
+    }
+
+    private function dispararEventoStockMinimoSiCorresponde(
+        int $empresaId,
+        int $productoId,
+        int $bodegaId,
+        float $stockActual,
+        int $movimientoId
+    ): void {
+        $stockMinimo = $this->reposicionService->umbralMinimoPara($empresaId, $productoId, $bodegaId);
+
+        if ($stockMinimo <= 0 || $stockActual > $stockMinimo) {
+            return;
+        }
+
+        DB::afterCommit(function () use ($empresaId, $productoId, $bodegaId, $stockActual, $stockMinimo, $movimientoId) {
+            event(new StockMinimoPerforado(
+                empresaId: $empresaId,
+                productoId: $productoId,
+                bodegaId: $bodegaId,
+                stockActual: $this->redondearCantidad($stockActual),
+                stockMinimo: $this->redondearCantidad($stockMinimo),
+                movimientoId: $movimientoId
+            ));
+        });
+    }
+
     private function validarCantidadPositiva(mixed $cantidad): float
     {
         if (!is_numeric($cantidad)) {
@@ -588,6 +823,10 @@ class InventarioMovimientoService
         return [
             'costo_unitario' => $this->redondearCantidad($costoUnitario),
             'costo_total' => $this->redondearCantidad($costoTotal),
+            'ubicacion_origen_id' => $data['ubicacion_origen_id'] ?? null,
+            'ubicacion_destino_id' => $data['ubicacion_destino_id'] ?? null,
+            'estado_stock_origen' => $data['estado_stock_origen'] ?? null,
+            'estado_stock_destino' => $data['estado_stock_destino'] ?? null,
             'referencia' => $data['referencia'] ?? null,
             'motivo' => $data['motivo'] ?? null,
             'observacion' => $data['observacion'] ?? null,
@@ -629,6 +868,8 @@ class InventarioMovimientoService
             'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
             'bodegaOrigen:id,empresa_id,codigo,nombre,estado',
             'bodegaDestino:id,empresa_id,codigo,nombre,estado',
+            'ubicacionOrigen:id,empresa_id,bodega_id,codigo,nombre,tipo,activo',
+            'ubicacionDestino:id,empresa_id,bodega_id,codigo,nombre,tipo,activo',
             'lotes.lote:id,empresa_id,producto_id,codigo_lote,fecha_fabricacion,fecha_vencimiento,activo',
             'lotes.bodegaOrigen:id,empresa_id,codigo,nombre,estado',
             'lotes.bodegaDestino:id,empresa_id,codigo,nombre,estado',

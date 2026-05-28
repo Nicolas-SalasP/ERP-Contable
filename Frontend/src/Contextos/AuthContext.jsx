@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { api } from '../Configuracion/api';
+import { api, markTokenIssued } from '../Configuracion/api';
 
 const AuthContext = createContext(null);
 
@@ -18,21 +18,26 @@ export const AuthProvider = ({ children }) => {
 
             if (response.token) {
                 const tokenRecibido = response.token;
-                const usuarioRecibido = response.user;
+                let usuarioRecibido = response.user;
+
+                const storage = remember ? localStorage : sessionStorage;
+                const otherStorage = remember ? sessionStorage : localStorage;
+
+                storage.setItem('erp_token', tokenRecibido);
+                storage.removeItem.bind(otherStorage)('erp_token');
+                otherStorage.removeItem('erp_token');
+                otherStorage.removeItem('erp_user');
+                markTokenIssued();
+
+                try {
+                    const meResponse = await api.get('/auth/me');
+                    if (meResponse && meResponse.id) {
+                        usuarioRecibido = meResponse;
+                    }
+                } catch (_) {}
 
                 setUser(usuarioRecibido);
-                
-                if (remember) {
-                    localStorage.setItem('erp_token', tokenRecibido);
-                    localStorage.setItem('erp_user', JSON.stringify(usuarioRecibido));
-                    sessionStorage.removeItem('erp_token');
-                    sessionStorage.removeItem('erp_user');
-                } else {
-                    sessionStorage.setItem('erp_token', tokenRecibido);
-                    sessionStorage.setItem('erp_user', JSON.stringify(usuarioRecibido));
-                    localStorage.removeItem('erp_token');
-                    localStorage.removeItem('erp_user');
-                }
+                storage.setItem('erp_user', JSON.stringify(usuarioRecibido));
 
                 return { success: true };
             } else {
@@ -57,8 +62,10 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         localStorage.removeItem('erp_token');
         localStorage.removeItem('erp_user');
+        localStorage.removeItem('erp_token_issued_at');
         sessionStorage.removeItem('erp_token');
         sessionStorage.removeItem('erp_user');
+        sessionStorage.removeItem('erp_token_issued_at');
 
         setUser(null);
     };

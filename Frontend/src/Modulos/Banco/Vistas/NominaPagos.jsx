@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import * as XLSX from "@e965/xlsx";
@@ -228,7 +230,7 @@ const NominaPagos = () => {
                             Tesorería y Finanzas
                         </span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Nómina de Pagos</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Nómina de Pagos</h1><AyudaModulo moduloId="nominaPagos" /></div>
                     <p className="text-slate-500 font-medium mt-1">
                         Agrupa facturas de proveedores y genera archivos para pago bancario.
                     </p>
@@ -266,10 +268,12 @@ const NominaPagos = () => {
             </div>
 
             {loading ? (
-                 <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-500 mb-4"></div>
-                    <p className="font-bold">Analizando cuentas por pagar...</p>
-                 </div>
+                <EstadoCarga
+                    cargando={true}
+                    mensajeCargando="Analizando cuentas por pagar..."
+                    tamano="compacto"
+                    color="blue"
+                />
             ) : paso === 1 ? (
                 /* PASO 1: SELECCIÓN DE FACTURAS */
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

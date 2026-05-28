@@ -6,6 +6,8 @@ use App\Domains\Core\Models\Empresa;
 
 class Cliente extends Model
 {
+    use \App\Domains\Sii\Concerns\HasSiiAttributesCliente;
+
     protected $table = 'clientes';
     const UPDATED_AT = null;
 

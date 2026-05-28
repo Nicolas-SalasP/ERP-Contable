@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
 import ModalGenerico from '../../../Componentes/ModalGenerico';
 
+import { logger } from '../../../Configuracion/logger';
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -30,20 +32,17 @@ const LibroMayor = () => {
         desde: new Date().toISOString().slice(0, 7) + '-01',
         hasta: new Date().toISOString().split('T')[0],
         cuenta: cuentaGuardada,
-        auditoria: 1 
+        auditoria: 1,
+        search: '',
     });
 
-    // Estados buscador inteligente
     const [busquedaCuenta, setBusquedaCuenta] = useState(cuentaGuardada);
     const [sugerencias, setSugerencias] = useState([]);
     const [mostrarLista, setMostrarLista] = useState(false);
     const wrapperRef = useRef(null);
-
-    // Estados Menú Contextual y Visor
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, asientoId: null });
     const [asientoSeleccionado, setAsientoSeleccionado] = useState(null);
 
-    // Estado para Notificaciones (Modales)
     const [notificacion, setNotificacion] = useState({
         show: false,
         title: '',
@@ -86,19 +85,31 @@ const LibroMayor = () => {
             const res = await api.get('/contabilidad/plan-cuentas');
             if (res.success) setPlanCuentas(res.data);
         } catch (error) {
-            console.error("Error plan cuentas", error);
+            logger.error("Error plan cuentas", error);
         }
     };
 
     const cargarLibroDiario = async () => {
+        const diffTime = Math.abs(new Date(filtros.hasta) - new Date(filtros.desde));
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 366) {
+            return setNotificacion({
+                show: true,
+                title: 'Rango Excedido',
+                message: 'Por seguridad y rendimiento, consulta un máximo de 366 días a la vez.',
+                type: 'warning'
+            });
+        }
+
         setLoading(true);
         try {
             const cuentaAEnviar = filtros.cuenta || (busquedaCuenta.match(/^\d+/) ? busquedaCuenta : '');
-            const params = { 
-                desde: filtros.desde, 
-                hasta: filtros.hasta, 
+            const params = {
+                desde: filtros.desde,
+                hasta: filtros.hasta,
                 cuenta: cuentaAEnviar,
-                filtro: filtros.auditoria 
+                filtro: filtros.auditoria,
+                search: filtros.search
             };
             const query = new URLSearchParams(params).toString();
             const res = await api.get(`/contabilidad/libro-diario?${query}`);
@@ -118,7 +129,7 @@ const LibroMayor = () => {
                         cuenta_codigo: ctaCodigo,
                         cuenta_nombre: ctaNombre,
                         glosa: mov.glosa,
-                        estado: mov.estado, // Capturamos el estado
+                        estado: mov.estado,
                         debe: mov.debe,
                         haber: mov.haber
                     }));
@@ -134,7 +145,7 @@ const LibroMayor = () => {
                                     cuenta_codigo: det.cuenta_contable || det.cuenta?.codigo,
                                     cuenta_nombre: det.cuenta?.nombre || '',
                                     glosa: asiento.glosa,
-                                    estado: asiento.estado, // Capturamos el estado
+                                    estado: asiento.estado,
                                     numero_documento: asiento.numero_documento,
                                     debe: det.debe,
                                     haber: det.haber
@@ -157,7 +168,7 @@ const LibroMayor = () => {
                 });
             }
         } catch (error) {
-            console.error("Error cargando diario", error);
+            logger.error("Error cargando diario", error);
             setAsientos([]);
         } finally {
             setLoading(false);
@@ -252,7 +263,7 @@ const LibroMayor = () => {
             )}
 
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-slate-900">Libros Contables</h1>
+                <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-900">Libros Contables</h1><AyudaModulo moduloId="libroMayor" size={26} /></div>
                 <div className="flex bg-white rounded-lg shadow-sm border p-1">
                     <button onClick={() => setActiveTab('diario')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition ${activeTab === 'diario' ? 'bg-slate-800 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>Libro Diario / Mayor</button>
                     {activeTab === 'visor' && (
@@ -326,9 +337,19 @@ const LibroMayor = () => {
                             </div>
                         )}
                     </div>
+                    <div className="flex-1 min-w-[180px]">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Palabra en Glosa</label>
+                        <input
+                            type="text"
+                            className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                            placeholder="Ej: Traspaso, Pago..."
+                            value={filtros.search}
+                            onChange={e => setFiltros({ ...filtros, search: e.target.value })}
+                        />
+                    </div>
                     <div>
                         <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Auditoría</label>
-                        <select 
+                        <select
                             className="border border-blue-200 bg-blue-50 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700"
                             value={filtros.auditoria}
                             onChange={e => setFiltros({ ...filtros, auditoria: Number(e.target.value) })}

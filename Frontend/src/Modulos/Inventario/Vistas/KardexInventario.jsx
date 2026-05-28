@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import inventarioApi from '../Servicios/inventarioApi';
+import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     EmptyState,
     Field,
@@ -42,41 +43,30 @@ const KardexInventario = () => {
     const [consultando, setConsultando] = useState(false);
     const [error, setError] = useState(null);
 
-    const [productos, setProductos] = useState([]);
-    const [bodegas, setBodegas] = useState([]);
-    const [lotes, setLotes] = useState([]);
+    const {
+        productos,
+        bodegas,
+        lotes,
+        cargarProductosCache,
+        cargarBodegasCache,
+        cargarLotesCache,
+    } = useInventarioData();
+
     const [kardex, setKardex] = useState([]);
 
     const [filtros, setFiltros] = useState(initialFiltros);
 
-    const cargarBase = async () => {
+    const cargarBase = async (force = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            const [
-                productosResponse,
-                bodegasResponse,
-                lotesResponse,
-                kardexResponse,
-            ] = await Promise.allSettled([
-                inventarioApi.productos.listar(),
-                inventarioApi.bodegas.listar(),
-                inventarioApi.lotes.listar(),
+            const [kardexResponse] = await Promise.allSettled([
                 inventarioApi.kardex.listar(),
+                cargarProductosCache({ force }),
+                cargarBodegasCache({ force }),
+                cargarLotesCache({ force }),
             ]);
-
-            if (productosResponse.status === 'fulfilled') {
-                setProductos(productosResponse.value.data || []);
-            }
-
-            if (bodegasResponse.status === 'fulfilled') {
-                setBodegas(bodegasResponse.value.data || []);
-            }
-
-            if (lotesResponse.status === 'fulfilled') {
-                setLotes(lotesResponse.value.data || []);
-            }
 
             if (kardexResponse.status === 'fulfilled') {
                 setKardex(kardexResponse.value.data || []);
@@ -196,7 +186,7 @@ const KardexInventario = () => {
                 title="Kardex de Inventario"
                 description="Consulta la trazabilidad de movimientos por producto, bodega, lote, tipo y fecha."
                 actions={(
-                    <SecondaryButton onClick={cargarBase}>
+                    <SecondaryButton onClick={() => cargarBase(true)}>
                         <i className="fas fa-rotate-right"></i>
                         Actualizar
                     </SecondaryButton>

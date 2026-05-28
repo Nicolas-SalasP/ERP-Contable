@@ -10,6 +10,7 @@ use App\Domains\Inventario\Models\ReservaDetalleInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Models\StockLoteInventario;
 use App\Domains\Inventario\Models\StockProducto;
+use App\Domains\Inventario\Models\StockUbicacionInventario;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +26,10 @@ class InventarioDisponibilidadService
     public function consultar(User $usuario, array $filtros = []): LengthAwarePaginator
     {
         $this->permisos->exigir($usuario, 'inventario.disponibilidad.ver');
+
+        if (!empty($filtros['ubicacion_id'])) {
+            return $this->consultarPorUbicacion($usuario, $filtros);
+        }
 
         $query = StockProducto::query()
             ->where('empresa_id', $usuario->empresa_id)
@@ -218,6 +223,50 @@ class InventarioDisponibilidadService
     public function disponibilidadLotesProductoBodega(int $empresaId, int $productoId, int $bodegaId): array
     {
         return $this->disponibilidadLotesProducto($empresaId, $productoId, $bodegaId);
+    }
+
+
+
+    private function consultarPorUbicacion(User $usuario, array $filtros = []): LengthAwarePaginator
+    {
+        $query = StockUbicacionInventario::query()
+            ->where('empresa_id', $usuario->empresa_id)
+            ->with([
+                'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
+                'bodega:id,empresa_id,codigo,nombre,estado',
+                'ubicacion:id,empresa_id,bodega_id,codigo,nombre,tipo,activo',
+                'lote:id,empresa_id,producto_id,codigo_lote,fecha_fabricacion,fecha_vencimiento,activo,estado_operativo',
+            ])
+            ->when(!empty($filtros['producto_id']), fn (Builder $query) => $query->where('producto_id', (int) $filtros['producto_id']))
+            ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
+            ->when(!empty($filtros['ubicacion_id']), fn (Builder $query) => $query->where('ubicacion_id', (int) $filtros['ubicacion_id']))
+            ->orderBy('bodega_id')
+            ->orderBy('ubicacion_id')
+            ->orderBy('producto_id');
+
+        $paginador = $query->paginate($this->normalizarPerPage($filtros['per_page'] ?? 15));
+
+        $paginador->getCollection()->transform(function (StockUbicacionInventario $stock) {
+            return [
+                'empresa_id' => (int) $stock->empresa_id,
+                'producto_id' => (int) $stock->producto_id,
+                'bodega_id' => (int) $stock->bodega_id,
+                'ubicacion_id' => (int) $stock->ubicacion_id,
+                'lote_id' => $stock->lote_id ? (int) $stock->lote_id : null,
+                'producto' => $stock->producto,
+                'bodega' => $stock->bodega,
+                'ubicacion' => $stock->ubicacion,
+                'lote' => $stock->lote,
+                'stock_fisico' => $this->redondearCantidad((float) $stock->stock_actual),
+                'stock_reservado' => $this->redondearCantidad((float) $stock->stock_reservado),
+                'stock_bloqueado' => $this->redondearCantidad((float) $stock->stock_bloqueado),
+                'stock_cuarentena' => $this->redondearCantidad((float) $stock->stock_cuarentena),
+                'stock_en_transito' => $this->redondearCantidad((float) $stock->stock_en_transito),
+                'stock_disponible' => $this->redondearCantidad($stock->stockDisponible()),
+            ];
+        });
+
+        return $paginador;
     }
 
     private function formatearDisponibilidadStock(StockProducto $stock, int $empresaId): array

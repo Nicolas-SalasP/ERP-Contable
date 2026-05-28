@@ -1,9 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
 >
+    <!--
+        IMPORTANTE: configuracion de BD de testing
+        ============================================
+        Por defecto los tests corren contra SQLite en memoria. Esto es rapido
+        para desarrollo local (~12 segundos toda la suite).
+
+        El CI corre la suite contra SQLite Y contra MySQL para garantizar
+        compatibilidad cruzada (ver .github/workflows/ci-cd.yml).
+
+        Para correr localmente contra MySQL real (ej: validar antes de un PR):
+            DB_CONNECTION=mysql \
+            DB_HOST=127.0.0.1 \
+            DB_PORT=3306 \
+            DB_DATABASE=sistema_contable_testing \
+            DB_USERNAME=erp_test \
+            DB_PASSWORD=erp_test_pwd \
+            php artisan test
+
+        Los tests deben pasar IDENTICAMENTE en ambos engines.
+    -->
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>

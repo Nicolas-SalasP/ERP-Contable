@@ -4,14 +4,22 @@ import BarraLateral from './BarraLateral';
 const LayoutPrincipal = ({ children }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
 
+    const openSidebar = () => setSidebarOpen(true);
+    const closeSidebar = () => setSidebarOpen(false);
+    const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+
     return (
         <div className="flex h-screen bg-gray-100 overflow-hidden">
-            
-            <BarraLateral isOpen={isSidebarOpen} toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
+
+            <BarraLateral
+                isOpen={isSidebarOpen}
+                toggleSidebar={toggleSidebar}
+                closeSidebar={closeSidebar}
+            />
 
             <div className="flex-1 flex flex-col overflow-hidden">
                 <header className="lg:hidden bg-white shadow-sm p-4 flex items-center justify-between z-10">
-                    <button onClick={() => setSidebarOpen(true)} className="text-slate-600 focus:outline-none">
+                    <button onClick={openSidebar} className="text-slate-600 focus:outline-none">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </button>
                     <span className="font-bold text-slate-800">ERP Contable</span>

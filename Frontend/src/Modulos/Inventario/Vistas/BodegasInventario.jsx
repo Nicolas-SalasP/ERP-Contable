@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
+import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     EmptyState,
     ErrorNotice,
@@ -38,19 +39,23 @@ const BodegasInventario = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
-    const [bodegas, setBodegas] = useState([]);
+    const {
+        bodegas,
+        cargarBodegasCache,
+        invalidarBodegas,
+        invalidarCatalogos,
+    } = useInventarioData();
+
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
     const [form, setForm] = useState(initialForm);
     const [busqueda, setBusqueda] = useState('');
 
-    const cargarBodegas = async () => {
+    const cargarBodegasVista = async (force = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            const response = await inventarioApi.bodegas.listar();
-
-            setBodegas(response.data || []);
+            await cargarBodegasCache({ force });
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -59,7 +64,7 @@ const BodegasInventario = () => {
     };
 
     useEffect(() => {
-        cargarBodegas();
+        cargarBodegasVista();
     }, []);
 
     const bodegasFiltradas = useMemo(() => {
@@ -130,9 +135,11 @@ const BodegasInventario = () => {
                 confirmButtonColor: '#10b981',
             });
 
+            invalidarBodegas();
+            invalidarCatalogos();
             limpiarFormulario();
             setMostrarFormulario(false);
-            await cargarBodegas();
+            await cargarBodegasVista(true);
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -151,7 +158,7 @@ const BodegasInventario = () => {
                 description="Administración de ubicaciones de stock. Las bodegas activas son utilizadas por movimientos, Kardex, lotes, reservas y tomas físicas."
                 actions={(
                     <>
-                        <SecondaryButton onClick={cargarBodegas}>
+                        <SecondaryButton onClick={() => cargarBodegasVista(true)}>
                             <i className="fas fa-rotate-right"></i>
                             Actualizar
                         </SecondaryButton>

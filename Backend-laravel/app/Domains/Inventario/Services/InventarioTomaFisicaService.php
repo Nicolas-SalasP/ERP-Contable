@@ -3,7 +3,9 @@
 namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Events\TomaFisicaConfirmada;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockLoteInventario;
@@ -18,7 +20,8 @@ class InventarioTomaFisicaService
 {
     public function __construct(
         private readonly InventarioPermisoService $permisos,
-        private readonly InventarioMovimientoService $movimientoService
+        private readonly InventarioMovimientoService $movimientoService,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -303,6 +306,8 @@ class InventarioTomaFisicaService
                 ->lockForUpdate()
                 ->get();
 
+            $movimientosGenerados = 0;
+
             foreach ($detalles as $detalle) {
                 if (!$detalle->requiereMovimientoAjuste()) {
                     continue;
@@ -318,6 +323,8 @@ class InventarioTomaFisicaService
                 $detalle->update([
                     'movimiento_ajuste_id' => $movimiento->id,
                 ]);
+
+                $movimientosGenerados++;
             }
 
             $toma->update([
@@ -327,7 +334,39 @@ class InventarioTomaFisicaService
                 'observacion' => $this->normalizarTextoNullable($datos['observacion'] ?? $toma->observacion),
             ]);
 
-            return $this->cargarRelacionesToma($toma->fresh());
+            DB::afterCommit(function () use ($empresaId, $toma, $usuario, $movimientosGenerados) {
+                event(new TomaFisicaConfirmada(
+                    empresaId: $empresaId,
+                    tomaFisicaId: (int) $toma->id,
+                    usuarioId: (int) $usuario->id,
+                    movimientosGenerados: $movimientosGenerados
+                ));
+            });
+
+            $toma = $this->cargarRelacionesToma($toma->fresh());
+            $this->eventosIntegracion->publicarDesdeOperacion($usuario, InventarioEventoIntegracion::EVENTO_TOMA_FISICA_AJUSTADA, [
+                'empresa_id' => $empresaId,
+                'entidad_tipo' => TomaFisicaInventario::class,
+                'entidad_id' => (int) $toma->id,
+                'prioridad' => $movimientosGenerados > 0
+                    ? InventarioEventoIntegracion::PRIORIDAD_ALTA
+                    : InventarioEventoIntegracion::PRIORIDAD_NORMAL,
+                'payload_json' => [
+                    'codigo_toma' => $toma->codigo_toma,
+                    'estado' => $toma->estado,
+                    'tipo' => $toma->tipo,
+                    'bodega_id' => $toma->bodega_id,
+                    'movimientos_generados' => $movimientosGenerados,
+                ],
+                'metadata_json' => [
+                    'referencia' => $toma->referencia,
+                    'observacion' => $toma->observacion,
+                ],
+                'origen_modulo' => 'inventario_toma_fisica',
+                'origen_id' => (int) $toma->id,
+            ], true);
+
+            return $toma;
         });
     }
 

@@ -11,22 +11,6 @@ trait PreparaInventarioTest
 {
     protected function prepararUsuariosInventarioDemo(): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Usuarios demo para tests de Inventario
-        |--------------------------------------------------------------------------
-        |
-        | Este método ejecuta InventarioPostmanSeeder solo dentro del test.
-        |
-        | No se agrega InventarioPostmanSeeder al DatabaseSeeder global.
-        | No crea roles.
-        | No asigna permisos.
-        |
-        | Sirve para disponer de:
-        | - contador@example.com
-        | - auditor@example.com
-        |
-        */
         $this->seed(InventarioPostmanSeeder::class);
     }
 
@@ -64,18 +48,6 @@ trait PreparaInventarioTest
         string $nombreRol,
         array $permisos
     ): array {
-        /*
-        |--------------------------------------------------------------------------
-        | Simula el gestor visual de roles
-        |--------------------------------------------------------------------------
-        |
-        | En producción/demo los permisos se asignan desde GestionRoles.jsx.
-        | En tests actualizamos roles.permisos para preparar cada escenario.
-        |
-        | Esto NO significa que Inventario gestione roles.
-        | Solo prepara el contexto de prueba.
-        |
-        */
         $rol = Rol::where('nombre', $nombreRol)->firstOrFail();
 
         $rol->update([
@@ -97,40 +69,41 @@ trait PreparaInventarioTest
             'inventario.productos.ver',
             'inventario.productos.crear',
             'inventario.productos.editar',
-
             'inventario.bodegas.ver',
             'inventario.bodegas.crear',
-
             'inventario.movimientos.ver',
             'inventario.movimientos.entrada',
             'inventario.movimientos.salida',
             'inventario.movimientos.traspaso',
             'inventario.movimientos.ajuste',
-
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',
-
+            'inventario.dashboard.ver',
+            'inventario.reportes.ver',
+            'inventario.reportes.exportar',
             'inventario.ajustes_criticos.ver',
             'inventario.ajustes_criticos.crear',
-            
             'inventario.lotes.ver',
             'inventario.lotes.crear',
             'inventario.lotes.editar',
-
             'inventario.reservas.ver',
             'inventario.reservas.crear',
             'inventario.reservas.cancelar',
             'inventario.reservas.liberar',
             'inventario.reservas.consumir',
             'inventario.disponibilidad.ver',
-
             'inventario.tomas_fisicas.ver',
             'inventario.tomas_fisicas.crear',
             'inventario.tomas_fisicas.contar',
             'inventario.tomas_fisicas.cerrar',
             'inventario.tomas_fisicas.ajustar',
             'inventario.tomas_fisicas.cancelar',
-    ];
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
+            'inventario.reglas_reposicion.crear',
+            'inventario.reglas_reposicion.editar',
+            'inventario.reglas_reposicion.eliminar',
+        ];
     }
 
     protected function permisosInventarioAuditor(): array
@@ -141,11 +114,16 @@ trait PreparaInventarioTest
             'inventario.movimientos.ver',
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',
+            'inventario.dashboard.ver',
+            'inventario.reportes.ver',
+            'inventario.reportes.exportar',
             'inventario.ajustes_criticos.ver',
             'inventario.lotes.ver',
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',
             'inventario.tomas_fisicas.ver',
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
         ];
     }
 
@@ -163,13 +141,14 @@ trait PreparaInventarioTest
             'inventario.ajustes_criticos.ver',
         ];
     }
+
     protected function permisosInventarioLotesCompleto(): array
-{
-    return [
-        'inventario.lotes.ver',
-        'inventario.lotes.crear',
-        'inventario.lotes.editar',
-    ];
+    {
+        return [
+            'inventario.lotes.ver',
+            'inventario.lotes.crear',
+            'inventario.lotes.editar',
+        ];
     }
 
     protected function permisosInventarioLotesLectura(): array
@@ -177,49 +156,74 @@ trait PreparaInventarioTest
         return [
             'inventario.lotes.ver',
         ];
-}
-protected function permisosInventarioReservasCompleto(): array
-{
-    return [
-        'inventario.reservas.ver',
-        'inventario.reservas.crear',
-        'inventario.reservas.cancelar',
-        'inventario.reservas.liberar',
-        'inventario.reservas.consumir',
-        'inventario.disponibilidad.ver',
-    ];
-}
+    }
 
-protected function permisosInventarioReservasLectura(): array
-{
-    return [
-        'inventario.reservas.ver',
-        'inventario.disponibilidad.ver',
-    ];
-}
+    protected function permisosInventarioReservasCompleto(): array
+    {
+        return [
+            'inventario.reservas.ver',
+            'inventario.reservas.crear',
+            'inventario.reservas.cancelar',
+            'inventario.reservas.liberar',
+            'inventario.reservas.consumir',
+            'inventario.disponibilidad.ver',
+        ];
+    }
 
-protected function permisosInventarioDisponibilidadLectura(): array
-{
-    return [
-        'inventario.disponibilidad.ver',
-    ];
-}
-protected function permisosInventarioTomasFisicasCompleto(): array
-{
-    return [
-        'inventario.tomas_fisicas.ver',
-        'inventario.tomas_fisicas.crear',
-        'inventario.tomas_fisicas.contar',
-        'inventario.tomas_fisicas.cerrar',
-        'inventario.tomas_fisicas.ajustar',
-        'inventario.tomas_fisicas.cancelar',
-    ];
-}
+    protected function permisosInventarioReservasLectura(): array
+    {
+        return [
+            'inventario.reservas.ver',
+            'inventario.disponibilidad.ver',
+        ];
+    }
 
-protected function permisosInventarioTomasFisicasLectura(): array
-{
-    return [
-        'inventario.tomas_fisicas.ver',
-    ];
-}
+    protected function permisosInventarioDisponibilidadLectura(): array
+    {
+        return [
+            'inventario.disponibilidad.ver',
+        ];
+    }
+
+    protected function permisosInventarioTomasFisicasCompleto(): array
+    {
+        return [
+            'inventario.tomas_fisicas.ver',
+            'inventario.tomas_fisicas.crear',
+            'inventario.tomas_fisicas.contar',
+            'inventario.tomas_fisicas.cerrar',
+            'inventario.tomas_fisicas.ajustar',
+            'inventario.tomas_fisicas.cancelar',
+        ];
+    }
+
+    protected function permisosInventarioTomasFisicasLectura(): array
+    {
+        return [
+            'inventario.tomas_fisicas.ver',
+        ];
+    }
+
+    protected function permisosInventarioReposicionCompleto(): array
+    {
+        return [
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
+            'inventario.reglas_reposicion.crear',
+            'inventario.reglas_reposicion.editar',
+            'inventario.reglas_reposicion.eliminar',
+            'inventario.productos.ver',
+            'inventario.bodegas.ver',
+        ];
+    }
+
+    protected function permisosInventarioReposicionLectura(): array
+    {
+        return [
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver',
+            'inventario.productos.ver',
+            'inventario.bodegas.ver',
+        ];
+    }
 }

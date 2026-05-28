@@ -4,6 +4,7 @@ namespace App\Domains\Contabilidad\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Models\User;
 
 class AsientoContable extends Model
 {
@@ -14,8 +15,6 @@ class AsientoContable extends Model
         'codigo_unico',
         'empresa_id',
         'numero_comprobante',
-        'centro_costo_id',
-        'empleado_nombre',
         'fecha',
         'glosa',
         'tipo_asiento',
@@ -42,5 +41,10 @@ class AsientoContable extends Model
     public function detalles()
     {
         return $this->hasMany(DetalleAsiento::class, 'asiento_id');
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Domains\Activos\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Domains\Contabilidad\Models\CentroCosto;
+use App\Domains\Contabilidad\Models\PlanCuenta;
 
 class ActivoFijo extends Model
 {
@@ -23,11 +24,20 @@ class ActivoFijo extends Model
         'vida_util_meses',
         'valor_residual',
         'estado',
-        'depreciacion_acumulada'
+        'depreciacion_acumulada',
+        'cm_ajuste_acumulado',
+        'cm_depreciacion_ajuste_acumulado',
+        'ultimo_periodo_cm_mes',
+        'ultimo_periodo_cm_anio',
     ];
 
     public function centroCosto()
     {
         return $this->belongsTo(CentroCosto::class, 'centro_costo_id');
+    }
+
+    public function cuenta()
+    {
+        return $this->belongsTo(PlanCuenta::class, 'cuenta_activo_codigo', 'codigo');
     }
 }

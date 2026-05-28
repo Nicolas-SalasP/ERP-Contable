@@ -85,7 +85,7 @@ class ReporteContableService
         ];
     }
 
-    public function generarLibroDiario(int $empresaId, string $fechaInicio, string $fechaFin, int $filtro = 1)
+    public function generarLibroDiario(int $empresaId, string $fechaInicio, string $fechaFin, int $filtro = 1, ?string $search = null)
     {
         $query = AsientoContable::with(['detalles.cuenta'])
             ->where('empresa_id', $empresaId)
@@ -94,6 +94,9 @@ class ReporteContableService
             ->orderBy('id', 'asc');
 
         $query = $this->aplicarFiltroEstado($query, $filtro, 'estado');
+        if (!empty($search)) {
+            $query->where('glosa', 'LIKE', "%{$search}%");
+        }
 
         return $query->get();
     }

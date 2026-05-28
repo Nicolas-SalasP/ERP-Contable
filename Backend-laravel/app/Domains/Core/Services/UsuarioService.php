@@ -4,6 +4,7 @@ namespace App\Domains\Core\Services;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
+use App\Domains\Core\Models\EstadoSuscripcion;
 use Illuminate\Support\Facades\Hash;
 use Exception;
 
@@ -29,13 +30,17 @@ class UsuarioService
                 'rol_id' => $rolId
             ]);
         } else {
+            // Buscamos el id del estado 'Activa' en vez de hardcodear 1.
+            // Esto previene fallos si el orden de seeders cambia.
+            $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
+
             User::create([
                 'email' => $email,
                 'nombre' => 'Usuario Invitado',
                 'empresa_id' => $empresaId,
                 'rol_id' => $rolId,
                 'password' => Hash::make('12345678'),
-                'estado_suscripcion_id' => 1
+                'estado_suscripcion_id' => $estadoActiva->id
             ]);
         }
 
@@ -53,6 +58,12 @@ class UsuarioService
     public function desvincularUsuario(int $empresaId, int $usuarioId)
     {
         $usuario = User::where('empresa_id', $empresaId)->findOrFail($usuarioId);
+
+        // SEGURIDAD: revocar todos los tokens del usuario antes de eliminarlo.
+        // Sin esto, un usuario eliminado podria seguir usando su token activo
+        // hasta que expire.
+        $usuario->tokens()->delete();
+
         $usuario->delete();
 
         return true;

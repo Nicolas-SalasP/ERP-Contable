@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Producto extends Model
 {
+    use \App\Domains\Sii\Concerns\HasSiiAttributesProducto;
+
     protected $table = 'inventario_productos';
 
     protected $fillable = [

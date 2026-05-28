@@ -1,0 +1,56 @@
+# Dependencias
+node_modules/
+**/node_modules/
+vendor/
+Backend-laravel/vendor/
+
+# Builds y artefactos generados
+Frontend/dist/
+dist/
+build/
+public/build/
+public/hot/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+Backend-laravel/.env
+Backend-laravel/.env.*
+!Backend-laravel/.env.example
+Frontend/.env
+Frontend/.env.local
+Frontend/.env.development.local
+Frontend/.env.production.local
+
+# Laravel / PHPUnit
+Backend-laravel/.phpunit.result.cache
+Backend-laravel/.phpunit.cache/
+Backend-laravel/bootstrap/cache/*.php
+Backend-laravel/storage/logs/*.log
+Backend-laravel/database/database.sqlite
+
+# Logs y temporales
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Archivos comprimidos o respaldos locales
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# IDE / editor
+.idea/
+.vscode/
+
+# Metadatos locales del IDE Claude Code
+.claude/
+.rnd

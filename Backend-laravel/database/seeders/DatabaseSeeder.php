@@ -14,13 +14,15 @@ class DatabaseSeeder extends Seeder
             EstadoSuscripcionSeeder::class,
             EstadoCotizacionSeeder::class,
             CatalogoPlanMaestroSeeder::class,
+            CatalogoBancosSeeder::class,
+            InventarioCatalogosSeeder::class,
             EmpresaSeeder::class,
             CentroCostoSeeder::class,
             UserSeeder::class,
             SincronizarCuentasSeeder::class,
-            TestDataSeeder::class,
-            CatalogoBancosSeeder::class,
-            InventarioCatalogosSeeder::class,
+            FacturasYAsientosSeeder::class,
+            GastosOperacionalesSeeder::class,
+            CotizacionSeeder::class,
         ]);
     }
 }

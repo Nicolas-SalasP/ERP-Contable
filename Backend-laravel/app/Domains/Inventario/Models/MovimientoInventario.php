@@ -33,11 +33,15 @@ class MovimientoInventario extends Model
         'tipo',
         'bodega_origen_id',
         'bodega_destino_id',
+        'ubicacion_origen_id',
+        'ubicacion_destino_id',
         'cantidad',
         'stock_origen_antes',
         'stock_origen_despues',
         'stock_destino_antes',
         'stock_destino_despues',
+        'estado_stock_origen',
+        'estado_stock_destino',
         'costo_unitario',
         'costo_total',
         'referencia',
@@ -52,6 +56,8 @@ class MovimientoInventario extends Model
         'producto_id' => 'integer',
         'bodega_origen_id' => 'integer',
         'bodega_destino_id' => 'integer',
+        'ubicacion_origen_id' => 'integer',
+        'ubicacion_destino_id' => 'integer',
         'created_by' => 'integer',
 
         'cantidad' => 'decimal:4',
@@ -89,6 +95,16 @@ class MovimientoInventario extends Model
     public function lotes(): HasMany
     {
         return $this->hasMany(MovimientoLoteInventario::class, 'movimiento_inventario_id');
+    }
+
+    public function ubicacionOrigen(): BelongsTo
+    {
+        return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_origen_id');
+    }
+
+    public function ubicacionDestino(): BelongsTo
+    {
+        return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_destino_id');
     }
 
     public function consumosReserva(): HasMany

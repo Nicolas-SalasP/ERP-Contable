@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../../Configuracion/api'; 
+import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
+import EstadoCarga from '../../../Componentes/EstadoCarga';
+import BotonAccion from '../../../Componentes/BotonAccion';
+import { logger } from '../../../Configuracion/logger';
 
 const AdministradorCuentas = () => {
     const [cuentas, setCuentas] = useState([]);
@@ -8,12 +12,12 @@ const AdministradorCuentas = () => {
     const [busqueda, setBusqueda] = useState('');
     const [filtroTipo, setFiltroTipo] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('');
-    
+
     const [modalOpen, setModalOpen] = useState(false);
     const [cuentaEditando, setCuentaEditando] = useState(null);
     const [saving, setSaving] = useState(false);
-    
-    const formBase = { codigo: '', nombre: '', tipo: 'ACTIVO', imputable: 1, activo: 1 };
+
+    const formBase = { codigo: '', nombre: '', tipo: 'ACTIVO', nivel: 1, imputable: 1, activo: 1 };
     const [formEdit, setFormEdit] = useState(formBase);
 
     const cargarCuentas = async () => {
@@ -21,10 +25,10 @@ const AdministradorCuentas = () => {
         try {
             const res = await api.get('/contabilidad/plan-cuentas');
             if (res.success || Array.isArray(res.data)) {
-                setCuentas(res.data || res); 
+                setCuentas(res.data || res);
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -40,17 +44,18 @@ const AdministradorCuentas = () => {
     useEffect(() => { cargarCuentas(); }, []);
 
     const abrirCreacion = () => {
-        setCuentaEditando(null); 
+        setCuentaEditando(null);
         setFormEdit(formBase);
         setModalOpen(true);
     };
 
     const abrirEdicion = (cuenta) => {
-        setCuentaEditando(cuenta); 
+        setCuentaEditando(cuenta);
         setFormEdit({
             codigo: cuenta.codigo,
             nombre: cuenta.nombre,
             tipo: cuenta.tipo,
+            nivel: cuenta.nivel || 1,
             imputable: cuenta.imputable ? 1 : 0,
             activo: cuenta.activo !== undefined ? (cuenta.activo ? 1 : 0) : 1
         });
@@ -65,6 +70,14 @@ const AdministradorCuentas = () => {
                 text: 'El código y el nombre de la cuenta son obligatorios.',
                 customClass: { confirmButton: 'bg-amber-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-amber-600' },
                 buttonsStyling: false
+            });
+        }
+
+        if (parseInt(formEdit.nivel) === 1 && formEdit.imputable === 1) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Error de Jerarquía',
+                text: 'Las cuentas de Nivel 1 son de agrupación y no pueden ser imputables.'
             });
         }
 
@@ -88,7 +101,7 @@ const AdministradorCuentas = () => {
                     customClass: { popup: 'rounded-2xl' }
                 });
                 setModalOpen(false);
-                cargarCuentas(); 
+                cargarCuentas();
             }
         } catch (error) {
             Swal.fire({
@@ -106,11 +119,11 @@ const AdministradorCuentas = () => {
     const cuentasFiltradas = cuentas.filter(c => {
         const coincideBusqueda = c.codigo.includes(busqueda) || c.nombre.toLowerCase().includes(busqueda.toLowerCase());
         const coincideTipo = filtroTipo === '' || c.tipo === filtroTipo;
-        
+
         const isActiva = c.activo === undefined || c.activo == 1;
-        const coincideEstado = filtroEstado === '' || 
-                               (filtroEstado === 'ACTIVA' && isActiva) || 
-                               (filtroEstado === 'INACTIVA' && !isActiva);
+        const coincideEstado = filtroEstado === '' ||
+            (filtroEstado === 'ACTIVA' && isActiva) ||
+            (filtroEstado === 'INACTIVA' && !isActiva);
 
         return coincideBusqueda && coincideTipo && coincideEstado;
     });
@@ -130,10 +143,10 @@ const AdministradorCuentas = () => {
         <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans pb-10">
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Configuración: Plan de Cuentas</h2>
+                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900">Configuración: Plan de Cuentas</h2><AyudaModulo moduloId="planCuentas" size={26} /></div>
                     <p className="text-slate-500 text-sm mt-1">Administra la visibilidad, nombres y comportamiento de tus cuentas contables.</p>
                 </div>
-                <button 
+                <button
                     onClick={abrirCreacion}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                 >
@@ -147,8 +160,8 @@ const AdministradorCuentas = () => {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         className="w-full !pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm"
                         placeholder="Buscar por código o nombre..."
                         value={busqueda}
@@ -157,7 +170,7 @@ const AdministradorCuentas = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="w-full sm:w-48">
-                        <select 
+                        <select
                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm cursor-pointer"
                             value={filtroTipo}
                             onChange={(e) => setFiltroTipo(e.target.value)}
@@ -171,7 +184,7 @@ const AdministradorCuentas = () => {
                         </select>
                     </div>
                     <div className="w-full sm:w-48">
-                        <select 
+                        <select
                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm cursor-pointer"
                             value={filtroEstado}
                             onChange={(e) => setFiltroEstado(e.target.value)}
@@ -185,16 +198,16 @@ const AdministradorCuentas = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                {loading ? (
-                    <div className="p-10 text-center text-slate-400">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
-                        <p className="font-medium">Cargando plan maestro...</p>
-                    </div>
-                ) : cuentasFiltradas.length === 0 ? (
-                    <div className="p-10 text-center text-slate-400">
-                        <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        <p className="font-medium">No se encontraron cuentas contables con esos filtros.</p>
-                    </div>
+                {loading || cuentasFiltradas.length === 0 ? (
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && cuentasFiltradas.length === 0}
+                        mensajeCargando="Cargando plan maestro..."
+                        mensajeVacio="No se encontraron cuentas contables con esos filtros."
+                        iconoVacio="🔍"
+                        tamano="compacto"
+                        color="blue"
+                    />
                 ) : (
                     <>
                         <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50">
@@ -203,7 +216,7 @@ const AdministradorCuentas = () => {
                                 return (
                                     <div key={cuenta.id} className={`bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative ${!isActiva ? 'opacity-70' : ''}`}>
                                         <div className={`absolute top-0 left-0 w-1.5 h-full rounded-l-xl ${isActiva ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
-                                        
+
                                         <div className="flex justify-between items-start mb-2 pl-2">
                                             <div>
                                                 <div className="text-xs font-bold text-slate-500 font-mono mb-0.5">{cuenta.codigo}</div>
@@ -261,19 +274,19 @@ const AdministradorCuentas = () => {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center whitespace-nowrap">
-                                                    {cuenta.imputable == 1 ? 
-                                                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase" title="Recibe asientos contables">SÍ</span> : 
+                                                    {cuenta.imputable == 1 ?
+                                                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase" title="Recibe asientos contables">SÍ</span> :
                                                         <span className="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase" title="Solo agrupa saldos">NO</span>
                                                     }
                                                 </td>
                                                 <td className="px-6 py-4 text-center whitespace-nowrap">
-                                                    {isActiva ? 
-                                                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">Activa</span> : 
+                                                    {isActiva ?
+                                                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">Activa</span> :
                                                         <span className="bg-slate-200 text-slate-600 border border-slate-300 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">Inactiva</span>
                                                     }
                                                 </td>
                                                 <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                    <button 
+                                                    <button
                                                         onClick={() => abrirEdicion(cuenta)}
                                                         className="flex items-center gap-1.5 ml-auto bg-white border border-slate-200 hover:bg-blue-50 text-slate-600 hover:text-blue-700 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-xs shadow-sm"
                                                         title="Configurar Cuenta"
@@ -307,26 +320,36 @@ const AdministradorCuentas = () => {
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
-                        
+
                         <div className="p-6 space-y-5 bg-white">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Código Contable</label>
-                                    <input 
-                                        type="text" 
-                                        value={formEdit.codigo} 
-                                        onChange={e => setFormEdit({...formEdit, codigo: e.target.value.replace(/\D/g, '')})} 
-                                        disabled={!!cuentaEditando} 
+                                    <input
+                                        type="text"
+                                        value={formEdit.codigo}
+                                        onChange={e => setFormEdit({ ...formEdit, codigo: e.target.value.replace(/[^0-9.-]/g, '') })}
+                                        disabled={!!cuentaEditando}
                                         className={`w-full border rounded-lg p-3 font-mono font-bold outline-none transition-all ${cuentaEditando ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' : 'bg-white border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-slate-800'}`}
                                         placeholder="Ej: 110101"
                                     />
                                     {cuentaEditando && <span className="text-[10px] text-slate-400 mt-1 block">El código no es editable.</span>}
                                 </div>
+                                <div className="col-span-2 sm:col-span-1">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Nivel (1 al 6)</label>
+                                    <input
+                                        type="number"
+                                        min="1" max="6"
+                                        value={formEdit.nivel}
+                                        onChange={e => setFormEdit({ ...formEdit, nivel: e.target.value })}
+                                        className="w-full border border-slate-300 rounded-lg p-3 font-bold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    />
+                                </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Tipo de Cuenta</label>
-                                    <select 
-                                        value={formEdit.tipo} 
-                                        onChange={e => setFormEdit({...formEdit, tipo: e.target.value})}
+                                    <select
+                                        value={formEdit.tipo}
+                                        onChange={e => setFormEdit({ ...formEdit, tipo: e.target.value })}
                                         disabled={!!cuentaEditando}
                                         className={`w-full border rounded-lg p-3 font-bold outline-none transition-all ${cuentaEditando ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' : 'bg-white border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-slate-800 cursor-pointer'}`}
                                     >
@@ -341,11 +364,11 @@ const AdministradorCuentas = () => {
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Nombre de la Cuenta</label>
-                                <input 
-                                    type="text" 
-                                    value={formEdit.nombre} 
-                                    onChange={e => setFormEdit({...formEdit, nombre: e.target.value})}
-                                    className="w-full border border-slate-300 rounded-lg p-3 font-bold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all" 
+                                <input
+                                    type="text"
+                                    value={formEdit.nombre}
+                                    onChange={e => setFormEdit({ ...formEdit, nombre: e.target.value })}
+                                    className="w-full border border-slate-300 rounded-lg p-3 font-bold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                                     placeholder="Ej: Banco Santander, Caja, etc."
                                 />
                             </div>
@@ -356,7 +379,7 @@ const AdministradorCuentas = () => {
                                     <p className="text-xs text-slate-500 mt-0.5">Permite recibir asientos contables.</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={formEdit.imputable === 1} onChange={() => setFormEdit({...formEdit, imputable: formEdit.imputable === 1 ? 0 : 1})} />
+                                    <input type="checkbox" className="sr-only peer" disabled={parseInt(formEdit.nivel) === 1} checked={formEdit.imputable === 1} onChange={() => setFormEdit({ ...formEdit, imputable: formEdit.imputable === 1 ? 0 : 1 })} />
                                     <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
@@ -367,7 +390,7 @@ const AdministradorCuentas = () => {
                                     <p className="text-xs text-emerald-700 mt-0.5">Actívala o escóndela del sistema.</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={formEdit.activo === 1} onChange={() => setFormEdit({...formEdit, activo: formEdit.activo === 1 ? 0 : 1})} />
+                                    <input type="checkbox" className="sr-only peer" checked={formEdit.activo === 1} onChange={() => setFormEdit({ ...formEdit, activo: formEdit.activo === 1 ? 0 : 1 })} />
                                     <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
                                 </label>
                             </div>
@@ -377,16 +400,21 @@ const AdministradorCuentas = () => {
                             <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-bold transition-all text-center">
                                 Cancelar
                             </button>
-                            <button onClick={guardarCambios} disabled={saving} className="w-full sm:w-auto px-8 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
-                                {saving ? (
-                                    <><i className="fas fa-spinner fa-spin"></i> Guardando...</>
-                                ) : (
-                                    <>
-                                        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                                        {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}
-                                    </>
-                                )}
-                            </button>
+                            <BotonAccion
+                                onClick={guardarCambios}
+                                cargando={saving}
+                                color="slate"
+                                tamano="md"
+                                textoCargando="Guardando..."
+                                icono={
+                                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                }
+                                className="w-full sm:w-auto"
+                            >
+                                {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}
+                            </BotonAccion>
                         </div>
                     </div>
                 </div>

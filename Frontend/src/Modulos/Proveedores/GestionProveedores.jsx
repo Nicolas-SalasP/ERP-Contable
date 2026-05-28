@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../Configuracion/api'; 
+import AyudaModulo from '../../Componentes/AyudaModulo';
+import EstadoCarga from '../../Componentes/EstadoCarga';
+import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { formatearIdentificador, validarIdentificador } from '../../Utilidades/identificadores';
+import { logger } from '../../Configuracion/logger';
+// LISTA DE BANCOS PARA EL AUTOCOMPLETADO
+const BANCOS_CHILE = [
+    "Banco de Chile", "Banco Estado", "Banco Santander", "BCI", "Scotiabank", "Itaú",
+    "Banco Security", "Banco BICE", "Banco Falabella", "Banco Ripley", "Banco Consorcio",
+    "Banco Internacional", "Tenpo", "Mercado Pago", "Prepago Los Héroes", "Coopeuch"
+];
 
 const BankAccountsTab = ({ proveedorId }) => {
     const [accounts, setAccounts] = useState([]);
@@ -16,9 +25,9 @@ const BankAccountsTab = ({ proveedorId }) => {
         setLoading(true);
         try {
             const data = await api.get(`/cuentas-bancarias/proveedor/${proveedorId}`);
-            if (data.success) setAccounts(data.data || []); 
+            if (data.success) setAccounts(data.data || []);
         } catch (err) {
-            console.error("Error cargando cuentas", err);
+            logger.error("Error cargando cuentas", err);
         } finally {
             setLoading(false);
         }
@@ -34,7 +43,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                 buttonsStyling: false
             });
         }
-        
+
         try {
             const data = await api.post('/cuentas-bancarias', { ...newAccount, proveedorId });
             if (data.success) {
@@ -91,10 +100,16 @@ const BankAccountsTab = ({ proveedorId }) => {
                     Cuentas Registradas
                 </h3>
 
-                {loading ? (
-                    <div className="p-8 text-center text-slate-400"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500 mx-auto"></div></div>
-                ) : accounts.length === 0 ? (
-                    <div className="p-6 text-center text-slate-400 italic bg-slate-50 rounded-xl border border-slate-100">Sin cuentas asociadas</div>
+                {loading || accounts.length === 0 ? (
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && accounts.length === 0}
+                        mensajeCargando=""
+                        mensajeVacio="Sin cuentas asociadas"
+                        iconoVacio="🏦"
+                        tamano="inline"
+                        color="emerald"
+                    />
                 ) : (
                     <>
                         <div className="grid grid-cols-1 gap-3 md:hidden">
@@ -149,29 +164,38 @@ const BankAccountsTab = ({ proveedorId }) => {
             <div className="bg-slate-50 p-4 md:p-5 rounded-xl border border-slate-200 shadow-sm">
                 <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wide">Agregar Nueva Cuenta</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <input 
-                        className="border border-slate-300 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full" 
-                        placeholder="Nombre del Banco" 
-                        value={newAccount.banco} 
-                        onChange={e => setNewAccount({ ...newAccount, banco: e.target.value })} 
+
+                    {/* INPUT INTELIGENTE DE BANCOS */}
+                    <div>
+                        <input
+                            list="lista-bancos-datalist"
+                            className="border border-slate-300 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full bg-white"
+                            placeholder="Seleccione Banco..."
+                            value={newAccount.banco}
+                            onChange={e => setNewAccount({ ...newAccount, banco: e.target.value })}
+                        />
+                        <datalist id="lista-bancos-datalist">
+                            {BANCOS_CHILE.map(banco => <option key={banco} value={banco} />)}
+                        </datalist>
+                    </div>
+
+                    <input
+                        className="border border-slate-300 p-2.5 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full"
+                        placeholder="N° de Cuenta"
+                        value={newAccount.numeroCuenta}
+                        onChange={e => setNewAccount({ ...newAccount, numeroCuenta: e.target.value })}
                     />
-                    <input 
-                        className="border border-slate-300 p-2.5 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full" 
-                        placeholder="N° de Cuenta" 
-                        value={newAccount.numeroCuenta} 
-                        onChange={e => setNewAccount({ ...newAccount, numeroCuenta: e.target.value })} 
-                    />
-                    <select 
-                        className="border border-slate-300 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full bg-white" 
-                        value={newAccount.tipoCuenta} 
+                    <select
+                        className="border border-slate-300 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full bg-white"
+                        value={newAccount.tipoCuenta}
                         onChange={e => setNewAccount({ ...newAccount, tipoCuenta: e.target.value })}
                     >
                         <option value="Corriente">Cta Corriente</option>
                         <option value="Vista">Cta Vista</option>
                         <option value="Ahorro">Cta Ahorro</option>
                     </select>
-                    <button 
-                        onClick={handleAdd} 
+                    <button
+                        onClick={handleAdd}
                         className="bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 shadow-md transition-colors py-2.5 px-4 w-full flex items-center justify-center gap-2"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg> Agregar
@@ -184,10 +208,10 @@ const BankAccountsTab = ({ proveedorId }) => {
 
 const GestionProveedores = () => {
     const [proveedores, setProveedores] = useState([]);
-    const [paises, setPaises] = useState([]); 
+    const [paises, setPaises] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('info'); 
+    const [activeTab, setActiveTab] = useState('info');
     const [idError, setIdError] = useState(false);
 
     const initialFormState = {
@@ -195,7 +219,7 @@ const GestionProveedores = () => {
     };
     const [formData, setFormData] = useState(initialFormState);
     const [editingId, setEditingId] = useState(null);
-    
+
     useEffect(() => { loadData(); }, []);
 
     const loadData = async () => {
@@ -207,14 +231,14 @@ const GestionProveedores = () => {
             ]);
 
             if (provRes.success) setProveedores(provRes.data || []);
-            
+
             if (paisRes.success && paisRes.data.length > 0) {
                 setPaises(paisRes.data);
             } else {
                 setPaises([{ iso: 'CL', nombre: 'Chile', moneda_defecto: 'CLP', etiqueta_id: 'RUT' }]);
             }
         } catch (err) {
-            console.error("Error cargando datos:", err);
+            logger.error("Error cargando datos:", err);
             Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
         } finally {
             setLoading(false);
@@ -269,10 +293,10 @@ const GestionProveedores = () => {
     const handlePaisChange = (e) => {
         const newIso = e.target.value;
         const pInfo = paises.find(p => p.iso === newIso);
-        
-        setFormData(prev => ({ 
-            ...prev, 
-            paisIso: newIso, 
+
+        setFormData(prev => ({
+            ...prev,
+            paisIso: newIso,
             rut: '',
             moneda: pInfo ? pInfo.moneda_defecto : 'USD'
         }));
@@ -289,8 +313,8 @@ const GestionProveedores = () => {
                 buttonsStyling: false
             });
         }
-        
-        if(!formData.razonSocial) {
+
+        if (!formData.razonSocial) {
             return Swal.fire({
                 icon: 'warning',
                 title: 'Atención',
@@ -300,34 +324,53 @@ const GestionProveedores = () => {
             });
         }
 
-        if (editingId) {
-            return Swal.fire({
-                icon: 'info',
-                title: 'Aviso',
-                text: 'La edición está limitada en esta versión demo.',
-                customClass: { confirmButton: 'bg-blue-500 text-white font-bold py-2 px-6 rounded-lg' },
-                buttonsStyling: false
-            });
-        }
-
         try {
-            const data = await api.post('/proveedores', formData);
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Proveedor Guardado',
-                    text: `Código generado: ${data.codigo_generado}`,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-                setEditingId(data.id);
-                setFormData(prev => ({ ...prev, codigo: data.codigo_generado }));
-                const refresh = await api.get('/proveedores');
-                if(refresh.success) setProveedores(refresh.data);
-                setActiveTab('bank');
-
+            if (editingId) {
+                // LÓGICA DE EDICIÓN
+                const data = await api.put(`/proveedores/${editingId}`, formData);
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Actualizado',
+                        text: 'Proveedor actualizado correctamente.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    const refresh = await api.get('/proveedores');
+                    if (refresh.success) setProveedores(refresh.data);
+                    setModalOpen(false);
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
             } else {
-                Swal.fire('Error', data.message, 'error');
+                // LÓGICA DE CREACIÓN
+                const data = await api.post('/proveedores', formData);
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Proveedor Guardado',
+                        text: `Código generado: ${data.codigo_generado || data.data?.codigo_interno}`,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    // EXTRACCIÓN SEGURA DEL ID PARA QUE LA PESTAÑA DEL BANCO NO SE ROMPA
+                    const nuevoId = data.id || data.data?.id;
+
+                    setEditingId(nuevoId);
+                    setFormData(prev => ({ ...prev, codigo: data.codigo_generado || data.data?.codigo_interno }));
+
+                    const refresh = await api.get('/proveedores');
+                    if (refresh.success) setProveedores(refresh.data);
+
+                    if (nuevoId) {
+                        setActiveTab('bank');
+                    } else {
+                        logger.error("No se pudo obtener el ID del backend para abrir la pestaña de bancos.");
+                    }
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
             }
         } catch (err) {
             Swal.fire('Error', err.message || 'Ocurrió un error al guardar.', 'error');
@@ -338,7 +381,7 @@ const GestionProveedores = () => {
         <div className="max-w-6xl mx-auto p-4 md:p-6 font-sans text-gray-800 pb-10">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Proveedores</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-bold text-slate-900">Proveedores</h1><AyudaModulo moduloId="gestionProveedores" /></div>
                     <p className="text-slate-500 text-sm mt-1">Base de datos global de acreedores</p>
                 </div>
                 <button onClick={openCreate} className="w-full sm:w-auto bg-emerald-600 text-white px-5 py-2.5 rounded-lg shadow hover:bg-emerald-700 font-bold flex justify-center gap-2 items-center transition-transform active:scale-95">
@@ -347,16 +390,16 @@ const GestionProveedores = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                {loading ? (
-                    <div className="p-10 text-center text-slate-400">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-3"></div>
-                        <p className="font-medium">Cargando datos...</p>
-                    </div>
-                ) : proveedores.length === 0 ? (
-                    <div className="p-10 text-center text-slate-400">
-                        <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                        <p className="font-medium">No hay proveedores registrados.</p>
-                    </div>
+                {loading || proveedores.length === 0 ? (
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && proveedores.length === 0}
+                        mensajeCargando="Cargando datos..."
+                        mensajeVacio="No hay proveedores registrados."
+                        iconoVacio="🏢"
+                        tamano="compacto"
+                        color="emerald"
+                    />
                 ) : (
                     <>
                         <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50">
@@ -377,7 +420,7 @@ const GestionProveedores = () => {
                                             <span className="font-bold text-xs text-slate-400 w-6">ID:</span> {prov.rut}
                                         </div>
                                         <div className="text-sm text-slate-700 flex items-center gap-2">
-                                            <span className="font-bold text-xs text-slate-400 w-6">CTO:</span> 
+                                            <span className="font-bold text-xs text-slate-400 w-6">CTO:</span>
                                             <span className="truncate">{prov.nombre_contacto || 'Sin contacto'}</span>
                                         </div>
                                     </div>
@@ -417,7 +460,8 @@ const GestionProveedores = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                <button onClick={() => openEdit(prov)} className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 font-bold text-sm px-4 py-1.5 rounded-lg transition-colors opacity-100 md:opacity-0 group-hover:opacity-100 flex items-center gap-2 ml-auto">
+                                                {/* BOTÓN GESTIONAR SIEMPRE VISIBLE */}
+                                                <button onClick={() => openEdit(prov)} className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 font-bold text-sm px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 ml-auto shadow-sm">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                                     Gestionar
                                                 </button>
@@ -432,8 +476,9 @@ const GestionProveedores = () => {
             </div>
             {modalOpen && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-6 animate-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] animate-slide-up">
-                        
+                    {/* ALTURA MÍNIMA AÑADIDA PARA EVITAR QUE SE ENCOJA */}
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] min-h-[500px] animate-slide-up">
+
                         <div className="bg-slate-900 p-4 md:p-5 border-b border-slate-800 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                                 <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
@@ -464,12 +509,12 @@ const GestionProveedores = () => {
                                                 <span>{getEtiquetaId(formData.paisIso)} <span className="text-slate-400 font-normal normal-case ml-1">(Fiscal ID)</span></span>
                                                 {idError && <span className="text-red-500 animate-pulse font-black">FORMATO INVÁLIDO</span>}
                                             </label>
-                                            <input 
+                                            <input
                                                 className={`w-full border rounded-lg p-2.5 font-mono text-base outline-none transition-all
-                                                    ${idError ? 'border-red-500 bg-red-50 focus:ring-red-200' : 'border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100'}`} 
-                                                value={formData.rut} 
-                                                onChange={handleIdChange} 
-                                                placeholder="Ingrese número..." 
+                                                    ${idError ? 'border-red-500 bg-red-50 focus:ring-red-200' : 'border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100'}`}
+                                                value={formData.rut}
+                                                onChange={handleIdChange}
+                                                placeholder="Ingrese número..."
                                                 maxLength={20}
                                             />
                                             <p className="text-[10px] text-slate-400 mt-1 text-right">Se validará automáticamente según el país.</p>
@@ -520,14 +565,13 @@ const GestionProveedores = () => {
                                         </div>
                                     </div>
 
-                                    {!editingId && (
-                                        <div className="pt-6 flex flex-col sm:flex-row justify-end border-t border-slate-100 mt-6 gap-3">
-                                            <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-6 py-2.5 text-slate-500 hover:bg-slate-100 rounded-lg font-bold transition-colors">Cancelar</button>
-                                            <button onClick={handleSaveInfo} className="w-full sm:w-auto bg-emerald-600 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 hover:shadow-emerald-600/50 transition-all flex items-center justify-center gap-2">
-                                                <i className="fas fa-save"></i> Guardar Proveedor
-                                            </button>
-                                        </div>
-                                    )}
+                                    {/* BOTONES DE ACCIÓN LIBERADOS */}
+                                    <div className="pt-6 flex flex-col sm:flex-row justify-end border-t border-slate-100 mt-6 gap-3">
+                                        <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-6 py-2.5 text-slate-500 hover:bg-slate-100 rounded-lg font-bold transition-colors">Cancelar</button>
+                                        <button onClick={handleSaveInfo} className="w-full sm:w-auto bg-emerald-600 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 hover:shadow-emerald-600/50 transition-all flex items-center justify-center gap-2">
+                                            <i className="fas fa-save"></i> {editingId ? 'Guardar Cambios' : 'Guardar Proveedor'}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 

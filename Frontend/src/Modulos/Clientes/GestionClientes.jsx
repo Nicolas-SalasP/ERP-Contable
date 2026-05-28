@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import AyudaModulo from '../../Componentes/AyudaModulo';
+import EstadoCarga from '../../Componentes/EstadoCarga';
 import { api } from '../../Configuracion/api';
 import FormularioCliente from './Componentes/FormularioCliente';
 import HistorialCotizaciones from './Componentes/HistorialCotizaciones';
 import Swal from 'sweetalert2';
+import { logger } from '../../Configuracion/logger';
 
 const GestionClientes = () => {
     const [clientes, setClientes] = useState([]);
@@ -19,7 +22,7 @@ const GestionClientes = () => {
             const res = await api.get(`/clientes?search=${busqueda}`);
             if (res.success) setClientes(res.data || []);
         } catch (error) {
-            console.error("Error al cargar clientes", error);
+            logger.error("Error al cargar clientes", error);
             Swal.fire('Error', 'No se pudieron cargar los clientes', 'error');
         } finally {
             setLoading(false);
@@ -45,17 +48,23 @@ const GestionClientes = () => {
         setModalOpen(true);
     };
 
-    const handleBloquear = async (id, nombre) => {
+    const handleToggleEstado = async (cliente) => {
+        const isActivo = cliente.estado === 'ACTIVO';
+        
         const confirm = await Swal.fire({
-            title: '¿Bloquear Cliente?',
-            html: `¿Estás seguro de bloquear a <br/><strong class="text-slate-800 text-lg">${nombre}</strong>?<br/>No se podrán emitir nuevos documentos a su nombre.`,
-            icon: 'warning',
+            title: isActivo ? '¿Bloquear Cliente?' : '¿Activar Cliente?',
+            html: isActivo 
+                ? `¿Estás seguro de bloquear a <br/><strong class="text-slate-800 text-lg">${cliente.razon_social}</strong>?<br/>No se podrán emitir nuevos documentos a su nombre.`
+                : `¿Estás seguro de reactivar a <br/><strong class="text-slate-800 text-lg">${cliente.razon_social}</strong>?<br/>Podrá volver a operar normalmente.`,
+            icon: isActivo ? 'warning' : 'info',
             showCancelButton: true,
-            confirmButtonText: 'Sí, bloquear',
+            confirmButtonText: isActivo ? 'Sí, bloquear' : 'Sí, activar',
             cancelButtonText: 'Cancelar',
             buttonsStyling: false,
             customClass: {
-                confirmButton: 'bg-red-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-red-700 mx-2 transition-colors',
+                confirmButton: isActivo 
+                    ? 'bg-red-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-red-700 mx-2 transition-colors'
+                    : 'bg-emerald-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-emerald-700 mx-2 transition-colors',
                 cancelButton: 'bg-slate-500 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-slate-600 mx-2 transition-colors',
                 popup: 'rounded-2xl'
             }
@@ -63,18 +72,24 @@ const GestionClientes = () => {
 
         if (confirm.isConfirmed) {
             try {
-                const res = await api.delete(`/clientes/${id}`);
+                let res;
+                if (isActivo) {
+                    res = await api.delete(`/clientes/${cliente.id}`);
+                } else {
+                    res = await api.put(`/clientes/${cliente.id}/activar`);
+                }
+
                 if (res.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Cliente Bloqueado',
+                        title: isActivo ? 'Cliente Bloqueado' : 'Cliente Activado',
                         timer: 1500,
                         showConfirmButton: false
                     });
                     cargarClientes();
                 }
             } catch (error) {
-                Swal.fire('Error', error.message || 'Error al bloquear el cliente', 'error');
+                Swal.fire('Error', error.message || 'Error al cambiar el estado del cliente', 'error');
             }
         }
     };
@@ -83,7 +98,7 @@ const GestionClientes = () => {
         <div className="max-w-6xl mx-auto p-4 md:p-6 font-sans text-gray-800">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Clientes</h1>
+                    <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-bold text-slate-900">Clientes</h1><AyudaModulo moduloId="gestionClientes" /></div>
                     <p className="text-slate-500 text-sm mt-1">Base de datos centralizada de clientes activos</p>
                 </div>
                 <button onClick={openCreate} className="w-full sm:w-auto bg-emerald-600 text-white px-5 py-2.5 rounded-lg shadow hover:bg-emerald-700 font-bold flex justify-center gap-2 items-center transition-transform active:scale-95">
@@ -106,15 +121,17 @@ const GestionClientes = () => {
                 </div>
             </div>
 
-            {loading ? (
-                <div className="p-10 text-center text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-3"></div>
-                    <p className="font-medium">Cargando clientes...</p>
-                </div>
-            ) : clientes.length === 0 ? (
-                <div className="p-10 text-center text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    <p className="font-medium">No hay registros coincidentes.</p>
+            {loading || clientes.length === 0 ? (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <EstadoCarga
+                        cargando={loading}
+                        vacio={!loading && clientes.length === 0}
+                        mensajeCargando="Cargando clientes..."
+                        mensajeVacio="No hay registros coincidentes."
+                        iconoVacio="👥"
+                        tamano="compacto"
+                        color="emerald"
+                    />
                 </div>
             ) : (
                 <>
@@ -147,8 +164,16 @@ const GestionClientes = () => {
                                     <button onClick={() => openEdit(c)} className="flex-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-sm py-2 rounded-lg transition-colors border border-emerald-100">
                                         Gestionar
                                     </button>
-                                    <button onClick={() => handleBloquear(c.id, c.razon_social)} className="px-4 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg transition-colors border border-red-100 flex items-center justify-center" title="Bloquear">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                    <button 
+                                        onClick={() => handleToggleEstado(c)} 
+                                        className={`px-4 rounded-lg transition-colors border flex items-center justify-center ${c.estado === 'ACTIVO' ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 border-emerald-100'}`} 
+                                        title={c.estado === 'ACTIVO' ? 'Bloquear' : 'Activar'}
+                                    >
+                                        {c.estado === 'ACTIVO' ? (
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                        ) : (
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -191,8 +216,16 @@ const GestionClientes = () => {
                                                 <button onClick={() => openEdit(c)} className="text-emerald-700 hover:text-emerald-900 font-bold text-sm bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 px-3 py-1.5 rounded transition-colors">
                                                     Gestionar
                                                 </button>
-                                                <button onClick={() => handleBloquear(c.id, c.razon_social)} className="text-red-500 hover:text-red-700 p-1.5 bg-red-50 border border-red-100 hover:bg-red-100 rounded transition-colors" title="Bloquear Cliente">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                <button 
+                                                    onClick={() => handleToggleEstado(c)} 
+                                                    className={`p-1.5 rounded transition-colors border ${c.estado === 'ACTIVO' ? 'text-red-500 hover:text-red-700 bg-red-50 border-red-100 hover:bg-red-100' : 'text-emerald-500 hover:text-emerald-700 bg-emerald-50 border-emerald-100 hover:bg-emerald-100'}`} 
+                                                    title={c.estado === 'ACTIVO' ? 'Bloquear Cliente' : 'Activar Cliente'}
+                                                >
+                                                    {c.estado === 'ACTIVO' ? (
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                    ) : (
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                                    )}
                                                 </button>
                                             </div>
                                         </td>
