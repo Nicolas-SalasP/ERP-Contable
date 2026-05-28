@@ -226,10 +226,28 @@ XML;
         $ted1 = $this->builder->buildFirmado($dte, $caf);
         $ted2 = $this->builder->buildFirmado($dte, $caf);
 
-        // Quitamos TSTED de ambos: el resto debe ser identico (mismo DD => misma firma).
-        $sinTsted = fn (string $s) => preg_replace('#<TSTED>[^<]+</TSTED>#', '<TSTED/>', $s);
+        // TSTED varía en cada llamada (timestamp). FRMT = sign(DD_con_TSTED),
+        // por lo que FRMT también difiere. Normalizamos ambos para comparar
+        // solo la estructura y los datos fijos del DD.
+        $normalizar = fn (string $s) => preg_replace(
+            ['#<TSTED>[^<]+</TSTED>#', '#<FRMT[^>]*>[^<]+</FRMT>#'],
+            ['<TSTED/>', '<FRMT/>'],
+            $s
+        );
 
-        $this->assertSame($sinTsted($ted1), $sinTsted($ted2));
+        $this->assertSame($normalizar($ted1), $normalizar($ted2));
+
+        // Ambas firmas deben ser base64 válido y no vacío.
+        $this->assertMatchesRegularExpression(
+            '#<FRMT algoritmo="SHA1withRSA">[A-Za-z0-9+/]+=*</FRMT>#',
+            $ted1,
+            'ted1 debe tener FRMT válido'
+        );
+        $this->assertMatchesRegularExpression(
+            '#<FRMT algoritmo="SHA1withRSA">[A-Za-z0-9+/]+=*</FRMT>#',
+            $ted2,
+            'ted2 debe tener FRMT válido'
+        );
     }
 
     public function test_bloque_caf_del_dd_no_contiene_rsask(): void
