@@ -25,7 +25,7 @@ return new class extends Migration
             $table->smallInteger('dias_para_vencer');     // snapshot al envio; puede ser negativo
             $table->string('estado_envio', 20)->default('enviada'); // enviada|fallida
             $table->text('error_mensaje')->nullable();
-            $table->timestamp('enviada_at');
+            $table->timestamp('enviada_at')->nullable();
 
             $table->timestamps();
 

@@ -26,7 +26,7 @@ return new class extends Migration
 
             $table->string('estado', 20); // RESERVADO|USADO|HUERFANO|ANULADO
 
-            $table->timestamp('reservado_at');
+            $table->timestamp('reservado_at')->nullable();
             $table->timestamp('usado_at')->nullable();
             $table->timestamp('liberado_at')->nullable();
             $table->string('razon_liberacion', 200)->nullable();

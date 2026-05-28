@@ -4,15 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * F5.1 — Sesion de autenticacion con el SII por empresa y ambiente.
- *
- * Cada empresa-ambiente (cert vs prod) tiene su propia sesion porque firma
- * la semilla con su cert digital. Persistimos con TTL conservador (50 min vs
- * el ~60 min del SII) para reusar tokens activos sin re-autenticar.
- *
- * Campos sensibles: `token` debe estar en $hidden del modelo.
- */
 return new class extends Migration
 {
     public function up(): void
@@ -24,9 +15,9 @@ return new class extends Migration
             $table->string('token', 255);
             $table->string('semilla_usada', 100);
             $table->char('hash_firma_semilla', 64);
-            $table->timestamp('fecha_obtencion');
-            $table->timestamp('fecha_expiracion');
-            $table->timestamp('ultimo_uso_en')->nullable();
+            $table->dateTime('fecha_obtencion');
+            $table->dateTime('fecha_expiracion');
+            $table->dateTime('ultimo_uso_en')->nullable();
             $table->unsignedInteger('intentos_uso')->default(0);
             $table->timestamps();
 
