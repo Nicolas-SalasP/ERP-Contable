@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
+import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     AlertBox,
     EmptyState,
@@ -49,8 +50,14 @@ const TomasFisicasInventario = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
+    const {
+        bodegas,
+        cargarBodegasCache,
+        invalidarProductos,
+        invalidarLotes,
+    } = useInventarioData();
+
     const [tomas, setTomas] = useState([]);
-    const [bodegas, setBodegas] = useState([]);
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
     const [form, setForm] = useState(initialForm);
 
@@ -61,18 +68,17 @@ const TomasFisicasInventario = () => {
     const [tomaSeleccionada, setTomaSeleccionada] = useState(null);
     const [conteos, setConteos] = useState({});
 
-    const cargarDatos = async () => {
+    const cargarDatos = async (force = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            const [tomasResponse, bodegasResponse] = await Promise.all([
+            const [tomasResponse] = await Promise.all([
                 inventarioApi.tomasFisicas.listar(),
-                inventarioApi.bodegas.listar(),
+                cargarBodegasCache({ force }),
             ]);
 
             setTomas(tomasResponse.data || []);
-            setBodegas(bodegasResponse.data || []);
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -149,7 +155,7 @@ const TomasFisicasInventario = () => {
 
             limpiarFormulario();
             setMostrarFormulario(false);
-            await cargarDatos();
+            await cargarDatos(true);
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -233,7 +239,7 @@ const TomasFisicasInventario = () => {
                 confirmButtonColor: '#10b981',
             });
 
-            await cargarDatos();
+            await cargarDatos(true);
 
             if (tomaSeleccionada?.id === toma.id) {
                 await cargarDetalleToma(toma.id);
@@ -286,7 +292,7 @@ const TomasFisicasInventario = () => {
                 confirmButtonColor: '#10b981',
             });
 
-            await cargarDatos();
+            await cargarDatos(true);
             await cargarDetalleToma(tomaSeleccionada.id);
         } catch (err) {
             await Swal.fire({
@@ -354,7 +360,9 @@ const TomasFisicasInventario = () => {
                 confirmButtonColor: '#10b981',
             });
 
-            await cargarDatos();
+            invalidarProductos();
+            invalidarLotes();
+            await cargarDatos(true);
 
             if (tomaSeleccionada?.id === toma.id) {
                 await cargarDetalleToma(toma.id);
@@ -381,7 +389,7 @@ const TomasFisicasInventario = () => {
                 helpModuloId="inventario"
                 actions={(
                     <>
-                        <SecondaryButton onClick={cargarDatos}>
+                        <SecondaryButton onClick={() => cargarDatos(true)}>
                             <i className="fas fa-rotate-right"></i>
                             Actualizar
                         </SecondaryButton>

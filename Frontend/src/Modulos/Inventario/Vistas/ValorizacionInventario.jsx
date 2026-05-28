@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import inventarioApi from '../Servicios/inventarioApi';
+import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     EmptyState,
     formatCurrency,
@@ -53,39 +54,32 @@ const ValorizacionInventario = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const {
+        productos,
+        bodegas,
+        cargarProductosCache,
+        cargarBodegasCache,
+    } = useInventarioData();
+
     const [valorizacion, setValorizacion] = useState([]);
-    const [productos, setProductos] = useState([]);
-    const [bodegas, setBodegas] = useState([]);
 
     const [productoFiltro, setProductoFiltro] = useState('');
     const [bodegaFiltro, setBodegaFiltro] = useState('');
     const [busqueda, setBusqueda] = useState('');
 
-    const cargarDatos = async () => {
+    const cargarDatos = async (force = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            const [
-                valorizacionResponse,
-                productosResponse,
-                bodegasResponse,
-            ] = await Promise.allSettled([
+            const [valorizacionResponse] = await Promise.allSettled([
                 inventarioApi.valorizacion.listar(),
-                inventarioApi.productos.listar(),
-                inventarioApi.bodegas.listar(),
+                cargarProductosCache({ force }),
+                cargarBodegasCache({ force }),
             ]);
 
             if (valorizacionResponse.status === 'fulfilled') {
                 setValorizacion(valorizacionResponse.value.data || []);
-            }
-
-            if (productosResponse.status === 'fulfilled') {
-                setProductos(productosResponse.value.data || []);
-            }
-
-            if (bodegasResponse.status === 'fulfilled') {
-                setBodegas(bodegasResponse.value.data || []);
             }
         } catch (err) {
             setError(err?.response?.data || err);
@@ -140,7 +134,7 @@ const ValorizacionInventario = () => {
                 description="Consulta de stock valorizado con base en PMP/costo promedio. Útil para reportes contables, auditoría y dashboard."
                 helpModuloId="inventario"
                 actions={(
-                    <SecondaryButton onClick={cargarDatos}>
+                    <SecondaryButton onClick={() => cargarDatos(true)}>
                         <i className="fas fa-rotate-right"></i>
                         Actualizar
                     </SecondaryButton>

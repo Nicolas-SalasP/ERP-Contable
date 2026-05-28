@@ -22,6 +22,12 @@ use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
 use App\Domains\Inventario\Controllers\InventarioController;
+use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
+use App\Domains\Inventario\Controllers\InventarioDespachoController;
+use App\Domains\Inventario\Controllers\InventarioDevolucionController;
+use App\Domains\Inventario\Controllers\InventarioEventoIntegracionController;
+use App\Domains\Inventario\Controllers\InventarioPackingController;
+use App\Domains\Inventario\Controllers\InventarioPickingController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -220,7 +226,72 @@ Route::middleware('auth:sanctum')->group(function () {
     // Inventario, Bodegas y Movimientos (de dev / Slados)
     // ---------------------------------------------------------------------
     Route::prefix('inventario')->group(function () {
+        Route::get('/dashboard', [InventarioController::class, 'dashboard']);
+
+        Route::get('/auditoria', [InventarioAuditoriaController::class, 'index']);
+        Route::get('/auditoria/resumen', [InventarioAuditoriaController::class, 'resumen']);
+        Route::get('/auditoria/{id}', [InventarioAuditoriaController::class, 'show']);
+
+        Route::get('/eventos-integracion', [InventarioEventoIntegracionController::class, 'index']);
+        Route::get('/eventos-integracion/resumen', [InventarioEventoIntegracionController::class, 'resumen']);
+        Route::get('/eventos-integracion/{id}', [InventarioEventoIntegracionController::class, 'show']);
+        Route::post('/eventos-integracion/{id}/procesar', [InventarioEventoIntegracionController::class, 'procesar']);
+        Route::post('/eventos-integracion/{id}/ignorar', [InventarioEventoIntegracionController::class, 'ignorar']);
+        Route::post('/eventos-integracion/{id}/error', [InventarioEventoIntegracionController::class, 'error']);
+
+        Route::get('/reportes/stock', [InventarioController::class, 'reporteStock']);
+        Route::get('/reportes/movimientos', [InventarioController::class, 'reporteMovimientos']);
+        Route::get('/reportes/valorizacion', [InventarioController::class, 'reporteValorizacion']);
+        Route::get('/reportes/lotes', [InventarioController::class, 'reporteLotes']);
+        Route::get('/reportes/reservas', [InventarioController::class, 'reporteReservas']);
+        Route::get('/reportes/tomas-fisicas', [InventarioController::class, 'reporteTomasFisicas']);
+        Route::get('/reportes/ajustes', [InventarioController::class, 'reporteAjustes']);
+        Route::get('/reportes/reposicion-alertas', [InventarioController::class, 'reporteReposicionAlertas']);
+        Route::get('/reportes/picking', [InventarioPickingController::class, 'reporte']);
+        Route::get('/reportes/packing', [InventarioPackingController::class, 'reporte']);
+        Route::get('/reportes/despachos', [InventarioDespachoController::class, 'reporte']);
+        Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
+        Route::get('/reportes/{tipo}/exportar-csv', [InventarioController::class, 'exportarReporteCsv']);
+
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
+
+        Route::get('/ubicaciones', [InventarioController::class, 'ubicaciones']);
+        Route::post('/ubicaciones', [InventarioController::class, 'storeUbicacion']);
+        Route::get('/ubicaciones/{id}/stock', [InventarioController::class, 'stockUbicacion']);
+        Route::get('/ubicaciones/{id}', [InventarioController::class, 'showUbicacion']);
+        Route::put('/ubicaciones/{id}', [InventarioController::class, 'updateUbicacion']);
+        Route::get('/stock-ubicaciones', [InventarioController::class, 'stockUbicaciones']);
+        Route::post('/stock-ubicaciones/mover', [InventarioController::class, 'moverStockUbicacion']);
+        Route::post('/putaway/confirmar', [InventarioController::class, 'confirmarPutaway']);
+
+        Route::get('/picking', [InventarioPickingController::class, 'index']);
+        Route::post('/picking', [InventarioPickingController::class, 'store']);
+        Route::get('/picking/{id}', [InventarioPickingController::class, 'show']);
+        Route::post('/picking/{id}/asignar', [InventarioPickingController::class, 'asignar']);
+        Route::post('/picking/{id}/iniciar', [InventarioPickingController::class, 'iniciar']);
+        Route::post('/picking/{id}/confirmar', [InventarioPickingController::class, 'confirmar']);
+        Route::post('/picking/{id}/cancelar', [InventarioPickingController::class, 'cancelar']);
+
+        Route::get('/packing', [InventarioPackingController::class, 'index']);
+        Route::post('/packing', [InventarioPackingController::class, 'store']);
+        Route::get('/packing/{id}', [InventarioPackingController::class, 'show']);
+        Route::post('/packing/{id}/iniciar', [InventarioPackingController::class, 'iniciar']);
+        Route::post('/packing/{id}/confirmar', [InventarioPackingController::class, 'confirmar']);
+        Route::post('/packing/{id}/cancelar', [InventarioPackingController::class, 'cancelar']);
+
+        Route::get('/despachos', [InventarioDespachoController::class, 'index']);
+        Route::post('/despachos', [InventarioDespachoController::class, 'store']);
+        Route::get('/despachos/{id}/reversable', [InventarioDevolucionController::class, 'reversable']);
+        Route::get('/despachos/{id}', [InventarioDespachoController::class, 'show']);
+        Route::post('/despachos/{id}/iniciar', [InventarioDespachoController::class, 'iniciar']);
+        Route::post('/despachos/{id}/confirmar', [InventarioDespachoController::class, 'confirmar']);
+        Route::post('/despachos/{id}/cancelar', [InventarioDespachoController::class, 'cancelar']);
+
+        Route::get('/devoluciones', [InventarioDevolucionController::class, 'index']);
+        Route::post('/devoluciones', [InventarioDevolucionController::class, 'store']);
+        Route::get('/devoluciones/{id}', [InventarioDevolucionController::class, 'show']);
+        Route::post('/devoluciones/{id}/confirmar', [InventarioDevolucionController::class, 'confirmar']);
+        Route::post('/devoluciones/{id}/cancelar', [InventarioDevolucionController::class, 'cancelar']);
 
         Route::get('/productos', [InventarioController::class, 'index']);
         Route::post('/productos', [InventarioController::class, 'store']);
@@ -252,6 +323,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad']);
         Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto']);
+
+
+        Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion']);
+        Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion']);
+        Route::get('/reglas-reposicion/{id}', [InventarioController::class, 'showReglaReposicion']);
+        Route::put('/reglas-reposicion/{id}', [InventarioController::class, 'updateReglaReposicion']);
+        Route::delete('/reglas-reposicion/{id}', [InventarioController::class, 'destroyReglaReposicion']);
+        Route::get('/alertas', [InventarioController::class, 'alertas']);
+        Route::get('/reposicion/sugerencias', [InventarioController::class, 'sugerenciasReposicion']);
 
         Route::get('/reservas', [InventarioController::class, 'reservas']);
         Route::post('/reservas', [InventarioController::class, 'storeReserva']);

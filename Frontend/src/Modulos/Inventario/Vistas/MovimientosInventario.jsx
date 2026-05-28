@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
+import { useInventarioData } from '../Hooks/useInventarioData';
 import {
     AlertBox,
     EmptyState,
@@ -66,9 +67,17 @@ const MovimientosInventario = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
-    const [productos, setProductos] = useState([]);
-    const [bodegas, setBodegas] = useState([]);
-    const [lotes, setLotes] = useState([]);
+    const {
+        productos,
+        bodegas,
+        lotes,
+        cargarProductosCache,
+        cargarBodegasCache,
+        cargarLotesCache,
+        invalidarProductos,
+        invalidarLotes,
+    } = useInventarioData();
+
     const [movimientos, setMovimientos] = useState([]);
 
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -76,34 +85,17 @@ const MovimientosInventario = () => {
     const [filtroTipo, setFiltroTipo] = useState('');
     const [busqueda, setBusqueda] = useState('');
 
-    const cargarDatos = async () => {
+    const cargarDatos = async (force = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            const [
-                productosResponse,
-                bodegasResponse,
-                lotesResponse,
-                movimientosResponse,
-            ] = await Promise.allSettled([
-                inventarioApi.productos.listar(),
-                inventarioApi.bodegas.listar(),
-                inventarioApi.lotes.listar(),
+            const [movimientosResponse] = await Promise.allSettled([
                 inventarioApi.movimientos.listar(),
+                cargarProductosCache({ force }),
+                cargarBodegasCache({ force }),
+                cargarLotesCache({ force }),
             ]);
-
-            if (productosResponse.status === 'fulfilled') {
-                setProductos(productosResponse.value.data || []);
-            }
-
-            if (bodegasResponse.status === 'fulfilled') {
-                setBodegas(bodegasResponse.value.data || []);
-            }
-
-            if (lotesResponse.status === 'fulfilled') {
-                setLotes(lotesResponse.value.data || []);
-            }
 
             if (movimientosResponse.status === 'fulfilled') {
                 setMovimientos(movimientosResponse.value.data || []);
@@ -224,9 +216,11 @@ const MovimientosInventario = () => {
                 confirmButtonColor: '#10b981',
             });
 
+            invalidarProductos();
+            invalidarLotes();
             limpiarFormulario();
             setMostrarFormulario(false);
-            await cargarDatos();
+            await cargarDatos(true);
         } catch (err) {
             setError(err?.response?.data || err);
         } finally {
@@ -245,7 +239,7 @@ const MovimientosInventario = () => {
                 description="Registra entradas, salidas, traspasos y ajustes. Estos movimientos alimentan el Kardex, stock, PMP, lotes y valorización."
                 actions={(
                     <>
-                        <SecondaryButton onClick={cargarDatos}>
+                        <SecondaryButton onClick={() => cargarDatos(true)}>
                             <i className="fas fa-rotate-right"></i>
                             Actualizar
                         </SecondaryButton>

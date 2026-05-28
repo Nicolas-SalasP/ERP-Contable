@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -21,10 +22,17 @@ use App\Domains\Sii\Services\Xml\DteXmlBuilder;
 use App\Domains\Sii\Services\Xml\DteXsdValidator;
 use App\Domains\Sii\Services\Xml\Ted\TedBuilder;
 
+// Inventario
+use App\Domains\Inventario\Events\LoteVencidoDetectado;
+use App\Domains\Inventario\Events\StockMinimoPerforado;
+use App\Domains\Inventario\Events\TomaFisicaConfirmada;
+use App\Domains\Inventario\Listeners\RegistrarEventoInventarioListener;
+
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // CorreccionMonetaria — proveedor de índices IPC configurable
         $this->app->bind(IpcProviderInterface::class, function () {
             $proveedor = config('correccion_monetaria.ipc_provider', 'manual');
             return match ($proveedor) {
@@ -33,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
             };
         });
 
+        // SII — Bind explícito para que DteXmlBuilder reciba TedBuilder
+        // El container no auto-resuelve dependencias nullable con default null.
         $this->app->bind(DteXmlBuilder::class, function ($app) {
             return new DteXmlBuilder(
                 $app->make(DteXsdValidator::class),
@@ -44,6 +54,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Empresa::observe(EmpresaObserver::class);
+
+        // Inventario — eventos de dominio
+        Event::listen(StockMinimoPerforado::class, RegistrarEventoInventarioListener::class);
+        Event::listen(LoteVencidoDetectado::class, RegistrarEventoInventarioListener::class);
+        Event::listen(TomaFisicaConfirmada::class, RegistrarEventoInventarioListener::class);
+
+        // SII — Rate limiters por empresa (HARDENING-1 R6)
         RateLimiter::for('sii-empresa', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->empresa_id ?? $request->ip());
         });

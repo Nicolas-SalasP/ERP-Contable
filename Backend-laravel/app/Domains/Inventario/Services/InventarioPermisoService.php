@@ -3,34 +3,70 @@
 namespace App\Domains\Inventario\Services;
 
 use App\Domains\Core\Models\User;
+use App\Domains\Core\Support\ModuloPermisos;
 use Exception;
 
 class InventarioPermisoService
 {
     public function exigir(User $usuario, string $permiso): void
     {
-        if (!$usuario->relationLoaded('rol')) {
-            $usuario->load('rol');
-        }
-
-        $nombreRol = strtolower((string) ($usuario->rol->nombre ?? ''));
-
-        if ($nombreRol === 'administrador') {
+        if ($this->esAdministradorInventario($usuario)) {
             return;
         }
 
-        $permisos = $usuario->rol->permisos ?? [];
-
-        if (is_string($permisos)) {
-            $permisos = json_decode($permisos, true) ?: [];
-        }
-
-        if (!is_array($permisos)) {
-            $permisos = [];
-        }
-
-        if (!in_array($permiso, $permisos, true)) {
+        if (!in_array($permiso, $this->permisosUsuario($usuario), true)) {
             throw new Exception('No tienes permisos para ejecutar esta operación de inventario.');
         }
+    }
+
+    public function exigirAlguno(User $usuario, array $permisosRequeridos): void
+    {
+        if ($this->esAdministradorInventario($usuario)) {
+            return;
+        }
+
+        $permisosUsuario = $this->permisosUsuario($usuario);
+
+        foreach ($permisosRequeridos as $permiso) {
+            if (in_array($permiso, $permisosUsuario, true)) {
+                return;
+            }
+        }
+
+        throw new Exception('No tienes permisos para ejecutar esta operación de inventario.');
+    }
+
+    public function tiene(User $usuario, string $permiso): bool
+    {
+        if ($this->esAdministradorInventario($usuario)) {
+            return true;
+        }
+
+        return in_array($permiso, $this->permisosUsuario($usuario), true);
+    }
+
+    private function permisosUsuario(User $usuario): array
+    {
+        return ModuloPermisos::permisosUsuario($usuario);
+    }
+
+    private function esAdministradorInventario(User $usuario): bool
+    {
+        $usuario->loadMissing('rol');
+        $rol = $usuario->rol;
+
+        if (!$rol) {
+            return false;
+        }
+
+        $jerarquia = (int) ($rol->jerarquia ?? 0);
+        $nombreRol = strtolower(trim((string) ($rol->nombre ?? '')));
+
+        return $jerarquia >= 80 || in_array($nombreRol, [
+            'administrador',
+            'admin',
+            'super admin',
+            'superadmin',
+        ], true);
     }
 }

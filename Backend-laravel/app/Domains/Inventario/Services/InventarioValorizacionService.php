@@ -4,6 +4,7 @@ namespace App\Domains\Inventario\Services;
 
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockProducto;
+use App\Domains\Inventario\Services\Valorizacion\FifoValorizacionStrategy;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -11,6 +12,92 @@ use RuntimeException;
 class InventarioValorizacionService
 {
     private const DECIMALES = 4;
+
+    public function __construct(
+        private ?FifoValorizacionStrategy $fifoStrategy = null
+    ) {
+    }
+
+    public function calcularEntrada(
+        StockProducto $stock,
+        Producto $producto,
+        float $cantidad,
+        ?float $costoUnitario = null,
+        ?int $loteId = null,
+        ?string $fechaMovimiento = null
+    ): array {
+        if ($this->usaFifo($producto)) {
+            return $this->fifoStrategy()->calcularEntrada(
+                stock: $stock,
+                producto: $producto,
+                cantidad: $cantidad,
+                costoUnitario: $costoUnitario,
+                loteId: $loteId,
+                fechaMovimiento: $fechaMovimiento
+            );
+        }
+
+        $resultado = $this->calcularEntradaPmp($stock, $producto, $cantidad, $costoUnitario);
+        $resultado['metodo_valorizacion'] = 'PMP';
+
+        return $resultado;
+    }
+
+    public function calcularSalida(
+        StockProducto $stock,
+        Producto $producto,
+        float $cantidad,
+        ?int $loteId = null
+    ): array {
+        if ($this->usaFifo($producto)) {
+            return $this->fifoStrategy()->calcularSalida(
+                stock: $stock,
+                producto: $producto,
+                cantidad: $cantidad,
+                loteId: $loteId
+            );
+        }
+
+        $resultado = $this->calcularSalidaPmp($stock, $producto, $cantidad);
+        $resultado['metodo_valorizacion'] = 'PMP';
+
+        return $resultado;
+    }
+
+    public function calcularTraspaso(
+        StockProducto $stockOrigen,
+        StockProducto $stockDestino,
+        Producto $producto,
+        float $cantidad,
+        ?int $loteId = null,
+        ?string $fechaMovimiento = null
+    ): array {
+        if ($this->usaFifo($producto)) {
+            return $this->fifoStrategy()->calcularTraspaso(
+                stockOrigen: $stockOrigen,
+                stockDestino: $stockDestino,
+                producto: $producto,
+                cantidad: $cantidad,
+                loteId: $loteId,
+                fechaMovimiento: $fechaMovimiento
+            );
+        }
+
+        $resultado = $this->calcularTraspasoPmp($stockOrigen, $stockDestino, $producto, $cantidad);
+        $resultado['metodo_valorizacion'] = 'PMP';
+
+        return $resultado;
+    }
+
+    private function usaFifo(Producto $producto): bool
+    {
+        return strtoupper((string) $producto->metodo_valorizacion) === 'FIFO';
+    }
+
+    private function fifoStrategy(): FifoValorizacionStrategy
+    {
+        return $this->fifoStrategy ??= app(FifoValorizacionStrategy::class);
+    }
 
     /**
      * Calcula entrada valorizada con PMP.
