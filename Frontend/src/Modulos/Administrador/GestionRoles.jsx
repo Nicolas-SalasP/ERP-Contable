@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 const GestionRoles = () => {
     const [roles, setRoles] = useState([]);
     const [rolSeleccionado, setRolSeleccionado] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [_loading, setLoading] = useState(true);
 
     // Definición maestra de permisos del sistema
  const listaPermisos = [

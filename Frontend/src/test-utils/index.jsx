@@ -58,7 +58,7 @@ export const cleanTestEnv = () => {
 
 export const mockSwal = (overrides = {}) => {
     return {
-        fire: vi.fn(async (config) => ({
+        fire: vi.fn(async () => ({
             isConfirmed: true,
             isDenied: false,
             isDismissed: false,

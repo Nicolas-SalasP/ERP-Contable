@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { api, API_BASE_URL } from '../../Configuracion/api';
-import { logger } from '../../Configuracion/logger';
 import { validarIdentificador } from '../../Utilidades/identificadores';
 import Swal from 'sweetalert2';
 import ModalBancoEdicion from './Componentes/ModalBancoEdicion';
@@ -18,8 +17,8 @@ const PerfilEmpresa = () => {
     // --- HOOK: capa de datos del perfil ---
     const {
         formData, setFormData,
-        bancos, setBancos,
-        centros, setCentros,
+        bancos, setBancos: _setBancos,
+        centros, setCentros: _setCentros,
         listaBancos,
         loading,
         recargar: cargarPerfil,
