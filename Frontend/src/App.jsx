@@ -53,6 +53,7 @@ import ConfiguracionSii from './Modulos/Sii/Vistas/ConfiguracionSii';
 import CertificadoSii from './Modulos/Sii/Vistas/CertificadoSii';
 import FoliosCaf from './Modulos/Sii/Vistas/FoliosCaf';
 import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
+import Glosario from './Modulos/Glosario/Glosario';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -509,6 +510,13 @@ function App() {
               <RutaProtegida permiso="sii.dte.ver">
                 <LayoutPrincipal><FacturasSii /></LayoutPrincipal>
               </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+
+          <Route path="/glosario" element={
+            <RutaPrivada>
+              <LayoutPrincipal><Glosario /></LayoutPrincipal>
             </RutaPrivada>
           } />
 

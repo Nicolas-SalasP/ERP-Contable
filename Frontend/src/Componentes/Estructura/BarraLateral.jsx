@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../Contextos/AuthContext';
 import { usePermisos } from '../../Contextos/Permisos';
@@ -311,13 +311,14 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
         return false;
     };
 
-    useEffect(() => {
+    const activeGroupId = useMemo(() => {
         const activeGroup = menuGroups.find((group) => group.subItems && isGroupActive(group));
-
-        if (activeGroup) {
-            setOpenMenu(activeGroup.id);
-        }
+        return activeGroup?.id || '';
     }, [location.pathname]);
+
+    useEffect(() => {
+        setOpenMenu(activeGroupId);
+    }, [activeGroupId]);
 
     const toggleMenu = (id, hasSubItems) => {
         if (!hasSubItems) {
@@ -353,7 +354,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                         .filter(canShowGroup)
                         .map((group) => {
                             const active = isGroupActive(group);
-                            const open = openMenu === group.id || active;
+                            const open = openMenu === group.id;
                             const subItemsVisibles = visibleSubItems(group);
 
                             return (
@@ -362,6 +363,8 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                                     {group.subItems ? (
                                         <button
                                             type="button"
+                                            aria-expanded={open}
+                                            aria-controls={`menu-${group.id}`}
                                             onClick={() => toggleMenu(group.id, true)}
                                             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all duration-200 ${active
                                                     ? 'bg-emerald-500/10 text-emerald-400 font-bold border-emerald-500/20'
@@ -394,7 +397,10 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
 
                                     {/* SUBMENÚ DESPLEGABLE */}
                                     {group.subItems && (
-                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[1200px] opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
+                                        <div
+                                            id={`menu-${group.id}`}
+                                            className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[1200px] opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}
+                                        >
                                             <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
                                              {subItemsVisibles
                                                 .map((subItem) => (
