@@ -121,9 +121,6 @@ class ImpuestosService
             ->where('empresa_id', $empresaId)
             ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin]);
 
-        if ($esFlujoCaja) {
-        }
-
         $totalIngresos = (float) $queryVentas->sum('monto_neto');
 
         $queryCompras = DB::table('facturas')
@@ -141,7 +138,18 @@ class ImpuestosService
             ->where('detalles_asiento.tipo_operacion', 'DEBE')
             ->sum('detalles_asiento.debe');
 
-        $baseImponible = max(0, ($totalIngresos - $totalCostosGastos - $totalDepreciacion));
+        $resultadoCM = $this->calcularResultadoCMAnio($empresaId, $anio_comercial);
+        $ingresoCM = $resultadoCM['ingreso_neto'];
+        $gastoCM = $resultadoCM['gasto_neto'];
+
+        $baseImponible = max(0, (
+            $totalIngresos
+            - $totalCostosGastos
+            - $totalDepreciacion
+            + $ingresoCM
+            - $gastoCM
+        ));
+
         $impuestoRenta = round($baseImponible * ($tasaImpuesto / 100));
 
         $ppmAcumulado = (float) DB::table('asientos_contables')
@@ -160,11 +168,88 @@ class ImpuestosService
             'anio_tributario' => $anio_comercial + 1,
             'regimen_tributario' => $regimen,
             'regla_calculo' => $esFlujoCaja ? 'FLUJO_DE_CAJA' : 'DEVENGADO',
-            'ingresos' => ['ventas_netas' => $totalIngresos, 'otros_ingresos' => 0],
-            'gastos' => ['costos_directos' => $totalCostosGastos, 'depreciacion' => $totalDepreciacion, 'remuneraciones' => 0],
-            'resultado' => ['base_imponible' => $baseImponible, 'tasa_impuesto' => $tasaImpuesto, 'impuesto_renta' => $impuestoRenta],
-            'creditos' => ['ppm_acumulado' => $ppmAcumulado],
-            'liquidacion' => ['saldo_final' => abs($saldoFinal), 'tipo_saldo' => $saldoFinal > 0 ? 'A_PAGAR' : 'DEVOLUCION']
+            'ingresos' => [
+                'ventas_netas' => $totalIngresos,
+                'otros_ingresos' => 0,
+            ],
+            'gastos' => [
+                'costos_directos' => $totalCostosGastos,
+                'depreciacion' => $totalDepreciacion,
+                'remuneraciones' => 0,
+            ],
+            'correccion_monetaria' => [
+                'aplica' => $resultadoCM['aplica'],
+                'ejecutada' => $resultadoCM['ejecutada'],
+                'periodos' => $resultadoCM['periodos'],
+                'ingreso_cm' => $ingresoCM,
+                'gasto_cm' => $gastoCM,
+                'resultado_neto' => $ingresoCM - $gastoCM,
+            ],
+            'resultado' => [
+                'base_imponible' => $baseImponible,
+                'tasa_impuesto' => $tasaImpuesto,
+                'impuesto_renta' => $impuestoRenta,
+            ],
+            'creditos' => [
+                'ppm_acumulado' => $ppmAcumulado,
+            ],
+            'liquidacion' => [
+                'saldo_final' => abs($saldoFinal),
+                'tipo_saldo' => $saldoFinal > 0 ? 'A_PAGAR' : 'DEVOLUCION',
+            ],
+        ];
+    }
+
+    private function calcularResultadoCMAnio(int $empresaId, int $anio): array
+    {
+        $cuentasIngresoCM = ['811001', '811002'];
+        $cuentasGastoCM = ['821001', '821002', '821003'];
+
+        $ejecucionesAnio = DB::table('cm_ejecuciones')
+            ->where('empresa_id', $empresaId)
+            ->where('periodo_anio', $anio)
+            ->where('estado', 'ejecutada')
+            ->count();
+
+        if ($ejecucionesAnio === 0) {
+            return [
+                'aplica' => DB::table('cm_configuracion_empresa')
+                    ->where('empresa_id', $empresaId)
+                    ->value('aplica_cm') ?? true,
+                'ejecutada' => false,
+                'periodos' => 0,
+                'ingreso_neto' => 0.0,
+                'gasto_neto' => 0.0,
+            ];
+        }
+
+        $fechaInicio = "$anio-01-01";
+        $fechaFin = "$anio-12-31";
+
+        $ingresoCM = (float) DB::table('asientos_contables')
+            ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
+            ->where('asientos_contables.empresa_id', $empresaId)
+            ->where('asientos_contables.origen_modulo', 'correccion_monetaria')
+            ->whereBetween('asientos_contables.fecha', [$fechaInicio, $fechaFin])
+            ->where('asientos_contables.estado', 'MAYORIZADO')
+            ->whereIn('detalles_asiento.cuenta_contable', $cuentasIngresoCM)
+            ->sum('detalles_asiento.haber');
+
+        $gastoCM = (float) DB::table('asientos_contables')
+            ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
+            ->where('asientos_contables.empresa_id', $empresaId)
+            ->where('asientos_contables.origen_modulo', 'correccion_monetaria')
+            ->whereBetween('asientos_contables.fecha', [$fechaInicio, $fechaFin])
+            ->where('asientos_contables.estado', 'MAYORIZADO')
+            ->whereIn('detalles_asiento.cuenta_contable', $cuentasGastoCM)
+            ->sum('detalles_asiento.debe');
+
+        return [
+            'aplica' => true,
+            'ejecutada' => true,
+            'periodos' => $ejecucionesAnio,
+            'ingreso_neto' => $ingresoCM,
+            'gasto_neto' => $gastoCM,
         ];
     }
 

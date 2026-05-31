@@ -80,9 +80,10 @@ export const validarIdentificador = (numero, paisIso) => {
         case 'US': return numero.replace(/\D/g, '').length === 9;
         case 'DK': return numero.replace(/\D/g, '').length === 8;
         case 'BR': return numero.replace(/\D/g, '').length === 14;
-        case 'MX':
+        case 'MX': {
             const mxLen = numero.replace(/[^0-9A-Z]/gi, '').length;
             return mxLen >= 12 && mxLen <= 13;
+        }
         default: return true;
     }
 };
@@ -94,11 +95,12 @@ export const formatearIdentificador = (numero, paisIso) => {
     if (!limpio) return '';
 
     switch (paisIso) {
-        case 'CL':
+        case 'CL': {
             if (limpio.length <= 1) return limpio;
             const cuerpo = limpio.slice(0, -1);
             const dv = limpio.slice(-1);
             return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}-${dv}`;
+        }
 
         case 'US':
             if (limpio.length > 2) return `${limpio.slice(0, 2)}-${limpio.slice(2, 9)}`;

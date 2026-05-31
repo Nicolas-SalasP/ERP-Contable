@@ -59,15 +59,23 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('erp_token');
-        localStorage.removeItem('erp_user');
-        localStorage.removeItem('erp_token_issued_at');
-        sessionStorage.removeItem('erp_token');
-        sessionStorage.removeItem('erp_user');
-        sessionStorage.removeItem('erp_token_issued_at');
+    const logout = async () => {
+        try {
+            await api.auth.logout({ redirect: false });
+        } finally {
+            localStorage.removeItem('erp_token');
+            localStorage.removeItem('erp_user');
+            localStorage.removeItem('erp_token_issued_at');
+            sessionStorage.removeItem('erp_token');
+            sessionStorage.removeItem('erp_user');
+            sessionStorage.removeItem('erp_token_issued_at');
 
-        setUser(null);
+            setUser(null);
+
+            if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+            }
+        }
     };
 
     return (

@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->string('reset_token', 10)->nullable();
             $table->dateTime('reset_expires_at')->nullable();
             $table->foreignId('rol_id')->constrained('roles');
-            $table->foreignId('estado_suscripcion_id')->default(2)->constrained('estados_suscripcion');
+            $table->foreignId('estado_suscripcion_id')->nullable()->constrained('estados_suscripcion');
             $table->date('fecha_fin_suscripcion')->nullable();
             
             $table->dropColumn('email_verified_at');

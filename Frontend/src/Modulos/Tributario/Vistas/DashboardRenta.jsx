@@ -26,21 +26,26 @@ const DashboardRenta = () => {
                 const data = res.data;
                 const vNetas = Number(data.ingresos.ventas_netas) || 0;
                 const oIngresos = Number(data.ingresos.otros_ingresos) || 0;
-                
+
                 const cDirectos = Number(data.gastos.costos_directos) || 0;
                 const dep = Number(data.gastos.depreciacion) || 0;
                 const rem = Number(data.gastos.remuneraciones) || 0;
-                
+
+                const cm = data.correccion_monetaria || {};
+                const ingresoCM = Number(cm.ingreso_cm) || 0;
+                const gastoCM = Number(cm.gasto_cm) || 0;
+                const resultadoCM = ingresoCM - gastoCM;
+
                 const bImponible = Number(data.resultado.base_imponible) || 0;
                 const iRenta = Number(data.resultado.impuesto_renta) || 0;
 
                 const adaptedData = {
                     ...data,
                     resumen: {
-                        total_ingresos: vNetas + oIngresos,
-                        total_egresos: cDirectos + dep + rem,
+                        total_ingresos: vNetas + oIngresos + Math.max(0, resultadoCM),
+                        total_egresos: cDirectos + dep + rem + Math.max(0, -resultadoCM),
                         base_imponible: bImponible,
-                        impuesto_determinado: iRenta
+                        impuesto_determinado: iRenta,
                     },
                     desglose: {
                         ingresos_giro: vNetas,
@@ -50,11 +55,19 @@ const DashboardRenta = () => {
                         remuneraciones_pagadas: rem,
                         honorarios_pagados: 0,
                         arriendos_pagados: 0,
-                        gastos_generales: 0
+                        gastos_generales: 0,
+                    },
+                    correccion_monetaria: {
+                        aplica: cm.aplica ?? true,
+                        ejecutada: cm.ejecutada ?? false,
+                        periodos: cm.periodos ?? 0,
+                        ingreso_cm: ingresoCM,
+                        gasto_cm: gastoCM,
+                        resultado_neto: resultadoCM,
                     },
                     regimen_tributario: data.regimen_tributario || '14_A',
                     regla_calculo: data.regla_calculo || 'DEVENGADO',
-                    tasa_impuesto: data.resultado.tasa_impuesto
+                    tasa_impuesto: data.resultado.tasa_impuesto,
                 };
                 setDatosRenta(adaptedData);
             } else {
@@ -184,7 +197,7 @@ const DashboardRenta = () => {
         );
     }
 
-    const { resumen, desglose, tasa_impuesto } = datosRenta;
+    const { resumen, desglose, tasa_impuesto, correccion_monetaria: cm } = datosRenta;
 
     return (
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto bg-slate-50 min-h-screen animate-fade-in">
@@ -322,6 +335,69 @@ const DashboardRenta = () => {
                     </div>
                 </div>
             </div>
+
+            {cm && (
+                <div className={`mt-6 rounded-2xl border shadow-sm overflow-hidden ${cm.ejecutada
+                        ? 'bg-white border-violet-200'
+                        : 'bg-amber-50 border-amber-200'
+                    }`}>
+                    <div className={`px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center gap-3 ${cm.ejecutada ? 'bg-violet-50 border-violet-100' : 'bg-amber-100 border-amber-200'
+                        }`}>
+                        <div className="flex items-center gap-2">
+                            <i className={`fas fa-balance-scale text-sm ${cm.ejecutada ? 'text-violet-600' : 'text-amber-600'}`}></i>
+                            <h3 className={`font-bold ${cm.ejecutada ? 'text-violet-800' : 'text-amber-800'}`}>
+                                Corrección Monetaria Art. 41 LIR
+                            </h3>
+                            {cm.ejecutada && (
+                                <span className="text-[10px] bg-violet-100 text-violet-700 border border-violet-200 px-2 py-0.5 rounded font-black uppercase">
+                                    {cm.periodos} {cm.periodos === 1 ? 'período' : 'períodos'} ejecutados
+                                </span>
+                            )}
+                        </div>
+                        {cm.ejecutada ? (
+                            <span className={`sm:ml-auto font-black text-lg ${cm.resultado_neto >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                {cm.resultado_neto >= 0 ? '+' : ''}{formatCurrency(cm.resultado_neto)}
+                            </span>
+                        ) : (
+                            <span className="sm:ml-auto text-xs text-amber-700 font-bold">
+                                Sin CM ejecutada para {datosRenta.anio_comercial}. Base imponible no incluye ajuste por inflación.
+                            </span>
+                        )}
+                    </div>
+
+                    {cm.ejecutada && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                            <div className="px-5 py-4">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                    <i className="fas fa-arrow-up text-emerald-500 mr-1"></i>Ingresos CM
+                                </p>
+                                <p className="text-xl font-black text-emerald-700">{formatCurrency(cm.ingreso_cm)}</p>
+                                <p className="text-xs text-slate-400 mt-0.5">Revalorización activos + existencias</p>
+                            </div>
+                            <div className="px-5 py-4">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                    <i className="fas fa-arrow-down text-rose-500 mr-1"></i>Gastos CM
+                                </p>
+                                <p className="text-xl font-black text-rose-600">{formatCurrency(cm.gasto_cm)}</p>
+                                <p className="text-xs text-slate-400 mt-0.5">Revalorización depreciac. + patrimonio</p>
+                            </div>
+                            <div className="px-5 py-4 bg-violet-50/40">
+                                <p className="text-[10px] font-black text-violet-500 uppercase tracking-widest mb-1">
+                                    <i className="fas fa-equals mr-1"></i>Resultado Neto CM
+                                </p>
+                                <p className={`text-xl font-black ${cm.resultado_neto >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                    {cm.resultado_neto >= 0 ? '+' : ''}{formatCurrency(cm.resultado_neto)}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                    {cm.resultado_neto >= 0
+                                        ? 'Aumenta la base imponible'
+                                        : 'Reduce la base imponible'}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {mostrarMapeo && (
                 <ModalMapeoSII onClose={() => { setMostrarMapeo(false); cargarPreRenta(); }} />

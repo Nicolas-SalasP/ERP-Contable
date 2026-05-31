@@ -8,6 +8,8 @@ use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 
 class Factura extends Model
 {
+    use \App\Domains\Sii\Concerns\HasSiiAttributesFactura;
+
     protected $table = 'facturas';
     const UPDATED_AT = null;
 

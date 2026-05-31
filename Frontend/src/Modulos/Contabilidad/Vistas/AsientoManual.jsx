@@ -100,7 +100,7 @@ const AsientoManual = () => {
 
     const totalDebe = filas.reduce((sum, fila) => sum + fila.debe, 0);
     const totalHaber = filas.reduce((sum, fila) => sum + fila.haber, 0);
-    const diferencia = Math.abs(totalDebe - totalHaber);
+    const _diferencia = Math.abs(totalDebe - totalHaber);
     const estaCuadrado = totalDebe === totalHaber && totalDebe > 0 && filas.length >= 2;
 
     const guardarAsiento = async () => {

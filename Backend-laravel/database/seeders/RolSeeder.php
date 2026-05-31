@@ -18,6 +18,7 @@ class RolSeeder extends Seeder
                     $this->permisosOperativosCompletos(),
                     $this->permisosAdministracion(),
                     $this->permisosInventarioCompletos(),
+                    $this->permisosSiiAdministracion(),
                 ))),
             ],
             [
@@ -27,6 +28,7 @@ class RolSeeder extends Seeder
                 'permisos' => array_values(array_unique(array_merge(
                     $this->permisosOperativosCompletos(),
                     $this->permisosInventarioCompletos(),
+                    $this->permisosSiiAdministracion(),
                 ))),
             ],
             [
@@ -41,6 +43,7 @@ class RolSeeder extends Seeder
                         'activos.ver',
                     ],
                     $this->permisosInventarioCompletos(),
+                    $this->permisosSiiOperacion(),
                 ))),
             ],
             [
@@ -54,6 +57,7 @@ class RolSeeder extends Seeder
                         'usuarios.ver',
                     ],
                     $this->permisosInventarioSoloLectura(),
+                    $this->permisosSiiSoloLectura(),
                 ))),
             ],
         ];
@@ -84,6 +88,51 @@ class RolSeeder extends Seeder
         ];
     }
 
+
+
+    private function permisosSiiAdministracion(): array
+    {
+        return [
+            'sii.configuracion.ver',
+            'sii.configuracion.editar',
+            'sii.certificado.ver',
+            'sii.certificado.subir',
+            'sii.certificado.revocar',
+            'sii.caf.ver',
+            'sii.caf.subir',
+            'sii.caf.revocar',
+            'sii.dte.ver',
+            'sii.dte.emitir',
+            'sii.dte.reintentar',
+            'sii.dte.anular',
+            'sii.auditoria.ver',
+        ];
+    }
+
+    private function permisosSiiOperacion(): array
+    {
+        return [
+            'sii.configuracion.ver',
+            'sii.certificado.ver',
+            'sii.caf.ver',
+            'sii.dte.ver',
+            'sii.dte.emitir',
+            'sii.dte.reintentar',
+            'sii.auditoria.ver',
+        ];
+    }
+
+    private function permisosSiiSoloLectura(): array
+    {
+        return [
+            'sii.configuracion.ver',
+            'sii.certificado.ver',
+            'sii.caf.ver',
+            'sii.dte.ver',
+            'sii.auditoria.ver',
+        ];
+    }
+
     private function permisosInventarioCompletos(): array
     {
         return [
@@ -102,7 +151,29 @@ class RolSeeder extends Seeder
             'inventario.movimientos.ajuste',
             'inventario.kardex.ver',
 
-            // Ubicaciones, stock por ubicación, picking, packing, despachos y devoluciones
+            // PMP y valorizacion
+            'inventario.valorizacion.ver',
+
+            // Mermas y ajustes criticos
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+
+            // Lotes y trazabilidad
+            'inventario.lotes.ver',
+            'inventario.lotes.crear',
+            'inventario.lotes.editar',
+
+            // Reservas y disponibilidad
+            'inventario.reservas.ver',
+            'inventario.reservas.crear',
+            'inventario.reservas.cancelar',
+            'inventario.reservas.liberar',
+            'inventario.reservas.consumir',
+            'inventario.disponibilidad.ver',
+
+            // Toma fisica
+            'inventario.tomas_fisicas.ver',
+            // Operaciones logísticas: picking, packing, despachos y devoluciones
             'inventario.ubicaciones.ver',
             'inventario.ubicaciones.crear',
             'inventario.ubicaciones.editar',
@@ -126,58 +197,11 @@ class RolSeeder extends Seeder
             'inventario.despachos.cancelar',
             'inventario.devoluciones.ver',
             'inventario.devoluciones.crear',
+            'inventario.devoluciones.editar',
             'inventario.devoluciones.confirmar',
             'inventario.devoluciones.cancelar',
-            'inventario.reportes.picking',
-            'inventario.reportes.packing',
-            'inventario.reportes.despachos',
-            'inventario.reportes.devoluciones',
-
-            // Auditoría y seguridad operativa Fase 17
             'inventario.auditoria.ver',
-            'inventario.auditoria.detalle',
-            'inventario.auditoria.resumen',
-            'inventario.seguridad.ver',
             'inventario.eventos_integracion.ver',
-            'inventario.eventos_integracion.detalle',
-            'inventario.eventos_integracion.resumen',
-            'inventario.eventos_integracion.procesar',
-            'inventario.eventos_integracion.gestionar',
-
-            // PMP y valorizacion
-            'inventario.valorizacion.ver',
-
-            // Dashboard y reportes gerenciales
-            'inventario.dashboard.ver',
-            'inventario.reportes.ver',
-            'inventario.reportes.exportar',
-
-            // Mermas y ajustes criticos
-            'inventario.ajustes_criticos.ver',
-            'inventario.ajustes_criticos.crear',
-
-            // Lotes y trazabilidad
-            'inventario.lotes.ver',
-            'inventario.lotes.crear',
-            'inventario.lotes.editar',
-
-            // Alertas y reglas de reposicion
-            'inventario.alertas.ver',
-            'inventario.reglas_reposicion.ver',
-            'inventario.reglas_reposicion.crear',
-            'inventario.reglas_reposicion.editar',
-            'inventario.reglas_reposicion.eliminar',
-
-            // Reservas y disponibilidad
-            'inventario.reservas.ver',
-            'inventario.reservas.crear',
-            'inventario.reservas.cancelar',
-            'inventario.reservas.liberar',
-            'inventario.reservas.consumir',
-            'inventario.disponibilidad.ver',
-
-            // Toma fisica
-            'inventario.tomas_fisicas.ver',
             'inventario.tomas_fisicas.crear',
             'inventario.tomas_fisicas.contar',
             'inventario.tomas_fisicas.cerrar',
@@ -191,35 +215,43 @@ class RolSeeder extends Seeder
         return [
             'inventario.productos.ver',
             'inventario.bodegas.ver',
-            'inventario.ubicaciones.ver',
-            'inventario.stock_ubicaciones.ver',
-            'inventario.picking.ver',
-            'inventario.packing.ver',
-            'inventario.despachos.ver',
-            'inventario.devoluciones.ver',
             'inventario.movimientos.ver',
             'inventario.kardex.ver',
             'inventario.valorizacion.ver',
-            'inventario.dashboard.ver',
-            'inventario.reportes.ver',
-            'inventario.reportes.exportar',
             'inventario.ajustes_criticos.ver',
-            'inventario.alertas.ver',
-            'inventario.reglas_reposicion.ver',
             'inventario.lotes.ver',
             'inventario.reservas.ver',
             'inventario.disponibilidad.ver',
             'inventario.tomas_fisicas.ver',
-            'inventario.reportes.picking',
-            'inventario.reportes.packing',
-            'inventario.reportes.despachos',
-            'inventario.reportes.devoluciones',
+            // Operaciones logísticas: picking, packing, despachos y devoluciones
+            'inventario.ubicaciones.ver',
+            'inventario.ubicaciones.crear',
+            'inventario.ubicaciones.editar',
+            'inventario.stock_ubicaciones.ver',
+            'inventario.stock_ubicaciones.mover',
+            'inventario.putaway.ejecutar',
+            'inventario.picking.ver',
+            'inventario.picking.crear',
+            'inventario.picking.editar',
+            'inventario.picking.confirmar',
+            'inventario.picking.cancelar',
+            'inventario.packing.ver',
+            'inventario.packing.crear',
+            'inventario.packing.editar',
+            'inventario.packing.confirmar',
+            'inventario.packing.cancelar',
+            'inventario.despachos.ver',
+            'inventario.despachos.crear',
+            'inventario.despachos.editar',
+            'inventario.despachos.confirmar',
+            'inventario.despachos.cancelar',
+            'inventario.devoluciones.ver',
+            'inventario.devoluciones.crear',
+            'inventario.devoluciones.editar',
+            'inventario.devoluciones.confirmar',
+            'inventario.devoluciones.cancelar',
             'inventario.auditoria.ver',
-            'inventario.auditoria.detalle',
-            'inventario.auditoria.resumen',
             'inventario.eventos_integracion.ver',
-            'inventario.eventos_integracion.detalle',
-            'inventario.eventos_integracion.resumen',
         ];
     }
 }

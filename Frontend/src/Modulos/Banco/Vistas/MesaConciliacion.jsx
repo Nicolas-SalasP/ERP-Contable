@@ -13,7 +13,7 @@ const MesaConciliacion = () => {
     const [movimientos, setMovimientos] = useState([]);
     const [planCuentas, setPlanCuentas] = useState([]);
     const [centrosCosto, setCentrosCosto] = useState([]); 
-    const [anticiposPendientes, setAnticiposPendientes] = useState([]);
+    const [_anticiposPendientes, setAnticiposPendientes] = useState([]);
     
     // Estados Sugerencias y Manual
     const [sugerenciasFacturas, setSugerenciasFacturas] = useState([]);

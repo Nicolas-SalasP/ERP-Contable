@@ -10,8 +10,6 @@ import {
     Field,
     formatDate,
     formatNumber,
-    getBodegaNombre,
-    getProductoNombre,
     LoadingState,
     PageHeader,
     Panel,

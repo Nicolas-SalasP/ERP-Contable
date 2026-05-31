@@ -50,3 +50,7 @@ Thumbs.db
 # IDE / editor
 .idea/
 .vscode/
+
+# Metadatos locales del IDE Claude Code
+.claude/
+.rnd

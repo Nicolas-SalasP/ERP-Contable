@@ -38,7 +38,7 @@ return new class extends Migration
             $table->date('fecha_referencia')->nullable();
             $table->string('referencia', 120);
             $table->json('metadata')->nullable();
-            $table->timestamp('calculado_en');
+            $table->timestamp('calculado_en')->nullable();
             $table->timestamps();
 
             $table->unique(['empresa_id', 'tipo', 'referencia'], 'inv_alertas_estado_empresa_tipo_ref_uq');

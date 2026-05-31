@@ -4,6 +4,7 @@ namespace Tests\Feature\Activos;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Carbon\Carbon;
 use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
@@ -23,6 +24,11 @@ class ActivoFijoDepreciacionExtremaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Fecha fija a mitad de mes para evitar overflow de Carbon en subMonths()
+        // en ejecuciones realizadas en días 29/30/31.
+        Carbon::setTestNow(Carbon::create(2026, 5, 15, 12, 0, 0));
+
         $this->prepararEntornoBase();
         $this->empresa = Empresa::create(['rut' => '77.777.777-7', 'razon_social' => 'Empresa Extrema', 'regimen_tributario' => '14_A']);
         $this->usuario = User::create(['nombre' => 'Extremo', 'email' => 'ext@erp.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $this->rolSuperAdmin->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
@@ -30,6 +36,13 @@ class ActivoFijoDepreciacionExtremaTest extends TestCase
         PlanCuenta::create(['empresa_id' => $this->empresa->id, 'codigo' => '112105', 'nombre' => 'Activo', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
         PlanCuenta::create(['empresa_id' => $this->empresa->id, 'codigo' => '112106', 'nombre' => 'Depreciacion', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
         PlanCuenta::create(['empresa_id' => $this->empresa->id, 'codigo' => '609102', 'nombre' => 'Gasto', 'tipo' => 'GASTO', 'imputable' => true, 'activo' => true]);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow(null);
+
+        parent::tearDown();
     }
 
     public function test_depreciacion_es_funcional_en_el_mismo_mes_de_adquisicion()

@@ -30,11 +30,32 @@ class AuthController
 
             $user = User::with(['rol', 'estadoSuscripcion'])->where('email', $request->email)->first();
 
-            if (!$user || !Hash::check($request->password, $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Credenciales incorrectas'
-                ], 401);
+            $credencialesLocalesValidas = $user && Hash::check($request->password, $user->password);
+
+            // Si las credenciales locales fallan, intentar contra el web page
+            // (el usuario puede existir en la web pero no haber sido provisionado aún).
+            if (!$credencialesLocalesValidas) {
+                $webResult = $this->webClient->validateLogin($request->email, $request->password);
+
+                if (!$webResult || !($webResult['valid'] ?? false)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Credenciales incorrectas'
+                    ], 401);
+                }
+
+                // Provisionar / actualizar el usuario desde la web
+                $user = $this->provisioner->provision([
+                    'tenri_user_id' => $webResult['tenri_user_id'],
+                    'email'         => $webResult['email'],
+                    'name'          => $webResult['name'],
+                    'password_hash' => $webResult['password_hash'],
+                    'plan_slug'     => $webResult['plan_slug'],
+                    'module_keys'   => $webResult['module_keys'],
+                    'rol_erp'       => $webResult['rol_erp'],
+                ]);
+
+                $user->load(['rol', 'estadoSuscripcion']);
             }
 
             // Validar contra el nombre del estado (no contra id hardcodeado).
@@ -82,8 +103,16 @@ class AuthController
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Sesión cerrada correctamente']);
+        $token = $request->user()->currentAccessToken();
+
+        if ($token) {
+            $token->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sesion cerrada correctamente',
+        ]);
     }
 
     public function refresh(Request $request)

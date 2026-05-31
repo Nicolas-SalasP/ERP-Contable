@@ -40,6 +40,7 @@ import DevolucionesInventario from './Modulos/Inventario/Vistas/DevolucionesInve
 import AuditoriaInventario from './Modulos/Inventario/Vistas/AuditoriaInventario';
 import EventosIntegracionInventario from './Modulos/Inventario/Vistas/EventosIntegracionInventario';
 import MovimientosInventario from './Modulos/Inventario/Vistas/MovimientosInventario';
+import CorreccionMonetaria from './Modulos/CorreccionMonetaria/CorreccionMonetaria';
 import KardexInventario from './Modulos/Inventario/Vistas/KardexInventario';
 import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
 import ReservasInventario from './Modulos/Inventario/Vistas/ReservasInventario';
@@ -48,6 +49,10 @@ import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInve
 import AlertasInventario from './Modulos/Inventario/Vistas/AlertasInventario';
 import ReportesInventario from './Modulos/Inventario/Vistas/ReportesInventario';
 import InventarioProviderWrapper from './Modulos/Inventario/InventarioProviderWrapper';
+import ConfiguracionSii from './Modulos/Sii/Vistas/ConfiguracionSii';
+import CertificadoSii from './Modulos/Sii/Vistas/CertificadoSii';
+import FoliosCaf from './Modulos/Sii/Vistas/FoliosCaf';
+import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -229,6 +234,13 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
                 <LayoutPrincipal><DashboardRenta /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+          <Route path="/tributario/correccion-monetaria" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><CorreccionMonetaria /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -465,6 +477,41 @@ function App() {
             </RutaPrivada>
           } />
           
+          {/* ── SII ──────────────────────────────────────────────── */}
+          <Route path="/sii/configuracion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.configuracion.ver">
+                <LayoutPrincipal><ConfiguracionSii /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/certificado" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.certificado.ver">
+                <LayoutPrincipal><CertificadoSii /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/folios-caf" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.caf.ver">
+                <LayoutPrincipal><FoliosCaf /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/caf" element={<Navigate to="/sii/folios-caf" replace />} />
+
+          <Route path="/sii/facturas" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.dte.ver">
+                <LayoutPrincipal><FacturasSii /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
