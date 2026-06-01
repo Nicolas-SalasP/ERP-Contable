@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Services\EmpresaService;
 use Illuminate\Support\Facades\DB;
+use App\Domains\Core\Support\ModuloPermisos;
 use Illuminate\Validation\ValidationException;
 use Exception;
 
@@ -240,21 +241,7 @@ class EmpresaController extends Controller
 
             $permisos = $user->rol->permisos ?? [];
             if ($user->rol && $user->rol->jerarquia >= 100) {
-                $permisos = [
-                    'ventas.ver', 'ventas.crear', 'clientes.ver', 'clientes.crear',
-                    'compras.ver', 'compras.crear', 'proveedores.ver', 'proveedores.crear',
-                    'tesoreria.ver', 'tesoreria.crear', 'contabilidad.ver', 'contabilidad.crear',
-                    'activos.ver', 'activos.crear', 'tributario.ver', 'tributario.crear',
-                    'usuarios.ver', 'usuarios.gestionar',
-                    'inventario.productos.ver', 'inventario.productos.crear', 'inventario.productos.editar',
-                    'inventario.bodegas.ver', 'inventario.bodegas.crear',
-                    'inventario.movimientos.ver', 'inventario.movimientos.entrada',
-                    'inventario.movimientos.salida', 'inventario.movimientos.traspaso',
-                    'inventario.movimientos.ajuste', 'inventario.kardex.ver',
-                    'inventario.valorizacion.ver', 'inventario.lotes.ver', 'inventario.lotes.crear',
-                    'inventario.reservas.ver', 'inventario.reservas.crear',
-                    'inventario.tomas_fisicas.ver', 'inventario.tomas_fisicas.crear',
-                ];
+                $permisos = ModuloPermisos::todosLosPermisos();
             }
 
             return response()->json([

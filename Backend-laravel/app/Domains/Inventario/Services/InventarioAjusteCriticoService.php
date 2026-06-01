@@ -5,6 +5,8 @@ namespace App\Domains\Inventario\Services;
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\TipoAjusteCritico;
@@ -18,7 +20,9 @@ class InventarioAjusteCriticoService
 {
     public function __construct(
         private readonly InventarioMovimientoService $movimientoService,
-        private readonly InventarioPermisoService $permisos
+        private readonly InventarioPermisoService $permisos,
+        private readonly InventarioAuditoriaService $auditoria,
+        private readonly InventarioEventoIntegracionService $eventosIntegracion
     ) {
     }
 
@@ -203,6 +207,54 @@ class InventarioAjusteCriticoService
                 'registrado_por' => (int) $usuario->id,
             ]);
 
+            $accionAuditoria = $this->accionAuditoriaPorTipo($tipo);
+            $metadataEvento = [
+                'tipo_ajuste_critico_id' => $tipo->id,
+                'tipo_ajuste_codigo' => $tipo->codigo,
+                'tipo_movimiento' => $tipo->tipo_movimiento,
+                'movimiento_inventario_id' => $movimiento->id,
+                'producto_id' => $producto->id,
+                'bodega_id' => $bodega->id,
+                'cantidad' => $cantidad,
+            ];
+
+            $this->auditoria->registrarEvento($usuario, [
+                'empresa_id' => $empresaId,
+                'accion' => $accionAuditoria,
+                'entidad_tipo' => AjusteCriticoInventario::class,
+                'entidad_id' => (int) $ajuste->id,
+                'severidad' => InventarioAuditoriaEvento::SEVERIDAD_CRITICAL,
+                'descripcion' => 'Ajuste crítico de inventario registrado con impacto operativo.',
+                'referencia' => $referencia,
+                'motivo' => $motivo,
+                'observacion' => $observacion,
+                'origen_modulo' => $origenModulo,
+                'origen_id' => $origenId,
+                'metadata_json' => $metadataEvento,
+            ]);
+
+            $this->eventosIntegracion->publicarDesdeOperacion(
+                $usuario,
+                $accionAuditoria === InventarioAuditoriaEvento::ACCION_MERMA_REGISTRADA
+                    ? InventarioEventoIntegracion::EVENTO_MERMA_REGISTRADA
+                    : InventarioEventoIntegracion::EVENTO_AJUSTE_CRITICO_CREADO,
+                [
+                    'empresa_id' => $empresaId,
+                    'entidad_tipo' => AjusteCriticoInventario::class,
+                    'entidad_id' => (int) $ajuste->id,
+                    'prioridad' => InventarioEventoIntegracion::PRIORIDAD_CRITICA,
+                    'payload_json' => $metadataEvento,
+                    'metadata_json' => [
+                        'referencia' => $referencia,
+                        'motivo' => $motivo,
+                        'observacion' => $observacion,
+                    ],
+                    'origen_modulo' => $origenModulo,
+                    'origen_id' => $origenId,
+                ],
+                true
+            );
+
             return $ajuste->load([
                 'tipo:id,codigo,nombre,descripcion,tipo_movimiento,requiere_stock,activo',
                 'producto:id,empresa_id,sku,nombre,activo,permite_merma',
@@ -246,6 +298,7 @@ class InventarioAjusteCriticoService
             'motivo' => $this->motivoMovimientoPorTipo($tipo),
             'observacion' => $this->observacionMovimiento($tipo, $motivo, $observacion),
             'fecha_movimiento' => $fechaMovimiento ?: now(),
+            '_origen_operativo' => 'inventario_ajuste_critico',
         ];
 
         if ($tipo->esAjustePositivo()) {
@@ -267,6 +320,17 @@ class InventarioAjusteCriticoService
         throw ValidationException::withMessages([
             'tipo_ajuste_critico_id' => 'El tipo de ajuste crítico no puede generar movimiento de inventario.',
         ]);
+    }
+
+
+    private function accionAuditoriaPorTipo(TipoAjusteCritico $tipo): string
+    {
+        return match ($tipo->codigo) {
+            TipoAjusteCritico::CODIGO_MERMA_OPERACIONAL,
+            TipoAjusteCritico::CODIGO_DETERIORO,
+            TipoAjusteCritico::CODIGO_VENCIMIENTO => InventarioAuditoriaEvento::ACCION_MERMA_REGISTRADA,
+            default => InventarioAuditoriaEvento::ACCION_AJUSTE_CRITICO_CREADO,
+        };
     }
 
     private function motivoMovimientoPorTipo(TipoAjusteCritico $tipo): string

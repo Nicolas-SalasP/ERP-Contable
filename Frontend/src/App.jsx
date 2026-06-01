@@ -1,56 +1,58 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Contextos/AuthContext';
 import { usePermisos } from './Contextos/Permisos';
 import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
+
 import Login from './Modulos/Autenticacion/Login';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
 import Dashboard from './Modulos/Dashboard/Dashboard';
-
-const RegistroFactura = lazy(() => import('./Modulos/Contabilidad/Componentes/RegistroFactura'));
-const HistorialFacturas = lazy(() => import('./Modulos/Contabilidad/Vistas/HistorialFacturas'));
-const GestionProveedores = lazy(() => import('./Modulos/Proveedores/GestionProveedores'));
-const LibroMayor = lazy(() => import('./Modulos/Contabilidad/Vistas/LibroMayor'));
-const AnulacionGeneral = lazy(() => import('./Modulos/Contabilidad/Vistas/AnulacionGeneral'));
-const GestionCotizaciones = lazy(() => import('./Modulos/Cotizaciones/GestionCotizaciones'));
-const CrearCotizacion = lazy(() => import('./Modulos/Cotizaciones/CrearCotizacion'));
-const GestionClientes = lazy(() => import('./Modulos/Clientes/GestionClientes'));
-const PerfilEmpresa = lazy(() => import('./Modulos/Empresa/PerfilEmpresa'));
-const GestionActivos = lazy(() => import('./Modulos/Activos/Vistas/GestionActivos'));
-const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
-const AdministradorCuentas = lazy(() => import('./Modulos/Contabilidad/Vistas/AdministradorCuentas'));
-const DashboardRenta = lazy(() => import('./Modulos/Tributario/Vistas/DashboardRenta'));
-const CorreccionMonetaria = lazy(() => import('./Modulos/CorreccionMonetaria/CorreccionMonetaria'));
-const NominaPagos = lazy(() => import('./Modulos/Banco/Vistas/NominaPagos'));
-const CartolaBancaria = lazy(() => import('./Modulos/Banco/Vistas/CartolaBancaria'));
-const MesaConciliacion = lazy(() => import('./Modulos/Banco/Vistas/MesaConciliacion'));
-const CierreF29 = lazy(() => import('./Modulos/Contabilidad/Vistas/CierreF29'));
-const AsientoManual = lazy(() => import('./Modulos/Contabilidad/Vistas/AsientoManual'));
-const VisorProveedor = lazy(() => import('./Modulos/Proveedores/VisorProveedor'));
-const CrearEmpresa = lazy(() => import('./Modulos/Bienvenida/CrearEmpresa'));
-const GestionUsuarios = lazy(() => import('./Modulos/Administrador/GestionUsuarios'));
-const GestionRoles = lazy(() => import('./Modulos/Administrador/GestionRoles'));
-const InventarioDashboard = lazy(() => import('./Modulos/Inventario/Vistas/InventarioDashboard'));
-const ProductosInventario = lazy(() => import('./Modulos/Inventario/Vistas/ProductosInventario'));
-const BodegasInventario = lazy(() => import('./Modulos/Inventario/Vistas/BodegasInventario'));
-const MovimientosInventario = lazy(() => import('./Modulos/Inventario/Vistas/MovimientosInventario'));
-const KardexInventario = lazy(() => import('./Modulos/Inventario/Vistas/KardexInventario'));
-const LotesInventario = lazy(() => import('./Modulos/Inventario/Vistas/LotesInventario'));
-const ReservasInventario = lazy(() => import('./Modulos/Inventario/Vistas/ReservasInventario'));
-const TomasFisicasInventario = lazy(() => import('./Modulos/Inventario/Vistas/TomasFisicasInventario'));
-const ValorizacionInventario = lazy(() => import('./Modulos/Inventario/Vistas/ValorizacionInventario'));
-const VisorAsientoCompleto = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAsientoCompleto'));
-const Glosario = lazy(() => import('./Modulos/Glosario/Glosario'));
-const ReclasificadorAsiento = lazy(() => import('./Modulos/Contabilidad/Vistas/ReclasificadorAsiento'));
-
-const CargandoModulo = () => (
-  <div className="flex items-center justify-center min-h-[60vh]">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-      <p className="text-sm text-slate-500 font-medium">Cargando modulo...</p>
-    </div>
-  </div>
-);
+import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
+import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
+import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
+import LibroMayor from './Modulos/Contabilidad/Vistas/LibroMayor';
+import AnulacionGeneral from './Modulos/Contabilidad/Vistas/AnulacionGeneral';
+import GestionCotizaciones from './Modulos/Cotizaciones/GestionCotizaciones';
+import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
+import GestionClientes from './Modulos/Clientes/GestionClientes';
+import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
+import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
+import VisorAuditoriaFactura from './Modulos/Contabilidad/Vistas/VisorAuditoriaFactura';
+import AdministradorCuentas from './Modulos/Contabilidad/Vistas/AdministradorCuentas';
+import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
+import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
+import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
+import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
+import CierreF29 from './Modulos/Contabilidad/Vistas/CierreF29';
+import AsientoManual from './Modulos/Contabilidad/Vistas/AsientoManual';
+import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
+import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
+import GestionUsuarios from './Modulos/Administrador/GestionUsuarios';
+import GestionRoles from './Modulos/Administrador/GestionRoles';
+import InventarioDashboard from './Modulos/Inventario/Vistas/InventarioDashboard';
+import ProductosInventario from './Modulos/Inventario/Vistas/ProductosInventario';
+import BodegasInventario from './Modulos/Inventario/Vistas/BodegasInventario';
+import UbicacionesInventario from './Modulos/Inventario/Vistas/UbicacionesInventario';
+import PickingInventario from './Modulos/Inventario/Vistas/PickingInventario';
+import PackingInventario from './Modulos/Inventario/Vistas/PackingInventario';
+import DespachosInventario from './Modulos/Inventario/Vistas/DespachosInventario';
+import DevolucionesInventario from './Modulos/Inventario/Vistas/DevolucionesInventario';
+import AuditoriaInventario from './Modulos/Inventario/Vistas/AuditoriaInventario';
+import EventosIntegracionInventario from './Modulos/Inventario/Vistas/EventosIntegracionInventario';
+import MovimientosInventario from './Modulos/Inventario/Vistas/MovimientosInventario';
+import CorreccionMonetaria from './Modulos/CorreccionMonetaria/CorreccionMonetaria';
+import KardexInventario from './Modulos/Inventario/Vistas/KardexInventario';
+import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
+import ReservasInventario from './Modulos/Inventario/Vistas/ReservasInventario';
+import TomasFisicasInventario from './Modulos/Inventario/Vistas/TomasFisicasInventario';
+import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInventario';
+import AlertasInventario from './Modulos/Inventario/Vistas/AlertasInventario';
+import ReportesInventario from './Modulos/Inventario/Vistas/ReportesInventario';
+import InventarioProviderWrapper from './Modulos/Inventario/InventarioProviderWrapper';
+import ConfiguracionSii from './Modulos/Sii/Vistas/ConfiguracionSii';
+import CertificadoSii from './Modulos/Sii/Vistas/CertificadoSii';
+import FoliosCaf from './Modulos/Sii/Vistas/FoliosCaf';
+import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -91,8 +93,18 @@ const RutaProtegidaAlgunPermiso = ({ permisos = [], children }) => {
 };
 
 const permisosLecturaInventario = [
+  'inventario.dashboard.ver',
+  'inventario.reportes.ver',
   'inventario.productos.ver',
   'inventario.bodegas.ver',
+  'inventario.ubicaciones.ver',
+  'inventario.stock_ubicaciones.ver',
+  'inventario.picking.ver',
+  'inventario.packing.ver',
+  'inventario.despachos.ver',
+  'inventario.devoluciones.ver',
+  'inventario.auditoria.ver',
+  'inventario.eventos_integracion.ver',
   'inventario.movimientos.ver',
   'inventario.kardex.ver',
   'inventario.valorizacion.ver',
@@ -100,14 +112,22 @@ const permisosLecturaInventario = [
   'inventario.reservas.ver',
   'inventario.disponibilidad.ver',
   'inventario.tomas_fisicas.ver',
+  'inventario.alertas.ver',
+  'inventario.reglas_reposicion.ver',
 ];
+
+
+const InventarioLayout = ({ children }) => (
+  <InventarioProviderWrapper>
+    <LayoutPrincipal>{children}</LayoutPrincipal>
+  </InventarioProviderWrapper>
+);
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Suspense fallback={<CargandoModulo />}>
-          <Routes>
+        <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
           <Route path="/crear-empresa" element={
@@ -218,14 +238,6 @@ function App() {
             </RutaPrivada>
           } />
 
-          <Route path="/tributario/correccion-monetaria" element={
-            <RutaPrivada>
-              <RutaProtegida permiso="tributario.ver">
-                <LayoutPrincipal><CorreccionMonetaria /></LayoutPrincipal>
-              </RutaProtegida>
-            </RutaPrivada>
-          } />
-
           <Route path="/facturas/:id/auditoria" element={
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.ver">
@@ -274,13 +286,6 @@ function App() {
             </RutaPrivada>
           } />
 
-          {/* Glosario es publico para todos los usuarios autenticados, no requiere permiso */}
-          <Route path="/glosario" element={
-            <RutaPrivada>
-              <LayoutPrincipal><Glosario /></LayoutPrincipal>
-            </RutaPrivada>
-          } />
-
           <Route path="/proveedores/visor" element={
             <RutaPrivada>
               <RutaProtegida permiso="proveedores.ver">
@@ -312,24 +317,14 @@ function App() {
               </RutaProtegida>
             </RutaPrivada>
           } />
-          <Route path="/inventario" element={
+             <Route path="/inventario" element={
             <Navigate to="/inventario/dashboard" replace />
-          } />
-
-          <Route path="/contabilidad/factura/:id/asiento" element={
-            <RutaPrivada>
-              <RutaProtegida permiso="contabilidad.ver">
-                <LayoutPrincipal>
-                  <VisorAsientoCompleto />
-                </LayoutPrincipal>
-              </RutaProtegida>
-            </RutaPrivada>
           } />
 
           <Route path="/inventario/dashboard" element={
             <RutaPrivada>
               <RutaProtegidaAlgunPermiso permisos={permisosLecturaInventario}>
-                <LayoutPrincipal><InventarioDashboard /></LayoutPrincipal>
+                <InventarioLayout><InventarioDashboard /></InventarioLayout>
               </RutaProtegidaAlgunPermiso>
             </RutaPrivada>
           } />
@@ -337,17 +332,7 @@ function App() {
           <Route path="/inventario/productos" element={
             <RutaPrivada>
               <RutaProtegida permiso="inventario.productos.ver">
-                <LayoutPrincipal><ProductosInventario /></LayoutPrincipal>
-              </RutaProtegida>
-            </RutaPrivada>
-          } />
-
-          <Route path="/contabilidad/factura/:id/reclasificar" element={
-            <RutaPrivada>
-              <RutaProtegida permiso="contabilidad.crear">
-                <LayoutPrincipal>
-                  <ReclasificadorAsiento />
-                </LayoutPrincipal>
+                <InventarioLayout><ProductosInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -355,7 +340,65 @@ function App() {
           <Route path="/inventario/bodegas" element={
             <RutaPrivada>
               <RutaProtegida permiso="inventario.bodegas.ver">
-                <LayoutPrincipal><BodegasInventario /></LayoutPrincipal>
+                <InventarioLayout><BodegasInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/ubicaciones" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.ubicaciones.ver">
+                <InventarioLayout><UbicacionesInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+
+
+          <Route path="/inventario/picking" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.picking.ver">
+                <InventarioLayout><PickingInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/packing" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.packing.ver">
+                <InventarioLayout><PackingInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/despachos" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.despachos.ver">
+                <InventarioLayout><DespachosInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/devoluciones" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.devoluciones.ver">
+                <InventarioLayout><DevolucionesInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/auditoria" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.auditoria.ver">
+                <InventarioLayout><AuditoriaInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/eventos-integracion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.eventos_integracion.ver">
+                <InventarioLayout><EventosIntegracionInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -363,7 +406,7 @@ function App() {
           <Route path="/inventario/movimientos" element={
             <RutaPrivada>
               <RutaProtegida permiso="inventario.movimientos.ver">
-                <LayoutPrincipal><MovimientosInventario /></LayoutPrincipal>
+                <InventarioLayout><MovimientosInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -371,7 +414,7 @@ function App() {
           <Route path="/inventario/kardex" element={
             <RutaPrivada>
               <RutaProtegida permiso="inventario.kardex.ver">
-                <LayoutPrincipal><KardexInventario /></LayoutPrincipal>
+                <InventarioLayout><KardexInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -379,7 +422,7 @@ function App() {
           <Route path="/inventario/lotes" element={
             <RutaPrivada>
               <RutaProtegida permiso="inventario.lotes.ver">
-                <LayoutPrincipal><LotesInventario /></LayoutPrincipal>
+                <InventarioLayout><LotesInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -387,7 +430,7 @@ function App() {
           <Route path="/inventario/reservas" element={
             <RutaPrivada>
               <RutaProtegida permiso="inventario.reservas.ver">
-                <LayoutPrincipal><ReservasInventario /></LayoutPrincipal>
+                <InventarioLayout><ReservasInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -395,7 +438,7 @@ function App() {
           <Route path="/inventario/tomas-fisicas" element={
             <RutaPrivada>
               <RutaProtegida permiso="inventario.tomas_fisicas.ver">
-                <LayoutPrincipal><TomasFisicasInventario /></LayoutPrincipal>
+                <InventarioLayout><TomasFisicasInventario /></InventarioLayout>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -403,14 +446,65 @@ function App() {
           <Route path="/inventario/valorizacion" element={
             <RutaPrivada>
               <RutaProtegida permiso="inventario.valorizacion.ver">
-                <LayoutPrincipal><ValorizacionInventario /></LayoutPrincipal>
+                <InventarioLayout><ValorizacionInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/reportes" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="inventario.reportes.ver">
+                <InventarioLayout><ReportesInventario /></InventarioLayout>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/inventario/alertas" element={
+            <RutaPrivada>
+              <RutaProtegidaAlgunPermiso permisos={[
+                'inventario.alertas.ver',
+                'inventario.reglas_reposicion.ver',
+              ]}>
+                <InventarioLayout><AlertasInventario /></InventarioLayout>
+              </RutaProtegidaAlgunPermiso>
+            </RutaPrivada>
+          } />
+          
+          {/* ── SII ──────────────────────────────────────────────── */}
+          <Route path="/sii/configuracion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.configuracion.ver">
+                <LayoutPrincipal><ConfiguracionSii /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/certificado" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.certificado.ver">
+                <LayoutPrincipal><CertificadoSii /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/folios-caf" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.caf.ver">
+                <LayoutPrincipal><FoliosCaf /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/sii/facturas" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="sii.dte.ver">
+                <LayoutPrincipal><FacturasSii /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
 
           <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );

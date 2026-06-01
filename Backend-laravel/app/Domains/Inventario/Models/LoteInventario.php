@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LoteInventario extends Model
 {
+    public const ESTADO_DISPONIBLE = 'DISPONIBLE';
+    public const ESTADO_CUARENTENA = 'CUARENTENA';
+    public const ESTADO_BLOQUEADO = 'BLOQUEADO';
     protected $table = 'inventario_lotes';
 
     protected $fillable = [
@@ -20,6 +23,7 @@ class LoteInventario extends Model
         'fecha_vencimiento',
         'observacion',
         'activo',
+        'estado_operativo',
     ];
 
     protected $casts = [
@@ -150,6 +154,21 @@ class LoteInventario extends Model
         }
 
         return $this->fecha_vencimiento->toDateString() < now()->toDateString();
+    }
+
+    public function estaEnCuarentena(): bool
+    {
+        return $this->estado_operativo === self::ESTADO_CUARENTENA;
+    }
+
+    public function estaBloqueadoOperativamente(): bool
+    {
+        return in_array($this->estado_operativo, [self::ESTADO_CUARENTENA, self::ESTADO_BLOQUEADO], true);
+    }
+
+    public function puedeMoverseSalida(): bool
+    {
+        return !$this->estaVencido() && !$this->estaBloqueadoOperativamente();
     }
 
     public function perteneceAEmpresa(int $empresaId): bool

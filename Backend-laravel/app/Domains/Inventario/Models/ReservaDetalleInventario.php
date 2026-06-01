@@ -17,7 +17,9 @@ class ReservaDetalleInventario extends Model
         'reserva_id',
         'producto_id',
         'bodega_id',
+        'ubicacion_id',
         'lote_id',
+        'estado_stock',
         'cantidad_reservada',
         'cantidad_consumida',
         'cantidad_liberada',
@@ -28,6 +30,7 @@ class ReservaDetalleInventario extends Model
         'reserva_id' => 'integer',
         'producto_id' => 'integer',
         'bodega_id' => 'integer',
+        'ubicacion_id' => 'integer',
         'lote_id' => 'integer',
 
         'cantidad_reservada' => 'decimal:4',
@@ -66,6 +69,11 @@ class ReservaDetalleInventario extends Model
         return $this->belongsTo(LoteInventario::class, 'lote_id');
     }
 
+    public function ubicacion(): BelongsTo
+    {
+        return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_id');
+    }
+
     public function consumos(): HasMany
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'reserva_detalle_id');
@@ -100,6 +108,11 @@ class ReservaDetalleInventario extends Model
     public function scopeLote(Builder $query, int $loteId): Builder
     {
         return $query->where('lote_id', $loteId);
+    }
+
+    public function scopeUbicacion(Builder $query, int $ubicacionId): Builder
+    {
+        return $query->where('ubicacion_id', $ubicacionId);
     }
 
     public function scopeSinLote(Builder $query): Builder

@@ -547,53 +547,146 @@ export const glosario = {
     },
 
     // ================================================================
-    // INVENTARIO (resumen breve, modulo grande)
+    // INVENTARIO
     // ================================================================
     inventario: {
         id: 'inventario',
         titulo: 'Inventario',
         icono: '📦',
-        resumen: 'Controla productos, lotes, bodegas y movimientos de stock.',
+        resumen:
+            'Controla stock, bodegas, ubicaciones, lotes, reservas, preparación logística y trazabilidad operativa.',
         queEs:
-            'El inventario es el registro detallado de TODO lo que tienes en stock fisico: productos, ' +
-            'cantidades, ubicaciones (bodegas), y movimientos (entradas, salidas, ajustes, traslados). ' +
-            'Esta integrado con compras y ventas para que el stock se actualice solo.',
+            'El módulo de Inventario administra el ciclo logístico completo del stock físico: productos, bodegas, ' +
+            'ubicaciones, movimientos, Kardex, lotes, reservas, toma física, valorización, alertas, picking, packing, ' +
+            'despachos, devoluciones, reversas y auditoría operativa. Su responsabilidad es logística y trazable; ' +
+            'no emite DTE ni ejecuta procesos tributarios.',
         conceptos: [
             {
                 termino: 'Producto',
                 definicion:
-                    'El item que se compra, vende o usa. Tiene codigo SKU, nombre, unidad de medida y precio de costo.',
-            },
-            {
-                termino: 'Lote',
-                definicion:
-                    'Una agrupacion de unidades de un producto que llegaron juntas. Importante para productos ' +
-                    'con vencimiento (alimentos, medicamentos).',
+                    'Ítem administrado por el sistema. Puede tener SKU, unidad de medida, costo, stock, lotes, ' +
+                    'ubicación y reglas de reposición.',
             },
             {
                 termino: 'Bodega',
                 definicion:
-                    'Una ubicacion fisica donde se guarda el inventario. Una empresa puede tener varias bodegas.',
+                    'Unidad física o lógica donde se almacena inventario. Permite separar stock por sucursal, ' +
+                    'almacén o zona operativa.',
             },
             {
-                termino: 'Toma fisica',
+                termino: 'Ubicación',
                 definicion:
-                    'El conteo manual del inventario para comparar con lo que dice el sistema. ' +
-                    'Si hay diferencias se genera un ajuste.',
+                    'Posición específica dentro de una bodega. Mejora la trazabilidad del almacén y permite ' +
+                    'ordenar el flujo operativo.',
+            },
+            {
+                termino: 'Movimiento',
+                definicion:
+                    'Registro operativo de entrada, salida, traspaso o ajuste de stock. Cada movimiento alimenta ' +
+                    'la trazabilidad y el Kardex.',
+            },
+            {
+                termino: 'Kardex',
+                definicion:
+                    'Historial trazable de movimientos de inventario. Permite auditar entradas, salidas, ajustes, ' +
+                    'costos y saldos.',
+            },
+            {
+                termino: 'Lote',
+                definicion:
+                    'Agrupación trazable de unidades de un producto. Es clave para vencimientos, control sanitario, ' +
+                    'alimentos, medicamentos o productos que requieren seguimiento por origen.',
             },
             {
                 termino: 'Reserva',
                 definicion:
-                    'Stock apartado para una orden de venta futura. Aparece como "no disponible" para otras ventas.',
+                    'Stock comprometido para una operación futura. Reduce la disponibilidad libre sin descontar ' +
+                    'físicamente el inventario hasta que corresponda.',
+            },
+            {
+                termino: 'Toma física',
+                definicion:
+                    'Proceso de conteo real de inventario para comparar contra el stock del sistema y generar ' +
+                    'diferencias o ajustes controlados.',
+            },
+            {
+                termino: 'Valorización',
+                definicion:
+                    'Cálculo económico del inventario. Permite analizar costos, PMP, valor por producto, bodega o lote.',
+            },
+            {
+                termino: 'Alertas y reposición',
+                definicion:
+                    'Reglas para detectar bajo stock, necesidad de reposición, productos críticos o posibles quiebres operativos.',
+            },
+            {
+                termino: 'Picking',
+                definicion:
+                    'Preparación de productos desde bodega para un despacho o pedido. Controla cantidades solicitadas, ' +
+                    'preparadas y pendientes.',
+            },
+            {
+                termino: 'Packing',
+                definicion:
+                    'Proceso de embalaje posterior al picking. Organiza productos preparados en paquetes o unidades ' +
+                    'listas para despacho.',
+            },
+            {
+                termino: 'Despacho',
+                definicion:
+                    'Salida logística controlada de productos ya preparados y embalados. Permite cerrar el flujo operativo ' +
+                    'sin mezclar la responsabilidad del módulo con facturación electrónica.',
+            },
+            {
+                termino: 'Devoluciones/Reversas',
+                definicion:
+                    'Gestión de retornos y reversas operativas. Permite reingresar stock o anular efectos logísticos bajo ' +
+                    'reglas controladas.',
+            },
+            {
+                termino: 'Auditoría operativa',
+                definicion:
+                    'Registro de acciones relevantes del módulo para trazabilidad, control interno y revisión posterior.',
+            },
+            {
+                termino: 'Eventos de integración',
+                definicion:
+                    'Eventos técnicos para comunicar acciones de inventario con otros módulos o sistemas externos, sin emitir ' +
+                    'DTE ni ejecutar lógica tributaria desde Inventario.',
             },
         ],
         comoUsar: [
-            'Crea los productos con su SKU, nombre y unidad de medida.',
-            'Define las bodegas donde guardas inventario.',
-            'Registra movimientos de entrada cuando llega mercancia.',
-            'Las ventas descuentan stock automaticamente.',
-            'Periodicamente haz tomas fisicas para verificar y ajustar.',
+            'Revisa el Dashboard Inventario para ver KPIs, alertas y estado operativo general.',
+            'Administra productos, bodegas y ubicaciones antes de registrar movimientos o procesos logísticos.',
+            'Registra entradas, salidas, traspasos y ajustes mediante Movimientos; el Kardex mantiene la trazabilidad.',
+            'Usa lotes, vencimientos y reservas cuando el producto requiera seguimiento o compromiso de stock.',
+            'Ejecuta tomas físicas para comparar stock real contra stock del sistema y generar ajustes controlados.',
+            'Gestiona picking, packing, despachos, devoluciones y reversas para cubrir el flujo logístico posterior a pedidos.',
+            'Consulta reportes, valorización, auditoría operativa y eventos de integración para control gerencial y técnico.',
         ],
+        errores: [
+            {
+                problema: 'El stock disponible no coincide con el stock físico.',
+                solucion:
+                    'Revisa Kardex, movimientos, reservas activas y tomas físicas recientes. Si corresponde, realiza un ajuste ' +
+                    'controlado con motivo y observación.',
+            },
+            {
+                problema: 'No aparece una opción del menú de Inventario.',
+                solucion:
+                    'Verifica los permisos asignados al rol del usuario. Algunas vistas requieren permisos específicos como ' +
+                    'productos, reportes, alertas, reglas de reposición, picking o auditoría.',
+            },
+            {
+                problema: 'Una reserva o despacho no permite completar el flujo.',
+                solucion:
+                    'Valida disponibilidad, lote, bodega, ubicación y estado operativo previo. El sistema bloquea acciones que ' +
+                    'puedan romper trazabilidad o dejar stock inconsistente.',
+            },
+        ],
+        tip:
+            'Inventario debe mantenerse como módulo logístico/WMS. Puede integrarse con compras, ventas, pedidos u otros ' +
+            'módulos mediante referencias y eventos, pero no debe emitir DTE ni ejecutar lógica SII desde este dominio.',
     },
 
     // ================================================================

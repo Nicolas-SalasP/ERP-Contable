@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../Contextos/AuthContext';
 import { usePermisos } from '../../Contextos/Permisos';
 
-const BarraLateral = ({ isOpen, toggleSidebar }) => {
+const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) => {
     const location = useLocation();
     const { user, logout } = useAuth();
     const { tieneAlgunPermiso } = usePermisos();
@@ -71,13 +71,22 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 { path: '/activos', label: 'Inventario Activos' },
             ]
         },
-                {
+        {
             id: 'inventario',
             label: 'Inventario',
             icon: 'fas fa-boxes-stacked',
             permisosRequeridos: [
+                'inventario.dashboard.ver',
+                'inventario.reportes.ver',
                 'inventario.productos.ver',
                 'inventario.bodegas.ver',
+                'inventario.ubicaciones.ver',
+                'inventario.picking.ver',
+                'inventario.packing.ver',
+                'inventario.despachos.ver',
+                'inventario.devoluciones.ver',
+                'inventario.auditoria.ver',
+                'inventario.eventos_integracion.ver',
                 'inventario.movimientos.ver',
                 'inventario.kardex.ver',
                 'inventario.valorizacion.ver',
@@ -85,14 +94,24 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 'inventario.reservas.ver',
                 'inventario.disponibilidad.ver',
                 'inventario.tomas_fisicas.ver',
+                'inventario.alertas.ver',
+                'inventario.reglas_reposicion.ver',
             ],
             subItems: [
                 {
                     path: '/inventario/dashboard',
                     label: 'Dashboard Inventario',
                     permisosRequeridos: [
+                        'inventario.dashboard.ver',
+                        'inventario.reportes.ver',
                         'inventario.productos.ver',
                         'inventario.bodegas.ver',
+                        'inventario.ubicaciones.ver',
+                        'inventario.picking.ver',
+                        'inventario.packing.ver',
+                        'inventario.despachos.ver',
+                        'inventario.devoluciones.ver',
+                        'inventario.eventos_integracion.ver',
                         'inventario.movimientos.ver',
                         'inventario.kardex.ver',
                         'inventario.valorizacion.ver',
@@ -100,7 +119,14 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                         'inventario.reservas.ver',
                         'inventario.disponibilidad.ver',
                         'inventario.tomas_fisicas.ver',
+                        'inventario.alertas.ver',
+                        'inventario.reglas_reposicion.ver',
                     ],
+                },
+                {
+                    path: '/inventario/reportes',
+                    label: 'Reportes',
+                    permisosRequeridos: ['inventario.reportes.ver'],
                 },
                 {
                     path: '/inventario/productos',
@@ -111,6 +137,41 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     path: '/inventario/bodegas',
                     label: 'Bodegas',
                     permisosRequeridos: ['inventario.bodegas.ver'],
+                },
+                {
+                    path: '/inventario/ubicaciones',
+                    label: 'Ubicaciones',
+                    permisosRequeridos: ['inventario.ubicaciones.ver'],
+                },
+                {
+                    path: '/inventario/picking',
+                    label: 'Picking',
+                    permisosRequeridos: ['inventario.picking.ver'],
+                },
+                {
+                    path: '/inventario/packing',
+                    label: 'Packing',
+                    permisosRequeridos: ['inventario.packing.ver'],
+                },
+                {
+                    path: '/inventario/despachos',
+                    label: 'Despachos',
+                    permisosRequeridos: ['inventario.despachos.ver'],
+                },
+                {
+                    path: '/inventario/devoluciones',
+                    label: 'Devoluciones/Reversas',
+                    permisosRequeridos: ['inventario.devoluciones.ver'],
+                },
+                {
+                    path: '/inventario/auditoria',
+                    label: 'Auditoría Operativa',
+                    permisosRequeridos: ['inventario.auditoria.ver'],
+                },
+                {
+                    path: '/inventario/eventos-integracion',
+                    label: 'Eventos Integración',
+                    permisosRequeridos: ['inventario.eventos_integracion.ver'],
                 },
                 {
                     path: '/inventario/movimientos',
@@ -142,6 +203,11 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                     label: 'Valorización',
                     permisosRequeridos: ['inventario.valorizacion.ver'],
                 },
+                {
+                    path: '/inventario/alertas',
+                    label: 'Alertas y Reposición',
+                    permisosRequeridos: ['inventario.alertas.ver', 'inventario.reglas_reposicion.ver'],
+                },
             ]
         },
         {
@@ -153,6 +219,18 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                 { path: '/contabilidad/cierre-f29', label: 'Cierre de IVA (F29)' },
                 { path: '/tributario/renta', label: 'Operación Renta' },
                 { path: '/tributario/correccion-monetaria', label: 'Corrección Monetaria' },
+            ]
+        },
+        {
+            id: 'sii',
+            label: 'Facturación Electrónica (SII)',
+            icon: 'fas fa-file-invoice',
+            // permisosRequeridos intencionalmente omitido en F2.2: cualquier usuario
+            // autenticado con empresa_id ve el modulo. Granularidad fina llega en F8/F9.
+            subItems: [
+                { path: '/sii/configuracion', label: 'Configuración' },
+                { path: '/sii/caf', label: 'Folios CAF' },
+                { path: '/sii/certificado', label: 'Certificado Digital' },
             ]
         },
         {
@@ -173,7 +251,21 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
         }
     ];
 
-    const isActive = (path) => location.pathname === path;
+    const isMobileViewport = () => (
+        typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
+    );
+
+    const closeSidebarOnMobile = () => {
+        if (isMobileViewport()) {
+            closeSidebar();
+        }
+    };
+
+    const isActive = (path) => {
+        if (!path) return false;
+        if (path === '/') return location.pathname === '/';
+        return location.pathname === path || location.pathname.startsWith(`${path}/`);
+    };
 
     const isGroupActive = (group) => {
         if (group.path && isActive(group.path)) return true;
@@ -181,10 +273,18 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
         return false;
     };
 
+    useEffect(() => {
+        const activeGroup = menuGroups.find((group) => group.subItems && isGroupActive(group));
+
+        if (activeGroup) {
+            setOpenMenu(activeGroup.id);
+        }
+    }, [location.pathname]);
+
     const toggleMenu = (id, hasSubItems) => {
         if (!hasSubItems) {
             setOpenMenu('');
-            if (window.innerWidth < 1024) toggleSidebar();
+            closeSidebarOnMobile();
             return;
         }
         setOpenMenu(openMenu === id ? '' : id);
@@ -198,7 +298,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
         <>
             <div
                 className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 transition-opacity lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                onClick={toggleSidebar}
+                onClick={closeSidebar}
             ></div>
             <div className={`fixed top-0 left-0 z-30 h-full w-64 bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-transform duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
@@ -215,13 +315,14 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                         .filter(group => !group.permisosRequeridos || tieneAlgunPermiso(group.permisosRequeridos))
                         .map((group) => {
                             const active = isGroupActive(group);
-                            const open = openMenu === group.id;
+                            const open = openMenu === group.id || active;
 
                             return (
                                 <div key={group.id} className="mb-1">
                                     {/* BOTÓN DEL GRUPO O ENLACE DIRECTO */}
                                     {group.subItems ? (
                                         <button
+                                            type="button"
                                             onClick={() => toggleMenu(group.id, true)}
                                             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${active
                                                     ? 'bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20'
@@ -254,7 +355,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
 
                                     {/* SUBMENÚ DESPLEGABLE */}
                                     {group.subItems && (
-                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
+                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[1200px] opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                                             <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
                                              {group.subItems
                                                 .filter((subItem) => !subItem.permisosRequeridos || tieneAlgunPermiso(subItem.permisosRequeridos))
@@ -263,7 +364,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                                                     <Link
                                                         key={subItem.path}
                                                         to={subItem.path}
-                                                        onClick={() => window.innerWidth < 1024 && toggleSidebar()}
+                                                        onClick={closeSidebarOnMobile}
                                                         className={`block px-3 py-2.5 rounded-md text-xs font-medium transition-colors ${isActive(subItem.path)
                                                                 ? 'bg-emerald-500/10 text-emerald-400 font-bold'
                                                                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -287,7 +388,7 @@ const BarraLateral = ({ isOpen, toggleSidebar }) => {
                             to="/empresa/perfil"
                             className="flex items-center gap-3 flex-1 hover:bg-slate-900 p-2 rounded-lg transition-colors overflow-hidden group"
                             title="Ir a Configuración de Empresa"
-                            onClick={() => window.innerWidth < 1024 && toggleSidebar()}
+                            onClick={closeSidebarOnMobile}
                         >
                             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-xs font-black text-white flex-shrink-0 shadow-sm">
                                 {getInitials(user?.nombre || 'User')}
