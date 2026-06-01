@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use App\Domains\Core\Services\ProvisionUserService;
 use App\Domains\Core\Services\WebAuthClient;
 use App\Domains\Core\Support\ModuloPermisos;
+use Illuminate\Support\Carbon;
 use Throwable;
 
 class AuthController
@@ -64,6 +65,24 @@ class AuthController
                 return response()->json([
                     'success' => false,
                     'message' => 'Cuenta inactiva o suspendida.'
+                ], 403);
+            }
+
+            if ($user->empresa_id !== null) {
+                $empresa = $user->empresa()->first();
+                if ($empresa && (bool) $empresa->activa === false) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La empresa se encuentra suspendida. Contacte al administrador.'
+                    ], 403);
+                }
+            }
+
+            if ($user->bloqueado_hasta !== null
+                && Carbon::parse($user->bloqueado_hasta)->isFuture()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario bloqueado temporalmente.'
                 ], 403);
             }
 
