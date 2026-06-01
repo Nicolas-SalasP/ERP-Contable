@@ -98,7 +98,7 @@ const siiApi = {
          * F6.3 - Listado paginado de facturas con estado SII basico.
          * @param {{ por_pagina?: number, pagina?: number }} params
          */
-        listar: (params = {}) => api.get('/sii/facturas', params),
+        listar: (params = {}) => api.get('/sii/facturas', { params }),
 
         /**
          * F6.3 - Payload liviano para polling de estado.
@@ -132,7 +132,7 @@ const siiApi = {
          * @returns {Promise<{data: CafResumen[]}>}
          */
         listar: (tipoDte = null) =>
-            api.get('/sii/caf', tipoDte ? { tipo_dte: tipoDte } : {}),
+            api.get('/sii/caf', tipoDte ? { params: { tipo_dte: tipoDte } } : {}),
 
         /** @returns {Promise<{data: Record<string, SaldoPorTipo>}>} */
         saldos: () => api.get('/sii/caf/saldos'),

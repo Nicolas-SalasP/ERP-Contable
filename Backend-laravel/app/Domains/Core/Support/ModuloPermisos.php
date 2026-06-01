@@ -6,12 +6,6 @@ use App\Domains\Core\Models\User;
 
 final class ModuloPermisos
 {
-    /**
-     * Mapa unico de modulos front/provisioning hacia permisos efectivos.
-     *
-     * Mantener esta lista centralizada evita que AuthController, frontend y
-     * servicios de dominio deriven permisos con reglas distintas.
-     */
     public const MAP = [
         'dashboard' => ['dashboard.ver'],
         'clientes' => ['ventas.ver', 'clientes.ver', 'clientes.crear'],
@@ -61,7 +55,8 @@ final class ModuloPermisos
         'sii.configuracion' => ['sii.configuracion.ver', 'sii.configuracion.editar'],
         'sii.certificado'   => ['sii.certificado.ver', 'sii.certificado.subir', 'sii.certificado.revocar'],
         'sii.caf'           => ['sii.caf.ver', 'sii.caf.subir', 'sii.caf.revocar'],
-        'sii.dte'           => ['sii.dte.ver', 'sii.dte.emitir', 'sii.dte.reintentar'],
+        'sii.dte'           => ['sii.dte.ver', 'sii.dte.emitir', 'sii.dte.reintentar', 'sii.dte.anular'],
+        'sii.auditoria'     => ['sii.auditoria.ver'],
         'roles.gestion' => ['usuarios.ver', 'usuarios.gestionar'],
         'empresa.perfil' => [],
         'glosario' => [],

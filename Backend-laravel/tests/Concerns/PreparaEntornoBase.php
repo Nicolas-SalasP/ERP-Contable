@@ -99,10 +99,6 @@ trait PreparaEntornoBase
         ]);
     }
 
-    /**
-     * Crea los roles base con jerarquias correctas.
-     * Permisos vacios por defecto: cada test ajusta lo que necesite.
-     */
     protected function prepararRoles(): void
     {
         $this->rolSuperAdmin = Rol::create([
@@ -113,23 +109,83 @@ trait PreparaEntornoBase
         $this->rolAdministrador = Rol::create([
             'nombre' => 'Administrador',
             'jerarquia' => 80,
-            'permisos' => [],
+            'permisos' => $this->permisosSiiAdministracion(),
         ]);
         $this->rolContador = Rol::create([
             'nombre' => 'Contador',
             'jerarquia' => 50,
-            'permisos' => [],
+            'permisos' => $this->permisosSiiOperacion(),
         ]);
         $this->rolAuditor = Rol::create([
             'nombre' => 'Auditor',
             'jerarquia' => 50,
-            'permisos' => [],
+            'permisos' => $this->permisosSiiSoloLectura(),
         ]);
         $this->rolUsuarioBasico = Rol::create([
             'nombre' => 'Usuario',
             'jerarquia' => 10,
             'permisos' => [],
         ]);
+    }
+
+    /**
+     * Permisos SII completos para administracion operativa en tests.
+     */
+    protected function permisosSiiAdministracion(): array
+    {
+        return [
+            'sii.configuracion.ver',
+            'sii.configuracion.editar',
+
+            'sii.certificado.ver',
+            'sii.certificado.subir',
+            'sii.certificado.revocar',
+
+            'sii.caf.ver',
+            'sii.caf.subir',
+            'sii.caf.revocar',
+
+            'sii.dte.ver',
+            'sii.dte.emitir',
+            'sii.dte.reintentar',
+            'sii.dte.anular',
+
+            'sii.auditoria.ver',
+        ];
+    }
+
+    /**
+     * Permisos SII para operacion contable/tributaria sin revocaciones sensibles.
+     */
+    protected function permisosSiiOperacion(): array
+    {
+        return [
+            'sii.configuracion.ver',
+
+            'sii.certificado.ver',
+
+            'sii.caf.ver',
+
+            'sii.dte.ver',
+            'sii.dte.emitir',
+            'sii.dte.reintentar',
+
+            'sii.auditoria.ver',
+        ];
+    }
+
+    /**
+     * Permisos SII de lectura para auditoria.
+     */
+    protected function permisosSiiSoloLectura(): array
+    {
+        return [
+            'sii.configuracion.ver',
+            'sii.certificado.ver',
+            'sii.caf.ver',
+            'sii.dte.ver',
+            'sii.auditoria.ver',
+        ];
     }
 
     /**

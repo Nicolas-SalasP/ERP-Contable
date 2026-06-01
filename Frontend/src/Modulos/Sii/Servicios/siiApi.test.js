@@ -83,10 +83,16 @@ describe('siiApi.caf', () => {
     });
 
     it('listar con filtro pasa tipo_dte como param', async () => {
-        api.get.mockResolvedValue({ data: [] });
-        await siiApi.caf.listar(33);
-        expect(api.get).toHaveBeenCalledWith('/sii/caf', { tipo_dte: 33 });
+    api.get.mockResolvedValue({ data: [] });
+
+    await siiApi.caf.listar(33);
+
+    expect(api.get).toHaveBeenCalledWith('/sii/caf', {
+        params: {
+            tipo_dte: 33,
+        },
     });
+});
 
     it('saldos llama a GET /sii/caf/saldos', async () => {
         api.get.mockResolvedValue({ data: {} });

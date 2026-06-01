@@ -9,6 +9,7 @@ use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Contabilidad\Services\PlanCuentaService;
 use App\Domains\Core\Services\ContadorEmpresaService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -140,10 +141,17 @@ class ActivoFijoService
 
     public function depreciarMes(int $empresaId, int $usuarioId, string $mesAnio)
     {
-        $fechaCalculo = date('Y-m-t', strtotime($mesAnio . '-01'));
-        $glosaMes = "Centralización Depreciación Activos Fijos - " . date('m/Y', strtotime($fechaCalculo));
+        $periodo = Carbon::createFromFormat('Y-m-d', $mesAnio . '-01');
+        $fechaCalculo = $periodo->copy()->endOfMonth();
 
-        return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculo, $glosaMes) {
+        if ($periodo->isSameMonth(now())) {
+            $fechaCalculo = now();
+        }
+
+        $fechaCalculoFecha = $fechaCalculo->toDateString();
+        $glosaMes = "Centralización Depreciación Activos Fijos - " . $periodo->format('m/Y');
+
+        return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculoFecha, $glosaMes) {
             $yaEjecutado = DB::table('asientos_contables')
                 ->where('empresa_id', $empresaId)
                 ->where('origen_modulo', 'activos')
@@ -166,7 +174,7 @@ class ActivoFijoService
             $activos = ActivoFijo::where('empresa_id', $empresaId)
                 ->where('estado', 'ACTIVO')
                 ->whereRaw('depreciacion_acumulada < (valor_adquisicion - valor_residual)')
-                ->where('fecha_adquisicion', '<=', $fechaCalculo)
+                ->whereDate('fecha_adquisicion', '<=', $fechaCalculoFecha)
                 ->lockForUpdate()
                 ->get();
 
@@ -231,7 +239,7 @@ class ActivoFijoService
             $cabecera = [
                 'empresa_id' => $empresaId,
                 'usuario_id' => $usuarioId,
-                'fecha' => $fechaCalculo,
+                'fecha' => $fechaCalculoFecha,
                 'glosa' => $glosaMes,
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'activos',

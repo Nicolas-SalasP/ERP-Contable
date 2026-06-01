@@ -53,6 +53,7 @@ import ConfiguracionSii from './Modulos/Sii/Vistas/ConfiguracionSii';
 import CertificadoSii from './Modulos/Sii/Vistas/CertificadoSii';
 import FoliosCaf from './Modulos/Sii/Vistas/FoliosCaf';
 import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
+import Glosario from './Modulos/Glosario/Glosario';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -234,6 +235,13 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
                 <LayoutPrincipal><DashboardRenta /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+          <Route path="/tributario/correccion-monetaria" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><CorreccionMonetaria /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -495,11 +503,20 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/sii/caf" element={<Navigate to="/sii/folios-caf" replace />} />
+
           <Route path="/sii/facturas" element={
             <RutaPrivada>
               <RutaProtegida permiso="sii.dte.ver">
                 <LayoutPrincipal><FacturasSii /></LayoutPrincipal>
               </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+
+          <Route path="/glosario" element={
+            <RutaPrivada>
+              <LayoutPrincipal><Glosario /></LayoutPrincipal>
             </RutaPrivada>
           } />
 

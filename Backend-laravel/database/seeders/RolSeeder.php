@@ -18,6 +18,7 @@ class RolSeeder extends Seeder
                     $this->permisosOperativosCompletos(),
                     $this->permisosAdministracion(),
                     $this->permisosInventarioCompletos(),
+                    $this->permisosSiiAdministracion(),
                 ))),
             ],
             [
@@ -27,6 +28,7 @@ class RolSeeder extends Seeder
                 'permisos' => array_values(array_unique(array_merge(
                     $this->permisosOperativosCompletos(),
                     $this->permisosInventarioCompletos(),
+                    $this->permisosSiiAdministracion(),
                 ))),
             ],
             [
@@ -41,6 +43,7 @@ class RolSeeder extends Seeder
                         'activos.ver',
                     ],
                     $this->permisosInventarioCompletos(),
+                    $this->permisosSiiOperacion(),
                 ))),
             ],
             [
@@ -54,6 +57,7 @@ class RolSeeder extends Seeder
                         'usuarios.ver',
                     ],
                     $this->permisosInventarioSoloLectura(),
+                    $this->permisosSiiSoloLectura(),
                 ))),
             ],
         ];
@@ -81,6 +85,51 @@ class RolSeeder extends Seeder
     {
         return [
             'usuarios.ver', 'usuarios.gestionar',
+        ];
+    }
+
+
+
+    private function permisosSiiAdministracion(): array
+    {
+        return [
+            'sii.configuracion.ver',
+            'sii.configuracion.editar',
+            'sii.certificado.ver',
+            'sii.certificado.subir',
+            'sii.certificado.revocar',
+            'sii.caf.ver',
+            'sii.caf.subir',
+            'sii.caf.revocar',
+            'sii.dte.ver',
+            'sii.dte.emitir',
+            'sii.dte.reintentar',
+            'sii.dte.anular',
+            'sii.auditoria.ver',
+        ];
+    }
+
+    private function permisosSiiOperacion(): array
+    {
+        return [
+            'sii.configuracion.ver',
+            'sii.certificado.ver',
+            'sii.caf.ver',
+            'sii.dte.ver',
+            'sii.dte.emitir',
+            'sii.dte.reintentar',
+            'sii.auditoria.ver',
+        ];
+    }
+
+    private function permisosSiiSoloLectura(): array
+    {
+        return [
+            'sii.configuracion.ver',
+            'sii.certificado.ver',
+            'sii.caf.ver',
+            'sii.dte.ver',
+            'sii.auditoria.ver',
         ];
     }
 
