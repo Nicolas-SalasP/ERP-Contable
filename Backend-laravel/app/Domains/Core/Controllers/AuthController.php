@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use App\Domains\Core\Services\ProvisionUserService;
 use App\Domains\Core\Services\WebAuthClient;
 use App\Domains\Core\Support\ModuloPermisos;
+use Illuminate\Support\Carbon;
 use Throwable;
 
 class AuthController
@@ -67,6 +68,24 @@ class AuthController
                 ], 403);
             }
 
+            if ($user->empresa_id !== null) {
+                $empresa = $user->empresa()->first();
+                if ($empresa && (bool) $empresa->activa === false) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La empresa se encuentra suspendida. Contacte al administrador.'
+                    ], 403);
+                }
+            }
+
+            if ($user->bloqueado_hasta !== null
+                && Carbon::parse($user->bloqueado_hasta)->isFuture()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario bloqueado temporalmente.'
+                ], 403);
+            }
+
             $user->update(['ultimo_acceso' => now()]);
 
             $permisos = ModuloPermisos::permisosUsuario($user);
@@ -103,8 +122,16 @@ class AuthController
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Sesión cerrada correctamente']);
+        $token = $request->user()->currentAccessToken();
+
+        if ($token) {
+            $token->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sesion cerrada correctamente',
+        ]);
     }
 
     public function refresh(Request $request)

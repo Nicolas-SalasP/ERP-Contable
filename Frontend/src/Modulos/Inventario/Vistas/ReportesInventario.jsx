@@ -461,7 +461,6 @@ const ReportesInventario = () => {
     useEffect(() => {
         cargarReporte(buildParamsFor(reporte, filters));
         // Se recarga al cambiar de reporte. Los filtros se aplican explícitamente con el botón para evitar llamadas en cada cambio de input.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tipoReporte]);
 
     const rows = useMemo(() => getRows(resultado?.data, reporte.dataPath), [resultado, reporte]);
