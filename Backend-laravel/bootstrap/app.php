@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckSubscription;
+use App\Http\Middleware\TrackUltimoAcceso;
 use App\Http\Middleware\VerifyWebApiKey;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,8 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'web.api.key'        => VerifyWebApiKey::class,
-            'check.subscription' => CheckSubscription::class,
+            'web.api.key'         => VerifyWebApiKey::class,
+            'check.subscription'  => CheckSubscription::class,
+            'track.ultimo.acceso' => TrackUltimoAcceso::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

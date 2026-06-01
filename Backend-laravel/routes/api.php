@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Domains\Core\Controllers\AuthController;
+use App\Domains\Core\Controllers\Internal\AdminEmpresasController;
 use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
 use App\Domains\Core\Controllers\EmpresaController;
@@ -32,14 +33,14 @@ use App\Domains\Inventario\Controllers\InventarioPickingController;
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/refresh', [AuthController::class, 'refresh']);
         Route::get('/me', [AuthController::class, 'me']);
     });
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
     // Gestion de usuarios y roles
     Route::get('/usuarios', [UsuarioController::class, 'index']);
     Route::get('/usuarios/roles', [UsuarioController::class, 'roles']);
@@ -359,4 +360,15 @@ Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
     Route::post('/sync-plan',      [WebProvisioningController::class, 'syncPlan']);
     Route::post('/sync-password',  [WebProvisioningController::class, 'syncPassword']);
     Route::get('/online-users',    [WebProvisioningController::class, 'onlineUsers']);
+
+    Route::get('/empresas',        [AdminEmpresasController::class, 'index']);
+    Route::get('/empresas/{id}',   [AdminEmpresasController::class, 'show']);
+    Route::get('/usuarios',        [AdminEmpresasController::class, 'usuarios']);
+
+    // Acciones administrativas (write-side multitenant)
+    Route::post('/empresas/{id}/suspender', [AdminEmpresasController::class, 'suspender']);
+    Route::post('/empresas/{id}/activar',   [AdminEmpresasController::class, 'activar']);
+    Route::put('/empresas/{id}/plan',       [AdminEmpresasController::class, 'cambiarPlan']);
+    Route::post('/usuarios/{id}/bloquear',    [AdminEmpresasController::class, 'bloquearUsuario']);
+    Route::post('/usuarios/{id}/desbloquear', [AdminEmpresasController::class, 'desbloquearUsuario']);
 });

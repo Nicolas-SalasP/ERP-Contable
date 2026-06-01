@@ -67,6 +67,28 @@ class AuthController
                 ], 403);
             }
 
+            // Guard multitenant: si el usuario pertenece a una empresa y esa empresa
+            // esta suspendida (activa = false) => rechazar. Los usuarios SIN empresa
+            // (empresa_id null) NO quedan bloqueados por esta regla.
+            if ($user->empresa_id !== null) {
+                $empresa = $user->empresa()->first();
+                if ($empresa && (bool) $empresa->activa === false) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La empresa se encuentra suspendida. Contacte al administrador.'
+                    ], 403);
+                }
+            }
+
+            // Guard de bloqueo temporal de usuario: bloqueado_hasta en el futuro.
+            if ($user->bloqueado_hasta !== null
+                && \Illuminate\Support\Carbon::parse($user->bloqueado_hasta)->isFuture()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario bloqueado temporalmente.'
+                ], 403);
+            }
+
             $user->update(['ultimo_acceso' => now()]);
 
             $permisos = ModuloPermisos::permisosUsuario($user);
