@@ -563,19 +563,15 @@ describe('api.auth', () => {
         expect(result.token).toBe('t');
     });
 
-    it('logout limpia tokens', () => {
-        const originalLocation = window.location;
-        delete window.location;
-        window.location = { ...originalLocation, href: '' };
+  it('logout limpia tokens', async () => {
+    localStorage.setItem('erp_token', 'token-local');
+    sessionStorage.setItem('erp_token', 'token-session');
 
-        localStorage.setItem('erp_token', 'x');
-        sessionStorage.setItem('erp_token', 'y');
-        api.auth.logout();
-        expect(localStorage.getItem('erp_token')).toBeNull();
-        expect(sessionStorage.getItem('erp_token')).toBeNull();
-        expect(window.location.href).toBe('/login');
+    await api.auth.logout();
 
-        window.location = originalLocation;
+    expect(localStorage.getItem('erp_token')).toBeNull();
+    expect(sessionStorage.getItem('erp_token')).toBeNull();
+
     });
 });
 

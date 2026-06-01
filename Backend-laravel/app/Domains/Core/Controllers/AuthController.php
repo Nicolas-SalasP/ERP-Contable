@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use App\Domains\Core\Services\ProvisionUserService;
 use App\Domains\Core\Services\WebAuthClient;
 use App\Domains\Core\Support\ModuloPermisos;
+use Illuminate\Support\Carbon;
 use Throwable;
 
 class AuthController
@@ -67,9 +68,6 @@ class AuthController
                 ], 403);
             }
 
-            // Guard multitenant: si el usuario pertenece a una empresa y esa empresa
-            // esta suspendida (activa = false) => rechazar. Los usuarios SIN empresa
-            // (empresa_id null) NO quedan bloqueados por esta regla.
             if ($user->empresa_id !== null) {
                 $empresa = $user->empresa()->first();
                 if ($empresa && (bool) $empresa->activa === false) {
@@ -80,9 +78,8 @@ class AuthController
                 }
             }
 
-            // Guard de bloqueo temporal de usuario: bloqueado_hasta en el futuro.
             if ($user->bloqueado_hasta !== null
-                && \Illuminate\Support\Carbon::parse($user->bloqueado_hasta)->isFuture()) {
+                && Carbon::parse($user->bloqueado_hasta)->isFuture()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Usuario bloqueado temporalmente.'
@@ -125,8 +122,16 @@ class AuthController
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Sesión cerrada correctamente']);
+        $token = $request->user()->currentAccessToken();
+
+        if ($token) {
+            $token->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sesion cerrada correctamente',
+        ]);
     }
 
     public function refresh(Request $request)

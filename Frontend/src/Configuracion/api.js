@@ -482,6 +482,15 @@ const request = async (endpoint, method, body, options = {}) => {
 
         if (response.ok) {
             const data = await parseBody(response);
+
+            // Contrato API enterprise: si el backend responde HTTP 200/201
+            // pero marca success:false, el frontend debe tratarlo como error
+            // funcional y no como exito silencioso.
+            if (data && typeof data === 'object' && data.success === false) {
+                lastError = buildError(response.status, data, response.statusText);
+                break;
+            }
+
             return data;
         }
 
@@ -630,10 +639,32 @@ export const api = {
         register(data) {
             return request('/auth/register', 'POST', data);
         },
-        logout() {
+        async logout(options = {}) {
+            const redirect = options.redirect !== false;
+            const token = getToken();
+
+            // Limpiamos localmente antes de esperar red: el logout de UI debe
+            // sentirse inmediato e idempotente aunque el token ya este vencido.
             clearAuth();
-            if (typeof window !== 'undefined') {
-                window.location.href = '/login';
+
+            try {
+                if (token) {
+                    await fetch(`${API_BASE_URL}/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json',
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                }
+            } catch {
+                // No bloquea el logout local. El backend limpiara tokens validos
+                // cuando reciba la peticion; si falla la red, la sesion local ya
+                // queda cerrada.
+            } finally {
+                if (redirect && typeof window !== 'undefined') {
+                    window.location.href = '/login';
+                }
             }
         },
     },

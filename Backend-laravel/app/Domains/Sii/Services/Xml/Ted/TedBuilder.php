@@ -84,7 +84,12 @@ class TedBuilder
      */
     private function elemento(string $tag, string $valor): string
     {
-        $escaped = htmlspecialchars($valor, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        // Los valores van como texto de elemento, no como atributos.
+        // Escapar comillas/apostrofes con &quot;/&apos; hace que DOMDocument pueda
+        // reserializarlas luego como caracteres literales, cambiando los bytes
+        // del <DD> y rompiendo la verificacion RSA-SHA1 del FRMT en el TED.
+        // Por eso solo escapamos caracteres obligatorios en texto XML: &, < y >.
+        $escaped = htmlspecialchars($valor, ENT_XML1 | ENT_NOQUOTES, 'UTF-8');
 
         return "<{$tag}>{$escaped}</{$tag}>";
     }

@@ -5,22 +5,15 @@ namespace App\Domains\Core\Controllers\Internal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class AdminEmpresasController
 {
-    /**
-     * Lista todas las empresas (tenants) con agregados de sus usuarios.
-     *
-     * Respuesta: { "empresas": [ {id, rut, razon_social, regimen_tributario,
-     *   color_primario, created_at, usuarios_count, online_count, ultimo_acceso,
-     *   planes: [...] }, ... ] }
-     */
     public function index(): JsonResponse
     {
         $threshold = now()->subMinutes(30);
 
-        // Agregados por empresa calculados en una sola pasada (evita N+1).
         $empresas = DB::table('empresas as e')
             ->leftJoin('usuarios as u', 'u.empresa_id', '=', 'e.id')
             ->groupBy(
@@ -48,14 +41,13 @@ class AdminEmpresasController
             ->orderBy('e.id')
             ->get();
 
-        // Planes distintos (no nulos) por empresa en una sola consulta.
         $planesPorEmpresa = DB::table('usuarios')
             ->whereNotNull('plan_slug')
             ->select('empresa_id', 'plan_slug')
             ->distinct()
             ->get()
             ->groupBy('empresa_id')
-            ->map(fn ($rows) => $rows->pluck('plan_slug')->values()->all());
+            ->map(fn($rows) => $rows->pluck('plan_slug')->values()->all());
 
         $data = $empresas->map(function ($e) use ($planesPorEmpresa) {
             return [
@@ -76,13 +68,6 @@ class AdminEmpresasController
         return response()->json(['empresas' => $data]);
     }
 
-    /**
-     * Detalle de una empresa con el listado de sus usuarios.
-     *
-     * Respuesta: { "empresa": { ...campos, usuarios: [ {id, nombre, email,
-     *   plan_slug, rol, estado_suscripcion, ultimo_acceso, online, bloqueado} ] } }
-     * 404 JSON si no existe.
-     */
     public function show($id): JsonResponse
     {
         $empresa = DB::table('empresas')->where('id', $id)->first();
@@ -153,15 +138,6 @@ class AdminEmpresasController
         ]);
     }
 
-    /**
-     * Lista PLANA de todos los usuarios del ERP (vista user-centric).
-     *
-     * Respuesta: { "usuarios": [ {id, nombre, email, empresa_id, empresa,
-     *   plan_slug, rol, estado_suscripcion, ultimo_acceso, online, bloqueado} ] }
-     *
-     * Evita N+1 mediante JOINs a empresas, roles y estados_suscripcion.
-     * Ordena por ultimo_acceso DESC con los nulos al final.
-     */
     public function usuarios(): JsonResponse
     {
         $now = now();
@@ -212,27 +188,16 @@ class AdminEmpresasController
         return response()->json(['usuarios' => $usuarios]);
     }
 
-    /**
-     * Suspende una empresa (tenant): empresas.activa = false.
-     * Respuesta: { success:true, empresa:{ id, activa:false } }. 404 si no existe.
-     */
     public function suspender($id): JsonResponse
     {
         return $this->setActiva($id, false);
     }
 
-    /**
-     * Activa una empresa (tenant): empresas.activa = true.
-     * Respuesta: { success:true, empresa:{ id, activa:true } }. 404 si no existe.
-     */
     public function activar($id): JsonResponse
     {
         return $this->setActiva($id, true);
     }
 
-    /**
-     * Helper interno: cambia el estado activa de una empresa.
-     */
     private function setActiva($id, bool $activa): JsonResponse
     {
         try {
@@ -262,11 +227,6 @@ class AdminEmpresasController
         }
     }
 
-    /**
-     * Cambia el plan de TODOS los usuarios de una empresa.
-     * Body: { plan_slug: string|null, module_keys: array }
-     * Respuesta: { success:true, updated:<n>, plan_slug, module_keys }.
-     */
     public function cambiarPlan(Request $request, $id): JsonResponse
     {
         try {
@@ -302,7 +262,7 @@ class AdminEmpresasController
                 'plan_slug' => $planSlug,
                 'module_keys' => $moduleKeys,
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Datos inválidos.',
@@ -316,11 +276,6 @@ class AdminEmpresasController
         }
     }
 
-    /**
-     * Bloquea un usuario. Body opcional: { hasta?: 'Y-m-d H:i:s' }.
-     * Sin 'hasta' => bloqueo indefinido (now()+100 años).
-     * Respuesta: { success:true, usuario:{ id, bloqueado:true, bloqueado_hasta } }. 404 si no existe.
-     */
     public function bloquearUsuario(Request $request, $id): JsonResponse
     {
         try {
@@ -353,7 +308,7 @@ class AdminEmpresasController
                     'bloqueado_hasta' => $hasta,
                 ],
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Datos inválidos.',
@@ -367,10 +322,6 @@ class AdminEmpresasController
         }
     }
 
-    /**
-     * Desbloquea un usuario: bloqueado_hasta=null y resetea contadores de bloqueo.
-     * Respuesta: { success:true, usuario:{ id, bloqueado:false } }. 404 si no existe.
-     */
     public function desbloquearUsuario($id): JsonResponse
     {
         try {
