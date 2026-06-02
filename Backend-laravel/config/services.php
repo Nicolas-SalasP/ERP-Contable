@@ -5,6 +5,7 @@ return [
     'tenri_web' => [
         'base_url' => env('TENRI_WEB_BASE_URL', 'http://localhost:8000'),
         'api_key' => env('ERP_INTEGRATION_KEY'),
+        'web_integration_key' => env('WEB_INTEGRATION_KEY'),
     ],
 
     'postmark' => [
