@@ -264,7 +264,7 @@ const GestionUsuarios = () => {
                                     <input type="email" required value={formInvitar.email} onChange={(e) => setFormInvitar({ ...formInvitar, email: e.target.value })} placeholder="correo@ejemplo.com" className="w-full border border-slate-200 rounded-xl p-3 md:p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition-all font-bold text-slate-800" />
                                     <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        Si no tiene cuenta en AtlasWeb, se registrará al ingresar este correo.
+                                        Si no tiene cuenta en Tenri ERP Cloud, se registrará al ingresar este correo.
                                     </p>
                                 </div>
                                 <div>
