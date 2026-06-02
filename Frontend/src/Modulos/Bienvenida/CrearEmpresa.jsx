@@ -57,14 +57,17 @@ const CrearEmpresa = () => {
         if (!rut) return;
 
         if (!validarRutChile(rut)) {
-            setErrores(prev => ({ ...prev, empresa_rut: 'RUT inválido. Verifica la informacion ingresada.' }));
+            setErrores(prev => ({ ...prev, empresa_rut: 'RUT inválido. Revisa el dígito verificador.' }));
             return;
         }
 
         setVerificandoRut(true);
         try {
             const res = await api.get(`/empresas/verificar-rut?rut=${rut}`);
-            if (res.existe) {
+            // El backend es la fuente autoritativa de la validación del dígito verificador.
+            if (res.valido === false) {
+                setErrores(prev => ({ ...prev, empresa_rut: 'El RUT no es válido: el dígito verificador no corresponde.' }));
+            } else if (res.existe) {
                 setErrores(prev => ({ ...prev, empresa_rut: 'Este RUT ya está registrado en el ERP.' }));
             }
         } catch (error) {
@@ -259,7 +262,7 @@ const CrearEmpresa = () => {
             </div>
             
             <div className="mt-8 text-slate-600 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">
-                AtlasWeb Identity S2S
+                Tenri ERP Cloud
             </div>
         </div>
     );
