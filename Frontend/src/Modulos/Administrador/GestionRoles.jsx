@@ -2,140 +2,151 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 
+// Claves de permisos alineadas con el backend (ModuloPermisos / RolSeeder).
+const listaPermisos = [
+    { categoria: 'Ventas', keys: ['ventas.ver', 'ventas.crear'] },
+    { categoria: 'Clientes', keys: ['clientes.ver', 'clientes.crear'] },
+    { categoria: 'Compras', keys: ['compras.ver', 'compras.crear'] },
+    { categoria: 'Proveedores', keys: ['proveedores.ver', 'proveedores.crear'] },
+    { categoria: 'Tesorería', keys: ['tesoreria.ver', 'tesoreria.crear'] },
+    { categoria: 'Contabilidad', keys: ['contabilidad.ver', 'contabilidad.crear'] },
+    { categoria: 'Activos', keys: ['activos.ver', 'activos.crear'] },
+    { categoria: 'Tributario', keys: ['tributario.ver', 'tributario.crear'] },
+    { categoria: 'Usuarios', keys: ['usuarios.ver', 'usuarios.gestionar'] },
+    {
+        categoria: 'Inventario',
+        keys: [
+            'inventario.dashboard.ver', 'inventario.reportes.ver', 'inventario.reportes.exportar',
+            'inventario.productos.ver', 'inventario.productos.crear', 'inventario.productos.editar',
+            'inventario.bodegas.ver', 'inventario.bodegas.crear',
+            'inventario.movimientos.ver', 'inventario.movimientos.entrada', 'inventario.movimientos.salida',
+            'inventario.movimientos.traspaso', 'inventario.movimientos.ajuste',
+            'inventario.kardex.ver', 'inventario.valorizacion.ver',
+            'inventario.ajustes_criticos.ver', 'inventario.ajustes_criticos.crear',
+            'inventario.lotes.ver', 'inventario.lotes.crear', 'inventario.lotes.editar',
+            'inventario.reservas.ver', 'inventario.reservas.crear', 'inventario.reservas.cancelar',
+            'inventario.reservas.liberar', 'inventario.reservas.consumir', 'inventario.disponibilidad.ver',
+            'inventario.tomas_fisicas.ver', 'inventario.tomas_fisicas.crear', 'inventario.tomas_fisicas.contar',
+            'inventario.tomas_fisicas.cerrar', 'inventario.tomas_fisicas.ajustar', 'inventario.tomas_fisicas.cancelar',
+            'inventario.alertas.ver',
+            'inventario.reglas_reposicion.ver', 'inventario.reglas_reposicion.crear',
+            'inventario.reglas_reposicion.editar', 'inventario.reglas_reposicion.eliminar',
+            'inventario.ubicaciones.ver', 'inventario.ubicaciones.crear', 'inventario.ubicaciones.editar',
+            'inventario.stock_ubicaciones.ver', 'inventario.stock_ubicaciones.mover', 'inventario.putaway.ejecutar',
+            'inventario.picking.ver', 'inventario.picking.crear', 'inventario.picking.editar',
+            'inventario.picking.confirmar', 'inventario.picking.cancelar',
+            'inventario.packing.ver', 'inventario.packing.crear', 'inventario.packing.editar',
+            'inventario.packing.confirmar', 'inventario.packing.cancelar',
+            'inventario.despachos.ver', 'inventario.despachos.crear', 'inventario.despachos.editar',
+            'inventario.despachos.confirmar', 'inventario.despachos.cancelar',
+            'inventario.devoluciones.ver', 'inventario.devoluciones.crear',
+            'inventario.devoluciones.confirmar', 'inventario.devoluciones.cancelar',
+            'inventario.auditoria.ver', 'inventario.eventos_integracion.ver',
+        ],
+    },
+    {
+        categoria: 'SII (Facturación)',
+        keys: [
+            'sii.configuracion.ver', 'sii.configuracion.editar',
+            'sii.certificado.ver', 'sii.certificado.subir', 'sii.certificado.revocar',
+            'sii.caf.ver', 'sii.caf.subir', 'sii.caf.revocar',
+            'sii.dte.ver', 'sii.dte.emitir', 'sii.dte.reintentar', 'sii.dte.anular',
+            'sii.auditoria.ver',
+        ],
+    },
+];
+
 const GestionRoles = () => {
     const [roles, setRoles] = useState([]);
     const [rolSeleccionado, setRolSeleccionado] = useState(null);
     const [_loading, setLoading] = useState(true);
+    const [guardando, setGuardando] = useState(false);
 
-    // Definición maestra de permisos del sistema
- const listaPermisos = [
-    { categoria: 'Ventas', keys: ['ventas.ver', 'ventas.crear', 'ventas.anular', 'clientes.gestionar'] },
-    { categoria: 'Compras', keys: ['compras.ver', 'compras.crear', 'proveedores.gestionar'] },
-    { categoria: 'Tesorería', keys: ['tesoreria.ver', 'bancos.gestionar', 'conciliacion.ejecutar'] },
-    { categoria: 'Contabilidad', keys: ['contabilidad.ver', 'asientos.crear', 'plan_cuentas.editar'] },
-    { categoria: 'Activos', keys: ['activos.ver', 'activos.gestionar', 'proyectos.crear'] },
-    { categoria: 'Tributario', keys: ['f29.ver', 'f29.ejecutar', 'renta.ver'] },
-
-    {
-        categoria: 'Inventario',
-        keys: [
-            'inventario.productos.ver',
-            'inventario.productos.crear',
-            'inventario.productos.editar',
-            'inventario.bodegas.ver',
-            'inventario.bodegas.crear',
-            'inventario.movimientos.ver',
-            'inventario.movimientos.entrada',
-            'inventario.movimientos.salida',
-            'inventario.movimientos.traspaso',
-            'inventario.movimientos.ajuste',
-            'inventario.kardex.ver',
-            'inventario.valorizacion.ver',
-            'inventario.dashboard.ver',
-            'inventario.reportes.ver',
-            'inventario.reportes.exportar',
-            'inventario.ajustes_criticos.ver',
-            'inventario.ajustes_criticos.crear',
-            'inventario.lotes.ver',
-            'inventario.lotes.crear',
-            'inventario.lotes.editar',
-            'inventario.reservas.ver',
-            'inventario.reservas.crear',
-            'inventario.reservas.cancelar',
-            'inventario.reservas.liberar',
-            'inventario.reservas.consumir',
-            'inventario.disponibilidad.ver',
-            'inventario.tomas_fisicas.ver',
-            'inventario.tomas_fisicas.crear',
-            'inventario.tomas_fisicas.contar',
-            'inventario.tomas_fisicas.cerrar',
-            'inventario.tomas_fisicas.ajustar',
-            'inventario.tomas_fisicas.cancelar',
-            'inventario.alertas.ver',
-            'inventario.reglas_reposicion.ver',
-            'inventario.reglas_reposicion.crear',
-            'inventario.reglas_reposicion.editar',
-            'inventario.reglas_reposicion.eliminar',
-            'inventario.ubicaciones.ver',
-            'inventario.ubicaciones.crear',
-            'inventario.ubicaciones.editar',
-            'inventario.stock_ubicaciones.ver',
-            'inventario.stock_ubicaciones.mover',
-            'inventario.putaway.ejecutar',
-            'inventario.picking.ver',
-            'inventario.picking.crear',
-            'inventario.picking.editar',
-            'inventario.picking.confirmar',
-            'inventario.picking.cancelar',
-            'inventario.packing.ver',
-            'inventario.packing.crear',
-            'inventario.packing.editar',
-            'inventario.packing.confirmar',
-            'inventario.packing.cancelar',
-            'inventario.despachos.ver',
-            'inventario.despachos.crear',
-            'inventario.despachos.editar',
-            'inventario.despachos.confirmar',
-            'inventario.despachos.cancelar',
-            'inventario.devoluciones.ver',
-            'inventario.devoluciones.crear',
-            'inventario.devoluciones.confirmar',
-            'inventario.devoluciones.cancelar',
-            'inventario.reportes.picking',
-            'inventario.reportes.packing',
-            'inventario.reportes.despachos',
-            'inventario.reportes.devoluciones',
-            'inventario.auditoria.ver',
-            'inventario.auditoria.detalle',
-            'inventario.auditoria.resumen',
-            'inventario.seguridad.ver',
-            'inventario.eventos_integracion.ver',
-            'inventario.eventos_integracion.detalle',
-            'inventario.eventos_integracion.resumen',
-            'inventario.eventos_integracion.procesar',
-            'inventario.eventos_integracion.gestionar',
-
-
-        ],
-    },
-
-    { categoria: 'Administración', keys: ['usuarios.gestionar', 'roles.gestionar', 'empresa.editar'] },
-];
+    const esRolSistema = rolSeleccionado && (rolSeleccionado.empresa_id === null || rolSeleccionado.empresa_id === undefined);
 
     useEffect(() => { cargarRoles(); }, []);
 
-    const cargarRoles = async () => {
+    const cargarRoles = async (idSeleccionar = null) => {
         setLoading(true);
         try {
             const res = await api.get('/usuarios/roles');
             if (res.success) {
                 setRoles(res.data);
-                if (res.data.length > 0) setRolSeleccionado(res.data[0]);
+                const elegido = idSeleccionar
+                    ? res.data.find(r => r.id === idSeleccionar)
+                    : res.data.find(r => r.id === rolSeleccionado?.id) || res.data[0];
+                setRolSeleccionado(elegido || null);
             }
         } finally { setLoading(false); }
     };
 
+    const crearRol = async () => {
+        const { value: nombre } = await Swal.fire({
+            title: 'Nuevo rol',
+            input: 'text',
+            inputLabel: 'Nombre del rol',
+            inputPlaceholder: 'Ej: Vendedor',
+            showCancelButton: true,
+            confirmButtonText: 'Crear',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#4f46e5',
+            inputValidator: (v) => (!v || !v.trim()) && 'Ingresa un nombre para el rol.',
+        });
+        if (!nombre) return;
+
+        try {
+            const res = await api.post('/usuarios/roles', { nombre: nombre.trim(), permisos: [] });
+            if (res.success) {
+                Swal.fire({ icon: 'success', title: 'Rol creado', timer: 1300, showConfirmButton: false });
+                await cargarRoles(res.data?.id);
+            }
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'No se pudo crear', text: error.message || 'Error al crear el rol.' });
+        }
+    };
+
+    const duplicarRol = async () => {
+        if (!rolSeleccionado) return;
+        try {
+            const res = await api.post('/usuarios/roles', {
+                nombre: `${rolSeleccionado.nombre} (copia)`,
+                permisos: rolSeleccionado.permisos || [],
+            });
+            if (res.success) {
+                Swal.fire({ icon: 'success', title: 'Rol duplicado', text: 'Se creó una copia editable que puedes personalizar.', timer: 1800, showConfirmButton: false });
+                await cargarRoles(res.data?.id);
+            }
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'No se pudo duplicar', text: error.message || 'Solo puedes asignar permisos que tú posees.' });
+        }
+    };
+
     const handleTogglePermiso = (key) => {
+        if (esRolSistema) return;
         const nuevosPermisos = rolSeleccionado.permisos || [];
-        const act = nuevosPermisos.includes(key) 
-            ? nuevosPermisos.filter(p => p !== key) 
+        const act = nuevosPermisos.includes(key)
+            ? nuevosPermisos.filter(p => p !== key)
             : [...nuevosPermisos, key];
-        
+
         setRolSeleccionado({ ...rolSeleccionado, permisos: act });
     };
 
     const handleGuardar = async () => {
+        if (esRolSistema) return;
+        setGuardando(true);
         try {
             const res = await api.put(`/usuarios/roles/${rolSeleccionado.id}`, {
                 nombre: rolSeleccionado.nombre,
                 permisos: rolSeleccionado.permisos
             });
             if (res.success) {
-                Swal.fire({ icon: 'success', title: 'Permisos Actualizados', timer: 1500, showConfirmButton: false });
-                cargarRoles();
+                Swal.fire({ icon: 'success', title: 'Permisos actualizados', timer: 1500, showConfirmButton: false });
+                cargarRoles(rolSeleccionado.id);
             }
         } catch (error) {
-            Swal.fire({ icon: 'error', text: 'No se pudieron guardar los cambios.' });
+            Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: error.message || 'No se pudieron guardar los cambios.' });
+        } finally {
+            setGuardando(false);
         }
     };
 
@@ -150,20 +161,28 @@ const GestionRoles = () => {
                 <div className="lg:col-span-4 space-y-3">
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Perfiles Disponibles</h3>
                     {roles.map(rol => (
-                        <button 
+                        <button
                             key={rol.id}
                             onClick={() => setRolSeleccionado(rol)}
                             className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center justify-between group ${
-                                rolSeleccionado?.id === rol.id 
-                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200' 
+                                rolSeleccionado?.id === rol.id
+                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
                                 : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
                             }`}
                         >
-                            <span className="font-bold">{rol.nombre}</span>
+                            <span className="font-bold flex items-center gap-2">
+                                {rol.nombre}
+                                {(rol.empresa_id === null || rol.empresa_id === undefined) && (
+                                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${rolSeleccionado?.id === rol.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'}`}>Sistema</span>
+                                )}
+                            </span>
                             <i className={`fas fa-chevron-right text-xs transition-transform ${rolSeleccionado?.id === rol.id ? 'translate-x-1' : 'opacity-0'}`}></i>
                         </button>
                     ))}
-                    <button className="w-full p-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-500 transition-all">
+                    <button
+                        onClick={crearRol}
+                        className="w-full p-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-500 transition-all"
+                    >
                         + Crear Nuevo Rol
                     </button>
                 </div>
@@ -171,20 +190,34 @@ const GestionRoles = () => {
                 <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                     {rolSeleccionado ? (
                         <>
-                            <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center gap-4">
                                 <div>
                                     <h2 className="text-xl font-black text-slate-800">Configurando: {rolSeleccionado.nombre}</h2>
-                                    <p className="text-xs text-slate-500 font-medium mt-1">Marca las casillas para autorizar el acceso.</p>
+                                    <p className="text-xs text-slate-500 font-medium mt-1">
+                                        {esRolSistema
+                                            ? 'Rol del sistema (solo lectura). Duplícalo para crear una versión editable.'
+                                            : 'Marca las casillas para autorizar el acceso.'}
+                                    </p>
                                 </div>
-                                <button 
-                                    onClick={handleGuardar}
-                                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-200 transition-all text-sm"
-                                >
-                                    Guardar Cambios
-                                </button>
+                                {esRolSistema ? (
+                                    <button
+                                        onClick={duplicarRol}
+                                        className="bg-indigo-500 hover:bg-indigo-600 text-white font-black py-2.5 px-6 rounded-xl shadow-lg shadow-indigo-200 transition-all text-sm whitespace-nowrap"
+                                    >
+                                        <i className="fas fa-copy mr-2"></i>Duplicar
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleGuardar}
+                                        disabled={guardando}
+                                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-200 transition-all text-sm disabled:opacity-50 whitespace-nowrap"
+                                    >
+                                        {guardando ? 'Guardando…' : 'Guardar Cambios'}
+                                    </button>
+                                )}
                             </div>
 
-                            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                            <div className={`p-6 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto max-h-[60vh] custom-scrollbar ${esRolSistema ? 'opacity-70' : ''}`}>
                                 {listaPermisos.map(grupo => (
                                     <div key={grupo.categoria} className="space-y-3">
                                         <h4 className="text-[11px] font-black text-indigo-500 uppercase tracking-widest border-b border-indigo-50 pb-2">
@@ -192,13 +225,14 @@ const GestionRoles = () => {
                                         </h4>
                                         <div className="space-y-2">
                                             {grupo.keys.map(key => (
-                                                <label key={key} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group">
+                                                <label key={key} className={`flex items-center gap-3 p-2 rounded-lg transition-colors group ${esRolSistema ? 'cursor-default' : 'hover:bg-slate-50 cursor-pointer'}`}>
                                                     <div className="relative flex items-center">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={rolSeleccionado.permisos?.includes(key)}
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={rolSeleccionado.permisos?.includes(key) || false}
                                                             onChange={() => handleTogglePermiso(key)}
-                                                            className="w-5 h-5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                            disabled={esRolSistema}
+                                                            className="w-5 h-5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer disabled:cursor-default"
                                                         />
                                                     </div>
                                                     <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 capitalize">
