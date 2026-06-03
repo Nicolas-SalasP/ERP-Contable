@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Services\EmpresaService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Domains\Core\Support\ModuloPermisos;
 use App\Domains\Sii\Support\RutHelper;
 use Illuminate\Validation\ValidationException;
@@ -75,7 +76,8 @@ class EmpresaController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
@@ -95,7 +97,8 @@ class EmpresaController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('EmpresaController (logo): ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'No se pudo procesar la solicitud.'], 500);
         }
     }
 
@@ -116,7 +119,8 @@ class EmpresaController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
@@ -126,7 +130,8 @@ class EmpresaController extends Controller
             $this->empresaService->eliminarBanco($request->user()->empresa_id, $id);
             return response()->json(['success' => true]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
@@ -144,7 +149,8 @@ class EmpresaController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
@@ -186,7 +192,8 @@ class EmpresaController extends Controller
             $this->empresaService->eliminarCentroCosto($request->user()->empresa_id, $id);
             return response()->json(['success' => true]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 

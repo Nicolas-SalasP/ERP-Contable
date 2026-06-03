@@ -5,6 +5,7 @@ namespace App\Domains\Tesoreria\Controllers;
 use App\Domains\Tesoreria\Services\BancoService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class BancoController
@@ -86,7 +87,8 @@ class BancoController
             return response()->json(array_merge(['success' => true], $resultado));
 
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 500);
+            Log::error('BancoController (importarCartola): ' . $e->getMessage());
+            return response()->json(['success' => false, 'mensaje' => 'Error interno del servidor.'], 500);
         }
     }
 
