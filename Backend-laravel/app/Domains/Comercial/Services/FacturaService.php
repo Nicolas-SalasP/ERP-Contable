@@ -393,8 +393,12 @@ class FacturaService
 
     public function obtenerFacturasPorIds(int $empresaId, array $ids)
     {
+        // Solo se usa para aplicar pagos en la conciliacion bancaria: excluye
+        // facturas ya PAGADAS o ANULADAS para evitar pagarlas dos veces y que el
+        // excedente se registre erroneamente como anticipo.
         return Factura::where('empresa_id', $empresaId)
             ->whereIn('id', $ids)
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
             ->get();
     }
 
