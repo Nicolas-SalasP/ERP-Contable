@@ -41,6 +41,8 @@ use App\Domains\Inventario\Controllers\InventarioPickingController;
 | el set completo de inventario (ver ModuloPermisos::permisosUsuario).
 | Las rutas de perfil de empresa quedan solo autenticadas (sin permiso
 | especifico) porque son configuracion propia de cada miembro de la empresa.
+| El modulo Inventario aplica su propia autorizacion granular a nivel de
+| controller (InventarioPermisoService), por eso su grupo no repite permiso:.
 */
 
 Route::prefix('auth')->group(function () {
@@ -55,14 +57,18 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription'])->group(function () {
-    // Gestion de usuarios y roles
-    Route::get('/usuarios', [UsuarioController::class, 'index'])->middleware('permiso:usuarios.ver');
-    Route::get('/usuarios/roles', [UsuarioController::class, 'roles'])->middleware('permiso:usuarios.ver,usuarios.gestionar');
-    Route::post('/usuarios/invitar', [UsuarioController::class, 'invitar'])->middleware('permiso:usuarios.gestionar');
-    Route::put('/usuarios/{id}/rol', [UsuarioController::class, 'actualizarRol'])->middleware('permiso:usuarios.gestionar');
-    Route::delete('/usuarios/{id}', [UsuarioController::class, 'desvincular'])->middleware('permiso:usuarios.gestionar');
-    Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol'])->middleware('permiso:usuarios.gestionar');
-    Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol'])->middleware('permiso:usuarios.gestionar');
+    // Gestion de usuarios y roles.
+    // La autorizacion se aplica en el controller por jerarquia de rol (invitar
+    // exige Super Admin; desvincular/actualizarRol comparan jerarquia; store/
+    // updateRol validan escalada y scope de empresa). Por eso no se duplica
+    // aqui un permiso: que entraria en conflicto con esa logica relativa.
+    Route::get('/usuarios', [UsuarioController::class, 'index']);
+    Route::get('/usuarios/roles', [UsuarioController::class, 'roles']);
+    Route::post('/usuarios/invitar', [UsuarioController::class, 'invitar']);
+    Route::put('/usuarios/{id}/rol', [UsuarioController::class, 'actualizarRol']);
+    Route::delete('/usuarios/{id}', [UsuarioController::class, 'desvincular']);
+    Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol']);
+    Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol']);
 
     // Empresa - Perfil (configuracion propia: solo requiere autenticacion)
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
@@ -252,132 +258,133 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription'])
 
     // ---------------------------------------------------------------------
     // Inventario, Bodegas y Movimientos
+    // (autorizacion granular aplicada en los controllers via InventarioPermisoService)
     // ---------------------------------------------------------------------
     Route::prefix('inventario')->group(function () {
-        Route::get('/dashboard', [InventarioController::class, 'dashboard'])->middleware('permiso:inventario.dashboard.ver');
+        Route::get('/dashboard', [InventarioController::class, 'dashboard']);
 
-        Route::get('/auditoria', [InventarioAuditoriaController::class, 'index'])->middleware('permiso:inventario.auditoria.ver');
-        Route::get('/auditoria/resumen', [InventarioAuditoriaController::class, 'resumen'])->middleware('permiso:inventario.auditoria.resumen,inventario.auditoria.ver');
-        Route::get('/auditoria/{id}', [InventarioAuditoriaController::class, 'show'])->middleware('permiso:inventario.auditoria.detalle,inventario.auditoria.ver');
+        Route::get('/auditoria', [InventarioAuditoriaController::class, 'index']);
+        Route::get('/auditoria/resumen', [InventarioAuditoriaController::class, 'resumen']);
+        Route::get('/auditoria/{id}', [InventarioAuditoriaController::class, 'show']);
 
-        Route::get('/eventos-integracion', [InventarioEventoIntegracionController::class, 'index'])->middleware('permiso:inventario.eventos_integracion.ver');
-        Route::get('/eventos-integracion/resumen', [InventarioEventoIntegracionController::class, 'resumen'])->middleware('permiso:inventario.eventos_integracion.resumen,inventario.eventos_integracion.ver');
-        Route::get('/eventos-integracion/{id}', [InventarioEventoIntegracionController::class, 'show'])->middleware('permiso:inventario.eventos_integracion.detalle,inventario.eventos_integracion.ver');
-        Route::post('/eventos-integracion/{id}/procesar', [InventarioEventoIntegracionController::class, 'procesar'])->middleware('permiso:inventario.eventos_integracion.procesar,inventario.eventos_integracion.gestionar');
-        Route::post('/eventos-integracion/{id}/ignorar', [InventarioEventoIntegracionController::class, 'ignorar'])->middleware('permiso:inventario.eventos_integracion.gestionar');
-        Route::post('/eventos-integracion/{id}/error', [InventarioEventoIntegracionController::class, 'error'])->middleware('permiso:inventario.eventos_integracion.gestionar');
+        Route::get('/eventos-integracion', [InventarioEventoIntegracionController::class, 'index']);
+        Route::get('/eventos-integracion/resumen', [InventarioEventoIntegracionController::class, 'resumen']);
+        Route::get('/eventos-integracion/{id}', [InventarioEventoIntegracionController::class, 'show']);
+        Route::post('/eventos-integracion/{id}/procesar', [InventarioEventoIntegracionController::class, 'procesar']);
+        Route::post('/eventos-integracion/{id}/ignorar', [InventarioEventoIntegracionController::class, 'ignorar']);
+        Route::post('/eventos-integracion/{id}/error', [InventarioEventoIntegracionController::class, 'error']);
 
-        Route::get('/reportes/stock', [InventarioController::class, 'reporteStock'])->middleware('permiso:inventario.reportes.ver');
-        Route::get('/reportes/movimientos', [InventarioController::class, 'reporteMovimientos'])->middleware('permiso:inventario.reportes.ver');
-        Route::get('/reportes/valorizacion', [InventarioController::class, 'reporteValorizacion'])->middleware('permiso:inventario.reportes.ver');
-        Route::get('/reportes/lotes', [InventarioController::class, 'reporteLotes'])->middleware('permiso:inventario.reportes.ver');
-        Route::get('/reportes/reservas', [InventarioController::class, 'reporteReservas'])->middleware('permiso:inventario.reportes.ver');
-        Route::get('/reportes/tomas-fisicas', [InventarioController::class, 'reporteTomasFisicas'])->middleware('permiso:inventario.reportes.ver');
-        Route::get('/reportes/ajustes', [InventarioController::class, 'reporteAjustes'])->middleware('permiso:inventario.reportes.ver');
-        Route::get('/reportes/reposicion-alertas', [InventarioController::class, 'reporteReposicionAlertas'])->middleware('permiso:inventario.reportes.ver');
-        Route::get('/reportes/picking', [InventarioPickingController::class, 'reporte'])->middleware('permiso:inventario.reportes.picking,inventario.reportes.ver');
-        Route::get('/reportes/packing', [InventarioPackingController::class, 'reporte'])->middleware('permiso:inventario.reportes.packing,inventario.reportes.ver');
-        Route::get('/reportes/despachos', [InventarioDespachoController::class, 'reporte'])->middleware('permiso:inventario.reportes.despachos,inventario.reportes.ver');
-        Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte'])->middleware('permiso:inventario.reportes.devoluciones,inventario.reportes.ver');
-        Route::get('/reportes/{tipo}/exportar-csv', [InventarioController::class, 'exportarReporteCsv'])->middleware('permiso:inventario.reportes.exportar,inventario.reportes.ver');
+        Route::get('/reportes/stock', [InventarioController::class, 'reporteStock']);
+        Route::get('/reportes/movimientos', [InventarioController::class, 'reporteMovimientos']);
+        Route::get('/reportes/valorizacion', [InventarioController::class, 'reporteValorizacion']);
+        Route::get('/reportes/lotes', [InventarioController::class, 'reporteLotes']);
+        Route::get('/reportes/reservas', [InventarioController::class, 'reporteReservas']);
+        Route::get('/reportes/tomas-fisicas', [InventarioController::class, 'reporteTomasFisicas']);
+        Route::get('/reportes/ajustes', [InventarioController::class, 'reporteAjustes']);
+        Route::get('/reportes/reposicion-alertas', [InventarioController::class, 'reporteReposicionAlertas']);
+        Route::get('/reportes/picking', [InventarioPickingController::class, 'reporte']);
+        Route::get('/reportes/packing', [InventarioPackingController::class, 'reporte']);
+        Route::get('/reportes/despachos', [InventarioDespachoController::class, 'reporte']);
+        Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
+        Route::get('/reportes/{tipo}/exportar-csv', [InventarioController::class, 'exportarReporteCsv']);
 
-        Route::get('/catalogos', [InventarioController::class, 'catalogos'])->middleware('permiso:inventario.productos.ver');
+        Route::get('/catalogos', [InventarioController::class, 'catalogos']);
 
-        Route::get('/ubicaciones', [InventarioController::class, 'ubicaciones'])->middleware('permiso:inventario.ubicaciones.ver');
-        Route::post('/ubicaciones', [InventarioController::class, 'storeUbicacion'])->middleware('permiso:inventario.ubicaciones.crear');
-        Route::get('/ubicaciones/{id}/stock', [InventarioController::class, 'stockUbicacion'])->middleware('permiso:inventario.ubicaciones.ver,inventario.stock_ubicaciones.ver');
-        Route::get('/ubicaciones/{id}', [InventarioController::class, 'showUbicacion'])->middleware('permiso:inventario.ubicaciones.ver');
-        Route::put('/ubicaciones/{id}', [InventarioController::class, 'updateUbicacion'])->middleware('permiso:inventario.ubicaciones.editar');
-        Route::get('/stock-ubicaciones', [InventarioController::class, 'stockUbicaciones'])->middleware('permiso:inventario.stock_ubicaciones.ver');
-        Route::post('/stock-ubicaciones/mover', [InventarioController::class, 'moverStockUbicacion'])->middleware('permiso:inventario.stock_ubicaciones.mover');
-        Route::post('/putaway/confirmar', [InventarioController::class, 'confirmarPutaway'])->middleware('permiso:inventario.putaway.ejecutar');
+        Route::get('/ubicaciones', [InventarioController::class, 'ubicaciones']);
+        Route::post('/ubicaciones', [InventarioController::class, 'storeUbicacion']);
+        Route::get('/ubicaciones/{id}/stock', [InventarioController::class, 'stockUbicacion']);
+        Route::get('/ubicaciones/{id}', [InventarioController::class, 'showUbicacion']);
+        Route::put('/ubicaciones/{id}', [InventarioController::class, 'updateUbicacion']);
+        Route::get('/stock-ubicaciones', [InventarioController::class, 'stockUbicaciones']);
+        Route::post('/stock-ubicaciones/mover', [InventarioController::class, 'moverStockUbicacion']);
+        Route::post('/putaway/confirmar', [InventarioController::class, 'confirmarPutaway']);
 
-        Route::get('/picking', [InventarioPickingController::class, 'index'])->middleware('permiso:inventario.picking.ver');
-        Route::post('/picking', [InventarioPickingController::class, 'store'])->middleware('permiso:inventario.picking.crear');
-        Route::get('/picking/{id}', [InventarioPickingController::class, 'show'])->middleware('permiso:inventario.picking.ver');
-        Route::post('/picking/{id}/asignar', [InventarioPickingController::class, 'asignar'])->middleware('permiso:inventario.picking.editar');
-        Route::post('/picking/{id}/iniciar', [InventarioPickingController::class, 'iniciar'])->middleware('permiso:inventario.picking.editar');
-        Route::post('/picking/{id}/confirmar', [InventarioPickingController::class, 'confirmar'])->middleware('permiso:inventario.picking.confirmar');
-        Route::post('/picking/{id}/cancelar', [InventarioPickingController::class, 'cancelar'])->middleware('permiso:inventario.picking.cancelar');
+        Route::get('/picking', [InventarioPickingController::class, 'index']);
+        Route::post('/picking', [InventarioPickingController::class, 'store']);
+        Route::get('/picking/{id}', [InventarioPickingController::class, 'show']);
+        Route::post('/picking/{id}/asignar', [InventarioPickingController::class, 'asignar']);
+        Route::post('/picking/{id}/iniciar', [InventarioPickingController::class, 'iniciar']);
+        Route::post('/picking/{id}/confirmar', [InventarioPickingController::class, 'confirmar']);
+        Route::post('/picking/{id}/cancelar', [InventarioPickingController::class, 'cancelar']);
 
-        Route::get('/packing', [InventarioPackingController::class, 'index'])->middleware('permiso:inventario.packing.ver');
-        Route::post('/packing', [InventarioPackingController::class, 'store'])->middleware('permiso:inventario.packing.crear');
-        Route::get('/packing/{id}', [InventarioPackingController::class, 'show'])->middleware('permiso:inventario.packing.ver');
-        Route::post('/packing/{id}/iniciar', [InventarioPackingController::class, 'iniciar'])->middleware('permiso:inventario.packing.editar');
-        Route::post('/packing/{id}/confirmar', [InventarioPackingController::class, 'confirmar'])->middleware('permiso:inventario.packing.confirmar');
-        Route::post('/packing/{id}/cancelar', [InventarioPackingController::class, 'cancelar'])->middleware('permiso:inventario.packing.cancelar');
+        Route::get('/packing', [InventarioPackingController::class, 'index']);
+        Route::post('/packing', [InventarioPackingController::class, 'store']);
+        Route::get('/packing/{id}', [InventarioPackingController::class, 'show']);
+        Route::post('/packing/{id}/iniciar', [InventarioPackingController::class, 'iniciar']);
+        Route::post('/packing/{id}/confirmar', [InventarioPackingController::class, 'confirmar']);
+        Route::post('/packing/{id}/cancelar', [InventarioPackingController::class, 'cancelar']);
 
-        Route::get('/despachos', [InventarioDespachoController::class, 'index'])->middleware('permiso:inventario.despachos.ver');
-        Route::post('/despachos', [InventarioDespachoController::class, 'store'])->middleware('permiso:inventario.despachos.crear');
-        Route::get('/despachos/{id}/reversable', [InventarioDevolucionController::class, 'reversable'])->middleware('permiso:inventario.devoluciones.ver,inventario.despachos.ver');
-        Route::get('/despachos/{id}', [InventarioDespachoController::class, 'show'])->middleware('permiso:inventario.despachos.ver');
-        Route::post('/despachos/{id}/iniciar', [InventarioDespachoController::class, 'iniciar'])->middleware('permiso:inventario.despachos.editar');
-        Route::post('/despachos/{id}/confirmar', [InventarioDespachoController::class, 'confirmar'])->middleware('permiso:inventario.despachos.confirmar');
-        Route::post('/despachos/{id}/cancelar', [InventarioDespachoController::class, 'cancelar'])->middleware('permiso:inventario.despachos.cancelar');
+        Route::get('/despachos', [InventarioDespachoController::class, 'index']);
+        Route::post('/despachos', [InventarioDespachoController::class, 'store']);
+        Route::get('/despachos/{id}/reversable', [InventarioDevolucionController::class, 'reversable']);
+        Route::get('/despachos/{id}', [InventarioDespachoController::class, 'show']);
+        Route::post('/despachos/{id}/iniciar', [InventarioDespachoController::class, 'iniciar']);
+        Route::post('/despachos/{id}/confirmar', [InventarioDespachoController::class, 'confirmar']);
+        Route::post('/despachos/{id}/cancelar', [InventarioDespachoController::class, 'cancelar']);
 
-        Route::get('/devoluciones', [InventarioDevolucionController::class, 'index'])->middleware('permiso:inventario.devoluciones.ver');
-        Route::post('/devoluciones', [InventarioDevolucionController::class, 'store'])->middleware('permiso:inventario.devoluciones.crear');
-        Route::get('/devoluciones/{id}', [InventarioDevolucionController::class, 'show'])->middleware('permiso:inventario.devoluciones.ver');
-        Route::post('/devoluciones/{id}/confirmar', [InventarioDevolucionController::class, 'confirmar'])->middleware('permiso:inventario.devoluciones.confirmar');
-        Route::post('/devoluciones/{id}/cancelar', [InventarioDevolucionController::class, 'cancelar'])->middleware('permiso:inventario.devoluciones.cancelar');
+        Route::get('/devoluciones', [InventarioDevolucionController::class, 'index']);
+        Route::post('/devoluciones', [InventarioDevolucionController::class, 'store']);
+        Route::get('/devoluciones/{id}', [InventarioDevolucionController::class, 'show']);
+        Route::post('/devoluciones/{id}/confirmar', [InventarioDevolucionController::class, 'confirmar']);
+        Route::post('/devoluciones/{id}/cancelar', [InventarioDevolucionController::class, 'cancelar']);
 
-        Route::get('/productos', [InventarioController::class, 'index'])->middleware('permiso:inventario.productos.ver');
-        Route::post('/productos', [InventarioController::class, 'store'])->middleware('permiso:inventario.productos.crear');
+        Route::get('/productos', [InventarioController::class, 'index']);
+        Route::post('/productos', [InventarioController::class, 'store']);
 
-        Route::get('/bodegas', [InventarioController::class, 'bodegas'])->middleware('permiso:inventario.bodegas.ver');
-        Route::post('/bodegas', [InventarioController::class, 'storeBodega'])->middleware('permiso:inventario.bodegas.crear');
+        Route::get('/bodegas', [InventarioController::class, 'bodegas']);
+        Route::post('/bodegas', [InventarioController::class, 'storeBodega']);
 
-        Route::get('/movimientos', [InventarioController::class, 'movimientos'])->middleware('permiso:inventario.movimientos.ver');
-        Route::post('/movimientos', [InventarioController::class, 'registrarMovimiento'])->middleware('permiso:inventario.movimientos.entrada,inventario.movimientos.salida,inventario.movimientos.traspaso,inventario.movimientos.ajuste');
+        Route::get('/movimientos', [InventarioController::class, 'movimientos']);
+        Route::post('/movimientos', [InventarioController::class, 'registrarMovimiento']);
 
-        Route::get('/kardex', [InventarioController::class, 'kardex'])->middleware('permiso:inventario.kardex.ver');
-        Route::get('/productos/{id}/kardex', [InventarioController::class, 'kardexProducto'])->middleware('permiso:inventario.kardex.ver');
+        Route::get('/kardex', [InventarioController::class, 'kardex']);
+        Route::get('/productos/{id}/kardex', [InventarioController::class, 'kardexProducto']);
 
-        Route::get('/valorizacion', [InventarioController::class, 'valorizacion'])->middleware('permiso:inventario.valorizacion.ver');
-        Route::get('/productos/{id}/valorizacion', [InventarioController::class, 'valorizacionProducto'])->middleware('permiso:inventario.valorizacion.ver');
+        Route::get('/valorizacion', [InventarioController::class, 'valorizacion']);
+        Route::get('/productos/{id}/valorizacion', [InventarioController::class, 'valorizacionProducto']);
 
-        Route::get('/ajustes-criticos/tipos', [InventarioController::class, 'tiposAjusteCritico'])->middleware('permiso:inventario.ajustes_criticos.ver');
-        Route::get('/ajustes-criticos', [InventarioController::class, 'ajustesCriticos'])->middleware('permiso:inventario.ajustes_criticos.ver');
-        Route::post('/ajustes-criticos', [InventarioController::class, 'registrarAjusteCritico'])->middleware('permiso:inventario.ajustes_criticos.crear');
-        Route::get('/ajustes-criticos/{id}', [InventarioController::class, 'verAjusteCritico'])->middleware('permiso:inventario.ajustes_criticos.ver');
+        Route::get('/ajustes-criticos/tipos', [InventarioController::class, 'tiposAjusteCritico']);
+        Route::get('/ajustes-criticos', [InventarioController::class, 'ajustesCriticos']);
+        Route::post('/ajustes-criticos', [InventarioController::class, 'registrarAjusteCritico']);
+        Route::get('/ajustes-criticos/{id}', [InventarioController::class, 'verAjusteCritico']);
 
-        Route::get('/lotes', [InventarioController::class, 'lotes'])->middleware('permiso:inventario.lotes.ver');
-        Route::post('/lotes', [InventarioController::class, 'storeLote'])->middleware('permiso:inventario.lotes.crear');
-        Route::get('/lotes/{id}/stock', [InventarioController::class, 'stockLote'])->middleware('permiso:inventario.lotes.ver');
-        Route::get('/lotes/{id}', [InventarioController::class, 'showLote'])->middleware('permiso:inventario.lotes.ver');
-        Route::put('/lotes/{id}', [InventarioController::class, 'updateLote'])->middleware('permiso:inventario.lotes.editar');
+        Route::get('/lotes', [InventarioController::class, 'lotes']);
+        Route::post('/lotes', [InventarioController::class, 'storeLote']);
+        Route::get('/lotes/{id}/stock', [InventarioController::class, 'stockLote']);
+        Route::get('/lotes/{id}', [InventarioController::class, 'showLote']);
+        Route::put('/lotes/{id}', [InventarioController::class, 'updateLote']);
 
-        Route::get('/productos/{id}/lotes', [InventarioController::class, 'lotesProducto'])->middleware('permiso:inventario.lotes.ver');
+        Route::get('/productos/{id}/lotes', [InventarioController::class, 'lotesProducto']);
 
-        Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad'])->middleware('permiso:inventario.disponibilidad.ver');
-        Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto'])->middleware('permiso:inventario.disponibilidad.ver');
+        Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad']);
+        Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto']);
 
-        Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion'])->middleware('permiso:inventario.reglas_reposicion.ver');
-        Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion'])->middleware('permiso:inventario.reglas_reposicion.crear');
-        Route::get('/reglas-reposicion/{id}', [InventarioController::class, 'showReglaReposicion'])->middleware('permiso:inventario.reglas_reposicion.ver');
-        Route::put('/reglas-reposicion/{id}', [InventarioController::class, 'updateReglaReposicion'])->middleware('permiso:inventario.reglas_reposicion.editar');
-        Route::delete('/reglas-reposicion/{id}', [InventarioController::class, 'destroyReglaReposicion'])->middleware('permiso:inventario.reglas_reposicion.eliminar');
-        Route::get('/alertas', [InventarioController::class, 'alertas'])->middleware('permiso:inventario.alertas.ver');
-        Route::get('/reposicion/sugerencias', [InventarioController::class, 'sugerenciasReposicion'])->middleware('permiso:inventario.reglas_reposicion.ver,inventario.alertas.ver');
+        Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion']);
+        Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion']);
+        Route::get('/reglas-reposicion/{id}', [InventarioController::class, 'showReglaReposicion']);
+        Route::put('/reglas-reposicion/{id}', [InventarioController::class, 'updateReglaReposicion']);
+        Route::delete('/reglas-reposicion/{id}', [InventarioController::class, 'destroyReglaReposicion']);
+        Route::get('/alertas', [InventarioController::class, 'alertas']);
+        Route::get('/reposicion/sugerencias', [InventarioController::class, 'sugerenciasReposicion']);
 
-        Route::get('/reservas', [InventarioController::class, 'reservas'])->middleware('permiso:inventario.reservas.ver');
-        Route::post('/reservas', [InventarioController::class, 'storeReserva'])->middleware('permiso:inventario.reservas.crear');
-        Route::get('/reservas/{id}', [InventarioController::class, 'showReserva'])->middleware('permiso:inventario.reservas.ver');
-        Route::post('/reservas/{id}/cancelar', [InventarioController::class, 'cancelarReserva'])->middleware('permiso:inventario.reservas.cancelar');
-        Route::post('/reservas/{id}/liberar', [InventarioController::class, 'liberarReserva'])->middleware('permiso:inventario.reservas.liberar');
-        Route::post('/reservas/{id}/consumir', [InventarioController::class, 'consumirReserva'])->middleware('permiso:inventario.reservas.consumir');
+        Route::get('/reservas', [InventarioController::class, 'reservas']);
+        Route::post('/reservas', [InventarioController::class, 'storeReserva']);
+        Route::get('/reservas/{id}', [InventarioController::class, 'showReserva']);
+        Route::post('/reservas/{id}/cancelar', [InventarioController::class, 'cancelarReserva']);
+        Route::post('/reservas/{id}/liberar', [InventarioController::class, 'liberarReserva']);
+        Route::post('/reservas/{id}/consumir', [InventarioController::class, 'consumirReserva']);
 
-        Route::get('/productos/{id}', [InventarioController::class, 'show'])->middleware('permiso:inventario.productos.ver');
-        Route::put('/productos/{id}', [InventarioController::class, 'update'])->middleware('permiso:inventario.productos.editar');
+        Route::get('/productos/{id}', [InventarioController::class, 'show']);
+        Route::put('/productos/{id}', [InventarioController::class, 'update']);
 
-        Route::get('/tomas-fisicas', [InventarioController::class, 'tomasFisicas'])->middleware('permiso:inventario.tomas_fisicas.ver');
-        Route::post('/tomas-fisicas', [InventarioController::class, 'storeTomaFisica'])->middleware('permiso:inventario.tomas_fisicas.crear');
-        Route::get('/tomas-fisicas/{id}', [InventarioController::class, 'showTomaFisica'])->middleware('permiso:inventario.tomas_fisicas.ver');
-        Route::post('/tomas-fisicas/{id}/iniciar', [InventarioController::class, 'iniciarTomaFisica'])->middleware('permiso:inventario.tomas_fisicas.contar');
-        Route::post('/tomas-fisicas/{id}/conteos', [InventarioController::class, 'registrarConteosTomaFisica'])->middleware('permiso:inventario.tomas_fisicas.contar');
-        Route::post('/tomas-fisicas/{id}/cerrar', [InventarioController::class, 'cerrarTomaFisica'])->middleware('permiso:inventario.tomas_fisicas.cerrar');
-        Route::post('/tomas-fisicas/{id}/ajustar', [InventarioController::class, 'ajustarTomaFisica'])->middleware('permiso:inventario.tomas_fisicas.ajustar');
-        Route::post('/tomas-fisicas/{id}/cancelar', [InventarioController::class, 'cancelarTomaFisica'])->middleware('permiso:inventario.tomas_fisicas.cancelar');
+        Route::get('/tomas-fisicas', [InventarioController::class, 'tomasFisicas']);
+        Route::post('/tomas-fisicas', [InventarioController::class, 'storeTomaFisica']);
+        Route::get('/tomas-fisicas/{id}', [InventarioController::class, 'showTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/iniciar', [InventarioController::class, 'iniciarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/conteos', [InventarioController::class, 'registrarConteosTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cerrar', [InventarioController::class, 'cerrarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/ajustar', [InventarioController::class, 'ajustarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cancelar', [InventarioController::class, 'cancelarTomaFisica']);
     });
 });
 

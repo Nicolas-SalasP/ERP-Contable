@@ -106,6 +106,9 @@ class UsuarioController
                 'message' => 'Errores de validación',
                 'errors' => $e->errors()
             ], 422);
+        } catch (ModelNotFoundException $e) {
+            // Usuario o rol fuera del alcance de la empresa del solicitante.
+            return response()->json(['success' => false, 'message' => 'Usuario o rol no encontrado.'], 404);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al actualizar rol'], 400);
         }

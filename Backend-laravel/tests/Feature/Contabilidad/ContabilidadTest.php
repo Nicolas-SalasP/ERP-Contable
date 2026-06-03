@@ -33,7 +33,7 @@ class ContabilidadTest extends TestCase
     {
         parent::setUp();
         $this->prepararEntornoBase();
-        $this->rolContador = Rol::create(['nombre' => 'Contador', 'jerarquia' => 50, 'permisos' => []]);
+        $this->rolContador = Rol::create(['nombre' => 'Contador', 'jerarquia' => 50, 'permisos' => $this->permisosOperativosCompletos()]);
 
         $this->empresaA = Empresa::create([
             'rut' => '77.777.777-7',
