@@ -29,6 +29,7 @@ use App\Domains\Inventario\Controllers\InventarioDevolucionController;
 use App\Domains\Inventario\Controllers\InventarioEventoIntegracionController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
+use App\Domains\Inventario\Controllers\ReporteInventarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -282,19 +283,19 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription'])
         Route::post('/eventos-integracion/{id}/ignorar', [InventarioEventoIntegracionController::class, 'ignorar']);
         Route::post('/eventos-integracion/{id}/error', [InventarioEventoIntegracionController::class, 'error']);
 
-        Route::get('/reportes/stock', [InventarioController::class, 'reporteStock']);
-        Route::get('/reportes/movimientos', [InventarioController::class, 'reporteMovimientos']);
-        Route::get('/reportes/valorizacion', [InventarioController::class, 'reporteValorizacion']);
-        Route::get('/reportes/lotes', [InventarioController::class, 'reporteLotes']);
-        Route::get('/reportes/reservas', [InventarioController::class, 'reporteReservas']);
-        Route::get('/reportes/tomas-fisicas', [InventarioController::class, 'reporteTomasFisicas']);
-        Route::get('/reportes/ajustes', [InventarioController::class, 'reporteAjustes']);
-        Route::get('/reportes/reposicion-alertas', [InventarioController::class, 'reporteReposicionAlertas']);
+        Route::get('/reportes/stock', [ReporteInventarioController::class, 'reporteStock']);
+        Route::get('/reportes/movimientos', [ReporteInventarioController::class, 'reporteMovimientos']);
+        Route::get('/reportes/valorizacion', [ReporteInventarioController::class, 'reporteValorizacion']);
+        Route::get('/reportes/lotes', [ReporteInventarioController::class, 'reporteLotes']);
+        Route::get('/reportes/reservas', [ReporteInventarioController::class, 'reporteReservas']);
+        Route::get('/reportes/tomas-fisicas', [ReporteInventarioController::class, 'reporteTomasFisicas']);
+        Route::get('/reportes/ajustes', [ReporteInventarioController::class, 'reporteAjustes']);
+        Route::get('/reportes/reposicion-alertas', [ReporteInventarioController::class, 'reporteReposicionAlertas']);
         Route::get('/reportes/picking', [InventarioPickingController::class, 'reporte']);
         Route::get('/reportes/packing', [InventarioPackingController::class, 'reporte']);
         Route::get('/reportes/despachos', [InventarioDespachoController::class, 'reporte']);
         Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
-        Route::get('/reportes/{tipo}/exportar-csv', [InventarioController::class, 'exportarReporteCsv']);
+        Route::get('/reportes/{tipo}/exportar-csv', [ReporteInventarioController::class, 'exportarReporteCsv']);
 
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
 
