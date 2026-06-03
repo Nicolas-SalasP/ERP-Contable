@@ -34,12 +34,6 @@ class LoteInventario extends Model
         'activo' => 'boolean',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -130,12 +124,6 @@ class LoteInventario extends Model
             ->orderByDesc('created_at')
             ->orderByDesc('id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function estaActivo(): bool
     {

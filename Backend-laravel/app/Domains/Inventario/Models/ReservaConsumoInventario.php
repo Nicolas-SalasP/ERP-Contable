@@ -42,12 +42,6 @@ class ReservaConsumoInventario extends Model
         'fecha_consumo' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -92,12 +86,6 @@ class ReservaConsumoInventario extends Model
     {
         return $this->belongsTo(User::class, 'consumido_por');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
@@ -150,12 +138,6 @@ class ReservaConsumoInventario extends Model
             ->orderByDesc('fecha_consumo')
             ->orderByDesc('id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function tieneLote(): bool
     {

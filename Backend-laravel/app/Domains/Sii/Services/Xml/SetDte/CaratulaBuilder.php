@@ -15,13 +15,8 @@ use DOMElement;
  * Orden xs:sequence del XSD EnvioDTE_v10.xsd:
  *   RutEmisor, RutEnvia, RutReceptor, FchResol, NroResol, TmstFirmaEnv, SubTotDTE+
  *
- * RutReceptor es siempre 60803000-K (SII Chile) — mismo valor para cert
- * y produccion segun documentacion oficial. La distincion entre ambientes
- * se hace en F5 (URL del WS), no en la Caratula.
- *
- * RutEnvia se obtiene del subject del certificado digital activo de la
- * empresa (CertificadoService::extraerRutDelSujeto). Suele coincidir con
- * el RUT empresa o con el RUT del representante legal.
+ * RutReceptor es siempre 60803000-K (SII Chile), mismo valor para cert y prod.
+ * RutEnvia se obtiene del subject del certificado digital activo de la empresa.
  */
 class CaratulaBuilder
 {

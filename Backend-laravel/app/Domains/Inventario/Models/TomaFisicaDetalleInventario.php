@@ -46,12 +46,6 @@ class TomaFisicaDetalleInventario extends Model
         'fecha_conteo' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -91,12 +85,6 @@ class TomaFisicaDetalleInventario extends Model
     {
         return $this->belongsTo(User::class, 'contado_por');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
@@ -187,12 +175,6 @@ class TomaFisicaDetalleInventario extends Model
             ->orderByDesc('id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers de conteo
-    |--------------------------------------------------------------------------
-    */
-
     public function tieneLote(): bool
     {
         return $this->lote_id !== null;
@@ -266,12 +248,6 @@ class TomaFisicaDetalleInventario extends Model
     {
         return round($stockContado - (float) $this->stock_sistema, 4);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers de pertenencia
-    |--------------------------------------------------------------------------
-    */
 
     public function perteneceAEmpresa(int $empresaId): bool
     {

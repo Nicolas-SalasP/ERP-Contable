@@ -13,11 +13,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * F6.3 — Endpoints REST de SOLO LECTURA del estado SII de facturas.
- *
- * Bajo /api/sii/facturas/*. Cero modificacion al FacturaController del
- * Comercial. Multi-tenant safe via where('empresa_id', $userEmpresaId) +
- * findOrFail (IDOR retorna 404). Throttle aplicado por la ruta.
+ * Endpoints REST del estado SII de facturas. Multi-tenant safe via
+ * where('empresa_id', $userEmpresaId) + findOrFail (IDOR retorna 404).
  */
 class FacturaSiiController
 {
@@ -120,11 +117,9 @@ class FacturaSiiController
     }
 
     /**
-     * POST /api/sii/facturas/{facturaId}/reintentar  (F6.4)
+     * POST /api/sii/facturas/{facturaId}/reintentar
      *
-     * Encola la accion correcta segun el estado actual y retorna 202 con la
-     * accion programada. NO ejecuta nada sincronamente. La UI debe refrescar
-     * el estado tras este endpoint.
+     * Encola la accion correcta segun el estado actual y retorna 202. NO ejecuta nada sincronamente.
      */
     public function reintentar(
         ReintentarRequest $request,
@@ -190,8 +185,6 @@ class FacturaSiiController
 
         return response()->json(['data' => $this->formatoCompleto($factura)]);
     }
-
-    // ----------------- helpers de formato -----------------
 
     private function formatoLiviano(Factura $f): array
     {

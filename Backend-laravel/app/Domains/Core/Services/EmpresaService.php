@@ -37,8 +37,6 @@ class EmpresaService
         return $path;
     }
 
-    // --- BANCOS ---
-
     public function agregarBanco(int $empresaId, array $datos)
     {
         return CuentaBancariaEmpresa::create([
@@ -80,8 +78,6 @@ class EmpresaService
 
         return $cuenta;
     }
-
-    // --- CENTROS DE COSTO ---
 
     public function agregarCentroCosto(int $empresaId, array $datos)
     {

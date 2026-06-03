@@ -102,12 +102,6 @@ public function __construct(
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 13 - Ubicaciones físicas, stock por ubicación y putaway
-    |--------------------------------------------------------------------------
-    */
-
     public function ubicaciones(Request $request): JsonResponse
     {
         try {
@@ -273,12 +267,6 @@ public function __construct(
         return $this->moverStockUbicacion($request);
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 9 - Dashboard gerencial y reportes avanzados
-    |--------------------------------------------------------------------------
-    */
 
     public function dashboard(Request $request): JsonResponse
     {
@@ -674,12 +662,6 @@ public function __construct(
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 2 - Movimientos de Inventario y Kardex
-    |--------------------------------------------------------------------------
-    */
-
     public function movimientos(Request $request): JsonResponse
     {
         try {
@@ -830,16 +812,6 @@ public function __construct(
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 3 - Precio Medio Ponderado / Valorización
-    |--------------------------------------------------------------------------
-    |
-    | Inventario NO emite, gestiona ni prepara DTE.
-    | Estos endpoints consultan stock valorizado y resumen PMP.
-    |
-    */
-
     public function valorizacion(Request $request): JsonResponse
     {
         try {
@@ -910,16 +882,6 @@ public function __construct(
             return $this->respuestaError($e);
         }
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 5 - Lotes, vencimientos y trazabilidad avanzada
-    |--------------------------------------------------------------------------
-    |
-    | Inventario NO emite, gestiona ni prepara DTE.
-    | Los lotes entregan trazabilidad granular por producto/bodega/lote.
-    |
-    */
 
     public function lotes(Request $request): JsonResponse
     {
@@ -1062,16 +1024,6 @@ public function __construct(
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 4 - Mermas y ajustes críticos
-    |--------------------------------------------------------------------------
-    |
-    | Inventario NO emite, gestiona ni prepara DTE.
-    | No se usan codigo_dte, codigo_sii, folio_dte, xml_dte ni lógica SII.
-    |
-    */
-
     public function tiposAjusteCritico(
         Request $request,
         InventarioAjusteCriticoService $ajusteCriticoService
@@ -1190,18 +1142,6 @@ public function __construct(
             ], 422);
         }
     }
-
-        /*
-    |--------------------------------------------------------------------------
-    | Fase 6 - Reservas y disponibilidad comprometida
-    |--------------------------------------------------------------------------
-    |
-    | Inventario NO emite, gestiona ni prepara DTE.
-    | Las reservas comprometen disponibilidad, pero NO descuentan stock físico.
-    | El stock físico solo se descuenta al consumir una reserva mediante una
-    | salida real delegada a InventarioMovimientoService.
-    |
-    */
 
 public function reservas(Request $request): JsonResponse
 {
@@ -1355,10 +1295,7 @@ public function consumirReserva(Request $request, $id): JsonResponse
             'observacion' => ['nullable', 'string', 'max:2000'],
             'fecha_movimiento' => ['nullable', 'date'],
 
-            /*
-            | Si detalles no viene, el service consumirá todo lo pendiente.
-            | Si viene, consumirá parcialmente los detalles indicados.
-            */
+            // Si detalles no viene, el service consume todo lo pendiente; si viene, consume parcialmente los indicados.
             'detalles' => ['nullable', 'array', 'min:1'],
             'detalles.*.detalle_id' => ['required_with:detalles', 'integer'],
             'detalles.*.cantidad' => ['required_with:detalles', 'numeric', 'gt:0'],
@@ -1432,18 +1369,6 @@ public function disponibilidadProducto(Request $request, $id): JsonResponse
         return $this->respuestaError($e);
     }
 }
-/*
-|--------------------------------------------------------------------------
-| Fase 7 - Toma física e inventario cíclico
-|--------------------------------------------------------------------------
-|
-| Inventario NO emite, gestiona ni prepara DTE.
-| La toma física compara contra stock físico, no contra stock disponible.
-| Las reservas activas no descuentan stock físico y no alteran el snapshot.
-| El stock real solo cambia al ajustar una toma CERRADA, delegando el
-| movimiento real a InventarioMovimientoService.
-|
-*/
 
 public function tomasFisicas(Request $request): JsonResponse
 {
@@ -1650,12 +1575,6 @@ public function cancelarTomaFisica(Request $request, $id): JsonResponse
 }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fase 8 - Reglas de reposición y alertas
-    |--------------------------------------------------------------------------
-    */
-
     public function reglasReposicion(Request $request): JsonResponse
     {
         try {
@@ -1798,12 +1717,6 @@ public function cancelarTomaFisica(Request $request, $id): JsonResponse
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validaciones privadas
-    |--------------------------------------------------------------------------
-    */
-
     private function validarPermisoMovimiento(User $usuario, string $tipo): void
     {
         $permiso = match ($tipo) {
@@ -1859,12 +1772,6 @@ public function cancelarTomaFisica(Request $request, $id): JsonResponse
             ]);
         }
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers de respuesta
-    |--------------------------------------------------------------------------
-    */
 
     private function respuestaPaginada(LengthAwarePaginator $paginador): array
     {

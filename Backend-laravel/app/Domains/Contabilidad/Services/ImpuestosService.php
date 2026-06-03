@@ -17,11 +17,6 @@ class ImpuestosService
      * NO constituye una venta ni genera IVA debito; usarla inflaba el F29 y la
      * base de renta. Suma facturas/boletas/notas de debito y RESTA notas de
      * credito; excluye borradores, rechazados y anulados.
-     *
-     * PENDIENTE (flujo futuro): cuando una cotizacion pueda convertirse en una
-     * factura de venta con descuento de insumos de inventario, esa factura de
-     * venta debera incorporarse aqui como fuente de ventas. Hoy la venta real se
-     * materializa unicamente al emitir el DTE.
      */
     private function resumenVentasAfectas(int $empresaId, string $fechaInicio, string $fechaFin): array
     {

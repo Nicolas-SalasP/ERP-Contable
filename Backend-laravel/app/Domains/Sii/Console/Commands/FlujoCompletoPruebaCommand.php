@@ -17,15 +17,10 @@ use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
- * F5.4 — Comando demo del flujo completo SII (BORRADOR → resolucion terminal).
+ * Comando demo del flujo completo SII (BORRADOR → resolucion terminal).
  *
- * Encadena los servicios existentes en orden para producir output legible
- * paso-a-paso. NO implementa logica de negocio propia; es solo una fachada
- * pensada para demo, debug operativo y validacion manual.
- *
- * SEGURIDAD: por default usa Http::fake() para NO tocar el SII real. El
- * flag --no-fake habilita peticiones reales y requiere confirmacion
- * interactiva (no es default).
+ * Por default usa Http::fake() para NO tocar el SII real; --no-fake habilita
+ * peticiones reales y requiere confirmacion interactiva.
  */
 class FlujoCompletoPruebaCommand extends Command
 {
@@ -83,7 +78,6 @@ class FlujoCompletoPruebaCommand extends Command
 
         $this->printHeader($empresa, $escenario, $noFake);
 
-        // --- Paso 1: crear DTE en BORRADOR ---
         try {
             $dte = $this->crearDteFixture($empresa, $tipoDte);
         } catch (Throwable $e) {
@@ -92,7 +86,6 @@ class FlujoCompletoPruebaCommand extends Command
         }
         $this->printPaso1($dte);
 
-        // --- Paso 2: emitir (F4.4) ---
         try {
             $dte = $emitir->emitir($dte->id);
         } catch (Throwable $e) {
@@ -102,7 +95,6 @@ class FlujoCompletoPruebaCommand extends Command
         }
         $this->printPaso2($dte);
 
-        // --- Paso 3: token (F5.1) ---
         try {
             $sesion = $tokenService->obtenerSesionActiva($empresa);
         } catch (Throwable $e) {
@@ -112,7 +104,6 @@ class FlujoCompletoPruebaCommand extends Command
         }
         $this->printPaso3($sesion);
 
-        // --- Paso 4: enviar (F5.2) ---
         try {
             $envio = $enviar->enviar($dte->id);
         } catch (Throwable $e) {
@@ -122,7 +113,7 @@ class FlujoCompletoPruebaCommand extends Command
         }
         $this->printPaso4($envio, $dte->fresh());
 
-        // --- Paso 5: pollear inmediato ignorando backoff (demo) ---
+        // Pollear inmediato ignorando backoff (demo).
         try {
             $envio = $pollear->pollear($envio->fresh());
         } catch (Throwable $e) {
@@ -286,8 +277,6 @@ class FlujoCompletoPruebaCommand extends Command
             $this->line('Estado envio : ' . $envio->estado_envio);
         }
     }
-
-    // ----- envelopes helpers -----
 
     private function envSeed(string $semilla): string
     {

@@ -27,12 +27,6 @@ class StockLoteInventario extends Model
         'stock_actual' => 'decimal:4',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -52,12 +46,6 @@ class StockLoteInventario extends Model
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
@@ -83,12 +71,6 @@ class StockLoteInventario extends Model
     {
         return $query->where('stock_actual', '>', 0);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function tieneStock(): bool
     {

@@ -13,17 +13,11 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * F6.2 — Listener async que orquesta el flujo SII completo desde una Factura:
- * mapeo (F6.1) → firma (F4.4) → envio (F5.2). El polling automatico de
- * F5.3 (job programado cada 5 min) lleva el envio a su estado terminal.
+ * Listener async que orquesta el flujo SII completo desde una Factura:
+ * mapeo → firma → envio. El polling automatico lleva el envio a su estado terminal.
  *
- * Idempotencia: si la factura ya tiene sii_dte_emitido_id seteado, skip
- * silencioso (no relanza). Reanudacion desde paso intermedio (DTE en
- * BORRADOR/FIRMADO tras fallo previo) sera via endpoints de F6.4.
- *
- * Aislamiento de excepciones (HARDENING R7): cada paso en try/catch
- * propio con log estructurado + trace_hash. Re-throw para que la queue
- * marque failed y reintente segun $tries/$backoff.
+ * Si la factura ya tiene un DTE asociado, reanuda desde el paso pendiente segun
+ * su estado. Cada paso re-lanza para que la queue reintente segun $tries/$backoff.
  */
 class ProcesarFacturaParaSiiListener implements ShouldQueue
 {
@@ -58,10 +52,8 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
             'usuario_id' => $event->usuarioId,
         ];
 
-        // 1. Idempotencia / reanudacion: si la factura ya tiene un DTE asociado,
-        //    se REANUDA desde el paso pendiente segun su estado, en vez de hacer
-        //    skip silencioso (que dejaba DTEs atascados en BORRADOR/FIRMADO tras
-        //    un fallo previo, perdiendo la emision sin aviso).
+        // Si el DTE ya esta en un estado terminal/enviado, skip; de lo contrario
+        // se reanuda desde el paso pendiente en vez de relanzar todo.
         $estadosYaProcesados = [
             SiiDteEmitido::ESTADO_ENVIADO_SII,
             SiiDteEmitido::ESTADO_EN_PROCESO_SII,
@@ -85,7 +77,7 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
             return;
         }
 
-        // 2. PASO 1: Mapeo Factura -> SiiDteEmitido BORRADOR (F6.1). Solo si aun no existe.
+        // Mapeo Factura -> SiiDteEmitido BORRADOR, solo si aun no existe.
         if (!$dte) {
             try {
                 $dte = $this->mapper->mapear($factura, $event->referencias);
@@ -99,7 +91,7 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
             }
         }
 
-        // 3. PASO 2: Firmado + folio + persistencia (F4.4). Se omite si ya esta firmado.
+        // Firmado + folio + persistencia. Se omite si ya esta firmado.
         if ($dte->estado !== SiiDteEmitido::ESTADO_FIRMADO) {
             try {
                 $this->emitirService->emitir($dte->id);
@@ -113,8 +105,7 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
             }
         }
 
-        // 4. PASO 3: Envio al WS DTEUpload (F5.2). El polling de F5.3 hace
-        //    el resto hasta ACEPTADO/RECHAZADO.
+        // Envio al WS DTEUpload; el polling hace el resto hasta ACEPTADO/RECHAZADO.
         try {
             $this->envioService->enviar($dte->id);
             Log::channel('sii')->info(

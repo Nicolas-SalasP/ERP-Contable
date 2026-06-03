@@ -10,21 +10,8 @@ use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
- * HARDENING-1 R2 — Lee el XML completo del EnvioDTE persistido por F4.4 con
- * verificacion criptografica de integridad y fallback a BD si el disco falla.
- *
- * Estrategia tiered:
- *
- *   1. Lee del disco vía xml_path; recomputa SHA256 y compara con
- *      xml_hash_sha256 de BD.
- *      - Match: retorna el contenido (camino feliz).
- *      - Mismatch o I/O error: pasa al fallback BD.
- *
- *   2. Descifra xml_completo_cifrado; recomputa SHA256.
- *      - Match: retorna el contenido y LOGUEA incidente de disco corrupto.
- *      - Mismatch: lanza IntegridadXmlException (ambas fuentes corruptas).
- *
- * Usa hash_equals() para evitar timing attacks en la comparacion de hashes.
+ * Lee el XML completo del EnvioDTE con verificacion de integridad (SHA256) y
+ * fallback al backup cifrado en BD si el disco falla. Usa hash_equals() contra timing attacks.
  */
 class XmlDteIntegrityService
 {
@@ -44,7 +31,7 @@ class XmlDteIntegrityService
 
         $disk = config('sii.storage.disk', 'local');
 
-        // -------- Fase 1: intento desde disco --------
+        // Intento desde disco.
         try {
             if (Storage::disk($disk)->exists($dte->xml_path)) {
                 $xmlDisco = Storage::disk($disk)->get($dte->xml_path);
@@ -76,7 +63,7 @@ class XmlDteIntegrityService
             ]);
         }
 
-        // -------- Fase 2: fallback a backup cifrado en BD --------
+        // Fallback a backup cifrado en BD.
         if ($dte->xml_completo_cifrado === null || $dte->xml_completo_cifrado === '') {
             throw IntegridadXmlException::ambasFuentesCorruptas($dteId);
         }

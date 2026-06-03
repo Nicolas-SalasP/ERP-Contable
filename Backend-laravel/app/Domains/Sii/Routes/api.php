@@ -6,20 +6,11 @@ use App\Domains\Sii\Http\Controllers\SiiCertificadoController;
 use App\Domains\Sii\Http\Controllers\SiiConfiguracionController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Rutas del modulo SII
-|--------------------------------------------------------------------------
-|
-| Cargadas por SiiServiceProvider con prefix 'api/sii' y middleware
-| ['api', 'auth:sanctum', 'throttle:sii-empresa'].
-|
-| HARDENING Fase 20:
-| - auth:sanctum valida identidad.
-| - permiso:* valida autorizacion granular por endpoint.
-| - ping queda solo autenticado para healthcheck operativo.
-|
-*/
+/**
+ * Rutas del modulo SII. Cargadas por SiiServiceProvider con prefix 'api/sii' y
+ * middleware ['api', 'auth:sanctum', 'throttle:sii-empresa']. permiso:* valida
+ * autorizacion granular por endpoint; ping queda solo autenticado.
+ */
 
 Route::get('ping', function () {
     $payload = [
@@ -36,17 +27,11 @@ Route::get('ping', function () {
     ], $payload));
 });
 
-// ---------------------------------------------------------------------
-// Configuracion SII por empresa
-// ---------------------------------------------------------------------
 Route::get('configuracion', [SiiConfiguracionController::class, 'show'])
     ->middleware('permiso:sii.configuracion.ver');
 Route::put('configuracion', [SiiConfiguracionController::class, 'update'])
     ->middleware('permiso:sii.configuracion.editar');
 
-// ---------------------------------------------------------------------
-// Certificado digital .pfx/.p12
-// ---------------------------------------------------------------------
 Route::get('certificado', [SiiCertificadoController::class, 'show'])
     ->middleware('permiso:sii.certificado.ver');
 Route::post('certificado', [SiiCertificadoController::class, 'store'])
@@ -57,9 +42,6 @@ Route::delete('certificado/{id}', [SiiCertificadoController::class, 'destroy'])
     ->whereNumber('id')
     ->middleware('permiso:sii.certificado.revocar');
 
-// ---------------------------------------------------------------------
-// Folios CAF
-// ---------------------------------------------------------------------
 Route::prefix('caf')->group(function () {
     Route::get('saldos', [SiiCafController::class, 'saldos'])
         ->middleware('permiso:sii.caf.ver');
@@ -75,9 +57,6 @@ Route::prefix('caf')->group(function () {
         ->middleware('permiso:sii.caf.revocar');
 });
 
-// ---------------------------------------------------------------------
-// Facturas — visibilidad de estado SII + reintento manual
-// ---------------------------------------------------------------------
 Route::prefix('facturas')->group(function () {
     Route::get('/', [FacturaSiiController::class, 'index'])
         ->middleware('permiso:sii.dte.ver');

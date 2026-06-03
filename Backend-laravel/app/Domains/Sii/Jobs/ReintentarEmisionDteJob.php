@@ -13,23 +13,13 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * F6.4 — Job de reintento manual de emision sobre un DTE existente.
+ * Job de reintento manual de emision sobre un DTE existente (no crea DTEs nuevos).
+ * Acciones: 'reanudar_firma' (DTE en BORRADOR) y 'reanudar_envio' (FIRMADO o
+ * ultimo envio fallido).
  *
- * NO se usa para crear DTEs nuevos (eso lo hace ProcesarFacturaParaSiiListener
- * de F6.2). Las acciones validas son:
- *   - 'reanudar_firma': invoca EmitirDteService::emitir($dteId). Aplica si el
- *                       DTE quedo en BORRADOR (firma fallo).
- *   - 'reanudar_envio': invoca EnvioSiiService::enviar($dteId). Aplica si el
- *                       DTE esta FIRMADO o el ultimo envio fallo
- *                       (ERROR_TRANSPORTE/ERROR_TIMEOUT).
- *
- * Idempotencia: los servicios internos hacen lockForUpdate del DTE/envio. Si
- * un job paralelo ya transiciono el estado, el segundo job recibe excepcion
- * del servicio (estado invalido) y la promueve a fallo del job, donde el log
- * estructurado deja evidencia.
- *
- * Configuracion: tries=2 (operador ya decidio manualmente; no queremos
- * cascada automatica). backoff [60, 300].
+ * Idempotencia: los servicios internos hacen lockForUpdate; si un job paralelo
+ * ya transiciono el estado, el segundo recibe excepcion de estado invalido.
+ * tries=2 porque el operador ya decidio manualmente (no queremos cascada automatica).
  */
 class ReintentarEmisionDteJob implements ShouldQueue
 {

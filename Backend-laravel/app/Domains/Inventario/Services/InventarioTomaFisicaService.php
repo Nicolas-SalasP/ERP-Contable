@@ -25,12 +25,6 @@ class InventarioTomaFisicaService
     ) {
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Consultas API
-    |--------------------------------------------------------------------------
-    */
-
     public function listar(User $usuario, array $filtros = []): LengthAwarePaginator
     {
         $this->permisos->exigir($usuario, 'inventario.tomas_fisicas.ver');
@@ -88,12 +82,6 @@ class InventarioTomaFisicaService
             conRelaciones: true
         );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Escritura API
-    |--------------------------------------------------------------------------
-    */
 
     public function crear(User $usuario, array $datos): TomaFisicaInventario
     {
@@ -397,12 +385,6 @@ class InventarioTomaFisicaService
         });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Preparación de snapshot
-    |--------------------------------------------------------------------------
-    */
-
     private function prepararDetalles(TomaFisicaInventario $toma): void
     {
         if ($toma->esGeneral()) {
@@ -548,12 +530,6 @@ class InventarioTomaFisicaService
             'fecha_conteo' => null,
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Aplicación de ajustes
-    |--------------------------------------------------------------------------
-    */
 
     private function aplicarAjusteDetalle(
         TomaFisicaDetalleInventario $detalle,
@@ -726,12 +702,6 @@ class InventarioTomaFisicaService
         ));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Obtención y validación de entidades
-    |--------------------------------------------------------------------------
-    */
-
     private function obtenerTomaFisicaEmpresa(
         int $tomaFisicaId,
         int $empresaId,
@@ -839,12 +809,6 @@ class InventarioTomaFisicaService
         return (int) $bodega->id;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Normalización
-    |--------------------------------------------------------------------------
-    */
-
     private function normalizarTipo(mixed $tipo): string
     {
         if (!is_string($tipo) || trim($tipo) === '') {
@@ -945,12 +909,6 @@ class InventarioTomaFisicaService
     {
         return number_format((float) $valor, 4, '.', '');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Utilidades de respuesta
-    |--------------------------------------------------------------------------
-    */
 
     private function cargarRelacionesToma(TomaFisicaInventario $toma): TomaFisicaInventario
     {

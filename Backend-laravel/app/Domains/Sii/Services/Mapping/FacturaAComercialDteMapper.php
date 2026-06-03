@@ -16,25 +16,8 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * F6.1 — Mapper Factura (Comercial) → SiiDteEmitido (Sii) en BORRADOR.
- *
- * Punto de entrada del modulo SII desde el dominio Comercial. Toma una Factura
- * con datos suficientes (cliente_id, tipo_dte, detalles cuadrados) y produce
- * el snapshot SiiDteEmitido + sus satelites en una sola DB::transaction.
- *
- *   - NO reserva folio CAF (eso es F4.4 EmitirDteService).
- *   - NO firma ni envia al SII (F4.4 + F5.x).
- *   - NO dispara eventos ni encola jobs (F6.2).
- *
- * Validaciones EXHAUSTIVAS pre-construccion (D5): si alguna falla se lanza
- * FacturaIncompletaParaSii ANTES de tocar BD, garantizando cero folios huerfanos.
- *
- * Atomicidad: lockForUpdate sobre la factura previene doble emision concurrente.
- * Si el persistir lanza, rollback completo de SiiDteEmitido + satelites + FK.
- *
- * Snapshot inmutable: emisor_* / receptor_* / detalles son COPIADOS (strings y
- * decimals). Cambios posteriores en Empresa o Cliente NO afectan el DTE. R1
- * de HARDENING-1 (booted updating hook) refuerza esto a nivel de modelo.
+ * Mapper Factura (Comercial) → SiiDteEmitido (Sii) en BORRADOR. Snapshot inmutable;
+ * lockForUpdate sobre la factura previene doble emision concurrente.
  */
 class FacturaAComercialDteMapper
 {
