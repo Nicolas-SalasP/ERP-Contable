@@ -636,6 +636,9 @@ export const api = {
         async login(credentials) {
             return await request('/auth/login', 'POST', credentials);
         },
+        async tokenLogin(ssoToken) {
+            return await request('/auth/token-login', 'POST', { sso_token: ssoToken });
+        },
         register(data) {
             return request('/auth/register', 'POST', data);
         },

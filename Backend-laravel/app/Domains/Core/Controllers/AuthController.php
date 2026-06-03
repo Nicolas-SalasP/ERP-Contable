@@ -120,6 +120,95 @@ class AuthController
         }
     }
 
+    /**
+     * Acceso por token SSO de un solo uso emitido por la web Tenri.
+     * Valida el token contra la web, provisiona/actualiza el usuario y entrega
+     * un token de sesion del ERP (mismo flujo de guardas que el login normal).
+     */
+    public function tokenLogin(Request $request)
+    {
+        try {
+            $request->validate(['sso_token' => 'required|string']);
+
+            $webResult = $this->webClient->validateSsoToken($request->sso_token);
+
+            if (!$webResult || !($webResult['valid'] ?? false)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token SSO inválido o expirado.',
+                ], 401);
+            }
+
+            $user = $this->provisioner->provision([
+                'tenri_user_id' => $webResult['tenri_user_id'],
+                'email'         => $webResult['email'],
+                'name'          => $webResult['name'],
+                'password_hash' => $webResult['password_hash'],
+                'plan_slug'     => $webResult['plan_slug'],
+                'module_keys'   => $webResult['module_keys'],
+                'rol_erp'       => $webResult['rol_erp'],
+            ]);
+            $user->load(['rol', 'estadoSuscripcion']);
+
+            if (!$user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cuenta inactiva o suspendida.',
+                ], 403);
+            }
+
+            if ($user->empresa_id !== null) {
+                $empresa = $user->empresa()->first();
+                if ($empresa && (bool) $empresa->activa === false) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La empresa se encuentra suspendida. Contacte al administrador.',
+                    ], 403);
+                }
+            }
+
+            if ($user->bloqueado_hasta !== null
+                && Carbon::parse($user->bloqueado_hasta)->isFuture()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario bloqueado temporalmente.',
+                ], 403);
+            }
+
+            $user->update(['ultimo_acceso' => now()]);
+
+            $permisos = ModuloPermisos::permisosUsuario($user);
+            $token = $user->createToken('react-spa-token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'issued_at' => now()->toIso8601String(),
+                'user' => [
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'email' => $user->email,
+                    'empresa_id' => $user->empresa_id,
+                    'rol_id' => $user->rol_id,
+                    'plan_slug' => $user->plan_slug,
+                    'permisos' => $permisos,
+                ],
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            Log::error('Error en tokenLogin SSO: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error Interno del Servidor. Inténtelo más tarde.',
+            ], 500);
+        }
+    }
+
     public function logout(Request $request)
     {
         $token = $request->user()->currentAccessToken();

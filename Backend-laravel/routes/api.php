@@ -45,6 +45,7 @@ use App\Domains\Inventario\Controllers\InventarioPickingController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/token-login', [AuthController::class, 'tokenLogin']);
 
     Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);

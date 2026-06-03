@@ -6,6 +6,7 @@ import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 
 import Login from './Modulos/Autenticacion/Login';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
+import SsoCallback from './Modulos/Autenticacion/SsoCallback';
 import Dashboard from './Modulos/Dashboard/Dashboard';
 import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
 import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
@@ -130,6 +131,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/sso-callback" element={<SsoCallback />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
           <Route path="/crear-empresa" element={
             <RutaPrivada requireEmpresa={false}>
