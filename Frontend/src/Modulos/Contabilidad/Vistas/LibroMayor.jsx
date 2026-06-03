@@ -230,7 +230,7 @@ const LibroMayor = () => {
             "Código Cuenta": fila.cuenta_codigo,
             "Nombre Cuenta": fila.cuenta_nombre,
             "Glosa": fila.glosa,
-            "Estado": fila.estado, // Agregado para auditoría en excel
+            "Estado": fila.estado,
             "Debe": parseFloat(fila.debe) || 0,
             "Haber": parseFloat(fila.haber) || 0
         }));
@@ -378,7 +378,6 @@ const LibroMayor = () => {
                 </div>
             )}
 
-            {/* TABLA DE MOVIMIENTOS */}
             {activeTab === 'diario' && (
                 <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden z-10 relative">
                     <div className="overflow-x-auto">
@@ -429,7 +428,6 @@ const LibroMayor = () => {
                 </div>
             )}
 
-            {/* VISTA 3: VISOR DE COMPROBANTE */}
             {activeTab === 'visor' && asientoSeleccionado && (
                 <div className="space-y-6 animate-fade-in-up">
                     <button

@@ -479,8 +479,7 @@ function App() {
               </RutaProtegidaAlgunPermiso>
             </RutaPrivada>
           } />
-          
-          {/* ── SII ──────────────────────────────────────────────── */}
+
           <Route path="/sii/configuracion" element={
             <RutaPrivada>
               <RutaProtegida permiso="sii.configuracion.ver">

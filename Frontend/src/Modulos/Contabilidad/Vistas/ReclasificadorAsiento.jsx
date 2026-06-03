@@ -88,8 +88,7 @@ const ReclasificadorAsiento = () => {
 
     const { cabecera, detalles } = data;
 
-    // --- LÓGICA DE DETECCIÓN DE REVERSOS (PARES ESPEJO) ---
-    // Usamos el índice para la lógica visual de "espejos", eso está bien
+    // Usamos el índice para la lógica visual de "espejos".
     const indicesAnulados = new Set();
     
     detalles.forEach((det, i) => {
@@ -197,7 +196,6 @@ const ReclasificadorAsiento = () => {
                                                     cuentas={cuentasPlan}
                                                     valor={form.lineas_editadas[det.id] || ''} 
                                                     onChange={(codigo) => {
-                                                        // FIX: Ahora enviamos el ID real de la línea a la base de datos
                                                         setForm({
                                                             ...form,
                                                             lineas_editadas: { ...form.lineas_editadas, [det.id]: codigo }

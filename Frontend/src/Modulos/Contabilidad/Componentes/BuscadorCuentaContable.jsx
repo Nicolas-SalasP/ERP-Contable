@@ -120,7 +120,7 @@ const BuscadorCuentaContable = ({
                             key={c.codigo}
                             className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-50 last:border-0 transition-colors flex flex-col"
                             onClick={() => {
-                                if (activeOnChange) activeOnChange(c.codigo); // Emite el código al padre
+                                if (activeOnChange) activeOnChange(c.codigo);
                                 setBusqueda(`${c.codigo} - ${c.nombre}`);
                                 setAbierto(false);
                             }}

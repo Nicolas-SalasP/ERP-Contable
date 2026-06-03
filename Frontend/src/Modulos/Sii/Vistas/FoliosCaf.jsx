@@ -61,7 +61,6 @@ const FoliosCaf = () => {
                 </p>
             </header>
 
-            {/* SALDOS POR TIPO */}
             <section data-testid="seccion-saldos">
                 <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600 mb-2">
                     Saldos por tipo de DTE
@@ -69,12 +68,10 @@ const FoliosCaf = () => {
                 <TablaSaldosCaf saldos={saldos} cargando={cargando} />
             </section>
 
-            {/* UPLOADER */}
             <section data-testid="seccion-uploader">
                 <UploaderCaf onSubidoExitosamente={handleSubirCaf} deshabilitado={subiendo} />
             </section>
 
-            {/* HISTORIAL */}
             <section data-testid="seccion-historial">
                 <TablaCafsHistorial
                     cafs={cafs}

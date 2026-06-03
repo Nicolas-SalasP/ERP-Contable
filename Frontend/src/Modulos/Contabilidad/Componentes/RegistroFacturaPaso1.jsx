@@ -15,7 +15,6 @@ const RegistroFacturaPaso1 = ({
 }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-fade-in-up">
-            {/* Columna izquierda: proveedor */}
             <div className="flex flex-col gap-4">
                 <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                     Proveedor
@@ -102,7 +101,6 @@ const RegistroFacturaPaso1 = ({
                 )}
             </div>
 
-            {/* Columna derecha: datos factura */}
             <div className="flex flex-col gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

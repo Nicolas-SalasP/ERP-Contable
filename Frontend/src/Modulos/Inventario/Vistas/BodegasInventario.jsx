@@ -114,14 +114,7 @@ const BodegasInventario = () => {
                 descripcion: form.descripcion || null,
                 ubicacion: form.ubicacion || null,
 
-                /*
-                |--------------------------------------------------------------------------
-                | Compatibilidad backend
-                |--------------------------------------------------------------------------
-                | Algunas versiones usan activa boolean.
-                | Otras usan estado ACTIVA/INACTIVA.
-                | Enviamos ambos para que el frontend sea compatible con la lógica actual.
-                */
+                // Compatibilidad backend: enviamos activa (boolean) y estado por si el backend usa uno u otro.
                 activa,
                 estado: activa ? 'ACTIVA' : 'INACTIVA',
             };

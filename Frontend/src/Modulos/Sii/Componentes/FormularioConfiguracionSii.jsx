@@ -118,7 +118,6 @@ const FormularioConfiguracionSii = ({ configuracion, onSubmit, guardando }) => {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in" data-testid="form-sii-configuracion">
-            {/* Seccion: Datos de emision */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <i className="fas fa-building text-emerald-600" /> Datos de Emision
@@ -149,7 +148,6 @@ const FormularioConfiguracionSii = ({ configuracion, onSubmit, guardando }) => {
                 </div>
             </section>
 
-            {/* Seccion: Resolucion SII */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <i className="fas fa-stamp text-blue-600" /> Resolucion SII
@@ -166,7 +164,6 @@ const FormularioConfiguracionSii = ({ configuracion, onSubmit, guardando }) => {
                 </div>
             </section>
 
-            {/* Seccion: Configuracion operacional */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <i className="fas fa-sliders text-amber-600" /> Configuracion Operacional

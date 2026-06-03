@@ -63,10 +63,7 @@ const HistorialFacturas = () => {
 
     const abrirModalPago = (factura) => {
         setMenuAbiertoId(null);
-        // Los pagos se registran exclusivamente desde Tesorería › Conciliación
-        // Bancaria, que genera el asiento de egreso contra la cuenta real. El
-        // atajo de "marcar pagada" se eliminó porque dejaba la CxP abierta en
-        // contabilidad (descuadre subdiario vs mayor).
+        // Los pagos se registran solo desde Conciliación Bancaria; el atajo "marcar pagada" dejaba la CxP descuadrada.
         Swal.fire({
             icon: 'info',
             title: 'El pago se registra en Tesorería',

@@ -348,7 +348,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                     </h1>
                 </div>
 
-                {/* NAVEGACIÓN SCROLLABLE */}
                 <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto custom-scrollbar pb-6">
                     {menuGroups
                         .filter(canShowGroup)
@@ -359,7 +358,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
 
                             return (
                                 <div key={group.id} className="mb-1">
-                                    {/* BOTÓN DEL GRUPO O ENLACE DIRECTO */}
                                     {group.subItems ? (
                                         <button
                                             type="button"
@@ -395,7 +393,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                                         </Link>
                                     )}
 
-                                    {/* SUBMENÚ DESPLEGABLE */}
                                     {group.subItems && (
                                         <div
                                             id={`menu-${group.id}`}
@@ -425,7 +422,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                         })}
                 </nav>
 
-                {/* PERFIL DE USUARIO ANCLADO ABAJO */}
                 <div className="p-4 border-t border-slate-800/50 bg-slate-950 shrink-0">
                     <div className="flex items-center justify-between gap-2">
                         <Link
@@ -445,7 +441,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                             </div>
                         </Link>
 
-                        {/* BOTÓN CERRAR SESIÓN CON SVG NATIVO */}
                         <button
                             onClick={logout}
                             className="text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 h-10 w-10 flex items-center justify-center rounded-lg transition-all"

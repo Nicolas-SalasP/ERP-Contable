@@ -1,7 +1,4 @@
 export const glosario = {
-    // ================================================================
-    // CONTABILIDAD
-    // ================================================================
     asientoManual: {
         id: 'asientoManual',
         titulo: 'Asiento Manual',
@@ -227,9 +224,6 @@ export const glosario = {
             'que aparece en el Balance. Si no calzan, hay un asiento mal hecho en el medio.',
     },
 
-    // ================================================================
-    // COMERCIAL
-    // ================================================================
     cotizacion: {
         id: 'cotizacion',
         titulo: 'Cotizaciones',
@@ -284,9 +278,6 @@ export const glosario = {
         ],
     },
 
-    // ================================================================
-    // ACTIVOS FIJOS
-    // ================================================================
     activoFijo: {
         id: 'activoFijo',
         titulo: 'Activos Fijos',
@@ -385,9 +376,6 @@ export const glosario = {
         ],
     },
 
-    // ================================================================
-    // BANCO / TESORERIA
-    // ================================================================
     conciliacion: {
         id: 'conciliacion',
         titulo: 'Conciliacion Bancaria',
@@ -429,9 +417,6 @@ export const glosario = {
             'casi imposibles de rastrear.',
     },
 
-    // ================================================================
-    // PROVEEDORES / COMERCIAL
-    // ================================================================
     anticipoProveedor: {
         id: 'anticipoProveedor',
         titulo: 'Anticipos a Proveedores',
@@ -471,9 +456,6 @@ export const glosario = {
         ],
     },
 
-    // ================================================================
-    // EMPRESA
-    // ================================================================
     crearEmpresa: {
         id: 'crearEmpresa',
         titulo: 'Crear Empresa',
@@ -524,9 +506,6 @@ export const glosario = {
         ],
     },
 
-    // ================================================================
-    // INVENTARIO
-    // ================================================================
     inventario: {
         id: 'inventario',
         titulo: 'Inventario',
@@ -667,9 +646,6 @@ export const glosario = {
             'módulos mediante referencias y eventos, pero no debe emitir DTE ni ejecutar lógica SII desde este dominio.',
     },
 
-    // ================================================================
-    // PLAN DE CUENTAS
-    // ================================================================
     planCuentas: {
         id: 'planCuentas',
         titulo: 'Plan de Cuentas',
@@ -708,9 +684,6 @@ export const glosario = {
             'Borrarlas romperia los reportes historicos.',
     },
 
-    // ================================================================
-    // MODULOS SECUNDARIOS
-    // ================================================================
     anulacion: {
         id: 'anulacion',
         titulo: 'Anulacion de Documentos',

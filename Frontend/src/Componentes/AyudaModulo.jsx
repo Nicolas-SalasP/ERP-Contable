@@ -65,7 +65,6 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                         onClick={(e) => e.stopPropagation()}
                         data-testid="ayuda-modulo-modal"
                     >
-                        {/* Header */}
                         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white px-6 py-5 flex items-start justify-between gap-4">
                             <div className="flex items-start gap-4">
                                 <div className="text-4xl leading-none" aria-hidden="true">
@@ -89,7 +88,6 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                             </button>
                         </div>
 
-                        {/* Body con scroll */}
                         <div className="overflow-y-auto p-6 space-y-5 text-slate-700">
                             <Seccion titulo="¿Que es?" emoji="📖">
                                 <p className="leading-relaxed">{modulo.queEs}</p>
@@ -152,7 +150,6 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                             )}
                         </div>
 
-                        {/* Footer */}
                         <div className="border-t border-slate-200 px-6 py-3 bg-slate-50 flex justify-end">
                             <button
                                 type="button"

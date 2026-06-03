@@ -146,12 +146,10 @@ const CrearEmpresa = () => {
 
     return (
         <div className="min-h-screen relative overflow-hidden bg-slate-950 flex flex-col justify-center items-center p-4 sm:p-6">
-            {/* Fondo: blobs de color difuminados */}
             <div className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] bg-emerald-600/20 blur-[130px] rounded-full animate-pulse"></div>
             <div className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[55%] bg-sky-700/20 blur-[130px] rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
             <div className="absolute top-[30%] right-[20%] w-[25%] h-[25%] bg-teal-500/10 blur-[100px] rounded-full"></div>
 
-            {/* Marca */}
             <div className="flex items-center gap-2.5 mb-7 relative z-10">
                 <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/30">
                     <i className="fas fa-cloud text-white text-base"></i>
@@ -161,7 +159,6 @@ const CrearEmpresa = () => {
 
             <div className="max-w-lg w-full bg-white/[0.06] backdrop-blur-2xl rounded-[2rem] shadow-2xl shadow-black/40 border border-white/10 overflow-hidden relative z-10">
 
-                {/* Encabezado: bienvenida + stepper */}
                 <div className="px-8 sm:px-10 pt-9 pb-7 text-center border-b border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">
                     <div className="flex items-center justify-center gap-2 mb-1">
                         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Bienvenido</h1>
@@ -170,7 +167,6 @@ const CrearEmpresa = () => {
                     </div>
                     <p className="text-slate-400 text-sm">Configura tu empresa en 3 pasos rápidos.</p>
 
-                    {/* Stepper */}
                     <div className="flex items-start justify-center mt-7">
                         {PASOS.map((p, i) => (
                             <div key={p.n} className="flex items-center">
@@ -194,14 +190,12 @@ const CrearEmpresa = () => {
                     </div>
                 </div>
 
-                {/* Contenido del paso */}
                 <div className="px-8 sm:px-10 py-8">
                     <div className="mb-6">
                         <h2 className="text-lg font-black text-white">{metaPaso.titulo}</h2>
                         <p className="text-slate-400 text-sm mt-0.5">{metaPaso.subtitulo}</p>
                     </div>
 
-                    {/* PASO 1 */}
                     {paso === 1 && (
                         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="relative">
@@ -231,7 +225,6 @@ const CrearEmpresa = () => {
                         </div>
                     )}
 
-                    {/* PASO 2 */}
                     {paso === 2 && (
                         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
                             <div>
@@ -254,7 +247,6 @@ const CrearEmpresa = () => {
                         </div>
                     )}
 
-                    {/* PASO 3 */}
                     {paso === 3 && (
                         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
                             <div>
@@ -280,7 +272,6 @@ const CrearEmpresa = () => {
                         </div>
                     )}
 
-                    {/* Acciones */}
                     <div className="flex gap-3 pt-7">
                         {paso > 1 && (
                             <button onClick={() => setPaso(paso - 1)} className="px-6 py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 flex items-center gap-2">
@@ -313,7 +304,6 @@ const CrearEmpresa = () => {
                 </div>
             </div>
 
-            {/* Pie */}
             <div className="mt-7 flex items-center gap-2 text-slate-500 text-[11px] font-semibold relative z-10">
                 <i className="fas fa-lock text-[10px]"></i>
                 <span>Conexión segura · Tenri ERP Cloud</span>

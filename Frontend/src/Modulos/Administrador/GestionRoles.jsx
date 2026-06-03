@@ -147,7 +147,6 @@ const GestionRoles = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* LISTA DE ROLES */}
                 <div className="lg:col-span-4 space-y-3">
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Perfiles Disponibles</h3>
                     {roles.map(rol => (
@@ -169,7 +168,6 @@ const GestionRoles = () => {
                     </button>
                 </div>
 
-                {/* MATRIZ DE PERMISOS */}
                 <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                     {rolSeleccionado ? (
                         <>

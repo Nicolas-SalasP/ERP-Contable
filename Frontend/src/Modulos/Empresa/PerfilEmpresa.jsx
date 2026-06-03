@@ -14,7 +14,6 @@ import { usePerfilEmpresa } from './Hooks/usePerfilEmpresa';
 const validarRutChileno = (rut) => validarIdentificador(rut, 'CL');
 
 const PerfilEmpresa = () => {
-    // --- HOOK: capa de datos del perfil ---
     const {
         formData, setFormData,
         bancos, setBancos: _setBancos,
@@ -24,15 +23,12 @@ const PerfilEmpresa = () => {
         recargar: cargarPerfil,
     } = usePerfilEmpresa();
 
-    // --- ESTADOS DE UI ---
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
 
-    // --- ESTADOS DE IMAGEN ---
     const [logoPreview, setLogoPreview] = useState(null);
     const [logoFile, setLogoFile] = useState(null);
 
-    // --- ESTADO DEL FORM DE NUEVO BANCO ---
     const [nuevoBanco, setNuevoBanco] = useState({
         banco: '', tipo_cuenta: 'Corriente', numero_cuenta: '', titular: '', rut_titular: '', email_notificacion: ''
     });
@@ -49,17 +45,14 @@ const PerfilEmpresa = () => {
 
     const [formCentro, setFormCentro] = useState({ codigo: '', nombre: '' });
 
-    // --- ESTADOS PARA MODALES DE EDICIÓN ---
     const [modalBancoOpen, setModalBancoOpen] = useState(false);
     const [bancoEditado, setBancoEditado] = useState(null);
 
     const [modalCentroOpen, setModalCentroOpen] = useState(false);
     const [centroEditado, setCentroEditado] = useState(null);
 
-    // --- CONSTANTES DE URL ---
     const BASE_URL_IMG = API_BASE_URL.replace('/api', '/storage/');
 
-    // --- HANDLERS Y FORMATEADORES ---
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleSeleccionarLogo = (e) => {
@@ -104,7 +97,6 @@ const PerfilEmpresa = () => {
         setFormData({ ...formData, telefono: cleaned });
     };
 
-    // --- GUARDAR PERFIL (Texto + Logo) ---
     const handleGuardarDatos = async (e) => {
         e.preventDefault();
         
@@ -163,7 +155,6 @@ const PerfilEmpresa = () => {
         }
     };
 
-    // --- LÓGICA DE BANCOS ---
     const handleAgregarBanco = async (e) => {
         e.preventDefault();
         if (!nuevoBanco.banco || !nuevoBanco.numero_cuenta) {
@@ -230,7 +221,6 @@ const PerfilEmpresa = () => {
         }
     };
 
-    // --- LÓGICA DE CENTROS DE COSTO ---
     const agregarCentro = async (e) => {
         e.preventDefault();
         if (!formCentro.codigo || !formCentro.nombre) {
@@ -318,7 +308,6 @@ const PerfilEmpresa = () => {
                 </div>
             </div>
 
-            {/* --- NAVEGACIÓN TABS --- */}
             <div className="flex flex-wrap gap-2 bg-slate-100 p-1.5 rounded-xl w-fit mb-6">
                 <button onClick={() => setActiveTab('general')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'general' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>
                     <svg className="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
@@ -335,7 +324,6 @@ const PerfilEmpresa = () => {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                {/* --- PESTAÑA: GENERAL --- */}
                 {activeTab === 'general' && (
                     <PerfilEmpresaGeneral
                         formData={formData}
@@ -349,7 +337,6 @@ const PerfilEmpresa = () => {
                     />
                 )}
 
-                {/* --- PESTAÑA: BANCOS --- */}
                 {activeTab === 'bancos' && (
                     <PerfilEmpresaBancos
                         bancos={bancos}
@@ -362,7 +349,6 @@ const PerfilEmpresa = () => {
                     />
                 )}
 
-                {/* --- PESTAÑA: CENTROS DE COSTO --- */}
                 {activeTab === 'centros' && (
                     <PerfilEmpresaCentros
                         centros={centros}
