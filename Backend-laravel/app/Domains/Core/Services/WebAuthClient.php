@@ -81,6 +81,8 @@ class WebAuthClient
                 'plan_slug' => $data['plan']['plan_slug'] ?? null,
                 'module_keys' => $data['plan']['module_keys'] ?? [],
                 'rol_erp' => $data['plan']['rol_erp'] ?? 'Administrador',
+                'subscription_status' => $data['subscription']['status'] ?? 'active',
+                'subscription_ends_at' => $data['subscription']['ends_at'] ?? null,
             ];
         } catch (Throwable $e) {
             Log::warning('WebAuthClient: error de red al validar contra la web', array_merge([
