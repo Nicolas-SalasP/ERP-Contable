@@ -69,7 +69,7 @@ const siiApi = {
 
     certificado: {
         /** @returns {Promise<CertificadoActivo>} */
-        obtener: () => api.get('/sii/certificado'),
+        obtener: () => api.get('/sii/certificado', { silent: true }),
 
         /**
          * @param {File} archivo - .pfx o .p12
