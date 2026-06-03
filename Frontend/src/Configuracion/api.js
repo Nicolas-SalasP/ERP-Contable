@@ -373,10 +373,37 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     });
 }
 
+const esSuscripcionSoloLectura = () => {
+    try {
+        const raw = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_user'))
+            || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('erp_user'));
+        const user = raw ? JSON.parse(raw) : null;
+        return ['read_only', 'expired'].includes(user?.subscription_status);
+    } catch {
+        return false;
+    }
+};
+
 const request = async (endpoint, method, body, options = {}) => {
     const esEndpointAuth = endpoint.startsWith('/auth/');
     if (!esEndpointAuth) {
         await ensureTokenFresh();
+    }
+
+    // Guard de solo-lectura: el backend es la garantia; esto evita el viaje de red
+    // y avisa al usuario cuando su suscripcion esta vencida o en solo lectura.
+    const esEscritura = ['POST', 'PUT', 'PATCH', 'DELETE'].includes((method || '').toUpperCase());
+    if (esEscritura && !esEndpointAuth && esSuscripcionSoloLectura()) {
+        if (typeof window !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Plan vencido',
+                text: 'Tu suscripción está vencida. Solo puedes consultar información.',
+                confirmButtonColor: '#0f172a',
+                confirmButtonText: 'Entendido',
+            });
+        }
+        return Promise.reject(buildError(403, { error_code: 'SUBSCRIPTION_READONLY', message: 'Suscripción en solo lectura.' }));
     }
 
     const url = `${API_BASE_URL}${endpoint}`;

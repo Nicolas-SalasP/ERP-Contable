@@ -6,7 +6,7 @@ import { usePermisos } from '../../Contextos/Permisos';
 const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) => {
     const location = useLocation();
     const { user, logout } = useAuth();
-    const { tieneAlgunPermiso } = usePermisos();
+    const { tieneAlgunPermiso, tieneModulo } = usePermisos();
     const [openMenu, setOpenMenu] = useState('');
 
     const menuGroups = [
@@ -289,7 +289,9 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
     };
 
     const subItemVisible = (subItem) => {
-        return !subItem.permisosRequeridos || tieneAlgunPermiso(subItem.permisosRequeridos);
+        const permisoOk = !subItem.permisosRequeridos || tieneAlgunPermiso(subItem.permisosRequeridos);
+        const moduloOk = !subItem.moduloRequerido || tieneModulo(subItem.moduloRequerido);
+        return permisoOk && moduloOk;
     };
 
     const visibleSubItems = (group) => {
@@ -298,8 +300,9 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
 
     const canShowGroup = (group) => {
         const hasParentPermission = !group.permisosRequeridos || tieneAlgunPermiso(group.permisosRequeridos);
+        const hasParentModulo = !group.moduloRequerido || tieneModulo(group.moduloRequerido);
 
-        if (!hasParentPermission) return false;
+        if (!hasParentPermission || !hasParentModulo) return false;
         if (!group.subItems) return true;
 
         return visibleSubItems(group).length > 0;

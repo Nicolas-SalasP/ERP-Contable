@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import BarraLateral from './BarraLateral';
+import BannerSuscripcion from '../BannerSuscripcion';
 
 const LayoutPrincipal = ({ children }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -25,6 +26,8 @@ const LayoutPrincipal = ({ children }) => {
                     <span className="font-bold text-slate-800">ERP Contable</span>
                     <div className="w-6"></div>
                 </header>
+
+                <BannerSuscripcion />
 
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-8">
                     {children}
