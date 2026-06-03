@@ -12,6 +12,7 @@ use App\Domains\Core\Models\EstadoSuscripcion;
 use App\Domains\Core\Models\Pais;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Contabilidad\Models\PlanCuenta;
 
 class ComercialNotasCreditoTest extends TestCase
 {
@@ -32,6 +33,11 @@ class ComercialNotasCreditoTest extends TestCase
     public function test_crear_nota_de_credito_asociada_a_factura_responde_correctamente()
     {
         $factura = Factura::create(['empresa_id' => $this->empresa->id, 'proveedor_id' => $this->prov->id, 'numero_factura' => 'F-ORIGINAL', 'tipo_documento' => 'FACTURA', 'tipo' => 'COMPRA', 'monto_bruto' => 1000, 'monto_neto' => 1000, 'monto_iva' => 0, 'fecha_emision' => now(), 'estado' => 'REGISTRADA', 'codigo_unico' => 1]);
+
+        // Cuentas del plan necesarias para centralizar la nota de credito.
+        foreach ([['410101', 'Gasto', 'GASTO'], ['353350', 'IVA Debito', 'PASIVO'], ['352105', 'Proveedores', 'PASIVO']] as [$cod, $nom, $tipo]) {
+            PlanCuenta::create(['empresa_id' => $this->empresa->id, 'codigo' => $cod, 'nombre' => $nom, 'tipo' => $tipo, 'imputable' => true, 'activo' => true]);
+        }
 
         $response = $this->actingAs($this->usuario)->postJson('/api/facturas', [
             'proveedor_id' => $this->prov->id,
