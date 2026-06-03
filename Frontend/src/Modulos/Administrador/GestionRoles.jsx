@@ -9,7 +9,7 @@ const SWAL_UI = {
         popup: 'rounded-3xl',
         title: 'text-slate-800',
         htmlContainer: 'text-slate-500',
-        input: 'rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200',
+        input: 'box-border block !w-[calc(100%-3rem)] !mx-auto rounded-xl border border-slate-200 px-4 py-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none',
         confirmButton: 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-7 rounded-xl mx-2 shadow-lg shadow-indigo-200',
         cancelButton: 'bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-7 rounded-xl mx-2',
     },
