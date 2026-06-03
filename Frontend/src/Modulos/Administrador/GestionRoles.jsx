@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 
+const SWAL_UI = {
+    buttonsStyling: false,
+    reverseButtons: true,
+    customClass: {
+        popup: 'rounded-3xl',
+        title: 'text-slate-800',
+        htmlContainer: 'text-slate-500',
+        input: 'rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200',
+        confirmButton: 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-7 rounded-xl mx-2 shadow-lg shadow-indigo-200',
+        cancelButton: 'bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-7 rounded-xl mx-2',
+    },
+};
+
 // Claves de permisos alineadas con el backend (ModuloPermisos / RolSeeder).
 const listaPermisos = [
     { categoria: 'Ventas', keys: ['ventas.ver', 'ventas.crear'] },
@@ -82,14 +95,15 @@ const GestionRoles = () => {
 
     const crearRol = async () => {
         const { value: nombre } = await Swal.fire({
+            ...SWAL_UI,
             title: 'Nuevo rol',
+            text: 'Dale un nombre al perfil que vas a configurar.',
             input: 'text',
             inputLabel: 'Nombre del rol',
             inputPlaceholder: 'Ej: Vendedor',
             showCancelButton: true,
-            confirmButtonText: 'Crear',
+            confirmButtonText: 'Crear rol',
             cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#4f46e5',
             inputValidator: (v) => (!v || !v.trim()) && 'Ingresa un nombre para el rol.',
         });
         if (!nombre) return;
@@ -97,11 +111,11 @@ const GestionRoles = () => {
         try {
             const res = await api.post('/usuarios/roles', { nombre: nombre.trim(), permisos: [] });
             if (res.success) {
-                Swal.fire({ icon: 'success', title: 'Rol creado', timer: 1300, showConfirmButton: false });
+                Swal.fire({ ...SWAL_UI, icon: 'success', title: 'Rol creado', timer: 1300, showConfirmButton: false });
                 await cargarRoles(res.data?.id);
             }
         } catch (error) {
-            Swal.fire({ icon: 'error', title: 'No se pudo crear', text: error.message || 'Error al crear el rol.' });
+            Swal.fire({ ...SWAL_UI, icon: 'error', title: 'No se pudo crear', text: error.message || 'Error al crear el rol.' });
         }
     };
 
@@ -113,11 +127,11 @@ const GestionRoles = () => {
                 permisos: rolSeleccionado.permisos || [],
             });
             if (res.success) {
-                Swal.fire({ icon: 'success', title: 'Rol duplicado', text: 'Se creó una copia editable que puedes personalizar.', timer: 1800, showConfirmButton: false });
+                Swal.fire({ ...SWAL_UI, icon: 'success', title: 'Rol duplicado', text: 'Se creó una copia editable que puedes personalizar.', timer: 1800, showConfirmButton: false });
                 await cargarRoles(res.data?.id);
             }
         } catch (error) {
-            Swal.fire({ icon: 'error', title: 'No se pudo duplicar', text: error.message || 'Solo puedes asignar permisos que tú posees.' });
+            Swal.fire({ ...SWAL_UI, icon: 'error', title: 'No se pudo duplicar', text: error.message || 'Solo puedes asignar permisos que tú posees.' });
         }
     };
 
@@ -140,11 +154,11 @@ const GestionRoles = () => {
                 permisos: rolSeleccionado.permisos
             });
             if (res.success) {
-                Swal.fire({ icon: 'success', title: 'Permisos actualizados', timer: 1500, showConfirmButton: false });
+                Swal.fire({ ...SWAL_UI, icon: 'success', title: 'Permisos actualizados', timer: 1500, showConfirmButton: false });
                 cargarRoles(rolSeleccionado.id);
             }
         } catch (error) {
-            Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: error.message || 'No se pudieron guardar los cambios.' });
+            Swal.fire({ ...SWAL_UI, icon: 'error', title: 'No se pudo guardar', text: error.message || 'No se pudieron guardar los cambios.' });
         } finally {
             setGuardando(false);
         }

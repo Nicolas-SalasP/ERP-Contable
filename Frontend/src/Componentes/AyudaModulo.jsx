@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { obtenerModulo } from '../Utilidades/glosario';
-import { logger } from '../Configuracion/logger';
 
 const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
     const [abierto, setAbierto] = useState(false);
@@ -27,8 +26,8 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
         }
     }, [abierto]);
 
+    // Si el modulo no tiene ayuda en el glosario, simplemente no se muestra el boton.
     if (!modulo) {
-        logger.warn(`[AyudaModulo] moduloId "${moduloId}" no existe en el glosario.`);
         return null;
     }
 
