@@ -57,7 +57,10 @@ import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
 import Glosario from './Modulos/Glosario/Glosario';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const auth = useAuth();
+  if (!auth) return <div>Cargando...</div>;
+
+  const { isAuthenticated, loading, user } = auth;
 
   if (loading) return <div>Cargando...</div>;
 
