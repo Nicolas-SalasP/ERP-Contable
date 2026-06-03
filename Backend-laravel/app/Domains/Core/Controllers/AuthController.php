@@ -249,13 +249,20 @@ class AuthController
 
     public function me(Request $request)
     {
-        $user = $request->user()->load(['empresa', 'rol']);
+        $user = $request->user()->load('rol');
 
         $permisos = ModuloPermisos::permisosUsuario($user);
 
-        $userData = $user->toArray();
-        $userData['permisos'] = $permisos;
-
-        return response()->json($userData);
+        // Whitelist (misma forma que el login): no se expone toArray() completo
+        // del usuario (tenri_user_id, module_keys, bloqueado_hasta, etc.).
+        return response()->json([
+            'id'         => $user->id,
+            'nombre'     => $user->nombre,
+            'email'      => $user->email,
+            'empresa_id' => $user->empresa_id,
+            'rol_id'     => $user->rol_id,
+            'plan_slug'  => $user->plan_slug,
+            'permisos'   => $permisos,
+        ]);
     }
 }
