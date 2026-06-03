@@ -148,3 +148,85 @@ describe('RegistroFactura - tipo Nota de Credito (FIX: factura_referencia_id)', 
         expect(inputRef.value).toBe('456');
     });
 });
+
+describe('RegistroFactura - flujo completo de 3 pasos', () => {
+    const proveedores = [
+        { id: 1, razon_social: 'Proveedor Uno', rut: '76.111.111-1', codigo_interno: 'P1', pais_iso: 'CL', moneda_defecto: 'CLP' },
+    ];
+
+    // El BuscadorCuentaContable autoselecciona la "cuenta puente" (690199) al montar
+    // sin valor, asi que cuentaDestino se completa solo al llegar al paso 3.
+    const planCuentas = [
+        { codigo: '690199', nombre: 'Cuenta Puente Por Clasificar', imputable: true },
+        { codigo: '410101', nombre: 'Gasto Generico', imputable: true },
+        { codigo: '353350', nombre: 'IVA Credito Fiscal', imputable: true },
+        { codigo: '352105', nombre: 'Proveedores Nacionales', imputable: true },
+    ];
+
+    const elegirProveedorUno = () => {
+        fireEvent.change(screen.getByPlaceholderText('Buscar RUT, Razón Social...'), { target: { value: 'Uno' } });
+        fireEvent.click(screen.getByText('Proveedor Uno'));
+    };
+
+    const completarPaso1 = (numero = 'F-001') => {
+        elegirProveedorUno();
+        fireEvent.change(screen.getByPlaceholderText('Ej: 123456'), { target: { name: 'numeroFactura', value: numero } });
+        fireEvent.change(screen.getByPlaceholderText('0'), { target: { value: '119000' } });
+    };
+
+    it('mantiene "Siguiente" deshabilitado hasta seleccionar proveedor y monto', async () => {
+        setupMocks({ 'GET /proveedores': () => mockJsonResponse(200, { success: true, data: proveedores }) });
+        renderWithRouter(<RegistroFactura />);
+        await waitFor(() => screen.getByText('Registro de Factura'));
+
+        expect(screen.getByRole('button', { name: /Siguiente/i }).disabled).toBe(true);
+
+        completarPaso1();
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /Siguiente/i }).disabled).toBe(false));
+    });
+
+    it('una factura duplicada bloquea el avance y muestra la advertencia', async () => {
+        setupMocks({
+            'GET /proveedores': () => mockJsonResponse(200, { success: true, data: proveedores }),
+            'GET /facturas/check': () => mockJsonResponse(200, { exists: true }),
+        });
+        renderWithRouter(<RegistroFactura />);
+        await waitFor(() => screen.getByText('Registro de Factura'));
+
+        completarPaso1('F-DUP');
+        fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+
+        expect(await screen.findByText('Factura Duplicada')).toBeDefined();
+        expect(screen.queryByText('Seleccionar Cuenta de Pago (Destino)')).toBeNull();
+    });
+
+    it('completa los 3 pasos y guarda la factura mostrando el comprobante', async () => {
+        const postSpy = vi.fn(() => mockJsonResponse(200, { success: true, data: { id: 99, comprobante_contable: 'COMP-2026-001' } }));
+        setupMocks({
+            'GET /proveedores': () => mockJsonResponse(200, { success: true, data: proveedores }),
+            'GET /facturas/check': () => mockJsonResponse(200, { exists: false }),
+            'GET /cuentas-bancarias/proveedor': () => mockJsonResponse(200, { success: true, data: [] }),
+            'GET /contabilidad/plan-cuentas': () => mockJsonResponse(200, { success: true, data: planCuentas }),
+            'POST /facturas': postSpy,
+        });
+        renderWithRouter(<RegistroFactura />);
+        await waitFor(() => screen.getByText('Registro de Factura'));
+
+        completarPaso1('F-001');
+        fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+
+        await screen.findByText('Fecha Vencimiento Factura');
+        fireEvent.change(document.querySelector('input[name="fechaVencimiento"]'), { target: { name: 'fechaVencimiento', value: '2030-12-31' } });
+        fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+
+        await screen.findByText('Previsualización y Clasificación del Asiento');
+        await screen.findByDisplayValue(/690199/);
+
+        fireEvent.click(screen.getByRole('button', { name: /Confirmar y Guardar/i }));
+
+        expect(await screen.findByText('Registro Exitoso')).toBeDefined();
+        expect(screen.getByText('COMP-2026-001')).toBeDefined();
+        expect(postSpy).toHaveBeenCalled();
+    });
+});

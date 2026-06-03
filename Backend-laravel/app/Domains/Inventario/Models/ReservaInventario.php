@@ -42,12 +42,6 @@ class ReservaInventario extends Model
         'fecha_expiracion' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -67,12 +61,6 @@ class ReservaInventario extends Model
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'reserva_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
@@ -145,12 +133,6 @@ class ReservaInventario extends Model
             ->orderByDesc('id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers estáticos
-    |--------------------------------------------------------------------------
-    */
-
     public static function estadosPermitidos(): array
     {
         return [
@@ -180,12 +162,6 @@ class ReservaInventario extends Model
             self::ESTADO_EXPIRADA,
         ];
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers de estado
-    |--------------------------------------------------------------------------
-    */
 
     public function estaActiva(): bool
     {

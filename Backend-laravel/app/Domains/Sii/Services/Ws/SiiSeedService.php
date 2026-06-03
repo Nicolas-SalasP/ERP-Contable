@@ -10,16 +10,11 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * F5.1 — Obtiene una semilla del WS de autenticacion del SII.
+ * Obtiene una semilla del WS de autenticacion del SII via SOAP getSeed.
  *
- * Envia un SOAP envelope con el metodo getSeed al endpoint del ambiente
- * (cert o prod). Parsea respuesta SOAP+CDATA y extrae <SEMILLA>.
- *
- * Estrategia de parseo SOAP+CDATA: DOMDocument anidado. El SII envuelve
- * su XML de respuesta en CDATA dentro del nodo SOAP <getSeedReturn>; primero
- * parseamos el SOAP, extraemos el textContent (que es el XML SII en claro),
- * y lo re-parseamos como segundo DOMDocument para navegar a <SEMILLA>.
- * SimpleXML no maneja bien los namespaces multi-prefijo de la respuesta.
+ * El SII envuelve su XML en CDATA dentro de <getSeedReturn>: parseamos el SOAP
+ * con DOMDocument, extraemos el textContent y lo re-parseamos para navegar a
+ * <SEMILLA> (SimpleXML no maneja bien los namespaces multi-prefijo).
  */
 class SiiSeedService
 {

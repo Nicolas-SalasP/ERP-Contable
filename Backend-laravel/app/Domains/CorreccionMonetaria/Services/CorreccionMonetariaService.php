@@ -461,7 +461,9 @@ class CorreccionMonetariaService
             ->join('asientos_contables as ac', 'da.asiento_id', '=', 'ac.id')
             ->where('ac.empresa_id', $empresaId)
             ->whereIn('da.cuenta_contable', $codigos)
-            ->where('ac.estado', 'MAYORIZADO')
+            // Mismo criterio que ReporteContableService: excluye anulados y
+            // reclasificados (antes solo incluia 'MAYORIZADO', inconsistente).
+            ->whereNotIn('ac.estado', ['ANULADO', 'RECLASIFICADO'])
             ->where('ac.fecha', '<=', $fechaHasta)
             ->groupBy('da.cuenta_contable')
             ->select('da.cuenta_contable', DB::raw('SUM(da.debe) as d'), DB::raw('SUM(da.haber) as h'))
@@ -495,7 +497,21 @@ class CorreccionMonetariaService
     {
         $activos = ActivoFijo::where('empresa_id', $empresaId)->where('estado', 'ACTIVO')->get();
 
+        $periodoActual = sprintf('%04d-%02d', $anio, $mes);
+
         foreach ($activos as $activo) {
+            // Proporcionalidad por meses de tenencia: un bien adquirido DURANTE (o
+            // despues de) el periodo corregido no se corrige ese mes; se corrige
+            // desde el periodo siguiente. Antes se aplicaba el factor completo a
+            // todos los activos, sobrevaluando los recien adquiridos.
+            $mesAdquisicion = $activo->fecha_adquisicion
+                ? \Illuminate\Support\Carbon::parse($activo->fecha_adquisicion)->format('Y-m')
+                : null;
+
+            if ($mesAdquisicion !== null && $mesAdquisicion >= $periodoActual) {
+                continue;
+            }
+
             $activo->update([
                 'cm_ajuste_acumulado'              => (float)$activo->cm_ajuste_acumulado + round((float)$activo->valor_adquisicion * ($factor - 1), 2),
                 'cm_depreciacion_ajuste_acumulado' => (float)$activo->cm_depreciacion_ajuste_acumulado + round((float)$activo->depreciacion_acumulada * ($factor - 1), 2),

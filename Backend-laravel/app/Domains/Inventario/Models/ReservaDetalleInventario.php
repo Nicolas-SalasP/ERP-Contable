@@ -38,12 +38,6 @@ class ReservaDetalleInventario extends Model
         'cantidad_liberada' => 'decimal:4',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -78,12 +72,6 @@ class ReservaDetalleInventario extends Model
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'reserva_detalle_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
@@ -131,12 +119,6 @@ class ReservaDetalleInventario extends Model
             $subQuery->comprometenDisponibilidad();
         });
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function cantidadPendiente(): float
     {

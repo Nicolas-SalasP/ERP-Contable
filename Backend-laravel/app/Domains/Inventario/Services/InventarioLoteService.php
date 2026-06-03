@@ -20,12 +20,6 @@ class InventarioLoteService
     ) {
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Consultas API
-    |--------------------------------------------------------------------------
-    */
-
     public function listarLotes(User $usuario, array $filtros = []): LengthAwarePaginator
     {
         $this->permisos->exigir($usuario, 'inventario.lotes.ver');
@@ -141,12 +135,6 @@ class InventarioLoteService
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Escritura API
-    |--------------------------------------------------------------------------
-    */
-
     public function crearLote(User $usuario, array $datos): LoteInventario
     {
         $this->permisos->exigir($usuario, 'inventario.lotes.crear');
@@ -233,16 +221,6 @@ class InventarioLoteService
         });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Resolución de lotes para movimientos
-    |--------------------------------------------------------------------------
-    |
-    | Estos métodos serán usados por InventarioMovimientoService en el Bloque 5.
-    | No crean movimientos ni valorizan stock consolidado.
-    |
-    */
-
     public function resolverLoteParaEntrada(Producto $producto, array $datos, int $empresaId): ?LoteInventario
     {
         if (!$producto->maneja_lotes) {
@@ -293,17 +271,6 @@ class InventarioLoteService
     {
         return $this->resolverLoteParaSalida($producto, $datos, $empresaId);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Aplicación de stock por lote
-    |--------------------------------------------------------------------------
-    |
-    | Estos métodos actualizan inventario_stock_lotes y crean detalle en
-    | inventario_movimiento_lotes. Deben ejecutarse dentro de la transacción del
-    | movimiento consolidado.
-    |
-    */
 
     public function aplicarEntradaLote(
         MovimientoInventario $movimiento,
@@ -459,12 +426,6 @@ class InventarioLoteService
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Utilidades públicas para otros services/tests
-    |--------------------------------------------------------------------------
-    */
-
     public function obtenerLoteActivoProductoEmpresa(
         int $loteId,
         int $productoId,
@@ -530,12 +491,6 @@ class InventarioLoteService
             ->lockForUpdate()
             ->firstOrFail();
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers internos
-    |--------------------------------------------------------------------------
-    */
 
     private function obtenerOCrearLoteDesdePayload(
         Producto $producto,

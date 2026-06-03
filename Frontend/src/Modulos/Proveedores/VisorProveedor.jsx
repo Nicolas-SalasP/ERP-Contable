@@ -13,7 +13,6 @@ const VisorProveedor = () => {
     const [loading, setLoading] = useState(false);
     const [datos, setDatos] = useState(null);
 
-    // --- MODALES Y FILTROS ---
     const [modalAbierto, setModalAbierto] = useState(false);
     const [listaProveedores, setListaProveedores] = useState([]);
     const [terminoBusqueda, setTerminoBusqueda] = useState('');
@@ -26,7 +25,6 @@ const VisorProveedor = () => {
     const [modalAnticipoAbierto, setModalAnticipoAbierto] = useState(false);
     const [formAnticipo, setFormAnticipo] = useState({ fecha: new Date().toISOString().split('T')[0], monto: '', referencia: '' });
 
-    // --- ESTADOS PARA EL CRUCE DE DOCUMENTOS ---
     const [modalCruceAbierto, setModalCruceAbierto] = useState(false);
     const [facturasCruceSel, setFacturasCruceSel] = useState([]);
     const [aFavorCruceSel, setAFavorCruceSel] = useState([]); 
@@ -155,7 +153,6 @@ const VisorProveedor = () => {
         }
     };
 
-    // --- FUNCIONES DE CRUCE ---
     const abrirModalCruce = () => {
         setFacturasCruceSel([]);
         setAFavorCruceSel([]);
@@ -205,7 +202,6 @@ const VisorProveedor = () => {
         return p.razon_social?.toLowerCase().includes(b) || (p.rut && p.rut.toLowerCase().includes(b)) || (p.codigo_interno && p.codigo_interno.toLowerCase().includes(b));
     });
 
-    // --- MODALES (Spotlight y Anticipo) ---
     const modalSpotlightJSX = modalAbierto && (
         <div className="fixed inset-0 bg-slate-900/80 z-[100] flex items-start justify-center pt-[10vh] p-4 animate-fade-in" onClick={() => setModalAbierto(false)}>
             <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] border border-slate-300" onClick={e => e.stopPropagation()}>
@@ -232,7 +228,6 @@ const VisorProveedor = () => {
         </div>
     );
 
-    // MODAL DE ANTICIPO MEJORADO Y FORMAL
     const modalAnticipoJSX = modalAnticipoAbierto && (
         <div className="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setModalAnticipoAbierto(false)}>
             <div className="bg-white w-full max-w-lg rounded-xl shadow-xl overflow-hidden border border-slate-300 flex flex-col" onClick={e => e.stopPropagation()}>
@@ -377,7 +372,6 @@ const VisorProveedor = () => {
         return pasaTipo && pasaNumero && pasaEstado;
     });
 
-    // --- CÁLCULOS DEL MODAL DE CRUCE ---
     const totalSelCargos = facturasCruceSel.reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
     const totalSelAbonos = aFavorCruceSel.reduce((sum, f) => sum + parseFloat(f.monto_bruto || f.monto), 0);
     const difCruce = totalSelCargos - totalSelAbonos;
@@ -386,7 +380,6 @@ const VisorProveedor = () => {
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setModalCruceAbierto(false)}>
             <div className="bg-white w-full max-w-5xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-300 animate-slide-down" onClick={e => e.stopPropagation()}>
                 
-                {/* CABECERA */}
                 <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white shrink-0 border-b border-slate-800 relative overflow-hidden">
                     <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-blue-500 opacity-20 rounded-full blur-3xl pointer-events-none"></div>
                     <div className="flex items-center gap-4 relative z-10">
@@ -407,10 +400,8 @@ const VisorProveedor = () => {
                     </button>
                 </div>
 
-                {/* CUERPO A DOS COLUMNAS */}
                 <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
                     
-                    {/* COLUMNA IZQUIERDA: DEUDAS (FACTURAS) */}
                     <div className="flex-1 flex flex-col border-r border-slate-200 bg-white">
                         <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                             <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 uppercase tracking-wide">
@@ -452,7 +443,6 @@ const VisorProveedor = () => {
                         </div>
                     </div>
 
-                    {/* COLUMNA DERECHA: A FAVOR (NC Y ANTICIPOS) */}
                     <div className="flex-1 flex flex-col bg-white">
                         <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                             <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 uppercase tracking-wide">
@@ -470,7 +460,6 @@ const VisorProveedor = () => {
                                 />
                             ) : (
                                 <div className="space-y-2">
-                                    {/* Mostrar Notas de Crédito */}
                                     {ncVigentes.map(nc => {
                                         const seleccionado = aFavorCruceSel.some(x => x.id === nc.id && x.tipo === 'NOTA_CREDITO');
                                         return (
@@ -535,7 +524,6 @@ const VisorProveedor = () => {
                     </div>
                 </div>
 
-                {/* FOOTER: RESUMEN MATEMÁTICO Y BOTÓN */}
                 <div className="bg-slate-50 border-t border-slate-200 p-4 shrink-0 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-4 w-full md:w-auto">
                         <div>
@@ -600,14 +588,11 @@ const VisorProveedor = () => {
                 </div>
             </div>
 
-            {/* TARJETA OSCURA PREMIUM CON COLOR PLANO */}
-            {/* FIX: Se eliminaron gradientes (bg-gradient), blurs y efectos de transparencia. Color sólido y plano bg-slate-900. */}
             <div className="bg-slate-900 rounded-2xl p-8 text-white shadow-xl mb-8 relative overflow-hidden border border-slate-800">
                 
                 <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-10">
                     <div className="space-y-4 flex-1">
                         <div>
-                            {/* FIX: Badge sólido sin transparencias */}
                             <span className="bg-slate-800 text-indigo-200 border border-slate-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block">
                                 CÓDIGO INTERNO: {proveedor.codigo_interno}
                             </span>
@@ -630,9 +615,7 @@ const VisorProveedor = () => {
                         </div>
                     </div>
 
-                    {/* RESUMEN CONTABLE CON COLOR PLANO */}
                     <div className="flex flex-col justify-center gap-4 lg:min-w-[280px] shrink-0 border-l border-slate-800 lg:pl-8">
-                        {/* FIX: Se eliminó el backdrop-blur y bg-slate-900/50. Ahora es un bg-slate-800 sólido. */}
                         <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 relative overflow-hidden">
                             <div className={`absolute top-0 left-0 w-1 h-full ${esAcreedor ? 'bg-rose-500' : esDeudor ? 'bg-emerald-500' : 'bg-slate-500'}`}></div>
                             <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Saldo Contable Actual</p>
@@ -659,7 +642,6 @@ const VisorProveedor = () => {
                 </div>
             </div>
 
-            {/* TABLA UNIFICADA (CUENTA CORRIENTE) */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="bg-slate-50 border-b border-slate-200 p-4 md:p-6 flex justify-between items-center">
                     <div>

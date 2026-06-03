@@ -1,7 +1,17 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api, markTokenIssued } from '../Configuracion/api';
 
 const AuthContext = createContext(null);
+
+// Storage activo de la sesion (el que contiene el token).
+const getSessionStorage = () => {
+    if (typeof window === 'undefined') return null;
+    if (localStorage.getItem('erp_token')) return localStorage;
+    if (sessionStorage.getItem('erp_token')) return sessionStorage;
+    return null;
+};
+
+const REFRESCO_SESION_MS = 3 * 60 * 1000; // 3 minutos
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
@@ -10,6 +20,47 @@ export const AuthProvider = ({ children }) => {
     });
 
     const [loading, setLoading] = useState(false);
+
+    // Re-sincroniza el usuario (incluidos sus permisos) contra el backend para que
+    // los cambios de rol/permisos surtan efecto sin necesidad de re-login.
+    const refrescarSesion = useCallback(async () => {
+        const storage = getSessionStorage();
+        if (!storage) return;
+        try {
+            const me = await api.get('/auth/me');
+            if (me && me.id) {
+                setUser(me);
+                storage.setItem('erp_user', JSON.stringify(me));
+            }
+        } catch (_) {
+            // Un 401 lo maneja globalmente api.js (cierra sesion). Errores de red se ignoran.
+        }
+    }, []);
+
+    // Refresco periodico y al recuperar el foco de la pestaña.
+    useEffect(() => {
+        if (!user?.id) return;
+        refrescarSesion();
+        const intervalo = setInterval(refrescarSesion, REFRESCO_SESION_MS);
+        const onFocus = () => refrescarSesion();
+        window.addEventListener('focus', onFocus);
+        return () => {
+            clearInterval(intervalo);
+            window.removeEventListener('focus', onFocus);
+        };
+    }, [user?.id, refrescarSesion]);
+
+    // Si otra pestaña cierra sesion (erp_token pasa a null), invalidamos el
+    // usuario en memoria de inmediato, sin esperar la recarga del navegador.
+    useEffect(() => {
+        const onStorage = (e) => {
+            if (e.key === 'erp_token' && e.newValue === null) {
+                setUser(null);
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, []);
 
     const login = async (email, password, remember = false) => {
         setLoading(true);
@@ -24,9 +75,11 @@ export const AuthProvider = ({ children }) => {
                 const otherStorage = remember ? sessionStorage : localStorage;
 
                 storage.setItem('erp_token', tokenRecibido);
-                storage.removeItem.bind(otherStorage)('erp_token');
+                // Limpia el otro storage por completo (incluido issued_at) para no
+                // dejar restos de una sesion anterior con distinto "Recordarme".
                 otherStorage.removeItem('erp_token');
                 otherStorage.removeItem('erp_user');
+                otherStorage.removeItem('erp_token_issued_at');
                 markTokenIssued();
 
                 try {
@@ -79,7 +132,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading, refrescarSesion }}>
             {children}
         </AuthContext.Provider>
     );

@@ -13,17 +13,6 @@ use RuntimeException;
 
 /**
  * Servicio generico para firma XMLDSig SHA1+RSA+C14N1.0+enveloped.
- *
- * Usado por DteSigner (firma <Documento>) y SetDteSigner (firma <SetDTE>).
- * El contrato algoritmico es FIJO por requerimiento SII Chile:
- *   CanonicalizationMethod: C14N 1.0 inclusiva (NO exc-c14n).
- *   SignatureMethod:        rsa-sha1
- *   DigestMethod:           sha1
- *   Transforms (Reference): enveloped-signature + C14N 1.0
- *
- * Verifica criptograficamente la firma generada antes de retornar — si el
- * round-trip falla, lanza DteXmlInvalidException (defensa contra regresiones
- * de bit-exactness en la canonicalizacion).
  */
 class XmlDsigSigner
 {
@@ -31,9 +20,6 @@ class XmlDsigSigner
     private const TRANSFORM_ENVELOPED = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature';
 
     /**
-     * Firma un nodo identificado por su atributo ID y agrega <ds:Signature>
-     * dentro de $signatureParent.
-     *
      * @param DOMDocument $dom              XML que contiene el nodo a firmar.
      * @param string      $nodeIdAttribute  Valor del atributo ID (ej. "D123", "SetDocDTE").
      * @param string      $nodeTagName      Tag local del nodo a localizar (ej. "Documento", "SetDTE").
@@ -173,14 +159,8 @@ class XmlDsigSigner
     }
 
     /**
-     * F5.1 — Firma el DOCUMENTO ENTERO con Reference URI="" (firma envelope
-     * "root-wrap"), usado por el protocolo de getToken del SII Chile:
-     *
-     *   <getToken><item><Semilla>X</Semilla></item><ds:Signature ... /></getToken>
-     *
-     * Aqui NO hay atributo ID que referenciar; la firma cubre todo el DOM y
-     * el transform enveloped-signature excluye automaticamente la propia
-     * Signature del digest. La Signature se inserta como ultimo hijo del root.
+     * Firma el documento entero con Reference URI="" (firma envelope "root-wrap"),
+     * usado por el protocolo de getToken del SII Chile.
      *
      * @throws DteXmlInvalidException si el round-trip de verificacion falla.
      */
@@ -222,13 +202,7 @@ class XmlDsigSigner
     }
 
     /**
-     * Agrega <ds:KeyInfo><ds:KeyValue><ds:RSAKeyValue><ds:Modulus/><ds:Exponent/>
-     * a la sigNode, ANTES de cualquier <ds:X509Data> que add509Cert anada
-     * despues. El XSD del SII exige este orden.
-     *
-     * Modulus y Exponent se extraen de la clave (privada o publica) via
-     * openssl_pkey_get_details. Aunque el contrato del SII es algorimicamente
-     * redundante (X509 ya contiene el publico), el XSD lo requiere.
+     * Agrega KeyValue (RSAKeyValue) a la sigNode ANTES de X509Data; el XSD del SII exige este orden.
      */
     private function agregarKeyValueRsa(XMLSecurityDSig $dsig, XMLSecurityKey $key): void
     {

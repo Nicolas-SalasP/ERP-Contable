@@ -14,8 +14,7 @@ const CartolaBancaria = () => {
     const [archivo, setArchivo] = useState(null);
     const fileInputRef = useRef(null);
 
-    // FIX: Ahora el formulario controla el tipo de movimiento (INGRESO o EGRESO)
-    const [formManual, setFormManual] = useState({ 
+    const [formManual, setFormManual] = useState({
         fecha: new Date().toISOString().split('T')[0], 
         descripcion: '', 
         monto: '', 
@@ -59,7 +58,6 @@ const CartolaBancaria = () => {
         }
     };
 
-    // --- MANEJO DEL EXCEL ---
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv'))) {
@@ -123,7 +121,6 @@ const CartolaBancaria = () => {
         }
     };
 
-    // --- REGISTRO MANUAL DE MOVIMIENTO ---
     const guardarIngresoManual = async () => {
         if (!formManual.monto || !formManual.descripcion || !formManual.fecha) {
             return Swal.fire('Faltan Datos', 'Complete todos los campos obligatorios.', 'warning');
@@ -131,8 +128,7 @@ const CartolaBancaria = () => {
 
         try {
             Swal.fire({ title: 'Registrando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
-            // FIX: Enviamos el payload completo al backend
+
             const payload = { ...formManual, cuenta_bancaria_id: cuentaActiva };
             const res = await api.post('/banco/ingreso-manual', payload);
 
@@ -142,7 +138,6 @@ const CartolaBancaria = () => {
                 cargarMovimientos();
             }
         } catch (error) {
-            // FIX: Interceptamos y formateamos los errores de validación (422) que devuelve Laravel
             let mensajeError = "No se pudo registrar el movimiento.";
             
             if (error.response?.data?.errors) {
@@ -181,7 +176,6 @@ const CartolaBancaria = () => {
                 </div>
             </div>
 
-            {/* SELECTOR DE CUENTA Y SALDO */}
             <div className="bg-slate-900 rounded-2xl p-6 shadow-xl text-white mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="w-full md:w-1/2">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
@@ -209,7 +203,6 @@ const CartolaBancaria = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* ZONA 1: IMPORTADOR EXCEL */}
                 <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
                     <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-2">
                         <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
@@ -259,7 +252,6 @@ const CartolaBancaria = () => {
                     </div>
                 </div>
 
-                {/* ZONA 2: REGISTRO MANUAL (INGRESO O EGRESO) */}
                 <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
                     <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-2">
                         <svg className={`w-5 h-5 ${esIngreso ? 'text-emerald-500' : 'text-rose-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
@@ -269,8 +261,7 @@ const CartolaBancaria = () => {
 
                     <div className="space-y-4 flex-1 flex flex-col justify-between">
                         <div className="space-y-4">
-                            
-                            {/* FIX: Selector visual de INGRESO vs EGRESO */}
+
                             <div className="bg-slate-100 p-1 rounded-xl flex gap-1 mb-2">
                                 <button
                                     onClick={() => setFormManual({ ...formManual, tipo_movimiento: 'INGRESO' })}
@@ -343,7 +334,6 @@ const CartolaBancaria = () => {
                 </div>
             </div>
 
-            {/* TABLA DE MOVIMIENTOS RECIENTES */}
             <div className="mt-8">
                 {loading ? (
                     <EstadoCarga

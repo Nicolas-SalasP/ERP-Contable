@@ -7,24 +7,11 @@ use App\Domains\Sii\Events\FacturaListaParaEmitirEvent;
 use App\Domains\Sii\Exceptions\FacturaNoEmisibleException;
 
 /**
- * F6.2 — Puerto de entrada formal del modulo SII para emision desde una
- * Factura del Comercial.
+ * Puerto de entrada del modulo SII para emision desde una Factura del Comercial:
+ * pre-valida y dispara FacturaListaParaEmitirEvent (procesado async por el listener).
  *
- * Unico metodo recomendado para disparar emision desde codigo externo
- * (controllers, comandos CLI, otros listeners). Encapsula:
- *   1. Pre-validacion ligera reusando $factura->puedeEmitirDte() del trait
- *      (F6.1). Si falla, lanza FacturaNoEmisibleException con razon especifica
- *      y NO dispara el evento.
- *   2. Dispatch del evento FacturaListaParaEmitirEvent, que el listener
- *      ProcesarFacturaParaSiiListener (queue=sii) procesa async.
- *
- * dispatchAfterCommit es automatico por la interface ShouldDispatchAfterCommit
- * del evento: si el llamador esta dentro de DB::transaction, el job se encola
- * solo si la tx commitea.
- *
- * Defensa en profundidad: tanto este servicio como el mapper (F6.1) validan
- * pre-emision. Aqui evitamos encolar jobs garantizadamente fallidos; el
- * mapper protege la atomicidad de persistencia en caso de race.
+ * dispatchAfterCommit es automatico por ShouldDispatchAfterCommit del evento:
+ * dentro de DB::transaction el job se encola solo si la tx commitea.
  */
 class EmitirDteDesdeFacturaService
 {

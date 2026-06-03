@@ -223,7 +223,12 @@ describe('CierreF29 - cambio de periodo', () => {
         }
         expect(selectMes).toBeTruthy();
 
-        fireEvent.change(selectMes, { target: { value: '06' } });
+        // Elegimos un mes DISTINTO al que ya tiene seleccionado el componente
+        // (por defecto el mes actual). Hardcodear '06' fallaba en junio porque
+        // coincidia con el valor por defecto y no disparaba el re-render.
+        const mesActualSelect = selectMes.value;
+        const nuevoMes = mesActualSelect === '06' ? '07' : '06';
+        fireEvent.change(selectMes, { target: { value: nuevoMes } });
 
         await waitFor(() => {
             const llamadasNuevas = fetchMock.mock.calls.filter(([url]) =>

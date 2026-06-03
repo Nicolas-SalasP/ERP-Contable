@@ -5,7 +5,6 @@ import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { formatearIdentificador, validarIdentificador } from '../../Utilidades/identificadores';
 import { logger } from '../../Configuracion/logger';
-// LISTA DE BANCOS PARA EL AUTOCOMPLETADO
 const BANCOS_CHILE = [
     "Banco de Chile", "Banco Estado", "Banco Santander", "BCI", "Scotiabank", "Itaú",
     "Banco Security", "Banco BICE", "Banco Falabella", "Banco Ripley", "Banco Consorcio",
@@ -165,7 +164,6 @@ const BankAccountsTab = ({ proveedorId }) => {
                 <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wide">Agregar Nueva Cuenta</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
-                    {/* INPUT INTELIGENTE DE BANCOS */}
                     <div>
                         <input
                             list="lista-bancos-datalist"
@@ -326,7 +324,6 @@ const GestionProveedores = () => {
 
         try {
             if (editingId) {
-                // LÓGICA DE EDICIÓN
                 const data = await api.put(`/proveedores/${editingId}`, formData);
                 if (data.success) {
                     Swal.fire({
@@ -343,7 +340,6 @@ const GestionProveedores = () => {
                     Swal.fire('Error', data.message, 'error');
                 }
             } else {
-                // LÓGICA DE CREACIÓN
                 const data = await api.post('/proveedores', formData);
                 if (data.success) {
                     Swal.fire({
@@ -460,7 +456,6 @@ const GestionProveedores = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                {/* BOTÓN GESTIONAR SIEMPRE VISIBLE */}
                                                 <button onClick={() => openEdit(prov)} className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 font-bold text-sm px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 ml-auto shadow-sm">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                                     Gestionar
@@ -476,7 +471,6 @@ const GestionProveedores = () => {
             </div>
             {modalOpen && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-6 animate-fade-in">
-                    {/* ALTURA MÍNIMA AÑADIDA PARA EVITAR QUE SE ENCOJA */}
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] min-h-[500px] animate-slide-up">
 
                         <div className="bg-slate-900 p-4 md:p-5 border-b border-slate-800 flex justify-between items-center text-white shrink-0">
@@ -565,7 +559,6 @@ const GestionProveedores = () => {
                                         </div>
                                     </div>
 
-                                    {/* BOTONES DE ACCIÓN LIBERADOS */}
                                     <div className="pt-6 flex flex-col sm:flex-row justify-end border-t border-slate-100 mt-6 gap-3">
                                         <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-6 py-2.5 text-slate-500 hover:bg-slate-100 rounded-lg font-bold transition-colors">Cancelar</button>
                                         <button onClick={handleSaveInfo} className="w-full sm:w-auto bg-emerald-600 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 hover:shadow-emerald-600/50 transition-all flex items-center justify-center gap-2">

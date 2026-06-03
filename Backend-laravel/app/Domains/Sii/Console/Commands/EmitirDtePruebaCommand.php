@@ -18,13 +18,8 @@ use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
- * Comando de validacion manual para el flujo completo de emision F4.4.
- *
- * Crea un SiiDteEmitido en BORRADOR con datos minimos fixture (receptor
- * generico 66666666-6, un detalle "Servicio de prueba"), invoca el
- * orquestador y reporta resultado. Es la contraparte CLI de los smoke
- * tests del DoD: util para validar manualmente que el flujo emite y
- * persiste en disco sin tener que escribir un tinker script.
+ * Comando de validacion manual del flujo de emision: crea un SiiDteEmitido
+ * fixture en BORRADOR, invoca el orquestador y reporta resultado.
  */
 class EmitirDtePruebaCommand extends Command
 {

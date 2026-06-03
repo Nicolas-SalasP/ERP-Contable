@@ -20,7 +20,6 @@ class SiiDteEmitido extends Model
 
     protected $table = 'sii_dte_emitido';
 
-    // -------- ESTADOS --------
     public const ESTADO_BORRADOR              = 'BORRADOR';
     public const ESTADO_FOLIO_RESERVADO       = 'FOLIO_RESERVADO';
     public const ESTADO_XML_GENERADO          = 'XML_GENERADO';
@@ -34,7 +33,6 @@ class SiiDteEmitido extends Model
     public const ESTADO_ANULADO_CON_NC        = 'ANULADO_CON_NC';
     public const ESTADO_ANULADO_FALLO_INTERNO = 'ANULADO_FALLO_INTERNO';
 
-    // -------- TIPOS DTE (XSD oficial SII) --------
     public const TIPO_FACTURA                  = 33;
     public const TIPO_FACTURA_EXENTA           = 34;
     public const TIPO_BOLETA                   = 39;
@@ -198,8 +196,6 @@ class SiiDteEmitido extends Model
         };
     }
 
-    // -------- RELACIONES --------
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
@@ -259,8 +255,6 @@ class SiiDteEmitido extends Model
         return $this->hasMany(SiiEnvioDte::class, 'dte_emitido_id')
             ->orderBy('created_at');
     }
-
-    // -------- SCOPES --------
 
     public function scopeAceptados(Builder $query): Builder
     {

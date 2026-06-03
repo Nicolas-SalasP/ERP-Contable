@@ -71,12 +71,6 @@ class MovimientoInventario extends Model
         'fecha_movimiento' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
@@ -164,12 +158,6 @@ class MovimientoInventario extends Model
             ->orderByDesc('id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers estáticos
-    |--------------------------------------------------------------------------
-    */
-
     public static function tiposPermitidos(): array
     {
         return [
@@ -195,12 +183,6 @@ class MovimientoInventario extends Model
             self::MOTIVO_EGRESO_MANUAL,
         ];
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers de tipo
-    |--------------------------------------------------------------------------
-    */
 
     public function esEntrada(): bool
     {
@@ -257,12 +239,6 @@ class MovimientoInventario extends Model
     {
         return $this->lotes()->exists();
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers para Kardex
-    |--------------------------------------------------------------------------
-    */
 
     public function stockAntesPrincipal(): ?string
     {

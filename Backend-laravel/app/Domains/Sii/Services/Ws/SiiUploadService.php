@@ -6,14 +6,11 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 /**
- * F5.2 — Cliente HTTP del endpoint DTEUpload (CGI legacy) del SII Chile.
+ * Cliente HTTP del endpoint DTEUpload (CGI legacy) del SII Chile.
  *
- * A diferencia de los WS SOAP de F5.1, DTEUpload recibe POST multipart/form-data
- * con el token en una cookie HTTP "TOKEN". La respuesta NO es XML estandar:
- * es texto plano o HTML con campos TRACKID/ERROR/GLOSA que extraemos con regex.
- *
- * NO orquesta — solo hace el POST y parsea. La orquestacion (validaciones,
- * persistencia, reintentos con nueva sesion) vive en EnvioSiiService.
+ * DTEUpload recibe POST multipart/form-data con el token en una cookie HTTP
+ * "TOKEN". La respuesta no es XML: texto/HTML con campos TRACKID/ERROR/GLOSA
+ * que extraemos con regex. La orquestacion vive en EnvioSiiService.
  */
 class SiiUploadService
 {

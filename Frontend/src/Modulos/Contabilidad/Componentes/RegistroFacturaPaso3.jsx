@@ -46,7 +46,6 @@ const RegistroFacturaPaso3 = ({
                         <div className="w-1/4 text-right text-red-600">Haber</div>
                     </div>
 
-                    {/* FILA GASTO / DESTINO */}
                     <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-white border-b border-slate-100 transition relative z-30">
                         <div className="w-full md:w-1/2 pr-0 md:pr-10">
                             <span className="font-bold text-slate-800 block text-xs uppercase mb-1">1. Cuenta Destino (Gasto / Activo)</span>
@@ -75,7 +74,6 @@ const RegistroFacturaPaso3 = ({
                         </div>
                     </div>
 
-                    {/* FILA IVA */}
                     {formData.tieneIva && (
                         <div className={`flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center border-b border-slate-100 relative z-20 transition ${
                             ivaInvalido ? 'bg-red-50' : 'hover:bg-blue-50/30'
@@ -129,7 +127,6 @@ const RegistroFacturaPaso3 = ({
                         </div>
                     )}
 
-                    {/* FILA PROVEEDORES */}
                     <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-slate-50 transition rounded-b-xl relative z-10">
                         <div className="w-full md:w-1/2 pr-0 md:pr-10">
                             <span className="font-bold text-slate-800 block text-xs uppercase mb-1">3. Cuenta Proveedor (Pasivo)</span>

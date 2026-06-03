@@ -10,13 +10,10 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * F5.3 — Cliente HTTP del WS QueryEstUp.jws (SOAP) del SII.
+ * Cliente HTTP del WS QueryEstUp.jws (SOAP) del SII.
  *
- * Mismo patron SOAP+CDATA que SiiSeedService (F5.1). El servicio retorna
- * en RESP_HDR el ESTADO de control (00=OK, 99=token expirado) y en
- * RESP_BODY el ESTADO real del envio (EPR, EOK, RPR, LOC, etc.).
- *
- * NO orquesta — solo POST + parseo. El reintento por token expirado vive
+ * Retorna en RESP_HDR el ESTADO de control (00=OK, 99=token expirado) y en
+ * RESP_BODY el ESTADO real del envio. El reintento por token expirado vive
  * en PollearEstadoSiiService.
  */
 class SiiEstadoUpService
@@ -164,9 +161,6 @@ XML;
                 throw PollingSiiException::respuestaSinEstado('XML SII interno no parseable');
             }
 
-            // El SII responde con un envelope SII:RESPUESTA con RESP_HDR + RESP_BODY.
-            // RESP_HDR.ESTADO es el codigo de control: 00 = OK, 99 = sesion expirada.
-            // RESP_BODY tiene el ESTADO real del envio (EPR/EOK/RPR/LOC/etc).
             $estadoHdr  = $this->extraerTextoDe($domSii, 'RESP_HDR', 'ESTADO') ?? '';
             $estadoBody = $this->extraerTextoDe($domSii, 'RESP_BODY', 'ESTADO');
             $glosa      = $this->extraerTextoDe($domSii, 'RESP_HDR', 'GLOSA')

@@ -12,6 +12,7 @@ use App\Domains\Core\Models\EstadoSuscripcion;
 use App\Domains\Core\Models\Pais;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Cotizacion;
+use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Comercial\Models\EstadoCotizacion;
 
 class ComercialCicloDeVidaTest extends TestCase
@@ -61,6 +62,11 @@ class ComercialCicloDeVidaTest extends TestCase
         
         // Cotización está "Aprobada" (id: 3)
         $cotizacion = Cotizacion::create(['empresa_id' => $this->empresa->id, 'cliente_id' => $cliente->id, 'nombre_cliente' => $cliente->razon_social, 'estado_id' => 3, 'numero_cotizacion' => 'COT-VENTA', 'subtotal' => 50000, 'monto_neto' => 50000, 'monto_iva' => 9500, 'monto_total' => 59500, 'total' => 59500, 'fecha_emision' => now()]);
+
+        // Cuentas del plan para centralizar la venta (CxC / Ventas / IVA Debito).
+        foreach ([['152005', 'CxC Clientes', 'ACTIVO'], ['501105', 'Ventas Nacionales', 'INGRESO'], ['353360', 'IVA Debito Fiscal', 'PASIVO']] as [$cod, $nom, $tipo]) {
+            PlanCuenta::create(['empresa_id' => $this->empresa->id, 'codigo' => $cod, 'nombre' => $nom, 'tipo' => $tipo, 'imputable' => true, 'activo' => true]);
+        }
 
         // Simulamos el botón "Generar Factura" desde la cotización
         $response = $this->actingAs($this->usuario)->postJson("/api/cotizaciones/{$cotizacion->id}/facturar");

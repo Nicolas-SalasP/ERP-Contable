@@ -45,12 +45,6 @@ class AjusteCriticoInventario extends Model
         'costo_total' => 'decimal:4',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -85,12 +79,6 @@ class AjusteCriticoInventario extends Model
     {
         return $this->belongsTo(User::class, 'registrado_por');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
@@ -144,12 +132,6 @@ class AjusteCriticoInventario extends Model
             ->orderByDesc('created_at')
             ->orderByDesc('id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function esAjustePositivo(): bool
     {

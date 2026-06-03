@@ -22,33 +22,11 @@ use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
- * Orquestador del flujo de emision de un DTE.
+ * Orquestador del flujo de emision de un DTE: deja el DTE en estado FIRMADO. No envia al SII.
  *
- * Dado un SiiDteEmitido en BORRADOR, ejecuta el flujo completo F4.1+F4.2+F4.3
- * y deja el DTE en estado FIRMADO, con su XML persistido en disco + backup
- * cifrado en BD, hash SHA256 calculado, folio CAF marcado como USADO, y log
- * estructurado de auditoria. NO envia al SII (eso es F5).
- *
- * ESTRATEGIA DE CONCURRENCIA Y FOLIOS HUERFANOS
- *
- * El metodo emitir() NO envuelve todo en una unica transaccion porque eso
- * haria que un fallo post-reserva revierta tambien el folio (no quedaria
- * HUERFANO en BD, simplemente desapareceria). En su lugar:
- *
- *   1) Tx corta para lock pesimista + validar precondiciones + verificar
- *      cert activo. Si algo falla aqui, el DTE NO consume folio.
- *
- *   2) reservarSiguienteFolio() en su propia tx (committed): si el flujo
- *      explota despues, el row de folio_uso queda en BD para que el catch
- *      lo marque como HUERFANO.
- *
- *   3) Construccion XML + firmas en memoria (sin tocar BD).
- *
- *   4) Persistir en disco PRIMERO (mas probable que falle por filesystem),
- *      luego tx final que actualiza el DTE y marca folio como USADO.
- *
- *   5) En cualquier excepcion post-reserva: best-effort cleanup
- *      (borrar archivo si fue escrito) y liberar folio como HUERFANO.
+ * El metodo emitir() NO envuelve todo en una unica transaccion: la reserva de folio
+ * se commitea por separado para que un fallo posterior deje el folio como HUERFANO
+ * (auditado) en lugar de desaparecer.
  */
 class EmitirDteService
 {
@@ -75,7 +53,7 @@ class EmitirDteService
      */
     public function emitir(int $dteEmitidoId): SiiDteEmitido
     {
-        // Fase 1: lock + validar + verificar cert (sin consumir folio aun).
+        // Lock + validar + verificar cert sin consumir folio aun.
         DB::transaction(function () use ($dteEmitidoId) {
             $dte = SiiDteEmitido::query()
                 ->where('id', $dteEmitidoId)
@@ -89,13 +67,12 @@ class EmitirDteService
             $this->certificadoService->extraerParPemDeEmpresa($dte->empresa);
         });
 
-        // Re-cargar el DTE fuera de la tx con sus relaciones (la fase 1
-        // cerro la tx; aqui leemos snapshot fresco).
+        // Re-cargar el DTE fuera de la tx con sus relaciones (snapshot fresco).
         /** @var SiiDteEmitido $dte */
         $dte = SiiDteEmitido::with(['empresa', 'detalles', 'referencias', 'traslado.madera', 'impuestosAdicionales'])
             ->findOrFail($dteEmitidoId);
 
-        // Fase 2: reservar folio (tx propia → committed inmediatamente).
+        // Reservar folio en tx propia (committed inmediatamente).
         $folioUso = $this->cafService->reservarSiguienteFolio($dte->empresa_id, $dte->tipo_dte);
         $caf      = SiiCaf::findOrFail($folioUso->caf_id);
 
@@ -103,25 +80,24 @@ class EmitirDteService
         $xmlPath = null;
 
         try {
-            // Fase 3: asignar folio reservado al DTE (en memoria, sin save todavia).
+            // Asignar folio reservado en memoria, sin save todavia.
             $dte->folio  = $folioUso->folio;
             $dte->caf_id = $folioUso->caf_id;
 
-            // Fase 4: generar XML con TED firmado + firmar Documento + envolver SetDTE.
             $xmlConTed     = $this->dteXmlBuilder->build($dte, $caf);
             $xmlDteFirmado = $this->dteSigner->firmar($xmlConTed, $dte->empresa);
             $setSinFirma   = $this->setDteBuilder->build($dte->empresa, [['dte' => $dte, 'xml' => $xmlDteFirmado]]);
             $envioFirmado  = $this->setDteSigner->firmar($setSinFirma, $dte->empresa);
 
-            // Fase 5: hash SHA256 sobre XML EN CLARO (antes de cifrar).
+            // Hash SHA256 sobre XML EN CLARO (antes de cifrar).
             $hashSha256 = hash('sha256', $envioFirmado);
 
-            // Fase 6: persistir en disco PRIMERO. Si falla por filesystem,
-            // la tx final ni siquiera abre y no hay que rollback de BD.
+            // Persistir en disco PRIMERO: si falla por filesystem, la tx final
+            // ni siquiera abre y no hay que rollback de BD.
             $xmlPath = $this->construirPathDeDisco($dte);
             Storage::disk($disk)->put($xmlPath, $envioFirmado);
 
-            // Fase 7: tx final: actualizar DTE + marcar folio USADO atomicamente.
+            // Tx final: actualizar DTE + marcar folio USADO atomicamente.
             $dteFresh = DB::transaction(function () use ($dte, $folioUso, $xmlPath, $hashSha256, $envioFirmado) {
                 /** @var SiiDteEmitido $dteLock */
                 $dteLock = SiiDteEmitido::query()

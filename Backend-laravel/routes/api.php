@@ -29,9 +29,26 @@ use App\Domains\Inventario\Controllers\InventarioDevolucionController;
 use App\Domains\Inventario\Controllers\InventarioEventoIntegracionController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
+use App\Domains\Inventario\Controllers\ReporteInventarioController;
+
+/*
+|--------------------------------------------------------------------------
+| RBAC granular por endpoint
+|--------------------------------------------------------------------------
+| Cada ruta sensible declara el/los permiso(s) requeridos via el middleware
+| 'permiso:' (EnsureUserHasPermission), que pasa si el usuario tiene AL MENOS
+| UNO de los permisos listados. Los roles con jerarquia >= 100 (Super Admin)
+| reciben todos los permisos; jerarquia >= 80 (Administrador) recibe ademas
+| el set completo de inventario (ver ModuloPermisos::permisosUsuario).
+| Las rutas de perfil de empresa quedan solo autenticadas (sin permiso
+| especifico) porque son configuracion propia de cada miembro de la empresa.
+| El modulo Inventario aplica su propia autorizacion granular a nivel de
+| controller (InventarioPermisoService), por eso su grupo no repite permiso:.
+*/
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/token-login', [AuthController::class, 'tokenLogin']);
 
     Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -40,8 +57,20 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Onboarding de empresa: accesible a un usuario autenticado que AUN no tiene
+// empresa (recien provisionado). No se exige check.subscription porque es el
+// paso previo a configurar la empresa/plan.
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
-    // Gestion de usuarios y roles
+    Route::get('/empresas/verificar-rut', [EmpresaController::class, 'verificarRut']);
+    Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
+});
+
+Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription'])->group(function () {
+    // Gestion de usuarios y roles.
+    // La autorizacion se aplica en el controller por jerarquia de rol (invitar
+    // exige Super Admin; desvincular/actualizarRol comparan jerarquia; store/
+    // updateRol validan escalada y scope de empresa). Por eso no se duplica
+    // aqui un permiso: que entraria en conflicto con esa logica relativa.
     Route::get('/usuarios', [UsuarioController::class, 'index']);
     Route::get('/usuarios/roles', [UsuarioController::class, 'roles']);
     Route::post('/usuarios/invitar', [UsuarioController::class, 'invitar']);
@@ -50,7 +79,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
     Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol']);
     Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol']);
 
-    // Empresa - Perfil
+    // Empresa - Perfil (configuracion propia: solo requiere autenticacion)
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
     Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil']);
     Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo']);
@@ -74,157 +103,171 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
     // ---------------------------------------------------------------------
     // Comercial - Clientes
     // ---------------------------------------------------------------------
-    Route::get('/clientes', [ClienteController::class, 'index']);
-    Route::post('/clientes', [ClienteController::class, 'store']);
-    Route::get('/clientes/{id}', [ClienteController::class, 'show']);
-    Route::put('/clientes/{id}', [ClienteController::class, 'update']);
-    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy']);
-    Route::put('/clientes/{id}/activar', [ClienteController::class, 'activar']);
-    Route::patch('/clientes/{id}/reactivar', [ClienteController::class, 'reactivar']);
+    Route::get('/clientes', [ClienteController::class, 'index'])->middleware('permiso:clientes.ver,ventas.ver');
+    Route::post('/clientes', [ClienteController::class, 'store'])->middleware('permiso:clientes.crear');
+    Route::get('/clientes/{id}', [ClienteController::class, 'show'])->middleware('permiso:clientes.ver,ventas.ver');
+    Route::put('/clientes/{id}', [ClienteController::class, 'update'])->middleware('permiso:clientes.crear');
+    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->middleware('permiso:clientes.crear');
+    Route::put('/clientes/{id}/activar', [ClienteController::class, 'activar'])->middleware('permiso:clientes.crear');
+    Route::patch('/clientes/{id}/reactivar', [ClienteController::class, 'reactivar'])->middleware('permiso:clientes.crear');
 
     // ---------------------------------------------------------------------
     // Comercial - Proveedores
     // ---------------------------------------------------------------------
-    Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo']);
-    Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha']);
-    Route::post('/proveedores/anticipos', [ProveedorController::class, 'guardarAnticipo']);
+    Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo'])->middleware('permiso:proveedores.ver,compras.ver');
+    Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha'])->middleware('permiso:proveedores.ver,compras.ver');
+    Route::post('/proveedores/anticipos', [ProveedorController::class, 'guardarAnticipo'])->middleware('permiso:proveedores.crear,compras.crear');
 
     // Endpoints dedicados de anticipos a proveedores (con saldo disponible)
-    Route::get('/anticipos-proveedores', [AnticipoProveedorController::class, 'index']);
-    Route::post('/anticipos-proveedores', [AnticipoProveedorController::class, 'store']);
-    Route::post('/anticipos-proveedores/{id}/aplicar', [AnticipoProveedorController::class, 'aplicar']);
-    Route::post('/proveedores/{id}/cruzar-documentos', [ProveedorController::class, 'cruzarDocumentos']);
-    Route::apiResource('proveedores', ProveedorController::class)->except(['show', 'destroy']);
+    Route::get('/anticipos-proveedores', [AnticipoProveedorController::class, 'index'])->middleware('permiso:proveedores.ver,compras.ver');
+    Route::post('/anticipos-proveedores', [AnticipoProveedorController::class, 'store'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::post('/anticipos-proveedores/{id}/aplicar', [AnticipoProveedorController::class, 'aplicar'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::post('/proveedores/{id}/cruzar-documentos', [ProveedorController::class, 'cruzarDocumentos'])->middleware('permiso:proveedores.crear,compras.crear');
+
+    // Resource de proveedores (index/store/update; show y destroy excluidos)
+    Route::get('/proveedores', [ProveedorController::class, 'index'])->middleware('permiso:proveedores.ver,compras.ver');
+    Route::post('/proveedores', [ProveedorController::class, 'store'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::put('/proveedores/{id}', [ProveedorController::class, 'update'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::patch('/proveedores/{id}', [ProveedorController::class, 'update'])->middleware('permiso:proveedores.crear,compras.crear');
 
     // ---------------------------------------------------------------------
     // Comercial - Facturas
     // ---------------------------------------------------------------------
-    Route::get('/facturas/historial', [FacturaController::class, 'historial']);
-    Route::get('/facturas/check', [FacturaController::class, 'check']);
-    Route::get('/facturas/vencidas', [FacturaController::class, 'vencidas']);
-    Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel']);
-    Route::get('/facturas/disponibles-proyectos', [FacturaController::class, 'disponiblesProyectos']);
-    Route::apiResource('facturas', FacturaController::class)->except(['update']);
-    Route::get('/facturas/{id}/asiento', [FacturaController::class, 'verAsiento']);
-    Route::post('/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificarAsiento']);
-    Route::get('/facturas/{id}/auditoria', [FacturaController::class, 'auditoria']);
-    Route::post('/facturas/{id}/pagar', [FacturaController::class, 'pagar']);
-    Route::post('/facturas/{id}/anular', [FacturaController::class, 'anular']);
-    Route::post('/facturas/{id}/vincular-proyecto', [FacturaController::class, 'vincularProyecto']);
+    Route::get('/facturas/historial', [FacturaController::class, 'historial'])->middleware('permiso:compras.ver');
+    Route::get('/facturas/check', [FacturaController::class, 'check'])->middleware('permiso:compras.ver');
+    Route::get('/facturas/vencidas', [FacturaController::class, 'vencidas'])->middleware('permiso:compras.ver');
+    Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel'])->middleware('permiso:compras.ver');
+    Route::get('/facturas/disponibles-proyectos', [FacturaController::class, 'disponiblesProyectos'])->middleware('permiso:compras.ver,activos.ver');
+
+    // Resource de facturas (index/store/show; update y destroy no existen)
+    Route::get('/facturas', [FacturaController::class, 'index'])->middleware('permiso:compras.ver');
+    Route::post('/facturas', [FacturaController::class, 'store'])->middleware('permiso:compras.crear');
+    Route::get('/facturas/{id}', [FacturaController::class, 'show'])->middleware('permiso:compras.ver');
+
+    Route::get('/facturas/{id}/asiento', [FacturaController::class, 'verAsiento'])->middleware('permiso:compras.ver,contabilidad.ver');
+    Route::post('/facturas/{id}/reclasificar', [FacturaController::class, 'reclasificarAsiento'])->middleware('permiso:contabilidad.crear');
+    Route::get('/facturas/{id}/auditoria', [FacturaController::class, 'auditoria'])->middleware('permiso:compras.ver,contabilidad.ver');
+    Route::post('/facturas/{id}/pagar', [FacturaController::class, 'pagar'])->middleware('permiso:tesoreria.crear,compras.crear');
+    Route::post('/facturas/{id}/anular', [FacturaController::class, 'anular'])->middleware('permiso:compras.crear');
+    Route::post('/facturas/{id}/vincular-proyecto', [FacturaController::class, 'vincularProyecto'])->middleware('permiso:activos.crear,compras.crear');
 
     // ---------------------------------------------------------------------
     // Comercial - Cotizaciones
     // ---------------------------------------------------------------------
-    Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf']);
-    Route::put('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
-    Route::patch('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado']);
-    Route::post('/cotizaciones/{id}/facturar', [CotizacionController::class, 'facturar']);
-    Route::apiResource('cotizaciones', CotizacionController::class)->except(['show', 'update']);
-    Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update']);
+    Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'generarPdf'])->middleware('permiso:ventas.ver');
+    Route::put('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado'])->middleware('permiso:ventas.crear');
+    Route::patch('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado'])->middleware('permiso:ventas.crear');
+    Route::post('/cotizaciones/{id}/facturar', [CotizacionController::class, 'facturar'])->middleware('permiso:ventas.crear');
+
+    // Resource de cotizaciones (index/store; show, update y destroy excluidos)
+    Route::get('/cotizaciones', [CotizacionController::class, 'index'])->middleware('permiso:ventas.ver');
+    Route::post('/cotizaciones', [CotizacionController::class, 'store'])->middleware('permiso:ventas.crear');
+    Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->middleware('permiso:ventas.crear');
 
     // ---------------------------------------------------------------------
     // Tesoreria - Cuentas de Proveedores
     // ---------------------------------------------------------------------
-    Route::get('/cuentas-bancarias/proveedor/{proveedorId}', [CuentaProveedorController::class, 'index']);
-    Route::post('/cuentas-bancarias', [CuentaProveedorController::class, 'store']);
-    Route::delete('/cuentas-bancarias/{id}', [CuentaProveedorController::class, 'destroy']);
+    Route::get('/cuentas-bancarias/proveedor/{proveedorId}', [CuentaProveedorController::class, 'index'])->middleware('permiso:tesoreria.ver,proveedores.ver');
+    Route::post('/cuentas-bancarias', [CuentaProveedorController::class, 'store'])->middleware('permiso:tesoreria.crear,proveedores.crear');
+    Route::delete('/cuentas-bancarias/{id}', [CuentaProveedorController::class, 'destroy'])->middleware('permiso:tesoreria.crear,proveedores.crear');
 
     // ---------------------------------------------------------------------
     // Tesoreria - Bancos Propios y Conciliacion
     // ---------------------------------------------------------------------
-    Route::get('/tesoreria/bancos-catalogo', [BancoController::class, 'catalogo']);
-    Route::get('/tesoreria/cuentas-propias', [BancoController::class, 'cuentasEmpresa']);
-    Route::post('/tesoreria/cuentas-propias', [BancoController::class, 'storeCuenta']);
-    Route::post('/tesoreria/conciliar/factura-compra', [ConciliacionController::class, 'pagarFacturaCompra']);
+    Route::get('/tesoreria/bancos-catalogo', [BancoController::class, 'catalogo'])->middleware('permiso:tesoreria.ver');
+    Route::get('/tesoreria/cuentas-propias', [BancoController::class, 'cuentasEmpresa'])->middleware('permiso:tesoreria.ver');
+    Route::post('/tesoreria/cuentas-propias', [BancoController::class, 'storeCuenta'])->middleware('permiso:tesoreria.crear');
+    Route::post('/tesoreria/conciliar/factura-compra', [ConciliacionController::class, 'pagarFacturaCompra'])->middleware('permiso:tesoreria.crear');
 
     // Tesoreria - Bancos y Conciliacion
-    Route::post('/banco/nomina/pagar', [BancoController::class, 'pagarNomina']);
-    Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa']);
-    Route::get('/banco/cuentas-imputables', [PlanCuentaController::class, 'imputables']);
-    Route::post('/banco/ingreso-manual', [BancoController::class, 'ingresoManual']);
-    Route::post('/banco/importar', [BancoController::class, 'importarCartola']);
+    Route::post('/banco/nomina/pagar', [BancoController::class, 'pagarNomina'])->middleware('permiso:tesoreria.crear');
+    Route::get('/banco/cuentas', [BancoController::class, 'cuentasEmpresa'])->middleware('permiso:tesoreria.ver');
+    Route::get('/banco/cuentas-imputables', [PlanCuentaController::class, 'imputables'])->middleware('permiso:tesoreria.ver,contabilidad.ver');
+    Route::post('/banco/ingreso-manual', [BancoController::class, 'ingresoManual'])->middleware('permiso:tesoreria.crear');
+    Route::post('/banco/importar', [BancoController::class, 'importarCartola'])->middleware('permiso:tesoreria.crear');
 
     // Tesoreria - Movimientos
-    Route::get('/banco/movimientos/pendientes/{idCuenta}', [ConciliacionController::class, 'movimientosPendientes']);
-    Route::get('/banco/movimientos/{id}/sugerencias', [ConciliacionController::class, 'sugerencias']);
-    Route::get('/banco/movimientos/{idCuenta}', [BancoController::class, 'movimientos']);
+    Route::get('/banco/movimientos/pendientes/{idCuenta}', [ConciliacionController::class, 'movimientosPendientes'])->middleware('permiso:tesoreria.ver');
+    Route::get('/banco/movimientos/{id}/sugerencias', [ConciliacionController::class, 'sugerencias'])->middleware('permiso:tesoreria.ver');
+    Route::get('/banco/movimientos/{idCuenta}', [BancoController::class, 'movimientos'])->middleware('permiso:tesoreria.ver');
 
     // Tesoreria - Mesa de Conciliacion
-    Route::get('/banco/anticipos-pendientes', [ConciliacionController::class, 'anticiposPendientes']);
-    Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliar']);
-    Route::post('/banco/movimientos/conciliar-anticipo', [ConciliacionController::class, 'conciliarAnticipo']);
-    Route::post('/banco/movimientos/conciliar-facturas', [ConciliacionController::class, 'conciliarFacturas']);
+    Route::get('/banco/anticipos-pendientes', [ConciliacionController::class, 'anticiposPendientes'])->middleware('permiso:tesoreria.ver');
+    Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliar'])->middleware('permiso:tesoreria.crear');
+    Route::post('/banco/movimientos/conciliar-anticipo', [ConciliacionController::class, 'conciliarAnticipo'])->middleware('permiso:tesoreria.crear');
+    Route::post('/banco/movimientos/conciliar-facturas', [ConciliacionController::class, 'conciliarFacturas'])->middleware('permiso:tesoreria.crear');
 
     // ---------------------------------------------------------------------
     // Contabilidad - Plan de Cuentas
     // ---------------------------------------------------------------------
-    Route::get('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'index']);
-    Route::post('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'store']);
-    Route::put('/contabilidad/plan-cuentas/{id}', [PlanCuentaController::class, 'update']);
-    Route::delete('/contabilidad/plan-cuentas/{id}', [PlanCuentaController::class, 'destroy']);
+    Route::get('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::post('/contabilidad/plan-cuentas', [PlanCuentaController::class, 'store'])->middleware('permiso:contabilidad.crear');
+    Route::put('/contabilidad/plan-cuentas/{id}', [PlanCuentaController::class, 'update'])->middleware('permiso:contabilidad.crear');
+    Route::delete('/contabilidad/plan-cuentas/{id}', [PlanCuentaController::class, 'destroy'])->middleware('permiso:contabilidad.crear');
 
     // Contabilidad - Asientos Contables
-    Route::get('/contabilidad/asientos', [AsientoContableController::class, 'index']);
-    Route::post('/contabilidad/asientos', [AsientoContableController::class, 'store']);
-    Route::get('/contabilidad/asientos/{id}', [AsientoContableController::class, 'show']);
-    Route::post('/contabilidad/asientos/{id}/reversar', [AsientoContableController::class, 'reversar']);
-    Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado']);
+    Route::get('/contabilidad/asientos', [AsientoContableController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::post('/contabilidad/asientos', [AsientoContableController::class, 'store'])->middleware('permiso:contabilidad.crear');
+    Route::get('/contabilidad/asientos/{id}', [AsientoContableController::class, 'show'])->middleware('permiso:contabilidad.ver');
+    Route::post('/contabilidad/asientos/{id}/reversar', [AsientoContableController::class, 'reversar'])->middleware('permiso:contabilidad.crear');
+    Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado'])->middleware('permiso:contabilidad.crear');
 
     // Contabilidad - Libros diarios y mayores
-    Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario']);
-    Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor']);
+    Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor'])->middleware('permiso:contabilidad.ver');
 
     // Contabilidad - Formularios 29 y 22 (Renta)
-    Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29']);
-    Route::post('/impuestos/cierre-f29/ejecutar', [ImpuestosController::class, 'ejecutarF29']);
-    Route::get('/renta/pre-calculo/{anio}', [ImpuestosController::class, 'preCalculoRenta']);
-    Route::get('/renta/mapeo', [ImpuestosController::class, 'obtenerMapeo']);
-    Route::post('/renta/mapeo', [ImpuestosController::class, 'guardarMapeo']);
-    Route::delete('/renta/mapeo/{id}', [ImpuestosController::class, 'eliminarMapeo']);
+    Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29'])->middleware('permiso:tributario.ver');
+    Route::post('/impuestos/cierre-f29/ejecutar', [ImpuestosController::class, 'ejecutarF29'])->middleware('permiso:tributario.crear');
+    Route::get('/renta/pre-calculo/{anio}', [ImpuestosController::class, 'preCalculoRenta'])->middleware('permiso:tributario.ver');
+    Route::get('/renta/mapeo', [ImpuestosController::class, 'obtenerMapeo'])->middleware('permiso:tributario.ver');
+    Route::post('/renta/mapeo', [ImpuestosController::class, 'guardarMapeo'])->middleware('permiso:tributario.crear');
+    Route::delete('/renta/mapeo/{id}', [ImpuestosController::class, 'eliminarMapeo'])->middleware('permiso:tributario.crear');
 
-    // Correccion Monetaria
+    // Correccion Monetaria (parte de contabilidad)
     Route::prefix('correccion-monetaria')->group(function () {
-        Route::get('/indices/{anio}', [CorreccionMonetariaController::class, 'indices']);
-        Route::post('/indices', [CorreccionMonetariaController::class, 'guardarIndice']);
-        Route::get('/configuracion', [CorreccionMonetariaController::class, 'configuracion']);
-        Route::put('/configuracion', [CorreccionMonetariaController::class, 'actualizarConfiguracion']);
-        Route::get('/cuentas', [CorreccionMonetariaController::class, 'cuentasConfiguracion']);
-        Route::put('/cuentas', [CorreccionMonetariaController::class, 'actualizarCuentasConfiguracion']);
-        Route::post('/cuentas', [CorreccionMonetariaController::class, 'agregarCuenta']);
-        Route::get('/estado/{mes}/{anio}', [CorreccionMonetariaController::class, 'estadoPeriodo']);
-        Route::get('/simular/{mes}/{anio}', [CorreccionMonetariaController::class, 'simular']);
-        Route::post('/ejecutar', [CorreccionMonetariaController::class, 'ejecutar']);
-        Route::get('/historial', [CorreccionMonetariaController::class, 'historial']);
+        Route::get('/indices/{anio}', [CorreccionMonetariaController::class, 'indices'])->middleware('permiso:contabilidad.ver');
+        Route::post('/indices', [CorreccionMonetariaController::class, 'guardarIndice'])->middleware('permiso:contabilidad.crear');
+        Route::get('/configuracion', [CorreccionMonetariaController::class, 'configuracion'])->middleware('permiso:contabilidad.ver');
+        Route::put('/configuracion', [CorreccionMonetariaController::class, 'actualizarConfiguracion'])->middleware('permiso:contabilidad.crear');
+        Route::get('/cuentas', [CorreccionMonetariaController::class, 'cuentasConfiguracion'])->middleware('permiso:contabilidad.ver');
+        Route::put('/cuentas', [CorreccionMonetariaController::class, 'actualizarCuentasConfiguracion'])->middleware('permiso:contabilidad.crear');
+        Route::post('/cuentas', [CorreccionMonetariaController::class, 'agregarCuenta'])->middleware('permiso:contabilidad.crear');
+        Route::get('/estado/{mes}/{anio}', [CorreccionMonetariaController::class, 'estadoPeriodo'])->middleware('permiso:contabilidad.ver');
+        Route::get('/simular/{mes}/{anio}', [CorreccionMonetariaController::class, 'simular'])->middleware('permiso:contabilidad.ver');
+        Route::post('/ejecutar', [CorreccionMonetariaController::class, 'ejecutar'])->middleware('permiso:contabilidad.crear');
+        Route::get('/historial', [CorreccionMonetariaController::class, 'historial'])->middleware('permiso:contabilidad.ver');
     });
 
     // Contabilidad - Anulaciones
-    Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar']);
-    Route::post('/anulacion/anular', [AnulacionController::class, 'anular']);
+    Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar'])->middleware('permiso:compras.ver,ventas.ver,contabilidad.ver');
+    Route::post('/anulacion/anular', [AnulacionController::class, 'anular'])->middleware('permiso:compras.crear,ventas.crear,contabilidad.crear');
 
     // ---------------------------------------------------------------------
     // Activos Fijos
     // ---------------------------------------------------------------------
-    Route::get('/activos', [ActivoFijoController::class, 'index']);
-    Route::get('/activos/pendientes', [ActivoFijoController::class, 'pendientes']);
-    Route::post('/activos', [ActivoFijoController::class, 'store']);
-    Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros']);
-    Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes']);
-    Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja']);
-    Route::put('/activos/{id}', [ActivoFijoController::class, 'update']);
+    Route::get('/activos', [ActivoFijoController::class, 'index'])->middleware('permiso:activos.ver');
+    Route::get('/activos/pendientes', [ActivoFijoController::class, 'pendientes'])->middleware('permiso:activos.ver');
+    Route::post('/activos', [ActivoFijoController::class, 'store'])->middleware('permiso:activos.crear');
+    Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros'])->middleware('permiso:activos.ver');
+    Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes'])->middleware('permiso:activos.crear');
+    Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja'])->middleware('permiso:activos.crear');
+    Route::put('/activos/{id}', [ActivoFijoController::class, 'update'])->middleware('permiso:activos.crear');
 
     // Activos Fijos - Proyectos
-    Route::get('/activos/proyectos/facturas-disponibles', [ActivoFijoController::class, 'facturasDisponibles']);
-    Route::post('/activos/proyectos/{id}/facturas', [ActivoFijoController::class, 'imputarFactura']);
-    Route::put('/activos/proyectos/{id}/activar', [ActivoFijoController::class, 'activarProyecto']);
-    Route::put('/activos/proyectos/{id}', [ActivoFijoController::class, 'updateProyecto']);
-    Route::delete('/activos/proyectos/{id}', [ActivoFijoController::class, 'deleteProyecto']);
-    Route::delete('/activos/proyectos/{proyectoId}/facturas/{facturaId}', [ActivoFijoController::class, 'desvincularFactura']);
-    Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos']);
-    Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto']);
-    Route::get('/activos/proyectos/{id}/analisis', [ActivoFijoController::class, 'analisisProyecto']);
+    Route::get('/activos/proyectos/facturas-disponibles', [ActivoFijoController::class, 'facturasDisponibles'])->middleware('permiso:activos.ver');
+    Route::post('/activos/proyectos/{id}/facturas', [ActivoFijoController::class, 'imputarFactura'])->middleware('permiso:activos.crear');
+    Route::put('/activos/proyectos/{id}/activar', [ActivoFijoController::class, 'activarProyecto'])->middleware('permiso:activos.crear');
+    Route::put('/activos/proyectos/{id}', [ActivoFijoController::class, 'updateProyecto'])->middleware('permiso:activos.crear');
+    Route::delete('/activos/proyectos/{id}', [ActivoFijoController::class, 'deleteProyecto'])->middleware('permiso:activos.crear');
+    Route::delete('/activos/proyectos/{proyectoId}/facturas/{facturaId}', [ActivoFijoController::class, 'desvincularFactura'])->middleware('permiso:activos.crear');
+    Route::get('/activos/proyectos', [ActivoFijoController::class, 'proyectos'])->middleware('permiso:activos.ver');
+    Route::post('/activos/proyectos', [ActivoFijoController::class, 'storeProyecto'])->middleware('permiso:activos.crear');
+    Route::get('/activos/proyectos/{id}/analisis', [ActivoFijoController::class, 'analisisProyecto'])->middleware('permiso:activos.ver');
 
     // ---------------------------------------------------------------------
-    // Inventario, Bodegas y Movimientos (de dev / Slados)
+    // Inventario, Bodegas y Movimientos
+    // (autorizacion granular aplicada en los controllers via InventarioPermisoService)
     // ---------------------------------------------------------------------
     Route::prefix('inventario')->group(function () {
         Route::get('/dashboard', [InventarioController::class, 'dashboard']);
@@ -240,19 +283,19 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/eventos-integracion/{id}/ignorar', [InventarioEventoIntegracionController::class, 'ignorar']);
         Route::post('/eventos-integracion/{id}/error', [InventarioEventoIntegracionController::class, 'error']);
 
-        Route::get('/reportes/stock', [InventarioController::class, 'reporteStock']);
-        Route::get('/reportes/movimientos', [InventarioController::class, 'reporteMovimientos']);
-        Route::get('/reportes/valorizacion', [InventarioController::class, 'reporteValorizacion']);
-        Route::get('/reportes/lotes', [InventarioController::class, 'reporteLotes']);
-        Route::get('/reportes/reservas', [InventarioController::class, 'reporteReservas']);
-        Route::get('/reportes/tomas-fisicas', [InventarioController::class, 'reporteTomasFisicas']);
-        Route::get('/reportes/ajustes', [InventarioController::class, 'reporteAjustes']);
-        Route::get('/reportes/reposicion-alertas', [InventarioController::class, 'reporteReposicionAlertas']);
+        Route::get('/reportes/stock', [ReporteInventarioController::class, 'reporteStock']);
+        Route::get('/reportes/movimientos', [ReporteInventarioController::class, 'reporteMovimientos']);
+        Route::get('/reportes/valorizacion', [ReporteInventarioController::class, 'reporteValorizacion']);
+        Route::get('/reportes/lotes', [ReporteInventarioController::class, 'reporteLotes']);
+        Route::get('/reportes/reservas', [ReporteInventarioController::class, 'reporteReservas']);
+        Route::get('/reportes/tomas-fisicas', [ReporteInventarioController::class, 'reporteTomasFisicas']);
+        Route::get('/reportes/ajustes', [ReporteInventarioController::class, 'reporteAjustes']);
+        Route::get('/reportes/reposicion-alertas', [ReporteInventarioController::class, 'reporteReposicionAlertas']);
         Route::get('/reportes/picking', [InventarioPickingController::class, 'reporte']);
         Route::get('/reportes/packing', [InventarioPackingController::class, 'reporte']);
         Route::get('/reportes/despachos', [InventarioDespachoController::class, 'reporte']);
         Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
-        Route::get('/reportes/{tipo}/exportar-csv', [InventarioController::class, 'exportarReporteCsv']);
+        Route::get('/reportes/{tipo}/exportar-csv', [ReporteInventarioController::class, 'exportarReporteCsv']);
 
         Route::get('/catalogos', [InventarioController::class, 'catalogos']);
 
@@ -324,7 +367,6 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
 
         Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad']);
         Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto']);
-
 
         Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion']);
         Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion']);

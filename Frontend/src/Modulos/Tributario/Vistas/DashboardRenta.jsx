@@ -243,6 +243,16 @@ const DashboardRenta = () => {
                 </div>
             </div>
 
+            <div className="mb-8 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 flex items-start gap-3 shadow-sm">
+                <i className="fas fa-triangle-exclamation text-amber-500 text-xl mt-0.5 shrink-0"></i>
+                <div className="text-sm text-amber-900">
+                    <strong className="font-black">Cálculo orientativo — no es la declaración oficial F22.</strong>{' '}
+                    Esta es una proyección de apoyo a partir de tus ventas, compras y corrección monetaria. La Operación
+                    Renta real requiere PPM de 12 meses, gastos rechazados, FUT/RAI y créditos de los propietarios, entre
+                    otros ajustes. <strong>No la uses para declarar sin validación de tu contador.</strong>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-emerald-500 relative group">
                     <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5"><i className="fas fa-arrow-down text-emerald-500"></i> Ingresos {esFlujoCaja ? 'Percibidos' : 'Devengados'}</p>

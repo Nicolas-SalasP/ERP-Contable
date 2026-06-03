@@ -219,12 +219,8 @@ class CafService
     }
 
     /**
-     * Revoca un CAF, liberando todos los folios RESERVADOS como HUERFANO.
-     *
-     * Los folios en estado USADO permanecen intactos (regla SII: lo emitido
-     * es legalmente inmutable). Los folios RESERVADOS pasan a HUERFANO con
-     * la razon "CAF revocado: {motivo}". El CAF mismo cambia a estado
-     * 'revocado' (no se elimina, auditoria preservada).
+     * Revoca un CAF, liberando los folios RESERVADOS como HUERFANO. Los folios
+     * USADO permanecen intactos (regla SII: lo emitido es legalmente inmutable).
      *
      * @throws \LogicException si el CAF ya estaba revocado
      */

@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
-import ModalPagoFactura from '../Componentes/ModalPagoFactura';
 import ModalAsiento from '../Componentes/ModalAsiento';
 import HistorialFiltros from '../Componentes/HistorialFiltros';
 import WorkbenchReclasificacion from '../Componentes/WorkbenchReclasificacion';
@@ -20,8 +19,6 @@ const formatDate = (dateString) => {
 
 const HistorialFacturas = () => {
     const navigate = useNavigate();
-    const [modalPagoOpen, setModalPagoOpen] = useState(false);
-    const [facturaSeleccionada, setFacturaSeleccionada] = useState(null);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [asientoData, setAsientoData] = useState(null);
@@ -66,8 +63,18 @@ const HistorialFacturas = () => {
 
     const abrirModalPago = (factura) => {
         setMenuAbiertoId(null);
-        setFacturaSeleccionada(factura);
-        setModalPagoOpen(true);
+        // Los pagos se registran solo desde Conciliación Bancaria; el atajo "marcar pagada" dejaba la CxP descuadrada.
+        Swal.fire({
+            icon: 'info',
+            title: 'El pago se registra en Tesorería',
+            html: `Para pagar la factura <b>#${factura.numero_factura}</b> usa <b>Tesorería › Conciliación Bancaria</b>. Así el egreso queda contabilizado contra la cuenta bancaria real.`,
+            showCancelButton: true,
+            confirmButtonText: 'Ir a Conciliación',
+            cancelButtonText: 'Cerrar',
+            confirmButtonColor: '#0f172a',
+        }).then((res) => {
+            if (res.isConfirmed) navigate('/banco/conciliacion');
+        });
     };
 
     React.useEffect(() => {
@@ -550,13 +557,6 @@ const HistorialFacturas = () => {
                     onIntentarBloqueada={intentarCambioProhibido}
                 />
             )}
-
-            <ModalPagoFactura
-                isOpen={modalPagoOpen}
-                onClose={() => setModalPagoOpen(false)}
-                factura={facturaSeleccionada}
-                onPagoExitoso={() => ejecutarBusqueda(false)}
-            />
 
         </div>
     );

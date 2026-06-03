@@ -141,10 +141,9 @@ class FacturaService
             $cuentaIva = $codigoIva ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoIva)->first() : null;
             $cuentaProveedor = $codigoProveedor ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoProveedor)->first() : null;
             $cuentaGasto = $codigoDestino ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoDestino)->first() : null;
-            if ($esNotaCredito && (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor)) {
-                return $factura;
-            }
-
+            // Antes, una NOTA_CREDITO con cuentas faltantes se registraba SIN asiento
+            // (return silencioso), dejando la contabilidad descuadrada. Ahora exige las
+            // cuentas igual que una factura normal y genera su asiento (invertido).
             if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
                 throw new Exception("Configuración Contable Incompleta: Verifique que las cuentas de IVA ({$codigoIva}), Proveedor ({$codigoProveedor}) y Destino ({$codigoDestino}) existan en el plan de cuentas de esta empresa.");
             }
@@ -154,40 +153,43 @@ class FacturaService
             $cabeceraAsiento = [
                 'empresa_id' => $datos['empresa_id'],
                 'fecha' => $fechaOperacion,
-                'glosa' => "Centralización Automática Factura Compra N° " . $datos['numero_factura'],
+                'glosa' => ($esNotaCredito ? "Centralización Automática Nota de Crédito Compra N° " : "Centralización Automática Factura Compra N° ") . $datos['numero_factura'],
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'compras',
                 'origen_id' => $factura->id,
                 'usuario_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
             ];
 
+            // Una factura de compra debita gasto + IVA y acredita la CxP del proveedor.
+            // Una NOTA DE CRÉDITO de compra invierte los signos: reduce el gasto y el
+            // IVA crédito (HABER) y disminuye la CxP del proveedor (DEBE).
             $detallesAsiento = [];
 
-            // 1. DEBE: El Gasto
+            // Gasto / Destino
             $detallesAsiento[] = [
                 'cuenta_contable' => $cuentaGasto->codigo,
-                'debe' => $neto,
-                'haber' => 0,
-                'glosa_detalle' => "Gasto Factura N° {$datos['numero_factura']}",
+                'debe' => $esNotaCredito ? 0 : $neto,
+                'haber' => $esNotaCredito ? $neto : 0,
+                'glosa_detalle' => ($esNotaCredito ? "Reversa Gasto NC N° " : "Gasto Factura N° ") . $datos['numero_factura'],
                 'centro_costo_id' => $datos['centro_costo_id'] ?? null
             ];
 
-            // 2. DEBE: IVA
+            // IVA Crédito Fiscal
             if ($iva > 0) {
                 $detallesAsiento[] = [
                     'cuenta_contable' => $cuentaIva->codigo,
-                    'debe' => $iva,
-                    'haber' => 0,
-                    'glosa_detalle' => "IVA CF Factura N° {$datos['numero_factura']}"
+                    'debe' => $esNotaCredito ? 0 : $iva,
+                    'haber' => $esNotaCredito ? $iva : 0,
+                    'glosa_detalle' => ($esNotaCredito ? "Reversa IVA CF NC N° " : "IVA CF Factura N° ") . $datos['numero_factura'],
                 ];
             }
 
-            // 3. HABER: Cuenta por Pagar (Bruto)
+            // Cuenta por Pagar (Bruto)
             $detallesAsiento[] = [
                 'cuenta_contable' => $cuentaProveedor->codigo,
-                'debe' => 0,
-                'haber' => $bruto,
-                'glosa_detalle' => "CxP Proveedor Factura N° {$datos['numero_factura']}"
+                'debe' => $esNotaCredito ? $bruto : 0,
+                'haber' => $esNotaCredito ? 0 : $bruto,
+                'glosa_detalle' => ($esNotaCredito ? "Reducción CxP NC N° " : "CxP Proveedor Factura N° ") . $datos['numero_factura'],
             ];
 
             $asiento = $this->asientoService->registrarAsiento($cabeceraAsiento, $detallesAsiento);
@@ -377,24 +379,26 @@ class FacturaService
 
     public function registrarPago(int $empresaId, int $facturaId, array $datos)
     {
-        $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
-
-        if ($factura->estado === 'PAGADA') {
-            throw new Exception("Esta factura ya se encuentra pagada.");
-        }
-
-        $factura->estado = 'PAGADA';
-        $factura->fecha_pago = $datos['fechaPago'] ?? now()->format('Y-m-d');
-        $factura->medio_pago = $datos['medioPago'] ?? 'TRANSFERENCIA';
-        $factura->save();
-
-        return $factura;
+        // El atajo de "marcar pagada" se deshabilito: marcaba la factura como
+        // PAGADA sin generar el asiento de egreso, dejando la cuenta por pagar
+        // del proveedor abierta en contabilidad (descuadre subdiario vs mayor).
+        // Los pagos deben registrarse desde Tesoreria > Conciliacion Bancaria,
+        // que genera el asiento contra la cuenta bancaria real.
+        throw new Exception(
+            "Los pagos de facturas se registran desde Tesoreria > Conciliacion Bancaria "
+            . "para contabilizar el egreso. Esta accion directa fue deshabilitada.",
+            422
+        );
     }
 
     public function obtenerFacturasPorIds(int $empresaId, array $ids)
     {
+        // Solo se usa para aplicar pagos en la conciliacion bancaria: excluye
+        // facturas ya PAGADAS o ANULADAS para evitar pagarlas dos veces y que el
+        // excedente se registre erroneamente como anticipo.
         return Factura::where('empresa_id', $empresaId)
             ->whereIn('id', $ids)
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
             ->get();
     }
 

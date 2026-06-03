@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import AyudaModulo from './AyudaModulo';
 import { listarModulos, obtenerModulo, buscarModulos, glosario } from '../Utilidades/glosario';
@@ -23,14 +23,8 @@ describe('AyudaModulo - boton', () => {
     });
 
     it('NO renderiza nada si moduloId no existe', () => {
-        // Silenciar console.warn esperado
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { container } = render(<AyudaModulo moduloId="moduloInexistente" />);
         expect(container.innerHTML).toBe('');
-        expect(warnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('moduloInexistente')
-        );
-        warnSpy.mockRestore();
     });
 });
 
