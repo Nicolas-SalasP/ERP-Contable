@@ -3,11 +3,14 @@
 namespace App\Domains\Contabilidad\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 
 class AsientoContable extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'asientos_contables';
     const UPDATED_AT = null;
 

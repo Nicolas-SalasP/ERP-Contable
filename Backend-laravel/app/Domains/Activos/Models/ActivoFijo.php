@@ -3,11 +3,14 @@
 namespace App\Domains\Activos\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 
 class ActivoFijo extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'activos_fijos';
 
     protected $fillable = [
