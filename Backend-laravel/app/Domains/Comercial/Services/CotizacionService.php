@@ -7,6 +7,8 @@ use App\Domains\Comercial\Models\CotizacionDetalle;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -237,6 +239,42 @@ class CotizacionService
                 'monto_bruto' => $cotizacion->monto_total ?? $cotizacion->total,
                 'estado' => 'REGISTRADA',
             ]);
+
+            // Centralización contable de la VENTA (antes la factura de venta no
+            // impactaba el mayor): DEBE Cuentas por Cobrar al cliente; HABER
+            // Ingresos por Venta + IVA Débito Fiscal.
+            $neto = (float) $cotizacion->monto_neto;
+            $iva = (float) $cotizacion->monto_iva;
+            $totalCxC = $neto + $iva;
+
+            $cuentaCxC = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
+            $cuentaVentas = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
+            $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
+
+            if (!$cuentaCxC || !$cuentaVentas || !$cuentaIvaDebito) {
+                throw new Exception(
+                    "Configuración Contable Incompleta: para facturar una venta se requieren las cuentas de Clientes (152005), Ventas (501105) e IVA Débito (353360) en el plan de cuentas."
+                );
+            }
+
+            $detallesVenta = [
+                ['cuenta_contable' => '152005', 'debe' => $totalCxC, 'haber' => 0, 'glosa_detalle' => "CxC Cliente Venta {$factura->numero_factura}"],
+                ['cuenta_contable' => '501105', 'debe' => 0, 'haber' => $neto, 'glosa_detalle' => "Ingreso por Venta {$factura->numero_factura}"],
+            ];
+            if ($iva > 0) {
+                $detallesVenta[] = ['cuenta_contable' => '353360', 'debe' => 0, 'haber' => $iva, 'glosa_detalle' => "IVA Débito Venta {$factura->numero_factura}"];
+            }
+
+            $asientoVenta = app(AsientoContableService::class)->registrarAsiento([
+                'empresa_id' => $empresaId,
+                'fecha' => date('Y-m-d'),
+                'glosa' => "Centralización Venta - {$factura->numero_factura}",
+                'tipo_asiento' => 'ingreso',
+                'origen_modulo' => 'ventas',
+                'origen_id' => $factura->id,
+            ], $detallesVenta);
+
+            $factura->update(['comprobante_contable' => $asientoVenta->numero_comprobante]);
 
             $estadoFacturada = EstadoCotizacion::where('nombre', 'Facturada')->first();
             if ($estadoFacturada) {
