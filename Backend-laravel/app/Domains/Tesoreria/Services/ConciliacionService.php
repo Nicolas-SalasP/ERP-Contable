@@ -143,6 +143,18 @@ class ConciliacionService
                     $glosaAsiento .= ($glosaAsiento ? " | " : "") . "Anticipo Generado";
                     
                     if ($entidadId) {
+                        // Valida que el proveedor pertenezca a la empresa antes de
+                        // crear el anticipo (evita referenciar un proveedor de otra
+                        // empresa: corrupcion de datos cross-tenant).
+                        $proveedorValido = DB::table('proveedores')
+                            ->where('id', $entidadId)
+                            ->where('empresa_id', $empresaId)
+                            ->exists();
+
+                        if (!$proveedorValido) {
+                            throw new Exception("El proveedor indicado no pertenece a la empresa.", 422);
+                        }
+
                         DB::table('anticipos_proveedores')->insert([
                             'empresa_id' => $empresaId,
                             'proveedor_id' => $entidadId,

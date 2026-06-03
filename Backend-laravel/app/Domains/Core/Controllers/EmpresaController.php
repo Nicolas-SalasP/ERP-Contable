@@ -45,14 +45,17 @@ class EmpresaController extends Controller
     public function actualizarPerfil(Request $request)
     {
         try {
-            $request->validate([
+            // Whitelist explicita de campos editables del perfil. Antes se usaba
+            // $request->except(...), que permitia mass-assignment de campos sensibles
+            // como 'activa' (reactivar una empresa suspendida) o 'tasa_impuesto'.
+            $datos = $request->validate([
                 'razon_social' => 'nullable|string|max:150',
                 'direccion' => 'nullable|string|max:255',
                 'telefono' => 'nullable|string|max:50',
                 'email' => 'nullable|email|max:100',
+                'color_primario' => 'nullable|string|max:20',
+                'regimen_tributario' => 'nullable|in:14_D3,14_D8,14_A',
             ]);
-
-            $datos = $request->except(['logo', 'rut', 'empresa_id', 'id']);
 
             $empresa = $this->empresaService->actualizarDatos($request->user()->empresa_id, $datos);
 
@@ -130,8 +133,16 @@ class EmpresaController extends Controller
     public function actualizarBanco(Request $request, $id)
     {
         try {
-            $cuenta = $this->empresaService->actualizarBanco($request->user()->empresa_id, $id, $request->all());
+            $datos = $request->validate([
+                'banco' => 'sometimes|required|string|max:100',
+                'tipo_cuenta' => 'sometimes|required|string|max:50',
+                'numero_cuenta' => 'sometimes|required|string|max:50',
+            ]);
+
+            $cuenta = $this->empresaService->actualizarBanco($request->user()->empresa_id, $id, $datos);
             return response()->json(['success' => true, 'data' => $cuenta]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
