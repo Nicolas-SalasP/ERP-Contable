@@ -8,6 +8,7 @@ use App\Domains\Contabilidad\Models\DetalleAsiento;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Exception;
 
 class AsientoContableService
@@ -132,7 +133,7 @@ class AsientoContableService
 
         return DB::transaction(function () use ($datosAsiento, $detalles) {
             if (empty($datosAsiento['numero_comprobante'])) {
-                $datosAsiento['numero_comprobante'] = 'T' . time() . rand(10, 99);
+                $datosAsiento['numero_comprobante'] = 'TMP-' . Str::uuid()->toString();
             }
 
             $asiento = AsientoContable::create($datosAsiento);
@@ -161,7 +162,7 @@ class AsientoContableService
         $this->validarCentrosCosto($datos['empresa_id'], $datos['detalles']);
 
         return DB::transaction(function () use ($datos) {
-            $tempNum = 'T' . time() . rand(10, 99);
+            $tempNum = 'TMP-' . Str::uuid()->toString();
 
             $asiento = AsientoContable::create([
                 'empresa_id' => $datos['empresa_id'],
@@ -246,7 +247,7 @@ class AsientoContableService
         $asientoOriginal->load('detalles');
 
         return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
-            $tempNum = 'T' . time() . rand(10, 99);
+            $tempNum = 'TMP-' . Str::uuid()->toString();
             $nuevoAsiento = AsientoContable::create([
                 'empresa_id' => $asientoOriginal->empresa_id,
                 'fecha' => $fechaReversa,
