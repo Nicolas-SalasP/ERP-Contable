@@ -260,6 +260,31 @@ class BancoService
         return $mov;
     }
 
+    /**
+     * Obtiene un movimiento para conciliarlo, bloqueandolo (lockForUpdate) y
+     * rechazandolo si ya fue conciliado. DEBE llamarse dentro de una transaccion.
+     *
+     * Evita la doble conciliacion: sin el lock + guard de estado, un doble click
+     * o reintento podia reprocesar un movimiento CONCILIADO y generar un segundo
+     * asiento de banco (doble cargo/abono) y re-pagar facturas.
+     */
+    public function obtenerMovimientoParaConciliar(int $empresaId, int $id)
+    {
+        $mov = DB::table('movimientos_bancarios')
+            ->where('empresa_id', $empresaId)
+            ->where('id', $id)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$mov) throw new Exception("Movimiento bancario no encontrado.");
+
+        if (isset($mov->estado) && $mov->estado === 'CONCILIADO') {
+            throw new Exception("El movimiento bancario ya fue conciliado.", 422);
+        }
+
+        return $mov;
+    }
+
     public function vincularAsientoAMovimiento(int $empresaId, int $movimientoId, int $asientoId)
     {
         DB::table('movimientos_bancarios')
