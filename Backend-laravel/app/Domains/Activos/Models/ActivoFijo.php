@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Core\Traits\HasEmpresaScope;
 
 class ActivoFijo extends Model
 {
     use SoftDeletes;
+    use HasEmpresaScope;
 
     protected $table = 'activos_fijos';
 

@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
+use App\Domains\Core\Traits\HasEmpresaScope;
 
 class AsientoContable extends Model
 {
     use SoftDeletes;
+    use HasEmpresaScope;
 
     protected $table = 'asientos_contables';
     const UPDATED_AT = null;

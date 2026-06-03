@@ -5,10 +5,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Pais;
+use App\Domains\Core\Traits\HasEmpresaScope;
 use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 class Proveedor extends Model
 {
     use SoftDeletes;
+    use HasEmpresaScope;
 
     protected $table = 'proveedores';
     const UPDATED_AT = null;
