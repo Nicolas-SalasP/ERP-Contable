@@ -377,18 +377,16 @@ class FacturaService
 
     public function registrarPago(int $empresaId, int $facturaId, array $datos)
     {
-        $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
-
-        if ($factura->estado === 'PAGADA') {
-            throw new Exception("Esta factura ya se encuentra pagada.");
-        }
-
-        $factura->estado = 'PAGADA';
-        $factura->fecha_pago = $datos['fechaPago'] ?? now()->format('Y-m-d');
-        $factura->medio_pago = $datos['medioPago'] ?? 'TRANSFERENCIA';
-        $factura->save();
-
-        return $factura;
+        // El atajo de "marcar pagada" se deshabilito: marcaba la factura como
+        // PAGADA sin generar el asiento de egreso, dejando la cuenta por pagar
+        // del proveedor abierta en contabilidad (descuadre subdiario vs mayor).
+        // Los pagos deben registrarse desde Tesoreria > Conciliacion Bancaria,
+        // que genera el asiento contra la cuenta bancaria real.
+        throw new Exception(
+            "Los pagos de facturas se registran desde Tesoreria > Conciliacion Bancaria "
+            . "para contabilizar el egreso. Esta accion directa fue deshabilitada.",
+            422
+        );
     }
 
     public function obtenerFacturasPorIds(int $empresaId, array $ids)
