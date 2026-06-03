@@ -3,6 +3,7 @@
 namespace App\Domains\Sii\Listeners;
 
 use App\Domains\Sii\Events\FacturaListaParaEmitirEvent;
+use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Emision\EmitirDteService;
 use App\Domains\Sii\Services\Envio\EnvioSiiService;
 use App\Domains\Sii\Services\Mapping\FacturaAComercialDteMapper;
@@ -57,37 +58,59 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
             'usuario_id' => $event->usuarioId,
         ];
 
-        // 1. Idempotencia: si ya tiene DTE asociado, skip silencioso.
-        if ($factura->sii_dte_emitido_id !== null) {
+        // 1. Idempotencia / reanudacion: si la factura ya tiene un DTE asociado,
+        //    se REANUDA desde el paso pendiente segun su estado, en vez de hacer
+        //    skip silencioso (que dejaba DTEs atascados en BORRADOR/FIRMADO tras
+        //    un fallo previo, perdiendo la emision sin aviso).
+        $estadosYaProcesados = [
+            SiiDteEmitido::ESTADO_ENVIADO_SII,
+            SiiDteEmitido::ESTADO_EN_PROCESO_SII,
+            SiiDteEmitido::ESTADO_ACEPTADO,
+            SiiDteEmitido::ESTADO_ACEPTADO_CON_REPAROS,
+            SiiDteEmitido::ESTADO_RECHAZADO,
+            SiiDteEmitido::ESTADO_REEMITIDO,
+            SiiDteEmitido::ESTADO_ANULADO_CON_NC,
+            SiiDteEmitido::ESTADO_ANULADO_FALLO_INTERNO,
+        ];
+
+        $dte = $factura->sii_dte_emitido_id !== null
+            ? SiiDteEmitido::find($factura->sii_dte_emitido_id)
+            : null;
+
+        if ($dte && in_array($dte->estado, $estadosYaProcesados, true)) {
             Log::channel('sii')->info(
-                'Listener skip: factura ya tiene DTE asociado.',
-                array_merge($contextoBase, ['dte_id' => $factura->sii_dte_emitido_id])
+                'Listener skip: el DTE ya fue enviado/terminal.',
+                array_merge($contextoBase, ['dte_id' => $dte->id, 'estado' => $dte->estado])
             );
             return;
         }
 
-        // 2. PASO 1: Mapeo Factura -> SiiDteEmitido BORRADOR (F6.1).
-        try {
-            $dte = $this->mapper->mapear($factura, $event->referencias);
-            Log::channel('sii')->info(
-                'Factura mapeada a DTE BORRADOR.',
-                array_merge($contextoBase, ['dte_id' => $dte->id, 'paso' => 'mapeo'])
-            );
-        } catch (Throwable $e) {
-            $this->logError($contextoBase, $e, 'mapeo', null);
-            throw $e;
+        // 2. PASO 1: Mapeo Factura -> SiiDteEmitido BORRADOR (F6.1). Solo si aun no existe.
+        if (!$dte) {
+            try {
+                $dte = $this->mapper->mapear($factura, $event->referencias);
+                Log::channel('sii')->info(
+                    'Factura mapeada a DTE BORRADOR.',
+                    array_merge($contextoBase, ['dte_id' => $dte->id, 'paso' => 'mapeo'])
+                );
+            } catch (Throwable $e) {
+                $this->logError($contextoBase, $e, 'mapeo', null);
+                throw $e;
+            }
         }
 
-        // 3. PASO 2: Firmado + folio + persistencia (F4.4).
-        try {
-            $this->emitirService->emitir($dte->id);
-            Log::channel('sii')->info(
-                'DTE firmado correctamente.',
-                array_merge($contextoBase, ['dte_id' => $dte->id, 'paso' => 'firma'])
-            );
-        } catch (Throwable $e) {
-            $this->logError($contextoBase, $e, 'firma', $dte->id);
-            throw $e;
+        // 3. PASO 2: Firmado + folio + persistencia (F4.4). Se omite si ya esta firmado.
+        if ($dte->estado !== SiiDteEmitido::ESTADO_FIRMADO) {
+            try {
+                $this->emitirService->emitir($dte->id);
+                Log::channel('sii')->info(
+                    'DTE firmado correctamente.',
+                    array_merge($contextoBase, ['dte_id' => $dte->id, 'paso' => 'firma'])
+                );
+            } catch (Throwable $e) {
+                $this->logError($contextoBase, $e, 'firma', $dte->id);
+                throw $e;
+            }
         }
 
         // 4. PASO 3: Envio al WS DTEUpload (F5.2). El polling de F5.3 hace
