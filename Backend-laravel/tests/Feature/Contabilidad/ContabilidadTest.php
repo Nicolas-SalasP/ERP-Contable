@@ -610,11 +610,13 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
     {
         $cuenta = PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1001', 'nombre' => 'Caja', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
 
+        // Simula el asiento de cierre real que genera ImpuestosService::ejecutarF29.
         AsientoContable::create([
             'empresa_id' => $this->empresaA->id,
             'numero_comprobante' => 'C-F29',
             'fecha' => '2026-03-31',
-            'glosa' => 'Cierre F29 Marzo',
+            'glosa' => 'Centralización F29 - 03/2026',
+            'origen_modulo' => 'impuestos',
             'estado' => 'MAYORIZADO'
         ]);
 

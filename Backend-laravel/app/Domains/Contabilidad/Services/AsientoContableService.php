@@ -39,10 +39,16 @@ class AsientoContableService
         $mes = date('n', strtotime($fecha));
         $anio = date('Y', strtotime($fecha));
 
+        // El cierre del periodo lo genera ImpuestosService::ejecutarF29 con
+        // origen_modulo 'impuestos', estado 'MAYORIZADO' y glosa
+        // "Centralización F29 - MM/AAAA". Antes se buscaba "Cierre F29", que NUNCA
+        // coincidia, dejando el mes abierto para asientos retroactivos.
         $mesCerrado = AsientoContable::where('empresa_id', $empresaId)
             ->whereYear('fecha', $anio)
             ->whereMonth('fecha', $mes)
-            ->where('glosa', 'like', '%Cierre F29%')
+            ->where('origen_modulo', 'impuestos')
+            ->where('estado', 'MAYORIZADO')
+            ->where('glosa', 'like', '%Centralización F29%')
             ->exists();
 
         if ($mesCerrado) {
