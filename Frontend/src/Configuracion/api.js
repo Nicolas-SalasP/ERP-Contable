@@ -166,9 +166,13 @@ const buildError = (status, payload, statusText = '') => {
         message,
         errors,
         raw: payload,
+        // Shape compatible con axios para las vistas que leen error.response.data.
+        // Se preserva el payload del backend (errors, 'mensaje', etc.) pero se
+        // asegura que 'message' sea el mejor mensaje computado (ej. errores de
+        // validacion ya formateados), no uno generico.
         response: {
             status,
-            data: payload || { message },
+            data: { ...(payload || {}), message },
         },
     };
 };
@@ -650,6 +654,11 @@ export const api = {
             // sentirse inmediato e idempotente aunque el token ya este vencido.
             clearAuth();
 
+            // Timeout para que la revocacion en el backend no cuelgue la UI si la
+            // red no responde (antes el fetch podia quedar pendiente ~30s+).
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
+
             try {
                 if (token) {
                     await fetch(`${API_BASE_URL}/auth/logout`, {
@@ -658,13 +667,15 @@ export const api = {
                             Accept: 'application/json',
                             Authorization: `Bearer ${token}`,
                         },
+                        signal: controller ? controller.signal : undefined,
                     });
                 }
             } catch {
                 // No bloquea el logout local. El backend limpiara tokens validos
-                // cuando reciba la peticion; si falla la red, la sesion local ya
-                // queda cerrada.
+                // cuando reciba la peticion; si falla la red o expira el timeout,
+                // la sesion local ya queda cerrada.
             } finally {
+                if (timeoutId) clearTimeout(timeoutId);
                 if (redirect && typeof window !== 'undefined') {
                     window.location.href = '/login';
                 }

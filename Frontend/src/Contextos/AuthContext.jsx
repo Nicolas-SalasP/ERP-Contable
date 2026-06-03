@@ -50,6 +50,18 @@ export const AuthProvider = ({ children }) => {
         };
     }, [user?.id, refrescarSesion]);
 
+    // Si otra pestaña cierra sesion (erp_token pasa a null), invalidamos el
+    // usuario en memoria de inmediato, sin esperar la recarga del navegador.
+    useEffect(() => {
+        const onStorage = (e) => {
+            if (e.key === 'erp_token' && e.newValue === null) {
+                setUser(null);
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, []);
+
     const login = async (email, password, remember = false) => {
         setLoading(true);
         try {
@@ -63,9 +75,11 @@ export const AuthProvider = ({ children }) => {
                 const otherStorage = remember ? sessionStorage : localStorage;
 
                 storage.setItem('erp_token', tokenRecibido);
-                storage.removeItem.bind(otherStorage)('erp_token');
+                // Limpia el otro storage por completo (incluido issued_at) para no
+                // dejar restos de una sesion anterior con distinto "Recordarme".
                 otherStorage.removeItem('erp_token');
                 otherStorage.removeItem('erp_user');
+                otherStorage.removeItem('erp_token_issued_at');
                 markTokenIssued();
 
                 try {
