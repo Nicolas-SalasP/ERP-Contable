@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
@@ -12,7 +12,10 @@ const CrearCotizacion = () => {
     const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
     const [busquedaCliente, setBusquedaCliente] = useState('');
     const [mostrarDropdown, setMostrarDropdown] = useState(false);
-    const [items, setItems] = useState([{ productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
+    // Cada item lleva un id estable para usarlo como key de React: con key={index},
+    // al borrar una linea intermedia los inputs se "corrian" a la fila equivocada.
+    const idItemRef = useRef(1);
+    const [items, setItems] = useState([{ id: 0, productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
     const [validez, setValidez] = useState(15);
     const [esAfecta, setEsAfecta] = useState(true);
@@ -43,7 +46,7 @@ const CrearCotizacion = () => {
     };
 
     const agregarItem = () => {
-        setItems([...items, { productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
+        setItems([...items, { id: idItemRef.current++, productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
     };
 
     const eliminarItem = (index) => {
@@ -191,7 +194,7 @@ const CrearCotizacion = () => {
                     </div>
                     <div className="space-y-6">
                         {items.map((item, index) => (
-                            <FilaItemCotizacion key={index} index={index} item={item} onChange={handleItemChange} onRemove={eliminarItem} />
+                            <FilaItemCotizacion key={item.id} index={index} item={item} onChange={handleItemChange} onRemove={eliminarItem} />
                         ))}
                     </div>
                 </div>

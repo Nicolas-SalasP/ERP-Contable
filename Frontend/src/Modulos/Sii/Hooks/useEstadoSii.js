@@ -24,7 +24,6 @@ export function useEstadoSii(facturaId) {
     const [data, setData] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
-    const intervalRef = useRef(null);
     const mounted = useRef(true);
 
     const cargar = useCallback(async () => {
@@ -60,17 +59,21 @@ export function useEstadoSii(facturaId) {
         }
 
         let cancelled = false;
+        // Interval LOCAL a esta corrida del effect (no un useRef compartido): su
+        // cleanup limpia exactamente este interval, evitando fugas cuando facturaId
+        // cambia y se pisaba la referencia compartida.
+        let intervalId = null;
 
         const iniciar = async () => {
             const inicial = await cargar();
             if (cancelled || !mounted.current) return;
 
             if (inicial?.es_pollable) {
-                intervalRef.current = setInterval(async () => {
+                intervalId = setInterval(async () => {
                     const nuevo = await cargar();
-                    if (!nuevo?.es_pollable && intervalRef.current) {
-                        clearInterval(intervalRef.current);
-                        intervalRef.current = null;
+                    if (!nuevo?.es_pollable && intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = null;
                     }
                 }, 10_000);
             }
@@ -81,9 +84,9 @@ export function useEstadoSii(facturaId) {
         return () => {
             cancelled = true;
             mounted.current = false;
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
             }
         };
     }, [facturaId, cargar]);

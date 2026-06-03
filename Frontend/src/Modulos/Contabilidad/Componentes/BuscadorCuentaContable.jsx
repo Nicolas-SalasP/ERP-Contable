@@ -18,6 +18,16 @@ const BuscadorCuentaContable = ({
     const activeOnChange = onChange || setCuentaSeleccionada;
     const activeCuentas = cuentas.length > 0 ? cuentas : localCuentas;
 
+    // Refs con el ultimo valor/callback: el effect de carga corre solo cuando
+    // cambia cuentas.length, pero debe usar el activeValue/activeOnChange MAS
+    // reciente (no la version capturada cuando se monto) para evitar stale closures.
+    const activeValueRef = useRef(activeValue);
+    const activeOnChangeRef = useRef(activeOnChange);
+    useEffect(() => {
+        activeValueRef.current = activeValue;
+        activeOnChangeRef.current = activeOnChange;
+    });
+
     useEffect(() => {
         if (cuentas.length === 0) {
             const fetchCuentas = async () => {
@@ -28,7 +38,7 @@ const BuscadorCuentaContable = ({
                         const lista = res.data.filter(c => c.imputable);
                         setLocalCuentas(lista);
 
-                        if (!activeValue && activeOnChange) {
+                        if (!activeValueRef.current && activeOnChangeRef.current) {
                             const cuentaPuente = lista.find(c =>
                                 c.codigo === '690199' ||
                                 c.nombre.toLowerCase().includes('puente') ||
@@ -36,7 +46,7 @@ const BuscadorCuentaContable = ({
                             );
                             const final = cuentaPuente || lista[0];
                             if (final) {
-                                activeOnChange(final.codigo);
+                                activeOnChangeRef.current(final.codigo);
                                 setBusqueda(`${final.codigo} - ${final.nombre}`);
                             }
                         }
