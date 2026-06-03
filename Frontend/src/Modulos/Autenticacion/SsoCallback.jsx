@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../Contextos/AuthContext';
-import { api } from '../../Configuracion/api';
+import { api, markTokenIssued } from '../../Configuracion/api';
 
 const SsoCallback = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { login: _setSession } = useAuth();
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -28,8 +26,10 @@ const SsoCallback = () => {
 
                 sessionStorage.setItem('erp_token', response.token);
                 sessionStorage.setItem('erp_user', JSON.stringify(response.user));
+                markTokenIssued(response.issued_at);
 
-                navigate('/dashboard', { replace: true });
+                // Recarga completa para que el AuthContext hidrate la sesión desde storage.
+                window.location.replace('/');
             } catch (err) {
                 setError('No se pudo completar el acceso automático. Por favor ingresa con tu email y contraseña.');
             }

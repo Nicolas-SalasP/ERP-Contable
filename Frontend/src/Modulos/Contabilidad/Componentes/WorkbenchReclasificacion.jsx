@@ -29,7 +29,6 @@ const WorkbenchReclasificacion = ({
 
     return (
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-visible animate-fade-in flex flex-col">
-            {/* Header */}
             <div className="bg-slate-50 p-4 md:p-8 border-b border-slate-200 rounded-t-2xl">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div>
@@ -85,7 +84,6 @@ const WorkbenchReclasificacion = ({
                 </div>
             </div>
 
-            {/* Detalles del asiento */}
             <div className="p-4 md:p-8 flex-1 bg-white">
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4">
                     Líneas del Asiento Original
@@ -101,7 +99,6 @@ const WorkbenchReclasificacion = ({
                     </div>
                 ) : (
                     <div className="border border-slate-200 rounded-xl overflow-visible shadow-sm">
-                        {/* Vista desktop: tabla */}
                         <div className="hidden md:block overflow-visible pb-24">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-900 text-white text-xs uppercase tracking-wider font-bold">
@@ -158,7 +155,6 @@ const WorkbenchReclasificacion = ({
                             </table>
                         </div>
 
-                        {/* Vista mobile: cards */}
                         <div className="md:hidden flex flex-col divide-y divide-slate-100 pb-10">
                             {asientoReclasificacion?.detalles?.map((linea, index) => {
                                 const isBloqueada = esBloqueada(linea.cuenta_contable);
@@ -209,7 +205,6 @@ const WorkbenchReclasificacion = ({
                 )}
             </div>
 
-            {/* Footer con boton confirmar */}
             <div className="bg-slate-50 p-4 md:p-6 border-t border-slate-200 mt-auto rounded-b-2xl">
                 <button
                     onClick={onConfirmar}

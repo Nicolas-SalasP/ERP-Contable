@@ -12,7 +12,6 @@ const PerfilEmpresaGeneral = ({
 }) => {
     return (
         <div className="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
-            {/* Columna izquierda: Logo */}
             <div className="lg:col-span-1 flex flex-col items-center space-y-4">
                 <div className="w-56 h-56 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center bg-slate-50 overflow-hidden relative group transition-colors hover:border-blue-400">
                     {imagenMostrada ? (
@@ -41,7 +40,6 @@ const PerfilEmpresaGeneral = ({
                 </p>
             </div>
 
-            {/* Columna derecha: Form */}
             <form onSubmit={onSubmit} className="lg:col-span-2 space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>

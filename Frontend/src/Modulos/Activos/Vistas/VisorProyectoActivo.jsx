@@ -156,7 +156,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
             if (res.success) {
                 onNotificar('success', 'Proyecto Activado y Capitalizado Exitosamente.');
                 setModalActivacionAbierto(false);
-                onVolver(); // Volvemos a la lista principal
+                onVolver();
             }
         } catch (error) {
             const msg = error.response?.data?.message || 'Error al activar el proyecto.';
@@ -179,7 +179,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
     const depreciacion = Number(proyecto.depreciacion_acumulada) || 0;
     const _valorLibro = valorOriginal - depreciacion;
 
-    // FIX: Constantes para evaluar las 3 cuentas usando sus arreglos específicos
     const cuentaAsignada = cuentasActivo.find(t => t.id === proyecto.tipo_activo_id);
     const cuentaDepreAsignada = cuentasDepreciacion.find(t => t.id === proyecto.cuenta_depreciacion_id);
     const cuentaGastoAsignada = cuentasGasto.find(t => t.id === proyecto.cuenta_gasto_id);
@@ -187,7 +186,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
-            {/* CABECERA */}
             <div className="flex items-center gap-4 border-b border-slate-200 pb-4">
                 <button onClick={onVolver} className="h-10 w-10 bg-slate-200 hover:bg-slate-300 rounded-full flex items-center justify-center transition-colors text-slate-600">
                     <i className="fas fa-arrow-left"></i>
@@ -200,14 +198,12 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 </div>
             </div>
 
-            {/* DASHBOARD Y CONFIGURACIÓN */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
                     <p className="text-xs font-bold text-slate-500 uppercase">Inversión Neta Acumulada</p>
                     <h3 className="text-2xl font-black text-slate-800 mt-1">{formatCurrency(valorOriginal)}</h3>
                 </div>
 
-                {/* BLOQUE DE LAS 3 CUENTAS */}
                 <div className={`lg:col-span-2 p-5 rounded-xl border shadow-sm flex flex-col justify-center ${!configuracionCompleta ? 'bg-rose-50 border-rose-200 border-l-4 border-l-rose-500' : 'bg-white border-slate-200 border-l-4 border-l-slate-400'}`}>
                     <div className="flex justify-between items-start">
                         <div className="w-full mr-4">
@@ -222,7 +218,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                             onChange={(e) => handleCambiarCuenta(e.target.value, 'tipo_activo_id')}
                                         >
                                             <option value="">Seleccionar...</option>
-                                            {/* FIX: Mapeamos cuentasActivo */}
                                             {cuentasActivo.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
                                         </select>
                                     </div>
@@ -234,7 +229,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                             onChange={(e) => handleCambiarCuenta(e.target.value, 'cuenta_depreciacion_id')}
                                         >
                                             <option value="">Seleccionar...</option>
-                                            {/* FIX: Mapeamos cuentasDepreciacion */}
                                             {cuentasDepreciacion.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
                                         </select>
                                     </div>
@@ -246,7 +240,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                             onChange={(e) => handleCambiarCuenta(e.target.value, 'cuenta_gasto_id')}
                                         >
                                             <option value="">Seleccionar...</option>
-                                            {/* FIX: Mapeamos cuentasGasto */}
                                             {cuentasGasto.map(t => <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>)}
                                         </select>
                                     </div>
@@ -280,7 +273,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 </div>
             </div>
 
-            {/* ACCIONES DE FASE */}
             {proyecto.estado === 'EN_CONSTRUCCION' && (
                 <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
@@ -302,7 +294,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 </div>
             )}
 
-            {/* TABLA DE COSTOS */}
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                 <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
                     <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider">Detalle de Inversión (Netos)</h3>
@@ -345,7 +336,6 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 </table>
             </div>
 
-            {/* MODALES */}
             {modalFacturasAbierto && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up border border-slate-200">

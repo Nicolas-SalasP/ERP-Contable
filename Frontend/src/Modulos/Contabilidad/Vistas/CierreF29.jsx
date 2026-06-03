@@ -76,7 +76,6 @@ const CierreF29 = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 animate-fade-in pb-10">
-            {/* CABECERA Y FILTROS */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -119,7 +118,6 @@ const CierreF29 = () => {
                 />
             ) : (
                 <div className="space-y-6">
-                    {/* DASHBOARD NUMÉRICO */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 text-rose-500 transform group-hover:scale-110 transition-transform">
@@ -150,7 +148,6 @@ const CierreF29 = () => {
                         </div>
                     </div>
 
-                    {/* SECCIÓN DE ACCIÓN (ASIENTO CONTABLE) */}
                     {!datosCierre.ya_cerrado && (datosCierre.ventas.iva_debito > 0 || datosCierre.compras.iva_credito > 0) && (
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
                             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
@@ -171,7 +168,6 @@ const CierreF29 = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
-                                        {/* DEBE: Reversa Débito */}
                                         {datosCierre.ventas.iva_debito > 0 && (
                                             <tr>
                                                 <td className="py-3 font-bold text-slate-700">[210201] IVA Débito Fiscal</td>
@@ -179,7 +175,6 @@ const CierreF29 = () => {
                                                 <td className="py-3 text-right text-slate-300">-</td>
                                             </tr>
                                         )}
-                                        {/* DEBE: Reconocimiento PPM como Activo (LA NUEVA LÍNEA) */}
                                         {datosCierre.ppm.monto > 0 && (
                                             <tr>
                                                 <td className="py-3 font-bold text-indigo-600">[110403] PPM por Recuperar</td>
@@ -187,7 +182,6 @@ const CierreF29 = () => {
                                                 <td className="py-3 text-right text-slate-300">-</td>
                                             </tr>
                                         )}
-                                        {/* DEBE: Remanente (si hay) */}
                                         {datosCierre.resumen.remanente > 0 && (
                                             <tr>
                                                 <td className="py-3 font-bold text-emerald-600">[110402] IVA Remanente</td>
@@ -195,7 +189,6 @@ const CierreF29 = () => {
                                                 <td className="py-3 text-right text-slate-300">-</td>
                                             </tr>
                                         )}
-                                        {/* HABER: Reversa Crédito */}
                                         {datosCierre.compras.iva_credito > 0 && (
                                             <tr>
                                                 <td className="py-3 font-bold text-slate-700">[110001] IVA Crédito Fiscal</td>
@@ -203,7 +196,6 @@ const CierreF29 = () => {
                                                 <td className="py-3 font-black text-slate-800 text-right">{formatCurrency(datosCierre.compras.iva_credito)}</td>
                                             </tr>
                                         )}
-                                        {/* HABER: A pagar (Incluye el PPM) */}
                                         {datosCierre.resumen.total_a_pagar > 0 && (
                                             <tr>
                                                 <td className="py-3 font-bold text-rose-600">[210301] IVA por Pagar (F29)</td>

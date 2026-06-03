@@ -5,17 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * F5.3 — Extiende sii_envio_dte con campos para soportar polling del estado
- * en el WS QueryEstUp del SII.
- *
- *   - fecha_ultimo_polling: timestamp del ultimo POST exitoso al WS.
- *   - fecha_resolucion: timestamp del estado terminal (ACEPTADO/RECHAZADO/etc).
- *   - intentos_polling: contador de POSTs al WS de consulta.
- *   - http_status_ultimo_polling: status HTTP del ultimo POST.
- *   - estado_sii_ultimo: codigo SII raw (EPR, EOK, RPR, etc.).
- *
- * Idempotente: solo agrega columnas faltantes (defensivo si la migracion
- * corre dos veces tras un fix en CI).
+ * Extiende sii_envio_dte con campos para soportar polling del estado en el WS
+ * QueryEstUp del SII. Idempotente: solo agrega columnas faltantes.
  */
 return new class extends Migration
 {

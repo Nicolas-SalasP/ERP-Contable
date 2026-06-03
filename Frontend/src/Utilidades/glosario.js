@@ -1,29 +1,4 @@
-/**
- * Glosario centralizado de modulos.
- *
- * Cada entrada describe un modulo en lenguaje simple para usuarios que NO
- * son contadores. Editar este archivo cambia el contenido en TODA la app
- * sin necesidad de tocar componentes.
- *
- * Estructura de cada modulo:
- *   id:        identificador unico (string)
- *   titulo:    nombre amigable
- *   icono:     emoji o caracter visual para la tarjeta del glosario
- *   resumen:   1-2 lineas, lo que aparece en el header de la modal
- *   queEs:     que es el modulo / concepto (parrafo)
- *   conceptos: array de { termino, definicion } - conceptos clave
- *   comoUsar:  array de pasos (strings) - como se usa el modulo
- *   errores:   array de { problema, solucion } - errores comunes
- *   tip:       (opcional) consejo destacado al final
- *
- * Tono: hablarle de tu, sin acentos argentinos (es-CL), simple y directo.
- * Evitar jerga contable salvo que se explique en el momento.
- */
-
 export const glosario = {
-    // ================================================================
-    // CONTABILIDAD
-    // ================================================================
     asientoManual: {
         id: 'asientoManual',
         titulo: 'Asiento Manual',
@@ -249,9 +224,6 @@ export const glosario = {
             'que aparece en el Balance. Si no calzan, hay un asiento mal hecho en el medio.',
     },
 
-    // ================================================================
-    // COMERCIAL
-    // ================================================================
     cotizacion: {
         id: 'cotizacion',
         titulo: 'Cotizaciones',
@@ -306,9 +278,6 @@ export const glosario = {
         ],
     },
 
-    // ================================================================
-    // ACTIVOS FIJOS
-    // ================================================================
     activoFijo: {
         id: 'activoFijo',
         titulo: 'Activos Fijos',
@@ -407,9 +376,6 @@ export const glosario = {
         ],
     },
 
-    // ================================================================
-    // BANCO / TESORERIA
-    // ================================================================
     conciliacion: {
         id: 'conciliacion',
         titulo: 'Conciliacion Bancaria',
@@ -451,9 +417,6 @@ export const glosario = {
             'casi imposibles de rastrear.',
     },
 
-    // ================================================================
-    // PROVEEDORES / COMERCIAL
-    // ================================================================
     anticipoProveedor: {
         id: 'anticipoProveedor',
         titulo: 'Anticipos a Proveedores',
@@ -493,9 +456,6 @@ export const glosario = {
         ],
     },
 
-    // ================================================================
-    // EMPRESA
-    // ================================================================
     crearEmpresa: {
         id: 'crearEmpresa',
         titulo: 'Crear Empresa',
@@ -515,7 +475,7 @@ export const glosario = {
             {
                 termino: 'Razon social',
                 definicion:
-                    'El nombre legal completo de la empresa segun el SII. Ej: "Atlas Digital Tech SpA".',
+                    'El nombre legal completo de la empresa segun el SII. Ej: "Tenri SpA".',
             },
             {
                 termino: 'Regimen tributario',
@@ -546,9 +506,6 @@ export const glosario = {
         ],
     },
 
-    // ================================================================
-    // INVENTARIO
-    // ================================================================
     inventario: {
         id: 'inventario',
         titulo: 'Inventario',
@@ -689,9 +646,6 @@ export const glosario = {
             'módulos mediante referencias y eventos, pero no debe emitir DTE ni ejecutar lógica SII desde este dominio.',
     },
 
-    // ================================================================
-    // PLAN DE CUENTAS
-    // ================================================================
     planCuentas: {
         id: 'planCuentas',
         titulo: 'Plan de Cuentas',
@@ -730,9 +684,6 @@ export const glosario = {
             'Borrarlas romperia los reportes historicos.',
     },
 
-    // ================================================================
-    // MODULOS SECUNDARIOS
-    // ================================================================
     anulacion: {
         id: 'anulacion',
         titulo: 'Anulacion de Documentos',

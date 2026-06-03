@@ -7,6 +7,9 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Exception;
 
+/**
+ * @tags Facturas
+ */
 class FacturaController
 {
     protected $service;
@@ -16,6 +19,7 @@ class FacturaController
         $this->service = $service;
     }
 
+    /** Lista facturas de la empresa (filtrable por ?estado). */
     public function index(Request $request)
     {
         return response()->json([
@@ -71,6 +75,7 @@ class FacturaController
         }
     }
 
+    /** Registra una factura de compra y centraliza su asiento contable. */
     public function store(Request $request)
     {
         $mapeo = [
@@ -235,6 +240,7 @@ class FacturaController
         }
     }
 
+    /** Registra el pago de una factura. */
     public function pagar(Request $request, $id)
     {
         try {
@@ -257,6 +263,7 @@ class FacturaController
         }
     }
 
+    /** Anula una factura (genera asiento inverso). Requiere motivo. */
     public function anular(Request $request, $id)
     {
         try {

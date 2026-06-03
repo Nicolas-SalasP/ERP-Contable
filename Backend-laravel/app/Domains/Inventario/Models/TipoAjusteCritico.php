@@ -34,22 +34,10 @@ class TipoAjusteCritico extends Model
         'activo' => 'boolean',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function ajustesCriticos(): HasMany
     {
         return $this->hasMany(AjusteCriticoInventario::class, 'tipo_ajuste_critico_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeActivo(Builder $query): Builder
     {
@@ -70,12 +58,6 @@ class TipoAjusteCritico extends Model
     {
         return $query->orderBy('id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function esAjustePositivo(): bool
     {

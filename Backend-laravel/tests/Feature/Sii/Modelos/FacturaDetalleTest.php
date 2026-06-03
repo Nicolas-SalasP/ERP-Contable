@@ -69,7 +69,7 @@ class FacturaDetalleTest extends TestCase
         $this->assertSame(1, $persistido->numero_linea);
     }
 
-    public function test_detalle_se_borra_en_cascada_al_borrar_factura(): void
+    public function test_borrado_logico_conserva_detalle_y_force_delete_lo_cascadea(): void
     {
         $this->prepararEntornoBase();
         $factura = $this->crearFactura();
@@ -93,8 +93,13 @@ class FacturaDetalleTest extends TestCase
 
         $this->assertSame(2, FacturaDetalle::where('factura_id', $factura->id)->count());
 
+        // Borrado logico (SoftDeletes): la factura queda recuperable y conserva su detalle.
         $factura->delete();
+        $this->assertTrue($factura->fresh()->trashed());
+        $this->assertSame(2, FacturaDetalle::where('factura_id', $factura->id)->count());
 
+        // Borrado fisico: el FK ON DELETE CASCADE elimina el detalle.
+        $factura->forceDelete();
         $this->assertSame(0, FacturaDetalle::where('factura_id', $factura->id)->count());
     }
 

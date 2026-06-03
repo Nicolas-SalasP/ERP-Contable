@@ -5,16 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * F4.4 — Extiende sii_dte_emitido con:
- *
- *   - xml_completo_cifrado (LONGTEXT): backup del EnvioDTE final cifrado con
- *     APP_KEY (Crypt::encryptString). Permite recuperacion total si el disco
- *     se corrompe o el archivo se pierde. Cifrado para no exponer contenido
- *     sensible en backups de BD.
- *
- *   - fecha_firma (TIMESTAMP): momento en que EmitirDteService firma el DTE
- *     y lo deja en estado FIRMADO. Distinto de fecha_emision (campo del XSD,
- *     puede ser pasada) y de fecha_envio_sii (cuando se sube al WS, F5).
+ * Extiende sii_dte_emitido con xml_completo_cifrado (backup del EnvioDTE cifrado
+ * con APP_KEY para recuperacion ante perdida de disco) y fecha_firma.
  */
 return new class extends Migration
 {

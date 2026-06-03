@@ -1,6 +1,6 @@
 import React from 'react';
 
-// Catalogo de tipos DTE para el dropdown de filtro (espeja SiiDteEmitido del backend).
+// Espeja SiiDteEmitido del backend.
 const TIPOS_DTE = [
     { codigo: 33,  nombre: 'Factura Electronica' },
     { codigo: 34,  nombre: 'Factura Exenta' },

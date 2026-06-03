@@ -28,7 +28,6 @@ const VisorAuditoriaFactura = () => {
     const cargarDatosAuditoria = async () => {
         setLoading(true);
         try {
-            // CONEXIÓN REAL AL BACKEND
             const res = await api.get(`/facturas/${id}/auditoria`);
             if (res.success) {
                 setFactura(res.data.factura);
@@ -51,7 +50,7 @@ const VisorAuditoriaFactura = () => {
     };
 
     const handleGuardarYCerrar = () => {
-        navigate(-1); // Retorna a la vista anterior (Historial)
+        navigate(-1);
     };
 
     if (loading) {
@@ -66,7 +65,6 @@ const VisorAuditoriaFactura = () => {
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-6 font-sans pb-10">
 
-            {/* BOTÓN VOLVER (NUEVO) */}
             <button
                 onClick={() => navigate(-1)}
                 className="mb-4 flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm transition-colors group"
@@ -77,7 +75,6 @@ const VisorAuditoriaFactura = () => {
                 Volver al Historial
             </button>
 
-            {/* CABECERA */}
             <div className="bg-slate-900 rounded-t-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-white shadow-lg relative">
                 <div className="w-full md:w-auto">
                     <div className="flex items-center gap-3 mb-3">
@@ -97,13 +94,11 @@ const VisorAuditoriaFactura = () => {
                         onClick={() => setMenuAbierto(!menuAbierto)}
                         className="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all border border-slate-700 hover:border-slate-500 focus:outline-none"
                     >
-                        {/* ARREGLO 3 PUNTOS: Solo puntos, sin silueta de persona */}
                         <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01"></path>
                         </svg>
                     </button>
 
-                    {/* MENÚ FLOTANTE */}
                     {menuAbierto && (
                         <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[99] animate-fade-in origin-top-right">
                             <ul className="text-sm font-medium text-slate-700 py-1">
@@ -129,7 +124,6 @@ const VisorAuditoriaFactura = () => {
                 </div>
             </div>
 
-            {/* CUERPO DE LA LÍNEA DE TIEMPO */}
             <div className="bg-white border-x border-b border-slate-200 rounded-b-2xl shadow-sm p-4 md:p-8">
                 <h3 className="text-lg font-bold text-slate-800 mb-8 border-b border-slate-100 pb-4 flex items-center gap-2">
                     <i className="fas fa-fingerprint text-slate-400"></i> Cadena de Custodia del Documento
@@ -138,7 +132,6 @@ const VisorAuditoriaFactura = () => {
                 <div className="relative border-l-2 border-slate-100 ml-3 md:ml-6 space-y-8 md:space-y-12 pb-4">
                     {historial.length > 0 ? historial.map((log, index) => (
                         <div key={log.id} className="relative pl-6 md:pl-10">
-                            {/* Punto de la línea de tiempo */}
                             <div className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-4 border-white shadow-sm ${index === 0 ? 'bg-blue-600 ring-4 ring-blue-50' : 'bg-slate-200'}`}></div>
 
                             <div className={`bg-white border rounded-2xl p-5 hover:border-slate-300 transition-all ${index === 0 ? 'border-blue-200 shadow-sm bg-blue-50/10' : 'border-slate-100'}`}>

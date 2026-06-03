@@ -91,7 +91,6 @@ const VisorAsientoCompleto = () => {
                     <p className="text-slate-700 mt-2 text-sm">{cabecera.glosa}</p>
                 </div>
 
-                {/* Contenedor derecho: Botones y Select */}
                 <div className="flex flex-col items-end gap-3">
                     <div className="flex gap-2">
                         <button onClick={manejarReclasificacion} className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded shadow transition-colors">
@@ -102,7 +101,6 @@ const VisorAsientoCompleto = () => {
                         </button>
                     </div>
 
-                    {/* Select de Vistas */}
                     <select
                         value={vistaActiva}
                         onChange={(e) => setVistaActiva(Number(e.target.value))}
@@ -115,7 +113,6 @@ const VisorAsientoCompleto = () => {
                 </div>
             </div>
 
-            {/* Tabla Estilo Excel (Compacta) */}
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-x-auto">
                 <table className="w-full border-collapse text-sm whitespace-nowrap">
                     <thead className="bg-slate-100 text-slate-700">
@@ -187,7 +184,6 @@ const VisorAsientoCompleto = () => {
                 </table>
             </div>
 
-            {/* Footer: Auditoría */}
             <div className="mt-6 flex justify-between items-end text-xs text-slate-500">
                 <p>Módulo: <span className="uppercase font-semibold">{cabecera.origen_modulo}</span></p>
                 <div className="text-right bg-slate-200/50 p-2 rounded border border-slate-200">

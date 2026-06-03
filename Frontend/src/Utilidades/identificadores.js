@@ -1,4 +1,3 @@
-// --- 1. ALGORITMOS ESPECÍFICOS ---
 const validarRutChile = (valor) => {
     const limpio = valor.replace(/[^0-9kK]/g, '').toUpperCase();
     if (limpio.length < 2) return false;
@@ -67,8 +66,6 @@ const validarNifSpania = (valor) => {
     return letras.charAt(numero % 23) === letra;
 };
 
-// --- 2. FUNCIÓN PÚBLICA PRINCIPAL DE VALIDACIÓN ---
-
 export const validarIdentificador = (numero, paisIso) => {
     if (!numero) return false;
 
@@ -87,8 +84,6 @@ export const validarIdentificador = (numero, paisIso) => {
         default: return true;
     }
 };
-
-// --- 3. FUNCIÓN PÚBLICA PRINCIPAL DE FORMATEO ---
 
 export const formatearIdentificador = (numero, paisIso) => {
     const limpio = numero.replace(/[^0-9kK]/g, '').toUpperCase();

@@ -2,9 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import siiApi from '../Servicios/siiApi';
 
 /**
- * Hook que encapsula la carga y persistencia de la configuracion SII de la
- * empresa autenticada. Los errores HTTP se delegan al toast global de api.js.
- *
+ * Hook que encapsula la carga y persistencia de la configuracion SII.
  * @returns {{
  *   configuracion: import('../Servicios/siiApi').ConfiguracionSii | null,
  *   cargando: boolean,

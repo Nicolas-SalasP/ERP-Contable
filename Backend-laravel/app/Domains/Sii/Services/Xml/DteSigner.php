@@ -11,15 +11,10 @@ use DOMXPath;
 use RobRichards\XMLSecLibs\XMLSecurityDSig;
 
 /**
- * Firma el <Documento ID="D{folio}"> de un XML de DTE producido por
- * DteXmlBuilder (F4.1 placeholder estructural, o F4.2 con TED real).
+ * Firma el <Documento ID="D{folio}"> de un XML de DTE producido por DteXmlBuilder.
  *
- * Estrategia:
- *  1) Elimina el <ds:Signature> placeholder que F4.1 dejo como hijo directo
- *     de <DTE> — su presencia contaminaria el digest del <Documento> dado
- *     que el firmante calcula enveloped sobre todo el contenido restante.
- *  2) Aplica XmlDsigSigner sobre <Documento>, dejando la <ds:Signature> real
- *     como hermano de <Documento> dentro de <DTE>.
+ * Primero elimina el <ds:Signature> placeholder (hijo directo de <DTE>) porque
+ * contaminaria el digest enveloped del <Documento>, luego aplica XmlDsigSigner.
  */
 class DteSigner
 {

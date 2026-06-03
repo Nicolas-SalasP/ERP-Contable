@@ -15,9 +15,10 @@ class UsuarioService
         return User::where('empresa_id', $empresaId)->get();
     }
 
-    public function listarRoles()
+    public function listarRoles(int $empresaId)
     {
-        return Rol::all();
+        // Roles de sistema (compartidos) + roles propios de la empresa.
+        return Rol::visiblesPara($empresaId)->get();
     }
 
     public function invitarUsuario(int $empresaId, string $email, int $rolId)
@@ -71,13 +72,19 @@ class UsuarioService
 
     public function guardarRol(int $empresaId, array $datos)
     {
+        // Los roles creados por una empresa quedan ligados a ella (nunca de sistema).
+        $datos['empresa_id'] = $empresaId;
+
         return Rol::create($datos);
     }
 
-    public function actualizarRolPermisos(int $rolId, array $datos)
+    public function actualizarRolPermisos(int $empresaId, int $rolId, array $datos)
     {
-        $rol = Rol::findOrFail($rolId);
+        // Solo se pueden editar roles propios de la empresa: nunca roles de
+        // sistema (empresa_id null) ni de otra empresa.
+        $rol = Rol::where('empresa_id', $empresaId)->findOrFail($rolId);
         $rol->update($datos);
+
         return $rol;
     }
 }

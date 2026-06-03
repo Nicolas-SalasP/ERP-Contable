@@ -53,20 +53,36 @@ class WebProvisioningController
 
     public function syncPlan(Request $request): JsonResponse
     {
+        // SEGURIDAD MULTITENANT: el sync debe apuntar a un usuario concreto
+        // (tenri_user_id), no a todos los usuarios que comparten un plan_slug.
+        // Antes, sincronizar el plan de una empresa sobrescribia los module_keys
+        // de TODAS las empresas con el mismo plan (fuga entre tenants). El cambio
+        // de plan a nivel de empresa se hace por AdminEmpresasController::cambiarPlan.
         $data = $request->validate([
+            'tenri_user_id' => ['required', 'integer'],
             'plan_slug' => ['required', 'string'],
             'module_keys' => ['required', 'array'],
         ]);
 
         try {
             $updated = DB::table('usuarios')
-                ->where('plan_slug', $data['plan_slug'])
+                ->where('tenri_user_id', $data['tenri_user_id'])
                 ->update([
-                    'module_keys' => json_encode($data['module_keys']),
+                    'plan_slug' => $data['plan_slug'],
+                    'module_keys' => json_encode(array_values($data['module_keys'])),
                     'tenri_synced_at' => now(),
                 ]);
 
-            Log::info('WebProvisioning: plan sincronizado masivamente', [
+            if ($updated === 0) {
+                Log::warning('WebProvisioning: syncPlan sin usuario', [
+                    'tenri_user_id' => $data['tenri_user_id'],
+                    'plan_slug' => $data['plan_slug'],
+                ]);
+                return response()->json(['success' => false, 'message' => 'Usuario no encontrado en ERP.'], 404);
+            }
+
+            Log::info('WebProvisioning: plan sincronizado por usuario', [
+                'tenri_user_id' => $data['tenri_user_id'],
                 'plan_slug' => $data['plan_slug'],
                 'usuarios_updated' => $updated,
                 'module_count' => count($data['module_keys']),
@@ -74,13 +90,14 @@ class WebProvisioningController
 
             return response()->json([
                 'success' => true,
+                'tenri_user_id' => $data['tenri_user_id'],
                 'plan_slug' => $data['plan_slug'],
                 'usuarios_updated' => $updated,
             ]);
         } catch (Throwable $e) {
             Log::error('WebProvisioning: error en sync-plan', [
                 'error' => $e->getMessage(),
-                'plan_slug' => $data['plan_slug'],
+                'tenri_user_id' => $data['tenri_user_id'] ?? null,
             ]);
             return response()->json(['success' => false, 'message' => 'Error al sincronizar plan.'], 500);
         }

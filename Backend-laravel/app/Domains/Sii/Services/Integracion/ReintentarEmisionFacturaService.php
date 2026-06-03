@@ -9,25 +9,8 @@ use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Models\SiiEnvioDte;
 
 /**
- * F6.4 — Decide la accion de reintento segun el estado actual del DTE/envio
- * y la encola asincronamente. NO ejecuta nada sincronamente.
- *
- * Reglas (en orden):
- *   1. Factura sin DTE             -> redispatch del evento via F6.2.
- *   2. DTE en estado terminal      -> 422 RAZON_ESTADO_TERMINAL.
- *   3. DTE en BORRADOR             -> job reanudar_firma.
- *   4. DTE en FIRMADO              -> job reanudar_envio.
- *   5. DTE en ENVIADO_SII:
- *        a. ultimo envio en ERROR_TRANSPORTE/ERROR_TIMEOUT/ERROR_PERMANENTE
- *           -> job reanudar_envio (ERROR_PERMANENTE incluido como acto
- *              deliberado del operador: la decision manual sobreescribe la
- *              clasificacion automatica del job de polling).
- *        b. ultimo envio en PENDIENTE/ENVIANDO/ENVIADO -> 422 ya_en_proceso.
- *        c. sin envio asociado (estado inconsistente: deberia ser imposible
- *           tras EnvioSiiService, pero defendemos contra data corrupta) ->
- *           job reanudar_envio (el job se encarga de fallar limpio si
- *           realmente no puede enviar).
- *   6. Cualquier otro estado del DTE -> 422 dte_no_reintentable.
+ * Decide la accion de reintento segun el estado actual del DTE/envio y la
+ * encola asincronamente. NO ejecuta nada sincronamente.
  */
 class ReintentarEmisionFacturaService
 {
@@ -70,7 +53,7 @@ class ReintentarEmisionFacturaService
     ): string {
         $factura = $factura->fresh(['dteEmitido.envios']);
 
-        // 1) Sin DTE: pipeline completo via F6.2 (encola listener async).
+        // Sin DTE: pipeline completo via evento (encola listener async).
         if ($factura->sii_dte_emitido_id === null) {
             $this->emitirDesdeFactura->dispatch($factura, [], 'reintento', $usuarioId);
             return 'redispatch_evento';
@@ -79,12 +62,10 @@ class ReintentarEmisionFacturaService
         $dte       = $factura->dteEmitido;
         $estadoDte = $dte->estado;
 
-        // 2) Terminal: imposible reintentar.
         if (in_array($estadoDte, self::ESTADOS_TERMINALES_DTE, true)) {
             throw ReintentoNoAplicableException::estadoTerminal($factura->id, $estadoDte);
         }
 
-        // 3) Reanudar desde firma.
         if ($estadoDte === SiiDteEmitido::ESTADO_BORRADOR) {
             ReintentarEmisionDteJob::dispatch(
                 $dte->id,
@@ -95,7 +76,7 @@ class ReintentarEmisionFacturaService
             return 'reanudar_firma';
         }
 
-        // 4) Reanudar desde envio (DTE ya firmado, nunca enviado).
+        // DTE ya firmado, nunca enviado: reanudar desde envio.
         if ($estadoDte === SiiDteEmitido::ESTADO_FIRMADO) {
             ReintentarEmisionDteJob::dispatch(
                 $dte->id,
@@ -106,7 +87,6 @@ class ReintentarEmisionFacturaService
             return 'reanudar_envio';
         }
 
-        // 5) DTE en ENVIADO_SII: depende del ultimo envio.
         if ($estadoDte === SiiDteEmitido::ESTADO_ENVIADO_SII) {
             // envios() viene ordenado ASC por created_at; el ultimo es last().
             $ultimoEnvio = $dte->envios->last();
@@ -139,7 +119,6 @@ class ReintentarEmisionFacturaService
             );
         }
 
-        // 6) Cualquier otro estado (FOLIO_RESERVADO, XML_GENERADO, EN_PROCESO_SII).
         throw ReintentoNoAplicableException::dteNoReintentable($factura->id, $estadoDte);
     }
 }

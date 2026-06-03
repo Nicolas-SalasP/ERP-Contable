@@ -44,12 +44,6 @@ class MovimientoLoteInventario extends Model
         'costo_total' => 'decimal:4',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -79,12 +73,6 @@ class MovimientoLoteInventario extends Model
     {
         return $this->belongsTo(Bodega::class, 'bodega_destino_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
@@ -121,12 +109,6 @@ class MovimientoLoteInventario extends Model
             ->orderByDesc('created_at')
             ->orderByDesc('id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function esEntradaLote(): bool
     {

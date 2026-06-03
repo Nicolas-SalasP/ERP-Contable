@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Exception;
 
+/**
+ * @tags Proveedores
+ */
 class ProveedorController
 {
     protected $service;
@@ -16,6 +19,7 @@ class ProveedorController
         $this->service = $service;
     }
 
+    /** Lista paginada de proveedores de la empresa (?limit). */
     public function index(Request $request)
     {
         $limit = (int) $request->query('limit', 15);
@@ -32,6 +36,7 @@ class ProveedorController
         ]);
     }
 
+    /** Catalogo basico de proveedores (id + razon social) para selectores. */
     public function catalogo(Request $request)
     {
         return response()->json([
@@ -40,6 +45,7 @@ class ProveedorController
         ]);
     }
 
+    /** Crea un proveedor (genera codigo interno automatico). */
     public function store(Request $request)
     {
         try {
@@ -61,6 +67,7 @@ class ProveedorController
         }
     }
 
+    /** Ficha completa de un proveedor (datos + cuentas + anticipos). */
     public function ficha(Request $request, $id)
     {
         try {

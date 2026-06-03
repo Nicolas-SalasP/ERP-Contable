@@ -9,7 +9,6 @@ const Glosario = () => {
 
     return (
         <div className="max-w-[95rem] mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 animate-fade-in pb-20">
-            {/* Header */}
             <div className="mb-6">
                 <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
                     📚 Glosario del Sistema
@@ -19,7 +18,6 @@ const Glosario = () => {
                 </p>
             </div>
 
-            {/* Buscador */}
             <div className="mb-6">
                 <div className="relative max-w-2xl">
                     <input
@@ -43,7 +41,6 @@ const Glosario = () => {
                 </p>
             </div>
 
-            {/* Si hay uno seleccionado, mostrar detalle a pantalla completa */}
             {seleccionado ? (
                 <DetalleModulo modulo={seleccionado} onVolver={() => setSeleccionado(null)} />
             ) : (

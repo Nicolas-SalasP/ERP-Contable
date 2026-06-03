@@ -6,6 +6,7 @@ import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 
 import Login from './Modulos/Autenticacion/Login';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
+import SsoCallback from './Modulos/Autenticacion/SsoCallback';
 import Dashboard from './Modulos/Dashboard/Dashboard';
 import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
 import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
@@ -56,7 +57,10 @@ import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
 import Glosario from './Modulos/Glosario/Glosario';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const auth = useAuth();
+  if (!auth) return <div>Cargando...</div>;
+
+  const { isAuthenticated, loading, user } = auth;
 
   if (loading) return <div>Cargando...</div>;
 
@@ -130,6 +134,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/sso-callback" element={<SsoCallback />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
           <Route path="/crear-empresa" element={
             <RutaPrivada requireEmpresa={false}>
@@ -477,8 +482,7 @@ function App() {
               </RutaProtegidaAlgunPermiso>
             </RutaPrivada>
           } />
-          
-          {/* ── SII ──────────────────────────────────────────────── */}
+
           <Route path="/sii/configuracion" element={
             <RutaPrivada>
               <RutaProtegida permiso="sii.configuracion.ver">
