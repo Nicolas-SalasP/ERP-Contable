@@ -56,6 +56,14 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Onboarding de empresa: accesible a un usuario autenticado que AUN no tiene
+// empresa (recien provisionado). No se exige check.subscription porque es el
+// paso previo a configurar la empresa/plan.
+Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
+    Route::get('/empresas/verificar-rut', [EmpresaController::class, 'verificarRut']);
+    Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
+});
+
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription'])->group(function () {
     // Gestion de usuarios y roles.
     // La autorizacion se aplica en el controller por jerarquia de rol (invitar
