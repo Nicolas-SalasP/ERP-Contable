@@ -6,6 +6,7 @@ use App\Domains\Core\Models\EstadoSuscripcion;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\User;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class ProvisionUserService
 {
@@ -17,8 +18,26 @@ class ProvisionUserService
 
             $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
 
-            $user = User::where('email', $payload['email'])->first()
-                ?? User::where('tenri_user_id', $payload['tenri_user_id'])->first();
+            // Match determinista por la identidad estable de Tenri (tenri_user_id)
+            // y solo despues por email. Si el email ya pertenece a OTRA identidad
+            // Tenri, es una colision y NO se sobreescribe ese usuario (evita
+            // secuestrar la cuenta de un usuario de otra empresa).
+            $tenriUserId = $payload['tenri_user_id'] ?? null;
+            $user = $tenriUserId ? User::where('tenri_user_id', $tenriUserId)->first() : null;
+
+            if (!$user) {
+                $existentePorEmail = User::where('email', $payload['email'])->first();
+
+                if ($existentePorEmail) {
+                    if ($existentePorEmail->tenri_user_id !== null
+                        && (int) $existentePorEmail->tenri_user_id !== (int) $tenriUserId) {
+                        throw new RuntimeException(
+                            "El email {$payload['email']} ya esta asociado a otra cuenta Tenri."
+                        );
+                    }
+                    $user = $existentePorEmail;
+                }
+            }
 
             $attributes = [
                 'tenri_user_id' => $payload['tenri_user_id'],
