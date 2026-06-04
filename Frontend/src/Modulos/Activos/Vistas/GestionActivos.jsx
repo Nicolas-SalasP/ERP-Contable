@@ -27,12 +27,10 @@ const GestionActivos = () => {
     const [depreciando, setDepreciando] = useState(false);
     const [mesDepreciacion, setMesDepreciacion] = useState(new Date().toISOString().slice(0, 7));
 
-    // Estados para la Baja de Activos
     const [modalBajaAbierto, setModalBajaAbierto] = useState(false);
     const [activoABajar, setActivoABajar] = useState(null);
     const [motivoBaja, setMotivoBaja] = useState('');
 
-    // Estados para la Edicion de Activos
     const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
     const [activoEditando, setActivoEditando] = useState(null);
     const [formEditar, setFormEditar] = useState({ nombre: '', descripcion: '' });
@@ -78,7 +76,6 @@ const GestionActivos = () => {
         }
     };
 
-    // Funciones para Baja de Activo
     const abrirModalBaja = (activo) => {
         setActivoABajar(activo);
         setMotivoBaja('');
@@ -182,7 +179,6 @@ const GestionActivos = () => {
                 />
             ) : (
                 <div className="transition-all duration-300">
-                    {/* TAB: PENDIENTES */}
                     {tabActiva === 'PENDIENTES' && (
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <table className="w-full text-left border-collapse">
@@ -218,7 +214,6 @@ const GestionActivos = () => {
                         </div>
                     )}
 
-                    {/* TAB: ACTIVOS REGISTRADOS */}
                     {tabActiva === 'REGISTRADOS' && (
                         <div className="space-y-4">
                             <div className="flex justify-end items-center gap-3">
@@ -312,14 +307,12 @@ const GestionActivos = () => {
                         </div>
                     )}
 
-                    {/* TAB: PROYECTOS */}
                     {tabActiva === 'PROYECTOS' && (
                         <GestionProyectosActivos onNotificar={mostrarNotificacion} />
                     )}
                 </div>
             )}
 
-            {/* MODAL: CONFIRMACIÓN DE BAJA */}
             {modalBajaAbierto && activoABajar && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up border border-slate-200">
@@ -371,7 +364,6 @@ const GestionActivos = () => {
                 </div>
             )}
 
-            {/* MODAL EDITAR ACTIVO */}
             {modalEditarAbierto && activoEditando && (
                 <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">

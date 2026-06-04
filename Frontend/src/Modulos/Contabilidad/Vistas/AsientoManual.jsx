@@ -185,7 +185,6 @@ const AsientoManual = () => {
                         <span className="text-slate-400 text-xs font-bold bg-slate-800 px-3 py-1 rounded-full">{filas.length} líneas</span>
                     </div>
 
-                    {/* Quitamos el ancho forzado (min-w) y reducimos márgenes para compactar */}
                     <div className="overflow-x-auto">
                         {filas.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-40 text-slate-400">
@@ -221,7 +220,6 @@ const AsientoManual = () => {
                                             <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[120px]">{fila.centroCosto ? fila.centroCosto.label : '-'}</td>
                                             <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[120px]">{fila.empleado || '-'}</td>
                                             <td className="px-3 py-2 text-center flex justify-center gap-1.5">
-                                                {/* Reemplazamos FontAwesome por SVGs */}
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); editarFila(fila); }}
                                                     className="w-7 h-7 flex items-center justify-center rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100"

@@ -10,6 +10,35 @@ class WebAuthClient
 {
     public function validateLogin(string $email, string $password): ?array
     {
+        return $this->postValidacion('/api/internal/erp/validate-login', [
+            'email' => $email,
+            'password' => $password,
+        ], ['email' => $email]);
+    }
+
+    /**
+     * Valida un token SSO de un solo uso emitido por la web Tenri y devuelve
+     * los datos de provisionamiento del usuario (mismo contrato que validateLogin).
+     *
+     * Contrato esperado en la web: POST {base}/api/internal/erp/validate-sso-token
+     * con { sso_token } -> { success, user{...}, plan{...} }.
+     */
+    public function validateSsoToken(string $ssoToken): ?array
+    {
+        return $this->postValidacion('/api/internal/erp/validate-sso-token', [
+            'sso_token' => $ssoToken,
+        ], ['sso_token' => substr($ssoToken, 0, 6) . '…']);
+    }
+
+    /**
+     * Realiza el POST de validacion contra la web y normaliza la respuesta al
+     * contrato comun usado por el login y el SSO.
+     *
+     * @param  array  $payload    Cuerpo enviado a la web.
+     * @param  array  $logContext Datos no sensibles para los logs.
+     */
+    private function postValidacion(string $path, array $payload, array $logContext): ?array
+    {
         $baseUrl = config('services.tenri_web.base_url');
         $apiKey = config('services.tenri_web.api_key');
 
@@ -23,20 +52,17 @@ class WebAuthClient
                 'Accept' => 'application/json',
             ])
                 ->timeout(5)
-                ->post("{$baseUrl}/api/internal/erp/validate-login", [
-                    'email' => $email,
-                    'password' => $password,
-                ]);
+                ->post("{$baseUrl}{$path}", $payload);
 
             if ($response->status() === 401) {
                 return ['valid' => false];
             }
 
             if (!$response->successful()) {
-                Log::warning('WebAuthClient: respuesta inesperada del web', [
+                Log::warning('WebAuthClient: respuesta inesperada del web', array_merge([
                     'status' => $response->status(),
-                    'email' => $email,
-                ]);
+                    'path' => $path,
+                ], $logContext));
                 return null;
             }
 
@@ -55,12 +81,14 @@ class WebAuthClient
                 'plan_slug' => $data['plan']['plan_slug'] ?? null,
                 'module_keys' => $data['plan']['module_keys'] ?? [],
                 'rol_erp' => $data['plan']['rol_erp'] ?? 'Administrador',
+                'subscription_status' => $data['subscription']['status'] ?? 'active',
+                'subscription_ends_at' => $data['subscription']['ends_at'] ?? null,
             ];
         } catch (Throwable $e) {
-            Log::warning('WebAuthClient: error de red al validar login', [
+            Log::warning('WebAuthClient: error de red al validar contra la web', array_merge([
                 'error' => $e->getMessage(),
-                'email' => $email,
-            ]);
+                'path' => $path,
+            ], $logContext));
 
             return null;
         }

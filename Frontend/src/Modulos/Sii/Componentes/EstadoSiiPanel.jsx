@@ -42,9 +42,7 @@ function Fila({ etiqueta, valor, testid }) {
 }
 
 /**
- * F6.3 — Panel expandible con TODOS los detalles del estado SII de una factura.
- * F6.4 — Suma boton "Reintentar emision" + modal de confirmacion.
- *
+ * Panel expandible con los detalles del estado SII de una factura.
  * @param {{ facturaId: number }} props
  */
 export function EstadoSiiPanel({ facturaId }) {

@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Contextos/AuthContext';
 import { usePermisos } from './Contextos/Permisos';
 import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
+import ErrorBoundary from './Componentes/ErrorBoundary';
 
 import Login from './Modulos/Autenticacion/Login';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
+import SsoCallback from './Modulos/Autenticacion/SsoCallback';
 import Dashboard from './Modulos/Dashboard/Dashboard';
 import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
 import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
@@ -56,7 +58,10 @@ import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
 import Glosario from './Modulos/Glosario/Glosario';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const auth = useAuth();
+  if (!auth) return <div>Cargando...</div>;
+
+  const { isAuthenticated, loading, user } = auth;
 
   if (loading) return <div>Cargando...</div>;
 
@@ -126,10 +131,12 @@ const InventarioLayout = ({ children }) => (
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/sso-callback" element={<SsoCallback />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
           <Route path="/crear-empresa" element={
             <RutaPrivada requireEmpresa={false}>
@@ -477,8 +484,7 @@ function App() {
               </RutaProtegidaAlgunPermiso>
             </RutaPrivada>
           } />
-          
-          {/* ── SII ──────────────────────────────────────────────── */}
+
           <Route path="/sii/configuracion" element={
             <RutaPrivada>
               <RutaProtegida permiso="sii.configuracion.ver">
@@ -522,8 +528,9 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -59,12 +59,6 @@ class TomaFisicaInventario extends Model
         'fecha_cancelacion' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
@@ -99,12 +93,6 @@ class TomaFisicaInventario extends Model
     {
         return $this->hasMany(TomaFisicaDetalleInventario::class, 'toma_fisica_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder
     {
@@ -184,12 +172,6 @@ class TomaFisicaInventario extends Model
             ->orderByDesc('id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers estáticos
-    |--------------------------------------------------------------------------
-    */
-
     public static function estadosPermitidos(): array
     {
         return [
@@ -217,12 +199,6 @@ class TomaFisicaInventario extends Model
             self::ESTADO_CANCELADA,
         ];
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers de estado
-    |--------------------------------------------------------------------------
-    */
 
     public function estaBorrador(): bool
     {
@@ -282,12 +258,6 @@ class TomaFisicaInventario extends Model
         ], true);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers de tipo
-    |--------------------------------------------------------------------------
-    */
-
     public function esGeneral(): bool
     {
         return $this->tipo === self::TIPO_GENERAL;
@@ -310,12 +280,6 @@ class TomaFisicaInventario extends Model
             self::TIPO_CICLICA,
         ], true);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers de dominio
-    |--------------------------------------------------------------------------
-    */
 
     public function perteneceAEmpresa(int $empresaId): bool
     {

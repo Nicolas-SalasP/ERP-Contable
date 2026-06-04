@@ -2,10 +2,14 @@
 namespace App\Domains\Comercial\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Traits\HasEmpresaScope;
 
 class Cliente extends Model
 {
+    use SoftDeletes;
+    use HasEmpresaScope;
     use \App\Domains\Sii\Concerns\HasSiiAttributesCliente;
 
     protected $table = 'clientes';

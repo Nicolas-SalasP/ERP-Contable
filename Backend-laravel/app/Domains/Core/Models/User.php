@@ -25,6 +25,8 @@ class User extends Authenticatable
         'plan_slug',
         'module_keys',
         'tenri_synced_at',
+        'subscription_status',
+        'subscription_ends_at',
     ];
 
     protected $hidden = [
@@ -38,6 +40,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'module_keys' => 'array',
             'tenri_synced_at' => 'datetime',
+            'subscription_ends_at' => 'datetime',
         ];
     }
 

@@ -12,17 +12,14 @@ use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Rol;
 use App\Observers\EmpresaObserver;
 
-// CorreccionMonetaria
 use App\Domains\CorreccionMonetaria\Providers\IpcProviderInterface;
 use App\Domains\CorreccionMonetaria\Providers\ManualIpcProvider;
 use App\Domains\CorreccionMonetaria\Providers\IneApiIpcProvider;
 
-// SII
 use App\Domains\Sii\Services\Xml\DteXmlBuilder;
 use App\Domains\Sii\Services\Xml\DteXsdValidator;
 use App\Domains\Sii\Services\Xml\Ted\TedBuilder;
 
-// Inventario
 use App\Domains\Inventario\Events\LoteVencidoDetectado;
 use App\Domains\Inventario\Events\StockMinimoPerforado;
 use App\Domains\Inventario\Events\TomaFisicaConfirmada;

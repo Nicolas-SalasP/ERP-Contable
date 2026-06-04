@@ -16,19 +16,6 @@ use LogicException;
 
 /**
  * Construye el XML del DTE (bloque <DTE>) conforme al XSD oficial DTE_v10.xsd.
- *
- * - Encoding ISO-8859-1 (decision arquitectonica + Iso88591Helper).
- * - DOMDocument nativo (no SimpleXML, no Blade) para control total de
- *   namespaces, encoding y order de xs:sequence.
- * - Validacion XSD SIEMPRE al final del build() (decision arquitectonica).
- *
- * SOBRE EL TED:
- * El XSD oficial requiere DD + FRMT con estructura completa; un TED vacio
- * NO pasa validacion. Por eso esta clase produce un TED con datos reales
- * (RE, TD, F, FE, RR, RSR, MNT, IT1, TSTED) + CAF y firmas como
- * PLACEHOLDERS base64-validos que F4.2 reemplazara con el CAF real del
- * folio y las firmas SHA1+RSA reales. El XML resultante valida XSD pero
- * NO esta firmado criptograficamente todavia.
  */
 class DteXmlBuilder
 {
@@ -39,9 +26,7 @@ class DteXmlBuilder
     private const PLACEHOLDER_BASE64 = 'UExBQ0VIT0xERVJfRjRfMl9GSVJNQQ=='; // "PLACEHOLDER_F4_2_FIRMA"
 
     /**
-     * @param ?TedBuilder $tedBuilder requerido solo cuando se invoca build()
-     *        con un CAF (modo F4.2 firmado). Default null preserva la API de
-     *        F4.1 (TED placeholder estructural) y mantiene los tests previos.
+     * @param ?TedBuilder $tedBuilder requerido solo cuando se invoca build() con un CAF (TED firmado).
      */
     public function __construct(
         private readonly DteXsdValidator $validator,
@@ -50,11 +35,6 @@ class DteXmlBuilder
     }
 
     /**
-     * Construye el XML del DTE. Si $caf se provee, el TED se firma con
-     * RSA-SHA1 usando la clave privada del CAF (F4.2). Sin $caf, se genera
-     * un TED placeholder estructural valido contra XSD pero sin firma real
-     * (F4.1, util para debug).
-     *
      * @throws DteIncompletoException  precondiciones por tipo no satisfechas
      * @throws \App\Domains\Sii\Exceptions\DteXmlInvalidException si el XML no valida contra XSD
      * @throws LogicException si $caf provisto pero TedBuilder no inyectado
@@ -139,10 +119,6 @@ class DteXmlBuilder
         return $xml;
     }
 
-    // -----------------------------------------------------------------
-    // Precondiciones de negocio
-    // -----------------------------------------------------------------
-
     private function validarPrecondiciones(SiiDteEmitido $dte): void
     {
         if ($dte->detalles->isEmpty()) {
@@ -173,10 +149,6 @@ class DteXmlBuilder
             throw DteIncompletoException::campoFaltante('receptor_rut o receptor_razon_social');
         }
     }
-
-    // -----------------------------------------------------------------
-    // Encabezado
-    // -----------------------------------------------------------------
 
     private function buildEncabezado(DOMDocument $dom, SiiDteEmitido $dte): DOMElement
     {
@@ -347,10 +319,6 @@ class DteXmlBuilder
         return $tot;
     }
 
-    // -----------------------------------------------------------------
-    // Detalle
-    // -----------------------------------------------------------------
-
     private function buildDetalle(DOMDocument $dom, SiiDteEmitidoDetalle $det, int $linea): DOMElement
     {
         $d = $dom->createElement('Detalle');
@@ -438,10 +406,6 @@ class DteXmlBuilder
         return $dr;
     }
 
-    // -----------------------------------------------------------------
-    // TED — estructura completa con firmas placeholder (F4.2 reemplaza)
-    // -----------------------------------------------------------------
-
     private function buildTed(DOMDocument $dom, SiiDteEmitido $dte): DOMElement
     {
         $ted = $dom->createElement('TED');
@@ -508,10 +472,6 @@ class DteXmlBuilder
         return $caf;
     }
 
-    // -----------------------------------------------------------------
-    // ds:Signature placeholder (F4.3 reemplaza con firma RSA-SHA1 real)
-    // -----------------------------------------------------------------
-
     private function buildDsSignaturePlaceholder(DOMDocument $dom, SiiDteEmitido $dte): DOMElement
     {
         $sig = $dom->createElementNS(self::NS_DSIG, 'ds:Signature');
@@ -562,10 +522,6 @@ class DteXmlBuilder
 
         return $sig;
     }
-
-    // -----------------------------------------------------------------
-    // Helper de creacion de elemento con encoding correcto
-    // -----------------------------------------------------------------
 
     private function createSanitizedElement(DOMDocument $dom, string $tagName, string $rawValue, ?int $maxLength = null): DOMElement
     {

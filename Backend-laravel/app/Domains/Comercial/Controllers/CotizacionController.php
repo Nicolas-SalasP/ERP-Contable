@@ -10,6 +10,9 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\ValidationException;
 use Exception;
 
+/**
+ * @tags Cotizaciones
+ */
 class CotizacionController
 {
     protected $service;

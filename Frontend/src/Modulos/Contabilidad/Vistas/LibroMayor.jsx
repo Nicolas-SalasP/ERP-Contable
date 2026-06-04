@@ -26,6 +26,9 @@ const LibroMayor = () => {
     const [asientos, setAsientos] = useState([]);
     const [planCuentas, setPlanCuentas] = useState([]);
     const [loading, setLoading] = useState(false);
+    // Versiona las cargas del libro diario para descartar respuestas fuera de orden
+    // (una respuesta lenta de un filtro viejo no debe pisar la del filtro actual).
+    const peticionDiarioRef = useRef(0);
     const cuentaGuardada = localStorage.getItem('ultimaCuentaLibroDiario') || '';
 
     const [filtros, setFiltros] = useState({
@@ -102,6 +105,7 @@ const LibroMayor = () => {
         }
 
         setLoading(true);
+        const reqId = ++peticionDiarioRef.current;
         try {
             const cuentaAEnviar = filtros.cuenta || (busquedaCuenta.match(/^\d+/) ? busquedaCuenta : '');
             const params = {
@@ -113,6 +117,9 @@ const LibroMayor = () => {
             };
             const query = new URLSearchParams(params).toString();
             const res = await api.get(`/contabilidad/libro-diario?${query}`);
+
+            // Descarta esta respuesta si ya se disparo una carga mas reciente.
+            if (reqId !== peticionDiarioRef.current) return;
 
             if (res.success) {
                 let datosAplanados = [];
@@ -169,9 +176,10 @@ const LibroMayor = () => {
             }
         } catch (error) {
             logger.error("Error cargando diario", error);
-            setAsientos([]);
+            if (reqId === peticionDiarioRef.current) setAsientos([]);
         } finally {
-            setLoading(false);
+            // Solo la peticion mas reciente controla el estado de carga.
+            if (reqId === peticionDiarioRef.current) setLoading(false);
         }
     };
 
@@ -222,7 +230,7 @@ const LibroMayor = () => {
             "Código Cuenta": fila.cuenta_codigo,
             "Nombre Cuenta": fila.cuenta_nombre,
             "Glosa": fila.glosa,
-            "Estado": fila.estado, // Agregado para auditoría en excel
+            "Estado": fila.estado,
             "Debe": parseFloat(fila.debe) || 0,
             "Haber": parseFloat(fila.haber) || 0
         }));
@@ -370,7 +378,6 @@ const LibroMayor = () => {
                 </div>
             )}
 
-            {/* TABLA DE MOVIMIENTOS */}
             {activeTab === 'diario' && (
                 <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden z-10 relative">
                     <div className="overflow-x-auto">
@@ -421,7 +428,6 @@ const LibroMayor = () => {
                 </div>
             )}
 
-            {/* VISTA 3: VISOR DE COMPROBANTE */}
             {activeTab === 'visor' && asientoSeleccionado && (
                 <div className="space-y-6 animate-fade-in-up">
                     <button

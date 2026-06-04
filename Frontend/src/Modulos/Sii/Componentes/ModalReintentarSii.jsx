@@ -4,21 +4,7 @@ import siiApi from '../Servicios/siiApi';
 const RAZON_MAX = 200;
 
 /**
- * F6.4 — Modal de confirmacion para reintentar emision al SII.
- *
- * Props:
- *   - abierto         : boolean
- *   - facturaId       : number
- *   - resumenEstado   : { estado?: string, ultimo_envio_estado?: string }
- *                       Solo informativo, mostrar contexto al operador.
- *   - onCerrar        : () => void
- *   - onReintentoExitoso : (respuesta) => void   - Padre invoca recargar().
- *
- * Comportamiento:
- *   - Submit invoca siiApi.facturas.reintentar({ razon }).
- *   - 202: cierra modal + dispara onReintentoExitoso(respuesta).
- *   - 422: muestra mensaje inline (no cierra).
- *   - Otros errores: muestra mensaje inline generico.
+ * Modal de confirmacion para reintentar emision al SII.
  */
 export function ModalReintentarSii({
     abierto,

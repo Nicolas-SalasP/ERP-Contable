@@ -14,18 +14,8 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * F5.1 — Orquesta el flujo completo de autenticacion con el WS SII y persiste
- * la sesion en sii_token_sesion. Reutiliza tokens activos para minimizar
- * autenticaciones contra el SII.
- *
- * Flujo:
- *   1. obtenerSesionActiva() busca sesion vigente (empresa+ambiente, no expirada).
- *      Si existe -> registrarUso() e incrementa contador, retorna.
- *   2. Si no, generarSesionNueva() ejecuta el flujo completo:
- *      a. SiiSeedService::obtener() -> semilla del SII.
- *      b. SiiSeedSigner::firmar() -> XML firmado con cert empresa.
- *      c. POST a getToken con el XML firmado -> extrae <TOKEN>.
- *      d. Persiste sesion con TTL conservador (50 min vs ~60 min real).
+ * Orquesta la autenticacion con el WS SII y persiste la sesion en sii_token_sesion.
+ * Reutiliza tokens activos para minimizar autenticaciones contra el SII.
  */
 class SiiTokenService
 {
@@ -80,17 +70,13 @@ class SiiTokenService
 
         $ambiente = $empresa->ambiente_sii;
 
-        // a) Semilla.
         $semilla = $this->seedService->obtener($ambiente);
 
-        // b) Firmar.
         $xmlFirmado       = $this->seedSigner->firmar($semilla, $empresa);
         $hashFirmaSemilla = hash('sha256', $xmlFirmado);
 
-        // c) POST al endpoint getToken.
         $token = $this->postGetToken($xmlFirmado, $ambiente);
 
-        // d) Persistir.
         $sesion = SiiTokenSesion::create([
             'empresa_id'         => $empresa->id,
             'ambiente'           => $ambiente,

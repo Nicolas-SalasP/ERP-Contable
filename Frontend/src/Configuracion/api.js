@@ -1,9 +1,5 @@
 import Swal from 'sweetalert2';
 
-// =====================================================================
-// CONFIGURACION
-// =====================================================================
-
 const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 
@@ -20,10 +16,6 @@ const globalConfig = {
     showErrorToast: true,
     timeoutMs: DEFAULT_TIMEOUT_MS,
 };
-
-// =====================================================================
-// AUTH / TOKEN
-// =====================================================================
 
 const getToken = () => {
     if (typeof window === 'undefined') return null;
@@ -54,10 +46,6 @@ const clearAuth = () => {
     });
 };
 
-// =====================================================================
-// QUERY STRING BUILDER
-// =====================================================================
-
 const buildQuery = (params = {}) => {
     if (!params || typeof params !== 'object') return '';
 
@@ -75,10 +63,6 @@ const buildQuery = (params = {}) => {
     const query = usp.toString();
     return query ? `?${query}` : '';
 };
-
-// =====================================================================
-// CONSTRUCCION DEL ERROR NORMALIZADO
-// =====================================================================
 
 const inferErrorCode = (status, payload) => {
     if (payload?.error_code) return payload.error_code;
@@ -166,16 +150,13 @@ const buildError = (status, payload, statusText = '') => {
         message,
         errors,
         raw: payload,
+        // Shape compatible con axios; 'message' es el mejor mensaje computado, no uno generico.
         response: {
             status,
-            data: payload || { message },
+            data: { ...(payload || {}), message },
         },
     };
 };
-
-// =====================================================================
-// TOAST GLOBAL (Swal)
-// =====================================================================
 
 const titleForError = (error) => {
     switch (error.code) {
@@ -202,10 +183,6 @@ const showErrorToast = (error) => {
         confirmButtonText: 'Entendido',
     });
 };
-
-// =====================================================================
-// CORE: REQUEST CON RETRY + TIMEOUT
-// =====================================================================
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -267,10 +244,6 @@ const handle401 = () => {
         window.location.href = '/login';
     }
 };
-
-// =====================================================================
-// REFRESH TOKEN
-// =====================================================================
 
 const REFRESH_THRESHOLD_MS = 90 * 60 * 1000; // 90 minutos
 const ISSUED_AT_KEY = 'erp_token_issued_at';
@@ -380,48 +353,19 @@ const ensureTokenFresh = async () => {
     }
 };
 
-// =====================================================================
-// MULTI-TAB SYNC (sin window.localStorage event como sessionStorage,
-// pero localStorage si dispara storage events entre tabs)
-// =====================================================================
-//
-// Si la app esta abierta en 2 tabs y una hace refresh:
-// - El token nuevo se guarda en storage (local o session segun "Recordarme")
-// - Si es localStorage: la otra tab recibe automaticamente el cambio via
-//   el evento 'storage' del browser (nativo, no requiere libreria)
-// - Si es sessionStorage: cada tab tiene su propio sessionStorage, asi
-//   que no hay sync automatico. Cada tab refresca por su cuenta cuando
-//   le toque. Sin race condition porque el backend acepta refrescos
-//   sucesivos (cada uno revoca el anterior).
-//
-// Aca implementamos UN listener basico para localStorage que:
-// 1. Detecta cuando otra tab cambio erp_token (login/refresh/logout)
-// 2. Limpia el refreshInFlight si esta en curso (la otra tab ya lo hizo)
-// 3. Si erp_token quedo null (logout en otra tab), aca tambien hace logout
-//
-// Para sessionStorage no hay sync porque cada tab tiene la suya. Eso
-// es comportamiento esperado: 2 tabs sin "Recordarme" son sesiones
-// independientes desde el punto de vista del browser.
-
+// Multi-tab sync: localStorage dispara 'storage' events entre tabs (sessionStorage no).
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('storage', (event) => {
-        // Solo nos interesan cambios en las claves de auth
         if (event.key !== 'erp_token' && event.key !== 'erp_token_issued_at') {
             return;
         }
 
-        // Si el token cambio (otra tab hizo refresh o login), descartamos
-        // cualquier refresh en flight aca - el resultado de la otra tab
-        // ya esta guardado y es lo que vamos a usar.
         if (event.key === 'erp_token') {
+            // Otra tab cambio el token: descartamos cualquier refresh en flight aca.
             refreshInFlight = null;
 
-            // Si erp_token quedo en null (otra tab hizo logout), hacemos
-            // logout aca tambien para mantener consistencia.
-            // event.newValue es null cuando se ejecuto removeItem en otra tab.
+            // event.newValue es null cuando otra tab ejecuto removeItem (logout).
             if (event.newValue === null && window.location.pathname !== '/login') {
-                // No llamamos handle401 directamente porque eso intenta hacer
-                // cleanup que ya hizo la otra tab. Solo redirigimos.
                 clearAuth();
                 window.location.href = '/login';
             }
@@ -429,10 +373,37 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     });
 }
 
+const esSuscripcionSoloLectura = () => {
+    try {
+        const raw = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_user'))
+            || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('erp_user'));
+        const user = raw ? JSON.parse(raw) : null;
+        return ['read_only', 'expired'].includes(user?.subscription_status);
+    } catch {
+        return false;
+    }
+};
+
 const request = async (endpoint, method, body, options = {}) => {
     const esEndpointAuth = endpoint.startsWith('/auth/');
     if (!esEndpointAuth) {
         await ensureTokenFresh();
+    }
+
+    // Guard de solo-lectura: el backend es la garantia; esto evita el viaje de red
+    // y avisa al usuario cuando su suscripcion esta vencida o en solo lectura.
+    const esEscritura = ['POST', 'PUT', 'PATCH', 'DELETE'].includes((method || '').toUpperCase());
+    if (esEscritura && !esEndpointAuth && esSuscripcionSoloLectura()) {
+        if (typeof window !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Plan vencido',
+                text: 'Tu suscripción está vencida. Solo puedes consultar información.',
+                confirmButtonColor: '#0f172a',
+                confirmButtonText: 'Entendido',
+            });
+        }
+        return Promise.reject(buildError(403, { error_code: 'SUBSCRIPTION_READONLY', message: 'Suscripción en solo lectura.' }));
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
@@ -483,9 +454,7 @@ const request = async (endpoint, method, body, options = {}) => {
         if (response.ok) {
             const data = await parseBody(response);
 
-            // Contrato API enterprise: si el backend responde HTTP 200/201
-            // pero marca success:false, el frontend debe tratarlo como error
-            // funcional y no como exito silencioso.
+            // HTTP 200/201 con success:false se trata como error funcional, no exito silencioso.
             if (data && typeof data === 'object' && data.success === false) {
                 lastError = buildError(response.status, data, response.statusText);
                 break;
@@ -513,10 +482,6 @@ const request = async (endpoint, method, body, options = {}) => {
     if (!silent) showErrorToast(lastError);
     return Promise.reject(lastError);
 };
-
-// =====================================================================
-// DESCARGAS BINARIAS (BLOB)
-// =====================================================================
 
 const downloadBlob = async (endpoint, filename, options = {}) => {
     const esEndpointAuth = endpoint.startsWith('/auth/');
@@ -569,10 +534,6 @@ const downloadBlob = async (endpoint, filename, options = {}) => {
         return Promise.reject(error);
     }
 };
-
-// =====================================================================
-// API PUBLICA
-// =====================================================================
 
 export const api = {
     defaults: {
@@ -636,6 +597,9 @@ export const api = {
         async login(credentials) {
             return await request('/auth/login', 'POST', credentials);
         },
+        async tokenLogin(ssoToken) {
+            return await request('/auth/token-login', 'POST', { sso_token: ssoToken });
+        },
         register(data) {
             return request('/auth/register', 'POST', data);
         },
@@ -643,9 +607,12 @@ export const api = {
             const redirect = options.redirect !== false;
             const token = getToken();
 
-            // Limpiamos localmente antes de esperar red: el logout de UI debe
-            // sentirse inmediato e idempotente aunque el token ya este vencido.
+            // Limpiamos localmente antes de esperar red para que el logout sea inmediato e idempotente.
             clearAuth();
+
+            // Timeout para que la revocacion en backend no cuelgue la UI si la red no responde.
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
 
             try {
                 if (token) {
@@ -655,13 +622,13 @@ export const api = {
                             Accept: 'application/json',
                             Authorization: `Bearer ${token}`,
                         },
+                        signal: controller ? controller.signal : undefined,
                     });
                 }
             } catch {
-                // No bloquea el logout local. El backend limpiara tokens validos
-                // cuando reciba la peticion; si falla la red, la sesion local ya
-                // queda cerrada.
+                // No bloquea el logout local: la sesion local ya quedo cerrada.
             } finally {
+                if (timeoutId) clearTimeout(timeoutId);
                 if (redirect && typeof window !== 'undefined') {
                     window.location.href = '/login';
                 }

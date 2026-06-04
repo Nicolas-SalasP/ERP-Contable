@@ -69,7 +69,7 @@ const siiApi = {
 
     certificado: {
         /** @returns {Promise<CertificadoActivo>} */
-        obtener: () => api.get('/sii/certificado'),
+        obtener: () => api.get('/sii/certificado', { silent: true }),
 
         /**
          * @param {File} archivo - .pfx o .p12
@@ -95,29 +95,19 @@ const siiApi = {
 
     facturas: {
         /**
-         * F6.3 - Listado paginado de facturas con estado SII basico.
+         * Listado paginado de facturas con estado SII basico.
          * @param {{ por_pagina?: number, pagina?: number }} params
          */
         listar: (params = {}) => api.get('/sii/facturas', { params }),
 
-        /**
-         * F6.3 - Payload liviano para polling de estado.
-         * Shape data: { factura_id, tiene_dte, dte_id?, estado?, estado_glosa_humana?,
-         *   es_terminal, es_pollable, tipo_dte?, folio?, track_id?, fecha_emision?,
-         *   fecha_envio_sii?, ambiente?, glosa_sii?, ultimo_evento? }
-         */
+        /** Payload liviano para polling de estado. */
         obtenerEstado: (facturaId) => api.get(`/sii/facturas/${facturaId}/estado`),
 
-        /** F6.3 - Vista completa: cliente, detalles, DTE con eventos+envios. */
+        /** Vista completa: cliente, detalles, DTE con eventos+envios. */
         obtener: (facturaId) => api.get(`/sii/facturas/${facturaId}`),
 
         /**
-         * F6.4 - Reintento manual de emision. Encola job async; el endpoint
-         * responde 202 con { factura_id, accion_encolada, mensaje }.
-         *
-         * En caso de 422 (estado no reintentable), el cliente recibe
-         * payload { error: { razon, mensaje, estado_actual } }.
-         *
+         * Reintento manual de emision (encola job async, responde 202).
          * @param {number} facturaId
          * @param {{ razon?: string }} payload  razon opcional, max 200 chars.
          */

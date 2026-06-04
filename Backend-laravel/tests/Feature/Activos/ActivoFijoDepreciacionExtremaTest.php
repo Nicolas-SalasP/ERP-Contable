@@ -24,9 +24,6 @@ class ActivoFijoDepreciacionExtremaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Fecha fija a mitad de mes para evitar overflow de Carbon en subMonths()
-        // en ejecuciones realizadas en días 29/30/31.
         Carbon::setTestNow(Carbon::create(2026, 5, 15, 12, 0, 0));
 
         $this->prepararEntornoBase();

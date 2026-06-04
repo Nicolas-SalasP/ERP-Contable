@@ -16,9 +16,9 @@ const CertificadoSii = () => {
             const data = await siiApi.certificado.obtener();
             setCertificado(data);
         } catch (e) {
-            // 404 = no hay cert activo; otros ya los manejo api.js (Swal).
-            if (e && e.status === 404) {
-                setCertificado(null);
+            setCertificado(null);
+            if (e && e.status !== 404) {
+                Swal.fire({ icon: 'error', title: 'Error', text: e?.message || 'No se pudo cargar el certificado.' });
             }
         } finally {
             setCargando(false);

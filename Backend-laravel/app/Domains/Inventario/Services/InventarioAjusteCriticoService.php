@@ -26,12 +26,6 @@ class InventarioAjusteCriticoService
     ) {
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Consultas
-    |--------------------------------------------------------------------------
-    */
-
     public function listarTiposAjusteCritico(User $usuario): Collection
     {
         $this->permisos->exigir($usuario, 'inventario.ajustes_criticos.ver');
@@ -101,19 +95,6 @@ class InventarioAjusteCriticoService
 
         return $ajuste;
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Registro
-    |--------------------------------------------------------------------------
-    |
-    | Inventario NO emite, gestiona ni prepara DTE.
-    | No se usan codigo_dte, codigo_sii, folio_dte, xml_dte ni lógica SII.
-    |
-    | El movimiento real se delega a InventarioMovimientoService para mantener
-    | Kardex, stock, lockForUpdate() y valorización PMP consistentes.
-    |
-    */
 
     public function registrarAjusteCritico(User $usuario, array $datos): AjusteCriticoInventario
     {
@@ -265,12 +246,6 @@ class InventarioAjusteCriticoService
         });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Preparación de movimiento
-    |--------------------------------------------------------------------------
-    */
-
     private function prepararDatosMovimiento(
         TipoAjusteCritico $tipo,
         Producto $producto,
@@ -359,12 +334,6 @@ class InventarioAjusteCriticoService
         ));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Obtención de entidades
-    |--------------------------------------------------------------------------
-    */
-
     private function obtenerTipoAjusteCriticoActivo(int $tipoAjusteCriticoId): TipoAjusteCritico
     {
         $tipo = TipoAjusteCritico::query()
@@ -429,12 +398,6 @@ class InventarioAjusteCriticoService
 
         return $bodega;
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validaciones de negocio
-    |--------------------------------------------------------------------------
-    */
 
     private function validarProductoPermiteTipoCritico(
         Producto $producto,

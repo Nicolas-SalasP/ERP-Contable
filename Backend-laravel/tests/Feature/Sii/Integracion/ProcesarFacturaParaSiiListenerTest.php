@@ -115,7 +115,12 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
     public function test_listener_idempotente_skip_si_factura_ya_tiene_dte_asociado(): void
     {
         $e = $this->escenarioFacturaEmisible();
-        $dteExistente = SiiDteEmitido::factory()->create(['empresa_id' => $e['empresa']->id]);
+        // DTE ya ENVIADO al SII: el listener debe hacer skip (no reprocesar).
+        // (Un DTE en BORRADOR/FIRMADO ahora SE REANUDA en vez de saltarse.)
+        $dteExistente = SiiDteEmitido::factory()->create([
+            'empresa_id' => $e['empresa']->id,
+            'estado' => SiiDteEmitido::ESTADO_ENVIADO_SII,
+        ]);
         $e['factura']->update(['sii_dte_emitido_id' => $dteExistente->id]);
 
         $handler = new TestHandler();

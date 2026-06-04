@@ -9,15 +9,10 @@ use DOMDocument;
 use LogicException;
 
 /**
- * Construye <EnvioDTE version="1.0"><SetDTE ID="SetDocDTE"><Caratula/><DTE>...
- * agrupando uno o mas DTE ya firmados (XMLs producidos por DteSigner).
+ * Construye <EnvioDTE><SetDTE><Caratula/><DTE>... agrupando uno o mas DTE ya
+ * firmados. La <ds:Signature> sobre SetDTE la inserta SetDteSigner despues.
  *
- * El SetDTE generado NO incluye aun la <ds:Signature> sobre SetDTE — esa la
- * inserta SetDteSigner como paso posterior.
- *
- * Validacion: todos los DTE deben tener el mismo emisor_rut. Receptor variable
- * permitido (en cert se aceptan sets multireceptor; en prod la regla la valida
- * el SII, no nosotros).
+ * Todos los DTE deben tener el mismo emisor_rut; receptor variable permitido.
  */
 class SetDteBuilder
 {

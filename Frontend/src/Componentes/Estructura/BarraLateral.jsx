@@ -6,7 +6,7 @@ import { usePermisos } from '../../Contextos/Permisos';
 const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) => {
     const location = useLocation();
     const { user, logout } = useAuth();
-    const { tieneAlgunPermiso } = usePermisos();
+    const { tieneAlgunPermiso, tieneModulo } = usePermisos();
     const [openMenu, setOpenMenu] = useState('');
 
     const menuGroups = [
@@ -289,7 +289,9 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
     };
 
     const subItemVisible = (subItem) => {
-        return !subItem.permisosRequeridos || tieneAlgunPermiso(subItem.permisosRequeridos);
+        const permisoOk = !subItem.permisosRequeridos || tieneAlgunPermiso(subItem.permisosRequeridos);
+        const moduloOk = !subItem.moduloRequerido || tieneModulo(subItem.moduloRequerido);
+        return permisoOk && moduloOk;
     };
 
     const visibleSubItems = (group) => {
@@ -298,8 +300,9 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
 
     const canShowGroup = (group) => {
         const hasParentPermission = !group.permisosRequeridos || tieneAlgunPermiso(group.permisosRequeridos);
+        const hasParentModulo = !group.moduloRequerido || tieneModulo(group.moduloRequerido);
 
-        if (!hasParentPermission) return false;
+        if (!hasParentPermission || !hasParentModulo) return false;
         if (!group.subItems) return true;
 
         return visibleSubItems(group).length > 0;
@@ -348,7 +351,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                     </h1>
                 </div>
 
-                {/* NAVEGACIÓN SCROLLABLE */}
                 <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto custom-scrollbar pb-6">
                     {menuGroups
                         .filter(canShowGroup)
@@ -359,7 +361,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
 
                             return (
                                 <div key={group.id} className="mb-1">
-                                    {/* BOTÓN DEL GRUPO O ENLACE DIRECTO */}
                                     {group.subItems ? (
                                         <button
                                             type="button"
@@ -395,7 +396,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                                         </Link>
                                     )}
 
-                                    {/* SUBMENÚ DESPLEGABLE */}
                                     {group.subItems && (
                                         <div
                                             id={`menu-${group.id}`}
@@ -425,7 +425,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                         })}
                 </nav>
 
-                {/* PERFIL DE USUARIO ANCLADO ABAJO */}
                 <div className="p-4 border-t border-slate-800/50 bg-slate-950 shrink-0">
                     <div className="flex items-center justify-between gap-2">
                         <Link
@@ -445,7 +444,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                             </div>
                         </Link>
 
-                        {/* BOTÓN CERRAR SESIÓN CON SVG NATIVO */}
                         <button
                             onClick={logout}
                             className="text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 h-10 w-10 flex items-center justify-center rounded-lg transition-all"

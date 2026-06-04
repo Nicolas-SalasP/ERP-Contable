@@ -8,6 +8,9 @@ use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Exception;
 
+/**
+ * @tags Clientes
+ */
 class ClienteController
 {
     protected $service;
@@ -17,6 +20,7 @@ class ClienteController
         $this->service = $service;
     }
 
+    /** Lista los clientes de la empresa autenticada (filtrable por ?search). */
     public function index(Request $request)
     {
         return response()->json([
@@ -25,6 +29,7 @@ class ClienteController
         ]);
     }
 
+    /** Muestra el detalle de un cliente por id (scope empresa). */
     public function show(Request $request, $id)
     {
         try {
@@ -50,6 +55,7 @@ class ClienteController
         }
     }
 
+    /** Crea un cliente para la empresa autenticada. */
     public function store(Request $request)
     {
         try {
@@ -90,6 +96,7 @@ class ClienteController
         }
     }
 
+    /** Actualiza los datos de un cliente (RUT unico por empresa). */
     public function update(Request $request, $id)
     {
         try {
@@ -153,12 +160,14 @@ class ClienteController
         }
     }
 
+    /** Inactiva (borrado logico) un cliente. */
     public function destroy(Request $request, $id)
     {
         $this->service->inactivarCliente($request->user()->empresa_id, $id);
         return response()->json(['success' => true]);
     }
 
+    /** Marca un cliente como activo. */
     public function activar(Request $request, $id)
     {
         try {
@@ -169,6 +178,7 @@ class ClienteController
         }
     }
 
+    /** Reactiva un cliente previamente inactivo. */
     public function reactivar(Request $request, $id)
     {
         try {

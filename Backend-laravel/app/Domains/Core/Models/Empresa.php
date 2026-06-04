@@ -17,8 +17,13 @@ class Empresa extends Model
         'telefono', 
         'logo_path', 
         'color_primario', 
-        'regimen_tributario', 
+        'regimen_tributario',
         'tasa_impuesto',
+        'activa',
+    ];
+
+    protected $casts = [
+        'activa' => 'boolean',
     ];
 
     public function usuarios()

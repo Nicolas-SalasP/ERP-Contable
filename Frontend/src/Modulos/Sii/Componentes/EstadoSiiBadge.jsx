@@ -17,10 +17,7 @@ const ESTILO_POR_ESTADO = {
 };
 
 /**
- * F6.3 — Badge inline que muestra el estado SII de una factura, con polling
- * automatico via useEstadoSii. Reusable desde cualquier vista (listados,
- * detalles, modales).
- *
+ * Badge inline que muestra el estado SII de una factura.
  * @param {{ facturaId: number }} props
  */
 export function EstadoSiiBadge({ facturaId }) {

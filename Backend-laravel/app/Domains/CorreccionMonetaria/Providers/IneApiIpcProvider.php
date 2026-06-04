@@ -52,47 +52,6 @@ class IneApiIpcProvider implements IpcProviderInterface
 
     private function consultarApiIne(int $anio, int $mes): ?array
     {
-        /*
-        $cacheKey = "ine_api_ipc_{$anio}_{$mes}";
-
-        return Cache::remember($cacheKey, 86400, function () use ($anio, $mes) {
-            try {
-                $response = Http::withHeaders([
-                    'Authorization' => "Bearer {$this->apiKey}",
-                    'Accept'        => 'application/json',
-                ])
-                ->timeout($this->timeoutSeconds)
-                ->get("{$this->baseUrl}/variacion-mensual/{$anio}/{$mes}");
-
-                if ($response->successful()) {
-                    $data = $response->json();
-                    // La estructura exacta depende de la API del INE.
-                    // Adaptar según documentación cuando se implemente.
-                    return [
-                        'variacion'  => (float) ($data['variacion'] ?? $data['value'] ?? 0),
-                        'url'        => $response->effectiveUri(),
-                        'raw'        => $data,
-                    ];
-                }
-
-                Log::warning("IneApiIpcProvider: respuesta no exitosa", [
-                    'status' => $response->status(),
-                    'anio'   => $anio,
-                    'mes'    => $mes,
-                ]);
-                return null;
-
-            } catch (\Exception $e) {
-                Log::error("IneApiIpcProvider: error consultando API", [
-                    'error' => $e->getMessage(),
-                    'anio'  => $anio,
-                    'mes'   => $mes,
-                ]);
-                return null;
-            }
-        });
-        */
-
         return null;
     }
 

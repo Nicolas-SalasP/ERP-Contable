@@ -5,8 +5,7 @@ const FilaItemCotizacion = ({ index, item, onChange, onRemove }) => {
 
     return (
         <div className="flex gap-6 items-start bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative group transition-all hover:border-emerald-200 hover:shadow-md">
-            
-            {/* Título y Descripción */}
+
             <div className="flex flex-col flex-1 gap-4">
                 <div className="relative">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Producto o Servicio</label>
@@ -30,7 +29,6 @@ const FilaItemCotizacion = ({ index, item, onChange, onRemove }) => {
                 </div>
             </div>
 
-            {/* Cantidad */}
             <div className="w-24">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 text-center">Cantidad</label>
                 <input
@@ -44,7 +42,6 @@ const FilaItemCotizacion = ({ index, item, onChange, onRemove }) => {
                 />
             </div>
 
-            {/* Precio Unitario */}
             <div className="w-40">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 text-right mr-1">Precio Unitario</label>
                 <div className="relative">
@@ -61,7 +58,6 @@ const FilaItemCotizacion = ({ index, item, onChange, onRemove }) => {
                 </div>
             </div>
 
-            {/* Subtotal de Línea */}
             <div className="w-36 text-right pt-8">
                 <span className="text-[10px] block font-bold text-slate-300 uppercase mb-1">Subtotal Item</span>
                 <span className="block font-black text-slate-900 text-xl tracking-tighter">
@@ -69,7 +65,6 @@ const FilaItemCotizacion = ({ index, item, onChange, onRemove }) => {
                 </span>
             </div>
 
-            {/* Botón Eliminar */}
             <button
                 type="button"
                 onClick={() => onRemove(index)}

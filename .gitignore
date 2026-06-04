@@ -53,10 +53,10 @@ Thumbs.db
 
 # Metadatos locales del IDE Claude Code
 .claude/
+CLAUDE.md
 .rnd
 
 # Entornos E2E locales
 Frontend/.env.e2e
 Frontend/.env.e2e.local
 !Frontend/.env.e2e.example
-

@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Exception;
 
+/**
+ * @tags Anticipos a proveedores
+ */
 class AnticipoProveedorController extends Controller
 {
     protected $service;

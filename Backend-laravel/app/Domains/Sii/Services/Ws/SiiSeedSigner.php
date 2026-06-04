@@ -8,15 +8,10 @@ use App\Domains\Sii\Services\Xml\XmlDsigSigner;
 use DOMDocument;
 
 /**
- * F5.1 — Construye y firma el XML <getToken><item><Semilla>X</Semilla></item></getToken>
- * que se envia al WS GetTokenFromSeed del SII.
+ * Construye y firma el XML <getToken> que se envia al WS GetTokenFromSeed del SII.
  *
  * El SII espera firma XMLDSig SHA1+RSA+C14N1.0+enveloped con Reference URI=""
- * (firma del documento completo). La Signature queda como ultimo hijo de
- * <getToken>, hermana de <item>.
- *
- * El cert + clave privada vienen del CertificadoService activo de la empresa
- * (mismo cert usado para firmar Documento y SetDTE en F4.3).
+ * (firma del documento completo).
  */
 class SiiSeedSigner
 {

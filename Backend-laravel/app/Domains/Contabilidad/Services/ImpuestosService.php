@@ -3,19 +3,74 @@
 namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Sii\Models\SiiDteEmitido;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class ImpuestosService
 {
+    /**
+     * Resumen de ventas afectas reales de un periodo para fines tributarios.
+     *
+     * Fuente: documentos tributarios electronicos efectivamente emitidos
+     * (sii_dte_emitido), NO cotizaciones. Una cotizacion es solo una oferta y
+     * NO constituye una venta ni genera IVA debito; usarla inflaba el F29 y la
+     * base de renta. Suma facturas/boletas/notas de debito y RESTA notas de
+     * credito; excluye borradores, rechazados y anulados.
+     */
+    private function resumenVentasAfectas(int $empresaId, string $fechaInicio, string $fechaFin): array
+    {
+        $estadosEmitidos = [
+            SiiDteEmitido::ESTADO_FIRMADO,
+            SiiDteEmitido::ESTADO_ENVIADO_SII,
+            SiiDteEmitido::ESTADO_EN_PROCESO_SII,
+            SiiDteEmitido::ESTADO_ACEPTADO,
+            SiiDteEmitido::ESTADO_ACEPTADO_CON_REPAROS,
+        ];
+
+        $tiposVenta = [
+            SiiDteEmitido::TIPO_FACTURA,
+            SiiDteEmitido::TIPO_FACTURA_EXENTA,
+            SiiDteEmitido::TIPO_BOLETA,
+            SiiDteEmitido::TIPO_BOLETA_EXENTA,
+            SiiDteEmitido::TIPO_NOTA_DEBITO,
+            SiiDteEmitido::TIPO_FACTURA_EXPORTACION,
+            SiiDteEmitido::TIPO_NOTA_DEBITO_EXPORTACION,
+        ];
+
+        $tiposNotaCredito = [
+            SiiDteEmitido::TIPO_NOTA_CREDITO,
+            SiiDteEmitido::TIPO_NOTA_CREDITO_EXPORTACION,
+        ];
+
+        $base = fn () => DB::table('sii_dte_emitido')
+            ->where('empresa_id', $empresaId)
+            ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])
+            ->whereIn('estado', $estadosEmitidos);
+
+        $ventas = $base()->whereIn('tipo_dte', $tiposVenta);
+        $notasCredito = $base()->whereIn('tipo_dte', $tiposNotaCredito);
+
+        $neto = (float) $ventas->sum('monto_neto') - (float) $notasCredito->sum('monto_neto');
+        $iva = (float) $ventas->sum('iva') - (float) $notasCredito->sum('iva');
+        $cantidad = $ventas->count() + $notasCredito->count();
+
+        return [
+            'neto' => $neto,
+            'iva' => $iva,
+            'cantidad' => $cantidad,
+        ];
+    }
+
     public function simularF29(int $empresaId, int $mes, int $anio)
     {
         $fechaInicio = "$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-01";
         $fechaFin = date('Y-m-t', strtotime($fechaInicio));
 
-        $ventas = DB::table('cotizaciones')->where('empresa_id', $empresaId)->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])->get();
-        $totalVentasNeto = $ventas->sum('monto_neto');
-        $ivaDebito = $ventas->sum('monto_iva');
+        // Ventas reales del periodo: DTEs emitidos (no cotizaciones). Ver resumenVentasAfectas().
+        $ventasResumen = $this->resumenVentasAfectas($empresaId, $fechaInicio, $fechaFin);
+        $totalVentasNeto = $ventasResumen['neto'];
+        $ivaDebito = $ventasResumen['iva'];
 
         $compras = DB::table('facturas')->where('empresa_id', $empresaId)->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])->where('estado', '!=', 'ANULADA')->get();
         $totalComprasNeto = $compras->sum('monto_neto');
@@ -42,7 +97,7 @@ class ImpuestosService
         return [
             'periodo' => str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio",
             'ya_cerrado' => $yaCerrado,
-            'ventas' => ['cantidad' => $ventas->count(), 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
+            'ventas' => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
             'compras' => ['cantidad' => $compras->count(), 'neto' => $totalComprasNeto, 'iva_credito' => $ivaCredito],
             'retenciones' => $retenciones,
             'ppm' => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
@@ -117,11 +172,8 @@ class ImpuestosService
         $esFlujoCaja = in_array($regimen, ['14_D3', '14_D8']);
         $tasaImpuesto = ($regimen === '14_A') ? 27.0 : (($regimen === '14_D3') ? 10.0 : 0.0);
 
-        $queryVentas = DB::table('cotizaciones')
-            ->where('empresa_id', $empresaId)
-            ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin]);
-
-        $totalIngresos = (float) $queryVentas->sum('monto_neto');
+        // Ingresos por ventas reales: DTEs emitidos (no cotizaciones). Ver resumenVentasAfectas().
+        $totalIngresos = $this->resumenVentasAfectas($empresaId, $fechaInicio, $fechaFin)['neto'];
 
         $queryCompras = DB::table('facturas')
             ->where('empresa_id', $empresaId)

@@ -10,23 +10,13 @@ use App\Domains\Sii\Services\Ws\SiiEstadoUpService;
 use App\Domains\Sii\Services\Ws\SiiTokenService;
 use App\Domains\Sii\Support\RutHelper;
 use Carbon\Carbon;
-// Importacion necesaria para el match en mapearEstadosTerminales; el helper
-// privado partirRutEnNumeroYDv tambien usa RutHelper.
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * F5.3 — Orquestador del polling individual de UN envio SII.
- *
- * Llamado por PollearEnviosPendientesJob para cada envio en ENVIADO que ya
- * toca pollear segun backoff. Lleva adelante:
- *
- *   - Reintento UNA vez con sesion nueva si RESP_HDR.ESTADO=99 (token expirado).
- *   - Mapeo del codigo SII (EPR/EOK/RPR/LOC/etc.) a estado local.
- *   - Transicion atomica del envio + DTE + 2 audit events (envio + DTE).
- *   - Marcado de ERROR_TIMEOUT si excede 10hr acumuladas desde fecha_envio.
+ * Orquestador del polling individual de UN envio SII.
  */
 class PollearEstadoSiiService
 {

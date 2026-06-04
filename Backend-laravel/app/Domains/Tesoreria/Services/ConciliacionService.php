@@ -80,7 +80,8 @@ class ConciliacionService
     public function procesarPagoFacturas(int $empresaId, int $usuarioId, int $movimientoId, array $facturasIds, ?int $entidadId = null)
     {
         return DB::transaction(function () use ($empresaId, $usuarioId, $movimientoId, $facturasIds, $entidadId) {
-            $movimiento = $this->bancoService->obtenerMovimiento($empresaId, $movimientoId);
+            // Bloquea el movimiento y rechaza si ya esta conciliado (evita doble cargo a banco).
+            $movimiento = $this->bancoService->obtenerMovimientoParaConciliar($empresaId, $movimientoId);
             
             $facturas = count($facturasIds) > 0 
                 ? $this->facturaService->obtenerFacturasPorIds($empresaId, $facturasIds) 
@@ -142,6 +143,18 @@ class ConciliacionService
                     $glosaAsiento .= ($glosaAsiento ? " | " : "") . "Anticipo Generado";
                     
                     if ($entidadId) {
+                        // Valida que el proveedor pertenezca a la empresa antes de
+                        // crear el anticipo (evita referenciar un proveedor de otra
+                        // empresa: corrupcion de datos cross-tenant).
+                        $proveedorValido = DB::table('proveedores')
+                            ->where('id', $entidadId)
+                            ->where('empresa_id', $empresaId)
+                            ->exists();
+
+                        if (!$proveedorValido) {
+                            throw new Exception("El proveedor indicado no pertenece a la empresa.", 422);
+                        }
+
                         DB::table('anticipos_proveedores')->insert([
                             'empresa_id' => $empresaId,
                             'proveedor_id' => $entidadId,
@@ -178,8 +191,9 @@ class ConciliacionService
     public function conciliarDirecto(int $empresaId, array $datos, int $usuarioId)
     {
         return DB::transaction(function () use ($empresaId, $datos, $usuarioId) {
-            $movimiento = $this->bancoService->obtenerMovimiento($empresaId, $datos['movimiento_id']);
-            
+            // Bloquea el movimiento y rechaza si ya esta conciliado (evita doble cargo a banco).
+            $movimiento = $this->bancoService->obtenerMovimientoParaConciliar($empresaId, $datos['movimiento_id']);
+
             $esIngreso = $movimiento->abono > 0;
             $monto = $esIngreso ? $movimiento->abono : $movimiento->cargo;
             $cuentaBanco = $this->bancoService->obtenerCuentaContableDeBanco($empresaId, $movimiento->cuenta_bancaria_id);

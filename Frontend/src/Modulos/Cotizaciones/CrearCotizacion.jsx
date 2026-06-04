@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
@@ -12,13 +12,17 @@ const CrearCotizacion = () => {
     const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
     const [busquedaCliente, setBusquedaCliente] = useState('');
     const [mostrarDropdown, setMostrarDropdown] = useState(false);
-    const [items, setItems] = useState([{ productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
+    // Cada item lleva un id estable para usarlo como key de React: con key={index},
+    // al borrar una linea intermedia los inputs se "corrian" a la fila equivocada.
+    const idItemRef = useRef(1);
+    const [items, setItems] = useState([{ id: 0, productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
     const [validez, setValidez] = useState(15);
     const [esAfecta, setEsAfecta] = useState(true);
     const [ivaPorcentaje, setIvaPorcentaje] = useState(19);
 
     const [modal, setModal] = useState({ show: false, title: '', message: '', type: 'info', idGenerado: null });
+    const [enviando, setEnviando] = useState(false);
 
     useEffect(() => {
         const fetchClientes = async () => {
@@ -42,7 +46,7 @@ const CrearCotizacion = () => {
     };
 
     const agregarItem = () => {
-        setItems([...items, { productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
+        setItems([...items, { id: idItemRef.current++, productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
     };
 
     const eliminarItem = (index) => {
@@ -55,11 +59,13 @@ const CrearCotizacion = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (enviando) return; // Evita doble submit (doble click) que duplicaria la cotizacion.
         if (!clienteSeleccionado) {
             setModal({ show: true, title: 'Atención', message: 'Debe seleccionar un cliente de la lista.', type: 'warning' });
             return;
         }
 
+        setEnviando(true);
         try {
             const detallesMapeados = items.map(item => ({
                 producto_nombre: item.productoNombre,
@@ -99,6 +105,8 @@ const CrearCotizacion = () => {
             logger.error("Error del backend:", error.response?.data || error);
             const mensajeError = error.response?.data?.message || 'No se pudo guardar la cotización.';
             setModal({ show: true, title: 'Error', message: mensajeError, type: 'danger' });
+        } finally {
+            setEnviando(false);
         }
     };
 
@@ -186,7 +194,7 @@ const CrearCotizacion = () => {
                     </div>
                     <div className="space-y-6">
                         {items.map((item, index) => (
-                            <FilaItemCotizacion key={index} index={index} item={item} onChange={handleItemChange} onRemove={eliminarItem} />
+                            <FilaItemCotizacion key={item.id} index={index} item={item} onChange={handleItemChange} onRemove={eliminarItem} />
                         ))}
                     </div>
                 </div>
@@ -200,7 +208,7 @@ const CrearCotizacion = () => {
                             <div className="text-emerald-600 text-[10px] font-bold uppercase mt-3 tracking-widest">Total Final Cotización</div>
                             <div className="text-5xl font-black text-slate-900 leading-none">${total.toLocaleString('es-CL')}</div>
                         </div>
-                        <button type="submit" className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-bold shadow-2xl hover:bg-slate-800 transition-all active:scale-95">Generar Cotización</button>
+                        <button type="submit" disabled={enviando} className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-bold shadow-2xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">{enviando ? 'Generando…' : 'Generar Cotización'}</button>
                     </div>
                 </div>
             </form>

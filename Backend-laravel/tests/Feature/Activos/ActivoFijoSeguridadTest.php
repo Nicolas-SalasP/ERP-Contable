@@ -91,6 +91,7 @@ class ActivoFijoSeguridadTest extends TestCase
         $vendedor = User::create(['nombre' => 'Ventas', 'email' => 'ventas@erp.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $rolVendedor->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
 
         $response = $this->actingAs($vendedor)->postJson('/api/activos/depreciar-mes', ['mes_anio' => now()->format('Y-m')]);
-        $response->assertStatus(403)->assertSee('Acceso denegado');
+        // El RBAC por endpoint (permiso:activos.crear) deniega al vendedor sin permisos.
+        $response->assertStatus(403)->assertJsonPath('success', false);
     }
 }

@@ -41,7 +41,7 @@ describe('siiApi.certificado', () => {
     it('obtener llama a GET /sii/certificado', async () => {
         api.get.mockResolvedValue({ id: 1, estado: 'activo' });
         await siiApi.certificado.obtener();
-        expect(api.get).toHaveBeenCalledWith('/sii/certificado');
+        expect(api.get).toHaveBeenCalledWith('/sii/certificado', { silent: true });
     });
 
     it('subir construye FormData con keys "archivo" y "password"', async () => {

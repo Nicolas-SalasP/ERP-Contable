@@ -10,17 +10,11 @@ use App\Domains\Sii\Support\Iso88591Helper;
 use LogicException;
 
 /**
- * Construye el TED firmado completo:
+ * Construye el TED firmado completo.
  *
- *   <TED version="1.0">
- *     <DD>RE,TD,F,FE,RR,RSR,MNT,IT1,CAF,TSTED</DD>
- *     <FRMT algoritmo="SHA1withRSA">firma_base64</FRMT>
- *   </TED>
- *
- * CRITICO: el byte-exact del DD que se firma debe ser identico al byte-exact
- * del DD que aparece en el XML final del DTE. Por eso construimos el TED como
- * string puro (sin DOMDocument intermedio) y lo inyectamos en el XML final
- * via reemplazo de placeholder (preservando bytes).
+ * El byte-exact del DD que se firma debe ser identico al del DD en el XML final;
+ * por eso construimos el TED como string puro (sin DOMDocument intermedio) y lo
+ * inyectamos via reemplazo de placeholder, preservando bytes.
  */
 class TedBuilder
 {
@@ -41,10 +35,9 @@ class TedBuilder
     {
         $this->validarConsistencia($dte, $caf);
 
-        // 1. Extraer bloque CAF interno (DA + FRMA del SII) — UTF-8.
         $cafBlockUtf8 = $this->cafSerializer->extraerBloqueCaf($caf);
 
-        // 2. Construir DD en UTF-8 con valores escapados, en orden EXACTO del XSD.
+        // DD en UTF-8 con valores escapados, en orden EXACTO del XSD.
         $primerItem = $dte->detalles->first();
         $nombreIt1  = $primerItem instanceof SiiDteEmitidoDetalle
             ? $primerItem->nombre_item
@@ -63,15 +56,12 @@ class TedBuilder
             . $this->elemento('TSTED', now()->format('Y-m-d\TH:i:s'))
             . '</DD>';
 
-        // 3. Convertir el DD a bytes ISO-8859-1 — esto es lo que el SII espera
-        //    y lo que firmamos para que verifique con RSAPUBK.
+        // Bytes ISO-8859-1: lo que el SII espera y lo que firmamos para que verifique con RSAPUBK.
         $ddIso = Iso88591Helper::convertToIso($ddUtf8);
 
-        // 4. Firmar los bytes EXACTOS del DD en ISO-8859-1.
         $firmaBase64 = $this->tedSigner->firmarDd($ddIso, $caf);
 
-        // 5. Componer TED final como concatenacion pura (sin DOM intermedio
-        //    que pueda reformatear bytes). FRMT contiene firma en ASCII puro.
+        // Concatenacion pura (sin DOM intermedio que pueda reformatear bytes).
         return '<TED version="1.0">'
             . $ddIso
             . '<FRMT algoritmo="SHA1withRSA">' . $firmaBase64 . '</FRMT>'

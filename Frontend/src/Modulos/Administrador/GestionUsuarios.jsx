@@ -7,7 +7,6 @@ const GestionUsuarios = () => {
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Estados para Modales
     const [showModalInvitar, setShowModalInvitar] = useState(false);
     const [showModalEditar, setShowModalEditar] = useState(false);
 
@@ -133,7 +132,6 @@ const GestionUsuarios = () => {
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto animate-fadeIn">
 
-            {/* Cabecera Responsiva */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4 overflow-hidden">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Gestión de Equipo</h1>
@@ -148,7 +146,6 @@ const GestionUsuarios = () => {
                 </button>
             </div>
 
-            {/* Tabla de Usuarios */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[750px]">
@@ -247,7 +244,6 @@ const GestionUsuarios = () => {
                 </div>
             </div>
 
-            {/* MODAL 1: INVITAR USUARIO */}
             {showModalInvitar && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fadeIn">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
@@ -264,7 +260,7 @@ const GestionUsuarios = () => {
                                     <input type="email" required value={formInvitar.email} onChange={(e) => setFormInvitar({ ...formInvitar, email: e.target.value })} placeholder="correo@ejemplo.com" className="w-full border border-slate-200 rounded-xl p-3 md:p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition-all font-bold text-slate-800" />
                                     <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        Si no tiene cuenta en AtlasWeb, se registrará al ingresar este correo.
+                                        Si no tiene cuenta en Tenri ERP Cloud, se registrará al ingresar este correo.
                                     </p>
                                 </div>
                                 <div>
@@ -289,19 +285,16 @@ const GestionUsuarios = () => {
                 </div>
             )}
 
-            {/* MODAL 2: PERFIL DE USUARIO Y EDICIÓN DE ROL */}
             {showModalEditar && usuarioSeleccionado && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fadeIn">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
 
-                        {/* Cabecera del Perfil */}
                         <div className="relative h-24 bg-gradient-to-r from-slate-800 to-slate-900 shrink-0">
                             <button onClick={() => setShowModalEditar(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
 
-                        {/* Avatar Flotante */}
                         <div className="flex justify-center -mt-12 relative z-10">
                             <div className="w-24 h-24 rounded-full bg-white p-1.5 shadow-sm">
                                 <div className="w-full h-full rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-3xl font-black text-slate-400">
@@ -310,16 +303,13 @@ const GestionUsuarios = () => {
                             </div>
                         </div>
 
-                        {/* Contenido scrolleable */}
                         <div className="px-6 pb-6 pt-4 relative flex-1 overflow-y-auto custom-scrollbar">
 
-                            {/* Datos del Usuario */}
                             <div className="text-center mb-6">
                                 <h3 className="text-xl font-black text-slate-800">{usuarioSeleccionado.nombre}</h3>
                                 <p className="text-sm text-slate-500 font-medium">{usuarioSeleccionado.email}</p>
                             </div>
 
-                            {/* Info de Actividad */}
                             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 grid grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado</p>
@@ -348,7 +338,6 @@ const GestionUsuarios = () => {
 
                             <hr className="border-slate-100 mb-6" />
 
-                            {/* Formulario para cambiar Rol */}
                             <form onSubmit={handleActualizarRol} className="space-y-5">
                                 <div>
                                     <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">

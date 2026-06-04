@@ -1,4 +1,4 @@
-# 📊 ERP Contable - Atlas Digital Tech
+# 📊 Tenri ERP Cloud
 
 Sistema de Planificación de Recursos Empresariales (ERP) diseñado para escalar y automatizar la gestión financiera, contable y tributaria de las pymes en Chile.
 

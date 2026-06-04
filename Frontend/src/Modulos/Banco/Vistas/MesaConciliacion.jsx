@@ -14,13 +14,11 @@ const MesaConciliacion = () => {
     const [planCuentas, setPlanCuentas] = useState([]);
     const [centrosCosto, setCentrosCosto] = useState([]); 
     const [_anticiposPendientes, setAnticiposPendientes] = useState([]);
-    
-    // Estados Sugerencias y Manual
+
     const [sugerenciasFacturas, setSugerenciasFacturas] = useState([]);
     const [cargandoSugerencias, setCargandoSugerencias] = useState(false);
     const [modoFacturas, setModoFacturas] = useState('SUGERENCIAS'); 
-    
-    // Estados Búsqueda Manual
+
     const [entidades, setEntidades] = useState([]);
     const [entidadSel, setEntidadSel] = useState(null);
     const [facturasManuales, setFacturasManuales] = useState([]);

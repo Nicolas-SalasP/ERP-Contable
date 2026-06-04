@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Services\EmpresaService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Domains\Core\Support\ModuloPermisos;
+use App\Domains\Sii\Support\RutHelper;
 use Illuminate\Validation\ValidationException;
 use Exception;
 
@@ -44,14 +46,17 @@ class EmpresaController extends Controller
     public function actualizarPerfil(Request $request)
     {
         try {
-            $request->validate([
+            // Whitelist explicita de campos editables del perfil. Antes se usaba
+            // $request->except(...), que permitia mass-assignment de campos sensibles
+            // como 'activa' (reactivar una empresa suspendida) o 'tasa_impuesto'.
+            $datos = $request->validate([
                 'razon_social' => 'nullable|string|max:150',
                 'direccion' => 'nullable|string|max:255',
                 'telefono' => 'nullable|string|max:50',
                 'email' => 'nullable|email|max:100',
+                'color_primario' => 'nullable|string|max:20',
+                'regimen_tributario' => 'nullable|in:14_D3,14_D8,14_A',
             ]);
-
-            $datos = $request->except(['logo', 'rut', 'empresa_id', 'id']);
 
             $empresa = $this->empresaService->actualizarDatos($request->user()->empresa_id, $datos);
 
@@ -71,7 +76,8 @@ class EmpresaController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
@@ -91,7 +97,8 @@ class EmpresaController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('EmpresaController (logo): ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'No se pudo procesar la solicitud.'], 500);
         }
     }
 
@@ -112,7 +119,8 @@ class EmpresaController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
@@ -122,17 +130,27 @@ class EmpresaController extends Controller
             $this->empresaService->eliminarBanco($request->user()->empresa_id, $id);
             return response()->json(['success' => true]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
     public function actualizarBanco(Request $request, $id)
     {
         try {
-            $cuenta = $this->empresaService->actualizarBanco($request->user()->empresa_id, $id, $request->all());
+            $datos = $request->validate([
+                'banco' => 'sometimes|required|string|max:100',
+                'tipo_cuenta' => 'sometimes|required|string|max:50',
+                'numero_cuenta' => 'sometimes|required|string|max:50',
+            ]);
+
+            $cuenta = $this->empresaService->actualizarBanco($request->user()->empresa_id, $id, $datos);
             return response()->json(['success' => true, 'data' => $cuenta]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
@@ -174,7 +192,8 @@ class EmpresaController extends Controller
             $this->empresaService->eliminarCentroCosto($request->user()->empresa_id, $id);
             return response()->json(['success' => true]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('EmpresaController: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
@@ -193,12 +212,16 @@ class EmpresaController extends Controller
         $rut = trim($request->query('rut', ''));
 
         if (!$rut) {
-            return response()->json(['existe' => false]);
+            return response()->json(['existe' => false, 'valido' => false]);
         }
 
-        $existe = Empresa::where('rut', $rut)->exists();
+        // Validacion autoritativa del digito verificador en el servidor.
+        $valido = RutHelper::validar($rut);
 
-        return response()->json(['existe' => $existe]);
+        // Solo tiene sentido consultar existencia si el RUT es valido.
+        $existe = $valido ? Empresa::where('rut', $rut)->exists() : false;
+
+        return response()->json(['existe' => $existe, 'valido' => $valido]);
     }
 
     public function onboarding(Request $request)
@@ -214,9 +237,13 @@ class EmpresaController extends Controller
         }
 
         $request->validate([
-            'empresa_rut'          => ['required', 'string', 'max:20'],
+            'empresa_rut'          => ['required', 'string', 'max:20', function ($attribute, $value, $fail) {
+                if (!RutHelper::validar($value)) {
+                    $fail('El RUT ingresado no es valido: revise el digito verificador.');
+                }
+            }],
             'empresa_razon_social' => ['required', 'string', 'max:150'],
-            'giro'                 => ['nullable', 'string', 'max:255'],
+            'giro'                 => ['nullable', 'string', 'max:80'],
             'direccion'            => ['nullable', 'string', 'max:255'],
             'telefono'             => ['nullable', 'string', 'max:50'],
             'regimen_tributario'   => ['nullable', 'in:14_D3,14_D8,14_A'],
@@ -226,6 +253,7 @@ class EmpresaController extends Controller
             $empresa = Empresa::create([
                 'rut'                => $request->empresa_rut,
                 'razon_social'       => $request->empresa_razon_social,
+                'giro_emisor'        => $request->giro,
                 'direccion'          => $request->direccion,
                 'telefono'           => $request->telefono,
                 'regimen_tributario' => $request->regimen_tributario ?? '14_D3',

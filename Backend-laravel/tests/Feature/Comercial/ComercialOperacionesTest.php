@@ -28,7 +28,7 @@ class ComercialOperacionesTest extends TestCase
         $this->usuario = User::create(['nombre' => 'Tesorero', 'email' => 't@o.cl', 'password' => bcrypt('123'), 'empresa_id' => $this->empresa->id, 'rol_id' => $this->rolSuperAdmin->id, 'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id]);
     }
 
-    public function test_pagar_factura_cambia_estado_y_registra_datos_de_pago()
+    public function test_pago_directo_de_factura_esta_deshabilitado()
     {
         $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '1.1.1.1-1', 'razon_social' => 'Prov', 'codigo_interno' => 'P1', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
 
@@ -50,14 +50,10 @@ class ComercialOperacionesTest extends TestCase
             'medioPago' => 'TRANSFERENCIA'
         ]);
 
-        if ($response->getStatusCode() === 404) {
-            $this->markTestSkipped('Ruta POST /api/facturas/{id}/pagar pendiente de registrar en api.php.');
-        } else {
-            $response->assertStatus(200);
-            $this->assertEquals('PAGADA', $factura->fresh()->estado);
-            $this->assertEquals('2026-05-15', $factura->fresh()->fecha_pago);
-            $this->assertEquals('TRANSFERENCIA', $factura->fresh()->medio_pago);
-        }
+        // El pago directo fue deshabilitado: el endpoint rechaza y la factura
+        // NO queda PAGADA (los pagos van por Tesoreria > Conciliacion Bancaria).
+        $response->assertStatus(400);
+        $this->assertEquals('REGISTRADA', $factura->fresh()->estado);
     }
 
     public function test_rechaza_pagar_factura_que_ya_esta_pagada()
@@ -82,9 +78,8 @@ class ComercialOperacionesTest extends TestCase
             'medioPago' => 'EFECTIVO'
         ]);
 
-        if ($response->getStatusCode() !== 404) {
-            $response->assertStatus(400)->assertSee('ya se encuentra pagada');
-        }
+        // El pago directo esta deshabilitado: rechaza con 400 en cualquier caso.
+        $response->assertStatus(400);
     }
 
     public function test_ux_permite_visualizar_la_auditoria_completa_de_una_factura()

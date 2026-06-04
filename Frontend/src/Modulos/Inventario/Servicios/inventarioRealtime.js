@@ -20,6 +20,13 @@ export const getEchoInventario = async () => {
         return null;
     }
 
+    // Sin token no tiene sentido autenticar canales privados: antes se creaba
+    // un Echo con "Bearer " vacio que fallaba la auth en silencio.
+    const token = getToken();
+    if (!token) {
+        return null;
+    }
+
     if (echoInstance) {
         return echoInstance;
     }
@@ -42,7 +49,7 @@ export const getEchoInventario = async () => {
         authEndpoint: `${getApiBaseUrl()}/broadcasting/auth`,
         auth: {
             headers: {
-                Authorization: `Bearer ${getToken() || ''}`,
+                Authorization: `Bearer ${token}`,
                 Accept: 'application/json',
             },
         },

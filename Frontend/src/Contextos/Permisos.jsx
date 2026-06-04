@@ -1,11 +1,9 @@
 import React from 'react';
 
-// ------------------------------------------------------------------
-// 1. HOOK: Para usar lógica en funciones o menús
-// ------------------------------------------------------------------
 export const usePermisos = () => {
     const user = JSON.parse(localStorage.getItem('erp_user') || sessionStorage.getItem('erp_user') || '{}');
     const permisosUsuario = user.permisos || [];
+    const modulosUsuario = user.module_keys || [];
 
     // Verifica si tiene un permiso exacto
     const tienePermiso = (permiso) => {
@@ -17,12 +15,16 @@ export const usePermisos = () => {
         return arregloPermisos.some(permiso => permisosUsuario.includes(permiso));
     };
 
-    return { tienePermiso, tieneAlgunPermiso, permisosUsuario };
+    // Verifica si el plan del usuario incluye un modulo. Vacio o '*' = sin restriccion
+    // de plan (admins locales sin SSO ven todo).
+    const tieneModulo = (key) => {
+        if (!modulosUsuario.length || modulosUsuario.includes('*')) return true;
+        return modulosUsuario.includes(key);
+    };
+
+    return { tienePermiso, tieneAlgunPermiso, tieneModulo, permisosUsuario };
 };
 
-// ------------------------------------------------------------------
-// 2. COMPONENTE: Envoltorio mágico para ocultar botones en la UI
-// ------------------------------------------------------------------
 export const Restringir = ({ permiso, children }) => {
     const { tienePermiso } = usePermisos();
 

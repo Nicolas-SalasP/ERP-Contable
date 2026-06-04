@@ -22,7 +22,6 @@ const HistorialFiltros = ({
             ref={panelRef}
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                {/* Proveedor con autocomplete */}
                 <div className="relative sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
                         Proveedor
@@ -62,7 +61,6 @@ const HistorialFiltros = ({
                     )}
                 </div>
 
-                {/* Numero de documento */}
                 <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
                         N° Documento
@@ -77,7 +75,6 @@ const HistorialFiltros = ({
                     />
                 </div>
 
-                {/* Estado + boton buscar */}
                 <div className="flex gap-2">
                     <div className="flex-1">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">

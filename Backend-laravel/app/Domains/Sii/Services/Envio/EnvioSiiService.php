@@ -18,24 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * F5.2 — Orquestador del envio de un DTE firmado al WS DTEUpload del SII.
- *
- * Persistencia hibrida (mismo patron que F4.4):
- *
- *   Tx 1 (corta, committed): lock + validar DTE FIRMADO + crear sii_envio_dte
- *        en ENVIANDO con intentos_envio=0. Si la siguiente fase falla, el
- *        envio queda auditable en BD.
- *
- *   Fase 2 (sin tx): leer XML verificado (HARDENING R2), obtener token activo,
- *        extraer RUT sender/company, POST al SII con manejo de ERROR=99.
- *
- *   Tx 3 (committed): actualizar envio con track_id + bodies cifrados +
- *        transicion DTE FIRMADO -> ENVIADO_SII + audit event registrarEnvio.
- *        Atomico: si algo falla, rollback de las tres operaciones.
- *
- *   Catch global: cualquier excepcion de fase 2/3 marca el envio como
- *        ERROR_TRANSPORTE o ERROR_PERMANENTE segun corresponda. El DTE
- *        permanece en FIRMADO.
+ * Orquestador del envio de un DTE firmado al WS DTEUpload del SII.
  */
 class EnvioSiiService
 {
@@ -58,7 +41,6 @@ class EnvioSiiService
      */
     public function enviar(int $dteEmitidoId): SiiEnvioDte
     {
-        // ---------- Tx 1: validar + crear sii_envio_dte en ENVIANDO ----------
         $envio = DB::transaction(function () use ($dteEmitidoId) {
             $dte = SiiDteEmitido::query()
                 ->where('id', $dteEmitidoId)
@@ -81,7 +63,6 @@ class EnvioSiiService
         /** @var Empresa $empresa */
         $empresa = $dte->empresa;
 
-        // ---------- Fase 2: leer XML verificado + obtener token + POST ----------
         try {
             $xmlEnvio = $this->integrityService->leerVerificado($dte->id);
 
@@ -110,7 +91,6 @@ class EnvioSiiService
             );
         }
 
-        // ---------- Procesar respuesta ----------
         if ($resultado['transport_failed'] || $resultado['error_code'] === -1) {
             return $this->marcarErrorTransporte(
                 $envio,
@@ -124,7 +104,6 @@ class EnvioSiiService
             return $this->marcarErrorPermanente($envio, $resultado);
         }
 
-        // ---------- Tx 3: exito atomico ----------
         return DB::transaction(function () use ($envio, $resultado) {
             $envio->update([
                 'estado_envio'                    => SiiEnvioDte::ESTADO_ENVIADO,
