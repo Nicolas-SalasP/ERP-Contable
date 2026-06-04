@@ -216,6 +216,12 @@ class FacturaController
                 'success' => true,
                 'message' => 'Asiento reclasificado exitosamente.'
             ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -280,6 +286,12 @@ class FacturaController
                 'success' => true,
                 'message' => 'Factura anulada con éxito y contabilidad reversada.'
             ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

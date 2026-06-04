@@ -161,6 +161,8 @@ class ProveedorController
             $anticipo = $this->service->adjuntarPdfAnticipo($request->user()->empresa_id, $id, $rutaPdf);
 
             return response()->json(['success' => true, 'data' => $anticipo]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             if ($rutaPdf) {
                 $pathToDelete = str_replace('storage/', '', $rutaPdf);
@@ -192,6 +194,12 @@ class ProveedorController
                 'message' => 'Documentos cruzados y compensados exitosamente.',
                 'data' => $resultado
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
