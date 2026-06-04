@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Domains\Core\Controllers\AuthController;
+use App\Domains\Core\Controllers\HealthController;
 use App\Domains\Core\Controllers\Internal\AdminEmpresasController;
 use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
@@ -45,6 +46,10 @@ use App\Domains\Inventario\Controllers\ReporteInventarioController;
 | El modulo Inventario aplica su propia autorizacion granular a nivel de
 | controller (InventarioPermisoService), por eso su grupo no repite permiso:.
 */
+
+// Health check operativo (publico, sin auth): el equipo verifica el estado de los
+// servicios sin SSH. 200 = todo OK, 503 = algun componente caido.
+Route::get('/health', HealthController::class);
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);

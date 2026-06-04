@@ -8,6 +8,7 @@ use App\Http\Middleware\VerifyWebApiKey;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -27,5 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Reporta a Sentry las excepciones no controladas (no-op si SENTRY_LARAVEL_DSN
+        // está vacío, p. ej. en desarrollo/tests).
+        Integration::handles($exceptions);
     })->create();
