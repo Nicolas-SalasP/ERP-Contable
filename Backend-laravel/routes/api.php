@@ -403,6 +403,11 @@ Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
     Route::post('/sync-password',  [WebProvisioningController::class, 'syncPassword']);
     Route::get('/online-users',    [WebProvisioningController::class, 'onlineUsers']);
 
+    // Catalogo de modulos asignables a un plan (fuente de verdad para el admin).
+    Route::get('/module-catalog', fn () => response()->json([
+        'modules' => \App\Domains\Core\Support\ModuloPermisos::catalogo(),
+    ]));
+
     Route::get('/empresas',        [AdminEmpresasController::class, 'index']);
     Route::get('/empresas/{id}',   [AdminEmpresasController::class, 'show']);
     Route::get('/usuarios',        [AdminEmpresasController::class, 'usuarios']);

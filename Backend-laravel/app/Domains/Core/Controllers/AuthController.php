@@ -54,9 +54,22 @@ class AuthController
                     'plan_slug'     => $webResult['plan_slug'],
                     'module_keys'   => $webResult['module_keys'],
                     'rol_erp'       => $webResult['rol_erp'],
+                    'subscription_status'  => $webResult['subscription_status'] ?? 'active',
+                    'subscription_ends_at' => $webResult['subscription_ends_at'] ?? null,
                 ]);
 
                 $user->load(['rol', 'estadoSuscripcion']);
+            }
+
+            // Credenciales locales validas pero cache de suscripcion viejo (>1h):
+            // re-sincroniza el estado del plan contra la web antes de los guards.
+            if ($credencialesLocalesValidas
+                && (!$user->tenri_synced_at || $user->tenri_synced_at->diffInHours(now()) >= 1)) {
+                $webResult = $this->webClient->validateLogin($request->email, $request->password);
+                if ($webResult && ($webResult['valid'] ?? false)) {
+                    $user = $this->provisioner->provision($webResult);
+                    $user->load(['rol', 'estadoSuscripcion']);
+                }
             }
 
             // Validar contra el nombre del estado (no contra id hardcodeado).
@@ -83,6 +96,13 @@ class AuthController
                 return response()->json([
                     'success' => false,
                     'message' => 'Usuario bloqueado temporalmente.'
+                ], 403);
+            }
+
+            if ($user->subscription_status === 'expired') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tu suscripción venció. Renueva tu plan en tenri.cl para volver a ingresar.'
                 ], 403);
             }
 
@@ -262,6 +282,9 @@ class AuthController
             'empresa_id' => $user->empresa_id,
             'rol_id'     => $user->rol_id,
             'plan_slug'  => $user->plan_slug,
+            'module_keys' => $user->module_keys ?? [],
+            'subscription_status'  => $user->subscription_status,
+            'subscription_ends_at' => $user->subscription_ends_at,
             'permisos'   => $permisos,
         ]);
     }
