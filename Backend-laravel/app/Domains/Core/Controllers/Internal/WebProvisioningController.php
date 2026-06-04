@@ -2,6 +2,7 @@
 
 namespace App\Domains\Core\Controllers\Internal;
 
+use App\Domains\Core\Models\User;
 use App\Domains\Core\Services\ProvisionUserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -110,21 +111,26 @@ class WebProvisioningController
             'password_hash' => ['required', 'string'],
         ]);
 
-        $updated = DB::table('usuarios')
-            ->where('tenri_user_id', $data['tenri_user_id'])
-            ->update([
-                'password' => $data['password_hash'],
-                'tenri_synced_at' => now(),
-            ]);
+        $user = User::where('tenri_user_id', $data['tenri_user_id'])->first();
 
-        if ($updated === 0) {
+        if (!$user) {
             Log::warning('WebProvisioning: syncPassword sin usuario', [
                 'tenri_user_id' => $data['tenri_user_id'],
             ]);
             return response()->json(['success' => false, 'message' => 'Usuario no encontrado en ERP.'], 404);
         }
 
-        Log::info('WebProvisioning: password sincronizada', [
+        DB::table('usuarios')
+            ->where('id', $user->id)
+            ->update([
+                'password' => $data['password_hash'],
+                'tenri_synced_at' => now(),
+            ]);
+
+        // H10: un cambio de contrasena en la web invalida todas las sesiones del ERP.
+        $user->tokens()->delete();
+
+        Log::info('WebProvisioning: password sincronizada y tokens revocados', [
             'tenri_user_id' => $data['tenri_user_id'],
         ]);
 
