@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckSubscription;
+use App\Http\Middleware\EnsureSubscriptionWritable;
 use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\TrackUltimoAcceso;
 use App\Http\Middleware\VerifyWebApiKey;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'web.api.key' => VerifyWebApiKey::class,
             'check.subscription' => CheckSubscription::class,
+            'subscription.writable' => EnsureSubscriptionWritable::class,
             'permiso' => EnsureUserHasPermission::class,
             'track.ultimo.acceso' => TrackUltimoAcceso::class,
         ]);

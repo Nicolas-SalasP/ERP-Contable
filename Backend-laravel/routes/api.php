@@ -65,7 +65,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
     Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
 });
 
-Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription'])->group(function () {
+Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 'subscription.writable'])->group(function () {
     // Gestion de usuarios y roles.
     // La autorizacion se aplica en el controller por jerarquia de rol (invitar
     // exige Super Admin; desvincular/actualizarRol comparan jerarquia; store/
