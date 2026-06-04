@@ -4,6 +4,7 @@ namespace Tests\Feature\Core;
 
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Services\InventarioPermisoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
@@ -60,5 +61,31 @@ class ModuloPlanTest extends TestCase
         // El rol concederia compras.ver, pero el plan (techo) solo habilita 'clientes'.
         $this->actingAs($user)->getJson('/api/clientes')->assertStatus(200);
         $this->actingAs($user)->getJson('/api/facturas')->assertStatus(403);
+    }
+
+    public function test_inventario_respeta_el_techo_del_plan_para_admin(): void
+    {
+        $empresa = Empresa::create(['rut' => '82.000.000-2', 'razon_social' => 'Inv SpA', 'regimen_tributario' => '14_D3']);
+        $svc = app(InventarioPermisoService::class);
+
+        $base = [
+            'password'              => bcrypt('x'),
+            'empresa_id'            => $empresa->id,
+            'rol_id'                => $this->rolAdministrador->id,
+            'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
+            'subscription_status'   => 'active',
+        ];
+
+        // Admin con plan que NO incluye inventario.productos -> denegado (techo manda sobre el atajo).
+        $sinInv = User::create(array_merge($base, ['nombre' => 'A', 'email' => 'a@inv.cl', 'module_keys' => ['clientes']]));
+        $this->assertFalse($svc->tiene($sinInv, 'inventario.productos.ver'));
+
+        // Admin con plan que SI incluye inventario.productos -> permitido.
+        $conInv = User::create(array_merge($base, ['nombre' => 'B', 'email' => 'b@inv.cl', 'module_keys' => ['inventario.productos']]));
+        $this->assertTrue($svc->tiene($conInv, 'inventario.productos.ver'));
+
+        // Admin local SIN plan (module_keys vacio) -> mantiene el atajo historico.
+        $local = User::create(array_merge($base, ['nombre' => 'C', 'email' => 'c@inv.cl', 'module_keys' => []]));
+        $this->assertTrue($svc->tiene($local, 'inventario.productos.ver'));
     }
 }

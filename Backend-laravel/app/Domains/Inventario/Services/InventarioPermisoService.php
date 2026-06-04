@@ -60,6 +60,18 @@ class InventarioPermisoService
         }
 
         $jerarquia = (int) ($rol->jerarquia ?? 0);
+
+        // SuperAdmin / staff interno: siempre exento.
+        if ($jerarquia >= 100) {
+            return true;
+        }
+
+        // Usuario con plan (module_keys): el techo del plan manda, sin atajo de admin.
+        if (!empty($usuario->module_keys)) {
+            return false;
+        }
+
+        // Admin local sin plan: mantiene el atajo historico.
         $nombreRol = strtolower(trim((string) ($rol->nombre ?? '')));
 
         return $jerarquia >= 80 || in_array($nombreRol, [
