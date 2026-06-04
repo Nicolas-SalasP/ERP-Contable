@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Contextos/AuthContext';
 import { usePermisos } from './Contextos/Permisos';
 import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
+import ErrorBoundary from './Componentes/ErrorBoundary';
 
 import Login from './Modulos/Autenticacion/Login';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
@@ -130,8 +131,9 @@ const InventarioLayout = ({ children }) => (
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/sso-callback" element={<SsoCallback />} />
@@ -526,8 +528,9 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
