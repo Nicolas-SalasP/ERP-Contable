@@ -115,6 +115,8 @@ trait PreparaEntornoBase
                 $this->permisosOperativosCompletos(),
                 $this->permisosInventarioCompletos(),
                 $this->permisosSiiAdministracion(),
+                // H15: espejo de RolSeeder — el Administrador declara gestión de usuarios.
+                ['usuarios.ver', 'usuarios.gestionar'],
             ))),
         ]);
         $this->rolContador = Rol::create([

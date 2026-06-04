@@ -66,18 +66,18 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 'subscription.writable'])->group(function () {
-    // Gestion de usuarios y roles.
-    // La autorizacion se aplica en el controller por jerarquia de rol (invitar
-    // exige Super Admin; desvincular/actualizarRol comparan jerarquia; store/
-    // updateRol validan escalada y scope de empresa). Por eso no se duplica
-    // aqui un permiso: que entraria en conflicto con esa logica relativa.
-    Route::get('/usuarios', [UsuarioController::class, 'index']);
-    Route::get('/usuarios/roles', [UsuarioController::class, 'roles']);
-    Route::post('/usuarios/invitar', [UsuarioController::class, 'invitar']);
-    Route::put('/usuarios/{id}/rol', [UsuarioController::class, 'actualizarRol']);
-    Route::delete('/usuarios/{id}', [UsuarioController::class, 'desvincular']);
-    Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol']);
-    Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol']);
+    // Gestion de usuarios y roles. RBAC en dos capas (H15):
+    //  - Capa 1 (aqui): gate grueso de capacidad -> permiso:usuarios.ver|gestionar.
+    //  - Capa 2 (controller): logica relativa por instancia (jerarquia del objetivo
+    //    vs la del solicitante, no-self, anti-escalada de permisos). NO movible a
+    //    middleware porque depende del recurso concreto. Ambas capas coexisten.
+    Route::get('/usuarios', [UsuarioController::class, 'index'])->middleware('permiso:usuarios.ver');
+    Route::get('/usuarios/roles', [UsuarioController::class, 'roles'])->middleware('permiso:usuarios.ver');
+    Route::post('/usuarios/invitar', [UsuarioController::class, 'invitar'])->middleware('permiso:usuarios.gestionar');
+    Route::put('/usuarios/{id}/rol', [UsuarioController::class, 'actualizarRol'])->middleware('permiso:usuarios.gestionar');
+    Route::delete('/usuarios/{id}', [UsuarioController::class, 'desvincular'])->middleware('permiso:usuarios.gestionar');
+    Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol'])->middleware('permiso:usuarios.gestionar');
+    Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol'])->middleware('permiso:usuarios.gestionar');
 
     // Empresa - Perfil (configuracion propia: solo requiere autenticacion)
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);

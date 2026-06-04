@@ -26,7 +26,7 @@ class UsuarioController
             $usuarios = $this->service->listarUsuarios($request->user()->empresa_id);
             return response()->json(['success' => true, 'data' => $usuarios]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al cargar usuarios'], 400);
+            return response()->json(['success' => false, 'message' => 'Error al cargar usuarios'], 500);
         }
     }
 
@@ -36,7 +36,7 @@ class UsuarioController
             $roles = $this->service->listarRoles($request->user()->empresa_id);
             return response()->json(['success' => true, 'data' => $roles]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al cargar roles'], 400);
+            return response()->json(['success' => false, 'message' => 'Error al cargar roles'], 500);
         }
     }
 
@@ -110,7 +110,7 @@ class UsuarioController
             // Usuario o rol fuera del alcance de la empresa del solicitante.
             return response()->json(['success' => false, 'message' => 'Usuario o rol no encontrado.'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al actualizar rol'], 400);
+            return response()->json(['success' => false, 'message' => 'Error al actualizar rol'], 500);
         }
     }
 
@@ -136,7 +136,7 @@ class UsuarioController
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al desvincular'], 400);
+            return response()->json(['success' => false, 'message' => 'Error al desvincular'], 500);
         }
     }
 
