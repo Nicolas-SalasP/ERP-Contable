@@ -1,3 +1,19 @@
+# Tenri ERP — Backend (API)
+
+ERP contable chileno multi-tenant. Laravel por dominios (`app/Domains/`), Sanctum, integración con `tenri.cl`.
+
+## Contrato HTTP de la API
+
+La semántica de los códigos de estado está fijada en **[docs/CONTRATO-HTTP.md](docs/CONTRATO-HTTP.md)**. Resumen:
+
+- **422** — error de validación de entrada (siempre; nunca 400 por validación).
+- **400** — regla de negocio/estado (el recurso existe pero la operación no aplica). Son intencionales.
+- **404** — recurso no encontrado o de otra empresa (multitenant: lo ajeno no existe para el usuario).
+- **403** — empresa suspendida, usuario bloqueado, permiso insuficiente, suscripción vencida.
+- **401** — no autenticado.
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

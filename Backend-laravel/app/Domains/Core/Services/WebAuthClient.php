@@ -2,6 +2,7 @@
 
 namespace App\Domains\Core\Services;
 
+use App\Support\HmacFirma;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -51,6 +52,7 @@ class WebAuthClient
                 'X-ERP-API-KEY' => $apiKey,
                 'Accept' => 'application/json',
             ])
+                ->withRequestMiddleware(fn ($req) => HmacFirma::firmarPsr($req, $apiKey))
                 ->timeout(5)
                 ->post("{$baseUrl}{$path}", $payload);
 

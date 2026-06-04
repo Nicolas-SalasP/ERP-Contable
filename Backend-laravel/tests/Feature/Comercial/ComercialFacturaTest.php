@@ -175,6 +175,27 @@ class ComercialFacturaTest extends TestCase
         ]);
     }
 
+    public function test_anular_sin_motivo_devuelve_422_no_400()
+    {
+        $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '9.9.9.9-9', 'razon_social' => 'P9', 'codigo_interno' => 'P9', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+        $factura = Factura::create(['empresa_id' => $this->empresa->id, 'proveedor_id' => $prov->id, 'numero_factura' => 'F-NO-MOT', 'codigo_unico' => 778899, 'fecha_emision' => now(), 'monto_bruto' => 100, 'monto_neto' => 100, 'monto_iva' => 0, 'tipo' => 'COMPRA', 'estado' => 'REGISTRADA']);
+
+        // Falta 'motivo' (required|string|min:5): error de validación de entrada → 422, no 400 de negocio.
+        $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/anular", [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('motivo');
+    }
+
+    public function test_reclasificar_sin_campos_requeridos_devuelve_422_no_400()
+    {
+        $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '4.4.4.4-4', 'razon_social' => 'P4', 'codigo_interno' => 'P4', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+        $factura = Factura::create(['empresa_id' => $this->empresa->id, 'proveedor_id' => $prov->id, 'numero_factura' => 'F-NO-REC', 'codigo_unico' => 667788, 'fecha_emision' => now(), 'monto_bruto' => 100, 'monto_neto' => 100, 'monto_iva' => 0, 'tipo' => 'COMPRA']);
+
+        $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/reclasificar", [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['fecha', 'glosa', 'cambios']);
+    }
+
     public function test_rechaza_anular_factura_ya_anulada_previamente()
     {
         $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '7.7.7.7-7', 'razon_social' => 'P7', 'codigo_interno' => 'P7', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);

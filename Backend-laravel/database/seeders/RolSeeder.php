@@ -29,6 +29,9 @@ class RolSeeder extends Seeder
                     $this->permisosOperativosCompletos(),
                     $this->permisosInventarioCompletos(),
                     $this->permisosSiiAdministracion(),
+                    // H15: el Administrador gestiona usuarios de facto (vía jerarquía);
+                    // ahora el permiso queda declarado para que el gate de ruta lo respete.
+                    $this->permisosAdministracion(),
                 ))),
             ],
             [

@@ -374,7 +374,8 @@ class ImpuestosService
             ->delete();
 
         if (!$eliminado) {
-            throw new Exception("El mapeo no existe o no pertenece a la empresa.", 400);
+            // Para el usuario autenticado, un mapeo de otra empresa simplemente no existe.
+            throw new Exception("El mapeo no existe o no pertenece a la empresa.", 404);
         }
 
         return true;

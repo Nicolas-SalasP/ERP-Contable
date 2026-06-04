@@ -131,8 +131,10 @@ class ConciliacionController
             return response()->json([
                 'success' => true, 
                 'message' => 'Conciliación procesada exitosamente.',
-                'asiento' => $asiento 
+                'asiento' => $asiento
             ]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
