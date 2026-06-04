@@ -32,6 +32,13 @@ class SiiCertificadoController extends Controller
 
     public function store(SubirCertificadoRequest $request): JsonResponse
     {
+        $empresa = $request->user()->empresa()->first();
+        if ($empresa && (bool) $empresa->activa === false) {
+            return response()->json([
+                'mensaje' => 'La empresa está suspendida; no se pueden cargar certificados.',
+            ], 403);
+        }
+
         $archivo  = $request->file('archivo');
         $contenido = file_get_contents($archivo->getRealPath());
         $password  = (string) $request->input('password');
