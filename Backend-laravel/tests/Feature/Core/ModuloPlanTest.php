@@ -40,4 +40,25 @@ class ModuloPlanTest extends TestCase
         // 'clientes' NO otorga compras.ver -> el endpoint de facturas queda bloqueado.
         $this->actingAs($user)->getJson('/api/facturas')->assertStatus(403);
     }
+
+    public function test_el_plan_acota_incluso_a_un_rol_amplio(): void
+    {
+        $empresa = Empresa::create(['rut' => '81.000.000-1', 'razon_social' => 'Techo SpA', 'regimen_tributario' => '14_D3']);
+
+        // Rol Administrador (amplio: incluye compras.ver) pero plan limitado a 'clientes'.
+        $user = User::create([
+            'nombre'                => 'Admin Acotado',
+            'email'                 => 'admin@techo.cl',
+            'password'              => bcrypt('x'),
+            'empresa_id'            => $empresa->id,
+            'rol_id'                => $this->rolAdministrador->id,
+            'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
+            'module_keys'           => ['clientes'],
+            'subscription_status'   => 'active',
+        ]);
+
+        // El rol concederia compras.ver, pero el plan (techo) solo habilita 'clientes'.
+        $this->actingAs($user)->getJson('/api/clientes')->assertStatus(200);
+        $this->actingAs($user)->getJson('/api/facturas')->assertStatus(403);
+    }
 }

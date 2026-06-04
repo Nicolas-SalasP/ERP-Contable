@@ -70,9 +70,11 @@ final class ModuloPermisos
     {
         $usuario->loadMissing('rol');
 
+        $moduleKeys = self::normalizarLista($usuario->module_keys ?? []);
         $permisosRol = self::normalizarLista($usuario->rol?->permisos ?? []);
-        $permisosModulos = self::permisosDesdeModulos($usuario->module_keys ?? []);
+        $permisosModulos = self::permisosDesdeModulos($moduleKeys);
 
+        // SuperAdmin / staff interno (jerarquia >= 100): sin tope de plan.
         if ($usuario->rol && (int) ($usuario->rol->jerarquia ?? 0) >= 100) {
             return self::normalizarLista(array_merge(
                 self::todosLosPermisos(),
@@ -81,15 +83,20 @@ final class ModuloPermisos
             ));
         }
 
-        if (self::esAdministradorOperativo($usuario)) {
-            return self::normalizarLista(array_merge(
-                $permisosRol,
-                $permisosModulos,
-                self::permisosInventarioCompletos()
-            ));
+        $base = self::esAdministradorOperativo($usuario)
+            ? array_merge($permisosRol, $permisosModulos, self::permisosInventarioCompletos())
+            : array_merge($permisosRol, $permisosModulos);
+
+        $base = self::normalizarLista($base);
+
+        // Plan como techo: si el usuario proviene de un plan (module_keys no vacio),
+        // sus permisos efectivos se limitan a los que el plan habilita, sin importar
+        // cuanto conceda el rol. Usuarios sin plan (admins locales) no se ven afectados.
+        if (!empty($moduleKeys)) {
+            $base = array_values(array_intersect($base, $permisosModulos));
         }
 
-        return self::normalizarLista(array_merge($permisosRol, $permisosModulos));
+        return self::normalizarLista($base);
     }
 
     public static function permisosDesdeModulos(mixed $moduleKeys): array
