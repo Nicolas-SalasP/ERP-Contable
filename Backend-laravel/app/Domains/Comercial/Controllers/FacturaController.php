@@ -4,6 +4,7 @@ namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Services\FacturaService;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -216,11 +217,17 @@ class FacturaController
                 'success' => true,
                 'message' => 'Asiento reclasificado exitosamente.'
             ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], 400);
+            ], $this->statusFromException($e, 422));
         }
     }
 
@@ -259,7 +266,7 @@ class FacturaController
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], 400);
+            ], $this->statusFromException($e, 422));
         }
     }
 
@@ -280,11 +287,17 @@ class FacturaController
                 'success' => true,
                 'message' => 'Factura anulada con éxito y contabilidad reversada.'
             ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], 400);
+            ], $this->statusFromException($e, 422));
         }
     }
 
@@ -297,7 +310,7 @@ class FacturaController
                 'data' => $vencidas
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -311,7 +324,7 @@ class FacturaController
                 'Content-Disposition' => 'attachment; filename="reporte_facturas_' . date('Y_m_d') . '.csv"',
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -323,7 +336,7 @@ class FacturaController
             );
             return response()->json(['success' => true, 'data' => $facturas]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -361,8 +374,22 @@ class FacturaController
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
-            $status = $e->getCode() === 404 ? 404 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(
+                ['success' => false, 'message' => $e->getMessage()],
+                $this->statusFromException($e, 422)
+            );
         }
     }
+
+    private function statusFromException(Exception $e, int $fallback = 422): int
+    {
+        if ($e instanceof ModelNotFoundException) {
+            return 404;
+        }
+
+        $code = (int) $e->getCode();
+
+        return in_array($code, [404, 409, 422], true) ? $code : $fallback;
+    }
+
 }

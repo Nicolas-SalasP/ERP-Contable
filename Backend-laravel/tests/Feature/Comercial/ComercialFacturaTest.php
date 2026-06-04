@@ -128,7 +128,7 @@ class ComercialFacturaTest extends TestCase
             'glosa' => 'A',
             'cambios' => ['352130' => '410101']
         ]);
-        $response->assertStatus(400)->assertSee('no tiene un asiento contable');
+        $response->assertStatus(422)->assertSee('no tiene un asiento contable');
     }
 
 
@@ -182,7 +182,7 @@ class ComercialFacturaTest extends TestCase
 
         $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/anular", ['motivo' => 'Doble clic malicioso']);
 
-        $response->assertStatus(400)->assertSee('ya fue anulada');
+        $response->assertStatus(409)->assertSee('ya fue anulada');
     }
 
     public function test_rechaza_anular_factura_con_pagos_aplicados_en_tesoreria()
@@ -191,7 +191,7 @@ class ComercialFacturaTest extends TestCase
         $factura = Factura::create(['empresa_id' => $this->empresa->id, 'proveedor_id' => $prov->id, 'numero_factura' => 'F-PAGADA', 'codigo_unico' => 445566, 'fecha_emision' => now(), 'monto_bruto' => 100, 'monto_neto' => 100, 'monto_iva' => 0, 'tipo' => 'COMPRA', 'estado' => 'PAGADA']);
 
         $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/anular", ['motivo' => 'Me arrepenti']);
-        $response->assertStatus(400)->assertSee('pagos aplicados en Tesorer');
+        $response->assertStatus(409)->assertSee('pagos aplicados en Tesorer');
     }
 
     /**

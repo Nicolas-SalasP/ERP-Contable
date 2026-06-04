@@ -6,6 +6,7 @@ use App\Domains\Comercial\Services\CotizacionService;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\ValidationException;
 use Exception;
@@ -158,11 +159,10 @@ class CotizacionController
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
-            $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $status);
+            ], $this->statusFromException($e, 422));
         }
     }
 
@@ -192,7 +192,10 @@ class CotizacionController
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(
+                ['success' => false, 'message' => $e->getMessage()],
+                $this->statusFromException($e, 422)
+            );
         }
     }
 
@@ -210,11 +213,22 @@ class CotizacionController
                 'data' => $factura
             ], 201);
         } catch (Exception $e) {
-            $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $status);
+            ], $this->statusFromException($e, 422));
         }
     }
+
+    private function statusFromException(Exception $e, int $fallback = 422): int
+    {
+        if ($e instanceof ModelNotFoundException) {
+            return 404;
+        }
+
+        $code = (int) $e->getCode();
+
+        return in_array($code, [404, 409, 422], true) ? $code : $fallback;
+    }
+
 }

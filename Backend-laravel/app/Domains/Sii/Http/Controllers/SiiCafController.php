@@ -65,6 +65,8 @@ class SiiCafController extends Controller
             $caf = $this->cafs->cargar($empresaId, $contenido);
         } catch (CafInvalidoException $e) {
             return response()->json([
+                'success'    => false,
+                'message'    => $e->getMessage(),
                 'mensaje'    => $e->getMessage(),
                 'error_code' => $e->motivo,
             ], 422);
@@ -92,7 +94,11 @@ class SiiCafController extends Controller
         try {
             $this->cafs->revocar($caf, $request->validated('motivo'));
         } catch (LogicException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 409);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'mensaje' => $e->getMessage(),
+            ], 409);
         }
 
         return response()->noContent();

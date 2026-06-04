@@ -23,6 +23,8 @@ class SiiCertificadoController extends Controller
 
         if ($cert === null) {
             return response()->json([
+                'success' => false,
+                'message' => 'No hay certificado activo para esta empresa. Suba uno con POST /api/sii/certificado.',
                 'mensaje' => 'No hay certificado activo para esta empresa. Suba uno con POST /api/sii/certificado.',
             ], 404);
         }
@@ -35,6 +37,8 @@ class SiiCertificadoController extends Controller
         $empresa = $request->user()->empresa()->first();
         if ($empresa && (bool) $empresa->activa === false) {
             return response()->json([
+                'success' => false,
+                'message' => 'La empresa está suspendida; no se pueden cargar certificados.',
                 'mensaje' => 'La empresa está suspendida; no se pueden cargar certificados.',
             ], 403);
         }
@@ -51,6 +55,8 @@ class SiiCertificadoController extends Controller
             );
         } catch (CertificadoInvalidoException $e) {
             return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
                 'mensaje' => $e->getMessage(),
                 'motivo'  => $e->motivo,
             ], 422);
@@ -77,6 +83,8 @@ class SiiCertificadoController extends Controller
 
         if ($cert === null) {
             return response()->json([
+                'success' => false,
+                'message' => 'No hay certificado activo para verificar.',
                 'mensaje' => 'No hay certificado activo para verificar.',
             ], 404);
         }

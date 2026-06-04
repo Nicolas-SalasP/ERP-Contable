@@ -142,7 +142,7 @@ class CotizacionService
             $cotizacion = Cotizacion::where('empresa_id', $empresaId)->findOrFail($cotiId);
 
             if (in_array($cotizacion->estado_id, [3, 5])) {
-                throw new Exception("No se puede editar una cotización que ya ha sido aprobada o facturada.");
+                throw new Exception("No se puede editar una cotización que ya ha sido aprobada o facturada.", 409);
             }
 
             if (isset($datos['fecha_validez'])) {
@@ -201,7 +201,8 @@ class CotizacionService
             if (!$estadoAprobada || $cotizacion->estado_id !== $estadoAprobada->id) {
                 throw new Exception(
                     "Solo cotizaciones APROBADAS pueden ser facturadas. " .
-                    "Estado actual: " . ($cotizacion->estado->nombre ?? '?')
+                    "Estado actual: " . ($cotizacion->estado->nombre ?? '?'),
+                    409
                 );
             }
 

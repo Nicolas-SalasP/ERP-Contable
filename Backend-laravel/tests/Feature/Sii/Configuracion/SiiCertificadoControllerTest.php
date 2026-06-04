@@ -58,7 +58,7 @@ class SiiCertificadoControllerTest extends TestCase
         Sanctum::actingAs($usuario);
 
         // Archivo valido (pasa el FormRequest): el rechazo viene del guard de empresa activa.
-        $archivo = UploadedFile::fake()->createWithContent('cert.pfx', 'contenido');
+        $archivo = UploadedFile::fake()->create('cert.pfx', 1, 'application/octet-stream');
 
         $this->post(
             '/api/sii/certificado',
@@ -96,6 +96,82 @@ class SiiCertificadoControllerTest extends TestCase
             ['Accept' => 'application/json']
         )->assertStatus(422)
          ->assertJsonValidationErrors('archivo');
+    }
+
+    public function test_post_rechaza_archivo_con_mime_no_permitido_con_422(): void
+    {
+        [, $usuario] = $this->crearEmpresaConAdmin();
+        Sanctum::actingAs($usuario);
+
+        $archivo = UploadedFile::fake()->create('cert.pfx', 1, 'text/plain');
+
+        $this->post(
+            '/api/sii/certificado',
+            ['archivo' => $archivo, 'password' => 'pwd'],
+            ['Accept' => 'application/json']
+        )->assertStatus(422)
+         ->assertJsonValidationErrors('archivo');
+    }
+
+    public function test_post_rechaza_password_faltante_con_422(): void
+    {
+        [, $usuario] = $this->crearEmpresaConAdmin();
+        Sanctum::actingAs($usuario);
+
+        $archivo = UploadedFile::fake()->create('cert.pfx', 1, 'application/octet-stream');
+
+        $this->post(
+            '/api/sii/certificado',
+            ['archivo' => $archivo],
+            ['Accept' => 'application/json']
+        )->assertStatus(422)
+         ->assertJsonValidationErrors('password');
+    }
+
+    public function test_post_rechaza_usuario_sin_permiso_para_subir_certificado(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $usuario = $this->crearUsuario($empresa, $this->rolUsuarioBasico);
+        Sanctum::actingAs($usuario);
+
+        $archivo = UploadedFile::fake()->create('cert.pfx', 1, 'application/octet-stream');
+
+        $this->post(
+            '/api/sii/certificado',
+            ['archivo' => $archivo, 'password' => 'pwd'],
+            ['Accept' => 'application/json']
+        )->assertStatus(403)
+         ->assertJsonPath('success', false);
+    }
+
+    public function test_post_ignora_empresa_id_inyectada_y_usa_empresa_del_usuario_autenticado(): void
+    {
+        [$empresaA, $usuarioA] = $this->crearEmpresaConAdmin();
+        [$empresaB] = $this->crearEmpresaConAdmin();
+        Sanctum::actingAs($usuarioA);
+
+        $pfx = $this->crearPfxDePrueba('pwd_tenant', 'Empresa Test 76086428-5');
+        $archivo = UploadedFile::fake()->createWithContent('cert.pfx', $pfx);
+
+        $this->post(
+            '/api/sii/certificado',
+            [
+                'archivo' => $archivo,
+                'password' => 'pwd_tenant',
+                'empresa_id' => $empresaB->id,
+            ],
+            ['Accept' => 'application/json']
+        )->assertStatus(201)
+         ->assertJsonPath('empresa_id', $empresaA->id);
+
+        $this->assertDatabaseHas('sii_certificado_empresa', [
+            'empresa_id' => $empresaA->id,
+            'estado' => 'activo',
+        ]);
+
+        $this->assertDatabaseMissing('sii_certificado_empresa', [
+            'empresa_id' => $empresaB->id,
+        ]);
     }
 
     public function test_post_rechaza_password_incorrecto_con_422_mensaje_claro(): void

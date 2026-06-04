@@ -43,7 +43,7 @@ class ComercialAnomaliasFinancierasTest extends TestCase
             'cuentaDestino' => '410101', 'cuentaIva' => '353350', 'cuentaProveedor' => '352105'
         ]);
 
-        $this->assertContains($response->getStatusCode(), [400, 422]);
+        $response->assertStatus(422);
     }
 
     public function test_rechaza_factura_con_fecha_de_emision_en_el_futuro()
@@ -71,7 +71,7 @@ class ComercialAnomaliasFinancierasTest extends TestCase
             'medioPago' => 'TRANSFERENCIA'
         ]);
 
-        $this->assertContains($response->getStatusCode(), [200, 400, 422]);
+        $response->assertStatus(422);
     }
 
     public function test_bloquea_anular_una_factura_que_ya_esta_anulada()
@@ -82,7 +82,7 @@ class ComercialAnomaliasFinancierasTest extends TestCase
             'motivo' => 'Doble anulación'
         ]);
 
-        $response->assertStatus(400);
+        $response->assertStatus(409);
     }
 
     public function test_genera_codigos_unicos_diferentes_para_facturas_masivas()

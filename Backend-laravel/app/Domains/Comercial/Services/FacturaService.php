@@ -426,11 +426,11 @@ class FacturaService
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
             if ($factura->estado === 'ANULADA') {
-                throw new Exception("Esta factura ya fue anulada anteriormente.");
+                throw new Exception("Esta factura ya fue anulada anteriormente.", 409);
             }
 
             if ($factura->estado === 'PAGADA') {
-                throw new Exception("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.");
+                throw new Exception("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.", 409);
             }
 
             if ($factura->comprobante_contable) {

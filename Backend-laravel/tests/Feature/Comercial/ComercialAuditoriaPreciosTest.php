@@ -60,7 +60,7 @@ class ComercialAuditoriaPreciosTest extends TestCase
             'detalles' => [['producto_nombre' => 'Hack', 'cantidad' => 1, 'precio_unitario' => 999999]]
         ]);
 
-        $response->assertStatus(400);
+        $response->assertStatus(409);
     }
 
     public function test_sistema_detecta_y_previene_montos_negativos_en_detalles_de_compra()
