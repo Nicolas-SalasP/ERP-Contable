@@ -279,37 +279,6 @@ public function __construct(
         }
     }
 
-    public function bodegas(Request $request): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'data' => $this->service->listarBodegas($request->user()),
-        ]);
-    }
-
-    public function storeBodega(Request $request): JsonResponse
-    {
-        try {
-            $datos = $request->validate([
-                'codigo' => 'required|string|max:20',
-                'nombre' => 'required|string|max:120',
-                'direccion' => 'nullable|string|max:255',
-                'estado' => 'nullable|in:ACTIVA,INACTIVA',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => $this->service->crearBodega($request->user(), $datos),
-                'message' => 'Bodega creada correctamente.',
-            ], 201);
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-        }
-    }
-
     public function movimientos(Request $request): JsonResponse
     {
         try {

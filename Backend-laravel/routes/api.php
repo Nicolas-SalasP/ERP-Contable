@@ -25,6 +25,7 @@ use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
 use App\Domains\Inventario\Controllers\InventarioController;
 use App\Domains\Inventario\Controllers\ProductoController;
+use App\Domains\Inventario\Controllers\BodegaController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -346,8 +347,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/productos', [ProductoController::class, 'index']);
         Route::post('/productos', [ProductoController::class, 'store']);
 
-        Route::get('/bodegas', [InventarioController::class, 'bodegas']);
-        Route::post('/bodegas', [InventarioController::class, 'storeBodega']);
+        Route::get('/bodegas', [BodegaController::class, 'bodegas']);
+        Route::post('/bodegas', [BodegaController::class, 'storeBodega']);
 
         Route::get('/movimientos', [InventarioController::class, 'movimientos']);
         Route::post('/movimientos', [InventarioController::class, 'registrarMovimiento']);
