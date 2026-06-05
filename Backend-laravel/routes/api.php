@@ -24,6 +24,7 @@ use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
 use App\Domains\Inventario\Controllers\InventarioController;
+use App\Domains\Inventario\Controllers\ProductoController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -342,8 +343,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::post('/devoluciones/{id}/confirmar', [InventarioDevolucionController::class, 'confirmar']);
         Route::post('/devoluciones/{id}/cancelar', [InventarioDevolucionController::class, 'cancelar']);
 
-        Route::get('/productos', [InventarioController::class, 'index']);
-        Route::post('/productos', [InventarioController::class, 'store']);
+        Route::get('/productos', [ProductoController::class, 'index']);
+        Route::post('/productos', [ProductoController::class, 'store']);
 
         Route::get('/bodegas', [InventarioController::class, 'bodegas']);
         Route::post('/bodegas', [InventarioController::class, 'storeBodega']);
@@ -388,8 +389,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::post('/reservas/{id}/liberar', [InventarioController::class, 'liberarReserva']);
         Route::post('/reservas/{id}/consumir', [InventarioController::class, 'consumirReserva']);
 
-        Route::get('/productos/{id}', [InventarioController::class, 'show']);
-        Route::put('/productos/{id}', [InventarioController::class, 'update']);
+        Route::get('/productos/{id}', [ProductoController::class, 'show']);
+        Route::put('/productos/{id}', [ProductoController::class, 'update']);
 
         Route::get('/tomas-fisicas', [InventarioController::class, 'tomasFisicas']);
         Route::post('/tomas-fisicas', [InventarioController::class, 'storeTomaFisica']);
