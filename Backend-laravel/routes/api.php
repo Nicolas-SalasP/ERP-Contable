@@ -30,6 +30,7 @@ use App\Domains\Inventario\Controllers\MovimientoController;
 use App\Domains\Inventario\Controllers\KardexController;
 use App\Domains\Inventario\Controllers\ValorizacionController;
 use App\Domains\Inventario\Controllers\LoteController;
+use App\Domains\Inventario\Controllers\ReservaController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -387,12 +388,12 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/alertas', [InventarioController::class, 'alertas']);
         Route::get('/reposicion/sugerencias', [InventarioController::class, 'sugerenciasReposicion']);
 
-        Route::get('/reservas', [InventarioController::class, 'reservas']);
-        Route::post('/reservas', [InventarioController::class, 'storeReserva']);
-        Route::get('/reservas/{id}', [InventarioController::class, 'showReserva']);
-        Route::post('/reservas/{id}/cancelar', [InventarioController::class, 'cancelarReserva']);
-        Route::post('/reservas/{id}/liberar', [InventarioController::class, 'liberarReserva']);
-        Route::post('/reservas/{id}/consumir', [InventarioController::class, 'consumirReserva']);
+        Route::get('/reservas', [ReservaController::class, 'reservas']);
+        Route::post('/reservas', [ReservaController::class, 'storeReserva']);
+        Route::get('/reservas/{id}', [ReservaController::class, 'showReserva']);
+        Route::post('/reservas/{id}/cancelar', [ReservaController::class, 'cancelarReserva']);
+        Route::post('/reservas/{id}/liberar', [ReservaController::class, 'liberarReserva']);
+        Route::post('/reservas/{id}/consumir', [ReservaController::class, 'consumirReserva']);
 
         Route::get('/productos/{id}', [ProductoController::class, 'show']);
         Route::put('/productos/{id}', [ProductoController::class, 'update']);
