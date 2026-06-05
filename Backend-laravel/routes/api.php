@@ -29,6 +29,7 @@ use App\Domains\Inventario\Controllers\BodegaController;
 use App\Domains\Inventario\Controllers\MovimientoController;
 use App\Domains\Inventario\Controllers\KardexController;
 use App\Domains\Inventario\Controllers\ValorizacionController;
+use App\Domains\Inventario\Controllers\LoteController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -367,13 +368,13 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::post('/ajustes-criticos', [InventarioController::class, 'registrarAjusteCritico']);
         Route::get('/ajustes-criticos/{id}', [InventarioController::class, 'verAjusteCritico']);
 
-        Route::get('/lotes', [InventarioController::class, 'lotes']);
-        Route::post('/lotes', [InventarioController::class, 'storeLote']);
-        Route::get('/lotes/{id}/stock', [InventarioController::class, 'stockLote']);
-        Route::get('/lotes/{id}', [InventarioController::class, 'showLote']);
-        Route::put('/lotes/{id}', [InventarioController::class, 'updateLote']);
+        Route::get('/lotes', [LoteController::class, 'lotes']);
+        Route::post('/lotes', [LoteController::class, 'storeLote']);
+        Route::get('/lotes/{id}/stock', [LoteController::class, 'stockLote']);
+        Route::get('/lotes/{id}', [LoteController::class, 'showLote']);
+        Route::put('/lotes/{id}', [LoteController::class, 'updateLote']);
 
-        Route::get('/productos/{id}/lotes', [InventarioController::class, 'lotesProducto']);
+        Route::get('/productos/{id}/lotes', [LoteController::class, 'lotesProducto']);
 
         Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad']);
         Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto']);
