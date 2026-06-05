@@ -28,6 +28,7 @@ use App\Domains\Inventario\Controllers\ProductoController;
 use App\Domains\Inventario\Controllers\BodegaController;
 use App\Domains\Inventario\Controllers\MovimientoController;
 use App\Domains\Inventario\Controllers\KardexController;
+use App\Domains\Inventario\Controllers\ValorizacionController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -358,8 +359,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/kardex', [KardexController::class, 'kardex']);
         Route::get('/productos/{id}/kardex', [KardexController::class, 'kardexProducto']);
 
-        Route::get('/valorizacion', [InventarioController::class, 'valorizacion']);
-        Route::get('/productos/{id}/valorizacion', [InventarioController::class, 'valorizacionProducto']);
+        Route::get('/valorizacion', [ValorizacionController::class, 'valorizacion']);
+        Route::get('/productos/{id}/valorizacion', [ValorizacionController::class, 'valorizacionProducto']);
 
         Route::get('/ajustes-criticos/tipos', [InventarioController::class, 'tiposAjusteCritico']);
         Route::get('/ajustes-criticos', [InventarioController::class, 'ajustesCriticos']);
