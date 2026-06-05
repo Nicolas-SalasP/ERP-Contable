@@ -66,13 +66,93 @@ final class ModuloPermisos
         'modulos.custom' => [],
     ];
 
+    /**
+     * Metadatos de presentacion por modulo: [label, categoria]. Solo es una capa
+     * visual sobre las keys de MAP (la fuente real). Una key sin entrada aqui
+     * igual aparece en el catalogo con un label humanizado y categoria 'General'.
+     */
+    private const META = [
+        'dashboard' => ['Dashboard principal', 'General'],
+        'dashboard.ejecutivo' => ['Dashboard ejecutivo', 'General'],
+        'empresa.perfil' => ['Perfil de empresa', 'General'],
+        'glosario' => ['Glosario contable', 'General'],
+        'clientes' => ['Clientes y directorio', 'Comercial'],
+        'cotizaciones' => ['Cotizaciones', 'Comercial'],
+        'facturas.manual' => ['Ingreso de facturas', 'Compras'],
+        'facturas.historial' => ['Historial de compras', 'Compras'],
+        'facturas.auditoria' => ['Auditoría de facturas', 'Compras'],
+        'dte.emision' => ['Emisión DTE', 'Compras'],
+        'documentos.anulacion' => ['Anulación de documentos', 'Compras'],
+        'proveedores' => ['Proveedores', 'Compras'],
+        'tesoreria.cartola' => ['Cartola bancaria', 'Tesorería'],
+        'tesoreria.conciliacion' => ['Mesa de conciliación', 'Tesorería'],
+        'tesoreria.nomina' => ['Nómina de pagos', 'Tesorería'],
+        'contabilidad.plan_cuentas' => ['Plan de cuentas', 'Contabilidad'],
+        'contabilidad.libro_mayor' => ['Libro mayor', 'Contabilidad'],
+        'contabilidad.asientos' => ['Asientos manuales', 'Contabilidad'],
+        'contabilidad.visor' => ['Visor de asientos', 'Contabilidad'],
+        'contabilidad.reclasificador' => ['Reclasificador', 'Contabilidad'],
+        'activos_fijos' => ['Activos fijos', 'Activos'],
+        'inventario.dashboard' => ['Dashboard de inventario', 'Inventario'],
+        'inventario.reportes' => ['Reportes de inventario', 'Inventario'],
+        'inventario.productos' => ['Productos', 'Inventario'],
+        'inventario.bodegas' => ['Bodegas', 'Inventario'],
+        'inventario.ubicaciones' => ['Ubicaciones', 'Inventario'],
+        'inventario.stock_ubicaciones' => ['Stock por ubicación', 'Inventario'],
+        'inventario.picking' => ['Picking', 'Inventario'],
+        'inventario.packing' => ['Packing', 'Inventario'],
+        'inventario.despachos' => ['Despachos', 'Inventario'],
+        'inventario.devoluciones' => ['Devoluciones', 'Inventario'],
+        'inventario.auditoria' => ['Auditoría operativa', 'Inventario'],
+        'inventario.eventos_integracion' => ['Eventos de integración', 'Inventario'],
+        'inventario.reportes_operacion_bodega' => ['Reportes de operación de bodega', 'Inventario'],
+        'inventario.movimientos' => ['Movimientos', 'Inventario'],
+        'inventario.kardex' => ['Kardex', 'Inventario'],
+        'inventario.ajustes_criticos' => ['Ajustes críticos', 'Inventario'],
+        'inventario.lotes' => ['Lotes', 'Inventario'],
+        'inventario.reservas' => ['Reservas', 'Inventario'],
+        'inventario.disponibilidad' => ['Disponibilidad', 'Inventario'],
+        'inventario.valorizacion' => ['Valorización', 'Inventario'],
+        'inventario.alertas' => ['Alertas y reposición', 'Inventario'],
+        'inventario.reglas_reposicion' => ['Reglas de reposición', 'Inventario'],
+        'inventario.tomas_fisicas' => ['Tomas físicas', 'Inventario'],
+        'tributario.renta' => ['Operación renta', 'Tributario'],
+        'tributario.mapeo_sii' => ['Mapeo SII', 'Tributario'],
+        'tributario.f29' => ['Cierre F29', 'Tributario'],
+        'sii.configuracion' => ['Configuración SII', 'SII'],
+        'sii.certificado' => ['Certificado digital', 'SII'],
+        'sii.caf' => ['Folios CAF', 'SII'],
+        'sii.dte' => ['Emisión y estado DTE', 'SII'],
+        'sii.auditoria' => ['Auditoría SII', 'SII'],
+        'usuarios.gestion' => ['Gestión de usuarios', 'Administración'],
+        'roles.gestion' => ['Roles y permisos', 'Administración'],
+        'integraciones.api' => ['Integraciones API', 'Enterprise'],
+        'white_label' => ['White-label', 'Enterprise'],
+        'modulos.custom' => ['Módulos a medida', 'Enterprise'],
+    ];
+
+    /**
+     * Catalogo de modulos asignables a un plan: [{key, label, categoria}].
+     * Derivado de MAP (la fuente de verdad), por lo que nunca se desincroniza.
+     */
+    public static function catalogo(): array
+    {
+        return array_map(static fn (string $key): array => [
+            'key' => $key,
+            'label' => self::META[$key][0] ?? ucfirst(str_replace(['.', '_'], ' ', $key)),
+            'categoria' => self::META[$key][1] ?? 'General',
+        ], array_keys(self::MAP));
+    }
+
     public static function permisosUsuario(User $usuario): array
     {
         $usuario->loadMissing('rol');
 
+        $moduleKeys = self::normalizarLista($usuario->module_keys ?? []);
         $permisosRol = self::normalizarLista($usuario->rol?->permisos ?? []);
-        $permisosModulos = self::permisosDesdeModulos($usuario->module_keys ?? []);
+        $permisosModulos = self::permisosDesdeModulos($moduleKeys);
 
+        // SuperAdmin / staff interno (jerarquia >= 100): sin tope de plan.
         if ($usuario->rol && (int) ($usuario->rol->jerarquia ?? 0) >= 100) {
             return self::normalizarLista(array_merge(
                 self::todosLosPermisos(),
@@ -81,15 +161,20 @@ final class ModuloPermisos
             ));
         }
 
-        if (self::esAdministradorOperativo($usuario)) {
-            return self::normalizarLista(array_merge(
-                $permisosRol,
-                $permisosModulos,
-                self::permisosInventarioCompletos()
-            ));
+        $base = self::esAdministradorOperativo($usuario)
+            ? array_merge($permisosRol, $permisosModulos, self::permisosInventarioCompletos())
+            : array_merge($permisosRol, $permisosModulos);
+
+        $base = self::normalizarLista($base);
+
+        // Plan como techo: si el usuario proviene de un plan (module_keys no vacio),
+        // sus permisos efectivos se limitan a los que el plan habilita, sin importar
+        // cuanto conceda el rol. Usuarios sin plan (admins locales) no se ven afectados.
+        if (!empty($moduleKeys)) {
+            $base = array_values(array_intersect($base, $permisosModulos));
         }
 
-        return self::normalizarLista(array_merge($permisosRol, $permisosModulos));
+        return self::normalizarLista($base);
     }
 
     public static function permisosDesdeModulos(mixed $moduleKeys): array

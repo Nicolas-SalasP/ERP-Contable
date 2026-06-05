@@ -7,6 +7,8 @@ use Tests\TestCase;
 use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Comercial\Models\Cliente;
+use App\Domains\Comercial\Models\Cotizacion;
+use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Activos\Models\ActivoFijo;
@@ -85,5 +87,24 @@ class SoftDeletesTest extends TestCase
         $this->assertNull(AsientoContable::find($id));
         $this->assertNotNull(AsientoContable::withTrashed()->find($id));
         $this->assertSoftDeleted('asientos_contables', ['id' => $id]);
+    }
+
+    public function test_cotizacion_se_borra_de_forma_logica_y_es_recuperable()
+    {
+        EstadoCotizacion::insert([['id' => 1, 'nombre' => 'Borrador']]);
+        $cliente = Cliente::create(['empresa_id' => $this->empresa->id, 'rut' => '5.5.5.5-5', 'razon_social' => 'Cliente Cot', 'estado' => 'ACTIVO']);
+        $cotizacion = Cotizacion::create([
+            'empresa_id' => $this->empresa->id, 'cliente_id' => $cliente->id, 'nombre_cliente' => 'Cliente Cot',
+            'estado_id' => 1, 'numero_cotizacion' => 'COT-DEL', 'subtotal' => 100, 'monto_neto' => 100,
+            'monto_iva' => 19, 'monto_total' => 119, 'total' => 119, 'fecha_emision' => now(),
+        ]);
+        $id = $cotizacion->id;
+
+        $cotizacion->delete();
+
+        $this->assertNull(Cotizacion::find($id));
+        $this->assertNotNull(Cotizacion::withTrashed()->find($id));
+        $this->assertTrue(Cotizacion::withTrashed()->find($id)->trashed());
+        $this->assertSoftDeleted('cotizaciones', ['id' => $id]);
     }
 }

@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import BarraLateral from './BarraLateral';
+import BannerSuscripcion from '../BannerSuscripcion';
+import ErrorBoundary from '../ErrorBoundary';
 
 const LayoutPrincipal = ({ children }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const location = useLocation();
 
     const openSidebar = () => setSidebarOpen(true);
     const closeSidebar = () => setSidebarOpen(false);
@@ -26,8 +30,12 @@ const LayoutPrincipal = ({ children }) => {
                     <div className="w-6"></div>
                 </header>
 
+                <BannerSuscripcion />
+
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-8">
-                    {children}
+                    <ErrorBoundary key={location.pathname} mensaje="Este módulo tuvo un problema. El resto del sistema sigue disponible.">
+                        {children}
+                    </ErrorBoundary>
                 </main>
             </div>
         </div>

@@ -47,6 +47,8 @@ class ProvisionUserService
                 'estado_suscripcion_id' => $estadoActiva->id,
                 'plan_slug' => $payload['plan_slug'],
                 'module_keys' => $payload['module_keys'] ?? [],
+                'subscription_status' => $payload['subscription_status'] ?? 'active',
+                'subscription_ends_at' => $payload['subscription_ends_at'] ?? null,
                 'tenri_synced_at' => now(),
             ];
 

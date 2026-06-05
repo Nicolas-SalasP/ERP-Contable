@@ -52,6 +52,21 @@ class SiiCertificadoControllerTest extends TestCase
         $this->assertSame('activo', $response->json('estado'));
     }
 
+    public function test_post_rechaza_certificado_si_la_empresa_esta_suspendida(): void
+    {
+        [, $usuario] = $this->crearEmpresaConAdmin(['activa' => false]);
+        Sanctum::actingAs($usuario);
+
+        // Archivo valido (pasa el FormRequest): el rechazo viene del guard de empresa activa.
+        $archivo = UploadedFile::fake()->createWithContent('cert.pfx', 'contenido');
+
+        $this->post(
+            '/api/sii/certificado',
+            ['archivo' => $archivo, 'password' => 'x'],
+            ['Accept' => 'application/json']
+        )->assertStatus(403);
+    }
+
     public function test_post_rechaza_archivo_no_pfx_con_422(): void
     {
         [, $usuario] = $this->crearEmpresaConAdmin();

@@ -2,6 +2,7 @@
 
 namespace App\Domains\Core\Services;
 
+use App\Support\HmacFirma;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -51,6 +52,7 @@ class WebAuthClient
                 'X-ERP-API-KEY' => $apiKey,
                 'Accept' => 'application/json',
             ])
+                ->withRequestMiddleware(fn ($req) => HmacFirma::firmarPsr($req, $apiKey))
                 ->timeout(5)
                 ->post("{$baseUrl}{$path}", $payload);
 
@@ -81,6 +83,8 @@ class WebAuthClient
                 'plan_slug' => $data['plan']['plan_slug'] ?? null,
                 'module_keys' => $data['plan']['module_keys'] ?? [],
                 'rol_erp' => $data['plan']['rol_erp'] ?? 'Administrador',
+                'subscription_status' => $data['subscription']['status'] ?? 'active',
+                'subscription_ends_at' => $data['subscription']['ends_at'] ?? null,
             ];
         } catch (Throwable $e) {
             Log::warning('WebAuthClient: error de red al validar contra la web', array_merge([

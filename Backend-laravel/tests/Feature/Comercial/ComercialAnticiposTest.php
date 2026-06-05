@@ -74,6 +74,15 @@ class ComercialAnticiposTest extends TestCase
         $this->assertContains($response->getStatusCode(), [404, 422]);
     }
 
+    public function test_cruzar_documentos_sin_facturas_ids_devuelve_422_no_400()
+    {
+        // Falta 'facturas_ids' (required|array): validación de entrada → 422, no 400.
+        $this->actingAs($this->usuario)
+            ->postJson("/api/proveedores/{$this->prov->id}/cruzar-documentos", [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('facturas_ids');
+    }
+
     public function test_aplicar_anticipo_a_factura_disminuye_el_saldo_disponible()
     {
         $anticipo = AnticipoProveedor::create([

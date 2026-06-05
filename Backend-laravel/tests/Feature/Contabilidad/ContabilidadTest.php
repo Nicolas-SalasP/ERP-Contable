@@ -1332,7 +1332,8 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
 
         $response = $this->actingAs($this->usuarioContador)->deleteJson("/api/renta/mapeo/{$mapeoB->id}");
 
-        $response->assertStatus(400);
+        // Un mapeo de otra empresa simplemente no existe para este usuario.
+        $response->assertStatus(404);
     }
 
     // PRUEBA: Protección de Base de Datos en Libro Diario

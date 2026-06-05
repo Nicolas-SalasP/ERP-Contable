@@ -3,6 +3,7 @@
 namespace App\Domains\Core\Services;
 
 use App\Domains\Core\Models\User;
+use App\Support\HmacFirma;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -49,6 +50,7 @@ class SubscriptionVerifierService
                 'X-ERP-API-KEY' => $apiKey,
                 'Accept' => 'application/json',
             ])
+                ->withRequestMiddleware(fn ($req) => HmacFirma::firmarPsr($req, $apiKey))
                 ->timeout(5)
                 ->post("{$baseUrl}/api/internal/erp/validate-token", [
                     'tenri_user_id' => $tenriUserId,

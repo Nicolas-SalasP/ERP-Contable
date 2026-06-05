@@ -3,12 +3,14 @@
 namespace App\Domains\Comercial\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Traits\HasEmpresaScope;
 
 class Cotizacion extends Model
 {
     use HasEmpresaScope;
+    use SoftDeletes;
 
     protected $table = 'cotizaciones';
     const UPDATED_AT = null;

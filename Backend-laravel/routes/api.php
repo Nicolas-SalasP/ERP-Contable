@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Domains\Core\Controllers\AuthController;
+use App\Domains\Core\Controllers\HealthController;
 use App\Domains\Core\Controllers\Internal\AdminEmpresasController;
 use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
@@ -46,6 +47,10 @@ use App\Domains\Inventario\Controllers\ReporteInventarioController;
 | controller (InventarioPermisoService), por eso su grupo no repite permiso:.
 */
 
+// Health check operativo (publico, sin auth): el equipo verifica el estado de los
+// servicios sin SSH. 200 = todo OK, 503 = algun componente caido.
+Route::get('/health', HealthController::class);
+
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/token-login', [AuthController::class, 'tokenLogin']);
@@ -65,19 +70,19 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
     Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
 });
 
-Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription'])->group(function () {
-    // Gestion de usuarios y roles.
-    // La autorizacion se aplica en el controller por jerarquia de rol (invitar
-    // exige Super Admin; desvincular/actualizarRol comparan jerarquia; store/
-    // updateRol validan escalada y scope de empresa). Por eso no se duplica
-    // aqui un permiso: que entraria en conflicto con esa logica relativa.
-    Route::get('/usuarios', [UsuarioController::class, 'index']);
-    Route::get('/usuarios/roles', [UsuarioController::class, 'roles']);
-    Route::post('/usuarios/invitar', [UsuarioController::class, 'invitar']);
-    Route::put('/usuarios/{id}/rol', [UsuarioController::class, 'actualizarRol']);
-    Route::delete('/usuarios/{id}', [UsuarioController::class, 'desvincular']);
-    Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol']);
-    Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol']);
+Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 'subscription.writable'])->group(function () {
+    // Gestion de usuarios y roles. RBAC en dos capas (H15):
+    //  - Capa 1 (aqui): gate grueso de capacidad -> permiso:usuarios.ver|gestionar.
+    //  - Capa 2 (controller): logica relativa por instancia (jerarquia del objetivo
+    //    vs la del solicitante, no-self, anti-escalada de permisos). NO movible a
+    //    middleware porque depende del recurso concreto. Ambas capas coexisten.
+    Route::get('/usuarios', [UsuarioController::class, 'index'])->middleware('permiso:usuarios.ver');
+    Route::get('/usuarios/roles', [UsuarioController::class, 'roles'])->middleware('permiso:usuarios.ver');
+    Route::post('/usuarios/invitar', [UsuarioController::class, 'invitar'])->middleware('permiso:usuarios.gestionar');
+    Route::put('/usuarios/{id}/rol', [UsuarioController::class, 'actualizarRol'])->middleware('permiso:usuarios.gestionar');
+    Route::delete('/usuarios/{id}', [UsuarioController::class, 'desvincular'])->middleware('permiso:usuarios.gestionar');
+    Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol'])->middleware('permiso:usuarios.gestionar');
+    Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol'])->middleware('permiso:usuarios.gestionar');
 
     // Empresa - Perfil (configuracion propia: solo requiere autenticacion)
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
@@ -402,6 +407,11 @@ Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
     Route::post('/sync-plan',      [WebProvisioningController::class, 'syncPlan']);
     Route::post('/sync-password',  [WebProvisioningController::class, 'syncPassword']);
     Route::get('/online-users',    [WebProvisioningController::class, 'onlineUsers']);
+
+    // Catalogo de modulos asignables a un plan (fuente de verdad para el admin).
+    Route::get('/module-catalog', fn () => response()->json([
+        'modules' => \App\Domains\Core\Support\ModuloPermisos::catalogo(),
+    ]));
 
     Route::get('/empresas',        [AdminEmpresasController::class, 'index']);
     Route::get('/empresas/{id}',   [AdminEmpresasController::class, 'show']);

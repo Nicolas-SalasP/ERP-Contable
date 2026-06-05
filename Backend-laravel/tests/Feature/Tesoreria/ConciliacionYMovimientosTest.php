@@ -229,6 +229,15 @@ class ConciliacionYMovimientosTest extends TestCase
         $this->assertTrue(in_array($response->getStatusCode(), [400, 422, 500]));
     }
 
+    public function test_conciliar_facturas_sin_movimiento_id_devuelve_422_no_400()
+    {
+        Sanctum::actingAs($this->adminA);
+        // Falta 'movimiento_id' (required|integer): validación de entrada → 422, no 400.
+        $this->postJson('/api/banco/movimientos/conciliar-facturas', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('movimiento_id');
+    }
+
     public function test_conciliar_factura_inexistente_falla()
     {
         Sanctum::actingAs($this->adminA);

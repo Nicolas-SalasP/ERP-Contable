@@ -130,7 +130,8 @@ class ImpuestosController
             $this->service->eliminarMapeo($request->user()->empresa_id, $id);
             return response()->json(['success' => true, 'message' => 'Mapeo eliminado.']);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            $status = $e->getCode() === 404 ? 404 : 400;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
 }
