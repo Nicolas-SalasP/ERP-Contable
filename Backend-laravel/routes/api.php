@@ -33,6 +33,7 @@ use App\Domains\Inventario\Controllers\LoteController;
 use App\Domains\Inventario\Controllers\ReservaController;
 use App\Domains\Inventario\Controllers\TomaFisicaController;
 use App\Domains\Inventario\Controllers\DisponibilidadController;
+use App\Domains\Inventario\Controllers\ReposicionController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -382,13 +383,13 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/disponibilidad', [DisponibilidadController::class, 'disponibilidad']);
         Route::get('/productos/{id}/disponibilidad', [DisponibilidadController::class, 'disponibilidadProducto']);
 
-        Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion']);
-        Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion']);
-        Route::get('/reglas-reposicion/{id}', [InventarioController::class, 'showReglaReposicion']);
-        Route::put('/reglas-reposicion/{id}', [InventarioController::class, 'updateReglaReposicion']);
-        Route::delete('/reglas-reposicion/{id}', [InventarioController::class, 'destroyReglaReposicion']);
+        Route::get('/reglas-reposicion', [ReposicionController::class, 'reglasReposicion']);
+        Route::post('/reglas-reposicion', [ReposicionController::class, 'storeReglaReposicion']);
+        Route::get('/reglas-reposicion/{id}', [ReposicionController::class, 'showReglaReposicion']);
+        Route::put('/reglas-reposicion/{id}', [ReposicionController::class, 'updateReglaReposicion']);
+        Route::delete('/reglas-reposicion/{id}', [ReposicionController::class, 'destroyReglaReposicion']);
         Route::get('/alertas', [InventarioController::class, 'alertas']);
-        Route::get('/reposicion/sugerencias', [InventarioController::class, 'sugerenciasReposicion']);
+        Route::get('/reposicion/sugerencias', [ReposicionController::class, 'sugerenciasReposicion']);
 
         Route::get('/reservas', [ReservaController::class, 'reservas']);
         Route::post('/reservas', [ReservaController::class, 'storeReserva']);
