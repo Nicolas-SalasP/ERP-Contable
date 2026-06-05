@@ -287,9 +287,13 @@ jobs:
 
             # Copiar public/ al subdominio (sin symlinks — LiteSpeed no los sigue)
             cp public/index.php  $ERP_PUBLIC/index.php
-            cp public/.htaccess  $ERP_PUBLIC/.htaccess
             cp public/favicon.ico $ERP_PUBLIC/favicon.ico 2>/dev/null || true
             cp public/robots.txt  $ERP_PUBLIC/robots.txt  2>/dev/null || true
+
+            # Limpiar cache de config antes de arrancar artisan
+            # (evita que BackupServiceProvider lea cache anterior sin la key 'backup')
+            rm -f bootstrap/cache/config.php
+            rm -f bootstrap/cache/routes-v7.php
 
             php artisan optimize:clear
             php artisan migrate --force
