@@ -34,6 +34,7 @@ use App\Domains\Inventario\Controllers\ReservaController;
 use App\Domains\Inventario\Controllers\TomaFisicaController;
 use App\Domains\Inventario\Controllers\DisponibilidadController;
 use App\Domains\Inventario\Controllers\ReposicionController;
+use App\Domains\Inventario\Controllers\AlertaController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -388,7 +389,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/reglas-reposicion/{id}', [ReposicionController::class, 'showReglaReposicion']);
         Route::put('/reglas-reposicion/{id}', [ReposicionController::class, 'updateReglaReposicion']);
         Route::delete('/reglas-reposicion/{id}', [ReposicionController::class, 'destroyReglaReposicion']);
-        Route::get('/alertas', [InventarioController::class, 'alertas']);
+        Route::get('/alertas', [AlertaController::class, 'alertas']);
         Route::get('/reposicion/sugerencias', [ReposicionController::class, 'sugerenciasReposicion']);
 
         Route::get('/reservas', [ReservaController::class, 'reservas']);
