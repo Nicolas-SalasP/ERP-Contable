@@ -282,67 +282,6 @@ public function __construct(
         }
     }
 
-    public function kardex(Request $request): JsonResponse
-    {
-        try {
-            $usuario = $request->user();
-
-            $this->permisos->exigir($usuario, 'inventario.kardex.ver');
-
-            $filtros = $request->validate([
-                'producto_id' => ['nullable', 'integer'],
-                'bodega_id' => ['nullable', 'integer'],
-                'lote_id' => ['nullable', 'integer'],
-                'ubicacion_id' => ['nullable', 'integer'],
-                'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
-                'desde' => ['nullable', 'date'],
-                'hasta' => ['nullable', 'date'],
-                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-            ]);
-
-            $paginador = $this->movimientoService->kardexGeneral(
-                $filtros,
-                (int) $usuario->empresa_id
-            );
-
-            return response()->json($this->respuestaPaginada($paginador));
-        } catch (ValidationException $e) {
-            return $this->respuestaValidacion($e);
-        } catch (Exception $e) {
-            return $this->respuestaError($e);
-        }
-    }
-
-    public function kardexProducto(Request $request, $id): JsonResponse
-    {
-        try {
-            $usuario = $request->user();
-
-            $this->permisos->exigir($usuario, 'inventario.kardex.ver');
-
-            $filtros = $request->validate([
-                'bodega_id' => ['nullable', 'integer'],
-                'lote_id' => ['nullable', 'integer'],
-                'tipo' => ['nullable', Rule::in(MovimientoInventario::tiposPermitidos())],
-                'desde' => ['nullable', 'date'],
-                'hasta' => ['nullable', 'date'],
-                'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-            ]);
-
-            $paginador = $this->movimientoService->kardexProducto(
-                (int) $id,
-                $filtros,
-                (int) $usuario->empresa_id
-            );
-
-            return response()->json($this->respuestaPaginada($paginador));
-        } catch (ValidationException $e) {
-            return $this->respuestaValidacion($e);
-        } catch (Exception $e) {
-            return $this->respuestaError($e);
-        }
-    }
-
     public function valorizacion(Request $request): JsonResponse
     {
         try {
