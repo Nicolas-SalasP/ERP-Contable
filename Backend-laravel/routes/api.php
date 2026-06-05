@@ -36,6 +36,7 @@ use App\Domains\Inventario\Controllers\DisponibilidadController;
 use App\Domains\Inventario\Controllers\ReposicionController;
 use App\Domains\Inventario\Controllers\AlertaController;
 use App\Domains\Inventario\Controllers\UbicacionController;
+use App\Domains\Inventario\Controllers\StockUbicacionController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -321,9 +322,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/ubicaciones/{id}/stock', [UbicacionController::class, 'stockUbicacion']);
         Route::get('/ubicaciones/{id}', [UbicacionController::class, 'showUbicacion']);
         Route::put('/ubicaciones/{id}', [UbicacionController::class, 'updateUbicacion']);
-        Route::get('/stock-ubicaciones', [InventarioController::class, 'stockUbicaciones']);
-        Route::post('/stock-ubicaciones/mover', [InventarioController::class, 'moverStockUbicacion']);
-        Route::post('/putaway/confirmar', [InventarioController::class, 'confirmarPutaway']);
+        Route::get('/stock-ubicaciones', [StockUbicacionController::class, 'stockUbicaciones']);
+        Route::post('/stock-ubicaciones/mover', [StockUbicacionController::class, 'moverStockUbicacion']);
+        Route::post('/putaway/confirmar', [StockUbicacionController::class, 'confirmarPutaway']);
 
         Route::get('/picking', [InventarioPickingController::class, 'index']);
         Route::post('/picking', [InventarioPickingController::class, 'store']);
