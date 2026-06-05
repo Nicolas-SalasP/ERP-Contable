@@ -401,57 +401,6 @@ public function __construct(
         }
     }
 
-public function disponibilidad(Request $request): JsonResponse
-{
-    try {
-        $filtros = $request->validate([
-            'producto_id' => ['nullable', 'integer'],
-            'bodega_id' => ['nullable', 'integer'],
-            'ubicacion_id' => ['nullable', 'integer'],
-            'incluir_lotes' => ['nullable', 'boolean'],
-            'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-        ]);
-
-        $paginador = $this->disponibilidadService->consultar(
-            $request->user(),
-            $filtros
-        );
-
-        return response()->json($this->respuestaPaginada($paginador));
-    } catch (ValidationException $e) {
-        return $this->respuestaValidacion($e);
-    } catch (Exception $e) {
-        return $this->respuestaError($e);
-    }
-}
-
-public function disponibilidadProducto(Request $request, $id): JsonResponse
-{
-    try {
-        $filtros = $request->validate([
-            'bodega_id' => ['nullable', 'integer'],
-            'ubicacion_id' => ['nullable', 'integer'],
-            'incluir_lotes' => ['nullable', 'boolean'],
-        ]);
-
-        $disponibilidad = $this->disponibilidadService->porProducto(
-            $request->user(),
-            (int) $id,
-            $filtros
-        );
-
-        return response()->json([
-            'success' => true,
-            'data' => $disponibilidad,
-        ]);
-    } catch (ValidationException $e) {
-        return $this->respuestaValidacion($e);
-    } catch (Exception $e) {
-        return $this->respuestaError($e);
-    }
-}
-
     public function reglasReposicion(Request $request): JsonResponse
     {
         try {

@@ -32,6 +32,7 @@ use App\Domains\Inventario\Controllers\ValorizacionController;
 use App\Domains\Inventario\Controllers\LoteController;
 use App\Domains\Inventario\Controllers\ReservaController;
 use App\Domains\Inventario\Controllers\TomaFisicaController;
+use App\Domains\Inventario\Controllers\DisponibilidadController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -378,8 +379,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
         Route::get('/productos/{id}/lotes', [LoteController::class, 'lotesProducto']);
 
-        Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad']);
-        Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto']);
+        Route::get('/disponibilidad', [DisponibilidadController::class, 'disponibilidad']);
+        Route::get('/productos/{id}/disponibilidad', [DisponibilidadController::class, 'disponibilidadProducto']);
 
         Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion']);
         Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion']);
