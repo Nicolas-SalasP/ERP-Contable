@@ -31,6 +31,7 @@ use App\Domains\Inventario\Controllers\KardexController;
 use App\Domains\Inventario\Controllers\ValorizacionController;
 use App\Domains\Inventario\Controllers\LoteController;
 use App\Domains\Inventario\Controllers\ReservaController;
+use App\Domains\Inventario\Controllers\TomaFisicaController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -398,14 +399,14 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/productos/{id}', [ProductoController::class, 'show']);
         Route::put('/productos/{id}', [ProductoController::class, 'update']);
 
-        Route::get('/tomas-fisicas', [InventarioController::class, 'tomasFisicas']);
-        Route::post('/tomas-fisicas', [InventarioController::class, 'storeTomaFisica']);
-        Route::get('/tomas-fisicas/{id}', [InventarioController::class, 'showTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/iniciar', [InventarioController::class, 'iniciarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/conteos', [InventarioController::class, 'registrarConteosTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/cerrar', [InventarioController::class, 'cerrarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/ajustar', [InventarioController::class, 'ajustarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/cancelar', [InventarioController::class, 'cancelarTomaFisica']);
+        Route::get('/tomas-fisicas', [TomaFisicaController::class, 'tomasFisicas']);
+        Route::post('/tomas-fisicas', [TomaFisicaController::class, 'storeTomaFisica']);
+        Route::get('/tomas-fisicas/{id}', [TomaFisicaController::class, 'showTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/iniciar', [TomaFisicaController::class, 'iniciarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/conteos', [TomaFisicaController::class, 'registrarConteosTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cerrar', [TomaFisicaController::class, 'cerrarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/ajustar', [TomaFisicaController::class, 'ajustarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cancelar', [TomaFisicaController::class, 'cancelarTomaFisica']);
     });
 });
 
