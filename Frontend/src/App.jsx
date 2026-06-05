@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Contextos/AuthContext';
 import { usePermisos } from './Contextos/Permisos';
@@ -9,52 +9,52 @@ import Login from './Modulos/Autenticacion/Login';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
 import SsoCallback from './Modulos/Autenticacion/SsoCallback';
 import Dashboard from './Modulos/Dashboard/Dashboard';
-import RegistroFactura from './Modulos/Contabilidad/Componentes/RegistroFactura';
-import HistorialFacturas from './Modulos/Contabilidad/Vistas/HistorialFacturas';
+const RegistroFactura = lazy(() => import('./Modulos/Contabilidad/Componentes/RegistroFactura'));
+const HistorialFacturas = lazy(() => import('./Modulos/Contabilidad/Vistas/HistorialFacturas'));
 import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
-import LibroMayor from './Modulos/Contabilidad/Vistas/LibroMayor';
-import AnulacionGeneral from './Modulos/Contabilidad/Vistas/AnulacionGeneral';
+const LibroMayor = lazy(() => import('./Modulos/Contabilidad/Vistas/LibroMayor'));
+const AnulacionGeneral = lazy(() => import('./Modulos/Contabilidad/Vistas/AnulacionGeneral'));
 import GestionCotizaciones from './Modulos/Cotizaciones/GestionCotizaciones';
 import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
 import GestionClientes from './Modulos/Clientes/GestionClientes';
 import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
 import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
-import VisorAuditoriaFactura from './Modulos/Contabilidad/Vistas/VisorAuditoriaFactura';
-import AdministradorCuentas from './Modulos/Contabilidad/Vistas/AdministradorCuentas';
+const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
+const AdministradorCuentas = lazy(() => import('./Modulos/Contabilidad/Vistas/AdministradorCuentas'));
 import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
 import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
 import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
 import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
-import CierreF29 from './Modulos/Contabilidad/Vistas/CierreF29';
-import AsientoManual from './Modulos/Contabilidad/Vistas/AsientoManual';
+const CierreF29 = lazy(() => import('./Modulos/Contabilidad/Vistas/CierreF29'));
+const AsientoManual = lazy(() => import('./Modulos/Contabilidad/Vistas/AsientoManual'));
 import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
 import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
 import GestionUsuarios from './Modulos/Administrador/GestionUsuarios';
 import GestionRoles from './Modulos/Administrador/GestionRoles';
-import InventarioDashboard from './Modulos/Inventario/Vistas/InventarioDashboard';
-import ProductosInventario from './Modulos/Inventario/Vistas/ProductosInventario';
-import BodegasInventario from './Modulos/Inventario/Vistas/BodegasInventario';
-import UbicacionesInventario from './Modulos/Inventario/Vistas/UbicacionesInventario';
-import PickingInventario from './Modulos/Inventario/Vistas/PickingInventario';
-import PackingInventario from './Modulos/Inventario/Vistas/PackingInventario';
-import DespachosInventario from './Modulos/Inventario/Vistas/DespachosInventario';
-import DevolucionesInventario from './Modulos/Inventario/Vistas/DevolucionesInventario';
-import AuditoriaInventario from './Modulos/Inventario/Vistas/AuditoriaInventario';
-import EventosIntegracionInventario from './Modulos/Inventario/Vistas/EventosIntegracionInventario';
-import MovimientosInventario from './Modulos/Inventario/Vistas/MovimientosInventario';
+const InventarioDashboard = lazy(() => import('./Modulos/Inventario/Vistas/InventarioDashboard'));
+const ProductosInventario = lazy(() => import('./Modulos/Inventario/Vistas/ProductosInventario'));
+const BodegasInventario = lazy(() => import('./Modulos/Inventario/Vistas/BodegasInventario'));
+const UbicacionesInventario = lazy(() => import('./Modulos/Inventario/Vistas/UbicacionesInventario'));
+const PickingInventario = lazy(() => import('./Modulos/Inventario/Vistas/PickingInventario'));
+const PackingInventario = lazy(() => import('./Modulos/Inventario/Vistas/PackingInventario'));
+const DespachosInventario = lazy(() => import('./Modulos/Inventario/Vistas/DespachosInventario'));
+const DevolucionesInventario = lazy(() => import('./Modulos/Inventario/Vistas/DevolucionesInventario'));
+const AuditoriaInventario = lazy(() => import('./Modulos/Inventario/Vistas/AuditoriaInventario'));
+const EventosIntegracionInventario = lazy(() => import('./Modulos/Inventario/Vistas/EventosIntegracionInventario'));
+const MovimientosInventario = lazy(() => import('./Modulos/Inventario/Vistas/MovimientosInventario'));
 import CorreccionMonetaria from './Modulos/CorreccionMonetaria/CorreccionMonetaria';
-import KardexInventario from './Modulos/Inventario/Vistas/KardexInventario';
-import LotesInventario from './Modulos/Inventario/Vistas/LotesInventario';
-import ReservasInventario from './Modulos/Inventario/Vistas/ReservasInventario';
-import TomasFisicasInventario from './Modulos/Inventario/Vistas/TomasFisicasInventario';
-import ValorizacionInventario from './Modulos/Inventario/Vistas/ValorizacionInventario';
-import AlertasInventario from './Modulos/Inventario/Vistas/AlertasInventario';
-import ReportesInventario from './Modulos/Inventario/Vistas/ReportesInventario';
+const KardexInventario = lazy(() => import('./Modulos/Inventario/Vistas/KardexInventario'));
+const LotesInventario = lazy(() => import('./Modulos/Inventario/Vistas/LotesInventario'));
+const ReservasInventario = lazy(() => import('./Modulos/Inventario/Vistas/ReservasInventario'));
+const TomasFisicasInventario = lazy(() => import('./Modulos/Inventario/Vistas/TomasFisicasInventario'));
+const ValorizacionInventario = lazy(() => import('./Modulos/Inventario/Vistas/ValorizacionInventario'));
+const AlertasInventario = lazy(() => import('./Modulos/Inventario/Vistas/AlertasInventario'));
+const ReportesInventario = lazy(() => import('./Modulos/Inventario/Vistas/ReportesInventario'));
 import InventarioProviderWrapper from './Modulos/Inventario/InventarioProviderWrapper';
-import ConfiguracionSii from './Modulos/Sii/Vistas/ConfiguracionSii';
-import CertificadoSii from './Modulos/Sii/Vistas/CertificadoSii';
-import FoliosCaf from './Modulos/Sii/Vistas/FoliosCaf';
-import FacturasSii from './Modulos/Sii/Vistas/FacturasSii';
+const ConfiguracionSii = lazy(() => import('./Modulos/Sii/Vistas/ConfiguracionSii'));
+const CertificadoSii = lazy(() => import('./Modulos/Sii/Vistas/CertificadoSii'));
+const FoliosCaf = lazy(() => import('./Modulos/Sii/Vistas/FoliosCaf'));
+const FacturasSii = lazy(() => import('./Modulos/Sii/Vistas/FacturasSii'));
 import Glosario from './Modulos/Glosario/Glosario';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
@@ -134,6 +134,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <BrowserRouter>
+        <Suspense fallback={<div>Cargando...</div>}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/sso-callback" element={<SsoCallback />} />
@@ -528,6 +529,7 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </ErrorBoundary>
