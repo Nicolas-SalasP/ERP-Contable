@@ -38,6 +38,7 @@ use App\Domains\Inventario\Controllers\AlertaController;
 use App\Domains\Inventario\Controllers\UbicacionController;
 use App\Domains\Inventario\Controllers\StockUbicacionController;
 use App\Domains\Inventario\Controllers\AjusteCriticoController;
+use App\Domains\Inventario\Controllers\DashboardController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -289,7 +290,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // (autorizacion granular aplicada en los controllers via InventarioPermisoService)
     // ---------------------------------------------------------------------
     Route::prefix('inventario')->group(function () {
-        Route::get('/dashboard', [InventarioController::class, 'dashboard']);
+        Route::get('/dashboard', [DashboardController::class, 'dashboard']);
 
         Route::get('/auditoria', [InventarioAuditoriaController::class, 'index']);
         Route::get('/auditoria/resumen', [InventarioAuditoriaController::class, 'resumen']);

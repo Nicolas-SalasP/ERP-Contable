@@ -103,16 +103,4 @@ public function __construct(
         }
     }
 
-    public function dashboard(Request $request): JsonResponse
-    {
-        try {
-            return response()->json([
-                'success' => true,
-                'data' => $this->dashboardService->obtener($request->user()),
-            ]);
-        } catch (Exception $e) {
-            return $this->respuestaError($e);
-        }
-    }
-
 }
