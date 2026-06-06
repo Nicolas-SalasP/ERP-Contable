@@ -23,7 +23,6 @@ use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
-use App\Domains\Inventario\Controllers\InventarioController;
 use App\Domains\Inventario\Controllers\ProductoController;
 use App\Domains\Inventario\Controllers\BodegaController;
 use App\Domains\Inventario\Controllers\MovimientoController;
