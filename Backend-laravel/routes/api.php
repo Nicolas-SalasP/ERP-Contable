@@ -37,6 +37,7 @@ use App\Domains\Inventario\Controllers\ReposicionController;
 use App\Domains\Inventario\Controllers\AlertaController;
 use App\Domains\Inventario\Controllers\UbicacionController;
 use App\Domains\Inventario\Controllers\StockUbicacionController;
+use App\Domains\Inventario\Controllers\AjusteCriticoController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -370,10 +371,10 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/valorizacion', [ValorizacionController::class, 'valorizacion']);
         Route::get('/productos/{id}/valorizacion', [ValorizacionController::class, 'valorizacionProducto']);
 
-        Route::get('/ajustes-criticos/tipos', [InventarioController::class, 'tiposAjusteCritico']);
-        Route::get('/ajustes-criticos', [InventarioController::class, 'ajustesCriticos']);
-        Route::post('/ajustes-criticos', [InventarioController::class, 'registrarAjusteCritico']);
-        Route::get('/ajustes-criticos/{id}', [InventarioController::class, 'verAjusteCritico']);
+        Route::get('/ajustes-criticos/tipos', [AjusteCriticoController::class, 'tiposAjusteCritico']);
+        Route::get('/ajustes-criticos', [AjusteCriticoController::class, 'ajustesCriticos']);
+        Route::post('/ajustes-criticos', [AjusteCriticoController::class, 'registrarAjusteCritico']);
+        Route::get('/ajustes-criticos/{id}', [AjusteCriticoController::class, 'verAjusteCritico']);
 
         Route::get('/lotes', [LoteController::class, 'lotes']);
         Route::post('/lotes', [LoteController::class, 'storeLote']);
