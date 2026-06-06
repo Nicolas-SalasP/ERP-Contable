@@ -82,25 +82,4 @@ public function __construct(
     $this->stockUbicacionService = $stockUbicacionService;
 }
 
-    public function catalogos(Request $request): JsonResponse
-    {
-        try {
-            $this->permisos->exigirAlguno($request->user(), [
-                'inventario.productos.ver',
-                'inventario.bodegas.ver',
-                'inventario.dashboard.ver',
-                'inventario.reportes.ver',
-                'inventario.ubicaciones.ver',
-                'inventario.stock_ubicaciones.ver',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => $this->service->catalogos($request->user()->empresa_id),
-            ]);
-        } catch (Exception $e) {
-            return $this->respuestaError($e);
-        }
-    }
-
 }

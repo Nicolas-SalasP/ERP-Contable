@@ -39,6 +39,7 @@ use App\Domains\Inventario\Controllers\UbicacionController;
 use App\Domains\Inventario\Controllers\StockUbicacionController;
 use App\Domains\Inventario\Controllers\AjusteCriticoController;
 use App\Domains\Inventario\Controllers\DashboardController;
+use App\Domains\Inventario\Controllers\CatalogoController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -317,7 +318,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
         Route::get('/reportes/{tipo}/exportar-csv', [ReporteInventarioController::class, 'exportarReporteCsv']);
 
-        Route::get('/catalogos', [InventarioController::class, 'catalogos']);
+        Route::get('/catalogos', [CatalogoController::class, 'catalogos']);
 
         Route::get('/ubicaciones', [UbicacionController::class, 'ubicaciones']);
         Route::post('/ubicaciones', [UbicacionController::class, 'storeUbicacion']);
