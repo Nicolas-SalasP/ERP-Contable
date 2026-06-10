@@ -37,24 +37,12 @@ class AsientoContableService
 
     private function validarMesAbierto(int $empresaId, string $fecha)
     {
-        $mes = date('n', strtotime($fecha));
-        $anio = date('Y', strtotime($fecha));
-
-        // El cierre del periodo lo genera ImpuestosService::ejecutarF29 con
-        // origen_modulo 'impuestos', estado 'MAYORIZADO' y glosa
-        // "Centralización F29 - MM/AAAA". Antes se buscaba "Cierre F29", que NUNCA
-        // coincidia, dejando el mes abierto para asientos retroactivos.
-        $mesCerrado = AsientoContable::where('empresa_id', $empresaId)
-            ->whereYear('fecha', $anio)
-            ->whereMonth('fecha', $mes)
-            ->where('origen_modulo', 'impuestos')
-            ->where('estado', 'MAYORIZADO')
-            ->where('glosa', 'like', '%Centralización F29%')
-            ->exists();
-
-        if ($mesCerrado) {
-            throw new Exception("El periodo {$mes}/{$anio} ya está cerrado tributariamente.");
-        }
+        // El bloqueo de periodo es ahora una accion MANUAL y explicita gestionada por
+        // PeriodoContableService (tabla periodos_contables). El observer de
+        // AsientoContable aplica la misma garantia a nivel de modelo; este guard a
+        // nivel de servicio se conserva para un mensaje temprano y claro.
+        app(\App\Domains\Contabilidad\Services\PeriodoContableService::class)
+            ->assertAbierto($empresaId, $fecha);
     }
 
     private function validarCentrosCosto(int $empresaId, array $detalles): void

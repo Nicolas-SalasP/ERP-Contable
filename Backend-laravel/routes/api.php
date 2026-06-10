@@ -18,6 +18,7 @@ use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
 use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
+use App\Domains\Contabilidad\Controllers\PeriodoContableController;
 use App\Domains\CorreccionMonetaria\Controllers\CorreccionMonetariaController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
@@ -67,8 +68,12 @@ use App\Domains\Inventario\Controllers\ReporteInventarioController;
 Route::get('/health', HealthController::class);
 
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/token-login', [AuthController::class, 'tokenLogin']);
+    // Rate-limiting contra fuerza bruta / credential stuffing: 6 intentos por minuto
+    // por IP. Sin esto los endpoints publicos de credenciales son atacables sin limite.
+    Route::middleware('throttle:6,1')->group(function () {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/token-login', [AuthController::class, 'tokenLogin']);
+    });
 
     Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -231,6 +236,12 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/contabilidad/asientos/{id}', [AsientoContableController::class, 'show'])->middleware('permiso:contabilidad.ver');
     Route::post('/contabilidad/asientos/{id}/reversar', [AsientoContableController::class, 'reversar'])->middleware('permiso:contabilidad.crear');
     Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado'])->middleware('permiso:contabilidad.crear');
+
+    // Contabilidad - Bloqueo de periodo (inmutabilidad). El cierre es manual; la
+    // reapertura exige jerarquia >= 80 (validada en el service) y queda auditada.
+    Route::get('/contabilidad/periodos', [PeriodoContableController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::post('/contabilidad/periodos/cerrar', [PeriodoContableController::class, 'cerrar'])->middleware('permiso:contabilidad.cerrar_periodo');
+    Route::post('/contabilidad/periodos/reabrir', [PeriodoContableController::class, 'reabrir'])->middleware('permiso:contabilidad.cerrar_periodo');
 
     // Contabilidad - Libros diarios y mayores
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario'])->middleware('permiso:contabilidad.ver');
@@ -417,7 +428,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     });
 });
 
-Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
+Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {
     Route::post('/provision-user', [WebProvisioningController::class, 'provisionUser']);
     Route::post('/sync-plan',      [WebProvisioningController::class, 'syncPlan']);
     Route::post('/sync-password',  [WebProvisioningController::class, 'syncPassword']);

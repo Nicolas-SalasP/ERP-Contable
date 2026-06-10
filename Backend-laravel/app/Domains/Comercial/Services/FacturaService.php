@@ -240,6 +240,15 @@ class FacturaService
         DB::transaction(function () use ($empresaId, $usuarioId, $facturaId, $datos) {
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
+            // Guard de integridad: no se puede reclasificar el asiento de una factura
+            // anulada (su efecto contable ya fue reversado).
+            // TODO (P1): agregar bloqueo de periodo contable cerrado sobre $datos['fecha']
+            // (F-1/F-2). El periodo cerrado se valida abajo, sobre la fecha original
+            // del asiento y sobre la nueva fecha destino.
+            if (strtoupper((string) $factura->estado) === 'ANULADA') {
+                throw new Exception('No se puede reclasificar el asiento de una factura anulada.');
+            }
+
             if (!$factura->comprobante_contable) {
                 throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
             }
@@ -248,6 +257,11 @@ class FacturaService
                 ->where('empresa_id', $empresaId)
                 ->where('numero_comprobante', $factura->comprobante_contable)
                 ->firstOrFail();
+
+            // No reclasificar desde ni hacia un periodo contable cerrado.
+            $periodos = app(\App\Domains\Contabilidad\Services\PeriodoContableService::class);
+            $periodos->assertAbierto($empresaId, $asiento->fecha);
+            $periodos->assertAbierto($empresaId, $datos['fecha']);
 
             $glosaCabeceraOriginal = $asiento->glosa;
             $asiento->update([
