@@ -29,7 +29,9 @@ class BloqueoPeriodoContableTest extends TestCase
     private function nuevoAsiento(int $empresaId, string $fecha): AsientoContable
     {
         return AsientoContable::create([
-            'codigo_unico' => 'AS-' . uniqid(),
+            // codigo_unico es unsignedBigInteger nullable; en producción los asientos
+            // no lo setean (AsientoContableService nunca lo escribe). MySQL estricto
+            // rechaza un string aquí, así que lo dejamos null como en producción.
             'empresa_id' => $empresaId,
             'numero_comprobante' => 'NC-' . uniqid(),
             'fecha' => $fecha,
