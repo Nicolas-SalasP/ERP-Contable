@@ -104,14 +104,23 @@ Centralización mensual automática (asiento por período):
 | **R2 — Parámetros** | `ParametroPrevisional`, `IndicadorMensual`, `TablaImpuestoUnico` + carga/seed desde fuentes oficiales (Previred publica indicadores mensuales). | R1 | ✅ construido |
 | **R3 — Motor de liquidación** | `ConceptoRemuneracion` + `LiquidacionService` (cálculo completo) + `Liquidacion`/Detalle (PDF pendiente). | R1, R2 | ✅ construido |
 | **R4 — Provisiones + Finiquitos** | Devengo de vacaciones + cálculo de finiquito (causales, indemnizaciones). | R3 | ✅ construido |
-| **R5 — Centralización contable** | Asiento automático de remuneraciones y provisiones. | R3, R4 | ⏳ pendiente |
-| **R6 — Previred** | Archivo previsional mensual + envío (cierra el objetivo de Fase 2). | R3 | ⏳ pendiente |
+| **R5 — Centralización contable** | Asiento automático de remuneraciones y provisiones. | R3, R4 | ✅ construido |
+| **R6 — Previred** | Archivo previsional mensual + envío (cierra el objetivo de Fase 2). | R3 | ✅ construido |
 | **Futuro — Asistencia** | Contrato de eventos de marcaje → horas extra/atrasos hacia la liquidación. | R3 | ⏳ enganche preparado |
 
-> **Implementado (2026-06-11):** R1–R4 en `app/Domains/Rrhh` con tests verdes.
+> **Implementado (2026-06-11):** R1–R6 en `app/Domains/Rrhh` con tests verdes (1465 tests, 0 fallos).
 > Marco legal investigado y documentado en `docs/rrhh-leyes/MARCO-LEGAL-LABORAL-CHILE.md`.
 > Valores legales 2026 en `RrhhParametrosLegalesSeeder` (tope 90 UF, AFC 135,2 UF,
-> IMM $539.000, SIS 1,62%, tabla impuesto único 8 tramos). Falta R5 y R6.
+> IMM $539.000, SIS 1,62%, tabla impuesto único 8 tramos).
+>
+> **R5:** `CentralizacionRemuneracionesService` genera asiento mensual doble-entrada vía
+> `AsientoContableService`. Requiere mapeo contable configurado en `rrhh_mapeo_contable`
+> (6 cuentas obligatorias + 3 opcionales). Idempotente: bloquea doble centralización.
+>
+> **R6:** `PreviredService` genera CSV semicolon-delimitado con 25 columnas por trabajador
+> (RUT, AFP, salud, AFC, SIS, mutual, IUSC, líquido). Descarga directa desde
+> `GET /api/rrhh/previred/{anio}/{mes}/archivo`. Formato documentado en
+> `docs/integraciones/FORMATO-PREVIRED.md`.
 
 ---
 

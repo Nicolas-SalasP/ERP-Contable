@@ -25,6 +25,8 @@ use App\Domains\Rrhh\Controllers\ContratoController;
 use App\Domains\Rrhh\Controllers\LiquidacionController;
 use App\Domains\Rrhh\Controllers\FiniquitoController;
 use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
+use App\Domains\Rrhh\Controllers\CentralizacionController;
+use App\Domains\Rrhh\Controllers\PreviredController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
@@ -469,6 +471,16 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/indicadores', [ParametroPrevisionalController::class, 'indexIndicadores'])->middleware('permiso:rrhh.parametros.ver');
         Route::post('/indicadores', [ParametroPrevisionalController::class, 'storeIndicador'])->middleware('permiso:rrhh.parametros.editar');
         Route::get('/tabla-impuesto', [ParametroPrevisionalController::class, 'indexImpuesto'])->middleware('permiso:rrhh.parametros.ver');
+
+        // R5 — Centralización contable de remuneraciones
+        Route::get('/mapeo-contable', [CentralizacionController::class, 'indexMapeo'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/mapeo-contable', [CentralizacionController::class, 'upsertMapeo'])->middleware('permiso:rrhh.parametros.editar');
+        Route::delete('/mapeo-contable/{tipo}', [CentralizacionController::class, 'destroyMapeo'])->middleware('permiso:rrhh.parametros.editar');
+        Route::post('/centralizacion/{anio}/{mes}', [CentralizacionController::class, 'centralizar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // R6 — Previred: archivo previsional mensual
+        Route::get('/previred/{anio}/{mes}/archivo', [PreviredController::class, 'archivo'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/previred/{anio}/{mes}/preview', [PreviredController::class, 'preview'])->middleware('permiso:rrhh.remuneraciones.ver');
     });
 });
 
