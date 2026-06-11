@@ -91,19 +91,20 @@ const PreviredRrhh = () => {
                         <span className="text-sm text-slate-500">{preview.total_trabajadores} trabajador(es)</span>
                     </div>
                     <div className="overflow-x-auto">
+                        {/* Filas posicionales del archivo de 105 campos (sin encabezado) */}
                         <table className="w-full text-xs whitespace-nowrap">
                             <thead className="bg-slate-50 text-slate-600 uppercase">
                                 <tr>
-                                    {(preview.columnas ?? []).map((c) => (
-                                        <th key={c} className="px-3 py-2 text-left font-semibold">{c}</th>
+                                    {(preview.filas?.[0] ?? []).map((_, idx) => (
+                                        <th key={idx} className="px-3 py-2 text-left font-semibold">{idx + 1}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {(preview.filas ?? []).map((fila, i) => (
                                     <tr key={i} className="hover:bg-slate-50">
-                                        {(preview.columnas ?? []).map((c) => (
-                                            <td key={c} className="px-3 py-2 text-slate-700 font-mono">{fila[c]}</td>
+                                        {fila.map((valor, idx) => (
+                                            <td key={idx} className="px-3 py-2 text-slate-700 font-mono">{valor}</td>
                                         ))}
                                     </tr>
                                 ))}

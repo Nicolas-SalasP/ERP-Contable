@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../Contextos/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -11,6 +11,8 @@ const Login = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const redirectTo = searchParams.get('redirect') || '/';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -20,7 +22,7 @@ const Login = () => {
         const result = await login(email, password, rememberMe);
 
         if (result.success) {
-            navigate('/');
+            navigate(redirectTo, { replace: true });
         } else {
             const errorMap = {
                 'PLAN_VENCIDO': '⏳ Su suscripción ha vencido. Contacte a administración.',

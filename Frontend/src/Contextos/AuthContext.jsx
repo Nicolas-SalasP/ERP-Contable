@@ -15,8 +15,16 @@ const REFRESCO_SESION_MS = 3 * 60 * 1000; // 3 minutos
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
-        const storedUser = localStorage.getItem('erp_user') || sessionStorage.getItem('erp_user');
-        return storedUser ? JSON.parse(storedUser) : null;
+        try {
+            const storedUser = localStorage.getItem('erp_user') || sessionStorage.getItem('erp_user');
+            return storedUser ? JSON.parse(storedUser) : null;
+        } catch {
+            ['erp_token', 'erp_user', 'token', 'erp_token_issued_at'].forEach((k) => {
+                localStorage.removeItem(k);
+                sessionStorage.removeItem(k);
+            });
+            return null;
+        }
     });
 
     const [loading, setLoading] = useState(false);
@@ -88,6 +96,11 @@ export const AuthProvider = ({ children }) => {
                         usuarioRecibido = meResponse;
                     }
                 } catch (_) {}
+
+                if (!usuarioRecibido || !usuarioRecibido.id) {
+                    storage.removeItem('erp_token');
+                    return { success: false, message: 'No se recibió información del usuario.', code: 'USER_MISSING' };
+                }
 
                 setUser(usuarioRecibido);
                 storage.setItem('erp_user', JSON.stringify(usuarioRecibido));

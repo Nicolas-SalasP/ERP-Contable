@@ -17,7 +17,7 @@ const rrhhApi = {
 
     // ── R1: Contratos ─────────────────────────────────────────────────────────
     contratos: {
-        listarPorEmpleado: (empleadoId) => api.get(`/rrhh/empleados/${empleadoId}/contratos`),
+        listarPorEmpleado: (empleadoId, options = {}) => api.get(`/rrhh/empleados/${empleadoId}/contratos`, options),
         obtener: (id) => api.get(`/rrhh/contratos/${id}`),
         crear: (empleadoId, payload) => api.post(`/rrhh/empleados/${empleadoId}/contratos`, payload),
         terminar: (id, payload) => api.post(`/rrhh/contratos/${id}/terminar`, payload),
@@ -26,7 +26,7 @@ const rrhhApi = {
 
     // ── R3: Liquidaciones ─────────────────────────────────────────────────────
     liquidaciones: {
-        listar: (params = {}) => api.get('/rrhh/liquidaciones', { params }),
+        listar: (params = {}, options = {}) => api.get('/rrhh/liquidaciones', { params, ...options }),
         obtener: (id) => api.get(`/rrhh/liquidaciones/${id}`),
         calcular: (payload) => api.post('/rrhh/liquidaciones/calcular', payload),
         emitir: (id) => api.post(`/rrhh/liquidaciones/${id}/emitir`),
@@ -35,7 +35,7 @@ const rrhhApi = {
 
     // ── R4: Finiquitos ────────────────────────────────────────────────────────
     finiquitos: {
-        listar: (params = {}) => api.get('/rrhh/finiquitos', { params }),
+        listar: (options = {}) => api.get('/rrhh/finiquitos', options),
         obtener: (id) => api.get(`/rrhh/finiquitos/${id}`),
         calcular: (payload) => api.post('/rrhh/finiquitos/calcular', payload),
         firmar: (id) => api.post(`/rrhh/finiquitos/${id}/firmar`),

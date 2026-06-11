@@ -47,18 +47,25 @@ const FiniquitosRrhh = () => {
     const [form, setForm] = useState(FORM_VACIO);
     const [detalle, setDetalle] = useState(null);
 
-    const cargar = useCallback(async () => {
+    const cargar = useCallback(async (signal) => {
         setCargando(true);
         try {
-            const resp = await rrhhApi.finiquitos.listar();
+            const resp = await rrhhApi.finiquitos.listar({ signal });
             const data = resp?.data;
             setFiniquitos(data?.data ?? (Array.isArray(data) ? data : []));
-        } catch (_) { /* toast */ } finally {
             setCargando(false);
+        } catch (err) {
+            if (err?.name !== 'AbortError' && err?.code !== 'ERR_CANCELED') {
+                setCargando(false);
+            }
         }
     }, []);
 
-    useEffect(() => { cargar(); }, [cargar]);
+    useEffect(() => {
+        const controller = new AbortController();
+        cargar(controller.signal);
+        return () => controller.abort();
+    }, [cargar]);
 
     useEffect(() => {
         (async () => {
@@ -72,15 +79,26 @@ const FiniquitosRrhh = () => {
 
     const setCampo = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-    const onEmpleado = async (id) => {
-        setForm((f) => ({ ...f, empleado_id: id, contrato_id: '' }));
-        setContratos([]);
-        if (!id) return;
-        try {
-            const resp = await rrhhApi.contratos.listarPorEmpleado(id);
-            setContratos((resp?.data ?? []).filter((c) => c.estado === 'VIGENTE'));
-        } catch (_) { /* toast */ }
-    };
+    const onEmpleado = (() => {
+        let abortController = null;
+        return async (id) => {
+            if (abortController) abortController.abort();
+            abortController = new AbortController();
+            const signal = abortController.signal;
+
+            setForm((f) => ({ ...f, empleado_id: id, contrato_id: '' }));
+            setContratos([]);
+            if (!id) return;
+            try {
+                const resp = await rrhhApi.contratos.listarPorEmpleado(id, { signal });
+                if (!signal.aborted) {
+                    setContratos((resp?.data ?? []).filter((c) => c.estado === 'VIGENTE'));
+                }
+            } catch (err) {
+                if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') return;
+            }
+        };
+    })();
 
     const calcular = async (e) => {
         e.preventDefault();

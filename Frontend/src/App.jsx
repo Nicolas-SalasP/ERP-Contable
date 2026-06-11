@@ -64,6 +64,13 @@ const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/Centralizaci
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 import Glosario from './Modulos/Glosario/Glosario';
 
+// Si ya está autenticado, redirige al inicio (evita volver a /login sin logout).
+const RutaPublica = ({ children }) => {
+  const auth = useAuth();
+  if (auth?.isAuthenticated) return <Navigate to="/" replace />;
+  return children;
+};
+
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
   const auth = useAuth();
   if (!auth) return <div>Cargando...</div>;
@@ -99,6 +106,18 @@ const RutaProtegidaAlgunPermiso = ({ permisos = [], children }) => {
   const { tieneAlgunPermiso } = usePermisos();
 
   if (!tieneAlgunPermiso(permisos)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+// Guard de plan/módulo: replica la lógica de BarraLateral (moduloRequerido).
+// Fail-open cuando module_keys está vacío o es '*' (admins sin SSO ven todo).
+const RutaPorModulo = ({ modulo, children }) => {
+  const { tieneModulo } = usePermisos();
+
+  if (!tieneModulo(modulo)) {
     return <Navigate to="/" replace />;
   }
 
@@ -143,7 +162,7 @@ function App() {
         <BrowserRouter>
         <Suspense fallback={<div>Cargando...</div>}>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<RutaPublica><Login /></RutaPublica>} />
           <Route path="/sso-callback" element={<SsoCallback />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
           <Route path="/crear-empresa" element={
@@ -346,33 +365,41 @@ function App() {
 
           <Route path="/inventario/dashboard" element={
             <RutaPrivada>
-              <RutaProtegidaAlgunPermiso permisos={permisosLecturaInventario}>
-                <InventarioLayout><InventarioDashboard /></InventarioLayout>
-              </RutaProtegidaAlgunPermiso>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegidaAlgunPermiso permisos={permisosLecturaInventario}>
+                  <InventarioLayout><InventarioDashboard /></InventarioLayout>
+                </RutaProtegidaAlgunPermiso>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/productos" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.productos.ver">
-                <InventarioLayout><ProductosInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.productos.ver">
+                  <InventarioLayout><ProductosInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/bodegas" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.bodegas.ver">
-                <InventarioLayout><BodegasInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.bodegas.ver">
+                  <InventarioLayout><BodegasInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/ubicaciones" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.ubicaciones.ver">
-                <InventarioLayout><UbicacionesInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.ubicaciones.ver">
+                  <InventarioLayout><UbicacionesInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
@@ -380,140 +407,174 @@ function App() {
 
           <Route path="/inventario/picking" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.picking.ver">
-                <InventarioLayout><PickingInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.picking.ver">
+                  <InventarioLayout><PickingInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/packing" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.packing.ver">
-                <InventarioLayout><PackingInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.packing.ver">
+                  <InventarioLayout><PackingInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/despachos" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.despachos.ver">
-                <InventarioLayout><DespachosInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.despachos.ver">
+                  <InventarioLayout><DespachosInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/devoluciones" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.devoluciones.ver">
-                <InventarioLayout><DevolucionesInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.devoluciones.ver">
+                  <InventarioLayout><DevolucionesInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/auditoria" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.auditoria.ver">
-                <InventarioLayout><AuditoriaInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.auditoria.ver">
+                  <InventarioLayout><AuditoriaInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/eventos-integracion" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.eventos_integracion.ver">
-                <InventarioLayout><EventosIntegracionInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.eventos_integracion.ver">
+                  <InventarioLayout><EventosIntegracionInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/movimientos" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.movimientos.ver">
-                <InventarioLayout><MovimientosInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.movimientos.ver">
+                  <InventarioLayout><MovimientosInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/kardex" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.kardex.ver">
-                <InventarioLayout><KardexInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.kardex.ver">
+                  <InventarioLayout><KardexInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/lotes" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.lotes.ver">
-                <InventarioLayout><LotesInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.lotes.ver">
+                  <InventarioLayout><LotesInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/reservas" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.reservas.ver">
-                <InventarioLayout><ReservasInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.reservas.ver">
+                  <InventarioLayout><ReservasInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/tomas-fisicas" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.tomas_fisicas.ver">
-                <InventarioLayout><TomasFisicasInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.tomas_fisicas.ver">
+                  <InventarioLayout><TomasFisicasInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/valorizacion" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.valorizacion.ver">
-                <InventarioLayout><ValorizacionInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.valorizacion.ver">
+                  <InventarioLayout><ValorizacionInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/reportes" element={
             <RutaPrivada>
-              <RutaProtegida permiso="inventario.reportes.ver">
-                <InventarioLayout><ReportesInventario /></InventarioLayout>
-              </RutaProtegida>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegida permiso="inventario.reportes.ver">
+                  <InventarioLayout><ReportesInventario /></InventarioLayout>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/inventario/alertas" element={
             <RutaPrivada>
-              <RutaProtegidaAlgunPermiso permisos={[
-                'inventario.alertas.ver',
-                'inventario.reglas_reposicion.ver',
-              ]}>
-                <InventarioLayout><AlertasInventario /></InventarioLayout>
-              </RutaProtegidaAlgunPermiso>
+              <RutaPorModulo modulo="inventario">
+                <RutaProtegidaAlgunPermiso permisos={[
+                  'inventario.alertas.ver',
+                  'inventario.reglas_reposicion.ver',
+                ]}>
+                  <InventarioLayout><AlertasInventario /></InventarioLayout>
+                </RutaProtegidaAlgunPermiso>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/sii/configuracion" element={
             <RutaPrivada>
-              <RutaProtegida permiso="sii.configuracion.ver">
-                <LayoutPrincipal><ConfiguracionSii /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="sii">
+                <RutaProtegida permiso="sii.configuracion.ver">
+                  <LayoutPrincipal><ConfiguracionSii /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/sii/certificado" element={
             <RutaPrivada>
-              <RutaProtegida permiso="sii.certificado.ver">
-                <LayoutPrincipal><CertificadoSii /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="sii">
+                <RutaProtegida permiso="sii.certificado.ver">
+                  <LayoutPrincipal><CertificadoSii /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/sii/folios-caf" element={
             <RutaPrivada>
-              <RutaProtegida permiso="sii.caf.ver">
-                <LayoutPrincipal><FoliosCaf /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="sii">
+                <RutaProtegida permiso="sii.caf.ver">
+                  <LayoutPrincipal><FoliosCaf /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
@@ -521,9 +582,11 @@ function App() {
 
           <Route path="/sii/facturas" element={
             <RutaPrivada>
-              <RutaProtegida permiso="sii.dte.ver">
-                <LayoutPrincipal><FacturasSii /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="sii">
+                <RutaProtegida permiso="sii.dte.ver">
+                  <LayoutPrincipal><FacturasSii /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
@@ -531,57 +594,71 @@ function App() {
           {/* ── RRHH y Remuneraciones ── */}
           <Route path="/rrhh/empleados" element={
             <RutaPrivada>
-              <RutaProtegida permiso="rrhh.empleados.ver">
-                <LayoutPrincipal><EmpleadosRrhh /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.empleados.ver">
+                  <LayoutPrincipal><EmpleadosRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/rrhh/contratos" element={
             <RutaPrivada>
-              <RutaProtegida permiso="rrhh.empleados.ver">
-                <LayoutPrincipal><ContratosRrhh /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.empleados.ver">
+                  <LayoutPrincipal><ContratosRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/rrhh/liquidaciones" element={
             <RutaPrivada>
-              <RutaProtegida permiso="rrhh.remuneraciones.ver">
-                <LayoutPrincipal><LiquidacionesRrhh /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><LiquidacionesRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/rrhh/finiquitos" element={
             <RutaPrivada>
-              <RutaProtegida permiso="rrhh.remuneraciones.ver">
-                <LayoutPrincipal><FiniquitosRrhh /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><FiniquitosRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/rrhh/parametros" element={
             <RutaPrivada>
-              <RutaProtegida permiso="rrhh.parametros.ver">
-                <LayoutPrincipal><ParametrosRrhh /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.parametros.ver">
+                  <LayoutPrincipal><ParametrosRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/rrhh/centralizacion" element={
             <RutaPrivada>
-              <RutaProtegida permiso="rrhh.parametros.ver">
-                <LayoutPrincipal><CentralizacionRrhh /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.parametros.ver">
+                  <LayoutPrincipal><CentralizacionRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 
           <Route path="/rrhh/previred" element={
             <RutaPrivada>
-              <RutaProtegida permiso="rrhh.remuneraciones.ver">
-                <LayoutPrincipal><PreviredRrhh /></LayoutPrincipal>
-              </RutaProtegida>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><PreviredRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
             </RutaPrivada>
           } />
 

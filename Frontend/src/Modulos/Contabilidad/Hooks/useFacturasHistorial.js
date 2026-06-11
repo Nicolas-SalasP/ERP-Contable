@@ -74,9 +74,9 @@ export function useFacturasHistorial({ vistaActual = 1, onMenuClickOutside } = {
         setBusqueda(termino);
         if (termino.length > 0) {
             const matches = listaProveedores.filter(p =>
-                p.razon_social.toLowerCase().includes(termino.toLowerCase()) ||
+                (p.razon_social ?? '').toLowerCase().includes(termino.toLowerCase()) ||
                 (p.rut && p.rut.toLowerCase().includes(termino.toLowerCase())) ||
-                p.codigo_interno.toString().includes(termino)
+                String(p.codigo_interno ?? '').includes(termino)
             );
             setSugerencias(matches);
             setMostrarSugerencias(true);
