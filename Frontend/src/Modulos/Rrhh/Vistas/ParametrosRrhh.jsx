@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { usePermisos } from '../../../Contextos/Permisos';
 import rrhhApi from '../Servicios/rrhhApi';
 import { formatFecha, formatNumero, formatPesos, MESES, nombreMes } from '../Utilidades/formato';
@@ -70,10 +71,13 @@ const ParametrosRrhh = () => {
     return (
         <div className="max-w-6xl mx-auto p-6 md:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
-                    <i className="fas fa-scale-balanced text-emerald-600" />
-                    Parámetros Previsionales
-                </h1>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                        <i className="fas fa-scale-balanced text-emerald-600" />
+                        Parámetros Previsionales
+                    </h1>
+                    <AyudaModulo moduloId="parametrosRrhh" size={28} />
+                </div>
                 <p className="text-sm text-slate-500 mt-1">
                     Tasas, topes e indicadores legales que alimentan el motor de liquidación. Cero números mágicos en el código.
                 </p>

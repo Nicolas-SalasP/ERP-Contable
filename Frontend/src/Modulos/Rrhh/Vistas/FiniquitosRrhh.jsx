@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { usePermisos } from '../../../Contextos/Permisos';
 import rrhhApi from '../Servicios/rrhhApi';
 import { colorEstado, formatFecha, formatPesos } from '../Utilidades/formato';
@@ -128,10 +129,13 @@ const FiniquitosRrhh = () => {
         <div className="max-w-6xl mx-auto p-6 md:p-8">
             <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
-                        <i className="fas fa-handshake-slash text-emerald-600" />
-                        Finiquitos
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                            <i className="fas fa-handshake-slash text-emerald-600" />
+                            Finiquitos
+                        </h1>
+                        <AyudaModulo moduloId="finiquitosRrhh" size={28} />
+                    </div>
                     <p className="text-sm text-slate-500 mt-1">Indemnización por años de servicio, aviso previo y vacaciones proporcionales (Código del Trabajo).</p>
                 </div>
                 {puedeProcesar && (

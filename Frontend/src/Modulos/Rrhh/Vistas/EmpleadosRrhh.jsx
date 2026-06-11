@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { usePermisos } from '../../../Contextos/Permisos';
 import rrhhApi from '../Servicios/rrhhApi';
 import { colorEstado, formatFecha } from '../Utilidades/formato';
@@ -105,10 +106,13 @@ const EmpleadosRrhh = () => {
         <div className="max-w-7xl mx-auto p-6 md:p-8">
             <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
-                        <i className="fas fa-id-card-clip text-emerald-600" />
-                        Ficha de Personal
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                            <i className="fas fa-id-card-clip text-emerald-600" />
+                            Ficha de Personal
+                        </h1>
+                        <AyudaModulo moduloId="empleadosRrhh" size={28} />
+                    </div>
                     <p className="text-sm text-slate-500 mt-1">
                         Empleados de la empresa: datos personales, previsionales y bancarios (cifrados).
                     </p>

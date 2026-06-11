@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { usePermisos } from '../../../Contextos/Permisos';
+import { api } from '../../../Configuracion/api';
+import BuscadorCuentaContable from '../../Contabilidad/Componentes/BuscadorCuentaContable';
 import rrhhApi from '../Servicios/rrhhApi';
 import { MESES, nombreMes } from '../Utilidades/formato';
 
@@ -23,14 +26,15 @@ const LABELS = {
 
 const CentralizacionRrhh = () => {
     const { tienePermiso } = usePermisos();
-    const puedeEditar = tienePermiso('rrhh.parametros.editar');
+    const puedeEditar = tienePermiso('rrhh.parametros.ver') && tienePermiso('rrhh.parametros.editar');
     const puedeProcesar = tienePermiso('rrhh.remuneraciones.procesar');
 
     const [mapeos, setMapeos] = useState([]);
     const [requeridos, setRequeridos] = useState([]);
     const [todos, setTodos] = useState([]);
     const [cargando, setCargando] = useState(true);
-    const [editando, setEditando] = useState({}); // tipo -> codigo en edición
+    const [planCuentas, setPlanCuentas] = useState([]);
+    const [manual, setManual] = useState({}); // fallback tipo -> codigo (si no se pudo cargar el plan)
     const [periodo, setPeriodo] = useState({ anio: anioActual, mes: new Date().getMonth() + 1 });
     const [centralizando, setCentralizando] = useState(false);
 
@@ -48,15 +52,28 @@ const CentralizacionRrhh = () => {
 
     useEffect(() => { cargar(); }, [cargar]);
 
+    // Plan de cuentas para el buscador. Si el usuario no tiene acceso a contabilidad,
+    // queda vacío y se usa el ingreso manual de código como respaldo.
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await api.get('/contabilidad/plan-cuentas', { silent: true });
+                if (res?.success) {
+                    setPlanCuentas((res.data ?? []).filter((c) => c.imputable && c.activo !== false));
+                }
+            } catch (_) { /* sin plan: se usa el respaldo manual */ }
+        })();
+    }, []);
+
     const codigoDe = (tipo) => mapeos.find((m) => m.tipo_cuenta === tipo)?.cuenta_contable_codigo ?? '';
 
-    const guardarMapeo = async (tipo) => {
-        const codigo = (editando[tipo] ?? '').trim();
-        if (!codigo) return;
+    const guardarMapeo = async (tipo, codigo) => {
+        const limpio = (codigo ?? '').trim();
+        if (!limpio || limpio === codigoDe(tipo)) return;
         try {
-            await rrhhApi.mapeoContable.guardar({ tipo_cuenta: tipo, cuenta_contable_codigo: codigo });
-            setEditando((e) => { const n = { ...e }; delete n[tipo]; return n; });
-            await Swal.fire({ icon: 'success', title: 'Mapeo guardado', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+            await rrhhApi.mapeoContable.guardar({ tipo_cuenta: tipo, cuenta_contable_codigo: limpio });
+            setManual((m) => { const n = { ...m }; delete n[tipo]; return n; });
+            await Swal.fire({ icon: 'success', title: 'Cuenta asignada', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
             cargar();
         } catch (_) { /* toast */ }
     };
@@ -91,14 +108,18 @@ const CentralizacionRrhh = () => {
     };
 
     const faltantes = requeridos.filter((t) => !codigoDe(t));
+    const hayPlan = planCuentas.length > 0;
 
     return (
         <div className="max-w-5xl mx-auto p-6 md:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
-                    <i className="fas fa-book-bookmark text-emerald-600" />
-                    Centralización Contable
-                </h1>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                        <i className="fas fa-book-bookmark text-emerald-600" />
+                        Centralización Contable
+                    </h1>
+                    <AyudaModulo moduloId="centralizacionRrhh" size={28} />
+                </div>
                 <p className="text-sm text-slate-500 mt-1">
                     Genera el asiento mensual de remuneraciones (partida doble) desde las liquidaciones emitidas.
                 </p>
@@ -140,40 +161,58 @@ const CentralizacionRrhh = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-200">
                         <h3 className="font-bold text-slate-900 flex items-center gap-2"><i className="fas fa-sitemap text-emerald-600" /> Mapeo contable</h3>
-                        <p className="text-xs text-slate-500 mt-1">Asocia cada categoría RRHH a una cuenta del Plan de Cuentas (por código).</p>
+                        <p className="text-xs text-slate-500 mt-1">Asocia cada categoría RRHH a una cuenta imputable de tu Plan de Cuentas.</p>
                     </div>
                     <div className="divide-y divide-slate-100">
                         {(todos.length ? todos : Object.keys(LABELS)).map((tipo) => {
                             const esRequerido = requeridos.includes(tipo);
                             const codigoActual = codigoDe(tipo);
-                            const enEdicion = tipo in editando;
                             return (
                                 <div key={tipo} className="flex flex-wrap items-center gap-3 px-5 py-3">
                                     <div className="flex-1 min-w-[240px]">
                                         <span className="text-sm font-medium text-slate-800">{LABELS[tipo] || tipo}</span>
                                         {esRequerido && <span className="ml-2 text-[10px] font-bold uppercase text-red-500">obligatorio</span>}
                                     </div>
-                                    {puedeEditar ? (
-                                        <>
+
+                                    {!puedeEditar ? (
+                                        <span className="font-mono text-sm text-slate-700">{codigoActual || '—'}</span>
+                                    ) : hayPlan ? (
+                                        <div className="flex items-center gap-2 w-full sm:w-80">
+                                            <div className="flex-1">
+                                                <BuscadorCuentaContable
+                                                    cuentas={planCuentas}
+                                                    valor={codigoActual}
+                                                    onChange={(codigo) => guardarMapeo(tipo, codigo)}
+                                                />
+                                            </div>
+                                            {codigoActual && (
+                                                <button onClick={() => eliminarMapeo(tipo)}
+                                                    className="px-3 py-2 rounded-lg border border-slate-300 text-slate-500 hover:text-red-600 text-xs" title="Quitar cuenta">
+                                                    <i className="fas fa-trash" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        // Respaldo: ingreso manual del código si no se pudo cargar el Plan de Cuentas.
+                                        <div className="flex items-center gap-2">
                                             <input
-                                                value={enEdicion ? editando[tipo] : codigoActual}
-                                                onChange={(e) => setEditando((s) => ({ ...s, [tipo]: e.target.value }))}
+                                                value={tipo in manual ? manual[tipo] : codigoActual}
+                                                onChange={(e) => setManual((m) => ({ ...m, [tipo]: e.target.value }))}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') guardarMapeo(tipo, manual[tipo]); }}
                                                 placeholder="Código cuenta"
                                                 className="w-36 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none"
                                             />
-                                            <button onClick={() => guardarMapeo(tipo)} disabled={!enEdicion}
+                                            <button onClick={() => guardarMapeo(tipo, manual[tipo])} disabled={!(tipo in manual)}
                                                 className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-40" title="Guardar">
                                                 <i className="fas fa-check" />
                                             </button>
                                             {codigoActual && (
                                                 <button onClick={() => eliminarMapeo(tipo)}
-                                                    className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-500 hover:text-red-600 text-xs" title="Eliminar">
+                                                    className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-500 hover:text-red-600 text-xs" title="Quitar">
                                                     <i className="fas fa-trash" />
                                                 </button>
                                             )}
-                                        </>
-                                    ) : (
-                                        <span className="font-mono text-sm text-slate-700">{codigoActual || '—'}</span>
+                                        </div>
                                     )}
                                 </div>
                             );
