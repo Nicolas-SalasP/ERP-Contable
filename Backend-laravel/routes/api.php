@@ -20,6 +20,11 @@ use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
 use App\Domains\Contabilidad\Controllers\PeriodoContableController;
 use App\Domains\CorreccionMonetaria\Controllers\CorreccionMonetariaController;
+use App\Domains\Rrhh\Controllers\EmpleadoController;
+use App\Domains\Rrhh\Controllers\ContratoController;
+use App\Domains\Rrhh\Controllers\LiquidacionController;
+use App\Domains\Rrhh\Controllers\FiniquitoController;
+use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
@@ -425,6 +430,45 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::post('/tomas-fisicas/{id}/cerrar', [TomaFisicaController::class, 'cerrarTomaFisica']);
         Route::post('/tomas-fisicas/{id}/ajustar', [TomaFisicaController::class, 'ajustarTomaFisica']);
         Route::post('/tomas-fisicas/{id}/cancelar', [TomaFisicaController::class, 'cancelarTomaFisica']);
+    });
+
+    // ---------------------------------------------------------------------
+    // RRHH y Remuneraciones (Chile)
+    // ---------------------------------------------------------------------
+    Route::prefix('rrhh')->group(function () {
+        // Personal (R1)
+        Route::get('/empleados', [EmpleadoController::class, 'index'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados', [EmpleadoController::class, 'store'])->middleware('permiso:rrhh.empleados.crear');
+        Route::get('/empleados/{id}', [EmpleadoController::class, 'show'])->middleware('permiso:rrhh.empleados.ver');
+        Route::put('/empleados/{id}', [EmpleadoController::class, 'update'])->middleware('permiso:rrhh.empleados.editar');
+        Route::delete('/empleados/{id}', [EmpleadoController::class, 'destroy'])->middleware('permiso:rrhh.empleados.editar');
+
+        // Contratos (R1)
+        Route::get('/empleados/{empleadoId}/contratos', [ContratoController::class, 'indexPorEmpleado'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados/{empleadoId}/contratos', [ContratoController::class, 'store'])->middleware('permiso:rrhh.contratos.crear');
+        Route::get('/contratos/{id}', [ContratoController::class, 'show'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/contratos/{id}/terminar', [ContratoController::class, 'terminar'])->middleware('permiso:rrhh.contratos.crear');
+        Route::post('/contratos/{id}/haberes', [ContratoController::class, 'agregarHaber'])->middleware('permiso:rrhh.contratos.crear');
+
+        // Liquidaciones de sueldo (R3)
+        Route::get('/liquidaciones', [LiquidacionController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/liquidaciones/calcular', [LiquidacionController::class, 'calcular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/liquidaciones/{id}', [LiquidacionController::class, 'show'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/liquidaciones/{id}/emitir', [LiquidacionController::class, 'emitir'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/liquidaciones/{id}/anular', [LiquidacionController::class, 'anular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // Finiquitos (R4)
+        Route::get('/finiquitos', [FiniquitoController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/finiquitos/calcular', [FiniquitoController::class, 'calcular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/finiquitos/{id}', [FiniquitoController::class, 'show'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/finiquitos/{id}/firmar', [FiniquitoController::class, 'firmar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // Parametrización legal (R2): tasas, indicadores UF/UTM, tabla impuesto único
+        Route::get('/parametros', [ParametroPrevisionalController::class, 'indexParametros'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/parametros', [ParametroPrevisionalController::class, 'storeParametro'])->middleware('permiso:rrhh.parametros.editar');
+        Route::get('/indicadores', [ParametroPrevisionalController::class, 'indexIndicadores'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/indicadores', [ParametroPrevisionalController::class, 'storeIndicador'])->middleware('permiso:rrhh.parametros.editar');
+        Route::get('/tabla-impuesto', [ParametroPrevisionalController::class, 'indexImpuesto'])->middleware('permiso:rrhh.parametros.ver');
     });
 });
 

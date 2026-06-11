@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             FacturasYAsientosSeeder::class,
             GastosOperacionalesSeeder::class,
             CotizacionSeeder::class,
+            RrhhParametrosLegalesSeeder::class,
         ]);
     }
 }

@@ -115,6 +115,7 @@ trait PreparaEntornoBase
                 $this->permisosOperativosCompletos(),
                 $this->permisosInventarioCompletos(),
                 $this->permisosSiiAdministracion(),
+                $this->permisosRrhhCompletos(),
                 // H15: espejo de RolSeeder — el Administrador declara gestión de usuarios.
                 ['usuarios.ver', 'usuarios.gestionar'],
             ))),
@@ -301,6 +302,23 @@ trait PreparaEntornoBase
             'sii.caf.ver',
             'sii.dte.ver',
             'sii.auditoria.ver',
+        ];
+    }
+
+    /**
+     * Permisos RRHH completos. Espejo de RolSeeder::permisosRrhhCompletos().
+     */
+    protected function permisosRrhhCompletos(): array
+    {
+        return [
+            'rrhh.empleados.ver',
+            'rrhh.empleados.crear',
+            'rrhh.empleados.editar',
+            'rrhh.contratos.crear',
+            'rrhh.remuneraciones.ver',
+            'rrhh.remuneraciones.procesar',
+            'rrhh.parametros.ver',
+            'rrhh.parametros.editar',
         ];
     }
 

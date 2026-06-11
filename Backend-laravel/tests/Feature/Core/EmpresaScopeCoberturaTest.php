@@ -23,6 +23,9 @@ class EmpresaScopeCoberturaTest extends TestCase
      *    la empresa es la raiz del tenant, roles se resuelven cerca del auth).
      *  - CM config/ejecucion: configuracion de sistema creada por EmpresaObserver
      *    en contexto cross-empresa y aislada por filtro explicito en el service.
+     *  - ConceptoRemuneracion: catalogo hibrido (conceptos del sistema con
+     *    empresa_id null + personalizados por empresa). Un scope global ocultaria
+     *    los conceptos del sistema; se filtra explicitamente cuando aplica.
      */
     private const EXCLUSIONES = [
         \App\Domains\Core\Models\User::class,
@@ -31,6 +34,7 @@ class EmpresaScopeCoberturaTest extends TestCase
         \App\Domains\CorreccionMonetaria\Models\CmConfiguracionEmpresa::class,
         \App\Domains\CorreccionMonetaria\Models\CmConfiguracionCuenta::class,
         \App\Domains\CorreccionMonetaria\Models\CmEjecucion::class,
+        \App\Domains\Rrhh\Models\ConceptoRemuneracion::class,
     ];
 
     public function test_todo_modelo_tenant_tiene_empresa_scope(): void
