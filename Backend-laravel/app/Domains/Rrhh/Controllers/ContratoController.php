@@ -30,11 +30,11 @@ class ContratoController extends Controller
         $datos = $request->validate([
             'tipo' => 'required|in:INDEFINIDO,PLAZO_FIJO,POR_OBRA',
             'fecha_inicio' => 'required|date',
-            'fecha_termino' => 'nullable|date|after:fecha_inicio',
+            'fecha_termino' => 'required_if:tipo,PLAZO_FIJO,POR_OBRA|nullable|date|after:fecha_inicio',
             'cargo' => 'nullable|string|max:100',
             'departamento' => 'nullable|string|max:100',
             'centro_costo_id' => 'nullable|integer|exists:centros_costo,id',
-            'horas_semana' => 'nullable|integer|min:1|max:60',
+            'horas_semana' => 'nullable|integer|min:1|max:44',
             'tipo_jornada' => 'nullable|in:COMPLETA,PARCIAL,TURNO',
             'sueldo_base' => 'required|numeric|min:0',
             'observaciones' => 'nullable|string',

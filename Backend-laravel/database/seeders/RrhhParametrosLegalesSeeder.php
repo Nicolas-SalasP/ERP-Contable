@@ -114,8 +114,8 @@ class RrhhParametrosLegalesSeeder extends Seeder
             [4, 50.0,  70.0,  0.135, 4.49],
             [5, 70.0,  90.0,  0.230, 11.14],
             [6, 90.0,  120.0, 0.304, 17.80],
-            [7, 120.0, 310.0, 0.350, 23.80],
-            [8, 310.0, null,  0.400, 39.30],
+            [7, 120.0, 310.0, 0.350, 23.32],  // Fix 2: rebaja correcta (continuidad con tramo 6 en 120 UTM)
+            [8, 310.0, null,  0.400, 38.82],  // Fix 2: rebaja correcta (continuidad con tramo 7 en 310 UTM)
         ];
 
         foreach ($tramos as [$orden, $desde, $hasta, $tasa, $factor]) {

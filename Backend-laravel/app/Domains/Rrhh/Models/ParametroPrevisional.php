@@ -2,6 +2,7 @@
 
 namespace App\Domains\Rrhh\Models;
 
+use App\Domains\Rrhh\Exceptions\RrhhException;
 use Illuminate\Database\Eloquent\Model;
 
 class ParametroPrevisional extends Model
@@ -50,7 +51,12 @@ class ParametroPrevisional extends Model
     public function getComisionAfp(string $afpNombre): float
     {
         $comisiones = $this->afp_comisiones_json ?? [];
-        return (float) ($comisiones[$afpNombre] ?? $comisiones[strtolower($afpNombre)] ?? 1.44);
+        $valor = $comisiones[$afpNombre] ?? $comisiones[strtolower($afpNombre)] ?? null;
+        if ($valor === null) {
+            // Fix 8: AFP sin comisión configurada es error de datos, no fallback silencioso
+            throw RrhhException::regla("AFP \"{$afpNombre}\" sin comisión configurada en los parámetros previsionales.");
+        }
+        return (float) $valor;
     }
 
     public static function vigentePara(string $fecha): ?self

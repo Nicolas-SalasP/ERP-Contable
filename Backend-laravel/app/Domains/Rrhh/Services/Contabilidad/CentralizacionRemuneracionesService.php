@@ -11,13 +11,14 @@ use App\Domains\Rrhh\Models\LiquidacionDetalle;
 use App\Domains\Rrhh\Models\ProvisionVacaciones;
 use App\Domains\Rrhh\Models\RrhhMapeoContable;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
  * R5 — Centralización contable de remuneraciones.
  *
  * Genera un único asiento contable mensual que consolida todas las
- * liquidaciones EMITIDAS del período. El asiento sigue el esquema
+ * liquidaciones EMITIDAS y PAGADAS del período. El asiento sigue el esquema
  * estándar chileno:
  *
  *   DEBE:  Gasto Remuneraciones  (total haberes imponibles + no imponibles)
@@ -46,7 +47,7 @@ class CentralizacionRemuneracionesService
     ) {}
 
     /**
-     * Centraliza todas las liquidaciones EMITIDAS del período en un asiento.
+     * Centraliza todas las liquidaciones EMITIDAS o PAGADAS del período en un asiento.
      * Idempotente: lanza excepción si el período ya fue centralizado.
      */
     public function centralizar(
@@ -55,33 +56,43 @@ class CentralizacionRemuneracionesService
         int $mes,
         int $userId
     ): AsientoContable {
-        // ── 1. Cargar liquidaciones EMITIDAS del período ──────────────────
+        // ── 1. Cargar liquidaciones EMITIDAS o PAGADAS del período ───────
         $liquidaciones = Liquidacion::where('empresa_id', $empresaId)
             ->where('anio', $anio)
             ->where('mes', $mes)
-            ->where('estado', 'EMITIDA')
+            ->whereIn('estado', ['EMITIDA', 'PAGADA'])
             ->get();
 
         if ($liquidaciones->isEmpty()) {
             throw RrhhException::regla(
-                "No hay liquidaciones EMITIDAS para el período {$mes}/{$anio}. " .
+                "No hay liquidaciones EMITIDAS o PAGADAS para el período {$mes}/{$anio}. " .
                 "Calcule y emita las liquidaciones antes de centralizar."
             );
         }
 
         // ── 2. Control de idempotencia (un asiento por período) ───────────
         $periodoId = $anio * 100 + $mes;
+        $lockKey   = "centralizacion-rrhh-{$empresaId}-{$anio}-{$mes}";
 
-        if (AsientoContable::where('empresa_id', $empresaId)
-            ->where('origen_modulo', 'rrhh')
-            ->where('origen_id', $periodoId)
-            ->exists()
-        ) {
+        // Lock atómico: evita race check-then-act entre requests concurrentes.
+        if (!Cache::add($lockKey, true, 30)) {
             throw RrhhException::regla(
-                "El período {$mes}/{$anio} ya fue centralizado. " .
-                "Consulte los asientos contables de origen 'rrhh' para revisarlo."
+                "La centralización del período {$mes}/{$anio} ya está en curso. " .
+                "Espere unos segundos y vuelva a intentarlo."
             );
         }
+
+        try {
+            if (AsientoContable::where('empresa_id', $empresaId)
+                ->where('origen_modulo', 'rrhh')
+                ->where('origen_id', $periodoId)
+                ->exists()
+            ) {
+                throw RrhhException::regla(
+                    "El período {$mes}/{$anio} ya fue centralizado. " .
+                    "Consulte los asientos contables de origen 'rrhh' para revisarlo."
+                );
+            }
 
         // ── 3. Validar mapeo contable configurado ─────────────────────────
         $mapeos = RrhhMapeoContable::where('empresa_id', $empresaId)
@@ -173,7 +184,14 @@ class CentralizacionRemuneracionesService
         $this->agregarLinea($detalles, $mapeos, RrhhMapeoContable::PASIVO_LEYES_SOCIALES,
             0, $totalLeyesSoc, "Aportes empleador SIS+AFC+Mutual por pagar {$periodo}");
 
-        if ($descVolTotal > 0 && $mapeos->has(RrhhMapeoContable::PASIVO_DESCUENTOS_VOLUNTARIOS)) {
+        if ($descVolTotal > 0) {
+            if (!$mapeos->has(RrhhMapeoContable::PASIVO_DESCUENTOS_VOLUNTARIOS)) {
+                throw RrhhException::regla(
+                    "El período {$periodo} tiene descuentos voluntarios por \${$descVolTotal} " .
+                    "pero la cuenta PASIVO_DESCUENTOS_VOLUNTARIOS no está configurada. " .
+                    "Configure la cuenta en Configuración → RRHH → Mapeo Contable antes de centralizar."
+                );
+            }
             $this->agregarLinea($detalles, $mapeos, RrhhMapeoContable::PASIVO_DESCUENTOS_VOLUNTARIOS,
                 0, $descVolTotal, "Descuentos voluntarios por pagar {$periodo}");
         }
@@ -205,10 +223,13 @@ class CentralizacionRemuneracionesService
         );
 
         // ── 7. Vincular comprobante a las liquidaciones ───────────────────
-        Liquidacion::whereIn('id', $liquidacionIds)
-            ->update(['comprobante_contable' => $asiento->numero_comprobante]);
+            Liquidacion::whereIn('id', $liquidacionIds)
+                ->update(['comprobante_contable' => $asiento->numero_comprobante]);
 
-        return $asiento->load('detalles');
+            return $asiento->load('detalles');
+        } finally {
+            Cache::forget($lockKey);
+        }
     }
 
     private function agregarLinea(

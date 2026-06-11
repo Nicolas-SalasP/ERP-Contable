@@ -6,8 +6,10 @@ use App\Domains\Rrhh\Models\IndicadorMensual;
 use App\Domains\Rrhh\Models\ParametroPrevisional;
 use App\Domains\Rrhh\Models\TablaImpuestoUnico;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Administración de la parametrización legal (tasas previsionales, indicadores
@@ -26,6 +28,11 @@ class ParametroPrevisionalController extends Controller
 
     public function storeParametro(Request $request): JsonResponse
     {
+        // Tablas globales: solo staff interno puede escribirlas.
+        if ((int) ($request->user()?->rol?->jerarquia ?? 0) < 100) {
+            abort(403, 'Solo el equipo de soporte puede modificar parámetros legales globales.');
+        }
+
         $datos = $request->validate([
             'vigente_desde' => 'required|date',
             'vigente_hasta' => 'nullable|date|after:vigente_desde',
@@ -47,7 +54,30 @@ class ParametroPrevisionalController extends Controller
             'fuente' => 'nullable|string',
         ]);
 
-        $parametro = ParametroPrevisional::create($datos);
+        // Validar solapamiento: vigente_desde debe ser posterior al del parámetro actual
+        $actual = ParametroPrevisional::whereNull('vigente_hasta')
+            ->orderByDesc('vigente_desde')
+            ->first();
+
+        if ($actual) {
+            if ($datos['vigente_desde'] <= $actual->vigente_desde->toDateString()) {
+                abort(422, 'La fecha vigente_desde debe ser posterior a la del parámetro actual (' .
+                    $actual->vigente_desde->toDateString() . ').');
+            }
+        }
+
+        $parametro = DB::transaction(function () use ($datos, $actual) {
+            // Cerrar vigencia del parámetro anterior
+            if ($actual) {
+                $actual->update([
+                    'vigente_hasta' => Carbon::parse($datos['vigente_desde'])
+                        ->subDay()
+                        ->toDateString(),
+                ]);
+            }
+
+            return ParametroPrevisional::create($datos);
+        });
 
         return response()->json([
             'success' => true,
@@ -66,6 +96,11 @@ class ParametroPrevisionalController extends Controller
 
     public function storeIndicador(Request $request): JsonResponse
     {
+        // Tablas globales: solo staff interno puede escribirlas.
+        if ((int) ($request->user()?->rol?->jerarquia ?? 0) < 100) {
+            abort(403, 'Solo el equipo de soporte puede modificar parámetros legales globales.');
+        }
+
         $datos = $request->validate([
             'anio' => 'required|integer|min:2000|max:2100',
             'mes' => 'required|integer|min:1|max:12',

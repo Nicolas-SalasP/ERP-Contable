@@ -36,12 +36,12 @@ class PreviredController extends Controller
             $mes
         );
 
-        $nombreArchivo = sprintf('previred_%04d_%02d.csv', $anio, $mes);
+        $nombreArchivo = sprintf('previred_%04d_%02d.txt', $anio, $mes);
 
         return response()->streamDownload(function () use ($contenido) {
             echo $contenido;
         }, $nombreArchivo, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Type'        => 'text/plain; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$nombreArchivo}\"",
         ]);
     }
@@ -49,6 +49,9 @@ class PreviredController extends Controller
     /**
      * GET /api/rrhh/previred/{anio}/{mes}/preview
      * Retorna el contenido del archivo como JSON para previsualización en el SPA.
+     *
+     * El formato de 105 campos NO tiene encabezado; cada línea es una fila de datos.
+     * El JSON devuelto incluye un array posicional de 105 elementos por trabajador.
      */
     public function preview(Request $request, int $anio, int $mes): Response|\Illuminate\Http\JsonResponse
     {
@@ -62,17 +65,16 @@ class PreviredController extends Controller
             $mes
         );
 
-        // Parsear CSV → array de objetos para el frontend
-        $lineas = array_filter(explode("\r\n", $contenido));
-        $cabecera = str_getcsv(array_shift($lineas), ';');
-        $filas = array_map(fn($l) => array_combine($cabecera, str_getcsv($l, ';')), $lineas);
+        // El archivo no tiene encabezado: cada línea es directamente una fila de datos
+        $lineas = array_values(array_filter(explode("\r\n", $contenido)));
+        $filas  = array_map(fn($l) => explode(';', $l), $lineas);
 
         return response()->json([
-            'success'  => true,
-            'periodo'  => sprintf('%02d/%d', $mes, $anio),
-            'total_trabajadores' => count($filas),
-            'columnas' => $cabecera,
-            'filas'    => array_values($filas),
+            'success'             => true,
+            'periodo'             => sprintf('%02d/%d', $mes, $anio),
+            'total_trabajadores'  => count($filas),
+            'total_campos'        => 105,
+            'filas'               => $filas,
         ]);
     }
 }

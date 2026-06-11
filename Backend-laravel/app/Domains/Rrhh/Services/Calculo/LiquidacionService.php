@@ -9,6 +9,7 @@ use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\LiquidacionDetalle;
 use App\Domains\Rrhh\Models\ParametroPrevisional;
 use App\Domains\Rrhh\Models\TablaImpuestoUnico;
+use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use Illuminate\Support\Facades\DB;
 
@@ -58,7 +59,19 @@ class LiquidacionService
                 throw RrhhException::regla("No hay indicadores mensuales (UF/UTM) cargados para {$mes}/{$anio}.");
             }
 
-            // Eliminar borrador anterior si existe
+            // Fix 9: rechazar si ya existe una liquidación no-BORRADOR para el período
+            $liqExistente = Liquidacion::where('empresa_id', $empresaId)
+                ->where('empleado_id', $empleadoId)
+                ->where('anio', $anio)
+                ->where('mes', $mes)
+                ->whereIn('estado', [Liquidacion::ESTADO_EMITIDA, Liquidacion::ESTADO_PAGADA, Liquidacion::ESTADO_ANULADA])
+                ->first();
+            if ($liqExistente) {
+                throw RrhhException::regla(
+                    "Ya existe una liquidación en estado {$liqExistente->estado} para {$empleado->nombre_completo} en el período {$mes}/{$anio}. No se puede recalcular."
+                );
+            }
+
             Liquidacion::where('empresa_id', $empresaId)
                 ->where('empleado_id', $empleadoId)
                 ->where('anio', $anio)
@@ -103,7 +116,8 @@ class LiquidacionService
             $horasExtra = (float) ($extras['horas_extra'] ?? 0);
             if ($horasExtra > 0) {
                 $jornadaSemanal = (float) ($contrato->horas_semana ?: 42);
-                $valorHoraOrdinaria = $sueldoBase / ($jornadaSemanal * 4.333);
+                // Fix 4: fórmula DT — divide por 30 días y multiplica por días de jornada semanal
+                $valorHoraOrdinaria = ($sueldoBase / 30) * 7 / $jornadaSemanal;
                 $valorHoraExtra = $valorHoraOrdinaria * 1.5;
                 $montoHorasExtra = round($horasExtra * $valorHoraExtra);
                 $detalles[] = $this->lineaHaber($liq, ConceptoRemuneracion::HORAS_EXTRA,
@@ -114,7 +128,8 @@ class LiquidacionService
             $contrato->load('haberes');
             $orden_ni = self::ORDEN_HABERES_NO_IMPONIBLES;
 
-            foreach ($contrato->haberes as $haber) {
+            // Fix 1: filtrar solo tipos haber; descuentos del contrato se procesan en sección 10
+            foreach ($contrato->haberes->whereIn('tipo', ['HABER_IMPONIBLE', 'HABER_NO_IMPONIBLE']) as $haber) {
                 if (!$haber->activo) {
                     continue;
                 }
@@ -134,7 +149,14 @@ class LiquidacionService
             // ── 5. ASIGNACIÓN FAMILIAR ─────────────────────────────────────
             $cargasActivas = $empleado->cargasFamiliares()->count();
             if ($cargasActivas > 0) {
-                $montoAsigFam = $this->calcularAsignacionFamiliar($parametro, $sueldoBase, $cargasActivas);
+                // Fix 10: base del tramo es el imponible acumulado hasta aquí, no el sueldo base
+                $imponibleParaAsigFam = 0;
+                foreach ($detalles as $d) {
+                    if ($d['tipo'] === 'HABER_IMPONIBLE') {
+                        $imponibleParaAsigFam += $d['monto'];
+                    }
+                }
+                $montoAsigFam = $this->calcularAsignacionFamiliar($parametro, $imponibleParaAsigFam, $cargasActivas);
                 if ($montoAsigFam > 0) {
                     $detalles[] = $this->lineaHaber($liq, ConceptoRemuneracion::ASIGNACION_FAMILIAR,
                         "Asignación Familiar ({$cargasActivas} cargas)", 'HABER_NO_IMPONIBLE', $montoAsigFam, $orden_ni++);
@@ -174,16 +196,19 @@ class LiquidacionService
                 $baseImponible, $comisionPct, $afpComision, $ordenDL++);
 
             // Salud (7% Fonasa o plan Isapre)
+            // Fix 3: separar salud_legal (rebaja base tributable) de salud_adicional (solo descuento)
             $saludPct = (float) $parametro->salud_fonasa_pct;
             $saludBase = $baseImponible;
+            $saludLegalMonto = round($saludBase * ($saludPct / 100)); // siempre 7% topado
 
             if ($empleado->tipo_salud === 'ISAPRE' && $empleado->isapre_plan_uf) {
-                $saludIsapre = round((float) $empleado->isapre_plan_uf * $uf);
-                // Isapre: descuenta el mayor entre el plan en pesos y el 7% legal
-                $saludMonto = max($saludIsapre, round($saludBase * ($saludPct / 100)));
+                $saludIsaprePesos = round((float) $empleado->isapre_plan_uf * $uf);
+                $saludAdicionalMonto = max(0, $saludIsaprePesos - $saludLegalMonto);
+                $saludMonto = $saludLegalMonto + $saludAdicionalMonto;
                 $saludLabel = "Salud ISAPRE {$empleado->isapre_nombre}";
             } else {
-                $saludMonto = round($saludBase * ($saludPct / 100));
+                $saludAdicionalMonto = 0;
+                $saludMonto = $saludLegalMonto;
                 $saludLabel = 'Salud FONASA (7%)';
             }
             $detalles[] = $this->lineaDescuento($liq, ConceptoRemuneracion::SALUD,
@@ -192,9 +217,22 @@ class LiquidacionService
             // AFC — tope diferente (135.2 UF)
             $topeAfcPesos = round((float) $parametro->afc_tope_imponible_uf * $uf);
             $baseAfc = min($totalImponible, $topeAfcPesos);
-            $afcTrabajadorPct = $contrato->esIndefindo()
-                ? (float) $parametro->afc_indefinido_trabajador_pct
-                : (float) $parametro->afc_plazo_fijo_trabajador_pct;
+
+            // Fix 6: el 0,6% del trabajador indefinido cesa al cumplir 11 años
+            $afcTrabajadorPct = 0.0;
+            if ($contrato->esIndefindo()) {
+                $fechaInicioContrato = $contrato->fecha_inicio;
+                $fechaPeriodoCarbon = \Carbon\Carbon::create($anio, $mes, 1);
+                $aniosAntiguedad = $fechaInicioContrato
+                    ? (int) $fechaInicioContrato->diffInYears($fechaPeriodoCarbon)
+                    : 0;
+                if ($aniosAntiguedad < 11) {
+                    $afcTrabajadorPct = (float) $parametro->afc_indefinido_trabajador_pct;
+                }
+            } else {
+                $afcTrabajadorPct = (float) $parametro->afc_plazo_fijo_trabajador_pct;
+            }
+
             $afcMonto = round($baseAfc * ($afcTrabajadorPct / 100));
             if ($afcMonto > 0) {
                 $detalles[] = $this->lineaDescuento($liq, ConceptoRemuneracion::AFC_TRABAJADOR,
@@ -203,7 +241,8 @@ class LiquidacionService
             }
 
             // ── 8. BASE TRIBUTABLE (para impuesto único) ───────────────────
-            $totalDescLegalesPreImpuesto = $afpCotizacion + $afpComision + $saludMonto + $afcMonto;
+            // Fix 3: solo salud_legal rebaja base tributable; el exceso del plan Isapre no
+            $totalDescLegalesPreImpuesto = $afpCotizacion + $afpComision + $saludLegalMonto + $afcMonto;
             $baseTributable = $totalImponible - $totalDescLegalesPreImpuesto;
 
             // APV voluntario reduce base tributable (Art. 42 bis LIR)
@@ -246,6 +285,8 @@ class LiquidacionService
                 : (float) $parametro->afc_plazo_fijo_empleador_pct;
             $afcEmpleadorMonto = round($baseAfc * ($afcEmpleadorPct / 100));
             $mutualMonto = round($baseImponible * ((float) $parametro->mutual_cotizacion_basica_pct / 100));
+            // Fix 5: cotización adicional Ley 21.735 — cargo patronal puro
+            $reformaMonto = round($baseImponible * ((float) $parametro->cotizacion_adicional_empleador_pct / 100));
 
             // ── 12. TOTALES FINALES ─────────────────────────────────────────
             $totalDescuentosLegales = $afpCotizacion + $afpComision + $saludMonto + $afcMonto + $impuestoUnico;
@@ -271,6 +312,9 @@ class LiquidacionService
                 'aporte_empleador_sis' => $sisMonto,
                 'aporte_empleador_afc' => $afcEmpleadorMonto,
                 'aporte_empleador_mutual' => $mutualMonto,
+                'salud_legal' => $saludLegalMonto,
+                'salud_adicional' => $saludAdicionalMonto,
+                'aporte_empleador_reforma' => $reformaMonto,
             ]);
 
             return $liq->load(['detalles', 'empleado', 'contrato']);
@@ -298,6 +342,21 @@ class LiquidacionService
         }
         if ($liq->estado === Liquidacion::ESTADO_PAGADA) {
             throw RrhhException::regla('No se puede anular una liquidación ya pagada. Genere una nota de corrección.');
+        }
+        // Bloquear anulación si el período ya fue centralizado en contabilidad.
+        // Mismo criterio de idempotencia que CentralizacionRemuneracionesService:
+        // origen_modulo='rrhh', origen_id=anio*100+mes, empresa_id.
+        $periodoId = $liq->anio * 100 + $liq->mes;
+        $asiento = AsientoContable::where('empresa_id', $empresaId)
+            ->where('origen_modulo', 'rrhh')
+            ->where('origen_id', $periodoId)
+            ->first();
+        if ($asiento) {
+            throw RrhhException::regla(
+                "No se puede anular: el período ya fue centralizado en contabilidad " .
+                "(asiento N°{$asiento->numero_comprobante}). " .
+                "Anule primero el asiento de centralización."
+            );
         }
         $liq->update(['estado' => Liquidacion::ESTADO_ANULADA]);
         return $liq->fresh();
@@ -353,7 +412,7 @@ class LiquidacionService
         ];
     }
 
-    private function calcularAsignacionFamiliar(ParametroPrevisional $parametro, float $remuneracion, int $cargas): float
+    private function calcularAsignacionFamiliar(ParametroPrevisional $parametro, float $totalImponible, int $cargas): float
     {
         $tramos = $parametro->asignacion_familiar_tramos_json ?? [];
         if (empty($tramos)) {
@@ -362,7 +421,7 @@ class LiquidacionService
 
         foreach ($tramos as $tramo) {
             $hasta = $tramo['hasta_pesos'] ?? null;
-            if ($hasta === null || $remuneracion <= $hasta) {
+            if ($hasta === null || $totalImponible <= $hasta) {
                 return (float) ($tramo['monto_por_carga'] ?? 0) * $cargas;
             }
         }

@@ -16,22 +16,72 @@ use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
 
 /**
- * R6 — Generación del archivo previsional para Previred.
- * Valida formato CSV, mapeo de códigos AFP/salud, datos por trabajador
- * y aislamiento multitenant.
+ * R6 — Generación del archivo previsional para Previred (formato 105 campos).
+ *
+ * Valida:
+ * - Estructura posicional: 105 campos por fila, sin encabezado.
+ * - Tipo de movimiento: 0 (normal), 1 (contratación), 2 (retiro).
+ * - Días trabajados proporcionales cuando contrato inicia/termina en el mes.
+ * - Cotización adicional ISAPRE.
+ * - Códigos AFP y salud correctos.
+ * - Aislamiento multitenant.
  */
 class PreviredTest extends TestCase
 {
     use RefreshDatabase, PreparaEntornoBase;
 
-    private PreviredService $service;
+    // ── Posiciones de columna en el archivo de 105 campos (0-indexado) ────────
+    // Bloque 1: identificación trabajador
+    private const COL_RUT             = 0;
+    private const COL_DV              = 1;
+    private const COL_AP_PATERNO      = 2;
+    private const COL_AP_MATERNO      = 3;
+    private const COL_NOMBRES         = 4;
+    private const COL_SEXO            = 5;
+    private const COL_NACIONALIDAD    = 6;
+    private const COL_TIPO_PAGO       = 7;
+    private const COL_PERIODO_DESDE   = 8;
+    private const COL_PERIODO_HASTA   = 9;
+    private const COL_REGIMEN         = 10;
+    private const COL_TIPO_TRABAJADOR = 11;
+    private const COL_DIAS_TRABAJADOS = 12;
+    // Bloque 2: AFP
+    private const COL_TIPO_MOV        = 13;
+    private const COL_AFP_CODIGO      = 14;
+    private const COL_CUSPP           = 15;
+    private const COL_RIM_AFP         = 16;
+    private const COL_COT_AFP         = 17;
+    private const COL_SIS             = 18;
+    private const COL_COM_AFP         = 19;
+    // Bloque 3: AFC
+    private const COL_TIPO_AFC        = 24;
+    private const COL_RIM_AFC         = 25;
+    private const COL_AFC_TRAB        = 26;
+    private const COL_AFC_EMP         = 27;
+    // Bloque 5: Salud
+    private const COL_SALUD_CODIGO    = 34;
+    private const COL_FUN             = 35;
+    private const COL_RIM_SALUD       = 36;
+    private const COL_COT_SALUD       = 37;
+    private const COL_COT_ADIC_ISAPRE = 38;
+    // Bloque 8: empleador
+    private const COL_RUT_EMP         = 69;
+    private const COL_DV_EMP          = 70;
+    // Bloque 9: tributario/otros
+    private const COL_BASE_TRIB       = 80;
+    private const COL_IUSC            = 81;
+    private const COL_LIQUIDO         = 82;
+
+    private const TOTAL_CAMPOS = 105;
+
+    private PreviredService    $service;
     private LiquidacionService $liquidacionService;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->prepararEntornoBase();
-        $this->service = app(PreviredService::class);
+        $this->service            = app(PreviredService::class);
         $this->liquidacionService = app(LiquidacionService::class);
         $this->cargarParametrosLegales();
     }
@@ -39,78 +89,92 @@ class PreviredTest extends TestCase
     private function cargarParametrosLegales(): void
     {
         ParametroPrevisional::create([
-            'vigente_desde' => '2026-01-01',
-            'vigente_hasta' => null,
-            'afp_cotizacion_pct' => 10.0,
-            'afp_comisiones_json' => ['Habitat' => 1.27, 'Modelo' => 0.58, 'Capital' => 1.44, 'Uno' => 0.46],
-            'afp_sis_pct' => 1.62,
-            'tope_imponible_uf' => 90.0,
-            'salud_fonasa_pct' => 7.0,
-            'afc_indefinido_trabajador_pct' => 0.6,
-            'afc_indefinido_empleador_pct' => 2.4,
-            'afc_plazo_fijo_trabajador_pct' => 0.0,
-            'afc_plazo_fijo_empleador_pct' => 3.0,
-            'afc_tope_imponible_uf' => 135.2,
-            'imm' => 539000,
+            'vigente_desde'                    => '2026-01-01',
+            'vigente_hasta'                    => null,
+            'afp_cotizacion_pct'               => 10.0,
+            'afp_comisiones_json'              => ['Habitat' => 1.27, 'Modelo' => 0.58, 'Capital' => 1.44, 'Uno' => 0.46],
+            'afp_sis_pct'                      => 1.62,
+            'tope_imponible_uf'                => 90.0,
+            'salud_fonasa_pct'                 => 7.0,
+            'afc_indefinido_trabajador_pct'    => 0.6,
+            'afc_indefinido_empleador_pct'     => 2.4,
+            'afc_plazo_fijo_trabajador_pct'    => 0.0,
+            'afc_plazo_fijo_empleador_pct'     => 3.0,
+            'afc_tope_imponible_uf'            => 135.2,
+            'imm'                              => 539000,
             'gratificacion_tope_mensual_factor' => 4.75,
             'cotizacion_adicional_empleador_pct' => 1.0,
-            'mutual_cotizacion_basica_pct' => 0.9,
-            'asignacion_familiar_tramos_json' => [
+            'mutual_cotizacion_basica_pct'     => 0.9,
+            'asignacion_familiar_tramos_json'  => [
                 ['hasta_pesos' => 620251, 'monto_por_carga' => 22007],
-                ['hasta_pesos' => null, 'monto_por_carga' => 0],
+                ['hasta_pesos' => null,   'monto_por_carga' => 0],
             ],
             'fuente' => 'test',
         ]);
 
         IndicadorMensual::create([
-            'anio' => 2026, 'mes' => 6,
-            'uf_valor' => 39850, 'utm_valor' => 71506, 'uta_valor' => 71506 * 12,
+            'anio'      => 2026,
+            'mes'       => 6,
+            'uf_valor'  => 39850,
+            'utm_valor' => 71506,
+            'uta_valor' => 71506 * 12,
         ]);
 
         foreach ([
-            [1, 0.0, 13.5, 0.0, 0.0],
-            [2, 13.5, 30.0, 0.04, 0.54],
-            [3, 30.0, 50.0, 0.08, 1.74],
-            [4, 50.0, 70.0, 0.135, 4.49],
-            [5, 70.0, 90.0, 0.23, 11.14],
-            [6, 90.0, 120.0, 0.304, 17.80],
-            [7, 120.0, 310.0, 0.35, 23.80],
-            [8, 310.0, null, 0.40, 39.30],
+            [1, 0.0,   13.5,  0.0,   0.0],
+            [2, 13.5,  30.0,  0.04,  0.54],
+            [3, 30.0,  50.0,  0.08,  1.74],
+            [4, 50.0,  70.0,  0.135, 4.49],
+            [5, 70.0,  90.0,  0.23,  11.14],
+            [6, 90.0,  120.0, 0.304, 17.80],
+            [7, 120.0, 310.0, 0.35,  23.80],
+            [8, 310.0, null,  0.40,  39.30],
         ] as [$o, $d, $h, $t, $f]) {
             TablaImpuestoUnico::create([
-                'anio' => 2026, 'orden' => $o, 'desde_utm' => $d, 'hasta_utm' => $h,
-                'tasa' => $t, 'factor_deduccion_utm' => $f,
+                'anio'              => 2026,
+                'orden'             => $o,
+                'desde_utm'         => $d,
+                'hasta_utm'         => $h,
+                'tasa'              => $t,
+                'factor_deduccion_utm' => $f,
             ]);
         }
     }
 
     private function crearEmpleadoConContrato(
-        int $empresaId,
-        string $afp = 'Habitat',
-        string $tipoSalud = 'FONASA',
+        int    $empresaId,
+        string $afp          = 'Habitat',
+        string $tipoSalud    = 'FONASA',
         string $tipoContrato = 'INDEFINIDO',
-        float $sueldo = 900000
+        float  $sueldo       = 900000,
+        string $fechaInicio  = '2024-01-01',
+        ?string $fechaTermino = null,
+        ?string $isapreNombre = null,
+        float  $isapre_plan_uf = 0.0
     ): Empleado {
-        $rut = '12.' . rand(100, 999) . '.' . rand(100, 999) . '-' . rand(0, 9);
+        $rut      = '12.' . rand(100, 999) . '.' . rand(100, 999) . '-' . rand(0, 9);
         $empleado = Empleado::create([
-            'empresa_id' => $empresaId,
-            'rut' => $rut,
-            'nombres' => 'Juan Carlos',
+            'empresa_id'       => $empresaId,
+            'rut'              => $rut,
+            'nombres'          => 'Juan Carlos',
             'apellido_paterno' => 'González',
             'apellido_materno' => 'Pérez',
-            'afp' => $afp,
-            'tipo_salud' => $tipoSalud,
+            'afp'              => $afp,
+            'tipo_salud'       => $tipoSalud,
+            'isapre_nombre'    => $isapreNombre,
+            'isapre_plan_uf'   => $isapre_plan_uf,
         ]);
 
         Contrato::create([
-            'empresa_id' => $empresaId,
-            'empleado_id' => $empleado->id,
-            'tipo' => $tipoContrato,
-            'fecha_inicio' => '2024-01-01',
-            'sueldo_base' => $sueldo,
-            'horas_semana' => 42,
-            'estado' => 'VIGENTE',
-            'es_contrato_activo' => true,
+            'empresa_id'        => $empresaId,
+            'empleado_id'       => $empleado->id,
+            'tipo'              => $tipoContrato,
+            'fecha_inicio'      => $fechaInicio,
+            'fecha_termino'     => $fechaTermino,
+            'sueldo_base'       => $sueldo,
+            'horas_semana'      => 42,
+            'estado'            => $fechaTermino ? 'TERMINADO' : 'VIGENTE',
+            'es_contrato_activo' => $fechaTermino ? false : true,
         ]);
 
         return $empleado->fresh();
@@ -122,142 +186,342 @@ class PreviredTest extends TestCase
         return $this->liquidacionService->emitir($empresaId, $liq->id);
     }
 
-    // ── Tests ─────────────────────────────────────────────────────────────────
+    /** Parsea una línea del archivo → array de 105 campos */
+    private function parsearLinea(string $linea): array
+    {
+        return explode(';', $linea);
+    }
 
-    public function test_genera_archivo_csv_con_encabezado(): void
+    /** Devuelve las líneas de datos del archivo (sin filtrar encabezado porque no hay) */
+    private function lineasArchivo(string $contenido): array
+    {
+        return array_values(array_filter(explode("\r\n", $contenido)));
+    }
+
+    // ── Tests estructura ───────────────────────────────────────────────────────
+
+    public function test_cada_fila_tiene_exactamente_105_campos(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
-        $emp = $this->crearEmpleadoConContrato($empresa->id);
+        $emp       = $this->crearEmpleadoConContrato($empresa->id);
         $this->calcularYEmitir($empresa->id, $emp->id);
 
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $lineas    = $this->lineasArchivo($contenido);
 
-        $this->assertIsString($csv);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        $this->assertGreaterThanOrEqual(2, count($lineas), 'Debe tener encabezado + 1 fila de datos');
+        $this->assertCount(1, $lineas, 'Debe haber exactamente 1 fila de datos');
+        $campos = $this->parsearLinea($lineas[0]);
+        $this->assertCount(self::TOTAL_CAMPOS, $campos,
+            "Cada fila debe tener 105 campos; encontrados: " . count($campos));
+    }
 
-        // Verificar que la primera línea es el encabezado
-        $encabezado = $lineas[0];
-        $this->assertStringContainsString('RUT', $encabezado);
-        $this->assertStringContainsString('AFP_CODIGO', $encabezado);
-        $this->assertStringContainsString('PERIODO', $encabezado);
-        $this->assertStringContainsString('LIQUIDO_PAGAR', $encabezado);
+    public function test_no_hay_linea_de_encabezado(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato($empresa->id);
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido    = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $lineas       = $this->lineasArchivo($contenido);
+        $primeraLinea = $lineas[0];
+
+        // Si la primera línea fuera encabezado contendría texto en campo 1
+        $campos = $this->parsearLinea($primeraLinea);
+        // El campo 1 (índice 0) siempre es el RUT numérico del trabajador
+        $this->assertIsNumeric($campos[self::COL_RUT],
+            'El primer campo debe ser el RUT numérico; no debe haber encabezado');
     }
 
     public function test_contiene_una_fila_por_trabajador(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
 
-        // Crear 3 trabajadores con liquidaciones emitidas
         for ($i = 0; $i < 3; $i++) {
             $emp = $this->crearEmpleadoConContrato($empresa->id);
             $this->calcularYEmitir($empresa->id, $emp->id);
         }
 
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        // 1 encabezado + 3 datos
-        $this->assertCount(4, $lineas);
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $lineas    = $this->lineasArchivo($contenido);
+
+        $this->assertCount(3, $lineas, 'Debe haber una fila por trabajador');
+        foreach ($lineas as $linea) {
+            $this->assertCount(self::TOTAL_CAMPOS, $this->parsearLinea($linea));
+        }
     }
+
+    // ── Tests tipo de movimiento ───────────────────────────────────────────────
+
+    public function test_tipo_movimiento_0_para_mes_completo(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        // Contrato inicia mucho antes del período → sin movimiento
+        $emp = $this->crearEmpleadoConContrato($empresa->id, fechaInicio: '2024-01-01');
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('0', $campos[self::COL_TIPO_MOV],
+            'Mes completo sin inicio/término en el período → tipo movimiento 0');
+    }
+
+    public function test_tipo_movimiento_1_cuando_contrato_inicia_en_el_periodo(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        // Contrato inicia el 15 de junio 2026
+        $emp = $this->crearEmpleadoConContrato($empresa->id, fechaInicio: '2026-06-15');
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('1', $campos[self::COL_TIPO_MOV],
+            'Contrato que inicia en el período → tipo movimiento 1 (contratación)');
+    }
+
+    public function test_tipo_movimiento_2_cuando_contrato_termina_en_el_periodo(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        // El contrato se crea activo (para que LiquidacionService lo acepte),
+        // se calcula y emite la liquidación, y LUEGO se registra el término
+        // (igual que ocurre en producción: la liquidación precede al finiquito).
+        $emp = $this->crearEmpleadoConContrato($empresa->id, fechaInicio: '2024-01-01');
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        // Simular finiquito: registrar fecha_termino en el contrato
+        Contrato::where('empleado_id', $emp->id)->update(['fecha_termino' => '2026-06-20']);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('2', $campos[self::COL_TIPO_MOV],
+            'Contrato que termina en el período → tipo movimiento 2 (retiro)');
+    }
+
+    // ── Tests días trabajados ──────────────────────────────────────────────────
+
+    public function test_dias_trabajados_30_para_mes_completo(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato($empresa->id, fechaInicio: '2024-01-01');
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        // Junio tiene 30 días; contrato vigente todo el mes → 30
+        $this->assertEquals('30', $campos[self::COL_DIAS_TRABAJADOS],
+            'Contrato vigente todo junio (30 días) → 30 días trabajados');
+    }
+
+    public function test_dias_trabajados_proporcionales_inicio_en_periodo(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        // Contrato inicia el 16 de junio → 15 días (16..30)
+        $emp = $this->crearEmpleadoConContrato($empresa->id, fechaInicio: '2026-06-16');
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('15', $campos[self::COL_DIAS_TRABAJADOS],
+            'Contrato que inicia el día 16 de junio → 15 días trabajados (16..30)');
+    }
+
+    public function test_dias_trabajados_proporcionales_termino_en_periodo(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        // El contrato se calcula con contrato activo; después se registra el término
+        $emp = $this->crearEmpleadoConContrato($empresa->id, fechaInicio: '2024-01-01');
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        // Simular finiquito el día 10: registrar fecha_termino antes de generar Previred
+        Contrato::where('empleado_id', $emp->id)->update(['fecha_termino' => '2026-06-10']);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('10', $campos[self::COL_DIAS_TRABAJADOS],
+            'Contrato que termina el día 10 de junio → 10 días trabajados (1..10)');
+    }
+
+    // ── Tests códigos AFP y salud ──────────────────────────────────────────────
 
     public function test_codigo_afp_habitat_es_07(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
-        $emp = $this->crearEmpleadoConContrato($empresa->id, 'Habitat');
+        $emp       = $this->crearEmpleadoConContrato($empresa->id, afp: 'Habitat');
         $this->calcularYEmitir($empresa->id, $emp->id);
 
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        $cols = str_getcsv($lineas[1], ';');
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
 
-        // Columna AFP_CODIGO (índice 8 = posición 9 en el CSV)
-        $this->assertEquals('07', $cols[8], 'Habitat debe mapear al código 07 de Previred');
+        $this->assertEquals('07', $campos[self::COL_AFP_CODIGO],
+            'Habitat debe mapear al código AFP 07');
     }
 
     public function test_codigo_afp_uno_es_13(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
-        $emp = $this->crearEmpleadoConContrato($empresa->id, 'Uno');
+        $emp       = $this->crearEmpleadoConContrato($empresa->id, afp: 'Uno');
         $this->calcularYEmitir($empresa->id, $emp->id);
 
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        $cols = str_getcsv($lineas[1], ';');
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
 
-        $this->assertEquals('13', $cols[8], 'Uno AFP debe mapear al código 13 de Previred');
+        $this->assertEquals('13', $campos[self::COL_AFP_CODIGO],
+            'AFP Uno debe mapear al código 13');
     }
 
     public function test_codigo_salud_fonasa_es_07(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
-        $emp = $this->crearEmpleadoConContrato($empresa->id, 'Habitat', 'FONASA');
+        $emp       = $this->crearEmpleadoConContrato($empresa->id, tipoSalud: 'FONASA');
         $this->calcularYEmitir($empresa->id, $emp->id);
 
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        $cols = str_getcsv($lineas[1], ';');
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
 
-        // Columna SALUD_CODIGO (índice 12 = posición 13)
-        $this->assertEquals('07', $cols[12], 'FONASA debe mapear al código 07 de Previred');
+        $this->assertEquals('07', $campos[self::COL_SALUD_CODIGO],
+            'FONASA debe mapear al código salud 07');
     }
 
-    public function test_periodo_en_formato_aaaamm(): void
-    {
-        [$empresa] = $this->crearEmpresaConAdmin();
-        $emp = $this->crearEmpleadoConContrato($empresa->id);
-        $this->calcularYEmitir($empresa->id, $emp->id);
-
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        $cols = str_getcsv($lineas[1], ';');
-
-        // Columna PERIODO (índice 6)
-        $this->assertEquals('202606', $cols[6], 'El período debe ser AAAAMM');
-    }
-
-    public function test_liquido_pagar_es_positivo(): void
-    {
-        [$empresa] = $this->crearEmpresaConAdmin();
-        $emp = $this->crearEmpleadoConContrato($empresa->id, afp: 'Habitat', sueldo: 1200000);
-        $liq = $this->calcularYEmitir($empresa->id, $emp->id);
-
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        $cols = str_getcsv($lineas[1], ';');
-
-        // Columna LIQUIDO_PAGAR (última, índice 24)
-        $liquido = (int) $cols[24];
-        $this->assertGreaterThan(0, $liquido);
-        // El líquido en el CSV debe coincidir con la liquidación
-        $this->assertEqualsWithDelta((float) $liq->liquido_a_pagar, $liquido, 1.0);
-    }
+    // ── Tests AFC ─────────────────────────────────────────────────────────────
 
     public function test_tipo_afc_indefinido_es_1(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
-        $emp = $this->crearEmpleadoConContrato($empresa->id, tipoContrato: 'INDEFINIDO');
+        $emp       = $this->crearEmpleadoConContrato($empresa->id, tipoContrato: 'INDEFINIDO');
         $this->calcularYEmitir($empresa->id, $emp->id);
 
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        $cols = str_getcsv($lineas[1], ';');
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
 
-        // Columna TIPO_AFC (índice 16)
-        $this->assertEquals('1', $cols[16], 'Contrato indefinido = tipo AFC 1');
+        $this->assertEquals('1', $campos[self::COL_TIPO_AFC],
+            'Contrato indefinido → tipo AFC 1');
     }
 
     public function test_tipo_afc_plazo_fijo_es_2(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
-        $emp = $this->crearEmpleadoConContrato($empresa->id, tipoContrato: 'PLAZO_FIJO');
+        $emp       = $this->crearEmpleadoConContrato($empresa->id, tipoContrato: 'PLAZO_FIJO');
         $this->calcularYEmitir($empresa->id, $emp->id);
 
-        $csv = $this->service->generarArchivo($empresa->id, 2026, 6);
-        $lineas = array_values(array_filter(explode("\r\n", $csv)));
-        $cols = str_getcsv($lineas[1], ';');
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
 
-        $this->assertEquals('2', $cols[16], 'Contrato a plazo fijo = tipo AFC 2');
+        $this->assertEquals('2', $campos[self::COL_TIPO_AFC],
+            'Contrato a plazo fijo → tipo AFC 2');
     }
+
+    // ── Tests cotización adicional ISAPRE ─────────────────────────────────────
+
+    public function test_cotizacion_adicional_isapre_cero_para_fonasa(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato($empresa->id, tipoSalud: 'FONASA');
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('0', $campos[self::COL_COT_ADIC_ISAPRE],
+            'FONASA no tiene cotización adicional ISAPRE → debe ser 0');
+    }
+
+    public function test_cotizacion_adicional_isapre_positiva_cuando_plan_supera_7_pct(): void
+    {
+        // Sueldo 900 000; imponible salud aprox 900 000; 7% = 63 000
+        // Plan ISAPRE = 2 UF × 39 850 = 79 700 > 63 000 → adicional ≈ 16 700
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato(
+            $empresa->id,
+            tipoSalud:     'ISAPRE',
+            isapreNombre:  'Consalud',
+            isapre_plan_uf: 2.0,
+            sueldo:        900000
+        );
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $adicional = (int) $campos[self::COL_COT_ADIC_ISAPRE];
+        $this->assertGreaterThan(0, $adicional,
+            'Cuando el plan UF supera el 7% de imponible debe haber cotización adicional > 0');
+    }
+
+    public function test_cotizacion_adicional_isapre_cero_cuando_plan_no_supera_7_pct(): void
+    {
+        // Sueldo alto 3 000 000; 7% = 210 000; plan 1 UF × 39 850 = 39 850 < 210 000
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato(
+            $empresa->id,
+            tipoSalud:     'ISAPRE',
+            isapreNombre:  'Consalud',
+            isapre_plan_uf: 1.0,
+            sueldo:        3000000
+        );
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('0', $campos[self::COL_COT_ADIC_ISAPRE],
+            'Cuando el plan UF no supera el 7% de imponible la cotización adicional es 0');
+    }
+
+    // ── Tests período ─────────────────────────────────────────────────────────
+
+    public function test_periodo_desde_y_hasta_en_formato_aaaamm(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato($empresa->id);
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('202606', $campos[self::COL_PERIODO_DESDE], 'Período desde = 202606');
+        $this->assertEquals('202606', $campos[self::COL_PERIODO_HASTA],  'Período hasta = 202606');
+    }
+
+    // ── Tests montos ──────────────────────────────────────────────────────────
+
+    public function test_liquido_pagar_coincide_con_liquidacion(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato($empresa->id, afp: 'Habitat', sueldo: 1200000);
+        $liq       = $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $liquidoArchivo = (int) $campos[self::COL_LIQUIDO];
+        $this->assertGreaterThan(0, $liquidoArchivo, 'Líquido debe ser positivo');
+        $this->assertEqualsWithDelta(
+            (float) $liq->liquido_a_pagar,
+            $liquidoArchivo,
+            1.0,
+            'Líquido en archivo debe coincidir con el de la liquidación'
+        );
+    }
+
+    public function test_regimen_previsional_es_1_para_afp(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato($empresa->id);
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $contenido = $this->service->generarArchivo($empresa->id, 2026, 6);
+        $campos    = $this->parsearLinea($this->lineasArchivo($contenido)[0]);
+
+        $this->assertEquals('1', $campos[self::COL_REGIMEN],
+            'Trabajadores AFP → régimen previsional 1');
+    }
+
+    // ── Tests de error y multitenant ──────────────────────────────────────────
 
     public function test_falla_si_no_hay_liquidaciones_emitidas(): void
     {
@@ -272,14 +536,14 @@ class PreviredTest extends TestCase
         [$empresaA] = $this->crearEmpresaConAdmin();
         [$empresaB] = $this->crearEmpresaConAdmin();
 
-        // Empresa A tiene liquidaciones
         $empA = $this->crearEmpleadoConContrato($empresaA->id);
         $this->calcularYEmitir($empresaA->id, $empA->id);
 
-        // Empresa B no tiene nada → debe lanzar excepción
         $this->expectException(RrhhException::class);
         $this->service->generarArchivo($empresaB->id, 2026, 6);
     }
+
+    // ── Tests de endpoints HTTP ────────────────────────────────────────────────
 
     public function test_endpoint_previred_requiere_autenticacion(): void
     {
@@ -292,11 +556,27 @@ class PreviredTest extends TestCase
         [$empresa] = $this->crearEmpresaConAdmin();
 
         $rolSinPermiso = \App\Domains\Core\Models\Rol::create([
-            'nombre' => 'Sin Permiso', 'jerarquia' => 10, 'permisos' => [],
+            'nombre'    => 'Sin Permiso',
+            'jerarquia' => 10,
+            'permisos'  => [],
         ]);
         $usuario = $this->crearUsuario($empresa, $rolSinPermiso);
 
         $response = $this->actingAs($usuario)->getJson('/api/rrhh/previred/2026/6/archivo');
         $response->assertStatus(403);
+    }
+
+    public function test_nombre_archivo_descargado_es_txt(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $emp                  = $this->crearEmpleadoConContrato($empresa->id);
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $response = $this->actingAs($usuario)->get('/api/rrhh/previred/2026/6/archivo');
+        $response->assertStatus(200);
+
+        $disposition = $response->headers->get('Content-Disposition', '');
+        $this->assertStringContainsString('.txt', $disposition,
+            'El archivo descargado debe tener extensión .txt');
     }
 }

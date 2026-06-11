@@ -277,6 +277,87 @@ class CentralizacionContableTest extends TestCase
         $this->assertEquals($asiento->numero_comprobante, $comprobantes->first());
     }
 
+    public function test_centraliza_liquidaciones_pagadas_ademas_de_emitidas(): void
+    {
+        [$empresa, $admin] = $this->crearEmpresaConAdmin();
+        $cuentas = $this->crearCuentas($empresa->id);
+        $this->configurarMapeo($empresa->id, $cuentas);
+
+        $liqEmitida = $this->crearYEmitirLiquidacion($empresa->id);
+        // Marcar otra liquidación como PAGADA directamente (simula pago posterior a emisión)
+        $liqPagada = $this->crearYEmitirLiquidacion($empresa->id);
+        $liqPagada->update(['estado' => 'PAGADA']);
+
+        $asiento = $this->service->centralizar($empresa->id, 2026, 6, $admin->id);
+
+        $totalDebe  = (float) $asiento->detalles->sum('debe');
+        $totalHaber = (float) $asiento->detalles->sum('haber');
+        $this->assertEqualsWithDelta($totalDebe, $totalHaber, 0.01,
+            "El asiento debe cuadrar al incluir liquidaciones PAGADAS."
+        );
+
+        // Ambas liquidaciones (EMITIDA + PAGADA) quedaron referenciadas
+        $centralizadas = \App\Domains\Rrhh\Models\Liquidacion::where('empresa_id', $empresa->id)
+            ->whereNotNull('comprobante_contable')
+            ->count();
+        $this->assertEquals(2, $centralizadas);
+    }
+
+    public function test_asiento_cuadra_con_descuentos_voluntarios_mapeados(): void
+    {
+        [$empresa, $admin] = $this->crearEmpresaConAdmin();
+        $cuentas = $this->crearCuentas($empresa->id);
+
+        // Agregar cuenta para descuentos voluntarios
+        $cuentaDescVol = \App\Domains\Contabilidad\Models\PlanCuenta::create([
+            'empresa_id' => $empresa->id,
+            'codigo' => '2205',
+            'nombre' => 'Descuentos Voluntarios por Pagar',
+            'tipo' => 'PASIVO',
+            'nivel' => 2,
+            'imputable' => true,
+            'activo' => true,
+        ]);
+        $cuentas[RrhhMapeoContable::PASIVO_DESCUENTOS_VOLUNTARIOS] = $cuentaDescVol;
+        $this->configurarMapeo($empresa->id, $cuentas);
+
+        $liq = $this->crearYEmitirLiquidacion($empresa->id);
+
+        // Inyectar descuento voluntario directamente en la liquidación
+        if ((float) $liq->total_descuentos_voluntarios === 0.0) {
+            $liq->update(['total_descuentos_voluntarios' => 50000, 'liquido_a_pagar' => (float) $liq->liquido_a_pagar - 50000]);
+        }
+
+        $asiento = $this->service->centralizar($empresa->id, 2026, 6, $admin->id);
+
+        $totalDebe  = (float) $asiento->detalles->sum('debe');
+        $totalHaber = (float) $asiento->detalles->sum('haber');
+        $this->assertEqualsWithDelta($totalDebe, $totalHaber, 0.01,
+            "Asiento con descuentos voluntarios debe cuadrar (DEBE={$totalDebe} HABER={$totalHaber})."
+        );
+
+        // La línea de descuentos voluntarios existe en el HABER
+        $lineaDescVol = $asiento->detalles->firstWhere('cuenta_contable', '2205');
+        $this->assertNotNull($lineaDescVol, 'Debe existir línea de descuentos voluntarios.');
+        $this->assertGreaterThan(0, (float) $lineaDescVol->haber);
+    }
+
+    public function test_excepcion_si_hay_descuentos_voluntarios_sin_mapeo(): void
+    {
+        [$empresa, $admin] = $this->crearEmpresaConAdmin();
+        $cuentas = $this->crearCuentas($empresa->id);
+        $this->configurarMapeo($empresa->id, $cuentas);
+        // PASIVO_DESCUENTOS_VOLUNTARIOS no está configurado
+
+        $liq = $this->crearYEmitirLiquidacion($empresa->id);
+        // Forzar descuento voluntario > 0
+        $liq->update(['total_descuentos_voluntarios' => 30000, 'liquido_a_pagar' => max(0, (float) $liq->liquido_a_pagar - 30000)]);
+
+        $this->expectException(RrhhException::class);
+        $this->expectExceptionMessageMatches('/PASIVO_DESCUENTOS_VOLUNTARIOS/');
+        $this->service->centralizar($empresa->id, 2026, 6, $admin->id);
+    }
+
     public function test_liquidaciones_borrador_no_son_centralizadas(): void
     {
         [$empresa, $admin] = $this->crearEmpresaConAdmin();
@@ -303,7 +384,7 @@ class CentralizacionContableTest extends TestCase
 
         $asiento = $this->service->centralizar($empresa->id, 2026, 6, $admin->id);
 
-        // Solo la liquidación emitida fue centralizada
+        // Solo la liquidación emitida fue centralizada; la borrador no
         $centralizadas = Liquidacion::where('empresa_id', $empresa->id)
             ->whereNotNull('comprobante_contable')
             ->count();

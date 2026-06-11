@@ -4,6 +4,7 @@ namespace App\Domains\Rrhh\Services\Provisiones;
 
 use App\Domains\Rrhh\Models\Contrato;
 use App\Domains\Rrhh\Models\ProvisionVacaciones;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -81,33 +82,81 @@ class VacacionesService
         ];
     }
 
+    /**
+     * Calcula días proporcionales y monto de feriado al término del contrato (Art. 70).
+     *
+     * Fix #1: usa $fechaTermino como referencia del aniversario, no now().
+     * Fix #6: convierte días hábiles ganados a días corridos para la valorización.
+     *         Limitación: la base sigue siendo sueldo_base/30; ampliar a remuneración
+     *         íntegra (Art. 71) queda fuera del alcance de este fix.
+     */
     public function calcularVacacionesProporcionales(Contrato $contrato, string $fechaTermino): array
     {
-        $fechaInicio = $contrato->fecha_inicio;
-        // Días trabajados desde el último aniversario
-        $aniversario = $fechaInicio->copy()->year(now()->year);
-        if ($aniversario->gt(now())) {
+        $fechaInicio = $contrato->fecha_inicio instanceof Carbon
+            ? $contrato->fecha_inicio
+            : Carbon::parse($contrato->fecha_inicio);
+        $fechaFin = Carbon::parse($fechaTermino);
+
+        // Aniversario relativo a la fecha de término (no a now())
+        $aniversario = $fechaInicio->copy()->year($fechaFin->year);
+        if ($aniversario->gt($fechaFin)) {
             $aniversario->subYear();
         }
 
-        $diasDesdeAniversario = $aniversario->diffInDays($fechaTermino);
-        $diasAnuales = $this->diasAnualesSegunAntigüedad($contrato);
-        $diasProporcionales = round(($diasDesdeAniversario / 365) * $diasAnuales, 4);
+        $diasDesdeAniversario = $aniversario->diffInDays($fechaFin);
+        $diasAnuales = $this->diasAnualesSegunAntigüedad($contrato, $fechaFin);
+        $diasHabilesGanados = round(($diasDesdeAniversario / 365) * $diasAnuales, 4);
+
+        // Convertir días hábiles a días corridos contando desde el día siguiente al término
+        $diasCorridos = $this->habilesACorridos((int) round($diasHabilesGanados), $fechaFin);
 
         $remDiaria = (float) $contrato->sueldo_base / 30;
-        $monto = round($diasProporcionales * $remDiaria, 2);
+        $monto = round($diasCorridos * $remDiaria, 2);
 
         return [
-            'dias' => $diasProporcionales,
+            'dias' => $diasHabilesGanados,
+            'dias_corridos' => $diasCorridos,
             'monto' => $monto,
             'remuneracion_diaria' => $remDiaria,
         ];
     }
 
-    private function diasAnualesSegunAntigüedad(Contrato $contrato): float
+    /**
+     * Convierte N días hábiles a días corridos, contando hacia adelante desde
+     * el día siguiente a $fechaBase y saltando sábados y domingos.
+     * Los fines de semana intercalados quedan incluidos en el conteo corrido.
+     */
+    public function habilesACorridos(int $diasHabiles, Carbon $fechaBase): int
     {
+        if ($diasHabiles <= 0) {
+            return 0;
+        }
+
+        $cursor = $fechaBase->copy()->addDay();
+        $habilesContados = 0;
+        $inicio = $cursor->copy();
+
+        while ($habilesContados < $diasHabiles) {
+            if ($cursor->isWeekday()) {
+                $habilesContados++;
+            }
+            if ($habilesContados < $diasHabiles) {
+                $cursor->addDay();
+            }
+        }
+
+        return (int) $inicio->diffInDays($cursor) + 1;
+    }
+
+    private function diasAnualesSegunAntigüedad(Contrato $contrato, ?Carbon $referencia = null): float
+    {
+        $ref = $referencia ?? Carbon::now();
+        $fechaInicio = $contrato->fecha_inicio instanceof Carbon
+            ? $contrato->fecha_inicio
+            : Carbon::parse($contrato->fecha_inicio);
+
         // Vacaciones progresivas Art. 68: 10+ años → 1 día extra c/3 años adicionales
-        $anios = (int) $contrato->fecha_inicio->diffInYears(now());
+        $anios = (int) $fechaInicio->diffInYears($ref);
         if ($anios < 10) {
             return self::DIAS_HABILES_ANUALES;
         }

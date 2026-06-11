@@ -2,45 +2,38 @@
 
 namespace App\Domains\Rrhh\Services\Previred;
 
+use App\Domains\Core\Models\Empresa;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\ConceptoRemuneracion;
 use App\Domains\Rrhh\Models\Contrato;
 use App\Domains\Rrhh\Models\Empleado;
 use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\LiquidacionDetalle;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * R6 — Generación del archivo previsional mensual para Previred.
  *
- * Produce un CSV semicolon-delimitado, UTF-8, con una fila por trabajador
- * que haya tenido liquidación EMITIDA en el período. El formato sigue la
- * especificación de "Carga de Planilla" de Previred (previred.com).
+ * Produce un archivo de texto UTF-8 CRLF con UNA línea por trabajador,
+ * 105 campos separados por ";", SIN línea de encabezado, siguiendo el
+ * "Archivo de 105 posiciones" del sistema Previred (previred.com).
  *
  * IMPORTANTE: Verificar los campos y códigos de institución contra la
- * documentación oficial de Previred antes de envío a producción. Los
- * códigos AFP e ISAPRE y las posiciones de columna pueden cambiar.
- * Fuente de referencia: https://www.previred.com/web/previred/ayuda-planilla
+ * documentación oficial de Previred antes de envío a producción.
+ * Fuente: https://www.previred.com/web/previred/ayuda-planilla
  *
- * Codificación instituciones de salud (código Previred):
- *   FONASA     = 07
- *   Banmédica  = 01
- *   Colmena    = 02
- *   Consalud   = 03
- *   MásVida    = 04
- *   Nueva MásVida = 06
- *   Vida Tres  = 08
- *   Esencial   = 52
- *
- * Codificación AFP (código Previred):
- *   Capital    = 03
- *   Cuprum     = 05
- *   Habitat    = 07
- *   Modelo     = 09
- *   PlanVital  = 10
- *   ProVida    = 11
- *   Uno        = 13
+ * Tipos de movimiento:
+ *   0 = Sin movimiento (mes completo)
+ *   1 = Contratación (contrato inicia dentro del período)
+ *   2 = Retiro       (contrato termina dentro del período)
+ *   3 = Subsidio licencia médica
+ *   4 = Permiso sin goce de sueldo
+ *   5 = Incorporación nuevo lugar de trabajo
+ *   6 = Accidente del trabajo
+ *   7 = Reliquidación
+ *   8 = Subsidio maternal
+ *  11 = Otros
  */
 class PreviredService
 {
@@ -67,8 +60,19 @@ class PreviredService
         'ESENCIAL'      => '52',
     ];
 
+    // Código de régimen previsional AFP (campo 10 del formato 105):
+    // 1 = AFP, 2 = IPS (ex-INP), 3 = DIPRECA, 4 = CAPREDENA, 7 = Imponente voluntario
+    private const REGIMEN_AFP = '1';
+
+    // Tipo de trabajador (campo 11): 1 = Activo, 2 = Pensionado cotizante
+    private const TIPO_TRABAJADOR = '1';
+
+    // Código de mutualidad por defecto (ACHS = 01, ISL = 02, MUTUAL DE SEGURIDAD = 03)
+    // Sin dato específico en el ERP: campo vacío (se declara sin institución)
+    private const MUTUALIDAD_CODIGO_DEFAULT = '';
+
     /**
-     * Genera el contenido del archivo CSV para el período.
+     * Genera el contenido del archivo Previred de 105 campos para el período.
      * Retorna el string listo para descargar; el controller lo envía como respuesta.
      *
      * @throws RrhhException si no hay liquidaciones EMITIDAS o la empresa no existe.
@@ -89,120 +93,360 @@ class PreviredService
             );
         }
 
+        $empresa = Empresa::find($empresaId);
+
         // Cargar todos los detalles en una sola consulta y agrupar por liquidacion_id
-        $liquidacionIds = $liquidaciones->pluck('id')->all();
-        $detallesPorLiq = LiquidacionDetalle::whereIn('liquidacion_id', $liquidacionIds)
+        $liquidacionIds   = $liquidaciones->pluck('id')->all();
+        $detallesPorLiq   = LiquidacionDetalle::whereIn('liquidacion_id', $liquidacionIds)
             ->select('liquidacion_id', 'codigo_concepto', 'base_calculo', 'tasa_aplicada', 'monto')
             ->get()
             ->groupBy('liquidacion_id');
 
-        $periodo = sprintf('%04d%02d', $anio, $mes);
-        $filas   = [];
+        $periodo        = sprintf('%04d%02d', $anio, $mes);
+        $primerDiaMes   = Carbon::create($anio, $mes, 1);
+        $ultimoDiaMes   = $primerDiaMes->copy()->endOfMonth();
+        $diasEnMes      = (int) $ultimoDiaMes->format('j');
 
+        $lineas = [];
         foreach ($liquidaciones as $liq) {
-            $detalles = $detallesPorLiq->get($liq->id, collect());
-            $filas[] = $this->construirFila($liq, $detalles, $periodo);
+            $detalles  = $detallesPorLiq->get($liq->id, collect());
+            $lineas[]  = implode(';', $this->construirFila105(
+                $liq, $detalles, $periodo, $primerDiaMes, $ultimoDiaMes, $diasEnMes, $empresa
+            ));
         }
 
-        return $this->ensamblarCsv($filas, $anio, $mes);
+        return implode("\r\n", $lineas) . "\r\n";
     }
 
     /**
-     * Construye la fila de un trabajador en el formato Previred.
+     * Construye el array de 105 campos para una línea del archivo Previred.
+     * Los campos no poblados por el ERP llevan '' (alfanumérico) o '0' (numérico)
+     * según la convención oficial.
+     *
+     * Referencia de posiciones (1-indexado):
+     *   1–13  Identificación trabajador
+     *  14–24  Bloque AFP
+     *  25–29  Bloque Seguro de Cesantía (AFC)
+     *  30–34  Bloque IPS/ISL
+     *  35–51  Bloque Salud
+     *  52–58  Bloque CCAF
+     *  59–69  Bloque Mutualidad / Seguro de Accidentes
+     *  70–80  Datos empleador
+     *  81–105 Campos complementarios / reservados
      */
-    private function construirFila(Liquidacion $liq, Collection $detalles, string $periodo): array
-    {
+    private function construirFila105(
+        Liquidacion $liq,
+        Collection  $detalles,
+        string      $periodo,
+        Carbon      $primerDiaMes,
+        Carbon      $ultimoDiaMes,
+        int         $diasEnMes,
+        ?Empresa    $empresa
+    ): array {
         $empleado = $liq->empleado;
         $contrato = $liq->contrato;
 
-        // Separar RUT y dígito verificador
-        [$rut, $dv] = $this->separarRut($empleado->rut);
+        // ── Identificación trabajador ─────────────────────────────────────────
+        [$rut, $dv]   = $this->separarRut($empleado->rut ?? '');
+        $apPaterno     = strtoupper($empleado->apellido_paterno ?? '');
+        $apMaterno     = strtoupper($empleado->apellido_materno ?? '');
+        $nombres       = strtoupper($empleado->nombres ?? '');
+        $sexo          = ''; // campo 6: M/F — no poblado en el ERP aún
+        $nacionalidad  = ''; // campo 7: código país ISO — no poblado en el ERP aún
+        $tipoPago      = '3'; // campo 8: 3=transferencia (default razonable; sin dato específico)
 
-        // Montos de componentes individuales desde los detalles
-        $afpBase    = $this->baseCalculo($detalles, ConceptoRemuneracion::AFP_COTIZACION);
-        $afpCot     = $this->montoConcepto($detalles, ConceptoRemuneracion::AFP_COTIZACION);
-        $afpCom     = $this->montoConcepto($detalles, ConceptoRemuneracion::AFP_COMISION);
+        // Período desde/hasta (campos 9 y 10): AAAAMM del período de trabajo
+        $periodoDesde  = $periodo;
+        $periodoHasta  = $periodo;
 
-        $saludBase  = $this->baseCalculo($detalles, ConceptoRemuneracion::SALUD);
-        $saludCot   = $this->montoConcepto($detalles, ConceptoRemuneracion::SALUD);
+        // Campo 10: régimen previsional, campo 11: tipo trabajador, campo 12: días trabajados
+        $regimenPrevisional = self::REGIMEN_AFP;
+        $tipoTrabajador     = self::TIPO_TRABAJADOR;
+        $diasTrabajados     = $this->calcularDiasTrabajados($contrato, $primerDiaMes, $ultimoDiaMes, $diasEnMes);
 
-        $afcBase    = $this->baseCalculo($detalles, ConceptoRemuneracion::AFC_TRABAJADOR);
-        $afcTrab    = $this->montoConcepto($detalles, ConceptoRemuneracion::AFC_TRABAJADOR);
+        // Campo 13: tipo de línea — 0 = normal
+        $tipoLinea = '0';
 
-        // Aportes empleador vienen de la cabecera de la liquidación
-        $afcEmp     = (float) ($liq->aporte_empleador_afc ?? 0);
-        $sisMonto   = (float) ($liq->aporte_empleador_sis ?? 0);
+        // Tipo movimiento (campo 6 lógico, posición real en bloque):
+        // determinado por fecha de inicio/término del contrato dentro del mes
+        $tipoMovimiento = $this->calcularTipoMovimiento($contrato, $primerDiaMes, $ultimoDiaMes);
+
+        // ── Montos desde detalles de liquidación ─────────────────────────────
+        $afpBase   = $this->baseCalculo($detalles, ConceptoRemuneracion::AFP_COTIZACION);
+        $afpCot    = $this->montoConcepto($detalles, ConceptoRemuneracion::AFP_COTIZACION);
+        $afpCom    = $this->montoConcepto($detalles, ConceptoRemuneracion::AFP_COMISION);
+
+        $saludBase = $this->baseCalculo($detalles, ConceptoRemuneracion::SALUD);
+        $saludCot  = $this->montoConcepto($detalles, ConceptoRemuneracion::SALUD);
+
+        $afcBase   = $this->baseCalculo($detalles, ConceptoRemuneracion::AFC_TRABAJADOR);
+        $afcTrab   = $this->montoConcepto($detalles, ConceptoRemuneracion::AFC_TRABAJADOR);
+
+        // Aportes empleador desde la cabecera de la liquidación
+        $afcEmp      = (float) ($liq->aporte_empleador_afc ?? 0);
+        $sisMonto    = (float) ($liq->aporte_empleador_sis ?? 0);
         $mutualMonto = (float) ($liq->aporte_empleador_mutual ?? 0);
 
-        $iuscBase   = (float) ($liq->base_tributable ?? 0);
-        $iuscMonto  = $this->montoConcepto($detalles, ConceptoRemuneracion::IMPUESTO_UNICO);
+        $iuscBase    = (float) ($liq->base_tributable ?? 0);
+        $iuscMonto   = $this->montoConcepto($detalles, ConceptoRemuneracion::IMPUESTO_UNICO);
+        $liquido     = (float) ($liq->liquido_a_pagar ?? 0);
 
-        $liquido    = (float) ($liq->liquido_a_pagar ?? 0);
+        // Tipo de contrato AFC: 1 = indefinido, 2 = plazo fijo
+        $tipoAfc   = ($contrato && $contrato->tipo === 'INDEFINIDO') ? '1' : '2';
 
-        // Tipo de contrato AFC
-        $tipoAfc = ($contrato && $contrato->tipo === 'INDEFINIDO') ? '1' : '2';
-
-        // Código AFP e institución de salud
+        // Códigos institucionales
         $afpCodigo   = $this->codigoAfp($empleado->afp ?? '');
         $saludCodigo = $this->codigoSalud($empleado->tipo_salud ?? '', $empleado->isapre_nombre ?? '');
 
-        // Nombre completo
-        $nombres       = strtoupper($empleado->nombres ?? '');
-        $apPaterno     = strtoupper($empleado->apellido_paterno ?? '');
-        $apMaterno     = strtoupper($empleado->apellido_materno ?? '');
+        // Cotización adicional ISAPRE: max(0, plan_pesos − 7% imponible)
+        // Si es FONASA o no hay plan UF el adicional es 0
+        $cotAdicionalIsapre = $this->calcularAdicionalIsapre(
+            $empleado,
+            $saludBase,
+            $liq
+        );
+        // La cotización obligatoria salud (7%) y el adicional ISAPRE son dos campos distintos:
+        // saludCot ya representa el 7% de la remuneración imponible calculado en LiquidacionService.
+        // El adicional se informa aparte.
+
+        // Datos empleador (RUT separado)
+        [$rutEmp, $dvEmp] = $empresa ? $this->separarRut($empresa->rut) : ['', ''];
+
+        // ── Ensamblado de los 105 campos ─────────────────────────────────────
+        // Campos no disponibles en el ERP se marcan con '' o '0' según tipo.
+        // Ver FORMATO-PREVIRED.md para lista completa de campos sin poblar.
 
         return [
-            $rut,                       // 01 RUT trabajador (sin DV)
-            $dv,                        // 02 DV
-            $apPaterno,                 // 03 Apellido paterno
-            $apMaterno,                 // 04 Apellido materno
-            $nombres,                   // 05 Nombres
-            'A',                        // 06 Tipo movimiento: A=activo
-            $periodo,                   // 07 Período (AAAAMM)
-            '30',                       // 08 Días cotizados (mes completo)
-            $afpCodigo,                 // 09 Código AFP Previred
-            $this->pesos($afpBase),     // 10 Remuneración imponible AFP (pesos)
-            $this->pesos($afpCot),      // 11 Cotización obligatoria AFP (10%)
-            $this->pesos($afpCom),      // 12 Comisión AFP
-            $saludCodigo,               // 13 Código institución salud
-            $this->pesos($saludBase),   // 14 Remuneración imponible salud
-            $this->pesos($saludCot),    // 15 Cotización salud (7% o plan UF)
-            '0',                        // 16 Cotización adicional ISAPRE (incluida en saludCot)
-            $tipoAfc,                   // 17 Tipo AFC: 1=indefinido 2=plazo fijo
-            $this->pesos($afcBase),     // 18 Remuneración imponible AFC
-            $this->pesos($afcTrab),     // 19 Cotización AFC trabajador
-            $this->pesos($afcEmp),      // 20 Cotización AFC empleador
-            $this->pesos($sisMonto),    // 21 Cotización SIS (empleador)
-            $this->pesos($mutualMonto), // 22 Cotización mutual accidentes (empleador)
-            $this->pesos($iuscBase),    // 23 Base tributable IUSC
-            $this->pesos($iuscMonto),   // 24 Impuesto único 2ª cat.
-            $this->pesos($liquido),     // 25 Líquido a pagar
+            // === BLOQUE 1: Identificación trabajador (campos 1-13) ===
+            /* 01 */ $rut,                        // RUT trabajador (sin DV, sin puntos)
+            /* 02 */ $dv,                         // Dígito verificador
+            /* 03 */ $apPaterno,                  // Apellido paterno (mayúsculas)
+            /* 04 */ $apMaterno,                  // Apellido materno (mayúsculas)
+            /* 05 */ $nombres,                    // Nombres (mayúsculas)
+            /* 06 */ $sexo,                       // Sexo: M/F — sin dato ERP
+            /* 07 */ $nacionalidad,               // Nacionalidad código país — sin dato ERP
+            /* 08 */ $tipoPago,                   // Tipo de pago: 3=transferencia
+            /* 09 */ $periodoDesde,               // Período desde (AAAAMM)
+            /* 10 */ $periodoHasta,               // Período hasta (AAAAMM)
+            /* 11 */ $regimenPrevisional,         // Régimen previsional: 1=AFP
+            /* 12 */ $tipoTrabajador,             // Tipo trabajador: 1=activo
+            /* 13 */ (string) $diasTrabajados,    // Días trabajados en el período
+
+            // === BLOQUE 2: AFP (campos 14-24) ===
+            /* 14 */ $tipoMovimiento,             // Tipo de movimiento (0,1,2...)
+            /* 15 */ $afpCodigo,                  // Código AFP Previred
+            /* 16 */ '',                          // CUSPP (AFP extranjera) — vacío Chile
+            /* 17 */ $this->pesos($afpBase),      // Renta imponible AFP
+            /* 18 */ $this->pesos($afpCot),       // Cotización obligatoria AFP (10%)
+            /* 19 */ $this->pesos($sisMonto),     // Cotización SIS (aporte empleador)
+            /* 20 */ $this->pesos($afpCom),       // Comisión AFP
+            /* 21 */ '0',                         // Cotización voluntaria AFP — sin dato ERP
+            /* 22 */ '0',                         // APV (Ahorro Previsional Voluntario) — sin dato
+            /* 23 */ '0',                         // APV colectivo trabajador — sin dato
+            /* 24 */ '0',                         // APV colectivo empleador — sin dato
+
+            // === BLOQUE 3: Seguro de Cesantía AFC (campos 25-29) ===
+            /* 25 */ $tipoAfc,                    // Tipo AFC: 1=indefinido, 2=plazo fijo
+            /* 26 */ $this->pesos($afcBase),      // Renta imponible AFC
+            /* 27 */ $this->pesos($afcTrab),      // Cotización AFC trabajador
+            /* 28 */ $this->pesos($afcEmp),       // Cotización AFC empleador
+            /* 29 */ '0',                         // Aporte retiro AFC empleador — sin dato ERP
+
+            // === BLOQUE 4: IPS / ex-INP (campos 30-34) ===
+            /* 30 */ '',                          // Código caja IPS — sin dato ERP (empleados AFP)
+            /* 31 */ '0',                         // Renta imponible IPS — sin dato ERP
+            /* 32 */ '0',                         // Cotización IPS — sin dato ERP
+            /* 33 */ '0',                         // Cotización adicional IPS — sin dato ERP
+            /* 34 */ '0',                         // Cotización especial IPS — sin dato ERP
+
+            // === BLOQUE 5: Salud (campos 35-51) ===
+            /* 35 */ $saludCodigo,                // Código institución salud (07=Fonasa)
+            /* 36 */ '',                          // Número FUN ISAPRE — sin dato ERP
+            /* 37 */ $this->pesos($saludBase),    // Renta imponible salud
+            /* 38 */ $this->pesos($saludCot),     // Cotización obligatoria 7%
+            /* 39 */ $this->pesos($cotAdicionalIsapre), // Cotización adicional ISAPRE
+            /* 40 */ '0',                         // Cotización ISAPRE GES — sin dato ERP
+            /* 41 */ '0',                         // Cotización ISAPRE catastrófico — sin dato ERP
+            /* 42 */ '0',                         // Subsidio incapacidad laboral — sin dato ERP
+            /* 43 */ '0',                         // Otros descuentos salud — sin dato ERP
+            /* 44 */ '',                          // Número credencial salud — sin dato ERP
+            /* 45 */ '',                          // Tipo cobertura — sin dato ERP
+            /* 46 */ '0',                         // Meses cotizados salud — sin dato ERP
+            /* 47 */ '0',                         // Cargas simples — sin dato ERP
+            /* 48 */ '0',                         // Cargas dobles — sin dato ERP
+            /* 49 */ '0',                         // Cargas maternales — sin dato ERP
+            /* 50 */ '0',                         // Cargas inválidas — sin dato ERP
+            /* 51 */ '0',                         // Cotización salud empleador — sin dato ERP
+
+            // === BLOQUE 6: CCAF (campos 52-58) ===
+            /* 52 */ '',                          // Código CCAF — sin dato ERP
+            /* 53 */ '0',                         // Cargas CCAF — sin dato ERP
+            /* 54 */ '0',                         // Asignación familiar CCAF — sin dato ERP
+            /* 55 */ '0',                         // Subsidio CCAF — sin dato ERP
+            /* 56 */ '0',                         // Crédito social CCAF — sin dato ERP
+            /* 57 */ '0',                         // Otros descuentos CCAF — sin dato ERP
+            /* 58 */ '0',                         // Cotización CCAF — sin dato ERP
+
+            // === BLOQUE 7: Mutualidad / Seguro Accidentes del Trabajo (campos 59-69) ===
+            /* 59 */ self::MUTUALIDAD_CODIGO_DEFAULT, // Código mutualidad — sin dato ERP
+            /* 60 */ $this->pesos($mutualMonto),  // Cotización mutualidad básica (0,9%)
+            /* 61 */ '0',                         // Cotización mutualidad adicional — sin dato ERP
+            /* 62 */ '0',                         // Cotización diferenciada mutualidad — sin dato ERP
+            /* 63 */ '0',                         // Cotización extraordinaria mutualidad — sin dato ERP
+            /* 64 */ '0',                         // Días subsidio accidente laboral — sin dato ERP
+            /* 65 */ '0',                         // Monto subsidio accidente laboral — sin dato ERP
+            /* 66 */ '0',                         // Días suspensión mutualidad — sin dato ERP
+            /* 67 */ '0',                         // Tasa cotización diferenciada — sin dato ERP
+            /* 68 */ '0',                         // Renta imponible mutualidad — sin dato ERP
+            /* 69 */ '0',                         // Tipo accidente — sin dato ERP
+
+            // === BLOQUE 8: Datos empleador (campos 70-80) ===
+            /* 70 */ $rutEmp,                     // RUT empleador (sin DV, sin puntos)
+            /* 71 */ $dvEmp,                      // DV empleador
+            /* 72 */ '',                          // Código actividad económica — sin dato ERP
+            /* 73 */ '',                          // Dirección empleador — sin dato ERP
+            /* 74 */ '',                          // Ciudad empleador — sin dato ERP
+            /* 75 */ '',                          // Teléfono empleador — sin dato ERP
+            /* 76 */ '',                          // Email empleador — sin dato ERP
+            /* 77 */ '',                          // Nombre representante legal — sin dato ERP
+            /* 78 */ '',                          // RUT representante legal — sin dato ERP
+            /* 79 */ '',                          // DV representante legal — sin dato ERP
+            /* 80 */ '',                          // Cargo representante legal — sin dato ERP
+
+            // === BLOQUE 9: Tributario / Otros (campos 81-95) ===
+            /* 81 */ $this->pesos($iuscBase),     // Base tributable IUSC (2ª categoría)
+            /* 82 */ $this->pesos($iuscMonto),    // Impuesto único retenido
+            /* 83 */ $this->pesos($liquido),      // Líquido a pagar
+            /* 84 */ '0',                         // Asignación familiar directa — sin dato ERP
+            /* 85 */ '0',                         // Número de cargas directas — sin dato ERP
+            /* 86 */ '0',                         // Descuentos voluntarios — sin dato ERP
+            /* 87 */ '0',                         // Préstamo institucional — sin dato ERP
+            /* 88 */ '0',                         // Descuento cuota sindical — sin dato ERP
+            /* 89 */ '0',                         // Otros descuentos — sin dato ERP
+            /* 90 */ '0',                         // Anticipo sueldo — sin dato ERP
+            /* 91 */ '0',                         // Sueldo base — sin dato ERP (no requerido)
+            /* 92 */ '0',                         // Bono empresa — sin dato ERP
+            /* 93 */ '0',                         // Horas extras — sin dato ERP
+            /* 94 */ '0',                         // Total haberes — sin dato ERP
+            /* 95 */ '0',                         // Total descuentos — sin dato ERP
+
+            // === BLOQUE 10: Reservados / Complementarios (campos 96-105) ===
+            /* 96  */ '',
+            /* 97  */ '',
+            /* 98  */ '',
+            /* 99  */ '',
+            /* 100 */ '',
+            /* 101 */ '',
+            /* 102 */ '',
+            /* 103 */ '',
+            /* 104 */ '',
+            /* 105 */ '',
         ];
     }
 
-    /**
-     * Ensambla el CSV con encabezado descriptivo.
-     */
-    private function ensamblarCsv(array $filas, int $anio, int $mes): string
-    {
-        $header = [
-            'RUT', 'DV', 'AP_PATERNO', 'AP_MATERNO', 'NOMBRES',
-            'TIPO_MOVIMIENTO', 'PERIODO', 'DIAS_COTIZADOS',
-            'AFP_CODIGO', 'RIM_AFP', 'COTIZACION_AFP', 'COMISION_AFP',
-            'SALUD_CODIGO', 'RIM_SALUD', 'COTIZACION_SALUD', 'COTIZACION_ADICIONAL_ISAPRE',
-            'TIPO_AFC', 'RIM_AFC', 'COTIZACION_AFC_TRABAJADOR', 'COTIZACION_AFC_EMPLEADOR',
-            'COTIZACION_SIS', 'COTIZACION_MUTUAL',
-            'BASE_TRIBUTABLE', 'IMPUESTO_UNICO',
-            'LIQUIDO_PAGAR',
-        ];
+    // ── Lógica de negocio ─────────────────────────────────────────────────────
 
-        $lines = [];
-        $lines[] = implode(';', $header);
-        foreach ($filas as $fila) {
-            $lines[] = implode(';', $fila);
+    /**
+     * Calcula los días trabajados en el período:
+     * - Si el contrato inicia dentro del mes: días desde inicio hasta fin del mes.
+     * - Si el contrato termina dentro del mes: días desde inicio del mes hasta término.
+     * - Si ambos ocurren dentro del mes: días entre inicio y término.
+     * - En caso contrario: días del mes (28/29/30/31 según mes).
+     */
+    private function calcularDiasTrabajados(
+        ?Contrato $contrato,
+        Carbon    $primerDiaMes,
+        Carbon    $ultimoDiaMes,
+        int       $diasEnMes
+    ): int {
+        if (! $contrato) {
+            return $diasEnMes;
         }
 
-        return implode("\r\n", $lines) . "\r\n";
+        $inicio  = $contrato->fecha_inicio  ? Carbon::instance($contrato->fecha_inicio)  : null;
+        $termino = $contrato->fecha_termino ? Carbon::instance($contrato->fecha_termino) : null;
+
+        $desde = $primerDiaMes->copy();
+        $hasta = $ultimoDiaMes->copy();
+
+        // Contrato inicia dentro del mes
+        if ($inicio && $inicio->between($primerDiaMes, $ultimoDiaMes)) {
+            $desde = $inicio->copy();
+        }
+
+        // Contrato termina dentro del mes
+        if ($termino && $termino->between($primerDiaMes, $ultimoDiaMes)) {
+            $hasta = $termino->copy();
+        }
+
+        $dias = (int) $desde->diffInDays($hasta) + 1;
+
+        return max(1, min($dias, $diasEnMes));
+    }
+
+    /**
+     * Determina el tipo de movimiento:
+     *   0 = sin movimiento (mes completo)
+     *   1 = contratación (inicio en el período)
+     *   2 = retiro       (término en el período)
+     */
+    private function calcularTipoMovimiento(
+        ?Contrato $contrato,
+        Carbon    $primerDiaMes,
+        Carbon    $ultimoDiaMes
+    ): string {
+        if (! $contrato) {
+            return '0';
+        }
+
+        $inicio  = $contrato->fecha_inicio  ? Carbon::instance($contrato->fecha_inicio)  : null;
+        $termino = $contrato->fecha_termino ? Carbon::instance($contrato->fecha_termino) : null;
+
+        if ($inicio && $inicio->between($primerDiaMes, $ultimoDiaMes)) {
+            return '1';
+        }
+
+        if ($termino && $termino->between($primerDiaMes, $ultimoDiaMes)) {
+            return '2';
+        }
+
+        return '0';
+    }
+
+    /**
+     * Cotización adicional ISAPRE = max(0, plan_pesos − cotización_obligatoria_7%).
+     * Si es FONASA o el empleado no tiene plan en UF, retorna 0.
+     * La UF requerida se obtiene desde el indicador mensual de la liquidación.
+     */
+    private function calcularAdicionalIsapre(
+        Empleado    $empleado,
+        float       $saludBase,
+        Liquidacion $liq
+    ): float {
+        if (strtoupper($empleado->tipo_salud ?? '') !== 'ISAPRE') {
+            return 0.0;
+        }
+
+        $planUf = (float) ($empleado->isapre_plan_uf ?? 0);
+        if ($planUf <= 0) {
+            return 0.0;
+        }
+
+        // UF del período (indicador mensual cargado en la liquidación)
+        $ufValor = 0.0;
+        if ($liq->indicador_mensual_id) {
+            $indicador = $liq->indicador;
+            $ufValor   = (float) ($indicador?->uf_valor ?? 0);
+        }
+
+        if ($ufValor <= 0) {
+            return 0.0;
+        }
+
+        $planPesos          = $planUf * $ufValor;
+        $cotizacionObligat  = $saludBase * 0.07;
+
+        return max(0.0, $planPesos - $cotizacionObligat);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -214,7 +458,7 @@ class PreviredService
         if (str_contains($limpio, '-')) {
             [$numero, $dv] = explode('-', $limpio, 2);
         } else {
-            $dv = substr($limpio, -1);
+            $dv     = substr($limpio, -1);
             $numero = substr($limpio, 0, -1);
         }
         return [preg_replace('/\D/', '', $numero), $dv];

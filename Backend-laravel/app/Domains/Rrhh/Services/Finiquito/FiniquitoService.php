@@ -7,19 +7,23 @@ use App\Domains\Rrhh\Models\Finiquito;
 use App\Domains\Rrhh\Models\IndicadorMensual;
 use App\Domains\Rrhh\Services\Provisiones\VacacionesService;
 use App\Domains\Rrhh\Exceptions\RrhhException;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Cálculo de finiquito según Código del Trabajo chileno.
  *
- * Art. 161: necesidades de empresa → derecho a indemnización por años de servicio (Art. 163)
+ * Art. 161: necesidades de empresa / desahucio → derecho a indemnización por años de servicio (Art. 163)
  * Art. 163: 30 días × años completos (fracción > 6 meses = 1 año), máximo 11 años.
- *           Tope por mes: 90 UF.
+ *           Tope por mes: 90 UF (calculada al último día del mes ANTERIOR al término, Art. 172).
  * Art. 161: aviso previo 30 días o pago sustitutivo (1 mes de última remuneración).
  * Art. 70: vacaciones proporcionales al término de cualquier contrato.
  */
 class FiniquitoService
 {
+    // Causales que dan derecho a indemnización por años de servicio y aviso previo (Art. 161 inc. 1 y 2)
+    private const CAUSALES_INDEMNIZACION = ['NECESIDADES_EMPRESA', 'DESAHUCIO'];
+
     public function __construct(private readonly VacacionesService $vacaciones)
     {
     }
@@ -43,13 +47,18 @@ class FiniquitoService
                 throw RrhhException::regla('El contrato ya fue terminado.');
             }
 
-            $fechaTerminoDate = \Carbon\Carbon::parse($fechaTermino);
-            $fechaInicioDate = $contrato->fecha_inicio;
+            $fechaTerminoDate = Carbon::parse($fechaTermino);
+            $fechaInicioDate = $contrato->fecha_inicio instanceof Carbon
+                ? $contrato->fecha_inicio
+                : Carbon::parse($contrato->fecha_inicio);
 
             // ── Años de servicio ──────────────────────────────────────────
             $aniosCompletos = (int) $fechaInicioDate->diffInYears($fechaTerminoDate);
-            $mesesFraccion = (int) $fechaInicioDate->copy()->addYears($aniosCompletos)->diffInMonths($fechaTerminoDate);
-            $fraccionCuentaComoAnio = $mesesFraccion > 6;
+            $inicioFraccion = $fechaInicioDate->copy()->addYears($aniosCompletos);
+            $mesesFraccion = (int) $inicioFraccion->diffInMonths($fechaTerminoDate);
+            $diasRestantesFraccion = (int) $inicioFraccion->copy()->addMonths($mesesFraccion)->diffInDays($fechaTerminoDate);
+            // Fix #3: fracción SUPERIOR a 6 meses (6m+1d ya cuenta como año, no solo >6m)
+            $fraccionCuentaComoAnio = $mesesFraccion > 6 || ($mesesFraccion === 6 && $diasRestantesFraccion > 0);
             $aniosCalculo = min($aniosCompletos + ($fraccionCuentaComoAnio ? 1 : 0), 11);
 
             // ── Última remuneración ───────────────────────────────────────
@@ -57,26 +66,34 @@ class FiniquitoService
             $variablesPromedio = (float) ($datos['promedio_variables'] ?? 0);
             $baseCalculo = $ultimaRemuneracion + $variablesPromedio;
 
-            // Tope 90 UF para base de cálculo de indemnización (Art. 163)
-            $indicadorActual = IndicadorMensual::paraPeriodo(
-                (int) $fechaTerminoDate->format('Y'),
-                (int) $fechaTerminoDate->format('n')
+            // Fix #4: tope 90 UF usa UF del último día del mes ANTERIOR al término (Art. 172 CdT)
+            $mesAnterior = $fechaTerminoDate->copy()->startOfMonth()->subMonth();
+            $indicadorMesAnterior = IndicadorMensual::paraPeriodo(
+                (int) $mesAnterior->format('Y'),
+                (int) $mesAnterior->format('n')
             );
-            if ($indicadorActual) {
-                $tope90Uf = round(90 * (float) $indicadorActual->uf_valor);
-                $baseCalculo = min($baseCalculo, $tope90Uf);
+            if (!$indicadorMesAnterior) {
+                throw RrhhException::regla(
+                    "No existe el indicador UF para {$mesAnterior->format('m/Y')} "
+                    . "(mes anterior al término). Registre el indicador antes de calcular el finiquito."
+                );
             }
+            $tope90Uf = round(90 * (float) $indicadorMesAnterior->uf_valor);
+            $baseCalculo = min($baseCalculo, $tope90Uf);
+
+            // Fix #2: DESAHUCIO (Art. 161 inc. 2) también da derecho a indemnización y aviso previo
+            $tieneDerechoIndemnizacion = in_array($causal, self::CAUSALES_INDEMNIZACION, true);
 
             // ── Indemnización por años de servicio (Art. 163) ────────────
             $montoIndemnizacion = 0;
-            if ($causal === 'NECESIDADES_EMPRESA' && $aniosCalculo > 0) {
+            if ($tieneDerechoIndemnizacion && $aniosCalculo > 0) {
                 $montoIndemnizacion = round($baseCalculo * $aniosCalculo);
             }
 
             // ── Aviso previo sustitutivo (Art. 161) ───────────────────────
             $tieneAvisoPrevio = ($datos['aviso_previo'] ?? false) === true;
             $montoAvisoPrevio = 0;
-            if ($causal === 'NECESIDADES_EMPRESA' && !$tieneAvisoPrevio) {
+            if ($tieneDerechoIndemnizacion && !$tieneAvisoPrevio) {
                 $montoAvisoPrevio = round($baseCalculo);
             }
 
@@ -120,25 +137,28 @@ class FiniquitoService
         });
     }
 
+    // Fix #5: firmar() envuelto en DB::transaction para atomicidad
     public function firmar(int $empresaId, int $finiquitoId): Finiquito
     {
-        $finiquito = Finiquito::where('empresa_id', $empresaId)->findOrFail($finiquitoId);
-        if ($finiquito->estado !== 'BORRADOR') {
-            throw RrhhException::regla("El finiquito ya está en estado {$finiquito->estado}.");
-        }
-        $finiquito->update(['estado' => 'FIRMADO']);
+        return DB::transaction(function () use ($empresaId, $finiquitoId) {
+            $finiquito = Finiquito::where('empresa_id', $empresaId)->findOrFail($finiquitoId);
+            if ($finiquito->estado !== 'BORRADOR') {
+                throw RrhhException::regla("El finiquito ya está en estado {$finiquito->estado}.");
+            }
+            $finiquito->update(['estado' => 'FIRMADO']);
 
-        // Terminar el contrato asociado
-        $contrato = Contrato::find($finiquito->contrato_id);
-        if ($contrato && $contrato->estado !== 'TERMINADO') {
-            $contrato->update([
-                'estado' => 'TERMINADO',
-                'es_contrato_activo' => false,
-                'causal_termino' => $finiquito->causal,
-                'fecha_termino_real' => $finiquito->fecha_termino,
-            ]);
-        }
+            // Terminar el contrato asociado
+            $contrato = Contrato::find($finiquito->contrato_id);
+            if ($contrato && $contrato->estado !== 'TERMINADO') {
+                $contrato->update([
+                    'estado' => 'TERMINADO',
+                    'es_contrato_activo' => false,
+                    'causal_termino' => $finiquito->causal,
+                    'fecha_termino_real' => $finiquito->fecha_termino,
+                ]);
+            }
 
-        return $finiquito->fresh();
+            return $finiquito->fresh();
+        });
     }
 }

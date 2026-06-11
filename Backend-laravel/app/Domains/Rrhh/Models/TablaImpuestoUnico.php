@@ -2,6 +2,7 @@
 
 namespace App\Domains\Rrhh\Models;
 
+use App\Domains\Rrhh\Exceptions\RrhhException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -47,6 +48,11 @@ class TablaImpuestoUnico extends Model
 
         $baseEnUtm = $baseTributablePesos / $valorUtm;
         $tramos = static::paraAnio($anio);
+
+        // Fix 7: tabla vacía es error de configuración, no 0 silencioso
+        if ($tramos->isEmpty()) {
+            throw RrhhException::regla("No existe tabla de impuesto único para el año {$anio}.");
+        }
 
         foreach ($tramos as $tramo) {
             $hasta = $tramo->hasta_utm !== null ? (float) $tramo->hasta_utm : PHP_FLOAT_MAX;

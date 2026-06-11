@@ -39,6 +39,9 @@ class Liquidacion extends Model
         'aporte_empleador_afc',
         'aporte_empleador_sis',
         'aporte_empleador_mutual',
+        'salud_legal',
+        'salud_adicional',
+        'aporte_empleador_reforma',
         'estado',
         'observaciones',
         'comprobante_contable',
@@ -57,6 +60,9 @@ class Liquidacion extends Model
         'aporte_empleador_afc' => 'decimal:2',
         'aporte_empleador_sis' => 'decimal:2',
         'aporte_empleador_mutual' => 'decimal:2',
+        'salud_legal' => 'decimal:2',
+        'salud_adicional' => 'decimal:2',
+        'aporte_empleador_reforma' => 'decimal:2',
     ];
 
     public function empresa(): BelongsTo
