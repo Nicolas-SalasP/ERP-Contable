@@ -70,7 +70,7 @@ const PerfilEmpresaBancos = ({
                 </button>
             </form>
 
-            <div className="overflow-hidden border border-slate-200 rounded-2xl">
+            <div className="overflow-x-auto custom-scrollbar border border-slate-200 rounded-2xl">
                 <table className="min-w-full text-left bg-white">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>

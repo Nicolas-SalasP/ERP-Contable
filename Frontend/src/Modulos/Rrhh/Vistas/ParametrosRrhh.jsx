@@ -153,7 +153,8 @@ const ParametrosRrhh = () => {
                             </div>
                         )}
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <table className="w-full text-sm">
+                            <div className="overflow-x-auto custom-scrollbar">
+                            <table className="min-w-full text-sm">
                                 <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-3 text-left font-semibold">Período</th>
@@ -176,6 +177,7 @@ const ParametrosRrhh = () => {
                                     ))}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -183,12 +185,13 @@ const ParametrosRrhh = () => {
                 {tab === 'impuesto' && (
                     <div>
                         <div className="flex justify-end mb-3">
-                            <select value={anioTabla} onChange={(e) => setAnioTabla(Number(e.target.value))} className={`${inputCls} max-w-[140px]`}>
+                            <select value={anioTabla} onChange={(e) => setAnioTabla(Number(e.target.value))} className={`${inputCls} max-w-[100px] sm:max-w-[140px]`}>
                                 {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                             </select>
                         </div>
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <table className="w-full text-sm">
+                            <div className="overflow-x-auto custom-scrollbar">
+                            <table className="min-w-full text-sm">
                                 <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-3 text-left font-semibold">Tramo</th>
@@ -213,6 +216,7 @@ const ParametrosRrhh = () => {
                                     ))}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 )}

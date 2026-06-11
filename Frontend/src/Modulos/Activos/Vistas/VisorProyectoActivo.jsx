@@ -298,7 +298,8 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
                     <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider">Detalle de Inversión (Netos)</h3>
                 </div>
-                <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto custom-scrollbar">
+                <table className="min-w-full text-left border-collapse">
                     <thead className="bg-white border-b border-slate-200 text-[10px] uppercase text-slate-400">
                         <tr>
                             <th className="px-6 py-3">N° Documento</th>
@@ -334,6 +335,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {modalFacturasAbierto && (

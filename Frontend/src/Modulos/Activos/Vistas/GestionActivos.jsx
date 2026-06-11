@@ -181,7 +181,8 @@ const GestionActivos = () => {
                 <div className="transition-all duration-300">
                     {tabActiva === 'PENDIENTES' && (
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <table className="w-full text-left border-collapse">
+                            <div className="overflow-x-auto custom-scrollbar">
+                            <table className="min-w-full text-left border-collapse">
                                 <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
                                     <tr>
                                         <th className="px-6 py-4 font-bold">Documento</th>
@@ -211,6 +212,7 @@ const GestionActivos = () => {
                                     {activosPendientes.length === 0 && <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500 italic">No hay facturas pendientes de activar.</td></tr>}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     )}
 
@@ -240,7 +242,8 @@ const GestionActivos = () => {
                                 </BotonAccion>
                             </div>
                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                <table className="w-full text-left border-collapse">
+                                <div className="overflow-x-auto custom-scrollbar">
+                                <table className="min-w-full text-left border-collapse">
                                     <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
                                         <tr>
                                             <th className="px-6 py-4 font-bold">Código / Nombre</th>
@@ -303,6 +306,7 @@ const GestionActivos = () => {
                                         {activosRegistrados.length === 0 && <tr><td colSpan="6" className="px-6 py-10 text-center text-slate-400 italic">No hay activos registrados en el sistema.</td></tr>}
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
                         </div>
                     )}

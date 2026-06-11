@@ -77,7 +77,7 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="w-full max-w-[90rem] mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 pb-10">
+        <div className="w-full max-w-full xl:max-w-[90rem] mx-auto px-2 sm:px-4 py-4 md:py-6 lg:py-8 font-sans text-slate-800 pb-10">
 
             <div className="mb-8 md:mb-10">
                 <h1 className="text-3xl md:text-4xl font-black text-slate-900">Resumen Ejecutivo</h1>
@@ -202,7 +202,7 @@ const Dashboard = () => {
                         ) : (
                             <>
                                 <div className="overflow-x-auto flex-1">
-                                    <table className="min-w-full text-left">
+                                    <table className="min-w-full w-full text-left">
                                         <thead className="bg-slate-50 border-b border-slate-100">
                                             <tr>
                                                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</th>
@@ -215,7 +215,7 @@ const Dashboard = () => {
                                             {facturasUrgentes.map(fac => (
                                                 <tr key={fac.id} className="hover:bg-slate-50 transition-colors">
                                                     <td className="px-6 py-4 font-mono text-sm font-bold text-slate-600">Fac. {fac.numero_factura}</td>
-                                                    <td className="px-6 py-4 text-sm font-bold text-slate-800 truncate max-w-[200px]">{fac.nombre_proveedor}</td>
+                                                    <td className="px-6 py-4 text-sm font-bold text-slate-800 truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px]">{fac.nombre_proveedor}</td>
                                                     <td className="px-6 py-4 text-base font-black text-slate-900 text-right">{formatMoneda(fac.monto_bruto)}</td>
                                                     <td className="px-6 py-4 text-center">
                                                         <Link to="/facturas/historial" className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-2 rounded-lg border border-emerald-200 transition-colors">

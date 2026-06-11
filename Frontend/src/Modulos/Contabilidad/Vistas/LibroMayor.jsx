@@ -294,7 +294,7 @@ const LibroMayor = () => {
                         <input type="date" className="border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.hasta} onChange={e => setFiltros({ ...filtros, hasta: e.target.value })} />
                     </div>
 
-                    <div className="flex-1 min-w-[250px] relative" ref={wrapperRef}>
+                    <div className="flex-1 min-w-full sm:min-w-[250px] relative" ref={wrapperRef}>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buscar Cuenta (Vacío para ver todo)</label>
                         <div className="relative">
                             <input
@@ -345,7 +345,7 @@ const LibroMayor = () => {
                             </div>
                         )}
                     </div>
-                    <div className="flex-1 min-w-[180px]">
+                    <div className="flex-1 min-w-full sm:min-w-[180px]">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Palabra en Glosa</label>
                         <input
                             type="text"
@@ -412,7 +412,7 @@ const LibroMayor = () => {
                                                     <td className="px-4 py-2 text-center text-slate-500 border-r border-slate-100 whitespace-nowrap">{formatDate(row.fecha)}</td>
                                                     <td className="px-4 py-2 border-r border-slate-100">
                                                         <div className={`font-mono font-bold ${esAnulado ? 'text-red-700' : 'text-slate-600'}`}>{row.cuenta_codigo}</div>
-                                                        <div className={`truncate max-w-[200px] ${esAnulado ? 'text-red-500' : 'text-slate-400'}`}>{row.cuenta_nombre}</div>
+                                                        <div className={`truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px] ${esAnulado ? 'text-red-500' : 'text-slate-400'}`}>{row.cuenta_nombre}</div>
                                                     </td>
                                                     <td className={`px-4 py-2 border-r border-slate-100 ${esAnulado ? 'text-red-800 line-through decoration-red-300' : 'text-slate-700'}`}>{row.glosa}</td>
                                                     <td className="px-4 py-2 text-center text-slate-500 font-mono border-r border-slate-100">{row.numero_documento || '-'}</td>

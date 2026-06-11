@@ -86,7 +86,7 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <div className="w-full md:w-auto">
                                     <p className="text-[10px] font-bold text-slate-400 uppercase">Proveedor</p>
-                                    <p className="font-bold text-slate-800 text-lg truncate max-w-[250px]">{factura.nombre_proveedor}</p>
+                                    <p className="font-bold text-slate-800 text-lg truncate max-w-[180px] sm:max-w-[250px]">{factura.nombre_proveedor}</p>
                                     <p className="text-sm font-mono text-slate-500">Factura N° {factura.numero_factura}</p>
                                 </div>
                                 <div className="w-full md:w-auto text-left md:text-right border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-6">

@@ -155,7 +155,7 @@ const ModalMapeoSII = ({ onClose }) => {
                                 color="indigo"
                                 tamano="md"
                                 textoCargando="Procesando..."
-                                className="whitespace-nowrap min-w-[160px]"
+                                className="whitespace-nowrap w-full sm:w-auto sm:min-w-[160px]"
                             >
                                 Agregar Mapeo
                             </BotonAccion>
@@ -174,7 +174,8 @@ const ModalMapeoSII = ({ onClose }) => {
                                 color="indigo"
                             />
                         ) : (
-                            <table className="w-full text-left text-sm">
+                            <div className="overflow-x-auto custom-scrollbar">
+                            <table className="min-w-full text-left text-sm">
                                 <thead className="bg-white border-b border-slate-100 text-slate-500 uppercase text-xs">
                                     <tr>
                                         <th className="px-5 py-3 font-bold">Código</th>
@@ -209,6 +210,7 @@ const ModalMapeoSII = ({ onClose }) => {
                                     )}
                                 </tbody>
                             </table>
+                            </div>
                         )}
                     </div>
 

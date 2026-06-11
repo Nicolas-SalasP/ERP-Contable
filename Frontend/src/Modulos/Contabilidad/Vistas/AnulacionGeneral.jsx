@@ -233,7 +233,7 @@ const AnulacionGeneral = () => {
                                     )}
                                 </div>
                             </div>
-                            <div className="p-6 grid grid-cols-2 gap-6">
+                            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                 <div>
                                     <p className="text-xs text-slate-400 font-bold uppercase">Descripción / Glosa</p>
                                     <p className="text-slate-800 font-medium mt-1">{documento.descripcion}</p>

@@ -310,7 +310,7 @@ const GestionUsuarios = () => {
                                 <p className="text-sm text-slate-500 font-medium">{usuarioSeleccionado.email}</p>
                             </div>
 
-                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 grid grid-cols-2 gap-4">
+                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado</p>
                                     {usuarioSeleccionado.estado_suscripcion_id === 1 ? (

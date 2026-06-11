@@ -134,7 +134,7 @@ const ContratosRrhh = () => {
 
             <EstadoCarga cargando={cargandoEmpleados} mensajeCargando="Cargando empleados..." color="emerald" tamano="compacto">
                 <div className="flex flex-wrap items-end gap-3 mb-5">
-                    <div className="flex-1 min-w-[260px]">
+                    <div className="flex-1 min-w-full sm:min-w-[260px]">
                         <label className="block text-xs font-semibold text-slate-600 mb-1">Empleado</label>
                         <select value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)} className={inputCls}>
                             <option value="">Selecciona un empleado...</option>
@@ -165,13 +165,13 @@ const ContratosRrhh = () => {
                                 <table className="w-full text-sm">
                                     <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
                                         <tr>
-                                            <th className="px-4 py-3 text-left font-semibold">Tipo</th>
-                                            <th className="px-4 py-3 text-left font-semibold">Cargo</th>
-                                            <th className="px-4 py-3 text-left font-semibold">Inicio</th>
-                                            <th className="px-4 py-3 text-left font-semibold">Término</th>
-                                            <th className="px-4 py-3 text-right font-semibold">Sueldo base</th>
-                                            <th className="px-4 py-3 text-left font-semibold">Estado</th>
-                                            <th className="px-4 py-3 text-right font-semibold">Acciones</th>
+                                            <th className="px-2 sm:px-4 py-3 text-left font-semibold">Tipo</th>
+                                            <th className="px-2 sm:px-4 py-3 text-left font-semibold">Cargo</th>
+                                            <th className="px-2 sm:px-4 py-3 text-left font-semibold">Inicio</th>
+                                            <th className="px-2 sm:px-4 py-3 text-left font-semibold">Término</th>
+                                            <th className="px-2 sm:px-4 py-3 text-right font-semibold">Sueldo base</th>
+                                            <th className="px-2 sm:px-4 py-3 text-left font-semibold">Estado</th>
+                                            <th className="px-2 sm:px-4 py-3 text-right font-semibold">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -182,15 +182,15 @@ const ContratosRrhh = () => {
                                         )}
                                         {contratos.map((c) => (
                                             <tr key={c.id} className="hover:bg-slate-50">
-                                                <td className="px-4 py-3 text-slate-700">{TIPOS.find((t) => t.v === c.tipo)?.l || c.tipo}</td>
-                                                <td className="px-4 py-3 text-slate-700">{c.cargo || '—'}</td>
-                                                <td className="px-4 py-3 text-slate-600">{formatFecha(c.fecha_inicio)}</td>
-                                                <td className="px-4 py-3 text-slate-600">{formatFecha(c.fecha_termino_real || c.fecha_termino)}</td>
-                                                <td className="px-4 py-3 text-right font-medium text-slate-900">{formatPesos(c.sueldo_base)}</td>
-                                                <td className="px-4 py-3">
+                                                <td className="px-2 sm:px-4 py-3 text-slate-700">{TIPOS.find((t) => t.v === c.tipo)?.l || c.tipo}</td>
+                                                <td className="px-2 sm:px-4 py-3 text-slate-700">{c.cargo || '—'}</td>
+                                                <td className="px-2 sm:px-4 py-3 text-slate-600">{formatFecha(c.fecha_inicio)}</td>
+                                                <td className="px-2 sm:px-4 py-3 text-slate-600">{formatFecha(c.fecha_termino_real || c.fecha_termino)}</td>
+                                                <td className="px-2 sm:px-4 py-3 text-right font-medium text-slate-900">{formatPesos(c.sueldo_base)}</td>
+                                                <td className="px-2 sm:px-4 py-3">
                                                     <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${colorEstado(c.estado)}`}>{c.estado}</span>
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
+                                                <td className="px-2 sm:px-4 py-3 text-right">
                                                     {puedeCrear && c.estado === 'VIGENTE' && (
                                                         <button onClick={() => terminar(c)}
                                                             className="text-slate-400 hover:text-red-600 transition-colors px-2" title="Terminar contrato">

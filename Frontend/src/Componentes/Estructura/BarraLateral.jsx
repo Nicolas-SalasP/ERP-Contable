@@ -361,7 +361,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                 className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 transition-opacity lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={closeSidebar}
             ></div>
-            <div className={`fixed top-0 left-0 z-30 h-full w-64 bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-transform duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed top-0 left-0 z-30 h-full w-56 sm:w-64 bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-transform duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
                 <div className="flex items-center justify-center h-16 border-b border-slate-800/50 bg-slate-950 shrink-0">
                     <h1 className="text-xl font-black tracking-widest text-white flex items-center gap-2">
@@ -395,7 +395,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                                         >
                                             <div className="flex items-center gap-3">
                                                 <i className={`${group.icon} w-5 text-center text-lg`}></i>
-                                                <span className="text-sm">{group.label}</span>
+                                                <span className="text-xs sm:text-sm">{group.label}</span>
                                             </div>
                                             <i className={`fas fa-chevron-down text-[10px] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}></i>
                                         </button>
@@ -410,7 +410,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                                         >
                                             <div className="flex items-center gap-3">
                                                 <i className={`${group.icon} w-5 text-center text-lg`}></i>
-                                                <span className="text-sm">{group.label}</span>
+                                                <span className="text-xs sm:text-sm">{group.label}</span>
                                             </div>
                                         </Link>
                                     )}

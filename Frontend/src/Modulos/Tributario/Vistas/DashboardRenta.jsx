@@ -288,8 +288,8 @@ const DashboardRenta = () => {
                         <h3 className="font-bold text-emerald-800"><i className="fas fa-plus-circle mr-2"></i>Detalle de Ingresos</h3>
                         <span className="text-sm font-black text-emerald-700">{formatCurrency(resumen.total_ingresos)}</span>
                     </div>
-                    <div className="p-0 flex-grow">
-                        <table className="w-full text-left text-sm">
+                    <div className="p-0 flex-grow overflow-x-auto custom-scrollbar">
+                        <table className="min-w-full text-left text-sm">
                             <tbody className="divide-y divide-slate-100">
                                 <tr className="hover:bg-slate-50">
                                     <td className="px-5 py-4"><p className="text-slate-700 font-bold">Ingresos del Giro (Ventas)</p></td>
@@ -312,8 +312,8 @@ const DashboardRenta = () => {
                         <h3 className="font-bold text-rose-800"><i className="fas fa-minus-circle mr-2"></i>Detalle de Egresos</h3>
                         <span className="text-sm font-black text-rose-700">{formatCurrency(resumen.total_egresos)}</span>
                     </div>
-                    <div className="p-0 flex-grow">
-                        <table className="w-full text-left text-sm">
+                    <div className="p-0 flex-grow overflow-x-auto custom-scrollbar">
+                        <table className="min-w-full text-left text-sm">
                             <tbody className="divide-y divide-slate-100">
                                 <tr className="hover:bg-slate-50">
                                     <td className="px-5 py-3"><p className="text-slate-700 font-bold">Compras y Proveedores</p></td>

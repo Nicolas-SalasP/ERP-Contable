@@ -169,7 +169,7 @@ const CentralizacionRrhh = () => {
                             const codigoActual = codigoDe(tipo);
                             return (
                                 <div key={tipo} className="flex flex-wrap items-center gap-3 px-5 py-3">
-                                    <div className="flex-1 min-w-[240px]">
+                                    <div className="flex-1 min-w-full sm:min-w-[240px]">
                                         <span className="text-sm font-medium text-slate-800">{LABELS[tipo] || tipo}</span>
                                         {esRequerido && <span className="ml-2 text-[10px] font-bold uppercase text-red-500">obligatorio</span>}
                                     </div>

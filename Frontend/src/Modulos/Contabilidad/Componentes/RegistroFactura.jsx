@@ -332,7 +332,7 @@ const RegistroFactura = () => {
                         tamano="lg"
                         textoCargando="Verificando"
                         icono={<i className="fas fa-arrow-right"></i>}
-                        className="w-full md:w-auto min-w-[160px]"
+                        className="w-full sm:w-auto sm:min-w-[160px]"
                     >
                         Siguiente
                     </BotonAccion>
@@ -345,7 +345,7 @@ const RegistroFactura = () => {
                         tamano="lg"
                         textoCargando="Guardando..."
                         icono={<i className="fas fa-check"></i>}
-                        className="w-full md:w-auto min-w-[160px]"
+                        className="w-full sm:w-auto sm:min-w-[160px]"
                     >
                         Confirmar y Guardar
                     </BotonAccion>

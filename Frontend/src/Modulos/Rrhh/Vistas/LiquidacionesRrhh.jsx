@@ -33,18 +33,25 @@ const LiquidacionesRrhh = () => {
 
     const [detalle, setDetalle] = useState(null);
 
-    const cargar = useCallback(async () => {
+    const cargar = useCallback(async (signal) => {
         setCargando(true);
         try {
-            const resp = await rrhhApi.liquidaciones.listar(filtros);
+            const resp = await rrhhApi.liquidaciones.listar(filtros, { signal });
             const data = resp?.data;
             setLiquidaciones(data?.data ?? (Array.isArray(data) ? data : []));
-        } catch (_) { /* toast */ } finally {
             setCargando(false);
+        } catch (err) {
+            if (err?.name !== 'AbortError' && err?.code !== 'ERR_CANCELED') {
+                setCargando(false);
+            }
         }
     }, [filtros]);
 
-    useEffect(() => { cargar(); }, [cargar]);
+    useEffect(() => {
+        const controller = new AbortController();
+        cargar(controller.signal);
+        return () => controller.abort();
+    }, [cargar]);
 
     useEffect(() => {
         (async () => {
@@ -275,7 +282,7 @@ const LiquidacionesRrhh = () => {
                             </table>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                             <div className="bg-slate-50 rounded-lg p-3">
                                 <p className="text-xs text-slate-500">Total haberes</p>
                                 <p className="font-bold text-slate-900">{formatPesos(detalle.total_haberes)}</p>

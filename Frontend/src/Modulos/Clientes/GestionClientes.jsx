@@ -181,6 +181,7 @@ const GestionClientes = () => {
                     </div>
 
                     <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="overflow-x-auto custom-scrollbar">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-slate-50">
                                 <tr>
@@ -233,6 +234,7 @@ const GestionClientes = () => {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </>
             )}

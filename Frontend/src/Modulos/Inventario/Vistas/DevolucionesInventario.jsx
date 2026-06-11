@@ -299,7 +299,7 @@ const DevolucionesInventario = () => {
 
             <ErrorNotice error={error} />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 <StatCard title="Órdenes" value={formatNumber(resumen.total)} icon="fas fa-rotate-left" />
                 <StatCard title="Pendientes" value={formatNumber(resumen.pendientes)} icon="fas fa-hourglass-half" tone="blue" />
                 <StatCard title="Confirmadas" value={formatNumber(resumen.confirmadas)} icon="fas fa-circle-check" tone="emerald" />
@@ -313,7 +313,7 @@ const DevolucionesInventario = () => {
             {mostrarFormulario && (
                 <Panel title="Crear devolución/reversa desde despacho confirmado" subtitle="Consulta el saldo reversable antes de crear la orden post-despacho.">
                     <form onSubmit={crearDevolucion} className="space-y-5">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                             <Field label="Despacho confirmado">
                                 <select
                                     className={inputClass}

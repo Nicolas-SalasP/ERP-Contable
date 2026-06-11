@@ -112,7 +112,8 @@ const TabIndicesIpc = ({ anioInicial }) => {
                 </div>
             ) : (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <table className="w-full text-sm">
+                    <div className="overflow-x-auto custom-scrollbar">
+                    <table className="min-w-full text-sm">
                         <thead className="bg-slate-900 text-white">
                             <tr>
                                 <th className="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest first:rounded-tl-xl">Mes</th>
@@ -211,6 +212,7 @@ const TabIndicesIpc = ({ anioInicial }) => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             )}
 
