@@ -123,14 +123,19 @@ familiar, ingreso mínimo) **cambian periódicamente**. Diseño:
 
 ---
 
-## 8. Decisiones abiertas (antes de R1)
+## 8. Decisiones
 
-1. **Nombre del dominio:** `Rrhh` (amplio, recomendado) vs `Remuneraciones` (solo nómina).
-2. **Alcance de R1:** ¿solo ficha + contrato, o también cargas familiares y datos bancarios desde ya?
-3. **Múltiples contratos por empleado** (re-contrataciones, históricos): ¿se modela desde R1? (recomendado sí).
-4. **PDF de liquidación:** ¿formato propio o seguir un layout estándar? (hay `dompdf` ya en el ERP).
-5. **¿Quién mantiene los parámetros previsionales** mes a mes: carga manual en admin, o automatizamos
-   el import desde Previred? (R2 puede empezar manual).
+**Tomadas:**
+1. ✅ **Nombre del dominio: `Rrhh`** (amplio: personal + remuneraciones + finiquitos + futuro asistencia).
+2. ✅ **R1 = ficha completa:** `Empleado` + `Contrato`(s) con **histórico de múltiples contratos** +
+   **cargas familiares** + **datos bancarios cifrados** (`Crypt`).
+
+**Pendientes (más adelante):**
+3. **PDF de liquidación (R3):** ¿layout propio o estándar? (hay `dompdf` en el ERP).
+4. **Mantenimiento de parámetros previsionales (R2):** carga manual en admin al inicio, y automatizar
+   el import del archivo mensual de Previred después.
+
+> **Estado:** plan en revisión por el equipo antes de construir R1. No se ha escrito código del módulo.
 
 ---
 
