@@ -55,6 +55,13 @@ const ConfiguracionSii = lazy(() => import('./Modulos/Sii/Vistas/ConfiguracionSi
 const CertificadoSii = lazy(() => import('./Modulos/Sii/Vistas/CertificadoSii'));
 const FoliosCaf = lazy(() => import('./Modulos/Sii/Vistas/FoliosCaf'));
 const FacturasSii = lazy(() => import('./Modulos/Sii/Vistas/FacturasSii'));
+const EmpleadosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/EmpleadosRrhh'));
+const ContratosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ContratosRrhh'));
+const LiquidacionesRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LiquidacionesRrhh'));
+const FiniquitosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/FiniquitosRrhh'));
+const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh'));
+const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
+const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 import Glosario from './Modulos/Glosario/Glosario';
 
 const RutaPrivada = ({ children, requireEmpresa = true }) => {
@@ -520,6 +527,63 @@ function App() {
             </RutaPrivada>
           } />
 
+
+          {/* ── RRHH y Remuneraciones ── */}
+          <Route path="/rrhh/empleados" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="rrhh.empleados.ver">
+                <LayoutPrincipal><EmpleadosRrhh /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/contratos" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="rrhh.empleados.ver">
+                <LayoutPrincipal><ContratosRrhh /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/liquidaciones" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                <LayoutPrincipal><LiquidacionesRrhh /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/finiquitos" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                <LayoutPrincipal><FiniquitosRrhh /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/parametros" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="rrhh.parametros.ver">
+                <LayoutPrincipal><ParametrosRrhh /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/centralizacion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="rrhh.parametros.ver">
+                <LayoutPrincipal><CentralizacionRrhh /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/previred" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                <LayoutPrincipal><PreviredRrhh /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
 
           <Route path="/glosario" element={
             <RutaPrivada>

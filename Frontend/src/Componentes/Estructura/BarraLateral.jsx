@@ -255,6 +255,25 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
             ]
         },
         {
+            id: 'rrhh',
+            label: 'Recursos Humanos',
+            icon: 'fas fa-users',
+            permisosRequeridos: [
+                'rrhh.empleados.ver',
+                'rrhh.remuneraciones.ver',
+                'rrhh.parametros.ver',
+            ],
+            subItems: [
+                { path: '/rrhh/empleados', label: 'Empleados', permisosRequeridos: ['rrhh.empleados.ver'] },
+                { path: '/rrhh/contratos', label: 'Contratos', permisosRequeridos: ['rrhh.empleados.ver'] },
+                { path: '/rrhh/liquidaciones', label: 'Liquidaciones de Sueldo', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
+                { path: '/rrhh/finiquitos', label: 'Finiquitos', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
+                { path: '/rrhh/parametros', label: 'Parámetros Previsionales', permisosRequeridos: ['rrhh.parametros.ver'] },
+                { path: '/rrhh/centralizacion', label: 'Centralización Contable', permisosRequeridos: ['rrhh.parametros.ver'] },
+                { path: '/rrhh/previred', label: 'Archivo Previred', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
+            ]
+        },
+        {
             id: 'administracion',
             label: 'Administración',
             icon: 'fas fa-cogs',
@@ -399,24 +418,26 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                                     {group.subItems && (
                                         <div
                                             id={`menu-${group.id}`}
-                                            className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[1200px] opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}
+                                            className={`grid transition-all duration-300 ease-in-out ${open ? 'grid-rows-[1fr] opacity-100 mt-1 mb-2' : 'grid-rows-[0fr] opacity-0'}`}
                                         >
-                                            <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
-                                             {subItemsVisibles
-                                                .map((subItem) => (
-                                                    
-                                                    <Link
-                                                        key={subItem.path}
-                                                        to={subItem.path}
-                                                        onClick={closeSidebarOnMobile}
-                                                        className={`block px-3 py-2.5 rounded-md text-xs font-medium transition-colors ${isActive(subItem.path)
-                                                                ? 'bg-emerald-500/10 text-emerald-400 font-bold'
-                                                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                                                            }`}
-                                                    >
-                                                        {subItem.label}
-                                                    </Link>
-                                                ))}
+                                            <div className="overflow-hidden">
+                                                <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
+                                                 {subItemsVisibles
+                                                    .map((subItem) => (
+
+                                                        <Link
+                                                            key={subItem.path}
+                                                            to={subItem.path}
+                                                            onClick={closeSidebarOnMobile}
+                                                            className={`block px-3 py-2.5 rounded-md text-xs font-medium transition-colors ${isActive(subItem.path)
+                                                                    ? 'bg-emerald-500/10 text-emerald-400 font-bold'
+                                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                                                                }`}
+                                                        >
+                                                            {subItem.label}
+                                                        </Link>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
