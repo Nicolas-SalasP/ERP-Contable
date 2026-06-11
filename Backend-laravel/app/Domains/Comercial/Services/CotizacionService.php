@@ -26,7 +26,10 @@ class CotizacionService
     {
         return DB::transaction(function () use ($datos, $detalles) {
 
-            $cliente = Cliente::find($datos['cliente_id']);
+            // Defensa en profundidad: ademas del EmpresaScope, filtramos explicitamente
+            // por la empresa del documento para no depender solo del scope global.
+            $cliente = Cliente::where('empresa_id', $datos['empresa_id'])
+                ->find($datos['cliente_id']);
 
             if (!$cliente || $cliente->estado === 'INACTIVO') {
                 throw new Exception("No se puede emitir una cotización a un cliente inactivo.");
