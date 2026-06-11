@@ -3,9 +3,11 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use Illuminate\Support\Facades\DB;
 use \Carbon\Carbon;
 use Exception;
@@ -99,6 +101,25 @@ class FacturaService
 
         if (abs(($neto + $iva) - $bruto) > 0.01) {
             throw new Exception("Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.");
+        }
+
+        // Validar pertenencia antes de abrir la transacción (fail-fast).
+        if (!empty($datos['proveedor_id'])) {
+            $proveedorValido = Proveedor::where('empresa_id', $datos['empresa_id'])
+                ->where('id', $datos['proveedor_id'])
+                ->exists();
+            if (!$proveedorValido) {
+                throw new Exception("El proveedor indicado no pertenece a esta empresa.");
+            }
+        }
+
+        if (!empty($datos['cuenta_bancaria_id'])) {
+            $cuentaValida = CuentaBancariaEmpresa::where('empresa_id', $datos['empresa_id'])
+                ->where('id', $datos['cuenta_bancaria_id'])
+                ->exists();
+            if (!$cuentaValida) {
+                throw new Exception("La cuenta bancaria indicada no pertenece a esta empresa.");
+            }
         }
 
         return DB::transaction(function () use ($datos, $neto, $iva, $bruto) {

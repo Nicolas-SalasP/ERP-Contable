@@ -37,7 +37,11 @@ class ConciliacionService
             $this->facturaService->cambiarEstado($datos['empresa_id'], $factura->id, 'PAGADA');
 
             $cuentaProveedores = $datos['cuenta_proveedor'] ?? '352105';
-            $codigoCuentaBanco = $cuentaBanco->cuenta_contable_codigo ?? '110101';
+            // Usa la cuenta contable real del banco; lanza excepción si no está configurada.
+            $codigoCuentaBanco = $this->bancoService->obtenerCuentaContableDeBanco(
+                $datos['empresa_id'],
+                $datos['cuenta_bancaria_id']
+            );
             $glosa = "Pago Factura N° {$factura->numero_factura} a Proveedor";
 
             $this->asientoService->registrarAsiento([

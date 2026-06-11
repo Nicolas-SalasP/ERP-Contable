@@ -111,23 +111,27 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol'])->middleware('permiso:usuarios.gestionar');
     Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol'])->middleware('permiso:usuarios.gestionar');
 
-    // Empresa - Perfil (configuracion propia: solo requiere autenticacion)
+    // Empresa - Perfil: lectura libre (cualquier miembro); escritura restringida a
+    // usuarios.gestionar (mismo permiso que gestión de roles) dado que no existe
+    // una clave empresa.configurar en ModuloPermisos.
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
-    Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil']);
-    Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo']);
+    Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil'])->middleware('permiso:usuarios.gestionar');
+    Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo'])->middleware('permiso:usuarios.gestionar');
     Route::get('/empresas/catalogo-bancos', [EmpresaController::class, 'catalogoBancos']);
 
-    // Empresa - Cuentas Bancarias
-    Route::post('/empresas/bancos', [EmpresaController::class, 'agregarBanco']);
-    Route::put('/empresas/bancos/{id}', [EmpresaController::class, 'actualizarBanco']);
-    Route::delete('/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco']);
+    // Empresa - Cuentas Bancarias: escritura con tesoreria.crear (vector de fraude
+    // si cualquier usuario de lectura pudiera añadir/editar cuentas bancarias propias).
+    Route::post('/empresas/bancos', [EmpresaController::class, 'agregarBanco'])->middleware('permiso:tesoreria.crear');
+    Route::put('/empresas/bancos/{id}', [EmpresaController::class, 'actualizarBanco'])->middleware('permiso:tesoreria.crear');
+    Route::delete('/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco'])->middleware('permiso:tesoreria.crear');
 
-    // Empresa - Centros de Costos
+    // Empresa - Centros de Costos: escritura con contabilidad.crear (los CC son
+    // estructuras contables; no existe clave empresa.configurar en ModuloPermisos).
     Route::get('/empresas/centros-costo', [EmpresaController::class, 'listarCentros']);
     Route::get('/centros-costo', [EmpresaController::class, 'listarCentros']);
-    Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro']);
-    Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro']);
-    Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro']);
+    Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro'])->middleware('permiso:contabilidad.crear');
+    Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro'])->middleware('permiso:contabilidad.crear');
+    Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro'])->middleware('permiso:contabilidad.crear');
 
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
