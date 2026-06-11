@@ -98,15 +98,20 @@ Centralización mensual automática (asiento por período):
 
 ## 6. Fases de implementación (incremental, validando cada una)
 
-| Fase | Entregable | Depende de |
-|---|---|---|
-| **R1 — Personal** | `Empleado` + `Contrato` + CRUD + permisos RBAC + multitenant + tests. **Base navegable.** | — |
-| **R2 — Parámetros** | `ParametroPrevisional`, `IndicadorMensual`, `TablaImpuestoUnico` + carga/seed desde fuentes oficiales (Previred publica indicadores mensuales). | R1 |
-| **R3 — Motor de liquidación** | `ConceptoRemuneracion` + `LiquidacionService` (cálculo completo) + `Liquidacion`/Detalle + PDF de liquidación. | R1, R2 |
-| **R4 — Provisiones + Finiquitos** | Devengo de vacaciones + cálculo de finiquito (causales, indemnizaciones). | R3 |
-| **R5 — Centralización contable** | Asiento automático de remuneraciones y provisiones. | R3, R4 |
-| **R6 — Previred** | Archivo previsional mensual + envío (cierra el objetivo de Fase 2). | R3 |
-| **Futuro — Asistencia** | Contrato de eventos de marcaje → horas extra/atrasos hacia la liquidación. | R3 |
+| Fase | Entregable | Depende de | Estado |
+|---|---|---|---|
+| **R1 — Personal** | `Empleado` + `Contrato` + CRUD + permisos RBAC + multitenant + tests. **Base navegable.** | — | ✅ construido |
+| **R2 — Parámetros** | `ParametroPrevisional`, `IndicadorMensual`, `TablaImpuestoUnico` + carga/seed desde fuentes oficiales (Previred publica indicadores mensuales). | R1 | ✅ construido |
+| **R3 — Motor de liquidación** | `ConceptoRemuneracion` + `LiquidacionService` (cálculo completo) + `Liquidacion`/Detalle (PDF pendiente). | R1, R2 | ✅ construido |
+| **R4 — Provisiones + Finiquitos** | Devengo de vacaciones + cálculo de finiquito (causales, indemnizaciones). | R3 | ✅ construido |
+| **R5 — Centralización contable** | Asiento automático de remuneraciones y provisiones. | R3, R4 | ⏳ pendiente |
+| **R6 — Previred** | Archivo previsional mensual + envío (cierra el objetivo de Fase 2). | R3 | ⏳ pendiente |
+| **Futuro — Asistencia** | Contrato de eventos de marcaje → horas extra/atrasos hacia la liquidación. | R3 | ⏳ enganche preparado |
+
+> **Implementado (2026-06-11):** R1–R4 en `app/Domains/Rrhh` con tests verdes.
+> Marco legal investigado y documentado en `docs/rrhh-leyes/MARCO-LEGAL-LABORAL-CHILE.md`.
+> Valores legales 2026 en `RrhhParametrosLegalesSeeder` (tope 90 UF, AFC 135,2 UF,
+> IMM $539.000, SIS 1,62%, tabla impuesto único 8 tramos). Falta R5 y R6.
 
 ---
 
