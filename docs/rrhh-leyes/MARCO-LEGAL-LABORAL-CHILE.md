@@ -1,5 +1,7 @@
 # Marco Legal — Remuneraciones y RRHH Chile
 
+> **Valores actualizados a junio 2026. Indicadores mensuales y fuentes oficiales: ver FUENTES-NORMATIVAS-RRHH.md**
+
 **Fecha de referencia:** 2026-06-11  
 **Aplicación:** Módulo de RRHH y Remuneraciones del ERP Tenri  
 **Advertencia:** Los valores numéricos (tasas, topes, indicadores) **cambian periódicamente**.  
@@ -43,7 +45,7 @@ Verificar contra fuentes oficiales antes de actualizar el seeder de producción.
 
 *La gratificación legal del Art. 50 (25% mensual con tope) es imponible.
 
-**Tope remuneración imponible AFP:** 87,8 UF (actualizado mensualmente; fuente: Superintendencia de Pensiones).
+**Tope remuneración imponible AFP:** 90 UF (valor jun-2026; era 87,8 UF en 2022 — ver FUENTES-NORMATIVAS-RRHH.md).
 
 ### 1.3 Gratificación Legal (Art. 47-50)
 
@@ -59,7 +61,7 @@ La gratificación del Art. 50 pagada mensualmente es **imponible y tributable**.
 
 ### 1.4 Jornada y Horas Extra (Art. 22, 31-32)
 
-- Jornada ordinaria: máximo **45 horas semanales** (distribución en 5 o 6 días).
+- Jornada ordinaria: **42 horas semanales** desde 26-abr-2026 (ley 21.561: 44 hrs desde abr-2024, **42 hrs desde abr-2026 — vigente**, 40 hrs desde abr-2028); distribución en 5 o 6 días.
 - Horas extra: con acuerdo previo escrito, máximo **2 horas diarias**, recargo mínimo **50%** sobre hora ordinaria.
 - Solo son horas extra las que superan la jornada pactada (no las de la legal si la pactada es menor).
 
@@ -111,11 +113,11 @@ monto = (remuneración_diaria × dias_habiles) → remuneración incluye promedi
 ### 2.1 Cotización Obligatoria
 
 - **Trabajador:** 10% de la remuneración imponible + comisión de la administradora.
-- **Empleador (SIS):** Prima del Seguro de Invalidez y Sobrevivencia (SIS), definida mensualmente. Históricamente ~1.49% (varía por licitación; verificar en spensiones.cl).
+- **Empleador (SIS):** Prima del Seguro de Invalidez y Sobrevivencia (SIS), definida mensualmente. **1,62%** (valor jun-2026; era 1,49% en 2022 — ver FUENTES-NORMATIVAS-RRHH.md).
 
 ### 2.2 Tope Imponible
 
-- **87,8 UF** (referencia 2026; se actualiza mensualmente según la UF).
+- **90 UF** (valor jun-2026; era 87,8 UF en 2022 — ver FUENTES-NORMATIVAS-RRHH.md).
 - La cotización se aplica sobre `min(remuneración_imponible, tope_UF × valor_UF_del_mes)`.
 
 ### 2.3 AFP Vigentes y Comisiones (referencia 2026)
@@ -148,7 +150,7 @@ monto = (remuneración_diaria × dias_habiles) → remuneración incluye promedi
 
 - Establece las bases imponibles para cotizaciones previsionales.
 - Exime de cotización: movilización, colación, viáticos, asignación familiar.
-- Ratifica: tope de 87,8 UF para AFP/salud/AFC.
+- Ratifica: tope de 90 UF para AFP/salud (valor 2022: 87,8 UF — ver FUENTES-NORMATIVAS-RRHH.md) y 135,2 UF para AFC.
 
 ---
 
@@ -160,7 +162,7 @@ monto = (remuneración_diaria × dias_habiles) → remuneración incluye promedi
 ### 4.1 FONASA (salud pública)
 
 - El trabajador cotiza el **7%** de su remuneración imponible al sistema de salud.
-- Base imponible idéntica a AFP (mismo tope de 87,8 UF).
+- Base imponible idéntica a AFP (mismo tope de 90 UF — valor jun-2026; era 87,8 UF en 2022 — ver FUENTES-NORMATIVAS-RRHH.md).
 - El empleador no cotiza salud (el costo es del trabajador, descontado de su sueldo).
 
 ### 4.2 ISAPRE (salud privada)
@@ -186,7 +188,7 @@ monto = (remuneración_diaria × dias_habiles) → remuneración incluye promedi
 
 ### 5.2 Tope Imponible AFC
 
-- **122,6 UF** (referencia 2026; actualizar con el valor oficial mensual).
+- **135,2 UF** (valor jun-2026; era 122,6 UF en 2022 — ver FUENTES-NORMATIVAS-RRHH.md).
 
 ### 5.3 Cuenta Individual vs. Fondo Solidario
 
@@ -202,7 +204,7 @@ monto = (remuneración_diaria × dias_habiles) → remuneración incluye promedi
 
 - Crea el **SIS (Seguro de Invalidez y Sobrevivencia)** como cotización patronal.
 - La prima SIS varía según la licitación vigente y se aplica sobre la remuneración imponible.
-- En 2026 la tasa SIS referencial es ~**1,49%** (verificar en spensiones.cl mensualmente).
+- En jun-2026 la tasa SIS es **1,62%** (era 1,49% en 2022 — ver FUENTES-NORMATIVAS-RRHH.md; verificar en spensiones.cl mensualmente).
 - La reforma también introdujo el aporte al Pilar Solidario (cargo fiscal, no de empleadores).
 
 ---
@@ -234,9 +236,9 @@ La tabla se expresa en **UTM mensual**. Los tramos cambian cuando varía la UTM.
 | 30 a 50 UTM | 8,0% | 1,74 UTM |
 | 50 a 70 UTM | 13,5% | 4,49 UTM |
 | 70 a 90 UTM | 23,0% | 11,14 UTM |
-| 90 a 120 UTM | 30,4% | 17,8 UTM |
-| 120 a 150 UTM | 35,0% | 23,32 UTM |
-| Más de 150 UTM | 40,0% | 30,82 UTM |
+| 90 a 120 UTM | 30,4% | 17,80 UTM |
+| 120 a 310 UTM | 35,0% | 23,32 UTM |
+| Más de 310 UTM | 40,0% | 38,82 UTM |
 
 **Cálculo:**
 ```
@@ -276,7 +278,7 @@ Donde el factor deducción se convierte: `Factor_UTM × valor_UTM_del_mes`.
 **URL:** https://www.mintrab.gob.cl/ingreso-minimo/
 
 - Fijado por ley anualmente (normalmente en julio).
-- **2026 referencia:** $500.000 CLP (verificar valor vigente).
+- **2026 vigente:** $539.000 CLP.
 - Usado para: tope de gratificación Art. 50 (4,75 × IMM / 12), asignación familiar, mínimo contractual.
 
 ---
@@ -348,13 +350,13 @@ Cotización_AFC_empleador | ...
 
 | Concepto | Tasa trabajador | Tasa empleador | Tope imponible |
 |---|---|---|---|
-| AFP (cotización) | 10,00% | — | 87,8 UF |
-| AFP (comisión) | variable (0,49%–1,45%) | — | 87,8 UF |
-| SIS (Seguro Invalidez/Sobrevivencia) | — | ~1,49% | 87,8 UF |
-| Salud (Fonasa) | 7,00% | — | 87,8 UF |
-| Salud (Isapre) | plan en UF (mín. 7%) | — | 87,8 UF |
-| AFC – contrato indefinido | 0,60% | 2,40% | 122,6 UF |
-| AFC – contrato plazo fijo | 0,00% | 3,00% | 122,6 UF |
+| AFP (cotización) | 10,00% | — | 90 UF (valor 2022: 87,8 UF — ver FUENTES-NORMATIVAS-RRHH.md) |
+| AFP (comisión) | variable (0,46%–1,45%) | — | 90 UF |
+| SIS (Seguro Invalidez/Sobrevivencia) | — | 1,62% (valor 2022: 1,49% — ver FUENTES-NORMATIVAS-RRHH.md) | 90 UF |
+| Salud (Fonasa) | 7,00% | — | 90 UF |
+| Salud (Isapre) | plan en UF (mín. 7%) | — | 90 UF |
+| AFC – contrato indefinido | 0,60% | 2,40% | 135,2 UF (valor 2022: 122,6 UF — ver FUENTES-NORMATIVAS-RRHH.md) |
+| AFC – contrato plazo fijo | 0,00% | 3,00% | 135,2 UF |
 | Impuesto Único | tabla SII por tramos | — | — |
 
 ---
