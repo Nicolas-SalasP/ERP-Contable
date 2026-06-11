@@ -2,11 +2,14 @@
 
 namespace App\Domains\Inventario\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Model;
 
 class Bodega extends Model
 {
+    use HasEmpresaScope;
     protected $table = 'inventario_bodegas';
 
     protected $fillable = [

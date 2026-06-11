@@ -2,6 +2,8 @@
 
 namespace App\Domains\Sii\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class SiiTokenSesion extends Model
 {
+    use HasEmpresaScope;
     public const AMBIENTE_CERTIFICACION = 'certificacion';
     public const AMBIENTE_PRODUCCION    = 'produccion';
 

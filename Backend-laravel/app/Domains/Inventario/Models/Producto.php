@@ -2,11 +2,14 @@
 
 namespace App\Domains\Inventario\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Model;
 
 class Producto extends Model
 {
+    use HasEmpresaScope;
     use \App\Domains\Sii\Concerns\HasSiiAttributesProducto;
 
     protected $table = 'inventario_productos';
