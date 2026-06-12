@@ -8,6 +8,7 @@ use App\Domains\CorreccionMonetaria\Models\CmConfiguracionEmpresa;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\User;
+use App\Support\HmacFirma;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\PreparaEntornoBase;
@@ -103,10 +104,11 @@ class VulnerabilidadesCorregidas2026Test extends TestCase
         $this->usuarioAdmin->createToken('test-token');
         $this->assertSame(1, $this->usuarioAdmin->tokens()->count());
 
-        $response = $this->withHeaders(['X-WEB-API-KEY' => $claveTest])
-            ->postJson("/api/internal/web/usuarios/{$this->usuarioAdmin->id}/bloquear", [
-                'hasta' => now()->addHour()->format('Y-m-d H:i:s'),
-            ]);
+        $payload = ['hasta' => now()->addHour()->format('Y-m-d H:i:s')];
+        $headers = HmacFirma::headers($claveTest, json_encode($payload));
+
+        $response = $this->withHeaders($headers)
+            ->postJson("/api/internal/web/usuarios/{$this->usuarioAdmin->id}/bloquear", $payload);
 
         $response->assertOk()->assertJson(['success' => true]);
         $this->usuarioAdmin->refresh();
