@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Controllers\Concerns\RespondeInventario;
 use App\Domains\Inventario\Services\InventarioLoteService;
 use Exception;
@@ -44,6 +46,8 @@ class LoteController
             return response()->json($this->respuestaPaginada($paginador));
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -70,6 +74,8 @@ class LoteController
             ], 201);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -86,6 +92,8 @@ class LoteController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -115,6 +123,8 @@ class LoteController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -140,6 +150,8 @@ class LoteController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -159,6 +171,8 @@ class LoteController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }

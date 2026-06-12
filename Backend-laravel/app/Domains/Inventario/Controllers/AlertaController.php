@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Controllers\Concerns\RespondeInventario;
 use App\Domains\Inventario\Services\InventarioAlertaService;
 use Exception;
@@ -44,6 +46,8 @@ class AlertaController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }

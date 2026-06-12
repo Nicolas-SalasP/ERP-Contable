@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Models\InventarioPickingOrden;
 use App\Domains\Inventario\Services\InventarioPickingService;
 use Exception;
@@ -31,6 +33,8 @@ class InventarioPickingController
             return response()->json($this->respuestaPaginada($this->service->listar($request->user(), $filtros)));
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -66,6 +70,8 @@ class InventarioPickingController
             ], 201);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -78,6 +84,8 @@ class InventarioPickingController
                 'success' => true,
                 'data' => $this->service->obtener($request->user(), $id),
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -93,6 +101,8 @@ class InventarioPickingController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -106,6 +116,8 @@ class InventarioPickingController
                 'data' => $this->service->iniciar($request->user(), $id),
                 'message' => 'Picking iniciado correctamente.',
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -130,6 +142,8 @@ class InventarioPickingController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -149,6 +163,8 @@ class InventarioPickingController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -167,6 +183,8 @@ class InventarioPickingController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }

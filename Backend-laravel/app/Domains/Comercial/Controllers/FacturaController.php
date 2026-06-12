@@ -2,6 +2,8 @@
 
 namespace App\Domains\Comercial\Controllers;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Services\FacturaService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
@@ -67,6 +69,8 @@ class FacturaController
                 'success' => true,
                 'data' => $factura
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -171,6 +175,8 @@ class FacturaController
                 'message' => 'Errores de validación',
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -188,6 +194,8 @@ class FacturaController
                 'success' => true,
                 'data' => $datosAsiento
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -222,6 +230,8 @@ class FacturaController
                 'message' => $e->getMessage(),
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -238,6 +248,8 @@ class FacturaController
                 'success' => true,
                 'data' => $data
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -261,6 +273,8 @@ class FacturaController
                 'message' => 'Factura pagada correctamente.',
                 'data' => $factura
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -292,6 +306,8 @@ class FacturaController
                 'message' => $e->getMessage(),
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -308,6 +324,8 @@ class FacturaController
                 'success' => true,
                 'data' => $vencidas
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -322,6 +340,8 @@ class FacturaController
                 'Content-Type' => 'text/csv',
                 'Content-Disposition' => 'attachment; filename="reporte_facturas_' . date('Y_m_d') . '.csv"',
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -334,6 +354,8 @@ class FacturaController
                 $request->user()->empresa_id
             );
             return response()->json(['success' => true, 'data' => $facturas]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -372,6 +394,8 @@ class FacturaController
                 'message' => $e->getMessage(),
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);

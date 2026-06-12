@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Services\InventarioService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -41,6 +43,8 @@ class BodegaController
                 'data' => $this->service->crearBodega($request->user(), $datos),
                 'message' => 'Bodega creada correctamente.',
             ], 201);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

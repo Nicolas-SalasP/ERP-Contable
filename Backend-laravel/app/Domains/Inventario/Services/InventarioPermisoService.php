@@ -2,9 +2,10 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Support\ModuloPermisos;
-use Exception;
 
 class InventarioPermisoService
 {
@@ -15,7 +16,7 @@ class InventarioPermisoService
         }
 
         if (!in_array($permiso, $this->permisosUsuario($usuario), true)) {
-            throw new Exception('No tienes permisos para ejecutar esta operación de inventario.');
+            throw InventarioException::regla('No tienes permisos para ejecutar esta operación de inventario.');
         }
     }
 
@@ -33,7 +34,7 @@ class InventarioPermisoService
             }
         }
 
-        throw new Exception('No tienes permisos para ejecutar esta operación de inventario.');
+        throw InventarioException::regla('No tienes permisos para ejecutar esta operación de inventario.');
     }
 
     public function tiene(User $usuario, string $permiso): bool

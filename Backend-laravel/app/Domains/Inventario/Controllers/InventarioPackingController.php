@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Models\InventarioPackingOrden;
 use App\Domains\Inventario\Services\InventarioPackingService;
 use Exception;
@@ -37,6 +39,8 @@ class InventarioPackingController
             return response()->json($this->respuestaPaginada($this->service->listar($request->user(), $filtros)));
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -58,6 +62,8 @@ class InventarioPackingController
             ], 201);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -70,6 +76,8 @@ class InventarioPackingController
                 'success' => true,
                 'data' => $this->service->obtener($request->user(), $id),
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -83,6 +91,8 @@ class InventarioPackingController
                 'data' => $this->service->iniciar($request->user(), $id),
                 'message' => 'Packing iniciado correctamente.',
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -107,6 +117,8 @@ class InventarioPackingController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -126,6 +138,8 @@ class InventarioPackingController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -144,6 +158,8 @@ class InventarioPackingController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }

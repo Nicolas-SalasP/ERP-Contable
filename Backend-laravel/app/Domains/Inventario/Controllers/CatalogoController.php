@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Controllers\Concerns\RespondeInventario;
 use App\Domains\Inventario\Services\InventarioPermisoService;
 use App\Domains\Inventario\Services\InventarioService;
@@ -40,6 +42,8 @@ class CatalogoController
                 'success' => true,
                 'data' => $this->service->catalogos($request->user()->empresa_id),
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }

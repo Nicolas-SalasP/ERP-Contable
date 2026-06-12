@@ -2,12 +2,13 @@
 
 namespace App\Domains\Tesoreria\Services;
 
+use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+
 use App\Domains\Tesoreria\Models\CatalogoBanco;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class BancoService
 {
@@ -36,7 +37,7 @@ class BancoService
             ->exists();
 
         if ($existe) {
-            throw new Exception("Esta cuenta bancaria ya se encuentra registrada para su empresa.");
+            throw TesoreriaException::regla("Esta cuenta bancaria ya se encuentra registrada para su empresa.");
         }
 
         return CuentaBancariaEmpresa::create($datos);
@@ -52,7 +53,7 @@ class BancoService
                 ->exists();
 
             if (!$cuentaPertenece) {
-                throw new Exception("Cuenta bancaria no pertenece a la empresa.");
+                throw TesoreriaException::noEncontrado("Cuenta bancaria no pertenece a la empresa.");
             }
 
             // Lock pesimista sobre las facturas solicitadas para evitar doble pago concurrente.
@@ -62,21 +63,21 @@ class BancoService
                 ->get();
 
             if ($facturas->isEmpty()) {
-                throw new Exception("No se encontraron facturas para la empresa.");
+                throw TesoreriaException::noEncontrado("No se encontraron facturas para la empresa.");
             }
 
             // Detectar facturas ya pagadas/anuladas antes de modificar cualquiera.
             $noDisponibles = $facturas->whereIn('estado', ['PAGADA', 'ANULADA']);
             if ($noDisponibles->isNotEmpty()) {
                 $folios = $noDisponibles->pluck('numero_factura')->implode(', ');
-                throw new Exception("No se puede procesar: las siguientes facturas ya están PAGADAS o ANULADAS: {$folios}.");
+                throw TesoreriaException::regla("No se puede procesar: las siguientes facturas ya están PAGADAS o ANULADAS: {$folios}.");
             }
 
             // Verificar que todos los IDs solicitados existen en la empresa.
             $idsEncontrados = $facturas->pluck('id')->all();
             $idsNoEncontrados = array_diff($facturasIds, $idsEncontrados);
             if (!empty($idsNoEncontrados)) {
-                throw new Exception("No se encontraron facturas pendientes (IDs no hallados: " . implode(', ', $idsNoEncontrados) . ").");
+                throw TesoreriaException::noEncontrado("No se encontraron facturas pendientes (IDs no hallados: " . implode(', ', $idsNoEncontrados) . ").");
             }
 
             $totalNomina = 0;
@@ -134,7 +135,7 @@ class BancoService
         $cuenta = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->find($datos['cuenta_bancaria_id']);
         
         if (!$cuenta) {
-            throw new Exception("Cuenta bancaria no encontrada o no pertenece a tu empresa.", 403);
+            throw TesoreriaException::noEncontrado("Cuenta bancaria no encontrada o no pertenece a tu empresa.");
         }
 
         $tipoMov = $datos['tipo_movimiento'] ?? '';
@@ -241,14 +242,14 @@ class BancoService
 
         } catch (Exception $e) {
             DB::rollBack();
-            throw new Exception("El archivo contiene errores y la importación fue abortada. Error: " . $e->getMessage());
+            throw TesoreriaException::regla("El archivo contiene errores y la importación fue abortada. Error: " . $e->getMessage());
         }
     }
 
     public function obtenerCuentaBancaria(int $empresaId, int $id)
     {
         $cuenta = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->find($id);
-        if (!$cuenta) throw new Exception("Cuenta bancaria no encontrada.");
+        if (!$cuenta) throw TesoreriaException::noEncontrado("Cuenta bancaria no encontrada.");
         return $cuenta;
     }
 
@@ -257,7 +258,7 @@ class BancoService
         $cuenta = $this->obtenerCuentaBancaria($empresaId, $id);
         
         if (empty($cuenta->cuenta_contable)) {
-            throw new Exception("La cuenta bancaria '{$cuenta->banco}' no tiene un código contable asignado en su configuración. Por favor, edite la cuenta y asígnele una.");
+            throw TesoreriaException::regla("La cuenta bancaria '{$cuenta->banco}' no tiene un código contable asignado en su configuración. Por favor, edite la cuenta y asígnele una.");
         }
         
         return $cuenta->cuenta_contable;
@@ -270,7 +271,7 @@ class BancoService
             ->where('id', $id)
             ->first();
             
-        if (!$mov) throw new Exception("Movimiento bancario no encontrado.");
+        if (!$mov) throw TesoreriaException::noEncontrado("Movimiento bancario no encontrado.");
         return $mov;
     }
 
@@ -290,10 +291,10 @@ class BancoService
             ->lockForUpdate()
             ->first();
 
-        if (!$mov) throw new Exception("Movimiento bancario no encontrado.");
+        if (!$mov) throw TesoreriaException::noEncontrado("Movimiento bancario no encontrado.");
 
         if (isset($mov->estado) && $mov->estado === 'CONCILIADO') {
-            throw new Exception("El movimiento bancario ya fue conciliado.", 422);
+            throw TesoreriaException::regla("El movimiento bancario ya fue conciliado.");
         }
 
         return $mov;
@@ -343,11 +344,11 @@ class BancoService
                 ->first();
 
             if (!$anticipo) {
-                throw new Exception("El anticipo no existe o no pertenece a tu empresa.");
+                throw TesoreriaException::noEncontrado("El anticipo no existe o no pertenece a tu empresa.");
             }
 
             if ($anticipo->estado !== 'PENDIENTE') {
-                throw new Exception("El anticipo #{$anticipoId} ya fue vinculado o no está en estado PENDIENTE (estado actual: {$anticipo->estado}).", 422);
+                throw TesoreriaException::regla("El anticipo #{$anticipoId} ya fue vinculado o no está en estado PENDIENTE (estado actual: {$anticipo->estado}).");
             }
 
             DB::table('movimientos_bancarios')

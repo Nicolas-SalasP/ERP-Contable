@@ -2,9 +2,10 @@
 
 namespace App\Domains\Comercial\Services;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Models\Cliente;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class ClienteService
 {
@@ -30,7 +31,7 @@ class ClienteService
             ->exists();
 
         if ($existe) {
-            throw new Exception("El cliente con RUT {$datos['rut']} ya se encuentra registrado.");
+            throw ComercialException::regla("El cliente con RUT {$datos['rut']} ya se encuentra registrado.");
         }
 
         return Cliente::create($datos);
@@ -52,7 +53,7 @@ class ClienteService
                 ->exists(); //
 
             if ($existe) {
-                throw new Exception("El RUT ingresado ya está registrado para otro cliente en esta empresa."); //
+                throw ComercialException::regla("El RUT ingresado ya está registrado para otro cliente en esta empresa."); //
             }
         }
 
@@ -74,7 +75,7 @@ class ClienteService
         $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($clienteId);
 
         if ($cliente->estado === 'ACTIVO') {
-            throw new Exception("El cliente ya se encuentra activo.");
+            throw ComercialException::regla("El cliente ya se encuentra activo.");
         }
 
         $cliente->estado = 'ACTIVO';

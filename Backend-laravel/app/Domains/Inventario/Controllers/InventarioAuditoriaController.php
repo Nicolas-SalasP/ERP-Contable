@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Services\InventarioAuditoriaService;
 use Exception;
@@ -25,6 +27,8 @@ class InventarioAuditoriaController
             return response()->json($this->respuestaPaginada($this->service->listar($request->user(), $filtros)));
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -37,6 +41,8 @@ class InventarioAuditoriaController
                 'success' => true,
                 'data' => $this->service->obtener($request->user(), $id),
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -53,6 +59,8 @@ class InventarioAuditoriaController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }

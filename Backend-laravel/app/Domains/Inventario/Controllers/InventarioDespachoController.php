@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Models\InventarioDespachoOrden;
 use App\Domains\Inventario\Services\InventarioDespachoService;
 use Exception;
@@ -31,6 +33,8 @@ class InventarioDespachoController
             return response()->json($this->respuestaPaginada($this->service->listar($request->user(), $filtros)));
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -57,6 +61,8 @@ class InventarioDespachoController
             ], 201);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -69,6 +75,8 @@ class InventarioDespachoController
                 'success' => true,
                 'data' => $this->service->obtener($request->user(), $id),
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -82,6 +90,8 @@ class InventarioDespachoController
                 'data' => $this->service->iniciar($request->user(), $id),
                 'message' => 'Despacho iniciado correctamente.',
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -106,6 +116,8 @@ class InventarioDespachoController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -125,6 +137,8 @@ class InventarioDespachoController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -145,6 +159,8 @@ class InventarioDespachoController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }

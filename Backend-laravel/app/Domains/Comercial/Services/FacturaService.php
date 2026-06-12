@@ -2,6 +2,8 @@
 
 namespace App\Domains\Comercial\Services;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Models\PlanCuenta;
@@ -10,7 +12,6 @@ use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use Illuminate\Support\Facades\DB;
 use \Carbon\Carbon;
-use Exception;
 
 class FacturaService
 {
@@ -72,7 +73,7 @@ class FacturaService
             ->find($facturaId);
 
         if (!$factura) {
-            throw new Exception("La factura solicitada no existe o no pertenece a su empresa.");
+            throw ComercialException::noEncontrado("La factura solicitada no existe o no pertenece a su empresa.");
         }
 
         return $factura;
@@ -92,7 +93,7 @@ class FacturaService
     public function registrarFacturaCompra(array $datos): Factura
     {
         if (!isset($datos['monto_neto']) || $datos['monto_neto'] <= 0) {
-            throw new Exception("El monto neto debe ser mayor a 0.");
+            throw ComercialException::regla("El monto neto debe ser mayor a 0.");
         }
 
         $neto = round((float) $datos['monto_neto'], 2);
@@ -100,7 +101,7 @@ class FacturaService
         $bruto = isset($datos['monto_bruto']) ? round((float) $datos['monto_bruto'], 2) : round($neto + $iva, 2);
 
         if (abs(($neto + $iva) - $bruto) > 0.01) {
-            throw new Exception("Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.");
+            throw ComercialException::regla("Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.");
         }
 
         // Validar pertenencia antes de abrir la transacción (fail-fast).
@@ -109,7 +110,7 @@ class FacturaService
                 ->where('id', $datos['proveedor_id'])
                 ->exists();
             if (!$proveedorValido) {
-                throw new Exception("El proveedor indicado no pertenece a esta empresa.");
+                throw ComercialException::regla("El proveedor indicado no pertenece a esta empresa.");
             }
         }
 
@@ -118,7 +119,7 @@ class FacturaService
                 ->where('id', $datos['cuenta_bancaria_id'])
                 ->exists();
             if (!$cuentaValida) {
-                throw new Exception("La cuenta bancaria indicada no pertenece a esta empresa.");
+                throw ComercialException::regla("La cuenta bancaria indicada no pertenece a esta empresa.");
             }
         }
 
@@ -126,7 +127,7 @@ class FacturaService
             $existe = $this->verificarDuplicado($datos['empresa_id'], $datos['proveedor_id'], $datos['numero_factura']);
 
             if ($existe) {
-                throw new Exception("La factura {$datos['numero_factura']} ya se encuentra registrada para este proveedor.");
+                throw ComercialException::regla("La factura {$datos['numero_factura']} ya se encuentra registrada para este proveedor.");
             }
 
             $codigoUnico = Factura::generarCodigoUnico();
@@ -154,7 +155,7 @@ class FacturaService
                 $codigoIva = $datos['cuentaIva'] ?? '353350';
                 $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
             } else {
-                $codigoDestino = $datos['cuentaDestino'] ?? throw new Exception("Debe especificar la cuenta de destino/gasto.");
+                $codigoDestino = $datos['cuentaDestino'] ?? throw ComercialException::regla("Debe especificar la cuenta de destino/gasto.");
                 $codigoIva = $datos['cuentaIva'] ?? '353350';
                 $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
             }
@@ -166,7 +167,7 @@ class FacturaService
             // (return silencioso), dejando la contabilidad descuadrada. Ahora exige las
             // cuentas igual que una factura normal y genera su asiento (invertido).
             if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
-                throw new Exception("Configuración Contable Incompleta: Verifique que las cuentas de IVA ({$codigoIva}), Proveedor ({$codigoProveedor}) y Destino ({$codigoDestino}) existan en el plan de cuentas de esta empresa.");
+                throw ComercialException::regla("Configuración Contable Incompleta: Verifique que las cuentas de IVA ({$codigoIva}), Proveedor ({$codigoProveedor}) y Destino ({$codigoDestino}) existan en el plan de cuentas de esta empresa.");
             }
 
             $fechaOperacion = $datos['fechaContable'] ?? $datos['fecha_emision'];
@@ -229,7 +230,7 @@ class FacturaService
         $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
         if (!$factura->comprobante_contable) {
-            throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
+            throw ComercialException::regla('Esta factura aún no tiene un asiento contable vinculado.');
         }
 
         $asiento = AsientoContable::with(['detalles.cuenta', 'usuario'])
@@ -238,7 +239,7 @@ class FacturaService
             ->first();
 
         if (!$asiento) {
-            throw new Exception('El asiento asociado no fue encontrado en la base de datos.');
+            throw ComercialException::regla('El asiento asociado no fue encontrado en la base de datos.');
         }
 
         return [
@@ -267,11 +268,11 @@ class FacturaService
             // (F-1/F-2). El periodo cerrado se valida abajo, sobre la fecha original
             // del asiento y sobre la nueva fecha destino.
             if (strtoupper((string) $factura->estado) === 'ANULADA') {
-                throw new Exception('No se puede reclasificar el asiento de una factura anulada.');
+                throw ComercialException::regla('No se puede reclasificar el asiento de una factura anulada.');
             }
 
             if (!$factura->comprobante_contable) {
-                throw new Exception('Esta factura aún no tiene un asiento contable vinculado.');
+                throw ComercialException::regla('Esta factura aún no tiene un asiento contable vinculado.');
             }
 
             $asiento = AsientoContable::with('detalles')
@@ -342,7 +343,7 @@ class FacturaService
     {
         $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
         if (!$factura) {
-            throw new Exception("Factura no encontrada.", 404);
+            throw ComercialException::noEncontrado("Factura no encontrada.");
         }
         $factura->update(['proyecto_activo_id' => $proyectoId]);
         return $factura;
@@ -419,10 +420,9 @@ class FacturaService
         // del proveedor abierta en contabilidad (descuadre subdiario vs mayor).
         // Los pagos deben registrarse desde Tesoreria > Conciliacion Bancaria,
         // que genera el asiento contra la cuenta bancaria real.
-        throw new Exception(
+        throw ComercialException::regla(
             "Los pagos de facturas se registran desde Tesoreria > Conciliacion Bancaria "
-            . "para contabilizar el egreso. Esta accion directa fue deshabilitada.",
-            422
+            . "para contabilizar el egreso. Esta accion directa fue deshabilitada."
         );
     }
 
@@ -461,11 +461,11 @@ class FacturaService
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
             if ($factura->estado === 'ANULADA') {
-                throw new Exception("Esta factura ya fue anulada anteriormente.");
+                throw ComercialException::regla("Esta factura ya fue anulada anteriormente.");
             }
 
             if ($factura->estado === 'PAGADA') {
-                throw new Exception("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.");
+                throw ComercialException::regla("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.");
             }
 
             if ($factura->comprobante_contable) {

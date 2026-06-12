@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\LoteInventario;
@@ -11,7 +13,6 @@ use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Models\StockLoteInventario;
 use App\Domains\Inventario\Models\StockProducto;
 use App\Domains\Inventario\Models\StockUbicacionInventario;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
@@ -72,7 +73,7 @@ class InventarioDisponibilidadService
         $producto = Producto::where('empresa_id', $usuario->empresa_id)->find($productoId);
 
         if (!$producto) {
-            throw new Exception('El producto solicitado no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('El producto solicitado no existe o no pertenece a la empresa.');
         }
 
         $stocks = StockProducto::query()

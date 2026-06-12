@@ -2,11 +2,12 @@
 
 namespace App\Domains\Comercial\Services;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Models\AnticipoProveedor;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class AnticipoProveedorService
 {
@@ -16,7 +17,7 @@ class AnticipoProveedorService
             ->find($datos['proveedor_id']);
 
         if (!$proveedor) {
-            throw new Exception("Proveedor no encontrado o no pertenece a tu empresa.", 404);
+            throw ComercialException::noEncontrado("Proveedor no encontrado o no pertenece a tu empresa.");
         }
 
         return AnticipoProveedor::create([
@@ -39,7 +40,7 @@ class AnticipoProveedorService
                 ->find($anticipoId);
 
             if (!$anticipo) {
-                throw new Exception("Anticipo no encontrado.", 404);
+                throw ComercialException::noEncontrado("Anticipo no encontrado.");
             }
 
             $saldoActual = (float) $anticipo->getRawOriginal('saldo_disponible');
@@ -50,11 +51,11 @@ class AnticipoProveedorService
             }
 
             if ($anticipo->estado === 'APLICADO' || $saldoActual <= 0) {
-                throw new Exception("El anticipo ya fue aplicado completamente.");
+                throw ComercialException::regla("El anticipo ya fue aplicado completamente.");
             }
 
             if ($montoAplicar > $saldoActual) {
-                throw new Exception(
+                throw ComercialException::regla(
                     "Monto a aplicar ({$montoAplicar}) excede el saldo disponible ({$saldoActual})."
                 );
             }

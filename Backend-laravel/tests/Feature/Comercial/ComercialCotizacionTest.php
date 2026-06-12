@@ -117,6 +117,6 @@ class ComercialCotizacionTest extends TestCase
             'detalles' => [['producto_nombre' => 'Nuevo', 'cantidad' => 1, 'precio_unitario' => 5000]]
         ]);
 
-        $response->assertStatus(400)->assertSee('aprobada');
+        $response->assertStatus(422)->assertSee('aprobada');
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\LoteInventario;
@@ -15,7 +17,6 @@ use App\Domains\Inventario\Models\InventarioUbicacion;
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\StockLoteInventario;
 use App\Domains\Inventario\Models\StockProducto;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -98,7 +99,7 @@ class InventarioReservaService
             ->find($reservaId);
 
         if (!$reserva) {
-            throw new Exception('La reserva solicitada no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La reserva solicitada no existe o no pertenece a la empresa.');
         }
 
         return $this->cargarRelacionesReserva($reserva);
@@ -692,7 +693,7 @@ class InventarioReservaService
             ->first();
 
         if (!$reserva) {
-            throw new Exception('La reserva solicitada no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La reserva solicitada no existe o no pertenece a la empresa.');
         }
 
         return $reserva;

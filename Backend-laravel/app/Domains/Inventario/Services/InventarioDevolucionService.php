@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
@@ -11,7 +13,6 @@ use App\Domains\Inventario\Models\InventarioDevolucionDetalle;
 use App\Domains\Inventario\Models\InventarioDevolucionOrden;
 use App\Domains\Inventario\Models\InventarioUbicacion;
 use App\Domains\Inventario\Models\MovimientoInventario;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ class InventarioDevolucionService
             ->find($id);
 
         if (!$orden) {
-            throw new Exception('La devolución/reversa no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La devolución/reversa no existe o no pertenece a la empresa.');
         }
 
         return $this->cargarOrden($orden);
@@ -82,7 +83,7 @@ class InventarioDevolucionService
             ->find($despachoId);
 
         if (!$despacho) {
-            throw new Exception('La orden de despacho no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La orden de despacho no existe o no pertenece a la empresa.');
         }
 
         $this->validarDespachoReversible($despacho);
@@ -230,11 +231,11 @@ class InventarioDevolucionService
                 ->find($id);
 
             if (!$orden) {
-                throw new Exception('La devolución/reversa no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La devolución/reversa no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeConfirmarse()) {
-                throw new Exception('Solo se pueden confirmar devoluciones/reversas pendientes.');
+                throw InventarioException::regla('Solo se pueden confirmar devoluciones/reversas pendientes.');
             }
 
             $despacho = InventarioDespachoOrden::query()
@@ -243,7 +244,7 @@ class InventarioDevolucionService
                 ->find($orden->despacho_orden_id);
 
             if (!$despacho) {
-                throw new Exception('El despacho asociado no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('El despacho asociado no existe o no pertenece a la empresa.');
             }
 
             $this->validarDespachoReversible($despacho);
@@ -257,7 +258,7 @@ class InventarioDevolucionService
                 ->get();
 
             if ($detalles->isEmpty()) {
-                throw new Exception('La devolución/reversa no tiene detalles para confirmar.');
+                throw InventarioException::regla('La devolución/reversa no tiene detalles para confirmar.');
             }
 
             $hayDiferencias = false;
@@ -265,7 +266,7 @@ class InventarioDevolucionService
             foreach ($detalles as $detalle) {
                 $despachoDetalle = $detalle->despachoDetalle;
                 if (!$despachoDetalle || (int) $despachoDetalle->empresa_id !== $empresaId || (int) $despachoDetalle->despacho_orden_id !== (int) $despacho->id) {
-                    throw new Exception('Un detalle de devolución no pertenece al despacho asociado.');
+                    throw InventarioException::noEncontrado('Un detalle de devolución no pertenece al despacho asociado.');
                 }
 
                 $yaReversada = $this->cantidadConfirmadaReversada($empresaId, (int) $despachoDetalle->id);
@@ -344,11 +345,11 @@ class InventarioDevolucionService
                 ->find($id);
 
             if (!$orden) {
-                throw new Exception('La devolución/reversa no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La devolución/reversa no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeCancelarse()) {
-                throw new Exception('Solo se pueden cancelar devoluciones/reversas pendientes.');
+                throw InventarioException::regla('Solo se pueden cancelar devoluciones/reversas pendientes.');
             }
 
             InventarioDevolucionDetalle::where('empresa_id', $usuario->empresa_id)
