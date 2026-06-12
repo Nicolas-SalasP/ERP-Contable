@@ -4,19 +4,22 @@ import React from 'react';
 class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { hasError: false };
+        this.state = { hasError: false, error: null };
     }
 
-    static getDerivedStateFromError() {
-        return { hasError: true };
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
     }
 
     componentDidCatch(error, info) {
-        // En produccion esto deberia reportarse a un servicio de monitoreo (Sentry, Fase 30).
         if (import.meta.env?.DEV) {
             console.error('ErrorBoundary capturó un error:', error, info);
         }
     }
+
+    handleReintentar = () => {
+        this.setState({ hasError: false, error: null });
+    };
 
     handleRecargar = () => {
         if (typeof window !== 'undefined') window.location.reload();
@@ -33,12 +36,25 @@ class ErrorBoundary extends React.Component {
                     <p className="text-sm text-slate-500 mb-6">
                         {this.props.mensaje || 'Ocurrió un error inesperado en esta sección. Tu sesión sigue activa.'}
                     </p>
-                    <button
-                        onClick={this.handleRecargar}
-                        className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-colors"
-                    >
-                        Recargar
-                    </button>
+                    {import.meta.env?.DEV && this.state.error && (
+                        <p className="text-xs text-red-500 font-mono mb-4 text-left bg-red-100 rounded p-2 max-h-24 overflow-y-auto">
+                            {this.state.error.message}
+                        </p>
+                    )}
+                    <div className="flex flex-col gap-2 items-center">
+                        <button
+                            onClick={this.handleReintentar}
+                            className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-colors"
+                        >
+                            Reintentar
+                        </button>
+                        <button
+                            onClick={this.handleRecargar}
+                            className="text-sm text-slate-400 hover:text-slate-600 underline bg-transparent border-0 cursor-pointer"
+                        >
+                            Recargar página
+                        </button>
+                    </div>
                 </div>
             </div>
         );

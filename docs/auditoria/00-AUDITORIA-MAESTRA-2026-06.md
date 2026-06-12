@@ -75,7 +75,7 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 
 ### ✅ Fortalezas
 - **Cliente `api.js` centralizado** (`Frontend/src/Configuracion/api.js`): retry idempotente solo en GET/HEAD (POST/PUT/DELETE con `maxReintentos=0` — evita duplicar facturas), timeout 30s con `AbortController`, refresh proactivo de token con mutex `refreshInFlight` + sync multi-tab, toasts centralizados con manejo diferenciado 403/422/500.
-- **`ErrorBoundary`** envuelve toda la app (`App.jsx`), con `getDerivedStateFromError` + UI de recuperación.
+- **`ErrorBoundary` por módulo** en `LayoutPrincipal` con `key={location.pathname}` (reset automático al navegar): un crash en una vista no derriba el layout. Botón `Reintentar` (reset de estado) + `Recargar página` como opción secundaria. Root boundary en `App.jsx` protege de fallos del propio layout.
 - **53 usos de `DB::transaction`** en los dominios — atomicidad en operaciones multi-paso.
 - **Excepciones de dominio renderizables** (`RrhhException`, `PeriodoCerradoException`) con HTTP correcto.
 
@@ -92,7 +92,7 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 - **R-5** **Race condition por año** en `DashboardRenta.jsx:25-85` (`[anio]` sin `AbortController`): navegar rápido entre años puede mostrar datos del año equivocado (grave en cálculo tributario).
 - **R-6** **Race condition en paginación** `FacturasSii.jsx:29-50`: clics rápidos en Siguiente/Anterior → respuestas fuera de orden.
 - **R-7** `componentDidCatch` solo loguea en DEV (`ErrorBoundary.jsx:16`): crashes de producción se pierden sin telemetría.
-- **R-8** Un único ErrorBoundary raíz sin boundaries por módulo: un crash en una vista derriba todo el layout.
+- ✅ **R-8** ~~Un único ErrorBoundary raíz sin boundaries por módulo~~ — resuelto: `LayoutPrincipal` tiene boundary por módulo con reset automático.
 
 ### 🔵 BAJO
 - **R-9** 401 reactivo no intenta refresh, redirige directo a login (`api.js:474`).
@@ -164,7 +164,7 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 
 ### 🥉 P2 — Mejora continua (backlog)
 9. **R-7** Integrar telemetría de errores de producción (Sentry) en `ErrorBoundary` + `componentDidCatch`. **[M]** _(nota: Sentry ya está cableado en `bootstrap/app.php` para el backend; falta el lado frontend)_
-10. **R-8** ErrorBoundary por módulo (que un crash no derribe el layout). **[M]**
+10. ✅ **R-8** ErrorBoundary por módulo: `LayoutPrincipal` ya envuelve `<main>` con `<ErrorBoundary key={location.pathname}>` — un crash en una vista no derriba el layout (sidebar/header intactos). Mejorado: botón `Reintentar` (reset de estado, sin recarga completa) + mensaje de error en DEV + "Recargar página" como opción secundaria. 4 tests nuevos.
 11. ✅ **R-10** Cleanup de cancelación (montadoRef) en `useSiiCafs` y `useSiiConfiguracion`.
 12. **S-5** Revisión 1×1 de las 126 rutas sin `permiso:`. **[M]**
 13. **L-1** Poblar campos Previred (sexo, nacionalidad, mutualidad) antes de envío real. **[M]**
