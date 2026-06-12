@@ -67,9 +67,9 @@ class PreviredService
     // Tipo de trabajador (campo 11): 1 = Activo, 2 = Pensionado cotizante
     private const TIPO_TRABAJADOR = '1';
 
-    // Código de mutualidad por defecto (ACHS = 01, ISL = 02, MUTUAL DE SEGURIDAD = 03)
-    // Sin dato específico en el ERP: campo vacío (se declara sin institución)
-    private const MUTUALIDAD_CODIGO_DEFAULT = '';
+    // Fallback cuando la liquidación no tiene parámetro previsional vinculado.
+    // El valor correcto viene de ParametroPrevisional::mutual_codigo (01=ACHS, 02=ISL, 03=Mutual).
+    private const MUTUALIDAD_CODIGO_DEFAULT = '01';
 
     /**
      * Genera el contenido del archivo Previred de 105 campos para el período.
@@ -83,7 +83,7 @@ class PreviredService
             ->where('anio', $anio)
             ->where('mes', $mes)
             ->where('estado', 'EMITIDA')
-            ->with(['empleado', 'contrato'])
+            ->with(['empleado', 'contrato', 'parametro'])
             ->get();
 
         if ($liquidaciones->isEmpty()) {
@@ -151,8 +151,10 @@ class PreviredService
         $apPaterno     = strtoupper($empleado->apellido_paterno ?? '');
         $apMaterno     = strtoupper($empleado->apellido_materno ?? '');
         $nombres       = strtoupper($empleado->nombres ?? '');
-        $sexo          = ''; // campo 6: M/F — no poblado en el ERP aún
-        $nacionalidad  = ''; // campo 7: código país ISO — no poblado en el ERP aún
+        // campo 6: M/F; 'O' (otro) queda vacío porque Previred no tiene ese código
+        $sexo         = in_array($empleado->sexo, ['M', 'F'], true) ? $empleado->sexo : '';
+        // campo 7: código ISO 3166-1 alpha-3 (ej. CHL, ARG, PER); default CHL
+        $nacionalidad = strtoupper($empleado->nacionalidad ?? 'CHL');
         $tipoPago      = '3'; // campo 8: 3=transferencia (default razonable; sin dato específico)
 
         // Período desde/hasta (campos 9 y 10): AAAAMM del período de trabajo
@@ -209,6 +211,9 @@ class PreviredService
         // saludCot ya representa el 7% de la remuneración imponible calculado en LiquidacionService.
         // El adicional se informa aparte.
 
+        // Código mutualidad del parámetro previsional de la liquidación (01=ACHS, 02=ISL, 03=Mutual)
+        $mutualCodigo = $liq->parametro?->mutual_codigo ?? self::MUTUALIDAD_CODIGO_DEFAULT;
+
         // Datos empleador (RUT separado)
         [$rutEmp, $dvEmp] = $empresa ? $this->separarRut($empresa->rut) : ['', ''];
 
@@ -223,8 +228,8 @@ class PreviredService
             /* 03 */ $apPaterno,                  // Apellido paterno (mayúsculas)
             /* 04 */ $apMaterno,                  // Apellido materno (mayúsculas)
             /* 05 */ $nombres,                    // Nombres (mayúsculas)
-            /* 06 */ $sexo,                       // Sexo: M/F — sin dato ERP
-            /* 07 */ $nacionalidad,               // Nacionalidad código país — sin dato ERP
+            /* 06 */ $sexo,                       // Sexo: M/F (vacío si no aplica)
+            /* 07 */ $nacionalidad,               // Nacionalidad código ISO alpha-3
             /* 08 */ $tipoPago,                   // Tipo de pago: 3=transferencia
             /* 09 */ $periodoDesde,               // Período desde (AAAAMM)
             /* 10 */ $periodoHasta,               // Período hasta (AAAAMM)
@@ -288,7 +293,7 @@ class PreviredService
             /* 58 */ '0',                         // Cotización CCAF — sin dato ERP
 
             // === BLOQUE 7: Mutualidad / Seguro Accidentes del Trabajo (campos 59-69) ===
-            /* 59 */ self::MUTUALIDAD_CODIGO_DEFAULT, // Código mutualidad — sin dato ERP
+            /* 59 */ $mutualCodigo,               // Código mutualidad (01=ACHS, 02=ISL, 03=Mutual)
             /* 60 */ $this->pesos($mutualMonto),  // Cotización mutualidad básica (0,9%)
             /* 61 */ '0',                         // Cotización mutualidad adicional — sin dato ERP
             /* 62 */ '0',                         // Cotización diferenciada mutualidad — sin dato ERP

@@ -26,6 +26,7 @@ class ParametroPrevisional extends Model
         'gratificacion_tope_mensual_factor',
         'cotizacion_adicional_empleador_pct',
         'mutual_cotizacion_basica_pct',
+        'mutual_codigo',
         'asignacion_familiar_tramos_json',
         'fuente',
     ];

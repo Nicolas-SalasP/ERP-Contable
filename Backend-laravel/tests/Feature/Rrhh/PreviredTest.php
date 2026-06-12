@@ -579,4 +579,128 @@ class PreviredTest extends TestCase
         $this->assertStringContainsString('.txt', $disposition,
             'El archivo descargado debe tener extensión .txt');
     }
+
+    /** @test L-1: sexo M/F del empleado se vuelca al campo 6 del archivo. */
+    public function test_campo_sexo_refleja_valor_del_empleado(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+
+        $empleado = Empleado::create([
+            'empresa_id'       => $empresa->id,
+            'rut'              => '11.111.111-1',
+            'nombres'          => 'Maria',
+            'apellido_paterno' => 'Lopez',
+            'apellido_materno' => 'Soto',
+            'afp'              => 'Habitat',
+            'tipo_salud'       => 'FONASA',
+            'sexo'             => 'F',
+            'nacionalidad'     => 'CHL',
+        ]);
+        Contrato::create([
+            'empresa_id'        => $empresa->id,
+            'empleado_id'       => $empleado->id,
+            'tipo'              => 'INDEFINIDO',
+            'fecha_inicio'      => '2024-01-01',
+            'sueldo_base'       => 800000,
+            'horas_semana'      => 42,
+            'estado'            => 'VIGENTE',
+            'es_contrato_activo' => true,
+        ]);
+        $this->calcularYEmitir($empresa->id, $empleado->id);
+
+        $campos = $this->parsearPrimeraFila($empresa);
+
+        $this->assertEquals('F', $campos[self::COL_SEXO], 'Campo 6 debe ser F');
+    }
+
+    /** @test L-1: sexo 'O' (otro) queda vacío porque Previred no tiene ese código. */
+    public function test_sexo_otro_queda_vacio_en_previred(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+
+        $empleado = Empleado::create([
+            'empresa_id'       => $empresa->id,
+            'rut'              => '22.222.222-2',
+            'nombres'          => 'Alex',
+            'apellido_paterno' => 'Reyes',
+            'apellido_materno' => 'Mora',
+            'afp'              => 'Habitat',
+            'tipo_salud'       => 'FONASA',
+            'sexo'             => 'O',
+            'nacionalidad'     => 'CHL',
+        ]);
+        Contrato::create([
+            'empresa_id'        => $empresa->id,
+            'empleado_id'       => $empleado->id,
+            'tipo'              => 'INDEFINIDO',
+            'fecha_inicio'      => '2024-01-01',
+            'sueldo_base'       => 800000,
+            'horas_semana'      => 42,
+            'estado'            => 'VIGENTE',
+            'es_contrato_activo' => true,
+        ]);
+        $this->calcularYEmitir($empresa->id, $empleado->id);
+
+        $campos = $this->parsearPrimeraFila($empresa);
+
+        $this->assertEquals('', $campos[self::COL_SEXO], 'Campo 6 debe quedar vacío para sexo O');
+    }
+
+    /** @test L-1: nacionalidad ISO alpha-3 del empleado se vuelca al campo 7. */
+    public function test_campo_nacionalidad_refleja_valor_del_empleado(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+
+        $empleado = Empleado::create([
+            'empresa_id'       => $empresa->id,
+            'rut'              => '33.333.333-3',
+            'nombres'          => 'Pedro',
+            'apellido_paterno' => 'Gomez',
+            'apellido_materno' => 'Diaz',
+            'afp'              => 'Habitat',
+            'tipo_salud'       => 'FONASA',
+            'sexo'             => 'M',
+            'nacionalidad'     => 'ARG',
+        ]);
+        Contrato::create([
+            'empresa_id'        => $empresa->id,
+            'empleado_id'       => $empleado->id,
+            'tipo'              => 'INDEFINIDO',
+            'fecha_inicio'      => '2024-01-01',
+            'sueldo_base'       => 800000,
+            'horas_semana'      => 42,
+            'estado'            => 'VIGENTE',
+            'es_contrato_activo' => true,
+        ]);
+        $this->calcularYEmitir($empresa->id, $empleado->id);
+
+        $campos = $this->parsearPrimeraFila($empresa);
+
+        $this->assertEquals('ARG', $campos[self::COL_NACIONALIDAD], 'Campo 7 debe ser ARG');
+    }
+
+    /** @test L-1: código de mutualidad se lee desde el parámetro previsional (campo 59). */
+    public function test_campo_mutualidad_usa_codigo_del_parametro_previsional(): void
+    {
+        // El setUp de esta clase ya crea un ParametroPrevisional vigente sin mutual_codigo
+        // (valor por defecto '01'). Creamos uno explícito con ISL = '02'.
+        ParametroPrevisional::query()->update(['mutual_codigo' => '02']);
+
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $emp       = $this->crearEmpleadoConContrato($empresa->id);
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $campos = $this->parsearPrimeraFila($empresa);
+
+        // Campo 59 es índice 58 (base 0)
+        $this->assertEquals('02', $campos[58], 'Campo 59 debe ser 02 (ISL)');
+    }
+
+    private function parsearPrimeraFila(object $empresa): array
+    {
+        $service = app(\App\Domains\Rrhh\Services\Previred\PreviredService::class);
+        $archivo = $service->generarArchivo($empresa->id, 2026, 6);
+        $lineas  = explode("\r\n", trim($archivo));
+        return explode(';', $lineas[0]);
+    }
 }

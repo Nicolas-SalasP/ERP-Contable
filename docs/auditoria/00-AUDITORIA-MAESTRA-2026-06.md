@@ -137,7 +137,7 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 - **Ley 21.719:** datos sensibles cifrados + acceso por permiso.
 
 ### 🟡 MEDIO
-- **L-1 Previred — campos no poblados:** sexo, nacionalidad, FUN ISAPRE, APV, mutualidad se emiten vacíos/`0` (documentado en `FORMATO-PREVIRED.md`). No es ilegal pero puede ser rechazado por Previred según la institución. **Antes de producción real:** poblar `sexo`/`nacionalidad` en `empleados` y código de mutualidad por empresa.
+- ✅ **L-1 Previred — campos poblados:** campo 6 (sexo) usa `empleados.sexo` (M/F; 'O' queda vacío porque Previred no lo admite); campo 7 (nacionalidad) usa `empleados.nacionalidad` (ISO alpha-3, ej. CHL); campo 59 (código mutualidad) lee `parametros_previsionales.mutual_codigo` via la relación `parametro` de la liquidación — migración añade la columna con default '01' (ACHS). 4 tests nuevos cubren sexo F, sexo O→vacío, nacionalidad ARG y código mutualidad ISL.
 
 ### 🔵 BAJO
 - **L-2** Verificar valores legales 2026 contra fuente oficial antes de producción (ya advertido en seeders/docs).
@@ -167,7 +167,7 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 10. ✅ **R-8** ErrorBoundary por módulo: `LayoutPrincipal` ya envuelve `<main>` con `<ErrorBoundary key={location.pathname}>` — un crash en una vista no derriba el layout (sidebar/header intactos). Mejorado: botón `Reintentar` (reset de estado, sin recarga completa) + mensaje de error en DEV + "Recargar página" como opción secundaria. 4 tests nuevos.
 11. ✅ **R-10** Cleanup de cancelación (montadoRef) en `useSiiCafs` y `useSiiConfiguracion`.
 12. ✅ **S-5** Revisión 1×1 de las 126 rutas sin `permiso:` — sin vulnerabilidad: autorización de inventario verificada en capa de servicio + guardian `InventarioAutorizacionCoberturaTest` (red de seguridad anti-regresión).
-13. **L-1** Poblar campos Previred (sexo, nacionalidad, mutualidad) antes de envío real. **[M]**
+13. ✅ **L-1** Campos Previred poblados: sexo (campo 6), nacionalidad (campo 7), código mutualidad (campo 59) — migración + 4 tests.
 
 ### 🏅 P3 — Estratégico (planificar)
 14. **S-2** Migrar token a cookie `HttpOnly`/`Secure`/`SameSite` (cambio transversal backend+frontend). **[L]**
