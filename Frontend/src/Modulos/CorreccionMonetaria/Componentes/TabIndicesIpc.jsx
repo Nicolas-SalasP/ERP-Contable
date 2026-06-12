@@ -79,14 +79,15 @@ const TabIndicesIpc = ({ anioInicial }) => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
-                    <button onClick={() => setAnio(a => a - 1)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 font-bold">
+                    <button onClick={() => setAnio(a => a - 1)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 font-bold" aria-label="Año anterior">
                         <i className="fas fa-chevron-left text-xs"></i>
                     </button>
                     <span className="font-black text-slate-800 w-12 text-center">{anio}</span>
                     <button
                         onClick={() => setAnio(a => a + 1)}
                         disabled={anio >= anioActual + 1}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 font-bold disabled:opacity-40"
+                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 font-bold disabled:opacity-40"
+                        aria-label="Año siguiente"
                     >
                         <i className="fas fa-chevron-right text-xs"></i>
                     </button>

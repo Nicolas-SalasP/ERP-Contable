@@ -240,7 +240,7 @@ const VisorProveedor = () => {
                             <p className="text-xs text-slate-400 uppercase">Solicitud de Pago a Cuenta</p>
                         </div>
                     </div>
-                    <button onClick={() => setModalAnticipoAbierto(false)} className="text-slate-400 hover:text-white transition-colors">
+                    <button onClick={() => setModalAnticipoAbierto(false)} className="text-slate-400 hover:text-white transition-colors p-2" aria-label="Cerrar">
                         <i className="fas fa-times text-lg"></i>
                     </button>
                 </div>
@@ -395,7 +395,7 @@ const VisorProveedor = () => {
                             </p>
                         </div>
                     </div>
-                    <button onClick={() => setModalCruceAbierto(false)} className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 w-8 h-8 rounded flex items-center justify-center transition-colors relative z-10 border border-slate-700">
+                    <button onClick={() => setModalCruceAbierto(false)} className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 w-9 h-9 rounded flex items-center justify-center transition-colors relative z-10 border border-slate-700" aria-label="Cerrar">
                         <i className="fas fa-times"></i>
                     </button>
                 </div>

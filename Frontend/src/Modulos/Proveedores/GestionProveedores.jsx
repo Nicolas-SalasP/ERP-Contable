@@ -156,7 +156,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                                                 <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded uppercase border border-slate-200">{acc.tipo_cuenta}</span>
                                             </td>
                                             <td className="px-5 py-3 text-right">
-                                                <button onClick={() => handleDelete(acc.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Eliminar">
+                                                <button onClick={() => handleDelete(acc.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Eliminar" aria-label="Eliminar cuenta bancaria">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                 </button>
                                             </td>
@@ -496,7 +496,7 @@ const GestionProveedores = () => {
                                 <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                                 {editingId ? 'Gestionar Proveedor' : 'Alta de Nuevo Proveedor'}
                             </h2>
-                            <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors text-3xl leading-none">&times;</button>
+                            <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors text-3xl leading-none" aria-label="Cerrar">&times;</button>
                         </div>
 
                         <div className="flex overflow-x-auto border-b bg-slate-50 hide-scrollbar shrink-0">

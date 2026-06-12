@@ -186,7 +186,10 @@ const ModalMapeoSII = ({ onClose }) => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {mapeadas.length === 0 ? (
-                                        <tr><td colSpan="4" className="text-center p-6 text-slate-400">No hay cuentas vinculadas.</td></tr>
+                                        <tr><td colSpan="4" className="text-center p-8 text-slate-400">
+                                            <i className="fas fa-link-slash text-2xl text-slate-300 mb-2 block"></i>
+                                            No hay cuentas vinculadas.
+                                        </td></tr>
                                     ) : (
                                         mapeadas.map(m => (
                                             <tr key={m.id} className="hover:bg-slate-50 transition-colors">

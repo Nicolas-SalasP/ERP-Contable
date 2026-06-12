@@ -53,7 +53,7 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 - **S-5 ✅ Auditoría de rutas sin `permiso:` — RESUELTO (sin vulnerabilidad):** se revisaron las ~126 rutas autenticadas sin `permiso:`. Resultado: **todas correctas**. Se agrupan en (a) auth/onboarding (`login`, `me`, `verificar-rut`, `onboarding` — públicas o self-service), (b) lecturas de catálogo/perfil no sensibles (`/paises`, `/empresas/perfil`, `/centros-costo`, `/catalogo-bancos`), (c) **todo el bloque `/inventario/*`** (~120 rutas), que por diseño autoriza en la **capa de servicio** vía `InventarioPermisoService::exigir/exigirAlguno` como primera línea de cada acción (permite permisos por tipo de operación que un middleware grueso no expresaría). Verificado servicio-por-servicio: 19/19 servicios route-facing autorizan; los 2 sin inyección (`Movimiento`, `Valorizacion`) autorizan en su controller. Las rutas de escritura sin `permiso:` son inventario (autorizado en servicio) o `internal/web/*` (canal HMAC máquina-a-máquina). **Defensa en profundidad añadida:** guardian `InventarioAutorizacionCoberturaTest` que recorre todas las rutas GET de inventario y exige 403 para usuario sin permiso (+ control positivo anti-vacuo), de modo que un endpoint futuro sin candado falla en CI. _Observación menor (no bloqueante):_ en writes el controller valida antes de que el servicio autorice → usuario sin permiso recibe 422 en vez de 403 (cosmético; el servicio bloquea la escritura antes de actuar).
 
 ### 🔵 BAJO
-- **S-6** El fallback `X-WEB-API-KEY` del canal interno debería retirarse en favor de HMAC puro (deuda ya identificada en auditoría previa).
+- ✅ **S-6** Fallback `X-WEB-API-KEY` deshabilitado por defecto: el canal interno autentica solo con firma HMAC. La llave estática legacy solo se acepta si se activa el flag `WEB_INTEGRATION_ALLOW_LEGACY_KEY` (válvula temporal para migración coordinada con la web).
 - **S-7** Revisar llamadas `Http::` a SII/Previred/web Tenri para validar timeouts y allow-list de hosts (anti-SSRF).
 
 ---
@@ -115,12 +115,12 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
   Envolver en `<div className="overflow-x-auto">`.
 
 ### 🟡 MEDIO
-- **U-2** Accesibilidad: revisar botones solo-ícono sin `aria-label` y trap de foco en modales propios (los `PanelModal`/Swal están OK; revisar modales antiguos).
+- ✅ **U-2** Accesibilidad: `aria-label` añadido a botones solo-ícono de cierre de modal y acciones de tabla (proveedores, clientes, usuarios, visor proveedor, conciliación, corrección monetaria). Pasada inicial sobre los casos de mayor impacto; quedan modales antiguos menores por revisar.
 - **U-3** Estados de error de carga inicial no visibles (se cruza con R-1/R-3): impacto directo de usabilidad.
 
 ### 🔵 BAJO
-- **U-4** Targets táctiles pequeños en algunas acciones solo-ícono en tablas densas.
-- **U-5** Consistencia de empty-states entre módulos viejos (Inventario) y nuevos (RRHH).
+- ✅ **U-4** Targets táctiles: botones de acción solo-ícono subidos de 28–32px a 36–40px (`w-7/w-8/w-9 h-x` → `w-9/w-10`, `p-1.5`→`p-2`) en tablas densas y cierres de modal.
+- ✅ **U-5** Empty-states: existe componente reutilizable `EmptyState` (InventarioUI); se uniformaron los empty-states inline sin ícono (GestionUsuarios, ModalMapeoSII). Adopción amplia en otras vistas queda como mejora continua.
 
 ---
 
@@ -170,9 +170,9 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 13. ✅ **L-1** Campos Previred poblados: sexo (campo 6), nacionalidad (campo 7), código mutualidad (campo 59) — migración + 4 tests.
 
 ### 🏅 P3 — Estratégico (planificar)
-14. **S-2** Migrar token a cookie `HttpOnly`/`Secure`/`SameSite` (cambio transversal backend+frontend). **[L]**
-15. **S-6** Retirar fallback `X-WEB-API-KEY` (HMAC puro). **[M]**
-16. **U-2 / U-4 / U-5** Pasada de accesibilidad y consistencia de empty-states. **[L]**
+14. 🔜 **S-2** Migrar token a cookie `HttpOnly`/`Secure`/`SameSite` — **diferido con plan de diseño** en `S-2-PLAN-TOKEN-COOKIE-HTTPONLY.md` (dual-mode con feature flag y rollback; coordina flujo SSO con la web externa). **[L]**
+15. ✅ **S-6** Fallback `X-WEB-API-KEY` deshabilitado por defecto; canal interno solo HMAC (flag `WEB_INTEGRATION_ALLOW_LEGACY_KEY` para migración coordinada).
+16. ✅ **U-2 / U-4 / U-5** Pasada de accesibilidad: aria-labels, targets táctiles y empty-states (casos de mayor impacto).
 
 ---
 
