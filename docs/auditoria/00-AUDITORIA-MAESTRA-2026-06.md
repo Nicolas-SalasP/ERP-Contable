@@ -147,23 +147,25 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 ## 7. Plan de Acción Priorizado
 
 > Esfuerzo: S=pequeño (<2h), M=medio (medio día), L=grande (1+ día).
+> **Estado de implementación (2026-06-12):** P0 y P1 ✅ resueltos. Ver detalle abajo.
 
-### 🥇 P0 — Endurecimiento de seguridad (esta semana)
-1. **S-1** Middleware `SecurityHeaders` (CSP, HSTS, X-Frame-Options, X-Content-Type, Referrer-Policy). **[M]** — alto impacto, bajo riesgo.
-2. **U-1** Envolver las 2 tablas sin `overflow-x-auto`. **[S]**
-3. **R-1** `setError` + UI de error en `GestionProveedores` y `BankAccountsTab`. **[S]**
-4. **R-11** Optional chaining en `DashboardRenta.jsx:475` (evita crash). **[S]**
+### 🥇 P0 — Endurecimiento de seguridad (esta semana) — ✅ COMPLETADO
+1. ✅ **S-1** Middleware `SecurityHeaders` (CSP, HSTS, X-Frame-Options, X-Content-Type, Referrer-Policy, Permissions-Policy). Registrado global en `bootstrap/app.php`.
+2. ✅ **U-1** Tablas `WorkbenchReclasificacion` e `HistorialFacturas` envueltas en `overflow-x-auto`.
+3. ✅ **R-1** `loadError`/`errorCarga` + banner con botón Reintentar en `GestionProveedores` y `BankAccountsTab`.
+4. ✅ **R-11** Optional chaining `datosRenta?.creditos?.ppm_acumulado` en `DashboardRenta`.
 
-### 🥈 P1 — Robustez y consistencia (próximas 2 semanas)
-5. **R-2** Introducir excepciones de dominio tipadas (estilo `RrhhException`) en Inventario/Comercial/Tesorería para devolver 404/422 en vez de 500. **[L]** — se puede hacer por dominio.
-6. **R-5 / R-6** `AbortController` en `DashboardRenta` (año) y `FacturasSii` (paginación). **[M]**
-7. **R-3 / R-4** Mostrar error de carga inicial fuera del formulario; verificar todos los `allSettled`. **[M]**
-8. **S-3 / S-4** Acotar CORS a métodos/headers reales + `TrustProxies`/`forceScheme(https)`. **[S]**
+### 🥈 P1 — Robustez y consistencia (próximas 2 semanas) — ✅ COMPLETADO
+5. ✅ **R-2** Excepciones de dominio tipadas `InventarioException`/`ComercialException`/`TesoreriaException` (127 `throw new Exception` → 0). 30 controladores re-lanzan antes del catch genérico → 404/422 en vez de 500.
+   - 🔜 Pendiente menor: extender el patrón a `Activos`, `CorreccionMonetaria` y `Sii` si aún tienen `throw new Exception` genéricos.
+6. ✅ **R-5 / R-6** `AbortController` + cleanup en `DashboardRenta` (cambio de año) y `FacturasSii` (paginación).
+7. ✅ **R-3 / R-4** `ErrorNotice` movido fuera del panel colapsado en `ProductosInventario`/`MovimientosInventario`; `allSettled` verifica los 4 catálogos y avisa si fallan.
+8. ✅ **S-3 / S-4** CORS acotado a métodos/headers reales + `trustProxies(at: '*')` para HTTPS correcto detrás de proxy.
 
 ### 🥉 P2 — Mejora continua (backlog)
-9. **R-7** Integrar telemetría de errores de producción (Sentry) en `ErrorBoundary` + `componentDidCatch`. **[M]**
+9. **R-7** Integrar telemetría de errores de producción (Sentry) en `ErrorBoundary` + `componentDidCatch`. **[M]** _(nota: Sentry ya está cableado en `bootstrap/app.php` para el backend; falta el lado frontend)_
 10. **R-8** ErrorBoundary por módulo (que un crash no derribe el layout). **[M]**
-11. **R-10** Cleanup de cancelación en hooks SII. **[S]**
+11. ✅ **R-10** Cleanup de cancelación (montadoRef) en `useSiiCafs` y `useSiiConfiguracion`.
 12. **S-5** Revisión 1×1 de las 126 rutas sin `permiso:`. **[M]**
 13. **L-1** Poblar campos Previred (sexo, nacionalidad, mutualidad) antes de envío real. **[M]**
 
