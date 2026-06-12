@@ -167,12 +167,13 @@ const ProductosInventario = () => {
                 )}
             />
 
+            <ErrorNotice error={error} />
+
             {mostrarFormulario && (
                 <Panel
                     title="Crear producto"
                     subtitle="El stock inicial se mantiene en cero; los movimientos controlan entradas y salidas."
                 >
-                    <ErrorNotice error={error} />
 
                     <form onSubmit={guardarProducto} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                         <Field label="SKU">

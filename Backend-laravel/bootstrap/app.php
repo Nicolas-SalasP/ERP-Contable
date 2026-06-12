@@ -3,6 +3,7 @@
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureSubscriptionWritable;
 use App\Http\Middleware\EnsureUserHasPermission;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrackUltimoAcceso;
 use App\Http\Middleware\VerifyWebApiKey;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+        $middleware->append(SecurityHeaders::class);
         $middleware->alias([
             'web.api.key' => VerifyWebApiKey::class,
             'check.subscription' => CheckSubscription::class,

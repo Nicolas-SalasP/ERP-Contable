@@ -368,7 +368,7 @@ const HistorialFacturas = () => {
                                     })}
                                 </div>
 
-                                <div className="hidden md:block overflow-visible pb-10">
+                                <div className="hidden md:block overflow-x-auto pb-10">
                                     <table className="min-w-full divide-y divide-slate-100">
                                         <thead className="bg-slate-50 border-b border-slate-200">
                                             {vistaActual === 1 ? (

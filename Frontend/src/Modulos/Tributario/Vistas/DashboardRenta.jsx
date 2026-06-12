@@ -17,11 +17,11 @@ const DashboardRenta = () => {
     const [mostrarManual, setMostrarManual] = useState(false);
     const [mostrarMapeo, setMostrarMapeo] = useState(false);
 
-    const cargarPreRenta = async () => {
+    const cargarPreRenta = async (signal) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await api.get(`/renta/pre-calculo/${anio}`);
+            const res = await api.get(`/renta/pre-calculo/${anio}`, { signal });
             if (res.success) {
                 const data = res.data;
                 const vNetas = Number(data.ingresos.ventas_netas) || 0;
@@ -74,14 +74,18 @@ const DashboardRenta = () => {
                 setError('No se pudo cargar la información tributaria.');
             }
         } catch (err) {
-            setError(err.message || 'Error de conexión al obtener datos de Renta.');
+            if (err?.name !== 'AbortError' && err?.code !== 'ERR_CANCELED') {
+                setError(err.message || 'Error de conexión al obtener datos de Renta.');
+            }
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        cargarPreRenta();
+        const controller = new AbortController();
+        cargarPreRenta(controller.signal);
+        return () => controller.abort();
     }, [anio]);
 
     const regimen_tributario = datosRenta?.regimen_tributario || '14_A';
@@ -472,7 +476,7 @@ const DashboardRenta = () => {
                                     </li>
                                     <li className="flex items-center gap-3 text-xs font-bold text-indigo-900">
                                         <i className="fas fa-check-double text-indigo-500"></i>
-                                        Crédito PPM: Se descuenta el {datosRenta.creditos.ppm_acumulado > 0 ? '100%' : '0%'} de los pagos provisionales realizados.
+                                        Crédito PPM: Se descuenta el {datosRenta?.creditos?.ppm_acumulado > 0 ? '100%' : '0%'} de los pagos provisionales realizados.
                                     </li>
                                 </ul>
                             </div>

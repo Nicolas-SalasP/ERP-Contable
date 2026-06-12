@@ -90,7 +90,7 @@ const MovimientosInventario = () => {
             setLoading(true);
             setError(null);
 
-            const [movimientosResponse] = await Promise.allSettled([
+            const [movimientosResponse, productosRes, bodegasRes, lotesRes] = await Promise.allSettled([
                 inventarioApi.movimientos.listar(),
                 cargarProductosCache({ force }),
                 cargarBodegasCache({ force }),
@@ -99,6 +99,14 @@ const MovimientosInventario = () => {
 
             if (movimientosResponse.status === 'fulfilled') {
                 setMovimientos(movimientosResponse.value.data || []);
+            } else {
+                setError(movimientosResponse.reason?.response?.data || movimientosResponse.reason);
+            }
+
+            const catalogosFallidos = [productosRes, bodegasRes, lotesRes]
+                .filter((r) => r.status === 'rejected');
+            if (catalogosFallidos.length > 0 && movimientosResponse.status === 'fulfilled') {
+                setError('Algunos catálogos (productos/bodegas/lotes) no se cargaron. Los selectores pueden estar incompletos.');
             }
         } catch (err) {
             setError(err?.response?.data || err);
@@ -256,12 +264,13 @@ const MovimientosInventario = () => {
                 Los tipos de movimiento se envían en minúscula al backend: entrada, salida, traspaso, ajuste_positivo y ajuste_negativo.
             </AlertBox>
 
+            <ErrorNotice error={error} />
+
             {mostrarFormulario && (
                 <Panel
                     title="Registrar movimiento"
                     subtitle="La operación modifica stock real y genera trazabilidad en Kardex."
                 >
-                    <ErrorNotice error={error} />
 
                     <form onSubmit={guardarMovimiento} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                         <Field label="Tipo de movimiento">

@@ -98,7 +98,7 @@ const siiApi = {
          * Listado paginado de facturas con estado SII basico.
          * @param {{ por_pagina?: number, pagina?: number }} params
          */
-        listar: (params = {}) => api.get('/sii/facturas', { params }),
+        listar: (params = {}, options = {}) => api.get('/sii/facturas', { params, ...options }),
 
         /** Payload liviano para polling de estado. */
         obtenerEstado: (facturaId) => api.get(`/sii/facturas/${facturaId}/estado`),
