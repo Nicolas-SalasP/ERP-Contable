@@ -91,7 +91,7 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 - **R-4** `MovimientosInventario.jsx:93-105`: `Promise.allSettled` pero solo verifica `movimientosResponse`; fallos de productos/bodegas/lotes son silenciosos → dropdowns vacíos sin aviso.
 - **R-5** **Race condition por año** en `DashboardRenta.jsx:25-85` (`[anio]` sin `AbortController`): navegar rápido entre años puede mostrar datos del año equivocado (grave en cálculo tributario).
 - **R-6** **Race condition en paginación** `FacturasSii.jsx:29-50`: clics rápidos en Siguiente/Anterior → respuestas fuera de orden.
-- **R-7** `componentDidCatch` solo loguea en DEV (`ErrorBoundary.jsx:16`): crashes de producción se pierden sin telemetría.
+- ✅ **R-7** ~~`componentDidCatch` solo loguea en DEV~~ — resuelto: `captureException` de `src/Configuracion/sentry.js` reporta crashes de producción a Sentry cuando `VITE_SENTRY_DSN` está configurada.
 - ✅ **R-8** ~~Un único ErrorBoundary raíz sin boundaries por módulo~~ — resuelto: `LayoutPrincipal` tiene boundary por módulo con reset automático.
 
 ### 🔵 BAJO
@@ -163,7 +163,7 @@ robustez/UX** (estados de error visibles, race conditions menores, 2 tablas sin 
 8. ✅ **S-3 / S-4** CORS acotado a métodos/headers reales + `trustProxies(at: '*')` para HTTPS correcto detrás de proxy.
 
 ### 🥉 P2 — Mejora continua (backlog)
-9. **R-7** Integrar telemetría de errores de producción (Sentry) en `ErrorBoundary` + `componentDidCatch`. **[M]** _(nota: Sentry ya está cableado en `bootstrap/app.php` para el backend; falta el lado frontend)_
+9. ✅ **R-7** Telemetría de errores en `ErrorBoundary.componentDidCatch`: instalado `@sentry/react@10`; `src/Configuracion/sentry.js` inicializa Sentry si `VITE_SENTRY_DSN` está configurada (no-op en dev/sin DSN); `captureException` llamado con `componentStack`. Frontend documenta la var en `.env.example`. Test verifica la llamada a `captureException` con `vi.hoisted`.
 10. ✅ **R-8** ErrorBoundary por módulo: `LayoutPrincipal` ya envuelve `<main>` con `<ErrorBoundary key={location.pathname}>` — un crash en una vista no derriba el layout (sidebar/header intactos). Mejorado: botón `Reintentar` (reset de estado, sin recarga completa) + mensaje de error en DEV + "Recargar página" como opción secundaria. 4 tests nuevos.
 11. ✅ **R-10** Cleanup de cancelación (montadoRef) en `useSiiCafs` y `useSiiConfiguracion`.
 12. **S-5** Revisión 1×1 de las 126 rutas sin `permiso:`. **[M]**

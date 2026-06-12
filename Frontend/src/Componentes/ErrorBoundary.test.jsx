@@ -1,13 +1,23 @@
 import React from 'react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+
+const sentryMock = vi.hoisted(() => ({
+    captureException: vi.fn(),
+    captureMessage: vi.fn(),
+}));
+vi.mock('../Configuracion/sentry', () => sentryMock);
+
 import ErrorBoundary from './ErrorBoundary';
 
 const Bomba = () => {
     throw new Error('boom');
 };
 
-afterEach(cleanup);
+afterEach(() => {
+    cleanup();
+    sentryMock.captureException.mockClear();
+});
 
 describe('ErrorBoundary', () => {
     it('renderiza los hijos cuando no hay error', () => {
@@ -35,6 +45,19 @@ describe('ErrorBoundary', () => {
         render(<ErrorBoundary mensaje="Error específico del módulo"><Bomba /></ErrorBoundary>);
 
         expect(screen.getByText('Error específico del módulo')).toBeDefined();
+
+        spy.mockRestore();
+    });
+
+    it('reporta el error a captureException cuando un hijo lanza', () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        render(<ErrorBoundary><Bomba /></ErrorBoundary>);
+
+        expect(sentryMock.captureException).toHaveBeenCalledWith(
+            expect.any(Error),
+            expect.objectContaining({ extra: expect.objectContaining({ componentStack: expect.anything() }) }),
+        );
 
         spy.mockRestore();
     });

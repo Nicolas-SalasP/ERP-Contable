@@ -1,4 +1,5 @@
 import React from 'react';
+import { captureException } from '../Configuracion/sentry';
 
 // Error boundaries deben ser componentes de clase (React no expone hook equivalente).
 class ErrorBoundary extends React.Component {
@@ -15,6 +16,7 @@ class ErrorBoundary extends React.Component {
         if (import.meta.env?.DEV) {
             console.error('ErrorBoundary capturó un error:', error, info);
         }
+        captureException(error, { extra: { componentStack: info?.componentStack } });
     }
 
     handleReintentar = () => {
