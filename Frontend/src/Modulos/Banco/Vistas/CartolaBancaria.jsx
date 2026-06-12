@@ -387,7 +387,7 @@ const CartolaBancaria = () => {
                                     ))}
                                     {movimientos.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-10 text-center text-slate-400 italic">No hay movimientos en esta cuenta.</td>
+                                            <td colSpan="5" className="px-6 py-10 text-center text-slate-400"><i className="fas fa-exchange-alt text-slate-300 text-2xl mb-2 block"></i>No hay movimientos en esta cuenta.</td>
                                         </tr>
                                     )}
                                 </tbody>

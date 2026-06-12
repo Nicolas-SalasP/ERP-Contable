@@ -115,7 +115,7 @@ const ModalMapeoSII = ({ onClose }) => {
                         </h3>
                         <p className="text-indigo-200 text-sm mt-1">Asigna tus cuentas contables a los conceptos tributarios del Formulario 22.</p>
                     </div>
-                    <button onClick={onClose} className="text-indigo-200 hover:text-white transition-colors text-2xl">
+                    <button onClick={onClose} className="text-indigo-200 hover:text-white transition-colors text-2xl" aria-label="Cerrar">
                         <i className="fas fa-times"></i>
                     </button>
                 </div>

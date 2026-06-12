@@ -165,7 +165,7 @@ const ParametrosRrhh = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {indicadores.length === 0 && (
-                                        <tr><td colSpan={4} className="px-4 py-10 text-center text-slate-400">Sin indicadores cargados.</td></tr>
+                                        <tr><td colSpan={4} className="px-4 py-10 text-center text-slate-400"><i className="fas fa-chart-line text-slate-300 text-2xl mb-2 block"></i>Sin indicadores cargados.</td></tr>
                                     )}
                                     {indicadores.map((ind) => (
                                         <tr key={ind.id} className="hover:bg-slate-50">
@@ -203,7 +203,7 @@ const ParametrosRrhh = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {tabla.length === 0 && (
-                                        <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400">Sin tabla para {anioTabla}.</td></tr>
+                                        <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400"><i className="fas fa-table text-slate-300 text-2xl mb-2 block"></i>Sin tabla para {anioTabla}.</td></tr>
                                     )}
                                     {tabla.map((tr) => (
                                         <tr key={tr.id} className="hover:bg-slate-50">

@@ -425,7 +425,7 @@ const DashboardRenta = () => {
                                 <i className="fas fa-university text-indigo-200"></i>
                                 Ficha Técnica: Régimen {nombreRegimen}
                             </h3>
-                            <button onClick={() => setMostrarManual(false)} className="text-indigo-200 hover:text-white transition-colors text-2xl">
+                            <button onClick={() => setMostrarManual(false)} className="text-indigo-200 hover:text-white transition-colors text-2xl" aria-label="Cerrar">
                                 <i className="fas fa-times"></i>
                             </button>
                         </div>

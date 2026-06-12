@@ -394,8 +394,8 @@ const LibroMayor = () => {
                                 </tr>
                             </thead>
                             <tbody className="text-xs divide-y divide-slate-100">
-                                {loading ? <tr><td colSpan="7" className="p-8 text-center text-slate-400">Cargando...</td></tr> :
-                                    asientos.length === 0 ? <tr><td colSpan="7" className="p-8 text-center text-slate-400">No hay movimientos.</td></tr> : (
+                                {loading ? <tr><td colSpan="7" className="p-8 text-center text-slate-400"><i className="fas fa-spinner fa-spin text-slate-300 text-2xl mb-2 block"></i>Cargando...</td></tr> :
+                                    asientos.length === 0 ? <tr><td colSpan="7" className="p-8 text-center text-slate-400"><i className="fas fa-book-open text-slate-300 text-2xl mb-2 block"></i>No hay movimientos.</td></tr> : (
                                         asientos.map((row, idx) => {
                                             const esAnulado = row.estado === 'ANULADO' || row.estado === 'RECLASIFICADO';
                                             return (

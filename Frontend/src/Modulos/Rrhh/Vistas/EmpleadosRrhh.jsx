@@ -178,7 +178,7 @@ const EmpleadosRrhh = () => {
                                         <td className="px-4 py-3 text-right">
                                             {puedeEditar && (
                                                 <button onClick={() => abrirEditar(emp)}
-                                                    className="text-slate-400 hover:text-emerald-600 transition-colors px-2" title="Editar">
+                                                    className="text-slate-400 hover:text-emerald-600 transition-colors p-2 rounded-lg" aria-label="Editar empleado">
                                                     <i className="fas fa-pen" />
                                                 </button>
                                             )}

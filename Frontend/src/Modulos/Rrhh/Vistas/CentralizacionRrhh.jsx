@@ -187,7 +187,7 @@ const CentralizacionRrhh = () => {
                                             </div>
                                             {codigoActual && (
                                                 <button onClick={() => eliminarMapeo(tipo)}
-                                                    className="px-3 py-2 rounded-lg border border-slate-300 text-slate-500 hover:text-red-600 text-xs" title="Quitar cuenta">
+                                                    className="px-3 py-2 rounded-lg border border-slate-300 text-slate-500 hover:text-red-600 text-xs" aria-label="Quitar cuenta">
                                                     <i className="fas fa-trash" />
                                                 </button>
                                             )}
@@ -203,12 +203,12 @@ const CentralizacionRrhh = () => {
                                                 className="w-36 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none"
                                             />
                                             <button onClick={() => guardarMapeo(tipo, manual[tipo])} disabled={!(tipo in manual)}
-                                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-40" title="Guardar">
+                                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-40" aria-label="Guardar mapeo">
                                                 <i className="fas fa-check" />
                                             </button>
                                             {codigoActual && (
                                                 <button onClick={() => eliminarMapeo(tipo)}
-                                                    className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-500 hover:text-red-600 text-xs" title="Quitar">
+                                                    className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-500 hover:text-red-600 text-xs" aria-label="Quitar cuenta">
                                                     <i className="fas fa-trash" />
                                                 </button>
                                             )}

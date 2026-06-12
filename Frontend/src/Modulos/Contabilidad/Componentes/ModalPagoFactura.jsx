@@ -72,7 +72,7 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                             <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mt-0.5">Comprobante de Egreso</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-rose-400 transition-colors bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center">
+                    <button onClick={onClose} className="text-slate-400 hover:text-rose-400 transition-colors bg-slate-800 hover:bg-slate-700 w-9 h-9 rounded-full flex items-center justify-center" aria-label="Cerrar">
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
