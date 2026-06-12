@@ -24,11 +24,13 @@ vi.mock('../Servicios/rrhhApi', () => ({
 import PreviredRrhh from './PreviredRrhh';
 import rrhhApi from '../Servicios/rrhhApi';
 
+// El backend devuelve filas posicionales (array de arrays), sin encabezado:
+// cada línea del archivo Previred es explode(';', linea) -> 105 campos.
 const preview = {
     periodo: '06/2026',
     total_trabajadores: 1,
-    columnas: ['RUT', 'AFP_CODIGO', 'LIQUIDO_PAGAR'],
-    filas: [{ RUT: '11111111', AFP_CODIGO: '09', LIQUIDO_PAGAR: '800000' }],
+    total_campos: 105,
+    filas: [['11111111', '09', '800000']],
 };
 
 beforeEach(() => {
@@ -56,7 +58,7 @@ describe('PreviredRrhh', () => {
         fireEvent.click(screen.getByText('Previsualizar'));
 
         expect(await screen.findByText('11111111')).toBeDefined();
-        expect(screen.getByText('AFP_CODIGO')).toBeDefined();
+        expect(screen.getByText('800000')).toBeDefined();
         expect(screen.getByText(/1 trabajador\(es\)/)).toBeDefined();
         expect(rrhhApi.previred.previsualizar).toHaveBeenCalled();
     });

@@ -32,7 +32,7 @@ describe('rrhhApi', () => {
 
     it('contratos.listarPorEmpleado y terminar arman bien la ruta', () => {
         rrhhApi.contratos.listarPorEmpleado(3);
-        expect(api.get).toHaveBeenCalledWith('/rrhh/empleados/3/contratos');
+        expect(api.get).toHaveBeenCalledWith('/rrhh/empleados/3/contratos', {});
         rrhhApi.contratos.terminar(9, { causal_termino: 'RENUNCIA' });
         expect(api.post).toHaveBeenCalledWith('/rrhh/contratos/9/terminar', { causal_termino: 'RENUNCIA' });
     });
