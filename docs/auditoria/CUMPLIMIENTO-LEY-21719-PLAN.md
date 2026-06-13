@@ -129,3 +129,49 @@
 
 Fase 0 (docs) → **Fase 1 (crítico, ya)** → Fase 2 → Fase 3 → Fase 4 → Fase 5 → Fase 6 → Fase 7.
 Cada fase se aprueba y mergea antes de lanzar la siguiente. Los subagentes (Sonnet/Haiku) ejecutan una fase a la vez bajo revisión.
+
+---
+
+## Fase 2 — Operación de despliegue (Fase 2a: cifrado contacto Empleado)
+
+**Estado implementado:** `email`, `telefono`, `direccion` de `empleados` cifrados con
+`spatie/laravel-ciphersweet` v1.7 + `paragonie/ciphersweet` v4. Clave en `CIPHERSWEET_KEY`
+(64 hex chars / 32 bytes, backend NaCl, provider string).
+
+### Pasos obligatorios al desplegar en producción
+
+1. **Generar la clave de producción** (NUNCA reutilizar la de desarrollo/CI):
+   ```
+   php artisan ciphersweet:generate-key --show
+   ```
+   Guardar el resultado (64 hex chars) en el gestor de secretos (AWS Secrets Manager,
+   HashiCorp Vault, etc.). Definir la variable de entorno `CIPHERSWEET_KEY` en el servidor
+   antes de iniciar el proceso de migración.
+
+2. **Ejecutar la migración de esquema** (amplía email/telefono/direccion a `text`):
+   ```
+   php artisan migrate
+   ```
+
+3. **Backfill de filas existentes** (cifra las filas actualmente en texto plano):
+   El comando `ciphersweet:encrypt` de spatie re-guarda cada fila pasando por los
+   observers del modelo, lo que activa el cifrado CipherSweet. Requiere la nueva clave
+   como segundo argumento (idéntica al valor de `CIPHERSWEET_KEY` en producción):
+   ```
+   php artisan ciphersweet:encrypt "App\Domains\Rrhh\Models\Empleado" <NUEVA_CLAVE_HEX>
+   ```
+   El comando acepta un tercer argumento opcional `{sortDirection=asc}` y un cuarto
+   `{tablename?}`. En instalaciones con muchos empleados, considerar ejecutarlo en una
+   ventana de mantenimiento o en lotes usando una estrategia de migración sin downtime.
+
+4. **Verificar que el backfill fue completo:**
+   Tras el backfill no debe quedar ninguna fila con texto en claro. Verificar con:
+   ```sql
+   SELECT id, email FROM empleados WHERE email NOT LIKE 'nacl:%' LIMIT 10;
+   ```
+   (El ciphertext de CipherSweet con backend NaCl comienza con el prefijo `nacl:`.)
+
+5. **Advertencia de rotación de clave:** si en el futuro se rota la clave, el mismo
+   comando `ciphersweet:encrypt` actúa como re-encriptador: descifra con la clave
+   actual y cifra con la nueva. Perder la clave hace irrecuperables los campos cifrados.
+   La nueva clave debe quedar en `CIPHERSWEET_KEY` después de la rotación.

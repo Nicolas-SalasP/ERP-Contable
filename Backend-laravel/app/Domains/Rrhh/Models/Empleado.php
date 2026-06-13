@@ -9,10 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Crypt;
+use ParagonIE\CipherSweet\EncryptedRow;
+use Spatie\LaravelCipherSweet\Concerns\UsesCipherSweet;
+use Spatie\LaravelCipherSweet\Contracts\CipherSweetEncrypted;
 
-class Empleado extends Model
+class Empleado extends Model implements CipherSweetEncrypted
 {
-    use HasEmpresaScope, SoftDeletes;
+    use HasEmpresaScope, SoftDeletes, UsesCipherSweet;
 
     protected $table = 'empleados';
 
@@ -56,6 +59,16 @@ class Empleado extends Model
         'isapre_plan_uf' => 'decimal:4',
         'isapre_cotizacion_adicional_pct' => 'decimal:2',
     ];
+
+    // ---------- Cifrado de datos de contacto con CipherSweet (Ley 21.719 — Fase 2a) ----------
+
+    public static function configureCipherSweet(EncryptedRow $encryptedRow): void
+    {
+        $encryptedRow
+            ->addOptionalTextField('email')
+            ->addOptionalTextField('telefono')
+            ->addOptionalTextField('direccion');
+    }
 
     // ---------- Nombre completo ----------
 
