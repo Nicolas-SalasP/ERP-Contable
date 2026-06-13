@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Services\InventarioService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +47,8 @@ class ProductoController
                 'success' => true,
                 'data' => $this->service->obtenerProducto($request->user(), (int) $id),
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -80,6 +84,8 @@ class ProductoController
                 'data' => $this->service->crearProducto($request->user(), $datos),
                 'message' => 'Producto de inventario creado correctamente.',
             ], 201);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -114,6 +120,8 @@ class ProductoController
                 'data' => $this->service->actualizarProducto($request->user(), (int) $id, $datos),
                 'message' => 'Producto actualizado correctamente.',
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

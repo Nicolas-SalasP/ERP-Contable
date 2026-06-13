@@ -2,9 +2,10 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -127,7 +128,7 @@ class InventarioAuditoriaService
             ->find($id);
 
         if (!$evento) {
-            throw new Exception('El evento de auditoría no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('El evento de auditoría no existe o no pertenece a la empresa.');
         }
 
         return $evento;

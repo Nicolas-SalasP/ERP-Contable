@@ -1,7 +1,13 @@
 import React from 'react';
 
 export const usePermisos = () => {
-    const user = JSON.parse(localStorage.getItem('erp_user') || sessionStorage.getItem('erp_user') || '{}');
+    let user = {};
+    try {
+        const raw = localStorage.getItem('erp_user') || sessionStorage.getItem('erp_user');
+        if (raw) user = JSON.parse(raw);
+    } catch {
+        user = {};
+    }
     const permisosUsuario = user.permisos || [];
     const modulosUsuario = user.module_keys || [];
 

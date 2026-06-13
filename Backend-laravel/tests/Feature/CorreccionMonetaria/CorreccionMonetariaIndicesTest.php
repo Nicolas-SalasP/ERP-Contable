@@ -16,12 +16,15 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     protected $empresa;
     protected $usuario;
+    // Usuario con jerarquía >= 100 para escritura de índices IPC globales.
+    protected $usuarioSuperAdmin;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->prepararEntornoBase();
         [$this->empresa, $this->usuario] = $this->crearEmpresaConAdmin();
+        $this->usuarioSuperAdmin = $this->crearUsuario($this->empresa, $this->rolSuperAdmin);
 
         CmConfiguracionEmpresa::firstOrCreate(
             ['empresa_id' => $this->empresa->id],
@@ -41,7 +44,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_post_indices_guarda_ipc_correctamente()
     {
-        $res = $this->actingAs($this->usuario)
+        $res = $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', [
                 'anio'      => 2026,
                 'mes'       => 3,
@@ -58,7 +61,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_factor_multiplicador_se_calcula_correctamente()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', [
                 'anio'      => 2026,
                 'mes'       => 1,
@@ -71,7 +74,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_factor_multiplicador_variacion_negativa()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', [
                 'anio'      => 2026,
                 'mes'       => 6,
@@ -84,9 +87,9 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_acumulado_anual_se_recalcula_con_dos_meses()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => 0.5000]);
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 2, 'variacion' => 0.3000]);
 
         $febrero = CmIndiceIpc::where('anio', 2026)->where('mes', 2)->first();
@@ -96,9 +99,9 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_acumulado_es_multiplicativo_no_aditivo()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => 10.0]);
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 2, 'variacion' => 10.0]);
 
         $febrero = CmIndiceIpc::where('anio', 2026)->where('mes', 2)->first();
@@ -110,7 +113,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_get_indices_devuelve_12_meses()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 5, 'variacion' => 0.3]);
 
         $res = $this->actingAs($this->usuario)->getJson('/api/correccion-monetaria/indices/2026');
@@ -121,7 +124,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_get_indices_marca_mes_cargado_correctamente()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 4, 'variacion' => 0.42]);
 
         $res = $this->actingAs($this->usuario)->getJson('/api/correccion-monetaria/indices/2026');
@@ -146,9 +149,9 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_indices_es_idempotente_actualiza_en_lugar_de_duplicar()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => 0.5]);
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => 0.8]);
 
         $this->assertEquals(1, CmIndiceIpc::where('anio', 2026)->where('mes', 1)->count());
@@ -157,35 +160,35 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_indices_rechaza_mes_cero()
     {
-        $res = $this->actingAs($this->usuario)
+        $res = $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 0, 'variacion' => 0.5]);
         $res->assertUnprocessable();
     }
 
     public function test_indices_rechaza_mes_trece()
     {
-        $res = $this->actingAs($this->usuario)
+        $res = $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 13, 'variacion' => 0.5]);
         $res->assertUnprocessable();
     }
 
     public function test_indices_rechaza_variacion_mayor_a_50()
     {
-        $res = $this->actingAs($this->usuario)
+        $res = $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => 51]);
         $res->assertUnprocessable();
     }
 
     public function test_indices_rechaza_variacion_menor_a_menos_20()
     {
-        $res = $this->actingAs($this->usuario)
+        $res = $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => -21]);
         $res->assertUnprocessable();
     }
 
     public function test_indices_acepta_variacion_negativa_valida()
     {
-        $res = $this->actingAs($this->usuario)
+        $res = $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => -0.3]);
         $res->assertOk()->assertJson(['success' => true]);
     }
@@ -198,7 +201,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_indices_guarda_observacion()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', [
                 'anio'        => 2026,
                 'mes'         => 7,
@@ -214,7 +217,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_indices_registra_fuente_manual()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 2, 'variacion' => 0.3]);
 
         $indice = CmIndiceIpc::where('mes', 2)->first();
@@ -276,7 +279,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_estado_periodo_con_ipc_y_mes_correcto_puede_ejecutar()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 12, 'variacion' => 0.4]);
 
         $this->crearCuentasCMMinimas();
@@ -290,7 +293,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
 
     public function test_estado_periodo_modalidad_anual_bloquea_mes_distinto_al_cierre()
     {
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 6, 'variacion' => 0.4]);
 
         $res = $this->actingAs($this->usuario)
@@ -304,7 +307,7 @@ class CorreccionMonetariaIndicesTest extends TestCase
     {
         $this->actingAs($this->usuario)
             ->putJson('/api/correccion-monetaria/configuracion', ['modalidad' => 'mensual']);
-        $this->actingAs($this->usuario)
+        $this->actingAs($this->usuarioSuperAdmin)
             ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 6, 'variacion' => 0.4]);
 
         $this->crearCuentasCMMinimas();

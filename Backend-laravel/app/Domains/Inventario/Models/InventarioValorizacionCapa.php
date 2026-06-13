@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InventarioValorizacionCapa extends Model
 {
+    use HasEmpresaScope;
     public const ESTADO_ABIERTA = 'ABIERTA';
     public const ESTADO_CONSUMIDA = 'CONSUMIDA';
 

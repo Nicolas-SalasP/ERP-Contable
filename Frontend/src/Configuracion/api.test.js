@@ -370,11 +370,10 @@ describe('errores 4xx', () => {
         expect(err.response.data.message).toBe('Error legacy');
     });
 
-    it('401 limpia el token y redirige a /login', async () => {
-        // Mock de window.location
+    it('401 limpia el token y redirige a /login con returnUrl', async () => {
         const originalLocation = window.location;
         delete window.location;
-        window.location = { ...originalLocation, pathname: '/dashboard', href: '' };
+        window.location = { ...originalLocation, pathname: '/dashboard', search: '', href: '' };
 
         localStorage.setItem('erp_token', 'expirado');
         setupFetchSequence([
@@ -384,7 +383,8 @@ describe('errores 4xx', () => {
         await expect(api.get('/perfil')).rejects.toMatchObject({ status: 401 });
 
         expect(localStorage.getItem('erp_token')).toBeNull();
-        expect(window.location.href).toBe('/login');
+        expect(window.location.href).toContain('/login');
+        expect(window.location.href).toContain('redirect=');
 
         window.location = originalLocation;
     });
@@ -417,8 +417,8 @@ describe('errores 4xx', () => {
     });
 });
 
-describe('errores 5xx con retry', () => {
-    it('503 reintenta automaticamente y eventualmente exito', async () => {
+describe('errores 5xx con retry (solo GET/HEAD)', () => {
+    it('GET 503 reintenta automaticamente y eventualmente exito', async () => {
         const mock = setupFetchSequence([
             mockResponse(503, { message: 'Service unavailable' }),
             mockResponse(200, { success: true, data: 'OK' }),
@@ -428,7 +428,7 @@ describe('errores 5xx con retry', () => {
         expect(result.data).toBe('OK');
     });
 
-    it('503 que persiste rechaza despues de 3 intentos (1 + 2 retries)', async () => {
+    it('GET 503 que persiste rechaza despues de 3 intentos (1 + 2 retries)', async () => {
         const mock = setupFetchSequence([
             mockResponse(503, { message: 'down' }),
             mockResponse(503, { message: 'down' }),
@@ -438,7 +438,7 @@ describe('errores 5xx con retry', () => {
         expect(mock).toHaveBeenCalledTimes(3);
     });
 
-    it('500 NO reintenta (no es transitorio)', async () => {
+    it('GET 500 NO reintenta (no es transitorio)', async () => {
         const mock = setupFetchSequence([
             mockResponse(500, { message: 'Boom' }),
         ]);
@@ -446,17 +446,49 @@ describe('errores 5xx con retry', () => {
         expect(mock).toHaveBeenCalledTimes(1);
     });
 
-    it('400 NO reintenta', async () => {
+    it('GET 400 NO reintenta', async () => {
         const mock = setupFetchSequence([
             mockResponse(400, { message: 'Bad' }),
         ]);
         await expect(api.get('/x')).rejects.toMatchObject({ status: 400 });
         expect(mock).toHaveBeenCalledTimes(1);
     });
+
+    it('POST 503 NO reintenta (evita duplicar escrituras)', async () => {
+        const mock = setupFetchSequence([
+            mockResponse(503, { message: 'down' }),
+        ]);
+        await expect(api.post('/facturas', { numero: 'F-1' })).rejects.toMatchObject({ status: 503 });
+        expect(mock).toHaveBeenCalledTimes(1);
+    });
+
+    it('PUT 503 NO reintenta', async () => {
+        const mock = setupFetchSequence([
+            mockResponse(503, { message: 'down' }),
+        ]);
+        await expect(api.put('/facturas/1', { numero: 'F-1' })).rejects.toMatchObject({ status: 503 });
+        expect(mock).toHaveBeenCalledTimes(1);
+    });
+
+    it('DELETE 503 NO reintenta', async () => {
+        const mock = setupFetchSequence([
+            mockResponse(503, { message: 'down' }),
+        ]);
+        await expect(api.delete('/facturas/1')).rejects.toMatchObject({ status: 503 });
+        expect(mock).toHaveBeenCalledTimes(1);
+    });
+
+    it('POST error de red NO reintenta', async () => {
+        const mock = setupFetchSequence([
+            'NETWORK_ERROR',
+        ]);
+        await expect(api.post('/asientos', { monto: 100 })).rejects.toMatchObject({ status: 0 });
+        expect(mock).toHaveBeenCalledTimes(1);
+    });
 });
 
 describe('errores de red', () => {
-    it('error de red reintenta y eventualmente exito', async () => {
+    it('GET error de red reintenta y eventualmente exito', async () => {
         const mock = setupFetchSequence([
             'NETWORK_ERROR',
             mockResponse(200, { ok: true }),
@@ -466,7 +498,7 @@ describe('errores de red', () => {
         expect(result.ok).toBe(true);
     });
 
-    it('error de red persistente rechaza con status 0', async () => {
+    it('GET error de red persistente rechaza con status 0', async () => {
         setupFetchSequence([
             'NETWORK_ERROR',
             'NETWORK_ERROR',

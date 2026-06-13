@@ -4,6 +4,7 @@ namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Sii\Models\SiiDteEmitido;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -114,51 +115,61 @@ class ImpuestosService
             throw new Exception("Falta configuración: Se requieren cuentas de IVA Crédito (152540) y Débito (353360) en el plan de la empresa.");
         }
 
-        $simulacion = $this->simularF29($empresaId, $mes, $anio);
-
-        if ($simulacion['ya_cerrado']) {
-            throw new Exception("El F29 para este período ya ha sido centralizado.");
+        // Lock atómico: evita race check-then-act entre requests concurrentes.
+        $lockKey = "centralizacion-f29-{$empresaId}-{$anio}-{$mes}";
+        if (!Cache::add($lockKey, true, 30)) {
+            throw new Exception("La centralización del F29 para {$mes}/{$anio} ya está en curso. Espere unos segundos y vuelva a intentarlo.");
         }
 
-        if ($simulacion['ventas']['iva_debito'] == 0 && $simulacion['compras']['iva_credito'] == 0) {
-            throw new Exception("No hay movimientos de IVA para centralizar en este período.");
-        }
+        try {
+            $simulacion = $this->simularF29($empresaId, $mes, $anio);
 
-        $detalles = [];
+            if ($simulacion['ya_cerrado']) {
+                throw new Exception("El F29 para este período ya ha sido centralizado.");
+            }
 
-        if ($simulacion['ventas']['iva_debito'] > 0) {
-            $detalles[] = ['cuenta_contable' => '353360', 'debe' => $simulacion['ventas']['iva_debito'], 'haber' => 0, 'glosa_detalle' => 'Reversa IVA Débito'];
-        }
-        if ($simulacion['ppm']['monto'] > 0) {
-            $detalles[] = ['cuenta_contable' => '152541', 'debe' => $simulacion['ppm']['monto'], 'haber' => 0, 'glosa_detalle' => 'PPM por Recuperar'];
-        }
-        if ($simulacion['resumen']['remanente'] > 0) {
-            $detalles[] = ['cuenta_contable' => '152542', 'debe' => $simulacion['resumen']['remanente'], 'haber' => 0, 'glosa_detalle' => 'Remanente IVA F29'];
-        }
-        if ($simulacion['compras']['iva_credito'] > 0) {
-            $detalles[] = ['cuenta_contable' => '152540', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito'], 'glosa_detalle' => 'Reversa IVA Crédito'];
-        }
-        if ($simulacion['resumen']['total_a_pagar'] > 0) {
-            $detalles[] = ['cuenta_contable' => '353365', 'debe' => 0, 'haber' => $simulacion['resumen']['total_a_pagar'], 'glosa_detalle' => 'Impuesto a Pagar F29'];
-        }
+            if ($simulacion['ventas']['iva_debito'] == 0 && $simulacion['compras']['iva_credito'] == 0) {
+                throw new Exception("No hay movimientos de IVA para centralizar en este período.");
+            }
 
-        $fechaAsiento = date('Y-m-t', strtotime("$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-01"));
+            $detalles = [];
 
-        $asientoService = app(AsientoContableService::class);
+            if ($simulacion['ventas']['iva_debito'] > 0) {
+                $detalles[] = ['cuenta_contable' => '353360', 'debe' => $simulacion['ventas']['iva_debito'], 'haber' => 0, 'glosa_detalle' => 'Reversa IVA Débito'];
+            }
+            if ($simulacion['ppm']['monto'] > 0) {
+                $detalles[] = ['cuenta_contable' => '152541', 'debe' => $simulacion['ppm']['monto'], 'haber' => 0, 'glosa_detalle' => 'PPM por Recuperar'];
+            }
+            if ($simulacion['resumen']['remanente'] > 0) {
+                $detalles[] = ['cuenta_contable' => '152542', 'debe' => $simulacion['resumen']['remanente'], 'haber' => 0, 'glosa_detalle' => 'Remanente IVA F29'];
+            }
+            if ($simulacion['compras']['iva_credito'] > 0) {
+                $detalles[] = ['cuenta_contable' => '152540', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito'], 'glosa_detalle' => 'Reversa IVA Crédito'];
+            }
+            if ($simulacion['resumen']['total_a_pagar'] > 0) {
+                $detalles[] = ['cuenta_contable' => '353365', 'debe' => 0, 'haber' => $simulacion['resumen']['total_a_pagar'], 'glosa_detalle' => 'Impuesto a Pagar F29'];
+            }
 
-        $cabecera = [
-            'empresa_id' => $empresaId,
-            'usuario_id' => $usuarioId,
-            'fecha' => $fechaAsiento,
-            'glosa' => "Centralización F29 - " . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio",
-            'tipo_asiento' => 'traspaso',
-            'origen_modulo' => 'impuestos',
-            'estado' => 'MAYORIZADO'
-        ];
+            $fechaAsiento = date('Y-m-t', strtotime("$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-01"));
 
-        return DB::transaction(function () use ($asientoService, $cabecera, $detalles) {
-            return $asientoService->registrarAsiento($cabecera, $detalles);
-        });
+            $asientoService = app(AsientoContableService::class);
+
+            $cabecera = [
+                'empresa_id' => $empresaId,
+                'usuario_id' => $usuarioId,
+                'fecha' => $fechaAsiento,
+                'glosa' => "Centralización F29 - " . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio",
+                'tipo_asiento' => 'traspaso',
+                'origen_modulo' => 'impuestos',
+                'estado' => 'MAYORIZADO'
+            ];
+
+            return DB::transaction(function () use ($asientoService, $cabecera, $detalles) {
+                return $asientoService->registrarAsiento($cabecera, $detalles);
+            });
+        } finally {
+            Cache::forget($lockKey);
+        }
     }
 
     public function preCalculoRenta(int $empresaId, int $anio_comercial)

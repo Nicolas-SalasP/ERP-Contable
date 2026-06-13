@@ -2,6 +2,8 @@
 
 namespace App\Domains\Comercial\Services;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\CotizacionDetalle;
 use App\Domains\Comercial\Models\Cliente;
@@ -10,7 +12,6 @@ use App\Domains\Comercial\Models\Factura;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class CotizacionService
 {
@@ -26,10 +27,13 @@ class CotizacionService
     {
         return DB::transaction(function () use ($datos, $detalles) {
 
-            $cliente = Cliente::find($datos['cliente_id']);
+            // Defensa en profundidad: ademas del EmpresaScope, filtramos explicitamente
+            // por la empresa del documento para no depender solo del scope global.
+            $cliente = Cliente::where('empresa_id', $datos['empresa_id'])
+                ->find($datos['cliente_id']);
 
             if (!$cliente || $cliente->estado === 'INACTIVO') {
-                throw new Exception("No se puede emitir una cotización a un cliente inactivo.");
+                throw ComercialException::regla("No se puede emitir una cotización a un cliente inactivo.");
             }
 
             if (!empty($datos['numero_cotizacion'])) {
@@ -37,7 +41,7 @@ class CotizacionService
                     ->where('numero_cotizacion', $datos['numero_cotizacion'])
                     ->exists();
                 if ($existe) {
-                    throw new Exception("El número de cotización {$datos['numero_cotizacion']} ya existe.");
+                    throw ComercialException::regla("El número de cotización {$datos['numero_cotizacion']} ya existe.");
                 }
             }
 
@@ -109,7 +113,7 @@ class CotizacionService
             ->find($id);
 
         if (!$cotizacion) {
-            throw new Exception("La cotización solicitada no existe o no pertenece a su empresa.");
+            throw ComercialException::noEncontrado("La cotización solicitada no existe o no pertenece a su empresa.");
         }
 
         return $cotizacion;
@@ -120,14 +124,13 @@ class CotizacionService
         $cotizacion = Cotizacion::where('empresa_id', $empresaId)->find($id);
 
         if (!$cotizacion) {
-            $e = new Exception("La cotización solicitada no existe o no pertenece a su empresa.");
-            throw new Exception("La cotización solicitada no existe o no pertenece a su empresa.", 404);
+            throw ComercialException::noEncontrado("La cotización solicitada no existe o no pertenece a su empresa.");
         }
 
         $estado = EstadoCotizacion::where('nombre', $nombreEstado)->first();
 
         if (!$estado) {
-            throw new Exception("El estado '$nombreEstado' no es válido en el sistema.");
+            throw ComercialException::regla("El estado '$nombreEstado' no es válido en el sistema.");
         }
 
         $cotizacion->estado_id = $estado->id;
@@ -142,7 +145,7 @@ class CotizacionService
             $cotizacion = Cotizacion::where('empresa_id', $empresaId)->findOrFail($cotiId);
 
             if (in_array($cotizacion->estado_id, [3, 5])) {
-                throw new Exception("No se puede editar una cotización que ya ha sido aprobada o facturada.");
+                throw ComercialException::regla("No se puede editar una cotización que ya ha sido aprobada o facturada.");
             }
 
             if (isset($datos['fecha_validez'])) {
@@ -194,12 +197,12 @@ class CotizacionService
                 ->find($cotizacionId);
 
             if (!$cotizacion) {
-                throw new Exception("Cotizacion no encontrada.", 404);
+                throw ComercialException::noEncontrado("Cotizacion no encontrada.");
             }
 
             $estadoAprobada = EstadoCotizacion::where('nombre', 'Aprobada')->first();
             if (!$estadoAprobada || $cotizacion->estado_id !== $estadoAprobada->id) {
-                throw new Exception(
+                throw ComercialException::regla(
                     "Solo cotizaciones APROBADAS pueden ser facturadas. " .
                     "Estado actual: " . ($cotizacion->estado->nombre ?? '?')
                 );
@@ -207,7 +210,7 @@ class CotizacionService
 
             $cliente = $cotizacion->cliente;
             if (!$cliente) {
-                throw new Exception("Cotizacion no tiene cliente vinculado.");
+                throw ComercialException::regla("Cotizacion no tiene cliente vinculado.");
             }
 
             $proveedor = \App\Domains\Comercial\Models\Proveedor::where('empresa_id', $empresaId)
@@ -252,7 +255,7 @@ class CotizacionService
             $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
 
             if (!$cuentaCxC || !$cuentaVentas || !$cuentaIvaDebito) {
-                throw new Exception(
+                throw ComercialException::regla(
                     "Configuración Contable Incompleta: para facturar una venta se requieren las cuentas de Clientes (152005), Ventas (501105) e IVA Débito (353360) en el plan de cuentas."
                 );
             }

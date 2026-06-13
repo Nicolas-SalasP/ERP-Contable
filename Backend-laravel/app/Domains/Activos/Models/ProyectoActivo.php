@@ -2,10 +2,13 @@
 
 namespace App\Domains\Activos\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use Illuminate\Database\Eloquent\Model;
 
 class ProyectoActivo extends Model
 {
+    use HasEmpresaScope;
     protected $table = 'proyectos_activos';
     protected $primaryKey = 'id_proyecto';
 

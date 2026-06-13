@@ -2,12 +2,13 @@
 
 namespace App\Domains\Tesoreria\Services;
 
+use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+
 use App\Domains\Tesoreria\Models\CatalogoBanco;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class BancoService
 {
@@ -36,7 +37,7 @@ class BancoService
             ->exists();
 
         if ($existe) {
-            throw new Exception("Esta cuenta bancaria ya se encuentra registrada para su empresa.");
+            throw TesoreriaException::regla("Esta cuenta bancaria ya se encuentra registrada para su empresa.");
         }
 
         return CuentaBancariaEmpresa::create($datos);
@@ -47,21 +48,36 @@ class BancoService
         return DB::transaction(function () use ($empresaId, $usuarioId, $facturasIds, $cuentaBancariaId) {
 
             // SEGURIDAD: validar que la cuenta bancaria pertenezca a la empresa del usuario.
-            // Sin esto, un usuario podria registrar pagos contra cuenta de otra empresa (IDOR).
             $cuentaPertenece = CuentaBancariaEmpresa::where('id', $cuentaBancariaId)
                 ->where('empresa_id', $empresaId)
                 ->exists();
 
             if (!$cuentaPertenece) {
-                throw new Exception("Cuenta bancaria no pertenece a la empresa.");
+                throw TesoreriaException::noEncontrado("Cuenta bancaria no pertenece a la empresa.");
             }
 
+            // Lock pesimista sobre las facturas solicitadas para evitar doble pago concurrente.
             $facturas = Factura::where('empresa_id', $empresaId)
                 ->whereIn('id', $facturasIds)
+                ->lockForUpdate()
                 ->get();
 
             if ($facturas->isEmpty()) {
-                throw new Exception("No se encontraron facturas pendientes.");
+                throw TesoreriaException::noEncontrado("No se encontraron facturas para la empresa.");
+            }
+
+            // Detectar facturas ya pagadas/anuladas antes de modificar cualquiera.
+            $noDisponibles = $facturas->whereIn('estado', ['PAGADA', 'ANULADA']);
+            if ($noDisponibles->isNotEmpty()) {
+                $folios = $noDisponibles->pluck('numero_factura')->implode(', ');
+                throw TesoreriaException::regla("No se puede procesar: las siguientes facturas ya están PAGADAS o ANULADAS: {$folios}.");
+            }
+
+            // Verificar que todos los IDs solicitados existen en la empresa.
+            $idsEncontrados = $facturas->pluck('id')->all();
+            $idsNoEncontrados = array_diff($facturasIds, $idsEncontrados);
+            if (!empty($idsNoEncontrados)) {
+                throw TesoreriaException::noEncontrado("No se encontraron facturas pendientes (IDs no hallados: " . implode(', ', $idsNoEncontrados) . ").");
             }
 
             $totalNomina = 0;
@@ -70,41 +86,40 @@ class BancoService
 
             foreach ($facturas as $factura) {
                 /** @var Factura $factura */
-                $factura->estado = 'PAGADA'; 
+                $factura->estado = 'PAGADA';
                 $factura->save();
 
                 $totalNomina += $factura->monto_bruto;
                 $numerosFacturas[] = $factura->numero_factura;
             }
 
-            $cuentaEmpresa = CuentaBancariaEmpresa::find($cuentaBancariaId);
-            $cuentaContableBanco = $cuentaEmpresa->cuenta_contable_id ?? 110201; 
+            // Usa la cuenta contable real del banco; lanza excepción si no está configurada.
+            $cuentaContableBanco = $this->obtenerCuentaContableDeBanco($empresaId, $cuentaBancariaId);
 
             $datosAsiento = [
-                'empresa_id' => $empresaId,
-                'usuario_id' => $usuarioId,
-                'fecha'      => $fechaHoy,
-                'glosa'      => "Pago masivo nómina facturas: " . implode(', ', $numerosFacturas),
-                'tipo'       => 'EGRESO',
-                'detalles'   => [
+                'empresa_id'     => $empresaId,
+                'usuario_id'     => $usuarioId,
+                'fecha'          => $fechaHoy,
+                'glosa'          => "Pago masivo nómina facturas: " . implode(', ', $numerosFacturas),
+                'tipo_asiento'   => 'egreso',
+                'origen_modulo'  => 'tesoreria',
+                'detalles'       => [
                     [
                         'cuenta_contable' => '352105',
                         'debe'            => $totalNomina,
                         'haber'           => 0,
-                        'fecha'           => $fechaHoy,
                         'tipo_operacion'  => 'DEBE'
                     ],
                     [
                         'cuenta_contable' => $cuentaContableBanco,
                         'debe'            => 0,
                         'haber'           => $totalNomina,
-                        'fecha'           => $fechaHoy,
                         'tipo_operacion'  => 'HABER'
                     ]
                 ]
             ];
 
-            $asiento = $this->asientoService->crearAsientoManual($datosAsiento);
+            $asiento = $this->asientoService->registrarAsiento($datosAsiento, $datosAsiento['detalles']);
 
             return [
                 'success'    => true,
@@ -120,7 +135,7 @@ class BancoService
         $cuenta = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->find($datos['cuenta_bancaria_id']);
         
         if (!$cuenta) {
-            throw new Exception("Cuenta bancaria no encontrada o no pertenece a tu empresa.", 403);
+            throw TesoreriaException::noEncontrado("Cuenta bancaria no encontrada o no pertenece a tu empresa.");
         }
 
         $tipoMov = $datos['tipo_movimiento'] ?? '';
@@ -156,8 +171,8 @@ class BancoService
         DB::beginTransaction();
         
         try {
-            $cuentaBanco = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->findOrFail($cuentaBancariaId);
-            $codigoCuentaBanco = $cuentaBanco->cuenta_contable_codigo ?? '1-1-01-01';
+            // Usa la cuenta contable real del banco; lanza excepción si no está configurada.
+            $codigoCuentaBanco = $this->obtenerCuentaContableDeBanco($empresaId, $cuentaBancariaId);
 
             $gestor = fopen($archivo->getRealPath(), "r");
             $esCabecera = true;
@@ -227,14 +242,14 @@ class BancoService
 
         } catch (Exception $e) {
             DB::rollBack();
-            throw new Exception("El archivo contiene errores y la importación fue abortada. Error: " . $e->getMessage());
+            throw TesoreriaException::regla("El archivo contiene errores y la importación fue abortada. Error: " . $e->getMessage());
         }
     }
 
     public function obtenerCuentaBancaria(int $empresaId, int $id)
     {
         $cuenta = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->find($id);
-        if (!$cuenta) throw new Exception("Cuenta bancaria no encontrada.");
+        if (!$cuenta) throw TesoreriaException::noEncontrado("Cuenta bancaria no encontrada.");
         return $cuenta;
     }
 
@@ -243,7 +258,7 @@ class BancoService
         $cuenta = $this->obtenerCuentaBancaria($empresaId, $id);
         
         if (empty($cuenta->cuenta_contable)) {
-            throw new Exception("La cuenta bancaria '{$cuenta->banco}' no tiene un código contable asignado en su configuración. Por favor, edite la cuenta y asígnele una.");
+            throw TesoreriaException::regla("La cuenta bancaria '{$cuenta->banco}' no tiene un código contable asignado en su configuración. Por favor, edite la cuenta y asígnele una.");
         }
         
         return $cuenta->cuenta_contable;
@@ -256,7 +271,7 @@ class BancoService
             ->where('id', $id)
             ->first();
             
-        if (!$mov) throw new Exception("Movimiento bancario no encontrado.");
+        if (!$mov) throw TesoreriaException::noEncontrado("Movimiento bancario no encontrado.");
         return $mov;
     }
 
@@ -276,10 +291,10 @@ class BancoService
             ->lockForUpdate()
             ->first();
 
-        if (!$mov) throw new Exception("Movimiento bancario no encontrado.");
+        if (!$mov) throw TesoreriaException::noEncontrado("Movimiento bancario no encontrado.");
 
         if (isset($mov->estado) && $mov->estado === 'CONCILIADO') {
-            throw new Exception("El movimiento bancario ya fue conciliado.", 422);
+            throw TesoreriaException::regla("El movimiento bancario ya fue conciliado.");
         }
 
         return $mov;
@@ -317,25 +332,35 @@ class BancoService
 
     public function vincularMovimientoAAnticipo(int $empresaId, int $movimientoId, int $anticipoId)
     {
-        $this->obtenerMovimiento($empresaId, $movimientoId);
-        $anticipo = DB::table('anticipos_proveedores')
-            ->where('empresa_id', $empresaId)
-            ->where('id', $anticipoId)
-            ->first();
+        return DB::transaction(function () use ($empresaId, $movimientoId, $anticipoId) {
+            // Lock pesimista + guard de estado para evitar doble conciliación en carrera.
+            $movimiento = $this->obtenerMovimientoParaConciliar($empresaId, $movimientoId);
 
-        if (!$anticipo) {
-            throw new Exception("El anticipo no existe o no pertenece a tu empresa.");
-        }
+            // obtenerMovimientoParaConciliar ya rechaza CONCILIADO; validamos también el estado anticipo.
+            $anticipo = DB::table('anticipos_proveedores')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $anticipoId)
+                ->lockForUpdate()
+                ->first();
 
-        DB::table('movimientos_bancarios')
-            ->where('empresa_id', $empresaId)
-            ->where('id', $movimientoId)
-            ->update(['estado' => 'CONCILIADO_ANTICIPO']);
-            
-        DB::table('anticipos_proveedores')
-            ->where('empresa_id', $empresaId)
-            ->where('id', $anticipoId)
-            ->update(['estado' => 'PAGADO', 'movimiento_id' => $movimientoId]);
+            if (!$anticipo) {
+                throw TesoreriaException::noEncontrado("El anticipo no existe o no pertenece a tu empresa.");
+            }
+
+            if ($anticipo->estado !== 'PENDIENTE') {
+                throw TesoreriaException::regla("El anticipo #{$anticipoId} ya fue vinculado o no está en estado PENDIENTE (estado actual: {$anticipo->estado}).");
+            }
+
+            DB::table('movimientos_bancarios')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $movimientoId)
+                ->update(['estado' => 'CONCILIADO_ANTICIPO']);
+
+            DB::table('anticipos_proveedores')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $anticipoId)
+                ->update(['estado' => 'PAGADO', 'movimiento_id' => $movimientoId]);
+        });
     }
 
     public function obtenerMovimientosPorCuenta(int $empresaId, int $cuentaBancariaId)

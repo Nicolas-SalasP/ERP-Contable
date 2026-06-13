@@ -2,11 +2,14 @@
 
 namespace App\Domains\Comercial\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use Illuminate\Database\Eloquent\Model;
 use App\Domains\Core\Models\Empresa;
 
 class AnticipoProveedor extends Model
 {
+    use HasEmpresaScope;
     protected $table = 'anticipos_proveedores';
 
     protected $fillable = [

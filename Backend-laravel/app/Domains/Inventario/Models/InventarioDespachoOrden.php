@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventarioDespachoOrden extends Model
 {
+    use HasEmpresaScope;
     protected $table = 'inventario_despacho_ordenes';
 
     public const ESTADO_PENDIENTE = 'PENDIENTE';

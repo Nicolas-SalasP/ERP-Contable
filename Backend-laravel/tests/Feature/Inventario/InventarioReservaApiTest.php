@@ -626,7 +626,7 @@ class InventarioReservaApiTest extends TestCase
             ]);
 
         $this->getJson("/api/inventario/reservas/{$reservaAjena->id}")
-            ->assertStatus(422)
+            ->assertStatus(404)
             ->assertJsonPath('success', false);
     }
 

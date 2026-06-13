@@ -174,7 +174,7 @@ const AuditoriaInventario = () => {
 
             <ErrorNotice error={error} />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 <StatCard title="Eventos" value={resumen?.total_eventos ?? eventos.length} icon="fas fa-clipboard-list" tone="emerald" />
                 <StatCard title="Críticos" value={resumen?.por_severidad?.CRITICAL ?? 0} icon="fas fa-triangle-exclamation" tone="rose" />
                 <StatCard title="Warnings" value={resumen?.por_severidad?.WARNING ?? 0} icon="fas fa-shield-halved" tone="amber" />
@@ -182,7 +182,7 @@ const AuditoriaInventario = () => {
             </div>
 
             <Panel title="Filtros de auditoría" subtitle="Usa filtros específicos para revisión técnica, soporte o análisis post-incidente.">
-                <form onSubmit={aplicarFiltros} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <form onSubmit={aplicarFiltros} className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                     <Field label="Acción">
                         <select className={inputClass} value={filtros.accion} onChange={(e) => setFiltros({ ...filtros, accion: e.target.value })}>
                             <option value="">Todas</option>

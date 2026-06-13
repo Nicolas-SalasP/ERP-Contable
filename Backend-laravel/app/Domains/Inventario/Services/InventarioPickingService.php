@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
@@ -14,7 +16,6 @@ use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\ReservaDetalleInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Models\StockUbicacionInventario;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +74,7 @@ class InventarioPickingService
             ->find($id);
 
         if (!$orden) {
-            throw new Exception('La orden de picking no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
         }
 
         return $this->cargarOrden($orden);
@@ -139,11 +140,11 @@ class InventarioPickingService
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de picking no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeAsignarse()) {
-                throw new Exception('La orden de picking no puede asignarse en su estado actual o ya tiene reserva interna.');
+                throw InventarioException::regla('La orden de picking no puede asignarse en su estado actual o ya tiene reserva interna.');
             }
 
             $detalles = InventarioPickingDetalle::where('empresa_id', $empresaId)
@@ -274,11 +275,11 @@ class InventarioPickingService
             $orden = InventarioPickingOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de picking no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeIniciarse()) {
-                throw new Exception('La orden debe estar asignada y pendiente para iniciar picking.');
+                throw InventarioException::regla('La orden debe estar asignada y pendiente para iniciar picking.');
             }
 
             $orden->update([
@@ -300,11 +301,11 @@ class InventarioPickingService
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de picking no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeConfirmarse()) {
-                throw new Exception('La orden de picking no puede confirmarse en su estado actual.');
+                throw InventarioException::regla('La orden de picking no puede confirmarse en su estado actual.');
             }
 
             $detalles = InventarioPickingDetalle::where('empresa_id', $empresaId)
@@ -407,11 +408,11 @@ class InventarioPickingService
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de picking no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeCancelarse()) {
-                throw new Exception('La orden de picking no puede cancelarse en su estado actual.');
+                throw InventarioException::regla('La orden de picking no puede cancelarse en su estado actual.');
             }
 
             $detalles = InventarioPickingDetalle::where('empresa_id', $empresaId)

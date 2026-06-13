@@ -2,6 +2,7 @@
 
 namespace App\Domains\Core\Controllers\Internal;
 
+use App\Domains\Core\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -212,6 +213,12 @@ class AdminEmpresasController
 
             DB::table('empresas')->where('id', $id)->update(['activa' => $activa]);
 
+            // Al suspender, revocar todos los tokens activos de la empresa para
+            // que el acceso cese de inmediato (sin esperar expiración).
+            if (!$activa) {
+                User::where('empresa_id', $id)->each(fn($u) => $u->tokens()->delete());
+            }
+
             return response()->json([
                 'success' => true,
                 'empresa' => [
@@ -299,6 +306,10 @@ class AdminEmpresasController
             DB::table('usuarios')->where('id', $id)->update([
                 'bloqueado_hasta' => $hasta,
             ]);
+
+            // Revocar tokens activos para que el bloqueo sea inmediato.
+            $user = User::find($id);
+            $user?->tokens()->delete();
 
             return response()->json([
                 'success' => true,

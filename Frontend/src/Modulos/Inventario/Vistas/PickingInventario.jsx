@@ -204,7 +204,7 @@ const PickingInventario = () => {
 
             <ErrorNotice error={error} />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 <StatCard title="Órdenes" value={formatNumber(resumen.total)} icon="fas fa-clipboard-list" />
                 <StatCard title="Pendientes" value={formatNumber(resumen.pendientes)} icon="fas fa-hourglass-half" tone="blue" />
                 <StatCard title="En preparación" value={formatNumber(resumen.preparacion)} icon="fas fa-person-dolly" tone="amber" />

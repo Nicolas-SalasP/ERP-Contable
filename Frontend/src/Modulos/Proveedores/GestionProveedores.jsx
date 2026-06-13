@@ -14,6 +14,7 @@ const BANCOS_CHILE = [
 const BankAccountsTab = ({ proveedorId }) => {
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [loadError, setLoadError] = useState(null);
     const [newAccount, setNewAccount] = useState({ banco: '', numeroCuenta: '', tipoCuenta: 'Corriente', paisIso: 'CL' });
 
     useEffect(() => {
@@ -22,11 +23,13 @@ const BankAccountsTab = ({ proveedorId }) => {
 
     const loadAccounts = async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const data = await api.get(`/cuentas-bancarias/proveedor/${proveedorId}`);
             if (data.success) setAccounts(data.data || []);
         } catch (err) {
             logger.error("Error cargando cuentas", err);
+            setLoadError('No se pudieron cargar las cuentas bancarias.');
         } finally {
             setLoading(false);
         }
@@ -99,11 +102,17 @@ const BankAccountsTab = ({ proveedorId }) => {
                     Cuentas Registradas
                 </h3>
 
-                {loading || accounts.length === 0 ? (
+                {loading ? (
+                    <EstadoCarga cargando mensajeCargando="" tamano="inline" color="emerald" />
+                ) : loadError ? (
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        {loadError}
+                        <button onClick={loadAccounts} className="ml-auto underline text-red-600 font-semibold">Reintentar</button>
+                    </div>
+                ) : accounts.length === 0 ? (
                     <EstadoCarga
-                        cargando={loading}
-                        vacio={!loading && accounts.length === 0}
-                        mensajeCargando=""
+                        vacio
                         mensajeVacio="Sin cuentas asociadas"
                         iconoVacio="🏦"
                         tamano="inline"
@@ -147,7 +156,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                                                 <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded uppercase border border-slate-200">{acc.tipo_cuenta}</span>
                                             </td>
                                             <td className="px-5 py-3 text-right">
-                                                <button onClick={() => handleDelete(acc.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Eliminar">
+                                                <button onClick={() => handleDelete(acc.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Eliminar" aria-label="Eliminar cuenta bancaria">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                 </button>
                                             </td>
@@ -208,6 +217,7 @@ const GestionProveedores = () => {
     const [proveedores, setProveedores] = useState([]);
     const [paises, setPaises] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [errorCarga, setErrorCarga] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('info');
     const [idError, setIdError] = useState(false);
@@ -222,6 +232,7 @@ const GestionProveedores = () => {
 
     const loadData = async () => {
         setLoading(true);
+        setErrorCarga(null);
         try {
             const [provRes, paisRes] = await Promise.all([
                 api.get('/proveedores'),
@@ -237,7 +248,7 @@ const GestionProveedores = () => {
             }
         } catch (err) {
             logger.error("Error cargando datos:", err);
-            Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
+            setErrorCarga('No se pudieron cargar los proveedores. Verifica la conexión.');
         } finally {
             setLoading(false);
         }
@@ -385,6 +396,13 @@ const GestionProveedores = () => {
                 </button>
             </div>
 
+            {errorCarga && (
+                <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-3">
+                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span className="flex-1">{errorCarga}</span>
+                    <button onClick={loadData} className="underline font-semibold text-red-600 hover:text-red-800">Reintentar</button>
+                </div>
+            )}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 {loading || proveedores.length === 0 ? (
                     <EstadoCarga
@@ -478,7 +496,7 @@ const GestionProveedores = () => {
                                 <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                                 {editingId ? 'Gestionar Proveedor' : 'Alta de Nuevo Proveedor'}
                             </h2>
-                            <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors text-3xl leading-none">&times;</button>
+                            <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors text-3xl leading-none" aria-label="Cerrar">&times;</button>
                         </div>
 
                         <div className="flex overflow-x-auto border-b bg-slate-50 hide-scrollbar shrink-0">

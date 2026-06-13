@@ -1,11 +1,14 @@
 <?php
 namespace App\Domains\Tesoreria\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use Illuminate\Database\Eloquent\Model;
 use App\Domains\Core\Models\Empresa;
 
 class CuentaBancariaEmpresa extends Model
 {
+    use HasEmpresaScope;
     protected $table = 'cuentas_bancarias_empresa';
     const UPDATED_AT = null;
 

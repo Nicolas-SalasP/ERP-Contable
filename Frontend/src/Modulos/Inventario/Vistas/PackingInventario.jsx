@@ -177,7 +177,7 @@ const PackingInventario = () => {
 
             <ErrorNotice error={error} />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 <StatCard title="Packing" value={formatNumber(resumen.total)} icon="fas fa-box-open" />
                 <StatCard title="Pendientes" value={formatNumber(resumen.pendientes)} icon="fas fa-hourglass-half" tone="blue" />
                 <StatCard title="En empaque" value={formatNumber(resumen.empaque)} icon="fas fa-boxes-packing" tone="amber" />

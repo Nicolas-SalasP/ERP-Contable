@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioPackingDetalle;
@@ -9,7 +11,6 @@ use App\Domains\Inventario\Models\InventarioPackingOrden;
 use App\Domains\Inventario\Models\InventarioPickingAsignacion;
 use App\Domains\Inventario\Models\InventarioPickingDetalle;
 use App\Domains\Inventario\Models\InventarioPickingOrden;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ class InventarioPackingService
             ->find($id);
 
         if (!$orden) {
-            throw new Exception('La orden de packing no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La orden de packing no existe o no pertenece a la empresa.');
         }
 
         return $this->cargarOrden($orden);
@@ -150,11 +151,11 @@ class InventarioPackingService
             $orden = InventarioPackingOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de packing no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de packing no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeIniciarse()) {
-                throw new Exception('La orden de packing no puede iniciarse en su estado actual.');
+                throw InventarioException::regla('La orden de packing no puede iniciarse en su estado actual.');
             }
 
             $orden->update([
@@ -175,11 +176,11 @@ class InventarioPackingService
             $orden = InventarioPackingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de packing no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de packing no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeConfirmarse()) {
-                throw new Exception('La orden de packing no puede confirmarse en su estado actual.');
+                throw InventarioException::regla('La orden de packing no puede confirmarse en su estado actual.');
             }
 
             $detalles = InventarioPackingDetalle::where('empresa_id', $empresaId)
@@ -248,11 +249,11 @@ class InventarioPackingService
             $orden = InventarioPackingOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de packing no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de packing no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeCancelarse()) {
-                throw new Exception('La orden de packing no puede cancelarse en su estado actual.');
+                throw InventarioException::regla('La orden de packing no puede cancelarse en su estado actual.');
             }
 
             InventarioPackingDetalle::where('empresa_id', $usuario->empresa_id)

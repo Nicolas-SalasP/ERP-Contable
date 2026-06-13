@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
 use App\Domains\Inventario\Models\Bodega;
@@ -10,7 +12,6 @@ use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\TipoAjusteCritico;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -90,7 +91,7 @@ class InventarioAjusteCriticoService
             ->find($ajusteCriticoId);
 
         if (!$ajuste) {
-            throw new Exception('El ajuste crítico solicitado no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('El ajuste crítico solicitado no existe o no pertenece a la empresa.');
         }
 
         return $ajuste;

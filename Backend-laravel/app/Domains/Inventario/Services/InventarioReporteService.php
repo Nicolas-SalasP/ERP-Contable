@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
 use App\Domains\Inventario\Models\Bodega;
@@ -15,7 +17,6 @@ use App\Domains\Inventario\Models\StockProducto;
 use App\Domains\Inventario\Models\TomaFisicaDetalleInventario;
 use App\Domains\Inventario\Models\TomaFisicaInventario;
 use Carbon\CarbonImmutable;
-use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -606,7 +607,7 @@ class InventarioReporteService
             'tomas-fisicas' => $this->tomasFisicas($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
             'ajustes' => $this->ajustes($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
             'reposicion-alertas' => $this->reposicionAlertas($usuario, $filtros + ['limit' => self::MAX_LIMIT]),
-            default => throw new Exception('El tipo de reporte no es válido para exportación CSV.'),
+            default => throw InventarioException::regla('El tipo de reporte no es válido para exportación CSV.'),
         };
 
         $filas = $this->filasExportables($tipo, $resultado['data'] ?? []);

@@ -11,6 +11,8 @@ use Illuminate\Support\ServiceProvider;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Rol;
 use App\Observers\EmpresaObserver;
+use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Contabilidad\Observers\AsientoContableObserver;
 
 use App\Domains\CorreccionMonetaria\Providers\IpcProviderInterface;
 use App\Domains\CorreccionMonetaria\Providers\ManualIpcProvider;
@@ -51,6 +53,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Empresa::observe(EmpresaObserver::class);
+
+        // Contabilidad — bloqueo de periodo cerrado (inmutabilidad, F-1/F-2).
+        AsientoContable::observe(AsientoContableObserver::class);
 
         // Inventario — eventos de dominio
         Event::listen(StockMinimoPerforado::class, RegistrarEventoInventarioListener::class);

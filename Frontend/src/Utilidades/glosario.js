@@ -1005,6 +1005,189 @@ export const glosario = {
             'Si tenes que reclasificar muchas cosas a la vez, mejor revisa el plan de cuentas: probablemente ' +
             'esta mal configurado o falta capacitacion al equipo que registra.',
     },
+    empleadosRrhh: {
+        id: 'empleadosRrhh',
+        titulo: 'Ficha de Personal',
+        icono: '🧑‍💼',
+        resumen: 'Registra los datos de cada trabajador de la empresa.',
+        queEs:
+            'Es el registro maestro de tus trabajadores. Aqui guardas sus datos personales, de contacto, ' +
+            'su prevision (AFP y salud) y sus datos bancarios para el pago de sueldos. Toda liquidacion, ' +
+            'contrato o finiquito parte desde un empleado registrado aqui.',
+        conceptos: [
+            { termino: 'AFP', definicion: 'Administradora de Fondos de Pensiones donde el trabajador cotiza el 10% obligatorio mas la comision.' },
+            { termino: 'FONASA / ISAPRE', definicion: 'Sistema de salud del trabajador. FONASA descuenta 7%; ISAPRE descuenta el plan pactado en UF.' },
+            { termino: 'Datos bancarios', definicion: 'Banco y numero de cuenta para depositar el sueldo. Se guardan cifrados por la Ley 21.719 de proteccion de datos.' },
+        ],
+        comoUsar: [
+            'Haz click en "Nuevo empleado".',
+            'Completa al menos RUT, nombres y apellido paterno (lo demas es opcional).',
+            'Elige su AFP y sistema de salud: esto define como se calculan sus descuentos.',
+            'Si pagas por transferencia, completa banco, tipo y numero de cuenta.',
+            'Guarda. El empleado queda disponible para crearle contratos y liquidaciones.',
+        ],
+        errores: [
+            { problema: 'No me deja crear el empleado, dice que el RUT ya existe.', solucion: 'Cada RUT es unico por empresa. Busca en la lista; probablemente el trabajador ya esta registrado.' },
+            { problema: 'No veo el numero de cuenta al editar.', solucion: 'Por seguridad el numero de cuenta nunca se muestra de vuelta (esta cifrado). Si necesitas cambiarlo, escribelo de nuevo; si lo dejas vacio, se mantiene el anterior.' },
+        ],
+        tip: 'Carga primero a todos los empleados antes de empezar a calcular liquidaciones: te ahorras volver atras.',
+    },
+    contratosRrhh: {
+        id: 'contratosRrhh',
+        titulo: 'Contratos',
+        icono: '📝',
+        resumen: 'Gestiona el historial de contratos de cada trabajador.',
+        queEs:
+            'Cada trabajador tiene uno o mas contratos a lo largo del tiempo. El contrato define el tipo ' +
+            '(indefinido, plazo fijo o por obra), el sueldo base, la jornada y el cargo. Solo un contrato ' +
+            'puede estar VIGENTE a la vez: al crear uno nuevo, el anterior se desactiva automaticamente.',
+        conceptos: [
+            { termino: 'Indefinido / Plazo fijo / Por obra', definicion: 'Tipo de contrato. Afecta el seguro de cesantia (AFC) y las indemnizaciones del finiquito.' },
+            { termino: 'Sueldo base', definicion: 'La remuneracion fija mensual sobre la que se calcula la gratificacion, las horas extra y las cotizaciones.' },
+            { termino: 'Causal de termino', definicion: 'El articulo del Codigo del Trabajo por el que termina el contrato (Art. 159, 160 o 161). Define si hay o no indemnizacion.' },
+        ],
+        comoUsar: [
+            'Selecciona un empleado en el desplegable.',
+            'Revisa su historial de contratos en la tabla.',
+            'Para uno nuevo, haz click en "Nuevo contrato" y completa tipo, fechas y sueldo base.',
+            'Para terminar un contrato vigente, usa el boton de termino e indica la causal y la fecha.',
+        ],
+        errores: [
+            { problema: 'No me deja poner fecha de termino.', solucion: 'Los contratos indefinidos no llevan fecha de termino. Solo plazo fijo y por obra la exigen.' },
+            { problema: 'Cree un contrato y el anterior quedo TERMINADO.', solucion: 'Es correcto: solo un contrato puede estar vigente. Crear uno nuevo cierra el anterior automaticamente.' },
+        ],
+        tip: 'Antes de calcular el finiquito, asegurate de que el contrato del trabajador este VIGENTE: el finiquito lo termina al firmarse.',
+    },
+    liquidacionesRrhh: {
+        id: 'liquidacionesRrhh',
+        titulo: 'Liquidaciones de Sueldo',
+        icono: '💵',
+        resumen: 'Calcula el sueldo mensual con todos los descuentos legales.',
+        queEs:
+            'La liquidacion es el calculo mensual del sueldo de un trabajador: parte del sueldo base, suma ' +
+            'gratificacion y horas extra, y descuenta AFP, salud, seguro de cesantia (AFC) e impuesto unico. ' +
+            'El resultado es el "liquido a pagar". El sistema usa los parametros legales del periodo, sin numeros a mano.',
+        conceptos: [
+            { termino: 'Imponible', definicion: 'La parte del sueldo sobre la que se calculan las cotizaciones, con tope legal (90 UF en 2026).' },
+            { termino: 'Liquido a pagar', definicion: 'Lo que efectivamente recibe el trabajador: haberes menos todos los descuentos.' },
+            { termino: 'Borrador / Emitida', definicion: 'Una liquidacion en BORRADOR se puede recalcular. Al EMITIRLA queda firme y entra a centralizacion y Previred.' },
+        ],
+        comoUsar: [
+            'Haz click en "Calcular liquidacion" y elige el empleado y el periodo (mes y año).',
+            'Agrega horas extra o remuneraciones variables si corresponde.',
+            'Revisa el detalle de haberes y descuentos en el modal.',
+            'Cuando este correcta, EMITELA. Una vez emitida no se puede recalcular, pero si anular.',
+        ],
+        errores: [
+            { problema: 'Falla diciendo que no hay parametros del periodo.', solucion: 'Faltan los indicadores (UF/UTM) o los parametros previsionales del mes. Cargalos en "Parametros Previsionales" antes de calcular.' },
+            { problema: 'Recalcule y se borro la anterior.', solucion: 'Es correcto mientras este en BORRADOR: recalcular reemplaza el borrador del mismo periodo. Las EMITIDAS no se tocan.' },
+        ],
+        tip: 'Calcula y revisa en borrador todo el mes; recien cuando este todo OK, emite en bloque y centraliza.',
+    },
+    finiquitosRrhh: {
+        id: 'finiquitosRrhh',
+        titulo: 'Finiquitos',
+        icono: '🤝',
+        resumen: 'Calcula el pago final al terminar un contrato.',
+        queEs:
+            'El finiquito es el calculo de lo que se le paga al trabajador cuando termina su contrato: ' +
+            'indemnizacion por años de servicio, mes de aviso previo y vacaciones proporcionales, segun la ' +
+            'causal de termino del Codigo del Trabajo. Al firmarlo, el contrato queda terminado.',
+        conceptos: [
+            { termino: 'Indemnizacion por años de servicio', definicion: '30 dias de sueldo por año trabajado (fraccion mayor a 6 meses cuenta como año, tope 11 años). Solo aplica en necesidades de la empresa (Art. 161).' },
+            { termino: 'Aviso previo', definicion: 'Si no se avisa con 30 dias, se paga un mes de sueldo sustitutivo.' },
+            { termino: 'Vacaciones proporcionales', definicion: 'Los dias de vacaciones que el trabajador alcanzo a acumular y no tomo, pagados en dinero (Art. 73).' },
+        ],
+        comoUsar: [
+            'Haz click en "Calcular finiquito".',
+            'Elige el empleado y su contrato vigente.',
+            'Selecciona la causal de termino: define si hay indemnizacion.',
+            'Indica la fecha de termino y si diste aviso previo.',
+            'Revisa el desglose y, si esta correcto, firma el finiquito (esto termina el contrato).',
+        ],
+        errores: [
+            { problema: 'No aparece el contrato del trabajador.', solucion: 'Solo se listan contratos VIGENTES. Si ya estaba terminado, no se puede finiquitar de nuevo.' },
+            { problema: 'No salio indemnizacion por años.', solucion: 'La indemnizacion del Art. 163 solo aplica en "Necesidades de la empresa". En renuncia o vencimiento de plazo no corresponde.' },
+        ],
+        tip: 'Revisa bien la causal: es lo que mas cambia el monto final. Una renuncia y un despido por necesidades de la empresa pagan muy distinto.',
+    },
+    parametrosRrhh: {
+        id: 'parametrosRrhh',
+        titulo: 'Parametros Previsionales',
+        icono: '⚖️',
+        resumen: 'Las tasas y topes legales que usa el calculo de sueldos.',
+        queEs:
+            'Aqui viven los valores legales con que se calculan las liquidaciones: tasas de AFP y salud, topes ' +
+            'imponibles, seguro de cesantia, la tabla de impuesto unico y los indicadores UF/UTM de cada mes. ' +
+            'El motor de calculo lee estos datos; nunca hay numeros fijos en el codigo.',
+        conceptos: [
+            { termino: 'UF / UTM', definicion: 'Unidades reajustables. La UF fija los topes en pesos y la UTM se usa para el impuesto unico. Cambian todos los meses.' },
+            { termino: 'Tope imponible', definicion: 'El maximo sobre el que se cotiza (90 UF para AFP/salud en 2026). Lo que excede no cotiza.' },
+            { termino: 'Tabla de impuesto unico', definicion: 'Los tramos de impuesto a la renta de segunda categoria, expresados en UTM. Definen cuanto impuesto descuenta cada sueldo.' },
+        ],
+        comoUsar: [
+            'Revisa la pestaña "Previsionales" para ver las tasas y topes vigentes.',
+            'Cada mes, en "Indicadores UF/UTM", registra la UF y UTM del periodo (las publica la CMF y el SII).',
+            'En "Tabla Impuesto Unico" puedes consultar los tramos por año.',
+        ],
+        errores: [
+            { problema: 'Las liquidaciones fallan por falta de indicadores.', solucion: 'Cada mes necesita su UF y UTM cargadas. Registralas en la pestaña Indicadores antes de calcular sueldos de ese mes.' },
+            { problema: 'No hay parametros previsionales.', solucion: 'Ejecuta el seeder RrhhParametrosLegalesSeeder o crealos via API. Sin ellos el motor no puede calcular.' },
+        ],
+        tip: 'Verifica siempre los valores contra la fuente oficial (Superintendencia de Pensiones, SII, Previred) antes de procesar sueldos reales.',
+    },
+    centralizacionRrhh: {
+        id: 'centralizacionRrhh',
+        titulo: 'Centralizacion Contable',
+        icono: '📚',
+        resumen: 'Lleva las remuneraciones del mes a la contabilidad.',
+        queEs:
+            'Centralizar es generar el asiento contable mensual que resume todas las liquidaciones emitidas: ' +
+            'el gasto en remuneraciones y leyes sociales (debe) contra lo que queda por pagar a trabajadores, ' +
+            'AFP, salud, impuesto y aportes (haber). Primero configuras que cuenta del Plan usar para cada categoria.',
+        conceptos: [
+            { termino: 'Mapeo contable', definicion: 'La asociacion entre cada categoria de RRHH (ej: "Liquido por pagar") y una cuenta de tu Plan de Cuentas.' },
+            { termino: 'Partida doble', definicion: 'El asiento siempre cuadra: el total del Debe (gastos) es igual al del Haber (pasivos por pagar).' },
+            { termino: 'Cuenta obligatoria', definicion: 'Hay 6 categorias minimas que debes mapear si o si para poder centralizar; las de vacaciones son opcionales.' },
+        ],
+        comoUsar: [
+            'En "Mapeo contable", busca y asigna una cuenta del Plan para cada categoria obligatoria.',
+            'Emite todas las liquidaciones del mes en la vista de Liquidaciones.',
+            'Elige el periodo y haz click en "Centralizar periodo".',
+            'El sistema genera un unico asiento mensual y lo deja en la contabilidad.',
+        ],
+        errores: [
+            { problema: 'El boton de centralizar esta deshabilitado.', solucion: 'Faltan cuentas obligatorias por mapear. Completa las que aparecen marcadas como "obligatorio" mas abajo.' },
+            { problema: 'Dice que el periodo ya fue centralizado.', solucion: 'Cada mes se centraliza una sola vez. Si necesitas rehacerlo, reversa el asiento generado desde Contabilidad.' },
+        ],
+        tip: 'Configura el mapeo una sola vez al principio; despues, cada mes solo emites y centralizas.',
+    },
+    previredRrhh: {
+        id: 'previredRrhh',
+        titulo: 'Archivo Previred',
+        icono: '📄',
+        resumen: 'Genera la planilla mensual para pagar las cotizaciones.',
+        queEs:
+            'Previred es el portal donde se declaran y pagan las cotizaciones previsionales. Esta vista genera ' +
+            'la planilla del mes en formato CSV, con una fila por trabajador y sus montos de AFP, salud, AFC, ' +
+            'SIS, mutual e impuesto, lista para subir a previred.com.',
+        conceptos: [
+            { termino: 'Planilla previsional', definicion: 'El archivo con las cotizaciones de todos los trabajadores del mes, que se sube a Previred para declarar y pagar.' },
+            { termino: 'Previsualizar', definicion: 'Ver en pantalla el contenido del archivo antes de descargarlo, para revisar montos y trabajadores.' },
+            { termino: 'Periodo', definicion: 'El mes y año que se declara. Solo incluye liquidaciones que esten EMITIDAS.' },
+        ],
+        comoUsar: [
+            'Elige el periodo (mes y año).',
+            'Haz click en "Previsualizar" para revisar los datos por trabajador.',
+            'Si todo esta correcto, descarga el CSV con "Descargar CSV".',
+            'Sube el archivo en previred.com para declarar y pagar dentro del plazo legal.',
+        ],
+        errores: [
+            { problema: 'No genera nada o da error.', solucion: 'Solo se incluyen liquidaciones EMITIDAS. Emite los sueldos del mes antes de generar el archivo.' },
+            { problema: 'Un trabajador aparece con codigo de AFP 00.', solucion: 'Su AFP o ISAPRE no esta en la tabla de codigos Previred. Revisa que el nombre de la AFP/ISAPRE en la ficha sea el correcto.' },
+        ],
+        tip: 'Las cotizaciones se pagan hasta el dia 13 del mes siguiente. Genera y sube el archivo con tiempo para evitar multas e intereses.',
+    },
 };
 
 export const listarModulos = () => Object.values(glosario).sort((a, b) =>

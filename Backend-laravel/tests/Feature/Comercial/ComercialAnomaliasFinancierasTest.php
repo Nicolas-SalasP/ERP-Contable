@@ -82,7 +82,7 @@ class ComercialAnomaliasFinancierasTest extends TestCase
             'motivo' => 'Doble anulación'
         ]);
 
-        $response->assertStatus(400);
+        $response->assertStatus(422);
     }
 
     public function test_genera_codigos_unicos_diferentes_para_facturas_masivas()

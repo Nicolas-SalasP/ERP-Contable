@@ -241,7 +241,8 @@ const handle401 = () => {
     if (typeof window === 'undefined') return;
     clearAuth();
     if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${returnUrl}`;
     }
 };
 
@@ -425,15 +426,20 @@ const request = async (endpoint, method, body, options = {}) => {
         init.body = isFormData ? body : JSON.stringify(body);
     }
 
+    // Solo GET/HEAD son idempotentes: reintentar POST/PUT/PATCH/DELETE puede duplicar
+    // facturas, asientos o liquidaciones si el servidor procesó pero la respuesta se perdió.
+    const esIdempotente = ['GET', 'HEAD'].includes((method || '').toUpperCase());
+    const maxReintentos = esIdempotente ? MAX_RETRIES : 0;
+
     let attempt = 0;
     let lastError;
 
-    while (attempt <= MAX_RETRIES) {
+    while (attempt <= maxReintentos) {
         const { response, timedOut, networkError } = await doFetch(url, init, options);
 
         if (timedOut) {
             lastError = buildError(408, null, 'Timeout');
-            if (attempt < MAX_RETRIES) {
+            if (attempt < maxReintentos) {
                 attempt++;
                 await sleep(RETRY_DELAY_MS * attempt);
                 continue;
@@ -443,7 +449,7 @@ const request = async (endpoint, method, body, options = {}) => {
 
         if (networkError) {
             lastError = buildError(0, null, 'Network error');
-            if (attempt < MAX_RETRIES) {
+            if (attempt < maxReintentos) {
                 attempt++;
                 await sleep(RETRY_DELAY_MS * attempt);
                 continue;
@@ -471,7 +477,7 @@ const request = async (endpoint, method, body, options = {}) => {
 
         lastError = buildError(response.status, payload, response.statusText);
 
-        if (RETRY_STATUSES.has(response.status) && attempt < MAX_RETRIES) {
+        if (RETRY_STATUSES.has(response.status) && attempt < maxReintentos) {
             attempt++;
             await sleep(RETRY_DELAY_MS * attempt);
             continue;

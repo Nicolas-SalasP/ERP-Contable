@@ -236,12 +236,25 @@ class EmpresaController extends Controller
             return response()->json(['success' => false, 'message' => 'Este usuario ya tiene una empresa asignada.'], 422);
         }
 
+        // Normalizar RUT antes de validar: el sistema almacena sin puntos (p.ej. "12345678-9").
+        // La normalización se hace aquí para que la regla de unicidad compare contra
+        // el formato real almacenado en la BD.
+        $rutNormalizado = null;
+        try {
+            $rutNormalizado = RutHelper::normalizar((string) $request->empresa_rut);
+        } catch (\Exception $e) {
+            // La validación de formato (RutHelper::validar) se encarga del error.
+        }
+
         $request->validate([
-            'empresa_rut'          => ['required', 'string', 'max:20', function ($attribute, $value, $fail) {
-                if (!RutHelper::validar($value)) {
-                    $fail('El RUT ingresado no es valido: revise el digito verificador.');
-                }
-            }],
+            'empresa_rut'          => [
+                'required', 'string', 'max:20',
+                function ($attribute, $value, $fail) {
+                    if (!RutHelper::validar($value)) {
+                        $fail('El RUT ingresado no es valido: revise el digito verificador.');
+                    }
+                },
+            ],
             'empresa_razon_social' => ['required', 'string', 'max:150'],
             'giro'                 => ['nullable', 'string', 'max:80'],
             'direccion'            => ['nullable', 'string', 'max:255'],
@@ -249,9 +262,17 @@ class EmpresaController extends Controller
             'regimen_tributario'   => ['nullable', 'in:14_D3,14_D8,14_A'],
         ]);
 
-        return DB::transaction(function () use ($request, $user) {
+        // Unicidad server-side sobre el RUT normalizado (sin puntos).
+        $rutParaGuardar = $rutNormalizado ?? $request->empresa_rut;
+        if (Empresa::where('rut', $rutParaGuardar)->exists()) {
+            throw ValidationException::withMessages([
+                'empresa_rut' => ['Este RUT ya está registrado en el sistema.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($request, $user, $rutParaGuardar) {
             $empresa = Empresa::create([
-                'rut'                => $request->empresa_rut,
+                'rut'                => $rutParaGuardar,
                 'razon_social'       => $request->empresa_razon_social,
                 'giro_emisor'        => $request->giro,
                 'direccion'          => $request->direccion,

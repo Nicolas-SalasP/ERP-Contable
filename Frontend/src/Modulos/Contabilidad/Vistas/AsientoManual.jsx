@@ -213,12 +213,12 @@ const AsientoManual = () => {
                                             onDoubleClick={() => editarFila(fila)}
                                         >
                                             <td className="px-3 py-2 text-center text-xs font-bold text-slate-400">{index + 1}</td>
-                                            <td className="px-3 py-2 text-xs font-bold text-slate-700 truncate max-w-[200px]">{fila.cuenta.label}</td>
-                                            <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[180px] italic">{fila.glosa || '-'}</td>
+                                            <td className="px-3 py-2 text-xs font-bold text-slate-700 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px]">{fila.cuenta.label}</td>
+                                            <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[180px] italic">{fila.glosa || '-'}</td>
                                             <td className="px-3 py-2 text-xs font-mono font-black text-emerald-600 text-right">{fila.debe > 0 ? formatCurrency(fila.debe) : ''}</td>
                                             <td className="px-3 py-2 text-xs font-mono font-black text-rose-600 text-right">{fila.haber > 0 ? formatCurrency(fila.haber) : ''}</td>
-                                            <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[120px]">{fila.centroCosto ? fila.centroCosto.label : '-'}</td>
-                                            <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[120px]">{fila.empleado || '-'}</td>
+                                            <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[80px] sm:max-w-[120px]">{fila.centroCosto ? fila.centroCosto.label : '-'}</td>
+                                            <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[80px] sm:max-w-[120px]">{fila.empleado || '-'}</td>
                                             <td className="px-3 py-2 text-center flex justify-center gap-1.5">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); editarFila(fila); }}
@@ -259,7 +259,7 @@ const AsientoManual = () => {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                         Panel de Ingreso de Cuentas
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-end mb-4">
                         <div className="md:col-span-3">
                             <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Cuenta Contable *</label>
                             <Select

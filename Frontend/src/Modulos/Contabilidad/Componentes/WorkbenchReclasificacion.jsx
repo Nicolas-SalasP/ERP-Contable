@@ -99,7 +99,8 @@ const WorkbenchReclasificacion = ({
                     </div>
                 ) : (
                     <div className="border border-slate-200 rounded-xl overflow-visible shadow-sm">
-                        <div className="hidden md:block overflow-visible pb-24">
+                        <div className="hidden md:block pb-24">
+                            <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-900 text-white text-xs uppercase tracking-wider font-bold">
                                     <tr>
@@ -153,6 +154,7 @@ const WorkbenchReclasificacion = ({
                                     })}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
 
                         <div className="md:hidden flex flex-col divide-y divide-slate-100 pb-10">

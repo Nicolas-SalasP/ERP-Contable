@@ -245,7 +245,7 @@ const EventosIntegracionInventario = () => {
 
             <ErrorNotice error={error} />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 <StatCard title="Eventos" value={resumen?.total_eventos ?? registros.length} icon="fas fa-diagram-project" tone="emerald" />
                 <StatCard title="Pendientes" value={resumen?.pendientes ?? resumen?.por_estado?.PENDIENTE ?? 0} icon="fas fa-clock" tone="amber" />
                 <StatCard title="Errores" value={resumen?.errores ?? resumen?.por_estado?.ERROR ?? 0} icon="fas fa-triangle-exclamation" tone="rose" />
@@ -253,7 +253,7 @@ const EventosIntegracionInventario = () => {
             </div>
 
             <Panel title="Filtros" subtitle="Filtra por evento, estado, prioridad, entidad, usuario, correlación o rango de fechas.">
-                <form onSubmit={aplicarFiltros} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <form onSubmit={aplicarFiltros} className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                     <Field label="Evento">
                         <select className={inputClass} value={filtros.evento} onChange={(e) => setFiltros({ ...filtros, evento: e.target.value })}>
                             <option value="">Todos</option>
@@ -359,7 +359,7 @@ const EventosIntegracionInventario = () => {
                             <div className="rounded-2xl border border-slate-100 p-4 bg-slate-50">
                                 <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Evento</div>
                                 <div className="font-black text-slate-800">{pretty(seleccionado.evento)}</div>
-                                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">
                                     <div><span className="font-bold text-slate-500">Estado:</span> {seleccionado.estado}</div>
                                     <div><span className="font-bold text-slate-500">Prioridad:</span> {seleccionado.prioridad}</div>
                                     <div><span className="font-bold text-slate-500">Empresa:</span> {seleccionado.empresa_id}</div>

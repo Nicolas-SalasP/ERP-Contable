@@ -17,11 +17,11 @@ const DashboardRenta = () => {
     const [mostrarManual, setMostrarManual] = useState(false);
     const [mostrarMapeo, setMostrarMapeo] = useState(false);
 
-    const cargarPreRenta = async () => {
+    const cargarPreRenta = async (signal) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await api.get(`/renta/pre-calculo/${anio}`);
+            const res = await api.get(`/renta/pre-calculo/${anio}`, { signal });
             if (res.success) {
                 const data = res.data;
                 const vNetas = Number(data.ingresos.ventas_netas) || 0;
@@ -74,14 +74,18 @@ const DashboardRenta = () => {
                 setError('No se pudo cargar la información tributaria.');
             }
         } catch (err) {
-            setError(err.message || 'Error de conexión al obtener datos de Renta.');
+            if (err?.name !== 'AbortError' && err?.code !== 'ERR_CANCELED') {
+                setError(err.message || 'Error de conexión al obtener datos de Renta.');
+            }
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        cargarPreRenta();
+        const controller = new AbortController();
+        cargarPreRenta(controller.signal);
+        return () => controller.abort();
     }, [anio]);
 
     const regimen_tributario = datosRenta?.regimen_tributario || '14_A';
@@ -288,8 +292,8 @@ const DashboardRenta = () => {
                         <h3 className="font-bold text-emerald-800"><i className="fas fa-plus-circle mr-2"></i>Detalle de Ingresos</h3>
                         <span className="text-sm font-black text-emerald-700">{formatCurrency(resumen.total_ingresos)}</span>
                     </div>
-                    <div className="p-0 flex-grow">
-                        <table className="w-full text-left text-sm">
+                    <div className="p-0 flex-grow overflow-x-auto custom-scrollbar">
+                        <table className="min-w-full text-left text-sm">
                             <tbody className="divide-y divide-slate-100">
                                 <tr className="hover:bg-slate-50">
                                     <td className="px-5 py-4"><p className="text-slate-700 font-bold">Ingresos del Giro (Ventas)</p></td>
@@ -312,8 +316,8 @@ const DashboardRenta = () => {
                         <h3 className="font-bold text-rose-800"><i className="fas fa-minus-circle mr-2"></i>Detalle de Egresos</h3>
                         <span className="text-sm font-black text-rose-700">{formatCurrency(resumen.total_egresos)}</span>
                     </div>
-                    <div className="p-0 flex-grow">
-                        <table className="w-full text-left text-sm">
+                    <div className="p-0 flex-grow overflow-x-auto custom-scrollbar">
+                        <table className="min-w-full text-left text-sm">
                             <tbody className="divide-y divide-slate-100">
                                 <tr className="hover:bg-slate-50">
                                     <td className="px-5 py-3"><p className="text-slate-700 font-bold">Compras y Proveedores</p></td>
@@ -421,7 +425,7 @@ const DashboardRenta = () => {
                                 <i className="fas fa-university text-indigo-200"></i>
                                 Ficha Técnica: Régimen {nombreRegimen}
                             </h3>
-                            <button onClick={() => setMostrarManual(false)} className="text-indigo-200 hover:text-white transition-colors text-2xl">
+                            <button onClick={() => setMostrarManual(false)} className="text-indigo-200 hover:text-white transition-colors text-2xl" aria-label="Cerrar">
                                 <i className="fas fa-times"></i>
                             </button>
                         </div>
@@ -472,7 +476,7 @@ const DashboardRenta = () => {
                                     </li>
                                     <li className="flex items-center gap-3 text-xs font-bold text-indigo-900">
                                         <i className="fas fa-check-double text-indigo-500"></i>
-                                        Crédito PPM: Se descuenta el {datosRenta.creditos.ppm_acumulado > 0 ? '100%' : '0%'} de los pagos provisionales realizados.
+                                        Crédito PPM: Se descuenta el {datosRenta?.creditos?.ppm_acumulado > 0 ? '100%' : '0%'} de los pagos provisionales realizados.
                                     </li>
                                 </ul>
                             </div>

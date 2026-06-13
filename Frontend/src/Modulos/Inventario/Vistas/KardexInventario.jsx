@@ -364,7 +364,7 @@ const KardexInventario = () => {
 
                                     <Td className="text-slate-500">
                                     <span
-                                        className="block max-w-[180px] truncate"
+                                        className="block max-w-[120px] sm:max-w-[180px] md:max-w-[250px] truncate"
                                         title={item.referencia || '-'}
                                     >
                                         {item.referencia || '-'}

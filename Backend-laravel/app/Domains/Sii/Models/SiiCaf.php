@@ -2,6 +2,8 @@
 
 namespace App\Domains\Sii\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Core\Models\Empresa;
 use Database\Factories\Sii\SiiCafFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class SiiCaf extends Model
 {
+    use HasEmpresaScope;
     use HasFactory;
 
     public const ESTADO_ACTIVO   = 'activo';

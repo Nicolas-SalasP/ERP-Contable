@@ -19,6 +19,7 @@ class RolSeeder extends Seeder
                     $this->permisosAdministracion(),
                     $this->permisosInventarioCompletos(),
                     $this->permisosSiiAdministracion(),
+                    $this->permisosRrhhCompletos(),
                 ))),
             ],
             [
@@ -32,6 +33,7 @@ class RolSeeder extends Seeder
                     // H15: el Administrador gestiona usuarios de facto (vía jerarquía);
                     // ahora el permiso queda declarado para que el gate de ruta lo respete.
                     $this->permisosAdministracion(),
+                    $this->permisosRrhhCompletos(),
                 ))),
             ],
             [
@@ -47,6 +49,7 @@ class RolSeeder extends Seeder
                     ],
                     $this->permisosInventarioCompletos(),
                     $this->permisosSiiOperacion(),
+                    $this->permisosRrhhCompletos(),
                 ))),
             ],
             [
@@ -61,6 +64,7 @@ class RolSeeder extends Seeder
                     ],
                     $this->permisosInventarioSoloLectura(),
                     $this->permisosSiiSoloLectura(),
+                    $this->permisosRrhhSoloLectura(),
                 ))),
             ],
         ];
@@ -133,6 +137,29 @@ class RolSeeder extends Seeder
             'sii.caf.ver',
             'sii.dte.ver',
             'sii.auditoria.ver',
+        ];
+    }
+
+    private function permisosRrhhCompletos(): array
+    {
+        return [
+            'rrhh.empleados.ver',
+            'rrhh.empleados.crear',
+            'rrhh.empleados.editar',
+            'rrhh.contratos.crear',
+            'rrhh.remuneraciones.ver',
+            'rrhh.remuneraciones.procesar',
+            'rrhh.parametros.ver',
+            'rrhh.parametros.editar',
+        ];
+    }
+
+    private function permisosRrhhSoloLectura(): array
+    {
+        return [
+            'rrhh.empleados.ver',
+            'rrhh.remuneraciones.ver',
+            'rrhh.parametros.ver',
         ];
     }
 

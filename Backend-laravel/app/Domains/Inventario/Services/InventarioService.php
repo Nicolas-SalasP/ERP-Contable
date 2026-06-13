@@ -2,13 +2,14 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockProducto;
 use App\Domains\Inventario\Models\UnidadMedida;
-use Exception;
 use Illuminate\Support\Facades\DB;
 
 class InventarioService
@@ -67,7 +68,7 @@ class InventarioService
             ->find($id);
 
         if (!$producto) {
-            throw new Exception('El producto solicitado no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('El producto solicitado no existe o no pertenece a la empresa.');
         }
 
         return $producto;
@@ -127,7 +128,7 @@ class InventarioService
         $producto = Producto::where('empresa_id', $usuario->empresa_id)->find($id);
 
         if (!$producto) {
-            throw new Exception('El producto solicitado no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('El producto solicitado no existe o no pertenece a la empresa.');
         }
 
         $this->validarProducto($usuario->empresa_id, $datos, $id);
@@ -188,7 +189,7 @@ class InventarioService
             ->exists();
 
         if ($existe) {
-            throw new Exception('Ya existe una bodega con ese código para la empresa.');
+            throw InventarioException::regla('Ya existe una bodega con ese código para la empresa.');
         }
 
         return Bodega::create([
@@ -224,30 +225,30 @@ class InventarioService
         $sku = strtoupper(trim((string) ($datos['sku'] ?? '')));
 
         if (!preg_match('/^[A-Z0-9._-]{2,50}$/', $sku)) {
-            throw new Exception('El SKU debe tener entre 2 y 50 caracteres y solo puede incluir letras, números, punto, guion o guion bajo.');
+            throw InventarioException::regla('El SKU debe tener entre 2 y 50 caracteres y solo puede incluir letras, números, punto, guion o guion bajo.');
         }
 
         $nombre = trim((string) ($datos['nombre'] ?? ''));
 
         if ($nombre === '') {
-            throw new Exception('El nombre del producto es obligatorio.');
+            throw InventarioException::regla('El nombre del producto es obligatorio.');
         }
 
         $tipoProducto = $datos['tipo_producto'] ?? 'BIEN';
 
         if (!in_array($tipoProducto, ['BIEN', 'SERVICIO', 'INSUMO'], true)) {
-            throw new Exception('El tipo de producto no es válido.');
+            throw InventarioException::regla('El tipo de producto no es válido.');
         }
 
         $metodoValorizacion = $datos['metodo_valorizacion'] ?? 'PMP';
 
         if (!in_array($metodoValorizacion, ['PMP', 'FIFO'], true)) {
-            throw new Exception('El método de valorización no es válido.');
+            throw InventarioException::regla('El método de valorización no es válido.');
         }
 
         foreach (['costo_promedio', 'precio_venta_neto', 'stock_minimo'] as $campo) {
             if (isset($datos[$campo]) && (float) $datos[$campo] < 0) {
-                throw new Exception('Los valores monetarios y de stock no pueden ser negativos.');
+                throw InventarioException::regla('Los valores monetarios y de stock no pueden ser negativos.');
             }
         }
 
@@ -258,11 +259,11 @@ class InventarioService
         }
 
         if ($querySku->exists()) {
-            throw new Exception('Ya existe un producto con ese SKU en esta empresa.');
+            throw InventarioException::regla('Ya existe un producto con ese SKU en esta empresa.');
         }
 
         if (!UnidadMedida::where('id', $datos['unidad_medida_id'] ?? null)->where('activo', true)->exists()) {
-            throw new Exception('La unidad de medida seleccionada no es válida.');
+            throw InventarioException::regla('La unidad de medida seleccionada no es válida.');
         }
 
         if (!empty($datos['bodega_defecto_id'])) {
@@ -272,7 +273,7 @@ class InventarioService
                 ->exists();
 
             if (!$bodegaValida) {
-                throw new Exception('La bodega por defecto no existe o no pertenece a la empresa.');
+                throw InventarioException::regla('La bodega por defecto no existe o no pertenece a la empresa.');
             }
         }
 
@@ -280,7 +281,7 @@ class InventarioService
         $requiereFechaVencimiento = filter_var($datos['requiere_fecha_vencimiento'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         if ($requiereFechaVencimiento && !$manejaLotes) {
-            throw new Exception('Un producto que requiere fecha de vencimiento debe manejar lotes.');
+            throw InventarioException::regla('Un producto que requiere fecha de vencimiento debe manejar lotes.');
         }
     }
 }

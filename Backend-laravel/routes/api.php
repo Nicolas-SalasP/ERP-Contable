@@ -18,15 +18,35 @@ use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
 use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
+use App\Domains\Contabilidad\Controllers\PeriodoContableController;
 use App\Domains\CorreccionMonetaria\Controllers\CorreccionMonetariaController;
+use App\Domains\Rrhh\Controllers\EmpleadoController;
+use App\Domains\Rrhh\Controllers\ContratoController;
+use App\Domains\Rrhh\Controllers\LiquidacionController;
+use App\Domains\Rrhh\Controllers\FiniquitoController;
+use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
+use App\Domains\Rrhh\Controllers\CentralizacionController;
+use App\Domains\Rrhh\Controllers\PreviredController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
-use App\Domains\Inventario\Controllers\InventarioController;
 use App\Domains\Inventario\Controllers\ProductoController;
 use App\Domains\Inventario\Controllers\BodegaController;
 use App\Domains\Inventario\Controllers\MovimientoController;
+use App\Domains\Inventario\Controllers\KardexController;
+use App\Domains\Inventario\Controllers\ValorizacionController;
+use App\Domains\Inventario\Controllers\LoteController;
+use App\Domains\Inventario\Controllers\ReservaController;
+use App\Domains\Inventario\Controllers\TomaFisicaController;
+use App\Domains\Inventario\Controllers\DisponibilidadController;
+use App\Domains\Inventario\Controllers\ReposicionController;
+use App\Domains\Inventario\Controllers\AlertaController;
+use App\Domains\Inventario\Controllers\UbicacionController;
+use App\Domains\Inventario\Controllers\StockUbicacionController;
+use App\Domains\Inventario\Controllers\AjusteCriticoController;
+use App\Domains\Inventario\Controllers\DashboardController;
+use App\Domains\Inventario\Controllers\CatalogoController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -55,8 +75,12 @@ use App\Domains\Inventario\Controllers\ReporteInventarioController;
 Route::get('/health', HealthController::class);
 
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/token-login', [AuthController::class, 'tokenLogin']);
+    // Rate-limiting contra fuerza bruta / credential stuffing: 6 intentos por minuto
+    // por IP. Sin esto los endpoints publicos de credenciales son atacables sin limite.
+    Route::middleware('throttle:6,1')->group(function () {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/token-login', [AuthController::class, 'tokenLogin']);
+    });
 
     Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -87,23 +111,27 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol'])->middleware('permiso:usuarios.gestionar');
     Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol'])->middleware('permiso:usuarios.gestionar');
 
-    // Empresa - Perfil (configuracion propia: solo requiere autenticacion)
+    // Empresa - Perfil: lectura libre (cualquier miembro); escritura restringida a
+    // usuarios.gestionar (mismo permiso que gestión de roles) dado que no existe
+    // una clave empresa.configurar en ModuloPermisos.
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
-    Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil']);
-    Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo']);
+    Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil'])->middleware('permiso:usuarios.gestionar');
+    Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo'])->middleware('permiso:usuarios.gestionar');
     Route::get('/empresas/catalogo-bancos', [EmpresaController::class, 'catalogoBancos']);
 
-    // Empresa - Cuentas Bancarias
-    Route::post('/empresas/bancos', [EmpresaController::class, 'agregarBanco']);
-    Route::put('/empresas/bancos/{id}', [EmpresaController::class, 'actualizarBanco']);
-    Route::delete('/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco']);
+    // Empresa - Cuentas Bancarias: escritura con tesoreria.crear (vector de fraude
+    // si cualquier usuario de lectura pudiera añadir/editar cuentas bancarias propias).
+    Route::post('/empresas/bancos', [EmpresaController::class, 'agregarBanco'])->middleware('permiso:tesoreria.crear');
+    Route::put('/empresas/bancos/{id}', [EmpresaController::class, 'actualizarBanco'])->middleware('permiso:tesoreria.crear');
+    Route::delete('/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco'])->middleware('permiso:tesoreria.crear');
 
-    // Empresa - Centros de Costos
+    // Empresa - Centros de Costos: escritura con contabilidad.crear (los CC son
+    // estructuras contables; no existe clave empresa.configurar en ModuloPermisos).
     Route::get('/empresas/centros-costo', [EmpresaController::class, 'listarCentros']);
     Route::get('/centros-costo', [EmpresaController::class, 'listarCentros']);
-    Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro']);
-    Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro']);
-    Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro']);
+    Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro'])->middleware('permiso:contabilidad.crear');
+    Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro'])->middleware('permiso:contabilidad.crear');
+    Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro'])->middleware('permiso:contabilidad.crear');
 
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
@@ -220,6 +248,12 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/contabilidad/asientos/{id}/reversar', [AsientoContableController::class, 'reversar'])->middleware('permiso:contabilidad.crear');
     Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado'])->middleware('permiso:contabilidad.crear');
 
+    // Contabilidad - Bloqueo de periodo (inmutabilidad). El cierre es manual; la
+    // reapertura exige jerarquia >= 80 (validada en el service) y queda auditada.
+    Route::get('/contabilidad/periodos', [PeriodoContableController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::post('/contabilidad/periodos/cerrar', [PeriodoContableController::class, 'cerrar'])->middleware('permiso:contabilidad.cerrar_periodo');
+    Route::post('/contabilidad/periodos/reabrir', [PeriodoContableController::class, 'reabrir'])->middleware('permiso:contabilidad.cerrar_periodo');
+
     // Contabilidad - Libros diarios y mayores
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario'])->middleware('permiso:contabilidad.ver');
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor'])->middleware('permiso:contabilidad.ver');
@@ -278,7 +312,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // (autorizacion granular aplicada en los controllers via InventarioPermisoService)
     // ---------------------------------------------------------------------
     Route::prefix('inventario')->group(function () {
-        Route::get('/dashboard', [InventarioController::class, 'dashboard']);
+        Route::get('/dashboard', [DashboardController::class, 'dashboard']);
 
         Route::get('/auditoria', [InventarioAuditoriaController::class, 'index']);
         Route::get('/auditoria/resumen', [InventarioAuditoriaController::class, 'resumen']);
@@ -305,16 +339,16 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
         Route::get('/reportes/{tipo}/exportar-csv', [ReporteInventarioController::class, 'exportarReporteCsv']);
 
-        Route::get('/catalogos', [InventarioController::class, 'catalogos']);
+        Route::get('/catalogos', [CatalogoController::class, 'catalogos']);
 
-        Route::get('/ubicaciones', [InventarioController::class, 'ubicaciones']);
-        Route::post('/ubicaciones', [InventarioController::class, 'storeUbicacion']);
-        Route::get('/ubicaciones/{id}/stock', [InventarioController::class, 'stockUbicacion']);
-        Route::get('/ubicaciones/{id}', [InventarioController::class, 'showUbicacion']);
-        Route::put('/ubicaciones/{id}', [InventarioController::class, 'updateUbicacion']);
-        Route::get('/stock-ubicaciones', [InventarioController::class, 'stockUbicaciones']);
-        Route::post('/stock-ubicaciones/mover', [InventarioController::class, 'moverStockUbicacion']);
-        Route::post('/putaway/confirmar', [InventarioController::class, 'confirmarPutaway']);
+        Route::get('/ubicaciones', [UbicacionController::class, 'ubicaciones']);
+        Route::post('/ubicaciones', [UbicacionController::class, 'storeUbicacion']);
+        Route::get('/ubicaciones/{id}/stock', [UbicacionController::class, 'stockUbicacion']);
+        Route::get('/ubicaciones/{id}', [UbicacionController::class, 'showUbicacion']);
+        Route::put('/ubicaciones/{id}', [UbicacionController::class, 'updateUbicacion']);
+        Route::get('/stock-ubicaciones', [StockUbicacionController::class, 'stockUbicaciones']);
+        Route::post('/stock-ubicaciones/mover', [StockUbicacionController::class, 'moverStockUbicacion']);
+        Route::post('/putaway/confirmar', [StockUbicacionController::class, 'confirmarPutaway']);
 
         Route::get('/picking', [InventarioPickingController::class, 'index']);
         Route::post('/picking', [InventarioPickingController::class, 'store']);
@@ -354,58 +388,107 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/movimientos', [MovimientoController::class, 'movimientos']);
         Route::post('/movimientos', [MovimientoController::class, 'registrarMovimiento']);
 
-        Route::get('/kardex', [InventarioController::class, 'kardex']);
-        Route::get('/productos/{id}/kardex', [InventarioController::class, 'kardexProducto']);
+        Route::get('/kardex', [KardexController::class, 'kardex']);
+        Route::get('/productos/{id}/kardex', [KardexController::class, 'kardexProducto']);
 
-        Route::get('/valorizacion', [InventarioController::class, 'valorizacion']);
-        Route::get('/productos/{id}/valorizacion', [InventarioController::class, 'valorizacionProducto']);
+        Route::get('/valorizacion', [ValorizacionController::class, 'valorizacion']);
+        Route::get('/productos/{id}/valorizacion', [ValorizacionController::class, 'valorizacionProducto']);
 
-        Route::get('/ajustes-criticos/tipos', [InventarioController::class, 'tiposAjusteCritico']);
-        Route::get('/ajustes-criticos', [InventarioController::class, 'ajustesCriticos']);
-        Route::post('/ajustes-criticos', [InventarioController::class, 'registrarAjusteCritico']);
-        Route::get('/ajustes-criticos/{id}', [InventarioController::class, 'verAjusteCritico']);
+        Route::get('/ajustes-criticos/tipos', [AjusteCriticoController::class, 'tiposAjusteCritico']);
+        Route::get('/ajustes-criticos', [AjusteCriticoController::class, 'ajustesCriticos']);
+        Route::post('/ajustes-criticos', [AjusteCriticoController::class, 'registrarAjusteCritico']);
+        Route::get('/ajustes-criticos/{id}', [AjusteCriticoController::class, 'verAjusteCritico']);
 
-        Route::get('/lotes', [InventarioController::class, 'lotes']);
-        Route::post('/lotes', [InventarioController::class, 'storeLote']);
-        Route::get('/lotes/{id}/stock', [InventarioController::class, 'stockLote']);
-        Route::get('/lotes/{id}', [InventarioController::class, 'showLote']);
-        Route::put('/lotes/{id}', [InventarioController::class, 'updateLote']);
+        Route::get('/lotes', [LoteController::class, 'lotes']);
+        Route::post('/lotes', [LoteController::class, 'storeLote']);
+        Route::get('/lotes/{id}/stock', [LoteController::class, 'stockLote']);
+        Route::get('/lotes/{id}', [LoteController::class, 'showLote']);
+        Route::put('/lotes/{id}', [LoteController::class, 'updateLote']);
 
-        Route::get('/productos/{id}/lotes', [InventarioController::class, 'lotesProducto']);
+        Route::get('/productos/{id}/lotes', [LoteController::class, 'lotesProducto']);
 
-        Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad']);
-        Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto']);
+        Route::get('/disponibilidad', [DisponibilidadController::class, 'disponibilidad']);
+        Route::get('/productos/{id}/disponibilidad', [DisponibilidadController::class, 'disponibilidadProducto']);
 
-        Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion']);
-        Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion']);
-        Route::get('/reglas-reposicion/{id}', [InventarioController::class, 'showReglaReposicion']);
-        Route::put('/reglas-reposicion/{id}', [InventarioController::class, 'updateReglaReposicion']);
-        Route::delete('/reglas-reposicion/{id}', [InventarioController::class, 'destroyReglaReposicion']);
-        Route::get('/alertas', [InventarioController::class, 'alertas']);
-        Route::get('/reposicion/sugerencias', [InventarioController::class, 'sugerenciasReposicion']);
+        Route::get('/reglas-reposicion', [ReposicionController::class, 'reglasReposicion']);
+        Route::post('/reglas-reposicion', [ReposicionController::class, 'storeReglaReposicion']);
+        Route::get('/reglas-reposicion/{id}', [ReposicionController::class, 'showReglaReposicion']);
+        Route::put('/reglas-reposicion/{id}', [ReposicionController::class, 'updateReglaReposicion']);
+        Route::delete('/reglas-reposicion/{id}', [ReposicionController::class, 'destroyReglaReposicion']);
+        Route::get('/alertas', [AlertaController::class, 'alertas']);
+        Route::get('/reposicion/sugerencias', [ReposicionController::class, 'sugerenciasReposicion']);
 
-        Route::get('/reservas', [InventarioController::class, 'reservas']);
-        Route::post('/reservas', [InventarioController::class, 'storeReserva']);
-        Route::get('/reservas/{id}', [InventarioController::class, 'showReserva']);
-        Route::post('/reservas/{id}/cancelar', [InventarioController::class, 'cancelarReserva']);
-        Route::post('/reservas/{id}/liberar', [InventarioController::class, 'liberarReserva']);
-        Route::post('/reservas/{id}/consumir', [InventarioController::class, 'consumirReserva']);
+        Route::get('/reservas', [ReservaController::class, 'reservas']);
+        Route::post('/reservas', [ReservaController::class, 'storeReserva']);
+        Route::get('/reservas/{id}', [ReservaController::class, 'showReserva']);
+        Route::post('/reservas/{id}/cancelar', [ReservaController::class, 'cancelarReserva']);
+        Route::post('/reservas/{id}/liberar', [ReservaController::class, 'liberarReserva']);
+        Route::post('/reservas/{id}/consumir', [ReservaController::class, 'consumirReserva']);
 
         Route::get('/productos/{id}', [ProductoController::class, 'show']);
         Route::put('/productos/{id}', [ProductoController::class, 'update']);
 
-        Route::get('/tomas-fisicas', [InventarioController::class, 'tomasFisicas']);
-        Route::post('/tomas-fisicas', [InventarioController::class, 'storeTomaFisica']);
-        Route::get('/tomas-fisicas/{id}', [InventarioController::class, 'showTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/iniciar', [InventarioController::class, 'iniciarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/conteos', [InventarioController::class, 'registrarConteosTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/cerrar', [InventarioController::class, 'cerrarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/ajustar', [InventarioController::class, 'ajustarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/cancelar', [InventarioController::class, 'cancelarTomaFisica']);
+        Route::get('/tomas-fisicas', [TomaFisicaController::class, 'tomasFisicas']);
+        Route::post('/tomas-fisicas', [TomaFisicaController::class, 'storeTomaFisica']);
+        Route::get('/tomas-fisicas/{id}', [TomaFisicaController::class, 'showTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/iniciar', [TomaFisicaController::class, 'iniciarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/conteos', [TomaFisicaController::class, 'registrarConteosTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cerrar', [TomaFisicaController::class, 'cerrarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/ajustar', [TomaFisicaController::class, 'ajustarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cancelar', [TomaFisicaController::class, 'cancelarTomaFisica']);
+    });
+
+    // ---------------------------------------------------------------------
+    // RRHH y Remuneraciones (Chile)
+    // ---------------------------------------------------------------------
+    Route::prefix('rrhh')->group(function () {
+        // Personal (R1)
+        Route::get('/empleados', [EmpleadoController::class, 'index'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados', [EmpleadoController::class, 'store'])->middleware('permiso:rrhh.empleados.crear');
+        Route::get('/empleados/{id}', [EmpleadoController::class, 'show'])->middleware('permiso:rrhh.empleados.ver');
+        Route::put('/empleados/{id}', [EmpleadoController::class, 'update'])->middleware('permiso:rrhh.empleados.editar');
+        Route::delete('/empleados/{id}', [EmpleadoController::class, 'destroy'])->middleware('permiso:rrhh.empleados.editar');
+
+        // Contratos (R1)
+        Route::get('/empleados/{empleadoId}/contratos', [ContratoController::class, 'indexPorEmpleado'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados/{empleadoId}/contratos', [ContratoController::class, 'store'])->middleware('permiso:rrhh.contratos.crear');
+        Route::get('/contratos/{id}', [ContratoController::class, 'show'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/contratos/{id}/terminar', [ContratoController::class, 'terminar'])->middleware('permiso:rrhh.contratos.crear');
+        Route::post('/contratos/{id}/haberes', [ContratoController::class, 'agregarHaber'])->middleware('permiso:rrhh.contratos.crear');
+
+        // Liquidaciones de sueldo (R3)
+        Route::get('/liquidaciones', [LiquidacionController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/liquidaciones/calcular', [LiquidacionController::class, 'calcular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/liquidaciones/{id}', [LiquidacionController::class, 'show'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/liquidaciones/{id}/emitir', [LiquidacionController::class, 'emitir'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/liquidaciones/{id}/anular', [LiquidacionController::class, 'anular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // Finiquitos (R4)
+        Route::get('/finiquitos', [FiniquitoController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/finiquitos/calcular', [FiniquitoController::class, 'calcular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/finiquitos/{id}', [FiniquitoController::class, 'show'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/finiquitos/{id}/firmar', [FiniquitoController::class, 'firmar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // Parametrización legal (R2): tasas, indicadores UF/UTM, tabla impuesto único
+        Route::get('/parametros', [ParametroPrevisionalController::class, 'indexParametros'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/parametros', [ParametroPrevisionalController::class, 'storeParametro'])->middleware('permiso:rrhh.parametros.editar');
+        Route::get('/indicadores', [ParametroPrevisionalController::class, 'indexIndicadores'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/indicadores', [ParametroPrevisionalController::class, 'storeIndicador'])->middleware('permiso:rrhh.parametros.editar');
+        Route::get('/tabla-impuesto', [ParametroPrevisionalController::class, 'indexImpuesto'])->middleware('permiso:rrhh.parametros.ver');
+
+        // R5 — Centralización contable de remuneraciones
+        Route::get('/mapeo-contable', [CentralizacionController::class, 'indexMapeo'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/mapeo-contable', [CentralizacionController::class, 'upsertMapeo'])->middleware('permiso:rrhh.parametros.editar');
+        Route::delete('/mapeo-contable/{tipo}', [CentralizacionController::class, 'destroyMapeo'])->middleware('permiso:rrhh.parametros.editar');
+        Route::post('/centralizacion/{anio}/{mes}', [CentralizacionController::class, 'centralizar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // R6 — Previred: archivo previsional mensual
+        Route::get('/previred/{anio}/{mes}/archivo', [PreviredController::class, 'archivo'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/previred/{anio}/{mes}/preview', [PreviredController::class, 'preview'])->middleware('permiso:rrhh.remuneraciones.ver');
     });
 });
 
-Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
+Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {
     Route::post('/provision-user', [WebProvisioningController::class, 'provisionUser']);
     Route::post('/sync-plan',      [WebProvisioningController::class, 'syncPlan']);
     Route::post('/sync-password',  [WebProvisioningController::class, 'syncPassword']);

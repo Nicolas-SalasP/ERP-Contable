@@ -2,11 +2,12 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Integracion\Contratos\InventarioEventoIntegracionContrato;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -119,7 +120,7 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
             ->find($id);
 
         if (!$evento) {
-            throw new Exception('El evento de integración no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('El evento de integración no existe o no pertenece a la empresa.');
         }
 
         return $evento;
@@ -247,7 +248,7 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
             ->find($id);
 
         if (!$evento) {
-            throw new Exception('El evento de integración no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('El evento de integración no existe o no pertenece a la empresa.');
         }
 
         return $evento;

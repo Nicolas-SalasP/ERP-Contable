@@ -2,6 +2,8 @@
 
 namespace App\Domains\Comercial\Controllers;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Services\ClienteService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
@@ -47,6 +49,8 @@ class ClienteController
                 'success' => true,
                 'data' => $cliente
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -88,6 +92,8 @@ class ClienteController
                 'errors' => $e->errors()
             ], 422);
 
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -155,6 +161,8 @@ class ClienteController
 
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Errores de validación', 'errors' => $e->errors()], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
@@ -173,6 +181,8 @@ class ClienteController
         try {
             $cliente = $this->service->activarCliente($request->user()->empresa_id, $id);
             return response()->json(['success' => true, 'message' => 'Cliente activado']);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -189,6 +199,8 @@ class ClienteController
                 'message' => 'Cliente reactivado exitosamente.',
                 'data' => $cliente
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
