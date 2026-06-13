@@ -24,6 +24,10 @@ class CuentaBancariaEmpresa extends Model
         'email_notificacion',
     ];
 
+    protected $casts = [
+        'numero_cuenta' => 'encrypted',
+    ];
+
     public function empresa()
     {
         return $this->belongsTo(Empresa::class);

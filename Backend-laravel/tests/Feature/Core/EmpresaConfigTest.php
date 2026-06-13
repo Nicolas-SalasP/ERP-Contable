@@ -434,10 +434,12 @@ class EmpresaConfigTest extends TestCase
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [200, 201]));
-        $this->assertDatabaseHas('cuentas_bancarias_empresa', [
-            'empresa_id' => $this->empresaA->id,
-            'numero_cuenta' => '123456789'
-        ]);
+        // La BD almacena el número cifrado; verificamos mediante el accessor del modelo.
+        $cuenta = CuentaBancariaEmpresa::where('empresa_id', $this->empresaA->id)
+            ->where('banco', 'Banco Santander')
+            ->first();
+        $this->assertNotNull($cuenta);
+        $this->assertSame('123456789', $cuenta->numero_cuenta);
     }
 
     // PRUEBA: Defectos cuenta bancaria
@@ -549,10 +551,8 @@ class EmpresaConfigTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $this->assertDatabaseHas('cuentas_bancarias_empresa', [
-            'id' => $cuenta->id,
-            'numero_cuenta' => '999'
-        ]);
+        // La BD almacena el número cifrado; verificamos mediante el accessor del modelo.
+        $this->assertSame('999', $cuenta->fresh()->numero_cuenta);
     }
 
     // PRUEBA: Actualizar cuenta inexistente

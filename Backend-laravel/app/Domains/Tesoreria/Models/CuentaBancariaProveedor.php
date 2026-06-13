@@ -20,6 +20,10 @@ class CuentaBancariaProveedor extends Model
         'activo',
     ];
 
+    protected $casts = [
+        'numero_cuenta' => 'encrypted',
+    ];
+
     public function proveedor()
     {
         return $this->belongsTo(Proveedor::class);

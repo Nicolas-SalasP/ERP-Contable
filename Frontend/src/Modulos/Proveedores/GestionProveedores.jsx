@@ -3,7 +3,7 @@ import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
-import { formatearIdentificador, validarIdentificador } from '../../Utilidades/identificadores';
+import { formatearIdentificador, validarIdentificador, enmascararIdentificador } from '../../Utilidades/identificadores';
 import { logger } from '../../Configuracion/logger';
 const BANCOS_CHILE = [
     "Banco de Chile", "Banco Estado", "Banco Santander", "BCI", "Scotiabank", "Itaú",
@@ -431,7 +431,7 @@ const GestionProveedores = () => {
                                     </div>
                                     <div className="space-y-1.5 mb-4 pl-2 mt-3">
                                         <div className="text-sm font-mono text-slate-600 flex items-center gap-2">
-                                            <span className="font-bold text-xs text-slate-400 w-6">ID:</span> {prov.rut}
+                                            <span className="font-bold text-xs text-slate-400 w-6">ID:</span> {enmascararIdentificador(prov.rut, prov.pais_iso)}
                                         </div>
                                         <div className="text-sm text-slate-700 flex items-center gap-2">
                                             <span className="font-bold text-xs text-slate-400 w-6">CTO:</span>
@@ -467,7 +467,7 @@ const GestionProveedores = () => {
                                                 <div className="font-bold text-slate-800">{prov.razon_social}</div>
                                                 <div className="text-xs text-slate-400 mt-0.5"><i className="fas fa-user mr-1"></i> {prov.nombre_contacto || '---'}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-slate-600 font-mono whitespace-nowrap">{prov.rut}</td>
+                                            <td className="px-6 py-4 text-sm text-slate-600 font-mono whitespace-nowrap">{enmascararIdentificador(prov.rut, prov.pais_iso)}</td>
                                             <td className="px-6 py-4 text-center whitespace-nowrap">
                                                 <span className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 rounded text-slate-600 border border-slate-200 uppercase">
                                                     {prov.pais_iso}

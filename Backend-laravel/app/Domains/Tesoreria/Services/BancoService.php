@@ -31,10 +31,12 @@ class BancoService
 
     public function registrarCuentaPropia(array $datos): CuentaBancariaEmpresa
     {
+        // numero_cuenta está cifrado con IV aleatorio; no se puede comparar con WHERE.
+        // Se carga el subconjunto empresa+banco y se compara el valor descifrado en PHP.
         $existe = CuentaBancariaEmpresa::where('empresa_id', $datos['empresa_id'])
             ->where('banco', $datos['banco'])
-            ->where('numero_cuenta', $datos['numero_cuenta'])
-            ->exists();
+            ->get()
+            ->contains(fn ($c) => $c->numero_cuenta === $datos['numero_cuenta']);
 
         if ($existe) {
             throw TesoreriaException::regla("Esta cuenta bancaria ya se encuentra registrada para su empresa.");

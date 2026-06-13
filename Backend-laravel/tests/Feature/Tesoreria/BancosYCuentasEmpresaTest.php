@@ -116,7 +116,11 @@ class BancosYCuentasEmpresaTest extends TestCase
             'rut_titular' => '11.111.111-1'
         ]);
         $this->assertTrue(in_array($response->getStatusCode(), [200, 201]));
-        $this->assertDatabaseHas('cuentas_bancarias_empresa', ['numero_cuenta' => '123456']);
+        $cuenta = CuentaBancariaEmpresa::where('empresa_id', $this->adminA->empresa_id)
+            ->where('banco', 'Banco de Chile')
+            ->first();
+        $this->assertNotNull($cuenta);
+        $this->assertSame('123456', $cuenta->numero_cuenta);
     }
 
     public function test_rechaza_crear_cuenta_con_payload_vacio()
@@ -192,10 +196,11 @@ class BancosYCuentasEmpresaTest extends TestCase
             'titular' => 'T',
             'rut_titular' => 'R'
         ]);
-        $this->assertDatabaseHas('cuentas_bancarias_empresa', [
-            'numero_cuenta' => '1',
-            'empresa_id' => $this->empresaA->id
-        ]);
+        $cuenta = CuentaBancariaEmpresa::where('empresa_id', $this->empresaA->id)
+            ->where('banco', 'B')
+            ->first();
+        $this->assertNotNull($cuenta);
+        $this->assertSame('1', $cuenta->numero_cuenta);
     }
 
     public function test_crear_cuenta_metodo_incorrecto_falla()

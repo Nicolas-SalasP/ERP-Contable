@@ -6,6 +6,7 @@ import { usePermisos } from '../../../Contextos/Permisos';
 import rrhhApi from '../Servicios/rrhhApi';
 import { colorEstado, formatFecha } from '../Utilidades/formato';
 import PanelModal from '../Componentes/PanelModal';
+import { enmascararIdentificador } from '../../../Utilidades/identificadores';
 
 const AFPS = ['Capital', 'Cuprum', 'Habitat', 'Modelo', 'PlanVital', 'ProVida', 'Uno'];
 
@@ -161,7 +162,7 @@ const EmpleadosRrhh = () => {
                                 )}
                                 {empleados.map((emp) => (
                                     <tr key={emp.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 font-mono text-slate-700">{emp.rut}</td>
+                                        <td className="px-4 py-3 font-mono text-slate-700">{enmascararIdentificador(emp.rut)}</td>
                                         <td className="px-4 py-3 font-medium text-slate-900">
                                             {emp.nombres} {emp.apellido_paterno} {emp.apellido_materno || ''}
                                         </td>
