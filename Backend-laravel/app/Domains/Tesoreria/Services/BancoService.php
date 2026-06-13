@@ -170,80 +170,94 @@ class BancoService
 
     public function procesarCartola(int $empresaId, int $usuarioId, int $cuentaBancariaId, string $cuentaContrapartida, $archivo): array
     {
-        DB::beginTransaction();
-        
+        // Precondición FUERA de la transacción: valida pertenencia de la cuenta y
+        // que tenga cuenta contable configurada. Sus errores (no encontrada / sin
+        // configuración) deben propagarse tal cual, no envolverse como error de archivo.
+        $codigoCuentaBanco = $this->obtenerCuentaContableDeBanco($empresaId, $cuentaBancariaId);
+
         try {
-            // Usa la cuenta contable real del banco; lanza excepción si no está configurada.
-            $codigoCuentaBanco = $this->obtenerCuentaContableDeBanco($empresaId, $cuentaBancariaId);
+            // DB::transaction garantiza el rollback ante cualquier excepción (antes se
+            // usaba beginTransaction()/commit() con un catch que no capturaba las
+            // TesoreriaException por falta del import, dejando la transacción abierta).
+            return DB::transaction(function () use (
+                $empresaId, $usuarioId, $cuentaBancariaId, $cuentaContrapartida, $codigoCuentaBanco, $archivo
+            ) {
+                $gestor = fopen($archivo->getRealPath(), "r");
+                $importados = 0;
+                $ignorados = 0;
 
-            $gestor = fopen($archivo->getRealPath(), "r");
-            $esCabecera = true;
-            $importados = 0;
-            $ignorados = 0;
+                try {
+                    $esCabecera = true;
 
-            while (($fila = fgetcsv($gestor, 1000, ",")) !== FALSE) {
-                if ($esCabecera) {
-                    $esCabecera = false;
-                    continue;
+                    while (($fila = fgetcsv($gestor, 1000, ",")) !== FALSE) {
+                        if ($esCabecera) {
+                            $esCabecera = false;
+                            continue;
+                        }
+
+                        if (count($fila) < 3) continue;
+
+                        $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $fila[0])));
+                        $descripcion = substr(trim($fila[1]), 0, 255);
+                        $monto = (float) $fila[2];
+
+                        if ($monto == 0) continue;
+
+                        $existeDuplicado = $this->asientoService->existeAsientoPorOrigen(
+                            $empresaId,
+                            'importacion_banco',
+                            $cuentaBancariaId,
+                            $fecha,
+                            $descripcion
+                        );
+
+                        if ($existeDuplicado) {
+                            $ignorados++;
+                            continue;
+                        }
+
+                        $detalles = [];
+                        $montoAbsoluto = abs($monto);
+
+                        if ($monto > 0) {
+                            $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => $montoAbsoluto, 'haber' => 0];
+                            $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => 0, 'haber' => $montoAbsoluto];
+                        } else {
+                            $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => $montoAbsoluto, 'haber' => 0];
+                            $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $montoAbsoluto];
+                        }
+
+                        $cabeceraAsiento = [
+                            'empresa_id' => $empresaId,
+                            'usuario_id' => $usuarioId,
+                            'fecha' => $fecha,
+                            'glosa' => $descripcion,
+                            'tipo_asiento' => 'traspaso',
+                            'origen_modulo' => 'importacion_banco',
+                            'origen_id' => $cuentaBancariaId,
+                            'estado' => 'MAYORIZADO'
+                        ];
+
+                        $this->asientoService->registrarAsiento($cabeceraAsiento, $detalles);
+                        $importados++;
+                    }
+                } finally {
+                    if (is_resource($gestor)) {
+                        fclose($gestor);
+                    }
                 }
 
-                if (count($fila) < 3) continue; 
-
-                $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $fila[0])));
-                $descripcion = substr(trim($fila[1]), 0, 255);
-                $monto = (float) $fila[2];
-
-                if ($monto == 0) continue;
-
-                $existeDuplicado = $this->asientoService->existeAsientoPorOrigen(
-                    $empresaId,
-                    'importacion_banco',
-                    $cuentaBancariaId,
-                    $fecha,
-                    $descripcion
-                );
-
-                if ($existeDuplicado) {
-                    $ignorados++;
-                    continue;
-                }
-
-                $detalles = [];
-                $montoAbsoluto = abs($monto);
-
-                if ($monto > 0) {
-                    $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => $montoAbsoluto, 'haber' => 0];
-                    $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => 0, 'haber' => $montoAbsoluto];
-                } else {
-                    $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => $montoAbsoluto, 'haber' => 0];
-                    $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $montoAbsoluto];
-                }
-
-                $cabeceraAsiento = [
-                    'empresa_id' => $empresaId,
-                    'usuario_id' => $usuarioId,
-                    'fecha' => $fecha,
-                    'glosa' => $descripcion,
-                    'tipo_asiento' => 'traspaso',
-                    'origen_modulo' => 'importacion_banco',
-                    'origen_id' => $cuentaBancariaId,
-                    'estado' => 'MAYORIZADO'
+                return [
+                    'importados' => $importados,
+                    'ignorados' => $ignorados
                 ];
-
-                $this->asientoService->registrarAsiento($cabeceraAsiento, $detalles);
-                $importados++;
-            }
-            fclose($gestor);
-
-            DB::commit();
-
-            return [
-                'importados' => $importados,
-                'ignorados' => $ignorados
-            ];
-
-        } catch (Exception $e) {
-            DB::rollBack();
+            });
+        } catch (TesoreriaException $e) {
+            // Error de dominio ya claro; no se envuelve.
+            throw $e;
+        } catch (\Throwable $e) {
+            // El rollback ya ocurrió dentro de DB::transaction. Aquí solo llegan
+            // errores de procesamiento del archivo, que se reportan como tales.
             throw TesoreriaException::regla("El archivo contiene errores y la importación fue abortada. Error: " . $e->getMessage());
         }
     }
