@@ -18,8 +18,8 @@
 | — | Nombres/apellidos del empleado | ⏸️ no se cifran (se preserva búsqueda parcial; protegidos por permisos) |
 | 3 | Log de auditoría de acceso/cambio a PII + endpoint DPO | ✅ hecho |
 | 4 | Consentimiento + política de privacidad versionada | ✅ hecho |
-| 5 | Derechos ARCO+ (exportar/portabilidad, supresión respetando retención, bloqueo) | ⏳ siguiente |
-| 6 | Registro de brechas + runbook 3h/72h | ⏳ pendiente |
+| 5 | Derechos ARCO+ (exportar/portabilidad, supresión respetando retención, bloqueo) | ✅ hecho |
+| 6 | Registro de brechas + runbook 3h/72h | ⏳ siguiente |
 | 7 | Evidencia para certificación ISO 27701 | ⏳ pendiente |
 
 ---
