@@ -94,6 +94,30 @@ class EmpleadoService
                 $empleado->save();
             }
 
+            // Registro de base jurídica para tratamiento de datos laborales (Ley 21.719 — Fase 4)
+            // La base de licitud es ejecución del contrato/obligación legal, NO consentimiento.
+            // Envuelto defensivamente para que un fallo aquí nunca bloquee la creación del empleado.
+            try {
+                $politicaVersion = \App\Domains\Core\Models\PoliticaPrivacidad::where('activa', true)
+                    ->value('version');
+                \App\Domains\Core\Models\Consentimiento::create([
+                    'empresa_id'       => $empresaId,
+                    'titular_type'     => \App\Domains\Rrhh\Models\Empleado::class,
+                    'titular_id'       => $empleado->id,
+                    'politica_version' => $politicaVersion,
+                    'finalidad'        => 'gestion_laboral_y_remuneraciones',
+                    'base_licitud'     => 'ejecucion_contrato',
+                    'otorgado'         => true,
+                    'otorgado_at'      => now(),
+                ]);
+            } catch (\Throwable $e) {
+                // Fallo defensivo: loguear pero no abortar la transacción
+                \Illuminate\Support\Facades\Log::warning('No se pudo registrar consentimiento laboral para empleado', [
+                    'empleado_id' => $empleado->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return $empleado->fresh();
         });
     }

@@ -10,6 +10,7 @@ use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\AnulacionController;
 use App\Domains\Core\Controllers\AuditoriaController;
 use App\Domains\Core\Controllers\UsuarioController;
+use App\Domains\Core\Controllers\PrivacidadController;
 use App\Domains\Comercial\Controllers\ClienteController;
 use App\Domains\Comercial\Controllers\ProveedorController;
 use App\Domains\Comercial\Controllers\FacturaController;
@@ -96,6 +97,15 @@ Route::prefix('auth')->group(function () {
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
     Route::get('/empresas/verificar-rut', [EmpresaController::class, 'verificarRut']);
     Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
+
+    // Política de privacidad y consentimiento — Ley 21.719 Fase 4
+    Route::prefix('privacidad')->group(function () {
+        Route::get('/politica', [PrivacidadController::class, 'politicaActiva']);
+        Route::get('/mi-consentimiento', [PrivacidadController::class, 'miConsentimiento']);
+        Route::post('/consentimiento', [PrivacidadController::class, 'aceptar']);
+        Route::delete('/consentimiento', [PrivacidadController::class, 'revocar']);
+        Route::post('/politica', [PrivacidadController::class, 'crearPolitica'])->middleware('permiso:usuarios.gestionar');
+    });
 });
 
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 'subscription.writable'])->group(function () {
