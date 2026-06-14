@@ -47,6 +47,8 @@ class Empleado extends Model implements CipherSweetEncrypted
         'estado',
         'fecha_ingreso_empresa',
         'observaciones',
+        'anonimizado_at',
+        'bloqueado_at',
     ];
 
     // Datos bancarios nunca salen en serialización (Ley 21.719)
@@ -59,6 +61,8 @@ class Empleado extends Model implements CipherSweetEncrypted
         'fecha_ingreso_empresa' => 'date',
         'isapre_plan_uf' => 'decimal:4',
         'isapre_cotizacion_adicional_pct' => 'decimal:2',
+        'anonimizado_at' => 'datetime',
+        'bloqueado_at' => 'datetime',
     ];
 
     // ---------- Cifrado con CipherSweet (Ley 21.719 — Fase 2a/2b) ----------

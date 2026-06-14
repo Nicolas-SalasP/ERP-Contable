@@ -22,6 +22,7 @@ use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
 use App\Domains\Contabilidad\Controllers\PeriodoContableController;
 use App\Domains\CorreccionMonetaria\Controllers\CorreccionMonetariaController;
+use App\Domains\Rrhh\Controllers\ArcoController;
 use App\Domains\Rrhh\Controllers\EmpleadoController;
 use App\Domains\Rrhh\Controllers\ContratoController;
 use App\Domains\Rrhh\Controllers\LiquidacionController;
@@ -464,6 +465,11 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/empleados/{id}', [EmpleadoController::class, 'show'])->middleware('permiso:rrhh.empleados.ver');
         Route::put('/empleados/{id}', [EmpleadoController::class, 'update'])->middleware('permiso:rrhh.empleados.editar');
         Route::delete('/empleados/{id}', [EmpleadoController::class, 'destroy'])->middleware('permiso:rrhh.empleados.editar');
+
+        // Derechos ARCO+ (Fase 5 — Ley 21.719)
+        Route::get('/empleados/{id}/datos-personales', [ArcoController::class, 'exportar'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados/{id}/bloquear', [ArcoController::class, 'bloquear'])->middleware('permiso:usuarios.gestionar');
+        Route::post('/empleados/{id}/anonimizar', [ArcoController::class, 'suprimir'])->middleware('permiso:usuarios.gestionar');
 
         // Contratos (R1)
         Route::get('/empleados/{empleadoId}/contratos', [ContratoController::class, 'indexPorEmpleado'])->middleware('permiso:rrhh.empleados.ver');
