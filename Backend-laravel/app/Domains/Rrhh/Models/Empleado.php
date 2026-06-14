@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Crypt;
+use ParagonIE\CipherSweet\BlindIndex;
 use ParagonIE\CipherSweet\EncryptedRow;
 use Spatie\LaravelCipherSweet\Concerns\UsesCipherSweet;
 use Spatie\LaravelCipherSweet\Contracts\CipherSweetEncrypted;
@@ -60,11 +61,15 @@ class Empleado extends Model implements CipherSweetEncrypted
         'isapre_cotizacion_adicional_pct' => 'decimal:2',
     ];
 
-    // ---------- Cifrado de datos de contacto con CipherSweet (Ley 21.719 — Fase 2a) ----------
+    // ---------- Cifrado con CipherSweet (Ley 21.719 — Fase 2a/2b) ----------
 
     public static function configureCipherSweet(EncryptedRow $encryptedRow): void
     {
         $encryptedRow
+            // Fase 2b: RUT cifrado con blind index para búsqueda exacta y control de unicidad
+            ->addTextField('rut')
+            ->addBlindIndex('rut', new BlindIndex('empleado_rut_index'))
+            // Fase 2a: campos de contacto
             ->addOptionalTextField('email')
             ->addOptionalTextField('telefono')
             ->addOptionalTextField('direccion');

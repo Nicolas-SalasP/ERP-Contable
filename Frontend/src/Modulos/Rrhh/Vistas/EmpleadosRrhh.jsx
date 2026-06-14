@@ -132,7 +132,7 @@ const EmpleadosRrhh = () => {
                     <input
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
-                        placeholder="Buscar por nombre o RUT..."
+                        placeholder="Buscar por nombre o RUT completo..."
                         className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                 </div>
