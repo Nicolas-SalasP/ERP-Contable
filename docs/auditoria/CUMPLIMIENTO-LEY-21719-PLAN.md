@@ -19,8 +19,8 @@
 | 3 | Log de auditoría de acceso/cambio a PII + endpoint DPO | ✅ hecho |
 | 4 | Consentimiento + política de privacidad versionada | ✅ hecho |
 | 5 | Derechos ARCO+ (exportar/portabilidad, supresión respetando retención, bloqueo) | ✅ hecho |
-| 6 | Registro de brechas + runbook 3h/72h | ⏳ siguiente |
-| 7 | Evidencia para certificación ISO 27701 | ⏳ pendiente |
+| 6 | Registro de brechas + runbook 3h/72h | ✅ hecho |
+| 7 | Evidencia para certificación ISO 27701 | ✅ hecho (capa técnica/documental) |
 
 ---
 
