@@ -1,9 +1,26 @@
 # Plan de Cumplimiento — Protección de Datos y Ciberseguridad (Chile)
 
-**Estado:** Propuesta para aprobación (no implementado).
+**Estado:** En ejecución por fases.
 **Alcance legal:** Ley 21.719 (Protección de Datos Personales), Ley 19.628 (vigente, será sustituida), Ley 21.663 (Marco de Ciberseguridad), camino a ISO/IEC 27001 + 27701.
-**Autor:** auditoría de cumplimiento 2026-06. **Última actualización:** 2026-06-13.
+**Autor:** auditoría de cumplimiento 2026-06. **Última actualización:** 2026-06-14.
 **Decisiones tomadas:** cifrado con **CipherSweet** (columnas cifradas + blind index); despliegue **por fases, crítico primero**.
+
+### Estado de avance
+
+| Fase | Alcance | Estado |
+|---|---|---|
+| 0 | Docs: RAT, DPIA, mapeo ISO, fuentes | ✅ hecho |
+| 1 | Cuentas bancarias empresa/proveedor cifradas; `SESSION_ENCRYPT`; máscara de RUT en UI | ✅ hecho |
+| 2a | CipherSweet + contacto del empleado (email, teléfono, dirección) | ✅ hecho |
+| 2b | RUT del empleado y cargas familiares con blind index (búsqueda exacta + unicidad) | ✅ hecho |
+| 2c | Fecha de nacimiento y sueldo base cifrados (con manejo de casts date/decimal) | ✅ hecho |
+| — | RUT de clientes/proveedores/empresa | ⏸️ diferido (toca SII/facturación; se reevalúa con certificación) |
+| — | Nombres/apellidos del empleado | ⏸️ no se cifran (se preserva búsqueda parcial; protegidos por permisos) |
+| 3 | Log de auditoría de acceso/cambio a PII + panel DPO | ⏳ siguiente |
+| 4 | Consentimiento + política de privacidad versionada | ⏳ pendiente |
+| 5 | Derechos ARCO+ (exportar/portabilidad, supresión respetando retención, bloqueo) | ⏳ pendiente |
+| 6 | Registro de brechas + runbook 3h/72h | ⏳ pendiente |
+| 7 | Evidencia para certificación ISO 27701 | ⏳ pendiente |
 
 ---
 
