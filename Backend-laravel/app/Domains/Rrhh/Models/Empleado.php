@@ -72,7 +72,35 @@ class Empleado extends Model implements CipherSweetEncrypted
             // Fase 2a: campos de contacto
             ->addOptionalTextField('email')
             ->addOptionalTextField('telefono')
-            ->addOptionalTextField('direccion');
+            ->addOptionalTextField('direccion')
+            // Fase 2c: fecha de nacimiento (dato sensible Ley 21.719)
+            // El cast 'date' sigue activo: CipherSweet desencripta el string y
+            // Eloquent lo re-tipifica como Carbon al acceder al atributo.
+            ->addOptionalTextField('fecha_nacimiento');
+    }
+
+    /**
+     * Compara atributos para determinar si están sucios.
+     *
+     * Override necesario para campos cifrados con CipherSweet que también tienen un
+     * cast primitivo (date). Sin este override, Eloquent llama a fromDateTime() sobre
+     * el ciphertext durante getDirty() → comparación incorrecta (no crash, pero
+     * marcaría siempre como dirty cuando en realidad no lo está).
+     *
+     * Para los campos gestionados por CipherSweet usamos comparación de string cruda.
+     */
+    public function originalIsEquivalent($key): bool
+    {
+        $encryptedFields = static::getCipherSweetEncryptedRow()->listEncryptedFields();
+
+        if (in_array($key, $encryptedFields, true)) {
+            if (! array_key_exists($key, $this->original)) {
+                return false;
+            }
+            return $this->attributes[$key] === $this->original[$key];
+        }
+
+        return parent::originalIsEquivalent($key);
     }
 
     // ---------- Nombre completo ----------
