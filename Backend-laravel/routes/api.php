@@ -8,6 +8,7 @@ use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
 use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\AnulacionController;
+use App\Domains\Core\Controllers\AuditoriaController;
 use App\Domains\Core\Controllers\UsuarioController;
 use App\Domains\Comercial\Controllers\ClienteController;
 use App\Domains\Comercial\Controllers\ProveedorController;
@@ -135,6 +136,11 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
+
+    // DPO — Auditoria PII (Ley 21.719 — Fase 3).
+    // Solo administradores (jerarquia >= 80, permiso usuarios.gestionar) pueden
+    // consultar el log. Las filas ya estan filtradas por empresa del solicitante.
+    Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('permiso:usuarios.gestionar');
 
     // ---------------------------------------------------------------------
     // Comercial - Clientes
