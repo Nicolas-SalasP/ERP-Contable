@@ -57,6 +57,7 @@ use App\Domains\Inventario\Controllers\InventarioEventoIntegracionController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\ReporteInventarioController;
+use App\Domains\Core\Controllers\IncidenteSeguridadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -152,6 +153,13 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // Solo administradores (jerarquia >= 80, permiso usuarios.gestionar) pueden
     // consultar el log. Las filas ya estan filtradas por empresa del solicitante.
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('permiso:usuarios.gestionar');
+
+    // Registro de incidentes de seguridad (Fase 6 — Ley 21.663 / 21.719).
+    // Solo administradores (permiso usuarios.gestionar). Aislamiento multitenant
+    // garantizado por EmpresaScope sobre IncidenteSeguridad.
+    Route::get('/incidentes', [IncidenteSeguridadController::class, 'index'])->middleware('permiso:usuarios.gestionar');
+    Route::post('/incidentes', [IncidenteSeguridadController::class, 'store'])->middleware('permiso:usuarios.gestionar');
+    Route::put('/incidentes/{id}', [IncidenteSeguridadController::class, 'update'])->middleware('permiso:usuarios.gestionar');
 
     // ---------------------------------------------------------------------
     // Comercial - Clientes
