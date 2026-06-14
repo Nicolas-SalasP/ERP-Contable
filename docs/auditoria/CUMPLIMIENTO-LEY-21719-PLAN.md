@@ -17,8 +17,8 @@
 | — | RUT de clientes/proveedores/empresa | ⏸️ diferido (toca SII/facturación; se reevalúa con certificación) |
 | — | Nombres/apellidos del empleado | ⏸️ no se cifran (se preserva búsqueda parcial; protegidos por permisos) |
 | 3 | Log de auditoría de acceso/cambio a PII + endpoint DPO | ✅ hecho |
-| 4 | Consentimiento + política de privacidad versionada | ⏳ siguiente |
-| 5 | Derechos ARCO+ (exportar/portabilidad, supresión respetando retención, bloqueo) | ⏳ pendiente |
+| 4 | Consentimiento + política de privacidad versionada | ✅ hecho |
+| 5 | Derechos ARCO+ (exportar/portabilidad, supresión respetando retención, bloqueo) | ⏳ siguiente |
 | 6 | Registro de brechas + runbook 3h/72h | ⏳ pendiente |
 | 7 | Evidencia para certificación ISO 27701 | ⏳ pendiente |
 
