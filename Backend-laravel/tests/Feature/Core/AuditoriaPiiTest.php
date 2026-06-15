@@ -103,6 +103,103 @@ class AuditoriaPiiTest extends TestCase
         $this->assertNull($fila->estado_nuevo);
     }
 
+    /**
+     * Precisión de campos CipherSweet — solo se registra el campo que cambió.
+     *
+     * Escenario: se actualiza únicamente un campo NO cifrado ("afp").
+     * El detalle debe incluir "afp" pero NO debe incluir campos cifrados
+     * como "rut" o "email" que no cambiaron (Phase 2c over-report fix).
+     */
+    public function test_actualizar_campo_no_cifrado_no_incluye_campos_cifrados_en_detalle(): void
+    {
+        [$empresa, $admin] = $this->crearEmpresaConAdmin();
+        $this->actingAs($admin);
+
+        $empleado = Empleado::create([
+            'empresa_id'       => $empresa->id,
+            'rut'              => '33.333.333-3',
+            'nombres'          => 'Carlos',
+            'apellido_paterno' => 'Pinto',
+            'email'            => 'carlos@empresa.cl',
+            'afp'              => 'Capital',
+            'tipo_salud'       => 'FONASA',
+        ]);
+
+        // Actualizar SOLO el campo no-cifrado "afp"
+        $empleado->update(['afp' => 'Habitat']);
+
+        $fila = Auditoria::where('auditable_type', Empleado::class)
+            ->where('auditable_id', $empleado->id)
+            ->where('operacion', 'ACTUALIZAR')
+            ->latest()
+            ->first();
+
+        $this->assertNotNull($fila, 'Debe existir una fila de auditoria ACTUALIZAR.');
+
+        // El campo modificado sí debe aparecer
+        $this->assertStringContainsString('afp', $fila->detalle,
+            'El detalle debe incluir "afp" como campo modificado.');
+
+        // Los campos cifrados que NO cambiaron NO deben aparecer (fix Phase 2c)
+        $this->assertStringNotContainsString('rut', $fila->detalle,
+            '"rut" no debe aparecer: no fue modificado, solo rescifrado con nonce nuevo.');
+        $this->assertStringNotContainsString('email', $fila->detalle,
+            '"email" no debe aparecer: no fue modificado, solo rescifrado con nonce nuevo.');
+
+        // Seguridad: ningún valor PII en la fila
+        $filaJson = json_encode($fila->toArray());
+        $this->assertStringNotContainsString('carlos@empresa.cl', $filaJson,
+            'El valor del email no debe aparecer en ninguna columna de la fila de auditoria.');
+        $this->assertNull($fila->estado_anterior);
+        $this->assertNull($fila->estado_nuevo);
+    }
+
+    /**
+     * Precisión de campos CipherSweet — cambiar un campo cifrado SÍ lo registra.
+     *
+     * Escenario: se actualiza "email" (campo cifrado con CipherSweet).
+     * El detalle debe incluir "email".
+     */
+    public function test_actualizar_campo_cifrado_aparece_en_detalle(): void
+    {
+        [$empresa, $admin] = $this->crearEmpresaConAdmin();
+        $this->actingAs($admin);
+
+        $emailNuevo = 'nuevo.pii@empresa.cl';
+
+        $empleado = Empleado::create([
+            'empresa_id'       => $empresa->id,
+            'rut'              => '44.444.444-0',
+            'nombres'          => 'Luisa',
+            'apellido_paterno' => 'Morales',
+            'email'            => 'viejo@empresa.cl',
+            'afp'              => 'Modelo',
+            'tipo_salud'       => 'FONASA',
+        ]);
+
+        // Actualizar SOLO el campo cifrado "email"
+        $empleado->update(['email' => $emailNuevo]);
+
+        $fila = Auditoria::where('auditable_type', Empleado::class)
+            ->where('auditable_id', $empleado->id)
+            ->where('operacion', 'ACTUALIZAR')
+            ->latest()
+            ->first();
+
+        $this->assertNotNull($fila, 'Debe existir una fila de auditoria ACTUALIZAR.');
+
+        // "email" sí cambió → debe aparecer en el detalle
+        $this->assertStringContainsString('email', $fila->detalle,
+            'El campo "email" modificado debe aparecer en el detalle.');
+
+        // Seguridad: el valor del email NO debe aparecer en ninguna columna
+        $filaJson = json_encode($fila->toArray());
+        $this->assertStringNotContainsString($emailNuevo, $filaJson,
+            'El valor PII del email no debe aparecer en ninguna columna de la fila de auditoria.');
+        $this->assertNull($fila->estado_anterior);
+        $this->assertNull($fila->estado_nuevo);
+    }
+
     public function test_eliminar_empleado_escribe_fila_auditoria_eliminar(): void
     {
         [$empresa, $admin] = $this->crearEmpresaConAdmin();
