@@ -53,7 +53,7 @@ const BannerPrivacidad = () => {
     return (
         <div
             data-testid="banner-privacidad"
-            className="fixed bottom-0 left-0 right-0 z-50 bg-slate-800 text-white shadow-2xl border-t border-slate-600"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-slate-800 text-white shadow-2xl border-t border-slate-600 pb-safe"
         >
             <div className="max-w-4xl mx-auto px-4 py-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">

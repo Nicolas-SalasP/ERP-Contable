@@ -70,3 +70,40 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #10b981;
 }
+
+/* ============================================================
+   Robustez móvil iOS / Android
+   ============================================================ */
+
+/* iOS Safari hace auto-zoom al enfocar inputs con font-size < 16px.
+   Forzamos 16px en controles de formulario sólo en pantallas chicas
+   (en desktop se conservan los tamaños de diseño). */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Altura de viewport dinámica: en móviles (sobre todo iOS Safari) 100vh
+   incluye la barra de direcciones y recorta/descuadra el contenido.
+   Donde el navegador soporta dvh, h-screen/min-h-screen pasan a dinámico. */
+@supports (height: 100dvh) {
+  .h-screen {
+    height: 100dvh;
+  }
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+/* Áreas seguras (notch / indicador de inicio en iPhone X+). Requiere
+   viewport-fit=cover en el meta viewport. Se aplican quirúrgicamente
+   (shell y elementos fixed), no a todo contenedor de alto completo. */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
