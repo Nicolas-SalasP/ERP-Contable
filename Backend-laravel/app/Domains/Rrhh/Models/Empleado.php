@@ -9,10 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Crypt;
+use ParagonIE\CipherSweet\BlindIndex;
+use ParagonIE\CipherSweet\EncryptedRow;
+use Spatie\LaravelCipherSweet\Concerns\UsesCipherSweet;
+use Spatie\LaravelCipherSweet\Contracts\CipherSweetEncrypted;
 
-class Empleado extends Model
+class Empleado extends Model implements CipherSweetEncrypted
 {
-    use HasEmpresaScope, SoftDeletes;
+    use HasEmpresaScope, SoftDeletes, UsesCipherSweet;
 
     protected $table = 'empleados';
 
@@ -43,6 +47,8 @@ class Empleado extends Model
         'estado',
         'fecha_ingreso_empresa',
         'observaciones',
+        'anonimizado_at',
+        'bloqueado_at',
     ];
 
     // Datos bancarios nunca salen en serialización (Ley 21.719)
@@ -55,7 +61,51 @@ class Empleado extends Model
         'fecha_ingreso_empresa' => 'date',
         'isapre_plan_uf' => 'decimal:4',
         'isapre_cotizacion_adicional_pct' => 'decimal:2',
+        'anonimizado_at' => 'datetime',
+        'bloqueado_at' => 'datetime',
     ];
+
+    // ---------- Cifrado con CipherSweet (Ley 21.719 — Fase 2a/2b) ----------
+
+    public static function configureCipherSweet(EncryptedRow $encryptedRow): void
+    {
+        $encryptedRow
+            // Fase 2b: RUT cifrado con blind index para búsqueda exacta y control de unicidad
+            ->addTextField('rut')
+            ->addBlindIndex('rut', new BlindIndex('empleado_rut_index'))
+            // Fase 2a: campos de contacto
+            ->addOptionalTextField('email')
+            ->addOptionalTextField('telefono')
+            ->addOptionalTextField('direccion')
+            // Fase 2c: fecha de nacimiento (dato sensible Ley 21.719)
+            // El cast 'date' sigue activo: CipherSweet desencripta el string y
+            // Eloquent lo re-tipifica como Carbon al acceder al atributo.
+            ->addOptionalTextField('fecha_nacimiento');
+    }
+
+    /**
+     * Compara atributos para determinar si están sucios.
+     *
+     * Override necesario para campos cifrados con CipherSweet que también tienen un
+     * cast primitivo (date). Sin este override, Eloquent llama a fromDateTime() sobre
+     * el ciphertext durante getDirty() → comparación incorrecta (no crash, pero
+     * marcaría siempre como dirty cuando en realidad no lo está).
+     *
+     * Para los campos gestionados por CipherSweet usamos comparación de string cruda.
+     */
+    public function originalIsEquivalent($key): bool
+    {
+        $encryptedFields = static::getCipherSweetEncryptedRow()->listEncryptedFields();
+
+        if (in_array($key, $encryptedFields, true)) {
+            if (! array_key_exists($key, $this->original)) {
+                return false;
+            }
+            return $this->attributes[$key] === $this->original[$key];
+        }
+
+        return parent::originalIsEquivalent($key);
+    }
 
     // ---------- Nombre completo ----------
 

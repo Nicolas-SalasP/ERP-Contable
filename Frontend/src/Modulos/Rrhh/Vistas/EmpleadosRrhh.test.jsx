@@ -42,7 +42,8 @@ describe('EmpleadosRrhh', () => {
         render(<EmpleadosRrhh />);
         expect(await screen.findByText('Ana Soto')).toBeDefined();
         expect(screen.getByText(/Beto Lira/)).toBeDefined();
-        expect(screen.getByText('11.111.111-1')).toBeDefined();
+        // RUT se muestra enmascarado en la tabla (Ley 21.719): '11.111.111-1' → '11.***.**1-1'
+        expect(screen.getByText('11.***.**1-1')).toBeDefined();
     });
 
     it('muestra el boton "Nuevo empleado" cuando hay permiso de crear', async () => {

@@ -6,6 +6,7 @@ import FormularioCliente from './Componentes/FormularioCliente';
 import HistorialCotizaciones from './Componentes/HistorialCotizaciones';
 import Swal from 'sweetalert2';
 import { logger } from '../../Configuracion/logger';
+import { enmascararIdentificador } from '../../Utilidades/identificadores';
 
 const GestionClientes = () => {
     const [clientes, setClientes] = useState([]);
@@ -152,7 +153,7 @@ const GestionClientes = () => {
                                 
                                 <div className="pl-2 space-y-1.5 mb-4">
                                     <div className="text-sm font-mono text-slate-600 flex items-center gap-2">
-                                        <span className="font-bold text-xs text-slate-400 w-4">RUT</span> {c.rut}
+                                        <span className="font-bold text-xs text-slate-400 w-4">RUT</span> {enmascararIdentificador(c.rut)}
                                     </div>
                                     <div className="text-sm text-slate-700 flex items-center gap-2">
                                         <span className="font-bold text-xs text-slate-400 w-4">CTO</span> 
@@ -198,7 +199,7 @@ const GestionClientes = () => {
                                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-xs font-bold text-emerald-600 font-mono mb-1">{c.codigo_cliente}</div>
-                                            <div className="text-sm font-mono text-slate-600">{c.rut}</div>
+                                            <div className="text-sm font-mono text-slate-600">{enmascararIdentificador(c.rut)}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-slate-800">{c.razon_social}</div>

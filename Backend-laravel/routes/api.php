@@ -8,7 +8,9 @@ use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
 use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\AnulacionController;
+use App\Domains\Core\Controllers\AuditoriaController;
 use App\Domains\Core\Controllers\UsuarioController;
+use App\Domains\Core\Controllers\PrivacidadController;
 use App\Domains\Comercial\Controllers\ClienteController;
 use App\Domains\Comercial\Controllers\ProveedorController;
 use App\Domains\Comercial\Controllers\FacturaController;
@@ -20,6 +22,7 @@ use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
 use App\Domains\Contabilidad\Controllers\PeriodoContableController;
 use App\Domains\CorreccionMonetaria\Controllers\CorreccionMonetariaController;
+use App\Domains\Rrhh\Controllers\ArcoController;
 use App\Domains\Rrhh\Controllers\EmpleadoController;
 use App\Domains\Rrhh\Controllers\ContratoController;
 use App\Domains\Rrhh\Controllers\LiquidacionController;
@@ -54,6 +57,7 @@ use App\Domains\Inventario\Controllers\InventarioEventoIntegracionController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\ReporteInventarioController;
+use App\Domains\Core\Controllers\IncidenteSeguridadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +99,15 @@ Route::prefix('auth')->group(function () {
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
     Route::get('/empresas/verificar-rut', [EmpresaController::class, 'verificarRut']);
     Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
+
+    // Política de privacidad y consentimiento — Ley 21.719 Fase 4
+    Route::prefix('privacidad')->group(function () {
+        Route::get('/politica', [PrivacidadController::class, 'politicaActiva']);
+        Route::get('/mi-consentimiento', [PrivacidadController::class, 'miConsentimiento']);
+        Route::post('/consentimiento', [PrivacidadController::class, 'aceptar']);
+        Route::delete('/consentimiento', [PrivacidadController::class, 'revocar']);
+        Route::post('/politica', [PrivacidadController::class, 'crearPolitica'])->middleware('permiso:usuarios.gestionar');
+    });
 });
 
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 'subscription.writable'])->group(function () {
@@ -135,6 +148,18 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
+
+    // DPO — Auditoria PII (Ley 21.719 — Fase 3).
+    // Solo administradores (jerarquia >= 80, permiso usuarios.gestionar) pueden
+    // consultar el log. Las filas ya estan filtradas por empresa del solicitante.
+    Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('permiso:usuarios.gestionar');
+
+    // Registro de incidentes de seguridad (Fase 6 — Ley 21.663 / 21.719).
+    // Solo administradores (permiso usuarios.gestionar). Aislamiento multitenant
+    // garantizado por EmpresaScope sobre IncidenteSeguridad.
+    Route::get('/incidentes', [IncidenteSeguridadController::class, 'index'])->middleware('permiso:usuarios.gestionar');
+    Route::post('/incidentes', [IncidenteSeguridadController::class, 'store'])->middleware('permiso:usuarios.gestionar');
+    Route::put('/incidentes/{id}', [IncidenteSeguridadController::class, 'update'])->middleware('permiso:usuarios.gestionar');
 
     // ---------------------------------------------------------------------
     // Comercial - Clientes
@@ -448,6 +473,11 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/empleados/{id}', [EmpleadoController::class, 'show'])->middleware('permiso:rrhh.empleados.ver');
         Route::put('/empleados/{id}', [EmpleadoController::class, 'update'])->middleware('permiso:rrhh.empleados.editar');
         Route::delete('/empleados/{id}', [EmpleadoController::class, 'destroy'])->middleware('permiso:rrhh.empleados.editar');
+
+        // Derechos ARCO+ (Fase 5 — Ley 21.719)
+        Route::get('/empleados/{id}/datos-personales', [ArcoController::class, 'exportar'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados/{id}/bloquear', [ArcoController::class, 'bloquear'])->middleware('permiso:usuarios.gestionar');
+        Route::post('/empleados/{id}/anonimizar', [ArcoController::class, 'suprimir'])->middleware('permiso:usuarios.gestionar');
 
         // Contratos (R1)
         Route::get('/empleados/{empleadoId}/contratos', [ContratoController::class, 'indexPorEmpleado'])->middleware('permiso:rrhh.empleados.ver');

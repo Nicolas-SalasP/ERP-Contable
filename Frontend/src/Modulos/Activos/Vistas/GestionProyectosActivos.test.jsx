@@ -105,7 +105,7 @@ describe('GestionProyectosActivos - eliminar proyecto', () => {
 
         await waitForCards();
 
-        const botonesEliminar = screen.getAllByTitle(/eliminar proyecto/i);
+        const botonesEliminar = screen.getAllByLabelText(/eliminar proyecto/i);
         expect(botonesEliminar.length).toBe(2);
     });
 
@@ -120,7 +120,7 @@ describe('GestionProyectosActivos - eliminar proyecto', () => {
 
         await waitForCards();
 
-        const botonesEliminar = screen.getAllByTitle(/eliminar proyecto/i);
+        const botonesEliminar = screen.getAllByLabelText(/eliminar proyecto/i);
         fireEvent.click(botonesEliminar[0]);
 
         await waitFor(() => expect(swalMock.fire).toHaveBeenCalled());
@@ -145,7 +145,7 @@ describe('GestionProyectosActivos - eliminar proyecto', () => {
 
         await waitForCards();
 
-        fireEvent.click(screen.getAllByTitle(/eliminar proyecto/i)[0]);
+        fireEvent.click(screen.getAllByLabelText(/eliminar proyecto/i)[0]);
         await waitFor(() => expect(swalMock.fire).toHaveBeenCalled());
 
         await new Promise((r) => setTimeout(r, 50));
@@ -163,7 +163,7 @@ describe('GestionProyectosActivos - eliminar proyecto', () => {
 
         await waitForCards();
 
-        const botonesEliminar = screen.getAllByTitle(/eliminar proyecto/i);
+        const botonesEliminar = screen.getAllByLabelText(/eliminar proyecto/i);
         fireEvent.click(botonesEliminar[1]);
 
         await waitFor(() => expect(swalMock.fire).toHaveBeenCalled());
@@ -188,7 +188,7 @@ describe('GestionProyectosActivos - eliminar proyecto', () => {
         renderWithRouter(<GestionProyectosActivos onNotificar={vi.fn()} />);
         await waitForCards();
 
-        fireEvent.click(screen.getAllByTitle(/eliminar proyecto/i)[1]);
+        fireEvent.click(screen.getAllByLabelText(/eliminar proyecto/i)[1]);
 
         await waitFor(() => expect(swalMock.fire).toHaveBeenCalledTimes(1));
 

@@ -1,9 +1,26 @@
 # Plan de Cumplimiento — Protección de Datos y Ciberseguridad (Chile)
 
-**Estado:** Propuesta para aprobación (no implementado).
+**Estado:** En ejecución por fases.
 **Alcance legal:** Ley 21.719 (Protección de Datos Personales), Ley 19.628 (vigente, será sustituida), Ley 21.663 (Marco de Ciberseguridad), camino a ISO/IEC 27001 + 27701.
-**Autor:** auditoría de cumplimiento 2026-06. **Última actualización:** 2026-06-13.
+**Autor:** auditoría de cumplimiento 2026-06. **Última actualización:** 2026-06-14.
 **Decisiones tomadas:** cifrado con **CipherSweet** (columnas cifradas + blind index); despliegue **por fases, crítico primero**.
+
+### Estado de avance
+
+| Fase | Alcance | Estado |
+|---|---|---|
+| 0 | Docs: RAT, DPIA, mapeo ISO, fuentes | ✅ hecho |
+| 1 | Cuentas bancarias empresa/proveedor cifradas; `SESSION_ENCRYPT`; máscara de RUT en UI | ✅ hecho |
+| 2a | CipherSweet + contacto del empleado (email, teléfono, dirección) | ✅ hecho |
+| 2b | RUT del empleado y cargas familiares con blind index (búsqueda exacta + unicidad) | ✅ hecho |
+| 2c | Fecha de nacimiento y sueldo base cifrados (con manejo de casts date/decimal) | ✅ hecho |
+| — | RUT de clientes/proveedores/empresa | ⏸️ diferido (toca SII/facturación; se reevalúa con certificación) |
+| — | Nombres/apellidos del empleado | ⏸️ no se cifran (se preserva búsqueda parcial; protegidos por permisos) |
+| 3 | Log de auditoría de acceso/cambio a PII + endpoint DPO | ✅ hecho |
+| 4 | Consentimiento + política de privacidad versionada | ✅ hecho |
+| 5 | Derechos ARCO+ (exportar/portabilidad, supresión respetando retención, bloqueo) | ✅ hecho |
+| 6 | Registro de brechas + runbook 3h/72h | ✅ hecho |
+| 7 | Evidencia para certificación ISO 27701 | ✅ hecho (capa técnica/documental) |
 
 ---
 
@@ -129,3 +146,49 @@
 
 Fase 0 (docs) → **Fase 1 (crítico, ya)** → Fase 2 → Fase 3 → Fase 4 → Fase 5 → Fase 6 → Fase 7.
 Cada fase se aprueba y mergea antes de lanzar la siguiente. Los subagentes (Sonnet/Haiku) ejecutan una fase a la vez bajo revisión.
+
+---
+
+## Fase 2 — Operación de despliegue (Fase 2a: cifrado contacto Empleado)
+
+**Estado implementado:** `email`, `telefono`, `direccion` de `empleados` cifrados con
+`spatie/laravel-ciphersweet` v1.7 + `paragonie/ciphersweet` v4. Clave en `CIPHERSWEET_KEY`
+(64 hex chars / 32 bytes, backend NaCl, provider string).
+
+### Pasos obligatorios al desplegar en producción
+
+1. **Generar la clave de producción** (NUNCA reutilizar la de desarrollo/CI):
+   ```
+   php artisan ciphersweet:generate-key --show
+   ```
+   Guardar el resultado (64 hex chars) en el gestor de secretos (AWS Secrets Manager,
+   HashiCorp Vault, etc.). Definir la variable de entorno `CIPHERSWEET_KEY` en el servidor
+   antes de iniciar el proceso de migración.
+
+2. **Ejecutar la migración de esquema** (amplía email/telefono/direccion a `text`):
+   ```
+   php artisan migrate
+   ```
+
+3. **Backfill de filas existentes** (cifra las filas actualmente en texto plano):
+   El comando `ciphersweet:encrypt` de spatie re-guarda cada fila pasando por los
+   observers del modelo, lo que activa el cifrado CipherSweet. Requiere la nueva clave
+   como segundo argumento (idéntica al valor de `CIPHERSWEET_KEY` en producción):
+   ```
+   php artisan ciphersweet:encrypt "App\Domains\Rrhh\Models\Empleado" <NUEVA_CLAVE_HEX>
+   ```
+   El comando acepta un tercer argumento opcional `{sortDirection=asc}` y un cuarto
+   `{tablename?}`. En instalaciones con muchos empleados, considerar ejecutarlo en una
+   ventana de mantenimiento o en lotes usando una estrategia de migración sin downtime.
+
+4. **Verificar que el backfill fue completo:**
+   Tras el backfill no debe quedar ninguna fila con texto en claro. Verificar con:
+   ```sql
+   SELECT id, email FROM empleados WHERE email NOT LIKE 'nacl:%' LIMIT 10;
+   ```
+   (El ciphertext de CipherSweet con backend NaCl comienza con el prefijo `nacl:`.)
+
+5. **Advertencia de rotación de clave:** si en el futuro se rota la clave, el mismo
+   comando `ciphersweet:encrypt` actúa como re-encriptador: descifra con la clave
+   actual y cifra con la nueva. Perder la clave hace irrecuperables los campos cifrados.
+   La nueva clave debe quedar en `CIPHERSWEET_KEY` después de la rotación.

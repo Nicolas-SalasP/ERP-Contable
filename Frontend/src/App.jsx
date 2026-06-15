@@ -63,6 +63,7 @@ const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh')
 const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 import Glosario from './Modulos/Glosario/Glosario';
+const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 
 // Si ya está autenticado, redirige al inicio (evita volver a /login sin logout).
 const RutaPublica = ({ children }) => {
@@ -665,6 +666,14 @@ function App() {
           <Route path="/glosario" element={
             <RutaPrivada>
               <LayoutPrincipal><Glosario /></LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/cumplimiento" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="usuarios.gestionar">
+                <LayoutPrincipal><PanelDpo /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
