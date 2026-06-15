@@ -19,6 +19,7 @@ import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
 import GestionClientes from './Modulos/Clientes/GestionClientes';
 import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
 import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
+const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
 const AdministradorCuentas = lazy(() => import('./Modulos/Contabilidad/Vistas/AdministradorCuentas'));
 import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
@@ -223,6 +224,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="proveedores.ver">
                 <LayoutPrincipal><GestionProveedores /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/cumplimiento" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="usuarios.gestionar">
+                <LayoutPrincipal><PanelDpo /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />

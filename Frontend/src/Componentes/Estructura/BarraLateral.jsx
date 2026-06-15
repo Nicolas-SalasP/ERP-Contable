@@ -281,6 +281,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
             subItems: [
                 { path: '/empresa/usuarios', label: 'Gestión de Equipo' },
                 { path: '/empresa/roles', label: 'Roles y Permisos' },
+                { path: '/cumplimiento', label: 'Protección de Datos (DPO)', permisosRequeridos: ['usuarios.gestionar'] },
             ]
         },
         {
