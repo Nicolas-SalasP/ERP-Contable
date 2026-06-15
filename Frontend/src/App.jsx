@@ -19,7 +19,6 @@ import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
 import GestionClientes from './Modulos/Clientes/GestionClientes';
 import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
 import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
-const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
 const AdministradorCuentas = lazy(() => import('./Modulos/Contabilidad/Vistas/AdministradorCuentas'));
 import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
@@ -64,6 +63,7 @@ const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh')
 const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 import Glosario from './Modulos/Glosario/Glosario';
+const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 
 // Si ya está autenticado, redirige al inicio (evita volver a /login sin logout).
 const RutaPublica = ({ children }) => {
@@ -224,14 +224,6 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="proveedores.ver">
                 <LayoutPrincipal><GestionProveedores /></LayoutPrincipal>
-              </RutaProtegida>
-            </RutaPrivada>
-          } />
-
-          <Route path="/cumplimiento" element={
-            <RutaPrivada>
-              <RutaProtegida permiso="usuarios.gestionar">
-                <LayoutPrincipal><PanelDpo /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -674,6 +666,14 @@ function App() {
           <Route path="/glosario" element={
             <RutaPrivada>
               <LayoutPrincipal><Glosario /></LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/cumplimiento" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="usuarios.gestionar">
+                <LayoutPrincipal><PanelDpo /></LayoutPrincipal>
+              </RutaProtegida>
             </RutaPrivada>
           } />
 
