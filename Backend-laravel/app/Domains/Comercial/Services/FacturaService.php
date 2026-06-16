@@ -365,9 +365,9 @@ class FacturaService
             ->toArray();
     }
 
-    public function obtenerAuditoriaCompleta(int $id): array
+    public function obtenerAuditoriaCompleta(int $empresaId, int $id): array
     {
-        $factura = Factura::with('proveedor')->findOrFail($id);
+        $factura = Factura::where('empresa_id', $empresaId)->with('proveedor')->findOrFail($id);
 
         $historial = DB::table('auditorias')
             ->where('auditable_type', Factura::class)
