@@ -69,6 +69,12 @@ parameters:
 		-
 			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
 			identifier: class.notFound
+			count: 3
+			path: app/Domains/Comercial/Controllers/HonorariosController.php
+
+		-
+			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
+			identifier: class.notFound
 			count: 8
 			path: app/Domains/Comercial/Controllers/ProveedorController.php
 
@@ -255,6 +261,18 @@ parameters:
 		-
 			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
 			identifier: class.notFound
+			count: 5
+			path: app/Domains/Contabilidad/Controllers/Dj1879Controller.php
+
+		-
+			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
+			identifier: class.notFound
+			count: 5
+			path: app/Domains/Contabilidad/Controllers/Dj1887Controller.php
+
+		-
+			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
+			identifier: class.notFound
 			count: 7
 			path: app/Domains/Contabilidad/Controllers/ImpuestosController.php
 
@@ -311,6 +329,54 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 2
 			path: app/Domains/Contabilidad/Services/AsientoContableService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$codigo_concepto\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_termino_real\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$horas_semana\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rut\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tipo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tipo_jornada\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>horas_semana" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tipo_jornada" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
 
 		-
 			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
@@ -628,18 +694,6 @@ parameters:
 			message: '#^Access to an undefined property App\\Domains\\Core\\Models\\User\:\:\$rol\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Domains/Core/Support/ModuloPermisos.php
-
-		-
-			message: '#^Offset 0 on array\{''Activos fijos'', ''Activos''\}\|array\{''Ajustes críticos''\|''Alertas y reposición''\|''Auditoría operativa''\|''Bodegas''\|''Dashboard de…''\|''Despachos''\|''Devoluciones''\|''Disponibilidad''\|''Eventos de…''\|''Kardex''\|''Lotes''\|''Movimientos''\|''Packing''\|''Picking''\|''Productos''\|''Reglas de reposición''\|''Reportes de…''\|''Reservas''\|''Stock por ubicación''\|''Tomas físicas''\|''Ubicaciones''\|''Valorización'', ''Inventario''\}\|array\{''Anulación de…''\|''Auditoría de…''\|''Emisión DTE''\|''Historial de compras''\|''Ingreso de facturas''\|''Proveedores'', ''Compras''\}\|array\{''Archivo Previred''\|''Centralización…''\|''Contratos''\|''Ficha de personal''\|''Finiquitos''\|''Liquidaciones de…''\|''Parámetros…'', ''RRHH''\}\|array\{''Asientos manuales''\|''Cierre de periodo''\|''Libro mayor''\|''Plan de cuentas''\|''Reclasificador''\|''Visor de asientos'', ''Contabilidad''\}\|array\{''Auditoría SII''\|''Certificado digital''\|''Configuración SII''\|''Emisión y estado DTE''\|''Folios CAF'', ''SII''\}\|array\{''Cartola bancaria''\|''Mesa de conciliación''\|''Nómina de pagos'', ''Tesorería''\}\|array\{''Cierre F29''\|''Mapeo SII''\|''Operación renta'', ''Tributario''\}\|array\{''Clientes y…''\|''Cotizaciones'', ''Comercial''\}\|array\{''Dashboard ejecutivo''\|''Dashboard principal''\|''Glosario contable''\|''Perfil de empresa'', ''General''\}\|array\{''Gestión de usuarios''\|''Roles y permisos'', ''Administración''\}\|array\{''Integraciones API''\|''Módulos a medida''\|''White\-label'', ''Enterprise''\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Domains/Core/Support/ModuloPermisos.php
-
-		-
-			message: '#^Offset 1 on array\{''Activos fijos'', ''Activos''\}\|array\{''Ajustes críticos''\|''Alertas y reposición''\|''Auditoría operativa''\|''Bodegas''\|''Dashboard de…''\|''Despachos''\|''Devoluciones''\|''Disponibilidad''\|''Eventos de…''\|''Kardex''\|''Lotes''\|''Movimientos''\|''Packing''\|''Picking''\|''Productos''\|''Reglas de reposición''\|''Reportes de…''\|''Reservas''\|''Stock por ubicación''\|''Tomas físicas''\|''Ubicaciones''\|''Valorización'', ''Inventario''\}\|array\{''Anulación de…''\|''Auditoría de…''\|''Emisión DTE''\|''Historial de compras''\|''Ingreso de facturas''\|''Proveedores'', ''Compras''\}\|array\{''Archivo Previred''\|''Centralización…''\|''Contratos''\|''Ficha de personal''\|''Finiquitos''\|''Liquidaciones de…''\|''Parámetros…'', ''RRHH''\}\|array\{''Asientos manuales''\|''Cierre de periodo''\|''Libro mayor''\|''Plan de cuentas''\|''Reclasificador''\|''Visor de asientos'', ''Contabilidad''\}\|array\{''Auditoría SII''\|''Certificado digital''\|''Configuración SII''\|''Emisión y estado DTE''\|''Folios CAF'', ''SII''\}\|array\{''Cartola bancaria''\|''Mesa de conciliación''\|''Nómina de pagos'', ''Tesorería''\}\|array\{''Cierre F29''\|''Mapeo SII''\|''Operación renta'', ''Tributario''\}\|array\{''Clientes y…''\|''Cotizaciones'', ''Comercial''\}\|array\{''Dashboard ejecutivo''\|''Dashboard principal''\|''Glosario contable''\|''Perfil de empresa'', ''General''\}\|array\{''Gestión de usuarios''\|''Roles y permisos'', ''Administración''\}\|array\{''Integraciones API''\|''Módulos a medida''\|''White\-label'', ''Enterprise''\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
 			path: app/Domains/Core/Support/ModuloPermisos.php
 
 		-
@@ -2167,6 +2221,12 @@ parameters:
 			path: app/Domains/Rrhh/Controllers/LiquidacionController.php
 
 		-
+			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
+			identifier: class.notFound
+			count: 5
+			path: app/Domains/Rrhh/Controllers/LreController.php
+
+		-
 			message: '#^Access to property \$rol on an unknown class App\\Models\\User\.$#'
 			identifier: class.notFound
 			count: 2
@@ -2321,6 +2381,66 @@ parameters:
 			identifier: instanceof.alwaysTrue
 			count: 1
 			path: app/Domains/Rrhh/Services/Finiquito/FiniquitoService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cargasFamiliares\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$causal_termino\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ccaf_codigo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_inicio\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_termino_real\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organismo_mutual_codigo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$region\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rut\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tipo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tipo_jornada\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Rrhh/Services/Lre/GenerarLreService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$mutual_codigo\.$#'
