@@ -96,10 +96,14 @@ const Dj1887 = () => {
         try {
             const resp = await dj1887.validar(envioActivo.id);
             const data = resp?.data ?? resp;
-            const actualizado = data?.envio ?? data;
-            setEnvios((prev) => prev.map((e) => (e.id === envioActivo.id ? actualizado : e)));
-            setSeleccionado(actualizado);
-            mostrarMensaje('exito', 'DJ 1887 validada correctamente. Sin errores.');
+            const valido = data?.valido ?? true;
+            const errores = data?.errores ?? [];
+            await cargarHistorial();
+            if (valido) {
+                mostrarMensaje('exito', 'DJ 1887 validada correctamente. Sin errores.');
+            } else {
+                mostrarMensaje('error', `Validación con ${errores.length} error(es): ${errores[0] ?? ''}`);
+            }
         } catch (err) {
             const data = err?.response?.data;
             const msg = data?.mensaje ?? data?.message ?? 'Error al validar la DJ 1887.';
@@ -132,10 +136,8 @@ const Dj1887 = () => {
         if (!envioActivo || !puedeProcesar) return;
         setConfirmando(true);
         try {
-            const resp = await dj1887.confirmarPresentacion(envioActivo.id, folioConfirmacion || null);
-            const actualizado = resp?.data ?? resp;
-            setEnvios((prev) => prev.map((e) => (e.id === envioActivo.id ? actualizado : e)));
-            setSeleccionado(actualizado);
+            await dj1887.confirmarPresentacion(envioActivo.id, folioConfirmacion || null);
+            await cargarHistorial();
             setFolioConf('');
             mostrarMensaje('exito', 'Presentación ante el SII confirmada correctamente.');
         } catch (err) {
@@ -350,7 +352,7 @@ const Dj1887 = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {envios.map((envio) => (
+                                {envios.filter(Boolean).map((envio) => (
                                     <tr
                                         key={envio.id}
                                         className={`hover:bg-slate-50 cursor-pointer ${envioActivo?.id === envio.id ? 'bg-emerald-50' : ''}`}
