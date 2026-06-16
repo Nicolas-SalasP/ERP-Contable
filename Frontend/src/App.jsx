@@ -63,6 +63,7 @@ const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh')
 const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 const LreRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LreRrhh'));
+const Dj1887 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1887'));
 import Glosario from './Modulos/Glosario/Glosario';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 
@@ -278,6 +279,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
                 <LayoutPrincipal><CorreccionMonetaria /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1887" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1887 /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
