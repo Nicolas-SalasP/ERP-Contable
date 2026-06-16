@@ -78,7 +78,8 @@ class ImpuestosService
         $ivaCredito = $compras->sum('monto_iva');
 
         $retenciones = 0;
-        $tasaPpm = 1.00;
+        $empresaRow = DB::table('empresas')->where('id', $empresaId)->first();
+        $tasaPpm = (float) ($empresaRow->ppm_pct ?? 1.00);
         $montoPpm = round($totalVentasNeto * ($tasaPpm / 100));
 
         $ivaDeterminado = $ivaDebito - $ivaCredito;

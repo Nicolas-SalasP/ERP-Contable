@@ -56,6 +56,7 @@ class EmpresaController extends Controller
                 'email' => 'nullable|email|max:100',
                 'color_primario' => 'nullable|string|max:20',
                 'regimen_tributario' => 'nullable|in:14_D3,14_D8,14_A',
+                'ppm_pct' => 'nullable|numeric|min:0|max:10',
             ]);
 
             $empresa = $this->empresaService->actualizarDatos($request->user()->empresa_id, $datos);
