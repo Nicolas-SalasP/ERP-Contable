@@ -63,4 +63,13 @@ class Cotizacion extends Model
     {
         return $this->hasMany(CotizacionDetalle::class);
     }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::deleting(function (Cotizacion $cotizacion) {
+            $cotizacion->detalles()->delete();
+        });
+    }
 }
