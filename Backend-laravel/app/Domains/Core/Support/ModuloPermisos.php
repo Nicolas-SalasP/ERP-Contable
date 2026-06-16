@@ -66,6 +66,7 @@ final class ModuloPermisos
         'rrhh.parametros' => ['rrhh.parametros.ver', 'rrhh.parametros.editar'],
         'rrhh.centralizacion' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
         'rrhh.previred' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
+        'contabilidad.dj' => ['contabilidad.dj.ver', 'contabilidad.dj.procesar'],
         'empresa.perfil' => [],
         'glosario' => [],
         'integraciones.api' => [],

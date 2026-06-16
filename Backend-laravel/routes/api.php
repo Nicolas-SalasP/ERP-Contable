@@ -59,6 +59,7 @@ use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\ReporteInventarioController;
 use App\Domains\Core\Controllers\IncidenteSeguridadController;
+use App\Domains\Contabilidad\Controllers\Dj1887Controller;
 
 /*
 |--------------------------------------------------------------------------
@@ -527,6 +528,15 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/lre', [LreController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
         Route::get('/lre/{id}/descargar', [LreController::class, 'descargar'])->middleware('permiso:rrhh.remuneraciones.ver');
     });
+});
+
+// DJ 1887 - Declaración Jurada de Rentas (SII)
+Route::prefix('dj/1887')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                    [Dj1887Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                            [Dj1887Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                  [Dj1887Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                 [Dj1887Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',   [Dj1887Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {
