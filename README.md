@@ -97,4 +97,18 @@ pnpm e2e                                  # Playwright (requiere pnpm e2e:instal
 Pipeline automatizado vía GitHub Actions (`.github/workflows/ci-cd.yml`):
 
 * **Push a cualquier rama:** suite PHPUnit contra SQLite **y** contra MySQL 8 en contenedor (los tests deben pasar en ambos engines), más lint y build del frontend.
+* **Push a `staging`:** si todos los tests pasan, despliega a `staging.erp.tenri.cl` (mismo mecanismo FTP + SSH, secrets independientes).
 * **Push a `main`:** si todos los tests pasan, compila el frontend y despliega ambos ecosistemas a producción (FTP + SSH con migraciones y cache de Laravel).
+
+## Flujo de despliegue
+
+```
+feature/* → PR → staging → validación manual → PR → main → deploy producción
+```
+
+* Push a `staging` → deploy automático a `staging.erp.tenri.cl` (environment `staging` en GitHub).
+* Staging validado → merge a `main` → deploy a producción (environment `production` en GitHub, requiere aprobación de reviewer).
+
+> **Configuración requerida en GitHub → Settings → Environments:**
+> - `staging`: agregar los secrets `FTP_SERVER_STAGING`, `FTP_USERNAME_STAGING`, `FTP_PASSWORD_STAGING`, `SSH_HOST_STAGING`, `SSH_USERNAME_STAGING`, `SSH_PRIVATE_KEY_STAGING`.
+> - `production`: agregar una "environment protection rule" con al menos 1 required reviewer antes de hacer deploy a producción.
