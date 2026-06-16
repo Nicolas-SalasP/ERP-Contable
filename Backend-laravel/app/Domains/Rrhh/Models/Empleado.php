@@ -49,6 +49,11 @@ class Empleado extends Model implements CipherSweetEncrypted
         'observaciones',
         'anonimizado_at',
         'bloqueado_at',
+        'comuna_codigo_lre',
+        'organismo_mutual_codigo',
+        'ccaf_codigo',
+        'pensionado_vejez',
+        'pensionado_invalidez',
     ];
 
     // Datos bancarios nunca salen en serialización (Ley 21.719)

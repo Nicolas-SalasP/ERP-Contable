@@ -62,6 +62,7 @@ const FiniquitosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/FiniquitosRrhh')
 const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh'));
 const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
+const LreRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LreRrhh'));
 import Glosario from './Modulos/Glosario/Glosario';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 
@@ -658,6 +659,16 @@ function App() {
               <RutaPorModulo modulo="rrhh">
                 <RutaProtegida permiso="rrhh.remuneraciones.ver">
                   <LayoutPrincipal><PreviredRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/lre" element={
+            <RutaPrivada>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><LreRrhh /></LayoutPrincipal>
                 </RutaProtegida>
               </RutaPorModulo>
             </RutaPrivada>

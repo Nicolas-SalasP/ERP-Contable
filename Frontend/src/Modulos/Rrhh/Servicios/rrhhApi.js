@@ -73,6 +73,20 @@ const rrhhApi = {
                 `previred_${anio}_${String(mes).padStart(2, '0')}.csv`,
             ),
     },
+
+    // ── R7: LRE — Libro de Remuneraciones Electrónico ────────────────────────
+    lre: {
+        listar: (params = {}) => api.get('/rrhh/lre', { params }),
+        generar: (anio, mes) => api.post('/rrhh/lre/generar', { anio, mes }),
+        validar: (id) => api.post(`/rrhh/lre/${id}/validar`),
+        confirmarDt: (id, numeroConfirmacion) =>
+            api.post(`/rrhh/lre/${id}/confirmar-dt`, { numero_confirmacion: numeroConfirmacion }),
+        descargar: (id, anio, mes) =>
+            api.download(
+                `/rrhh/lre/${id}/descargar`,
+                `LRE_${anio}_${String(mes).padStart(2, '0')}.txt`,
+            ),
+    },
 };
 
 export default rrhhApi;

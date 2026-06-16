@@ -30,6 +30,7 @@ use App\Domains\Rrhh\Controllers\FiniquitoController;
 use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
 use App\Domains\Rrhh\Controllers\CentralizacionController;
 use App\Domains\Rrhh\Controllers\PreviredController;
+use App\Domains\Rrhh\Controllers\LreController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
@@ -516,6 +517,15 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         // R6 — Previred: archivo previsional mensual
         Route::get('/previred/{anio}/{mes}/archivo', [PreviredController::class, 'archivo'])->middleware('permiso:rrhh.remuneraciones.ver');
         Route::get('/previred/{anio}/{mes}/preview', [PreviredController::class, 'preview'])->middleware('permiso:rrhh.remuneraciones.ver');
+
+        // R7 — LRE: Libro de Remuneraciones Electrónico
+        // El LRE se genera, valida y descarga desde aquí. La subida al portal Mi DT
+        // es manual; el empleador registra el número de confirmación en confirmar-dt.
+        Route::post('/lre/generar', [LreController::class, 'generar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/lre/{id}/validar', [LreController::class, 'validar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/lre/{id}/confirmar-dt', [LreController::class, 'confirmarDt'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/lre', [LreController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/lre/{id}/descargar', [LreController::class, 'descargar'])->middleware('permiso:rrhh.remuneraciones.ver');
     });
 });
 
