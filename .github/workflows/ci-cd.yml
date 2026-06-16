@@ -137,6 +137,41 @@ jobs:
         run: php artisan test --stop-on-failure
 
   # ══════════════════════════════════════════════
+  # JOB 1C — ANÁLISIS ESTÁTICO (PHPStan / Larastan)
+  # ══════════════════════════════════════════════
+  static-analysis:
+    name: 🔍 Análisis estático (PHPStan)
+    runs-on: ubuntu-latest
+    continue-on-error: true  # informativo — no bloquea deploy mientras se reduce la deuda
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_sqlite, pdo_mysql, mbstring, json, bcmath, intl, gd, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: 📦 Cachear Composer
+        uses: actions/cache@v4
+        with:
+          path: Backend-laravel/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('Backend-laravel/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: 📦 Instalar dependencias
+        working-directory: Backend-laravel
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: 🔍 Análisis estático
+        working-directory: Backend-laravel
+        run: composer stan
+
+  # ══════════════════════════════════════════════
   # JOB 2 — LINT + BUILD FRONTEND
   # ══════════════════════════════════════════════
   test-frontend:
