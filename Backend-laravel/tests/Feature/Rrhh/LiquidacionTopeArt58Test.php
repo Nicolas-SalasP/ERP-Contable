@@ -143,7 +143,8 @@ class LiquidacionTopeArt58Test extends TestCase
      * Este test valida el segundo check del Art. 58 CT de forma aislada.
      * El descuento voluntario es 0 (pasa el primer check sin problema).
      * Los descuentos LEGALES solos superan el 45% gracias a una cotización AFP artificialmente
-     * alta (40%) configurada en un parámetro previsional específico para este test.
+     * alta (40%) configurada en un parámetro previsional específico para este test
+     * (vigente_desde='2026-05-01', que gana por orderByDesc sobre el de '2026-01-01').
      *
      * Matemática verificada:
      *   Sueldo base: 1.000.000
@@ -155,15 +156,18 @@ class LiquidacionTopeArt58Test extends TestCase
      *   AFC indefinido trabajador (0,6%): ~7.280
      *   Impuesto único: 0 (base tributable ~620.387 → tramo 0%)
      *   Total descuentos legales: ~592.967
-     *   Descuentos voluntarios: 0 → check 15% pasa (0 ≤ 181.003)
-     *   Tope 45% de 1.213.354: ~545.999
-     *   592.967 > 545.999 → excepción Art. 58 CT (segundo check)
+     *   Descuentos voluntarios: 0 → check 15% pasa (0 ≤ 182.003)
+     *   Tope 45% de 1.213.354: ~546.009
+     *   592.967 > 546.009 → excepción Art. 58 CT (segundo check)
      */
     public function test_lanza_excepcion_cuando_descuentos_totales_superan_45_pct_de_haberes(): void
     {
-        // Parámetro con AFP=40% para este test; vigente_desde más reciente tiene prioridad
+        // Parámetro con AFP=40% para este test; vigente_desde más reciente tiene prioridad.
+        // Nota: se usa '2026-05-01' (no '2026-06-01') para evitar la comparación de igualdad
+        // exacta con el período, que falla en SQLite al almacenar fechas como
+        // '2026-06-01 00:00:00' y comparar con '2026-06-01' (la cadena más larga no es ≤).
         ParametroPrevisional::create([
-            'vigente_desde' => '2026-06-01',
+            'vigente_desde' => '2026-05-01',
             'vigente_hasta' => null,
             'afp_cotizacion_pct' => 40.0,
             'afp_comisiones_json' => ['Habitat' => 1.27, 'Modelo' => 0.58, 'Capital' => 1.44],

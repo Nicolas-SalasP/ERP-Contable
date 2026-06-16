@@ -104,7 +104,7 @@ class LiquidacionSoftDeleteTest extends TestCase
             'descuentos_pendientes'          => 0,
             'total_bruto'                    => 2000000,
             'total_neto'                     => 2000000,
-            'estado'                         => 'EMITIDO',
+            'estado'                         => 'FIRMADO',
         ]);
 
         $id = $finiquito->id;
