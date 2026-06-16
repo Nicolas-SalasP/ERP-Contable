@@ -37,6 +37,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                 { path: '/proveedores/visor', label: 'Visor 360 Proveedor' },
                 { path: '/facturas/nueva', label: 'Ingresar Factura' },
                 { path: '/facturas/historial', label: 'Historial de Compras' },
+                { path: '/comercial/honorarios-recibidos', label: 'Honorarios Recibidos', permisosRequeridos: ['compras.ver'] },
             ]
         },
         {
@@ -219,6 +220,8 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                 { path: '/contabilidad/cierre-f29', label: 'Cierre de IVA (F29)' },
                 { path: '/tributario/renta', label: 'Operación Renta' },
                 { path: '/tributario/correccion-monetaria', label: 'Corrección Monetaria' },
+                { path: '/tributario/dj-1887', label: 'DJ 1887 — Rentas Empleados' },
+                { path: '/tributario/dj-1879', label: 'DJ 1879 — Retenciones Honorarios' },
             ]
         },
         {
@@ -271,6 +274,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                 { path: '/rrhh/parametros', label: 'Parámetros Previsionales', permisosRequeridos: ['rrhh.parametros.ver'] },
                 { path: '/rrhh/centralizacion', label: 'Centralización Contable', permisosRequeridos: ['rrhh.parametros.ver'] },
                 { path: '/rrhh/previred', label: 'Archivo Previred', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
+                { path: '/rrhh/lre', label: 'LRE — Libro de Remuneraciones', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
             ]
         },
         {
