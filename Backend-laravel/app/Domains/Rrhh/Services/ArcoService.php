@@ -5,6 +5,7 @@ namespace App\Domains\Rrhh\Services;
 use App\Domains\Core\Models\SolicitudArco;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\Empleado;
+use App\Domains\Rrhh\Models\Liquidacion;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -83,6 +84,20 @@ class ArcoService
                     'liquido_a_pagar' => $l->liquido_a_pagar,
                 ])->all(),
         ];
+
+        $datos['accesos'] = DB::table('auditorias')
+            ->where('auditable_type', Liquidacion::class)
+            ->where('operacion', 'LECTURA')
+            ->where('detalle', 'like', '%empleado id=' . $empleado->id)
+            ->orderBy('created_at', 'desc')
+            ->get(['nombre_usuario', 'operacion', 'detalle', 'created_at'])
+            ->map(fn ($a) => [
+                'usuario'   => $a->nombre_usuario,
+                'operacion' => $a->operacion,
+                'detalle'   => $a->detalle,
+                'fecha'     => $a->created_at,
+            ])
+            ->all();
 
         $this->registrar(
             $empleado,
