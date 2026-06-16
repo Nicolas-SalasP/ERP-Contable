@@ -77,7 +77,12 @@ class ImpuestosService
         $totalComprasNeto = $compras->sum('monto_neto');
         $ivaCredito = $compras->sum('monto_iva');
 
-        $retenciones = 0;
+        $retencionHonorarios = (int) \Illuminate\Support\Facades\DB::table('honorarios_recibidos')
+            ->where('empresa_id', $empresaId)
+            ->whereNull('deleted_at')
+            ->whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->sum('monto_retencion');
         $empresaRow = DB::table('empresas')->where('id', $empresaId)->first();
         $tasaPpm = (float) ($empresaRow->ppm_pct ?? 1.00);
         $montoPpm = round($totalVentasNeto * ($tasaPpm / 100));
@@ -87,10 +92,10 @@ class ImpuestosService
         $remanenteSiguienteMes = 0;
 
         if ($ivaDeterminado > 0) {
-            $totalAPagar = $ivaDeterminado + $retenciones + $montoPpm;
+            $totalAPagar = $ivaDeterminado + $retencionHonorarios + $montoPpm;
         } else {
             $remanenteSiguienteMes = abs($ivaDeterminado);
-            $totalAPagar = $retenciones + $montoPpm;
+            $totalAPagar = $retencionHonorarios + $montoPpm;
         }
 
         $glosaCierre = "Centralización F29 - " . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio";
@@ -101,7 +106,7 @@ class ImpuestosService
             'ya_cerrado' => $yaCerrado,
             'ventas' => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
             'compras' => ['cantidad' => $compras->count(), 'neto' => $totalComprasNeto, 'iva_credito' => $ivaCredito],
-            'retenciones' => $retenciones,
+            'retenciones' => $retencionHonorarios,
             'ppm' => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
             'resumen' => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar]
         ];

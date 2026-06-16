@@ -60,6 +60,8 @@ use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\ReporteInventarioController;
 use App\Domains\Core\Controllers\IncidenteSeguridadController;
 use App\Domains\Contabilidad\Controllers\Dj1887Controller;
+use App\Domains\Contabilidad\Controllers\Dj1879Controller;
+use App\Domains\Comercial\Controllers\HonorariosController;
 
 /*
 |--------------------------------------------------------------------------
@@ -537,6 +539,22 @@ Route::prefix('dj/1887')->middleware(['auth:sanctum', 'check.subscription'])->gr
     Route::post('/{djEnvio}/validar',                  [Dj1887Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
     Route::get('/{djEnvio}/descargar',                 [Dj1887Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
     Route::post('/{djEnvio}/confirmar-presentacion',   [Dj1887Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1879 - Retenciones de honorarios (SII)
+Route::prefix('dj/1879')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1879Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1879Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1879Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1879Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1879Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// Honorarios recibidos
+Route::prefix('honorarios')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                          [HonorariosController::class, 'index'])->middleware('permiso:compras.ver');
+    Route::post('/',                         [HonorariosController::class, 'store'])->middleware(['permiso:compras.crear', 'subscription.writable']);
+    Route::delete('/{honorariosRecibido}',   [HonorariosController::class, 'destroy'])->middleware(['permiso:compras.crear', 'subscription.writable']);
 });
 
 Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {
