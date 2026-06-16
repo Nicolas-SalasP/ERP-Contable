@@ -264,9 +264,6 @@ class FacturaService
 
             // Guard de integridad: no se puede reclasificar el asiento de una factura
             // anulada (su efecto contable ya fue reversado).
-            // TODO (P1): agregar bloqueo de periodo contable cerrado sobre $datos['fecha']
-            // (F-1/F-2). El periodo cerrado se valida abajo, sobre la fecha original
-            // del asiento y sobre la nueva fecha destino.
             if (strtoupper((string) $factura->estado) === 'ANULADA') {
                 throw ComercialException::regla('No se puede reclasificar el asiento de una factura anulada.');
             }
