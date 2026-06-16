@@ -154,7 +154,13 @@ class Empleado extends Model implements CipherSweetEncrypted
 
     public function contratoActivo(): HasMany
     {
-        return $this->hasMany(Contrato::class)->where('es_contrato_activo', true)->limit(1);
+        return $this->hasMany(Contrato::class)
+            ->where('es_contrato_activo', true)
+            ->where(function ($q) {
+                $q->whereNull('fecha_termino')
+                  ->orWhere('fecha_termino', '>=', now()->toDateString());
+            })
+            ->limit(1);
     }
 
     public function cargasFamiliares(): HasMany
