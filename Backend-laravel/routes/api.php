@@ -76,7 +76,8 @@ use App\Domains\Core\Controllers\IncidenteSeguridadController;
 
 // Health check operativo (publico, sin auth): el equipo verifica el estado de los
 // servicios sin SSH. 200 = todo OK, 503 = algun componente caido.
-Route::get('/health', HealthController::class);
+// Throttle: 30 req/min por IP para evitar uso como oraculo o DDoS.
+Route::get('/health', HealthController::class)->middleware('throttle:30,1');
 
 Route::prefix('auth')->group(function () {
     // Rate-limiting contra fuerza bruta / credential stuffing: 6 intentos por minuto
