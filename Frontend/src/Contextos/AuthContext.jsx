@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api, markTokenIssued } from '../Configuracion/api';
+import { api, markTokenIssued, setSubscriptionStatus } from '../Configuracion/api';
 
 const AuthContext = createContext(null);
 
@@ -17,7 +17,10 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
         try {
             const storedUser = localStorage.getItem('erp_user') || sessionStorage.getItem('erp_user');
-            return storedUser ? JSON.parse(storedUser) : null;
+            const parsed = storedUser ? JSON.parse(storedUser) : null;
+            // Inicializa el guard de suscripción en api.js con el estado persistido.
+            setSubscriptionStatus(parsed?.subscription_status ?? null);
+            return parsed;
         } catch {
             ['erp_token', 'erp_user', 'token', 'erp_token_issued_at'].forEach((k) => {
                 localStorage.removeItem(k);
@@ -38,6 +41,7 @@ export const AuthProvider = ({ children }) => {
             const me = await api.get('/auth/me');
             if (me && me.id) {
                 setUser(me);
+                setSubscriptionStatus(me.subscription_status ?? null);
                 storage.setItem('erp_user', JSON.stringify(me));
             }
         } catch (_) {
@@ -103,6 +107,7 @@ export const AuthProvider = ({ children }) => {
                 }
 
                 setUser(usuarioRecibido);
+                setSubscriptionStatus(usuarioRecibido.subscription_status ?? null);
                 storage.setItem('erp_user', JSON.stringify(usuarioRecibido));
 
                 return { success: true };
@@ -137,6 +142,7 @@ export const AuthProvider = ({ children }) => {
             sessionStorage.removeItem('erp_token_issued_at');
 
             setUser(null);
+            setSubscriptionStatus(null);
 
             if (typeof window !== 'undefined') {
                 window.location.href = '/login';

@@ -374,15 +374,17 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     });
 }
 
+// Estado de suscripción en memoria del módulo.
+// AuthContext lo actualiza después de cada /auth/me vía setSubscriptionStatus().
+// No se lee localStorage: la fuente de verdad es el contexto React.
+let _subscriptionStatus = null;
+
+export const setSubscriptionStatus = (status) => {
+    _subscriptionStatus = status ?? null;
+};
+
 const esSuscripcionSoloLectura = () => {
-    try {
-        const raw = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_user'))
-            || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('erp_user'));
-        const user = raw ? JSON.parse(raw) : null;
-        return ['read_only', 'expired'].includes(user?.subscription_status);
-    } catch {
-        return false;
-    }
+    return ['read_only', 'expired'].includes(_subscriptionStatus);
 };
 
 const request = async (endpoint, method, body, options = {}) => {
