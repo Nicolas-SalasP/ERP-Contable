@@ -512,9 +512,22 @@ class FacturaService
             $provRut = $f->proveedor->rut ?? 'N/A';
             $emision = $f->fecha_emision ? $f->fecha_emision->format('Y-m-d') : '';
             $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
-            $csvData .= "{$f->id},{$f->numero_factura},\"{$provNombre}\",{$provRut},{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
+            $csvData .= "{$f->id},"
+                . $this->escaparCampoCsv((string) $f->numero_factura) . ","
+                . $this->escaparCampoCsv($provNombre) . ","
+                . $this->escaparCampoCsv($provRut) . ","
+                . "{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
         }
 
         return $csvData;
+    }
+
+    private function escaparCampoCsv(string $valor): string
+    {
+        $valor = str_replace('"', '""', $valor);
+        if (preg_match('/^[=+\-@\t\r]/', $valor)) {
+            $valor = "'" . $valor;
+        }
+        return '"' . $valor . '"';
     }
 }
