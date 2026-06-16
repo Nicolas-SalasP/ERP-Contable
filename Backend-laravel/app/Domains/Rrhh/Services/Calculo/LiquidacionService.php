@@ -77,7 +77,7 @@ class LiquidacionService
                 ->where('anio', $anio)
                 ->where('mes', $mes)
                 ->where('estado', Liquidacion::ESTADO_BORRADOR)
-                ->delete();
+                ->forceDelete();
 
             $liq = Liquidacion::create([
                 'empresa_id' => $empresaId,
