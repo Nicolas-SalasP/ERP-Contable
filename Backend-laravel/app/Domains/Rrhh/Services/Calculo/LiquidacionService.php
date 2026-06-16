@@ -291,7 +291,24 @@ class LiquidacionService
             // ── 12. TOTALES FINALES ─────────────────────────────────────────
             $totalDescuentosLegales = $afpCotizacion + $afpComision + $saludMonto + $afcMonto + $impuestoUnico;
             $totalDescuentos = $totalDescuentosLegales + $totalDescuentosVoluntarios;
-            $liquidoPagar = $totalImponible + $totalNoImponible - $totalDescuentos;
+
+            // Validación tope Art. 58 Código del Trabajo
+            $topeVoluntarios = (int) round($totalImponible * 0.15);
+            if ($totalDescuentosVoluntarios > $topeVoluntarios) {
+                throw RrhhException::regla(
+                    "Descuentos voluntarios (\${$totalDescuentosVoluntarios}) superan el límite legal del 15% del imponible (\${$topeVoluntarios}). Art. 58 CT."
+                );
+            }
+
+            $totalHaberes = $totalImponible + $totalNoImponible;
+            $topeTotal = (int) round($totalHaberes * 0.45);
+            if ($totalDescuentos > $topeTotal) {
+                throw RrhhException::regla(
+                    "Descuentos totales (\${$totalDescuentos}) superan el 45% del total de haberes (\${$topeTotal}). Art. 58 CT."
+                );
+            }
+
+            $liquidoPagar = $totalHaberes - $totalDescuentos;
 
             // ── 13. PERSISITIR DETALLES ────────────────────────────────────
             foreach ($detalles as $det) {
