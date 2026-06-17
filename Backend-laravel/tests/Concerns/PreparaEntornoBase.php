@@ -341,6 +341,7 @@ trait PreparaEntornoBase
             'email' => 'admin' . uniqid() . '@test.cl',
             'password' => bcrypt('password123'),
             'empresa_id' => $empresa->id,
+            'empresa_activa_id' => $empresa->id,
             'rol_id' => $this->rolAdministrador->id,
             'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
         ], $datosUsuario));
@@ -375,6 +376,7 @@ trait PreparaEntornoBase
             'email' => 'user' . uniqid() . '@test.cl',
             'password' => bcrypt('password123'),
             'empresa_id' => $empresa->id,
+            'empresa_activa_id' => $empresa->id,
             'rol_id' => $rol->id,
             'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
         ], $overrides));

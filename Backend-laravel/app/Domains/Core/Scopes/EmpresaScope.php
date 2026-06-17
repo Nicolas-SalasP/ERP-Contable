@@ -17,9 +17,12 @@ class EmpresaScope implements Scope
             return;
         }
 
-        $empresaId = auth()->user()->empresa_id;
+        // Fase 2 multitenant: la empresa activa se resuelve del lado servidor desde
+        // empresa_activa_id (columna del usuario, nunca de un header/param del cliente).
+        // Para usuarios de una sola empresa, empresa_activa_id == empresa_id siempre.
+        $empresaId = auth()->user()->empresa_activa_id;
 
-        // Fail-safe: un usuario autenticado SIN empresa asignada (p. ej. recien
+        // Fail-safe: un usuario autenticado SIN empresa activa asignada (p. ej. recien
         // provisionado, en onboarding) NO debe ver datos de ninguna empresa. Antes
         // este caso desactivaba el filtro y exponia todas las empresas.
         if ($empresaId === null) {
