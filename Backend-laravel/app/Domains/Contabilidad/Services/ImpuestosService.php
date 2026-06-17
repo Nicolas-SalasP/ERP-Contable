@@ -84,7 +84,30 @@ class ImpuestosService
             ->whereMonth('fecha', $mes)
             ->sum('monto_retencion');
         $empresaRow = DB::table('empresas')->where('id', $empresaId)->first();
-        $tasaPpm = (float) ($empresaRow->ppm_pct ?? 1.00);
+
+        // PPM diferenciado por régimen tributario
+        if (($empresaRow->regimen_tributario ?? '') === '14_D8') {
+            $tasaTabla = DB::table('tasas_ppm_propyme')->where('anio', $anio)->first();
+            if ($tasaTabla) {
+                // Ingresos del año anterior para determinar si supera umbral 50.000 UF
+                // Umbral aproximado en pesos (50.000 UF × ~$38.000 = $1.900.000.000)
+                $ingresosAnioAnterior = (float) DB::table('sii_dte_emitido')
+                    ->where('empresa_id', $empresaId)
+                    ->whereYear('fecha_emision', $anio - 1)
+                    ->whereIn('estado', ['FIRMADO', 'ENVIADO_SII', 'EN_PROCESO_SII', 'ACEPTADO', 'ACEPTADO_CON_REPAROS'])
+                    ->whereIn('tipo_dte', [33, 34, 39, 41, 56, 110, 111])
+                    ->sum('monto_neto');
+                $umbral50000UF = 1_900_000_000;
+                $tasaPpm = $ingresosAnioAnterior > $umbral50000UF
+                    ? (float) $tasaTabla->tasa_sobre_50000uf_pct
+                    : (float) $tasaTabla->tasa_base_pct;
+            } else {
+                $tasaPpm = 0.125; // fallback rebaja transitoria si no hay tabla configurada
+            }
+        } else {
+            $tasaPpm = (float) ($empresaRow->ppm_pct ?? 1.00);
+        }
+
         $montoPpm = round($totalVentasNeto * ($tasaPpm / 100));
 
         $ivaDeterminado = $ivaDebito - $ivaCredito;
