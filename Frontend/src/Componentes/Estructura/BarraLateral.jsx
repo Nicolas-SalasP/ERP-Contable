@@ -58,6 +58,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
             permisosRequeridos: ['contabilidad.ver'],
             subItems: [
                 { path: '/contabilidad/libro-mayor', label: 'Libro Mayor' },
+                { path: '/contabilidad/balance-comprobacion', label: 'Balance de Comprobación' },
                 { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas' },
                 { path: '/contabilidad/anulacion', label: 'Anulaciones' },
                 { path: '/contabilidad/asiento-manual', label: 'Asiento Manual' },

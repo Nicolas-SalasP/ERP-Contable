@@ -13,6 +13,7 @@ const RegistroFactura = lazy(() => import('./Modulos/Contabilidad/Componentes/Re
 const HistorialFacturas = lazy(() => import('./Modulos/Contabilidad/Vistas/HistorialFacturas'));
 import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
 const LibroMayor = lazy(() => import('./Modulos/Contabilidad/Vistas/LibroMayor'));
+const BalanceComprobacion = lazy(() => import('./Modulos/Contabilidad/Vistas/BalanceComprobacion'));
 const AnulacionGeneral = lazy(() => import('./Modulos/Contabilidad/Vistas/AnulacionGeneral'));
 import GestionCotizaciones from './Modulos/Cotizaciones/GestionCotizaciones';
 import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
@@ -238,6 +239,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.ver">
                 <LayoutPrincipal><LibroMayor /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/balance-comprobacion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><BalanceComprobacion /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
