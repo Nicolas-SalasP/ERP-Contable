@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             CotizacionSeeder::class,
             RrhhParametrosLegalesSeeder::class,
             TasaRetencionHonorariosSeeder::class,
+            RrhhMapeoContableSeeder::class,
         ]);
     }
 }
