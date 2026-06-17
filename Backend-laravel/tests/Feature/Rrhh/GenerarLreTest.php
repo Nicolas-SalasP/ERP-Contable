@@ -52,7 +52,7 @@ class GenerarLreTest extends TestCase
             'fecha_inicio'     => '2024-01-01',
             'sueldo_base'      => 800000,
             'horas_semana'     => 45,
-            'estado'           => 'ACTIVO',
+            'estado'           => 'VIGENTE',
             'es_contrato_activo' => true,
         ]);
 
@@ -181,7 +181,7 @@ class GenerarLreTest extends TestCase
             'fecha_inicio'       => '2024-01-01',
             'sueldo_base'        => 700000,
             'horas_semana'       => 45,
-            'estado'             => 'ACTIVO',
+            'estado'             => 'VIGENTE',
             'es_contrato_activo' => true,
         ]);
 
@@ -262,7 +262,7 @@ class GenerarLreTest extends TestCase
             'fecha_inicio'       => '2024-01-01',
             'sueldo_base'        => 700000,
             'horas_semana'       => 45,
-            'estado'             => 'ACTIVO',
+            'estado'             => 'VIGENTE',
             'es_contrato_activo' => true,
         ]);
 
