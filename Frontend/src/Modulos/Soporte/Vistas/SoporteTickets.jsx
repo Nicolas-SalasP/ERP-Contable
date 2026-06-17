@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../../Configuracion/api';
+import { api } from '../../../Configuracion/api';
 
 const ESTADOS = [
   { value: '', label: 'Todos los estados' },

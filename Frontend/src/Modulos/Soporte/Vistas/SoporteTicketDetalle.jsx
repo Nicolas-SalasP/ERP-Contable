@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../../../Configuracion/api';
+import { api } from '../../../Configuracion/api';
 
 const COLOR_ESTADO = {
   nuevo: 'bg-blue-100 text-blue-700',
