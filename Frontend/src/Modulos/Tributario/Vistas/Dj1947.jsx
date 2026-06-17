@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { usePermisos } from '../../../Contextos/Permisos';
+import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { dj1947 } from '../Servicios/tributarioApi';
 
 const anioActual = new Date().getFullYear();
@@ -150,6 +151,7 @@ const Dj1947 = () => {
                 <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
                     <i className="fas fa-file-alt text-emerald-600" />
                     DJ 1947 — Propyme Transparente
+                    <AyudaModulo moduloId="dj1947" />
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">
                     Declaración Jurada anual de rentas atribuidas a propietarios de empresas Propyme Transparente (art. 14D N°8 LIR)

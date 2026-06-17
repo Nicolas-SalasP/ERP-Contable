@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { usePermisos } from '../../../Contextos/Permisos';
+import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { dj1887 } from '../Servicios/tributarioApi';
 
 const anioActual = new Date().getFullYear();
@@ -154,6 +155,7 @@ const Dj1887 = () => {
                 <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
                     <i className="fas fa-file-alt text-emerald-600" />
                     DJ 1887 — Rentas y Retenciones
+                    <AyudaModulo moduloId="dj1887" />
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">
                     Declaración Jurada anual de remuneraciones (art. 42° N°1 LIR)

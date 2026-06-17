@@ -1188,6 +1188,181 @@ export const glosario = {
         ],
         tip: 'Las cotizaciones se pagan hasta el dia 13 del mes siguiente. Genera y sube el archivo con tiempo para evitar multas e intereses.',
     },
+    lre: {
+        id: 'lre',
+        titulo: 'LRE — Libro de Remuneraciones Electronico',
+        icono: '📋',
+        resumen: 'Genera y valida el archivo LRE mensual para enviar al portal Mi DT.',
+        queEs:
+            'El Libro de Remuneraciones Electronico (LRE) es el reemplazo digital del antiguo libro de ' +
+            'remuneraciones en papel. Las empresas con 5 o mas trabajadores deben generarlo mensualmente ' +
+            'y subirlo al portal Mi DT (Direccion del Trabajo) dentro del plazo legal. ' +
+            'Informa los sueldos, descuentos y datos previsionales de cada trabajador.',
+        conceptos: [
+            { termino: 'Periodo', definicion: 'Mes y anio de las liquidaciones que se incluyen en el LRE. Cada periodo genera un archivo distinto.' },
+            { termino: 'Mi DT', definicion: 'Portal web de la Direccion del Trabajo (www.dt.gob.cl) donde se sube el archivo. No se transmite automaticamente desde el ERP.' },
+            { termino: 'Numero de confirmacion DT', definicion: 'Codigo que entrega Mi DT al recibir el archivo. Se registra en el ERP para dejar constancia del envio.' },
+            { termino: 'Estado VALIDADO', definicion: 'El archivo paso las validaciones internas del ERP. Listo para descargar y subir a Mi DT.' },
+        ],
+        comoUsar: [
+            'Ve a RRHH > LRE.',
+            'Selecciona el anio y mes del periodo.',
+            'Haz click en "Generar LRE". El sistema procesa todas las liquidaciones EMITIDAS del periodo.',
+            'Haz click en "Validar" para verificar que no haya errores.',
+            'Descarga el archivo .txt y subelo manualmente al portal Mi DT.',
+            'Una vez que Mi DT te entregue el numero de confirmacion, registralo en el ERP con "Confirmar envio a DT".',
+        ],
+        errores: [
+            { problema: 'Dice "no hay liquidaciones emitidas".', solucion: 'Solo se incluyen liquidaciones en estado EMITIDA. Ve a Liquidaciones y emite los sueldos del periodo antes de generar el LRE.' },
+            { problema: 'Falla la validacion.', solucion: 'Revisa los errores listados. Lo mas comun es un RUT mal formateado o un codigo de AFP/ISAPRE incorrecto en la ficha del trabajador.' },
+        ],
+        tip: 'El plazo legal para subir el LRE es el ultimo dia del mes siguiente al periodo declarado. No esperes el ultimo dia.',
+    },
+    dj1887: {
+        id: 'dj1887',
+        titulo: 'DJ 1887 — Rentas de Empleados',
+        icono: '📄',
+        resumen: 'Declara las rentas anuales y el IUSC retenido por trabajador al SII.',
+        queEs:
+            'La Declaracion Jurada 1887 informa al SII las rentas que la empresa pago a cada trabajador ' +
+            'durante el anio tributario, y el Impuesto Unico de Segunda Categoria (IUSC) que se les retuvo. ' +
+            'Es la base para que los trabajadores puedan hacer su Operacion Renta. ' +
+            'Se presenta una vez al anio (plazo: hasta el 28 de febrero del anio siguiente).',
+        conceptos: [
+            { termino: 'Renta neta', definicion: 'La base tributable anual del trabajador, despues de descontar AFP, salud y AFC. Es la renta sobre la que se calcula el IUSC.' },
+            { termino: 'IUSC', definicion: 'Impuesto Unico de Segunda Categoria. Se descuenta mensualmente de la liquidacion segun tabla progresiva del SII.' },
+            { termino: 'Anio tributario', definicion: 'El anio en que se declaran las rentas. Ej: AT 2026 = rentas del anio 2025.' },
+            { termino: 'Numero de certificado', definicion: 'Numero correlativo asignado a cada trabajador dentro de la DJ. El SII lo usa para cruzar informacion.' },
+        ],
+        comoUsar: [
+            'Ve a Tributario > DJ 1887.',
+            'Selecciona el anio tributario (AT) a declarar.',
+            'Haz click en "Generar DJ". El sistema lee las liquidaciones EMITIDAS del anio.',
+            'Haz click en "Validar" y revisa que no haya errores.',
+            'Descarga el archivo .txt y subelo al portal del SII (www.sii.cl) antes del 28 de febrero.',
+            'Una vez presentada, haz click en "Confirmar presentacion" y registra el folio.',
+        ],
+        errores: [
+            { problema: 'No genera nada o dice "sin trabajadores".', solucion: 'Solo incluye liquidaciones en estado EMITIDA o PAGADA. Verifica que el anio seleccionado tenga liquidaciones emitidas.' },
+            { problema: 'El archivo no pasa la validacion del SII.', solucion: 'Verifica que el RUT de la empresa y de todos los trabajadores esten correctos y con formato valido (sin puntos, con guion).' },
+        ],
+        tip: 'Genera la DJ 1887 antes de que tus trabajadores hagan su Operacion Renta. Si la entregas tarde, ellos no podran usar los datos y el SII puede multar a la empresa.',
+    },
+    dj1879: {
+        id: 'dj1879',
+        titulo: 'DJ 1879 — Retenciones de Honorarios',
+        icono: '📄',
+        resumen: 'Declara los honorarios pagados y las retenciones practicadas a terceros durante el anio.',
+        queEs:
+            'Cuando la empresa paga honorarios a personas que emiten boletas (prestadores independientes), ' +
+            'debe retener un porcentaje del monto bruto y enterarlo al SII. ' +
+            'La DJ 1879 informa anualmente al SII todos esos pagos y retenciones, agrupados por prestador. ' +
+            'Se presenta una vez al anio junto con la DJ 1887.',
+        conceptos: [
+            { termino: 'Honorario bruto', definicion: 'Monto total que indica la boleta antes de retener. Es la base para calcular la retencion.' },
+            { termino: 'Retencion', definicion: 'Porcentaje que la empresa descuenta del honorario y paga al SII en nombre del prestador. La tasa cambia cada anio (Ley 21.133).' },
+            { termino: 'Liquido a pagar', definicion: 'Lo que efectivamente recibe el prestador: bruto menos retencion.' },
+            { termino: 'Cuadratura', definicion: 'Que la suma de retenciones por prestador coincida con el total declarado. Si no cuadra, la DJ no pasa la validacion.' },
+        ],
+        comoUsar: [
+            'Primero registra cada boleta recibida en Compras > Honorarios Recibidos.',
+            'Ve a Tributario > DJ 1879.',
+            'Selecciona el anio tributario.',
+            'Haz click en "Generar DJ". El sistema agrupa los honorarios por prestador.',
+            'Valida, descarga y sube al SII antes del 28 de febrero.',
+        ],
+        errores: [
+            { problema: 'No hay datos al generar.', solucion: 'Primero debes registrar las boletas de honorarios recibidas en el modulo Honorarios Recibidos del anio seleccionado.' },
+            { problema: 'Error de cuadratura.', solucion: 'Revisa que no haya honorarios con monto de retencion negativo o cero cuando deberia tener retencion.' },
+        ],
+        tip: 'Registra las boletas de honorarios a medida que las recibes, no esperes a fin de anio para ingresar todo de golpe.',
+    },
+    dj1947: {
+        id: 'dj1947',
+        titulo: 'DJ 1947 — Propyme Transparente (14D N°8)',
+        icono: '📄',
+        resumen: 'Declara la renta atribuida y los PPM puestos a disposicion de cada propietario del regimen Propyme Transparente.',
+        queEs:
+            'Las empresas en regimen Propyme Transparente (art. 14 letra D N°8 LIR) no pagan Impuesto de Primera ' +
+            'Categoria. En cambio, los propietarios tributan directamente con sus impuestos finales (IGC o Adicional) ' +
+            'segun la renta que se les atribuye por su porcentaje de participacion. ' +
+            'La DJ 1947 informa al SII esa atribucion: cuanto le corresponde a cada socio del resultado tributario del anio.',
+        conceptos: [
+            { termino: 'Base imponible simplificada', definicion: 'Ingresos percibidos menos gastos pagados del anio, sin correccion monetaria ni inventario. Es la base del regimen 14D N°8.' },
+            { termino: 'Atribucion de renta', definicion: 'Reparticion del resultado tributario a cada propietario segun su porcentaje de participacion registrado en el ERP.' },
+            { termino: 'PPM a disposicion', definicion: 'Pago Provisional Mensual proporcional que cada propietario puede imputar contra su IGC en la Operacion Renta.' },
+            { termino: 'Propyme Transparente', definicion: 'Regimen tributario para PyMEs con ingresos promedio hasta 75.000 UF anuales. Liberado del IDPC; los socios tributan directamente.' },
+        ],
+        comoUsar: [
+            'Registra los propietarios de la empresa con su % de participacion en Empresa > Propietarios (deben sumar 100%).',
+            'Verifica que el regimen tributario de la empresa este en "14_D8" (Perfil de empresa).',
+            'Ve a Tributario > DJ 1947.',
+            'Selecciona el anio tributario.',
+            'Genera, valida, descarga y sube al SII antes del 28 de febrero.',
+        ],
+        errores: [
+            { problema: 'Dice que la empresa no es 14D N°8.', solucion: 'Ve a Perfil de empresa y verifica que el campo Regimen tributario este en "Propyme Transparente (14D N°8)".' },
+            { problema: 'Error "propietarios no suman 100%".', solucion: 'Ve a Empresa > Propietarios y ajusta los porcentajes hasta que sumen exactamente 100%.' },
+        ],
+        tip: 'Si el promedio de ingresos de los ultimos 3 anios supera las 75.000 UF, el ERP te advertira que podrias perder el regimen Propyme. Consulta a tu contador.',
+    },
+    honorariosRecibidos: {
+        id: 'honorariosRecibidos',
+        titulo: 'Honorarios Recibidos',
+        icono: '🧾',
+        resumen: 'Registra boletas de honorarios de prestadores independientes y calcula la retencion.',
+        queEs:
+            'Cuando contratas a una persona que trabaja de forma independiente y te emite una boleta de honorarios, ' +
+            'la empresa debe retener un porcentaje del monto bruto. Ese dinero retenido no se le paga al prestador: ' +
+            'la empresa lo entera directamente al SII en el F29 mensual. ' +
+            'Este modulo te permite registrar esas boletas y lleva el calculo automaticamente segun la tasa legal del anio.',
+        conceptos: [
+            { termino: 'Retencion', definicion: 'Monto que la empresa descuenta del honorario y paga al SII. La tasa cambia cada anio por la Ley 21.133 (sube gradualmente hasta 2028).' },
+            { termino: 'RUT del prestador', definicion: 'RUT de quien emitio la boleta. Debe ser valido (modulo 11). Se usa para la DJ 1879.' },
+            { termino: 'Monto bruto', definicion: 'Lo que dice la boleta antes de la retencion. El sistema calcula automaticamente el liquido a pagar.' },
+            { termino: 'F29', definicion: 'La retencion se incluye automaticamente en el calculo del F29 del mes correspondiente.' },
+        ],
+        comoUsar: [
+            'Ve a Compras > Honorarios Recibidos.',
+            'Haz click en "Agregar honorario".',
+            'Ingresa el RUT del prestador, nombre, numero de boleta (opcional), fecha y monto bruto.',
+            'El sistema calcula automaticamente la retencion y el liquido a pagar segun la tasa del anio.',
+            'Guarda. El honorario aparece en el F29 del mes de la fecha ingresada.',
+        ],
+        errores: [
+            { problema: 'RUT invalido.', solucion: 'Verifica que el RUT tenga el formato correcto (ej: 12345678-9) y que el digito verificador sea valido.' },
+            { problema: 'No encuentra la tasa del anio.', solucion: 'La tasa de retencion esta en una tabla por anio. Si el anio no esta configurado, contacta al administrador para agregar la tasa correspondiente.' },
+        ],
+        tip: 'Registra las boletas el mismo dia que las recibes. Asi el F29 del mes siempre estara correcto sin tener que hacer correcciones de ultimo minuto.',
+    },
+    propietariosEmpresa: {
+        id: 'propietariosEmpresa',
+        titulo: 'Propietarios de la Empresa',
+        icono: '👥',
+        resumen: 'Registra los socios o duenos de la empresa con su porcentaje de participacion para la DJ 1947.',
+        queEs:
+            'En el regimen Propyme Transparente, el resultado tributario de la empresa se distribuye a los socios ' +
+            'segun su porcentaje de participacion. Este modulo permite registrar quien es dueno de la empresa y ' +
+            'que porcentaje le corresponde a cada uno. Los porcentajes deben sumar exactamente 100%. ' +
+            'Esta informacion es la base para generar la DJ 1947.',
+        conceptos: [
+            { termino: 'Porcentaje de participacion', definicion: 'La fraccion del negocio que le pertenece a cada socio. Determina cuanta renta se le atribuye en la DJ 1947.' },
+            { termino: 'Suma 100%', definicion: 'La suma de todos los porcentajes de los socios debe ser exactamente 100%. Si no, no se puede generar la DJ 1947.' },
+            { termino: 'DJ 1947', definicion: 'Declaracion Jurada anual que usa estos datos para informar al SII la renta atribuida a cada propietario.' },
+        ],
+        comoUsar: [
+            'Ve a Empresa > Propietarios.',
+            'Haz click en "Agregar propietario".',
+            'Ingresa el RUT, nombre completo y porcentaje de participacion.',
+            'Verifica que la barra de total al fondo marque exactamente 100% (aparece en verde).',
+            'Guarda. Estos datos se usaran al generar la DJ 1947.',
+        ],
+        errores: [
+            { problema: 'Los porcentajes no suman 100%.', solucion: 'Ajusta los valores hasta que la suma sea exactamente 100%. Puedes usar decimales (ej: 33.33 + 33.33 + 33.34 = 100).' },
+            { problema: 'No me deja agregar el mismo RUT dos veces.', solucion: 'Cada propietario solo puede aparecer una vez. Si necesitas cambiar el porcentaje, edita el existente en vez de agregar uno nuevo.' },
+        ],
+        tip: 'Si la empresa tiene un solo dueno, ingresalo con 100%. Si cambia la composicion societaria durante el anio, actualiza antes de generar la DJ 1947.',
+    },
 };
 
 export const listarModulos = () => Object.values(glosario).sort((a, b) =>

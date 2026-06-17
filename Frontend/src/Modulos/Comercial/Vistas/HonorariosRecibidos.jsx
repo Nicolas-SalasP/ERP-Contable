@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { honorarios } from '../Servicios/comercialApi';
 
 const TASAS = { 2024: 13.75, 2025: 14.50, 2026: 15.25, 2027: 16.25, 2028: 17.00 };
@@ -126,6 +127,7 @@ const HonorariosRecibidos = () => {
                 <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
                     <i className="fas fa-receipt text-emerald-600" />
                     Honorarios Recibidos
+                    <AyudaModulo moduloId="honorariosRecibidos" />
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">
                     Boletas de honorarios recibidas con retención segunda categoría (art. 74 N°2 LIR)

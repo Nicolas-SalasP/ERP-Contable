@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { usePermisos } from '../../../Contextos/Permisos';
+import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import rrhhApi from '../Servicios/rrhhApi';
 import { MESES, nombreMes, formatFecha } from '../Utilidades/formato';
 
@@ -164,6 +165,7 @@ const LreRrhh = () => {
                 <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
                     <i className="fas fa-book text-emerald-600" />
                     Libro de Remuneraciones Electrónico (LRE)
+                    <AyudaModulo moduloId="lre" />
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">
                     Genera, valida y descarga el LRE mensual para subir al portal Mi DT del Ministerio del Trabajo.

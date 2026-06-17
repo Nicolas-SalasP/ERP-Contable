@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { propietariosApi } from '../Servicios/propietariosApi';
 
 const inputCls =
@@ -125,6 +126,7 @@ const PropietariosEmpresa = () => {
                 <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
                     <i className="fas fa-users text-emerald-600" />
                     Propietarios de la Empresa
+                    <AyudaModulo moduloId="propietariosEmpresa" />
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">
                     Registro de socios o propietarios con su porcentaje de participación. Requerido para DJ 1947 (Propyme Transparente).
