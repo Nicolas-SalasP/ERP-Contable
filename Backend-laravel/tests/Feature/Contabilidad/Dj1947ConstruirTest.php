@@ -5,6 +5,7 @@ namespace Tests\Feature\Contabilidad;
 use App\Domains\Contabilidad\Exceptions\DjException;
 use App\Domains\Contabilidad\Models\TasaPpmPropyme;
 use App\Domains\Contabilidad\Services\Dj\Dj1947Service;
+use App\Domains\Contabilidad\Services\Propyme\ElegibilidadPropymeService;
 use App\Domains\Contabilidad\Services\Propyme\ResultadoTributarioPropymeService;
 use App\Domains\Core\Models\Propietario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,7 +23,10 @@ class Dj1947ConstruirTest extends TestCase
     {
         parent::setUp();
         $this->prepararEntornoBase();
-        $this->service = new Dj1947Service(new ResultadoTributarioPropymeService());
+        $this->service = new Dj1947Service(
+            new ResultadoTributarioPropymeService(),
+            new ElegibilidadPropymeService(),
+        );
 
         TasaPpmPropyme::create([
             'anio'                   => 2026,
@@ -136,5 +140,52 @@ class Dj1947ConstruirTest extends TestCase
         $this->expectExceptionMessageMatches('/propietarios/');
 
         $this->service->construir($empresa->id, 2026);
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests elegibilidad dinámica
+    // -----------------------------------------------------------------------
+
+    public function test_elegibilidad_usa_uf_de_indicadores_mensuales_cuando_existe(): void
+    {
+        DB::table('indicadores_mensuales')->insert([
+            'anio'      => 2026,
+            'mes'       => 12,
+            'uf_valor'  => 40_000.0000,
+            'utm_valor' => 65_000.00,
+            'uta_valor' => 780_000.00,
+            'fuente'    => 'test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $elegibilidadService = new ElegibilidadPropymeService();
+        // Con UF 40.000 → límite = 40.000 × 75.000 = 3.000.000.000
+        $resultado = $elegibilidadService->verificar(999, 2026);
+
+        $this->assertEquals(3_000_000_000, $resultado['limite_pesos']);
+    }
+
+    public function test_elegibilidad_usa_fallback_hardcodeado_cuando_no_hay_indicador(): void
+    {
+        // Sin ninguna fila en indicadores_mensuales para 2026
+        $elegibilidadService = new ElegibilidadPropymeService();
+        $resultado = $elegibilidadService->verificar(999, 2026);
+
+        // Fallback = LIMITE_PESOS_APROXIMADO = 2.850.000.000
+        $this->assertEquals(2_850_000_000, $resultado['limite_pesos']);
+    }
+
+    public function test_construir_dj1947_incluye_elegibilidad_en_cabecera(): void
+    {
+        $empresa = $this->crearEmpresa14D8();
+
+        $this->insertarDte($empresa->id, 33, 1, '2026-04-01', 500_000.0);
+        $this->crearPropietario($empresa->id, '11111111-1', 'Socio Único', 100.0);
+
+        $data = $this->service->construir($empresa->id, 2026);
+
+        $this->assertArrayHasKey('elegibilidad', $data->cabecera);
+        $this->assertIsBool($data->cabecera['elegibilidad']['elegible']);
     }
 }

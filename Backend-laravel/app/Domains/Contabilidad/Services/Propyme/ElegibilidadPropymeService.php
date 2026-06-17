@@ -18,6 +18,7 @@ class ElegibilidadPropymeService
 
     public function verificar(int $empresaId, int $anioBase): array
     {
+        $limiteEnPesos   = $this->limiteEnPesosParaAnio($anioBase);
         $ingresosPorAnio = [];
 
         for ($i = 1; $i <= 3; $i++) {
@@ -41,17 +42,32 @@ class ElegibilidadPropymeService
         }
 
         $promedioPesos = array_sum($ingresosPorAnio) / 3;
-        $elegible = $promedioPesos <= self::LIMITE_PESOS_APROXIMADO;
+        $elegible      = $promedioPesos <= $limiteEnPesos;
 
         return [
-            'elegible'           => $elegible,
-            'promedio_pesos'     => (int) round($promedioPesos),
-            'limite_pesos_aprox' => self::LIMITE_PESOS_APROXIMADO,
-            'limite_uf'          => self::LIMITE_UF,
-            'ingresos_por_anio'  => $ingresosPorAnio,
-            'mensaje'            => $elegible
+            'elegible'          => $elegible,
+            'promedio_pesos'    => (int) round($promedioPesos),
+            'limite_pesos'      => $limiteEnPesos,
+            'limite_uf'         => self::LIMITE_UF,
+            'ingresos_por_anio' => $ingresosPorAnio,
+            'mensaje'           => $elegible
                 ? 'La empresa cumple el límite de ingresos para el régimen Propyme Transparente.'
                 : 'Advertencia: los ingresos promedio de los últimos 3 años superan el límite de 75.000 UF. La empresa podría no ser elegible para continuar en el régimen Propyme Transparente.',
         ];
+    }
+
+    private function limiteEnPesosParaAnio(int $anio): int
+    {
+        $uf = DB::table('indicadores_mensuales')
+            ->where('anio', $anio)
+            ->whereNotNull('uf_valor')
+            ->orderByDesc('mes')
+            ->value('uf_valor');
+
+        if ($uf === null) {
+            return self::LIMITE_PESOS_APROXIMADO;
+        }
+
+        return (int) round($uf * self::LIMITE_UF);
     }
 }

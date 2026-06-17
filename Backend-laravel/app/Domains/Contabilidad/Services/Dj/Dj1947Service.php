@@ -6,6 +6,7 @@ use App\Domains\Contabilidad\Contracts\DeclaracionJuradaContract;
 use App\Domains\Contabilidad\DataTransfer\DjData;
 use App\Domains\Contabilidad\DataTransfer\DjLineaData;
 use App\Domains\Contabilidad\Exceptions\DjException;
+use App\Domains\Contabilidad\Services\Propyme\ElegibilidadPropymeService;
 use App\Domains\Contabilidad\Services\Propyme\ResultadoTributarioPropymeService;
 use App\Domains\Core\Models\Empresa;
 
@@ -13,6 +14,7 @@ class Dj1947Service implements DeclaracionJuradaContract
 {
     public function __construct(
         private readonly ResultadoTributarioPropymeService $resultadoService,
+        private readonly ElegibilidadPropymeService $elegibilidadService,
     ) {}
 
     public function codigo(): string
@@ -29,6 +31,8 @@ class Dj1947Service implements DeclaracionJuradaContract
                 'La DJ 1947 solo aplica a empresas en régimen Propyme Transparente (14 D N°8).'
             );
         }
+
+        $elegibilidad = $this->elegibilidadService->verificar($empresaId, $anio);
 
         $resultado = $this->resultadoService->calcular($empresaId, $anio);
 
@@ -60,6 +64,7 @@ class Dj1947Service implements DeclaracionJuradaContract
                 'ppm_total'        => $resultado['ppm_total'],
                 'ingresos_totales' => $resultado['ingresos_totales'],
                 'gastos_totales'   => $resultado['gastos_totales'],
+                'elegibilidad'     => $elegibilidad,
             ],
             lineas: $lineas,
         );
@@ -108,6 +113,11 @@ class Dj1947Service implements DeclaracionJuradaContract
         $baseTotal = (int) ($data->cabecera['base_imponible'] ?? 0);
         if (! empty($data->lineas) && abs($sumaBase - $baseTotal) > count($data->lineas)) {
             $errores[] = "Descuadre en base imponible: cabecera declara {$baseTotal} pero suma de propietarios es {$sumaBase}.";
+        }
+
+        // Advertencia no bloqueante de elegibilidad
+        if (isset($data->cabecera['elegibilidad']) && $data->cabecera['elegibilidad']['elegible'] === false) {
+            $errores[] = '[ADVERTENCIA] ' . $data->cabecera['elegibilidad']['mensaje'];
         }
 
         return $errores;
