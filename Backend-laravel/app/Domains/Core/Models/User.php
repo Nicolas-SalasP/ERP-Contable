@@ -15,6 +15,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'empresa_id',
+        'empresa_activa_id',
         'email',
         'password',
         'nombre',
@@ -42,6 +43,17 @@ class User extends Authenticatable
             'tenri_synced_at' => 'datetime',
             'subscription_ends_at' => 'datetime',
         ];
+    }
+
+    public function empresas(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Empresa::class, 'empresa_user')
+            ->withPivot('rol_id', 'created_at');
+    }
+
+    public function empresaActiva(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Empresa::class, 'empresa_activa_id');
     }
 
     public function empresa()
