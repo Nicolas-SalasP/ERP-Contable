@@ -216,9 +216,12 @@ const doFetch = async (url, init, options) => {
     try {
         const response = await fetch(url, { ...init, signal: ctrl.signal });
         return { response, timedOut: false };
-    } catch {
+    } catch (err) {
         if (ctrl.wasTimeout()) {
             return { response: null, timedOut: true };
+        }
+        if (err?.name === 'AbortError') {
+            return { response: null, timedOut: false, aborted: true };
         }
         return { response: null, timedOut: false, networkError: true };
     } finally {
@@ -437,7 +440,13 @@ const request = async (endpoint, method, body, options = {}) => {
     let lastError;
 
     while (attempt <= maxReintentos) {
-        const { response, timedOut, networkError } = await doFetch(url, init, options);
+        const { response, timedOut, networkError, aborted } = await doFetch(url, init, options);
+
+        if (aborted) {
+            const err = buildError(0, null, 'Aborted');
+            err.code = 'ERR_CANCELED';
+            return Promise.reject(err);
+        }
 
         if (timedOut) {
             lastError = buildError(408, null, 'Timeout');
