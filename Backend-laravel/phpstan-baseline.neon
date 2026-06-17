@@ -273,6 +273,12 @@ parameters:
 		-
 			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
 			identifier: class.notFound
+			count: 5
+			path: app/Domains/Contabilidad/Controllers/Dj1947Controller.php
+
+		-
+			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
+			identifier: class.notFound
 			count: 7
 			path: app/Domains/Contabilidad/Controllers/ImpuestosController.php
 
@@ -599,6 +605,12 @@ parameters:
 			identifier: class.notFound
 			count: 4
 			path: app/Domains/Core/Controllers/PrivacidadController.php
+
+		-
+			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
+			identifier: class.notFound
+			count: 4
+			path: app/Domains/Core/Controllers/PropietariosController.php
 
 		-
 			message: '#^Access to an undefined property App\\Domains\\Core\\Models\\User\:\:\$rol\.$#'
