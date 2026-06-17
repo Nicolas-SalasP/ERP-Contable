@@ -61,6 +61,8 @@ use App\Domains\Inventario\Controllers\ReporteInventarioController;
 use App\Domains\Core\Controllers\IncidenteSeguridadController;
 use App\Domains\Contabilidad\Controllers\Dj1887Controller;
 use App\Domains\Contabilidad\Controllers\Dj1879Controller;
+use App\Domains\Contabilidad\Controllers\Dj1947Controller;
+use App\Domains\Core\Controllers\PropietariosController;
 use App\Domains\Comercial\Controllers\HonorariosController;
 
 /*
@@ -548,6 +550,23 @@ Route::prefix('dj/1879')->middleware(['auth:sanctum', 'check.subscription'])->gr
     Route::post('/{djEnvio}/validar',                 [Dj1879Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
     Route::get('/{djEnvio}/descargar',                [Dj1879Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
     Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1879Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1947 — Propyme Transparente 14D N°8
+Route::prefix('dj/1947')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1947Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1947Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1947Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1947Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1947Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// Propietarios de la empresa (para DJ 1947 / Propyme)
+Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription', 'permiso:contabilidad.ver'])->group(function () {
+    Route::get('/',                    [PropietariosController::class, 'index']);
+    Route::post('/',                   [PropietariosController::class, 'store'])->middleware('subscription.writable');
+    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware('subscription.writable');
+    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware('subscription.writable');
 });
 
 // Honorarios recibidos

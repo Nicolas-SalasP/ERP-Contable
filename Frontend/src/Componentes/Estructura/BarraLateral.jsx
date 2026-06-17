@@ -222,6 +222,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                 { path: '/tributario/correccion-monetaria', label: 'Corrección Monetaria' },
                 { path: '/tributario/dj-1887', label: 'DJ 1887 — Rentas Empleados' },
                 { path: '/tributario/dj-1879', label: 'DJ 1879 — Retenciones Honorarios' },
+                { path: '/tributario/dj-1947', label: 'DJ 1947 — Propyme' },
             ]
         },
         {
@@ -285,6 +286,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
             subItems: [
                 { path: '/empresa/usuarios', label: 'Gestión de Equipo' },
                 { path: '/empresa/roles', label: 'Roles y Permisos' },
+                { path: '/empresa/propietarios', label: 'Propietarios Empresa', permisosRequeridos: ['contabilidad.ver'] },
                 { path: '/cumplimiento', label: 'Protección de Datos (DPO)', permisosRequeridos: ['usuarios.gestionar'] },
             ]
         },
