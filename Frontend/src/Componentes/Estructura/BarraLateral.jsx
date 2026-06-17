@@ -280,6 +280,15 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
             ]
         },
         {
+            id: 'soporte',
+            label: 'Soporte',
+            icon: 'fas fa-headset',
+            permisosRequeridos: ['soporte.ver'],
+            subItems: [
+                { path: '/soporte/tickets', label: 'Mis tickets' },
+            ]
+        },
+        {
             id: 'administracion',
             label: 'Administración',
             icon: 'fas fa-cogs',

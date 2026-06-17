@@ -73,6 +73,7 @@ final class ModuloPermisos
         'dashboard.ejecutivo' => ['contabilidad.ver', 'tesoreria.ver', 'ventas.ver'],
         'white_label' => [],
         'modulos.custom' => [],
+        'soporte.tickets'    => ['soporte.ver', 'soporte.crear'],
     ];
 
     /**
@@ -146,6 +147,7 @@ final class ModuloPermisos
         'integraciones.api' => ['Integraciones API', 'Enterprise'],
         'white_label' => ['White-label', 'Enterprise'],
         'modulos.custom' => ['Módulos a medida', 'Enterprise'],
+        'soporte.tickets'    => ['Tickets de soporte', 'Soporte'],
     ];
 
     /**

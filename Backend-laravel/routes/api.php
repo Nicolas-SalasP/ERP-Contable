@@ -64,6 +64,7 @@ use App\Domains\Contabilidad\Controllers\Dj1879Controller;
 use App\Domains\Contabilidad\Controllers\Dj1947Controller;
 use App\Domains\Core\Controllers\PropietariosController;
 use App\Domains\Comercial\Controllers\HonorariosController;
+use App\Domains\Soporte\Controllers\SoporteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -575,6 +576,14 @@ Route::prefix('honorarios')->middleware(['auth:sanctum', 'check.subscription'])-
     Route::get('/',                          [HonorariosController::class, 'index'])->middleware('permiso:compras.ver');
     Route::post('/',                         [HonorariosController::class, 'store'])->middleware(['permiso:compras.crear', 'subscription.writable']);
     Route::delete('/{honorariosRecibido}',   [HonorariosController::class, 'destroy'])->middleware(['permiso:compras.crear', 'subscription.writable']);
+});
+
+// Soporte — proxy hacia api.tenri.cl
+Route::prefix('soporte/tickets')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',          [SoporteController::class, 'index'])->middleware('permiso:soporte.ver');
+    Route::post('/',         [SoporteController::class, 'store'])->middleware(['permiso:soporte.crear', 'subscription.writable']);
+    Route::get('/{id}',      [SoporteController::class, 'show'])->middleware('permiso:soporte.ver')->whereNumber('id');
+    Route::post('/{id}/reply', [SoporteController::class, 'reply'])->middleware(['permiso:soporte.ver', 'subscription.writable'])->whereNumber('id');
 });
 
 Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {

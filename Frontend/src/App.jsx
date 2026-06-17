@@ -71,6 +71,8 @@ const Dj1947 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1947'));
 const PropietariosEmpresa = lazy(() => import('./Modulos/Core/Vistas/PropietariosEmpresa'));
 import Glosario from './Modulos/Glosario/Glosario';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
+const SoporteTickets = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTickets'));
+const SoporteTicketDetalle = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTicketDetalle'));
 
 // Si ya está autenticado, redirige al inicio (evita volver a /login sin logout).
 const RutaPublica = ({ children }) => {
@@ -738,6 +740,22 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="usuarios.gestionar">
                 <LayoutPrincipal><PanelDpo /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/soporte/tickets" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="soporte.ver">
+                <LayoutPrincipal><SoporteTickets /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/soporte/tickets/:id" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="soporte.ver">
+                <LayoutPrincipal><SoporteTicketDetalle /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
