@@ -1202,7 +1202,19 @@ export const glosario = {
             { termino: 'Mi DT', definicion: 'Portal web de la Direccion del Trabajo (www.dt.gob.cl) donde se sube el archivo. No se transmite automaticamente desde el ERP.' },
             { termino: 'Numero de confirmacion DT', definicion: 'Codigo que entrega Mi DT al recibir el archivo. Registralo en el ERP para dejar constancia del envio.' },
         ],
-        tip: 'El plazo legal es el ultimo dia del mes siguiente al periodo. Solo se incluyen liquidaciones en estado EMITIDA; emite los sueldos antes de generar el LRE.',
+        comoUsar: [
+            'Ve a RRHH > LRE.',
+            'Selecciona el anio y mes del periodo.',
+            'Haz click en "Generar LRE". El sistema procesa todas las liquidaciones EMITIDAS del periodo.',
+            'Haz click en "Validar" para verificar que no haya errores.',
+            'Descarga el archivo .txt y subelo manualmente al portal Mi DT.',
+            'Una vez que Mi DT te entregue el numero de confirmacion, registralo en el ERP con "Confirmar envio a DT".',
+        ],
+        errores: [
+            { problema: 'Dice "no hay liquidaciones emitidas".', solucion: 'Solo se incluyen liquidaciones en estado EMITIDA. Emite los sueldos del periodo antes de generar el LRE.' },
+            { problema: 'Falla la validacion.', solucion: 'Revisa los errores listados. Lo mas comun es un RUT mal formateado o un codigo de AFP/ISAPRE incorrecto en la ficha del trabajador.' },
+        ],
+        tip: 'El plazo legal es el ultimo dia del mes siguiente al periodo. No esperes el ultimo dia.',
     },
 
     dj1887: {
@@ -1218,6 +1230,18 @@ export const glosario = {
         conceptos: [
             { termino: 'IUSC', definicion: 'Impuesto Unico de Segunda Categoria. Se descuenta de la liquidacion mensual segun tabla progresiva; la DJ 1887 informa el total retenido en el anio.' },
             { termino: 'Anio tributario (AT)', definicion: 'El anio en que se declaran las rentas. Ej: AT 2026 corresponde a las rentas ganadas durante el anio 2025.' },
+        ],
+        comoUsar: [
+            'Ve a Tributario > DJ 1887.',
+            'Selecciona el anio tributario (AT) a declarar.',
+            'Haz click en "Generar DJ". El sistema lee las liquidaciones EMITIDAS del anio.',
+            'Haz click en "Validar" y revisa que no haya errores.',
+            'Descarga el archivo .txt y subelo al portal del SII antes del 28 de febrero.',
+            'Una vez presentada, haz click en "Confirmar presentacion" y registra el folio.',
+        ],
+        errores: [
+            { problema: 'No genera nada o dice "sin trabajadores".', solucion: 'Solo incluye liquidaciones en estado EMITIDA o PAGADA. Verifica que el anio seleccionado tenga liquidaciones emitidas.' },
+            { problema: 'El archivo no pasa la validacion del SII.', solucion: 'Verifica que el RUT de la empresa y de todos los trabajadores esten correctos y con formato valido (sin puntos, con guion).' },
         ],
         tip: 'Genera la DJ 1887 antes de que tus trabajadores hagan su Operacion Renta. Si llega tarde, no pueden usar los datos y el SII puede multar a la empresa.',
     },
@@ -1236,6 +1260,17 @@ export const glosario = {
             { termino: 'Retencion', definicion: 'Porcentaje que la empresa descuenta del honorario bruto y paga al SII en nombre del prestador. La tasa sube cada anio por Ley 21.133.' },
             { termino: 'Liquido a pagar', definicion: 'Lo que efectivamente recibe el prestador: monto bruto menos la retencion.' },
         ],
+        comoUsar: [
+            'Primero registra cada boleta recibida en Compras > Honorarios Recibidos.',
+            'Ve a Tributario > DJ 1879.',
+            'Selecciona el anio tributario.',
+            'Haz click en "Generar DJ". El sistema agrupa los honorarios por prestador.',
+            'Valida, descarga y sube al SII antes del 28 de febrero.',
+        ],
+        errores: [
+            { problema: 'No hay datos al generar.', solucion: 'Primero registra las boletas de honorarios en el modulo Honorarios Recibidos del anio seleccionado.' },
+            { problema: 'Error de cuadratura.', solucion: 'Revisa que no haya honorarios con monto de retencion negativo o cero cuando deberia tener retencion.' },
+        ],
         tip: 'Registra las boletas en Honorarios Recibidos a medida que llegan. Si las ingresas todas a fin de anio es mas facil cometer errores.',
     },
 
@@ -1251,6 +1286,17 @@ export const glosario = {
         conceptos: [
             { termino: 'Base imponible simplificada', definicion: 'Ingresos percibidos menos gastos pagados del anio, sin correccion monetaria. Es la base del calculo para el regimen 14D N°8.' },
             { termino: 'Atribucion de renta', definicion: 'Distribucion del resultado tributario a cada propietario segun su porcentaje de participacion registrado en el ERP.' },
+        ],
+        comoUsar: [
+            'Registra los propietarios en Empresa > Propietarios (deben sumar 100%).',
+            'Verifica que el regimen tributario de la empresa este en "14_D8" (Perfil de empresa).',
+            'Ve a Tributario > DJ 1947.',
+            'Selecciona el anio tributario.',
+            'Genera, valida, descarga y sube al SII antes del 28 de febrero.',
+        ],
+        errores: [
+            { problema: 'Dice que la empresa no es 14D N°8.', solucion: 'Ve a Perfil de empresa y verifica que el campo Regimen tributario este en "Propyme Transparente (14D N°8)".' },
+            { problema: 'Error "propietarios no suman 100%".', solucion: 'Ve a Empresa > Propietarios y ajusta los porcentajes hasta que sumen exactamente 100%.' },
         ],
         tip: 'Antes de generar la DJ 1947, verifica que los propietarios esten registrados en Empresa > Propietarios y que sus porcentajes sumen exactamente 100%.',
     },
@@ -1269,6 +1315,17 @@ export const glosario = {
             { termino: 'Retencion', definicion: 'Monto que la empresa descuenta del bruto y paga al SII. La tasa sube cada anio; el sistema la aplica automaticamente segun la fecha de la boleta.' },
             { termino: 'Liquido a pagar', definicion: 'Lo que le depositas al prestador: monto bruto menos la retencion.' },
         ],
+        comoUsar: [
+            'Ve a Compras > Honorarios Recibidos.',
+            'Haz click en "Agregar honorario".',
+            'Ingresa el RUT del prestador, nombre, numero de boleta (opcional), fecha y monto bruto.',
+            'El sistema calcula automaticamente la retencion y el liquido a pagar segun la tasa del anio.',
+            'Guarda. El honorario aparece en el F29 del mes de la fecha ingresada.',
+        ],
+        errores: [
+            { problema: 'RUT invalido.', solucion: 'Verifica que el RUT tenga el formato correcto (ej: 12345678-9) y que el digito verificador sea valido.' },
+            { problema: 'No encuentra la tasa del anio.', solucion: 'La tasa de retencion esta en una tabla por anio. Si el anio no esta configurado, contacta al administrador.' },
+        ],
         tip: 'Registra cada boleta al recibirla. Asi el F29 del mes siempre refleja las retenciones reales sin correcciones de ultimo momento.',
     },
 
@@ -1285,6 +1342,17 @@ export const glosario = {
         conceptos: [
             { termino: 'Porcentaje de participacion', definicion: 'La fraccion del negocio que le pertenece a cada socio. Determina cuanta renta e impuesto le corresponde en la DJ 1947.' },
             { termino: 'Suma 100%', definicion: 'Todos los porcentajes juntos deben dar exactamente 100. El modulo muestra el total en verde si cuadra y en rojo si no.' },
+        ],
+        comoUsar: [
+            'Ve a Empresa > Propietarios.',
+            'Haz click en "Agregar propietario".',
+            'Ingresa el RUT, nombre completo y porcentaje de participacion.',
+            'Verifica que la barra de total marque exactamente 100% (aparece en verde).',
+            'Guarda. Estos datos se usaran al generar la DJ 1947.',
+        ],
+        errores: [
+            { problema: 'Los porcentajes no suman 100%.', solucion: 'Ajusta los valores hasta que la suma sea exactamente 100%. Puedes usar decimales (ej: 33.33 + 33.33 + 33.34 = 100).' },
+            { problema: 'No me deja agregar el mismo RUT dos veces.', solucion: 'Cada propietario solo puede aparecer una vez. Si necesitas cambiar el porcentaje, edita el existente.' },
         ],
         tip: 'Si la empresa tiene un solo dueno, ingresalo con 100%. Actualiza los porcentajes antes de generar la DJ 1947 si hubo cambios societarios durante el anio.',
     },
