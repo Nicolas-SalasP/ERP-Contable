@@ -87,19 +87,94 @@ class ReporteContableService
 
     public function generarBalanceComprobacion(int $empresaId, string $fechaInicio, string $fechaFin, int $filtro = 1): array
     {
+        $inicioAnio   = substr($fechaInicio, 0, 4) . '-01-01';
+        $fineAnterior = date('Y-m-d', strtotime($fechaInicio . ' -1 day'));
+
+        $mapAnterior = [];
+        if ($inicioAnio <= $fineAnterior) {
+            $mapAnterior = $this->consultarBalancePeriodo($empresaId, $inicioAnio, $fineAnterior, $filtro);
+        }
+
+        $mapMensual = $this->consultarBalancePeriodo($empresaId, $fechaInicio, $fechaFin, $filtro);
+
+        $codigos = array_unique(array_merge(array_keys($mapAnterior), array_keys($mapMensual)));
+        $codigos = array_map('strval', $codigos);
+        sort($codigos);
+
+        $cuentas = [];
+        $totales = [
+            'anterior'  => ['debe' => 0.0, 'haber' => 0.0, 'saldo_deudor' => 0.0, 'saldo_acreedor' => 0.0],
+            'mensual'   => ['debe' => 0.0, 'haber' => 0.0, 'saldo_deudor' => 0.0, 'saldo_acreedor' => 0.0],
+            'acumulado' => ['debe' => 0.0, 'haber' => 0.0, 'saldo_deudor' => 0.0, 'saldo_acreedor' => 0.0],
+        ];
+
+        foreach ($codigos as $codigo) {
+            $ant = $mapAnterior[$codigo] ?? ['nombre' => ($mapMensual[$codigo]['nombre'] ?? ''), 'tipo' => ($mapMensual[$codigo]['tipo'] ?? ''), 'debe' => 0.0, 'haber' => 0.0];
+            $men = $mapMensual[$codigo]  ?? ['nombre' => ($mapAnterior[$codigo]['nombre'] ?? ''), 'tipo' => ($mapAnterior[$codigo]['tipo'] ?? ''), 'debe' => 0.0, 'haber' => 0.0];
+
+            $antSaldo  = $this->calcularSaldoBalance((float) $ant['debe'], (float) $ant['haber']);
+            $menSaldo  = $this->calcularSaldoBalance((float) $men['debe'], (float) $men['haber']);
+            $acumDebe  = (float) $ant['debe']  + (float) $men['debe'];
+            $acumHaber = (float) $ant['haber'] + (float) $men['haber'];
+            $acumSaldo = $this->calcularSaldoBalance($acumDebe, $acumHaber);
+
+            $cuentas[] = [
+                'codigo'    => $codigo,
+                'nombre'    => $ant['nombre'] ?: $men['nombre'],
+                'tipo'      => $ant['tipo']   ?: $men['tipo'],
+                'anterior'  => $antSaldo,
+                'mensual'   => $menSaldo,
+                'acumulado' => $acumSaldo,
+            ];
+
+            $totales['anterior']['debe']           += (float) $ant['debe'];
+            $totales['anterior']['haber']          += (float) $ant['haber'];
+            $totales['anterior']['saldo_deudor']   += $antSaldo['saldo_deudor'];
+            $totales['anterior']['saldo_acreedor'] += $antSaldo['saldo_acreedor'];
+
+            $totales['mensual']['debe']           += (float) $men['debe'];
+            $totales['mensual']['haber']          += (float) $men['haber'];
+            $totales['mensual']['saldo_deudor']   += $menSaldo['saldo_deudor'];
+            $totales['mensual']['saldo_acreedor'] += $menSaldo['saldo_acreedor'];
+
+            $totales['acumulado']['debe']           += $acumDebe;
+            $totales['acumulado']['haber']          += $acumHaber;
+            $totales['acumulado']['saldo_deudor']   += $acumSaldo['saldo_deudor'];
+            $totales['acumulado']['saldo_acreedor'] += $acumSaldo['saldo_acreedor'];
+        }
+
+        foreach ($totales as $sec => $vals) {
+            foreach ($vals as $k => $v) {
+                $totales[$sec][$k] = round($v, 2);
+            }
+        }
+
+        return [
+            'periodo' => [
+                'inicio'      => $fechaInicio,
+                'fin'         => $fechaFin,
+                'inicio_anio' => $inicioAnio,
+            ],
+            'cuentas' => $cuentas,
+            'totales' => $totales,
+        ];
+    }
+
+    private function consultarBalancePeriodo(int $empresaId, string $fechaDesde, string $fechaHasta, int $filtro): array
+    {
         $query = DetalleAsiento::join('asientos_contables', 'detalles_asiento.asiento_id', '=', 'asientos_contables.id')
             ->join('plan_cuentas', function ($join) {
                 $join->on('detalles_asiento.cuenta_contable', '=', 'plan_cuentas.codigo')
                     ->on('plan_cuentas.empresa_id', '=', 'asientos_contables.empresa_id');
             })
             ->where('asientos_contables.empresa_id', $empresaId)
-            ->whereBetween('asientos_contables.fecha', [$fechaInicio, $fechaFin]);
+            ->whereBetween('asientos_contables.fecha', [$fechaDesde, $fechaHasta]);
 
         $query = $this->aplicarFiltroEstado($query, $filtro, 'asientos_contables.estado');
 
         $filas = $query
             ->groupBy('detalles_asiento.cuenta_contable', 'plan_cuentas.nombre', 'plan_cuentas.tipo')
-            ->orderBy('plan_cuentas.codigo', 'asc')
+            ->orderBy('detalles_asiento.cuenta_contable', 'asc')
             ->selectRaw(
                 'detalles_asiento.cuenta_contable as codigo,
                  plan_cuentas.nombre,
@@ -109,52 +184,34 @@ class ReporteContableService
             )
             ->get();
 
-        $cuentas = [];
-        $totalDebe        = 0.0;
-        $totalHaber       = 0.0;
-        $totalSaldoDeudor = 0.0;
-        $totalSaldoAcreedor = 0.0;
-
+        $map = [];
         foreach ($filas as $fila) {
-            $debe   = (float) $fila->total_debe;
-            $haber  = (float) $fila->total_haber;
-
-            if ($debe >= $haber) {
-                $saldoDeudor   = round($debe - $haber, 2);
-                $saldoAcreedor = 0.0;
-            } else {
-                $saldoDeudor   = 0.0;
-                $saldoAcreedor = round($haber - $debe, 2);
-            }
-
-            $totalDebe          += $debe;
-            $totalHaber         += $haber;
-            $totalSaldoDeudor   += $saldoDeudor;
-            $totalSaldoAcreedor += $saldoAcreedor;
-
-            $cuentas[] = [
-                'codigo'         => $fila->codigo,
-                'nombre'         => $fila->nombre,
-                'tipo'           => $fila->tipo,
-                'debe'           => round($debe, 2),
-                'haber'          => round($haber, 2),
-                'saldo_deudor'   => $saldoDeudor,
-                'saldo_acreedor' => $saldoAcreedor,
+            $map[$fila->codigo] = [
+                'nombre' => $fila->nombre,
+                'tipo'   => $fila->tipo,
+                'debe'   => (float) $fila->total_debe,
+                'haber'  => (float) $fila->total_haber,
             ];
         }
 
+        return $map;
+    }
+
+    private function calcularSaldoBalance(float $debe, float $haber): array
+    {
+        if ($debe >= $haber) {
+            return [
+                'debe'           => round($debe, 2),
+                'haber'          => round($haber, 2),
+                'saldo_deudor'   => round($debe - $haber, 2),
+                'saldo_acreedor' => 0.0,
+            ];
+        }
         return [
-            'periodo' => [
-                'inicio' => $fechaInicio,
-                'fin'    => $fechaFin,
-            ],
-            'cuentas' => $cuentas,
-            'totales' => [
-                'debe'           => round($totalDebe, 2),
-                'haber'          => round($totalHaber, 2),
-                'saldo_deudor'   => round($totalSaldoDeudor, 2),
-                'saldo_acreedor' => round($totalSaldoAcreedor, 2),
-            ],
+            'debe'           => round($debe, 2),
+            'haber'          => round($haber, 2),
+            'saldo_deudor'   => 0.0,
+            'saldo_acreedor' => round($haber - $debe, 2),
         ];
     }
 

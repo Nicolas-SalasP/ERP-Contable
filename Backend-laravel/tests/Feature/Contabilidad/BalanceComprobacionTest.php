@@ -101,7 +101,7 @@ class BalanceComprobacionTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
-    // Tests
+    // Tests existentes (actualizados al nuevo shape con 3 secciones)
     // -----------------------------------------------------------------------
 
     /**
@@ -124,7 +124,7 @@ class BalanceComprobacionTest extends TestCase
 
         $response->assertStatus(200)->assertJsonPath('success', true);
 
-        $totales = $response->json('data.totales');
+        $totales = $response->json('data.totales.mensual');
         $this->assertEquals($totales['debe'], $totales['haber'], 'El total Debe no coincide con el total Haber.');
     }
 
@@ -152,8 +152,8 @@ class BalanceComprobacionTest extends TestCase
         // Solo dos cuentas en el balance: Caja y Capital
         $filasCaja = array_values(array_filter($cuentas, fn($c) => $c['codigo'] === $caja->codigo));
         $this->assertCount(1, $filasCaja, 'Caja debe aparecer en una sola fila agrupada.');
-        $this->assertEquals(600.0, $filasCaja[0]['debe'], 'La suma acumulada de Debe en Caja debe ser 600.');
-        $this->assertEquals(0.0, $filasCaja[0]['haber']);
+        $this->assertEquals(600.0, $filasCaja[0]['mensual']['debe'], 'La suma acumulada de Debe en Caja debe ser 600.');
+        $this->assertEquals(0.0, $filasCaja[0]['mensual']['haber']);
     }
 
     /**
@@ -179,13 +179,13 @@ class BalanceComprobacionTest extends TestCase
         $filaCaja   = collect($cuentas)->firstWhere('codigo', $caja->codigo);
         $filaPasivo = collect($cuentas)->firstWhere('codigo', $pasivo->codigo);
 
-        // Caja: debe > haber → saldo deudor
-        $this->assertGreaterThan(0, $filaCaja['saldo_deudor']);
-        $this->assertEquals(0.0, $filaCaja['saldo_acreedor']);
+        // Caja: debe > haber → saldo deudor en sección mensual
+        $this->assertGreaterThan(0, $filaCaja['mensual']['saldo_deudor']);
+        $this->assertEquals(0.0, $filaCaja['mensual']['saldo_acreedor']);
 
-        // Pasivo: haber > debe → saldo acreedor
-        $this->assertEquals(0.0, $filaPasivo['saldo_deudor']);
-        $this->assertGreaterThan(0, $filaPasivo['saldo_acreedor']);
+        // Pasivo: haber > debe → saldo acreedor en sección mensual
+        $this->assertEquals(0.0, $filaPasivo['mensual']['saldo_deudor']);
+        $this->assertGreaterThan(0, $filaPasivo['mensual']['saldo_acreedor']);
     }
 
     /**
@@ -212,8 +212,8 @@ class BalanceComprobacionTest extends TestCase
         $cuentas = $response->json('data.cuentas');
         $filaCaja = collect($cuentas)->firstWhere('codigo', $caja->codigo);
 
-        // Solo el asiento MAYORIZADO (5000) debe contarse
-        $this->assertEquals(5000.0, $filaCaja['debe'], 'El asiento ANULADO no debe incluirse con filtro=1.');
+        // Solo el asiento MAYORIZADO (5000) debe contarse en la sección mensual
+        $this->assertEquals(5000.0, $filaCaja['mensual']['debe'], 'El asiento ANULADO no debe incluirse con filtro=1.');
     }
 
     /**
@@ -236,7 +236,7 @@ class BalanceComprobacionTest extends TestCase
 
         $response->assertStatus(200);
 
-        $totales = $response->json('data.totales');
+        $totales = $response->json('data.totales.mensual');
 
         $this->assertEqualsWithDelta(
             $totales['saldo_deudor'],
@@ -321,7 +321,7 @@ class BalanceComprobacionTest extends TestCase
         $response->assertStatus(200);
 
         // El total debe de empresa A es 1000, no 1000 + 999999
-        $totales = $response->json('data.totales');
+        $totales = $response->json('data.totales.mensual');
         $this->assertEquals(1000.0, $totales['debe'], 'El balance de empresa A no debe incluir datos de empresa B.');
     }
 
@@ -351,7 +351,8 @@ class BalanceComprobacionTest extends TestCase
     }
 
     /**
-     * El balance devuelve la estructura JSON correcta: periodo, cuentas, totales.
+     * El balance devuelve la estructura JSON correcta con las 3 secciones:
+     * periodo (con inicio_anio), cuentas y totales.
      */
     public function test_estructura_json_de_respuesta_es_valida(): void
     {
@@ -363,14 +364,25 @@ class BalanceComprobacionTest extends TestCase
             $this->ruta . '?fecha_inicio=2026-05-01&fecha_fin=2026-05-31'
         );
 
+        $seccion = ['debe', 'haber', 'saldo_deudor', 'saldo_acreedor'];
+
         $response->assertStatus(200)->assertJsonStructure([
             'success',
             'data' => [
-                'periodo' => ['inicio', 'fin'],
+                'periodo' => ['inicio', 'fin', 'inicio_anio'],
                 'cuentas' => [
-                    '*' => ['codigo', 'nombre', 'tipo', 'debe', 'haber', 'saldo_deudor', 'saldo_acreedor'],
+                    '*' => [
+                        'codigo', 'nombre', 'tipo',
+                        'anterior'  => $seccion,
+                        'mensual'   => $seccion,
+                        'acumulado' => $seccion,
+                    ],
                 ],
-                'totales' => ['debe', 'haber', 'saldo_deudor', 'saldo_acreedor'],
+                'totales' => [
+                    'anterior'  => $seccion,
+                    'mensual'   => $seccion,
+                    'acumulado' => $seccion,
+                ],
             ],
         ]);
     }
@@ -387,7 +399,155 @@ class BalanceComprobacionTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertEmpty($response->json('data.cuentas'));
-        $this->assertEquals(0.0, $response->json('data.totales.debe'));
-        $this->assertEquals(0.0, $response->json('data.totales.haber'));
+        $this->assertEquals(0.0, $response->json('data.totales.mensual.debe'));
+        $this->assertEquals(0.0, $response->json('data.totales.mensual.haber'));
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests nuevos: secciones anterior / mensual / acumulado
+    // -----------------------------------------------------------------------
+
+    /**
+     * Asiento en enero (período anterior) y asiento en febrero (período mensual).
+     * Consultar con fecha_inicio=2026-02-01, fecha_fin=2026-02-28.
+     * anterior.debe = monto de enero, mensual.debe = monto de febrero,
+     * acumulado.debe = suma de ambos.
+     */
+    public function test_anterior_acumula_desde_inicio_del_anio(): void
+    {
+        $caja    = $this->crearCuenta('1101', 'Caja', 'ACTIVO');
+        $capital = $this->crearCuenta('3001', 'Capital', 'PATRIMONIO');
+
+        // Asiento en enero (período anterior al mes de febrero)
+        $this->crearAsientoBalanceado($caja->codigo, 300.0, $capital->codigo, 300.0, '2026-01-15');
+
+        // Asiento en febrero (período mensual seleccionado)
+        $this->crearAsientoBalanceado($caja->codigo, 700.0, $capital->codigo, 700.0, '2026-02-10');
+
+        $response = $this->actingAs($this->usuario)->getJson(
+            $this->ruta . '?fecha_inicio=2026-02-01&fecha_fin=2026-02-28'
+        );
+
+        $response->assertStatus(200);
+
+        $cuentas  = $response->json('data.cuentas');
+        $filaCaja = collect($cuentas)->firstWhere('codigo', $caja->codigo);
+
+        $this->assertNotNull($filaCaja, 'La cuenta Caja debe aparecer en el balance.');
+        $this->assertEquals(300.0, $filaCaja['anterior']['debe'],   'anterior.debe debe ser el monto de enero.');
+        $this->assertEquals(700.0, $filaCaja['mensual']['debe'],    'mensual.debe debe ser el monto de febrero.');
+        $this->assertEquals(1000.0, $filaCaja['acumulado']['debe'], 'acumulado.debe debe ser la suma de ambos meses.');
+    }
+
+    /**
+     * Cuando fecha_inicio es el primer día del año (2026-01-01),
+     * no existe período anterior dentro del año → anterior de cada cuenta = 0.
+     * mensual = movimientos de enero. acumulado = igual que mensual.
+     */
+    public function test_anterior_vacio_cuando_periodo_es_enero(): void
+    {
+        $caja    = $this->crearCuenta('1101', 'Caja', 'ACTIVO');
+        $capital = $this->crearCuenta('3001', 'Capital', 'PATRIMONIO');
+
+        $this->crearAsientoBalanceado($caja->codigo, 500.0, $capital->codigo, 500.0, '2026-01-20');
+
+        $response = $this->actingAs($this->usuario)->getJson(
+            $this->ruta . '?fecha_inicio=2026-01-01&fecha_fin=2026-01-31'
+        );
+
+        $response->assertStatus(200);
+
+        $cuentas  = $response->json('data.cuentas');
+        $filaCaja = collect($cuentas)->firstWhere('codigo', $caja->codigo);
+
+        $this->assertNotNull($filaCaja);
+
+        // Sin período anterior en el año, anterior debe ser 0
+        $this->assertEquals(0.0, $filaCaja['anterior']['debe'],          'anterior.debe debe ser 0 en enero.');
+        $this->assertEquals(0.0, $filaCaja['anterior']['haber'],         'anterior.haber debe ser 0 en enero.');
+        $this->assertEquals(0.0, $filaCaja['anterior']['saldo_deudor'],  'anterior.saldo_deudor debe ser 0 en enero.');
+        $this->assertEquals(0.0, $filaCaja['anterior']['saldo_acreedor'],'anterior.saldo_acreedor debe ser 0 en enero.');
+
+        // Mensual = movimientos de enero
+        $this->assertEquals(500.0, $filaCaja['mensual']['debe']);
+
+        // Acumulado = igual que mensual cuando anterior es cero
+        $this->assertEquals(500.0, $filaCaja['acumulado']['debe']);
+        $this->assertEquals($filaCaja['mensual']['debe'], $filaCaja['acumulado']['debe']);
+    }
+
+    /**
+     * Con asientos en dos meses distintos del mismo año,
+     * acumulado.debe por cuenta = anterior.debe + mensual.debe.
+     */
+    public function test_acumulado_es_suma_anterior_mas_mensual(): void
+    {
+        $caja    = $this->crearCuenta('1101', 'Caja', 'ACTIVO');
+        $capital = $this->crearCuenta('3001', 'Capital', 'PATRIMONIO');
+
+        // Marzo (anterior al período de abril)
+        $this->crearAsientoBalanceado($caja->codigo, 400.0, $capital->codigo, 400.0, '2026-03-10');
+
+        // Abril (período mensual)
+        $this->crearAsientoBalanceado($caja->codigo, 600.0, $capital->codigo, 600.0, '2026-04-15');
+
+        $response = $this->actingAs($this->usuario)->getJson(
+            $this->ruta . '?fecha_inicio=2026-04-01&fecha_fin=2026-04-30'
+        );
+
+        $response->assertStatus(200);
+
+        $cuentas  = $response->json('data.cuentas');
+        $filaCaja = collect($cuentas)->firstWhere('codigo', $caja->codigo);
+
+        $this->assertNotNull($filaCaja);
+
+        $antDebe  = $filaCaja['anterior']['debe'];
+        $menDebe  = $filaCaja['mensual']['debe'];
+        $acumDebe = $filaCaja['acumulado']['debe'];
+
+        $this->assertEquals(400.0,  $antDebe,  'anterior.debe debe ser 400 (monto de marzo).');
+        $this->assertEquals(600.0,  $menDebe,  'mensual.debe debe ser 600 (monto de abril).');
+        $this->assertEquals(1000.0, $acumDebe, 'acumulado.debe debe ser la suma de anterior + mensual.');
+        $this->assertEqualsWithDelta($antDebe + $menDebe, $acumDebe, 0.01, 'acumulado = anterior + mensual.');
+    }
+
+    /**
+     * Cada cuenta en la respuesta debe tener las 3 secciones (anterior, mensual, acumulado),
+     * y cada sección debe tener los 4 campos (debe, haber, saldo_deudor, saldo_acreedor).
+     */
+    public function test_estructura_tiene_tres_secciones_por_cuenta(): void
+    {
+        $caja    = $this->crearCuenta('1101', 'Caja', 'ACTIVO');
+        $capital = $this->crearCuenta('3001', 'Capital', 'PATRIMONIO');
+        $this->crearAsientoBalanceado($caja->codigo, 1000.0, $capital->codigo, 1000.0, '2026-05-15');
+
+        $response = $this->actingAs($this->usuario)->getJson(
+            $this->ruta . '?fecha_inicio=2026-05-01&fecha_fin=2026-05-31'
+        );
+
+        $response->assertStatus(200);
+
+        $cuentas = $response->json('data.cuentas');
+        $this->assertNotEmpty($cuentas, 'Debe haber al menos una cuenta en la respuesta.');
+
+        $camposSeccion = ['debe', 'haber', 'saldo_deudor', 'saldo_acreedor'];
+
+        foreach ($cuentas as $cuenta) {
+            foreach (['anterior', 'mensual', 'acumulado'] as $seccion) {
+                $this->assertArrayHasKey(
+                    $seccion,
+                    $cuenta,
+                    "La cuenta {$cuenta['codigo']} debe tener la sección '{$seccion}'."
+                );
+                foreach ($camposSeccion as $campo) {
+                    $this->assertArrayHasKey(
+                        $campo,
+                        $cuenta[$seccion],
+                        "La sección '{$seccion}' de la cuenta {$cuenta['codigo']} debe tener el campo '{$campo}'."
+                    );
+                }
+            }
+        }
     }
 }

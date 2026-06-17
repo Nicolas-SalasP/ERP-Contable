@@ -80,16 +80,26 @@ const BalanceComprobacion = () => {
             'Código': c.codigo,
             'Cuenta': c.nombre,
             'Tipo': c.tipo,
-            'Debe': parseFloat(c.debe) || 0,
-            'Haber': parseFloat(c.haber) || 0,
-            'Saldo Deudor': parseFloat(c.saldo_deudor) || 0,
-            'Saldo Acreedor': parseFloat(c.saldo_acreedor) || 0,
+            'Ant. Debe': parseFloat(c.anterior.debe) || 0,
+            'Ant. Haber': parseFloat(c.anterior.haber) || 0,
+            'Ant. Saldo Deudor': parseFloat(c.anterior.saldo_deudor) || 0,
+            'Ant. Saldo Acreedor': parseFloat(c.anterior.saldo_acreedor) || 0,
+            'Mens. Debe': parseFloat(c.mensual.debe) || 0,
+            'Mens. Haber': parseFloat(c.mensual.haber) || 0,
+            'Mens. Saldo Deudor': parseFloat(c.mensual.saldo_deudor) || 0,
+            'Mens. Saldo Acreedor': parseFloat(c.mensual.saldo_acreedor) || 0,
+            'Acum. Debe': parseFloat(c.acumulado.debe) || 0,
+            'Acum. Haber': parseFloat(c.acumulado.haber) || 0,
+            'Acum. Saldo Deudor': parseFloat(c.acumulado.saldo_deudor) || 0,
+            'Acum. Saldo Acreedor': parseFloat(c.acumulado.saldo_acreedor) || 0,
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(datosExcel);
         worksheet['!cols'] = [
             { wch: 10 }, { wch: 35 }, { wch: 12 },
-            { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+            { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 },
+            { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 },
+            { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 },
         ];
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Balance Comprobacion');
@@ -98,12 +108,22 @@ const BalanceComprobacion = () => {
 
     const totales = resultado?.totales;
     const descuadrado = totales && (
-        Math.abs(totales.debe - totales.haber) > 1 ||
-        Math.abs(totales.saldo_deudor - totales.saldo_acreedor) > 1
+        Math.abs(totales.mensual.debe - totales.mensual.haber) > 1 ||
+        Math.abs(totales.acumulado.saldo_deudor - totales.acumulado.saldo_acreedor) > 1
     );
 
+    const celNum = (valor, colorPos, bgPos) => {
+        const v = parseFloat(valor);
+        if (!v || v === 0) return <span className="text-slate-300">-</span>;
+        return (
+            <span className={bgPos ? `${bgPos} ${colorPos}` : colorPos}>
+                {formatMoney(v)}
+            </span>
+        );
+    };
+
     return (
-        <div className="max-w-7xl mx-auto p-6 font-sans text-slate-800">
+        <div className="max-w-full mx-auto p-6 font-sans text-slate-800">
 
             <ModalGenerico
                 isOpen={notificacion.show}
@@ -114,13 +134,12 @@ const BalanceComprobacion = () => {
             />
 
             <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                     <h1 className="text-3xl font-bold text-slate-900">Balance de Comprobacion y Saldos</h1>
                     <AyudaModulo moduloId="balanceComprobacion" size={26} />
                 </div>
             </div>
 
-            {/* Panel de filtros */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
                 <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha Inicio</label>
@@ -171,72 +190,91 @@ const BalanceComprobacion = () => {
                 </div>
             </div>
 
-            {/* Banner de descuadre */}
             {descuadrado && (
                 <div className="mb-4 bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-red-700 font-semibold text-sm">
                     Advertencia: Balance descuadrado — Debe diferente a Haber o Saldo Deudor diferente a Saldo Acreedor. Revise los asientos del periodo.
                 </div>
             )}
 
-            {/* Tabla principal */}
             <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-100 text-[11px] uppercase text-slate-500 font-bold border-b border-slate-200">
+                        <thead className="text-[10px] uppercase font-bold border-b border-slate-200">
                             <tr>
-                                <th className="px-4 py-3 border-r border-slate-200">Codigo</th>
-                                <th className="px-4 py-3 border-r border-slate-200">Cuenta</th>
-                                <th className="px-4 py-3 border-r border-slate-200">Tipo</th>
-                                <th className="px-4 py-3 text-right border-r border-slate-200">Debe</th>
-                                <th className="px-4 py-3 text-right border-r border-slate-200">Haber</th>
-                                <th className="px-4 py-3 text-right border-r border-slate-200">Saldo Deudor</th>
-                                <th className="px-4 py-3 text-right">Saldo Acreedor</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Codigo</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Cuenta</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Tipo</th>
+                                <th colSpan="2" className="px-3 py-2 bg-amber-50 text-amber-700 text-center border-r border-amber-200 whitespace-nowrap">Periodo Anterior</th>
+                                <th colSpan="4" className="px-3 py-2 bg-blue-50 text-blue-700 text-center border-r border-blue-200 whitespace-nowrap">Movimientos Periodo</th>
+                                <th colSpan="2" className="px-3 py-2 bg-emerald-50 text-emerald-700 text-center whitespace-nowrap">Acumulado Año</th>
+                            </tr>
+                            <tr>
+                                <th className="px-3 py-2 bg-amber-50 text-amber-600 text-right border-r border-amber-100 whitespace-nowrap">SD</th>
+                                <th className="px-3 py-2 bg-amber-50 text-amber-600 text-right border-r border-slate-200 whitespace-nowrap">SA</th>
+                                <th className="px-3 py-2 bg-blue-50 text-blue-600 text-right border-r border-blue-100 whitespace-nowrap">Debe</th>
+                                <th className="px-3 py-2 bg-blue-50 text-blue-600 text-right border-r border-blue-100 whitespace-nowrap">Haber</th>
+                                <th className="px-3 py-2 bg-blue-50 text-blue-600 text-right border-r border-blue-100 whitespace-nowrap">SD</th>
+                                <th className="px-3 py-2 bg-blue-50 text-blue-600 text-right border-r border-slate-200 whitespace-nowrap">SA</th>
+                                <th className="px-3 py-2 bg-emerald-50 text-emerald-600 text-right border-r border-emerald-100 whitespace-nowrap">SD</th>
+                                <th className="px-3 py-2 bg-emerald-50 text-emerald-600 text-right whitespace-nowrap">SA</th>
                             </tr>
                         </thead>
                         <tbody className="text-xs divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-slate-400">
+                                    <td colSpan="11" className="p-8 text-center text-slate-400">
                                         <i className="fas fa-spinner fa-spin text-slate-300 text-2xl mb-2 block"></i>
                                         Cargando...
                                     </td>
                                 </tr>
                             ) : !resultado ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-slate-400">
+                                    <td colSpan="11" className="p-8 text-center text-slate-400">
                                         <i className="fas fa-table text-slate-300 text-2xl mb-2 block"></i>
                                         Seleccione un periodo y presione Consultar.
                                     </td>
                                 </tr>
                             ) : resultado.cuentas.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-slate-400">
+                                    <td colSpan="11" className="p-8 text-center text-slate-400">
                                         No hay cuentas con movimientos en el periodo seleccionado.
                                     </td>
                                 </tr>
                             ) : (
                                 resultado.cuentas.map((cuenta, idx) => (
                                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-4 py-2 font-mono font-bold text-slate-600 border-r border-slate-100">
+                                        <td className="px-3 py-2 font-mono font-bold text-slate-600 border-r border-slate-100 whitespace-nowrap">
                                             {cuenta.codigo}
                                         </td>
-                                        <td className="px-4 py-2 border-r border-slate-100 text-slate-700">
+                                        <td className="px-3 py-2 border-r border-slate-100 text-slate-700">
                                             {cuenta.nombre}
                                         </td>
-                                        <td className="px-4 py-2 border-r border-slate-100 text-slate-500">
+                                        <td className="px-3 py-2 border-r border-slate-100 text-slate-500 whitespace-nowrap">
                                             {cuenta.tipo}
                                         </td>
-                                        <td className="px-4 py-2 text-right font-mono border-r border-slate-100 text-emerald-600">
-                                            {formatMoney(cuenta.debe) || '-'}
+                                        <td className="px-3 py-2 text-right font-mono border-r border-amber-100 whitespace-nowrap">
+                                            {celNum(cuenta.anterior.saldo_deudor, 'text-amber-700')}
                                         </td>
-                                        <td className="px-4 py-2 text-right font-mono border-r border-slate-100 text-slate-600">
-                                            {formatMoney(cuenta.haber) || '-'}
+                                        <td className="px-3 py-2 text-right font-mono border-r border-slate-200 whitespace-nowrap">
+                                            {celNum(cuenta.anterior.saldo_acreedor, 'text-amber-600')}
                                         </td>
-                                        <td className={`px-4 py-2 text-right font-mono border-r border-slate-100 ${parseFloat(cuenta.saldo_deudor) > 0 ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400'}`}>
-                                            {formatMoney(cuenta.saldo_deudor) || '-'}
+                                        <td className="px-3 py-2 text-right font-mono border-r border-blue-100 whitespace-nowrap">
+                                            {celNum(cuenta.mensual.debe, 'text-blue-700')}
                                         </td>
-                                        <td className={`px-4 py-2 text-right font-mono ${parseFloat(cuenta.saldo_acreedor) > 0 ? 'bg-blue-50 text-blue-700' : 'text-slate-400'}`}>
-                                            {formatMoney(cuenta.saldo_acreedor) || '-'}
+                                        <td className="px-3 py-2 text-right font-mono border-r border-blue-100 whitespace-nowrap">
+                                            {celNum(cuenta.mensual.haber, 'text-blue-600')}
+                                        </td>
+                                        <td className="px-3 py-2 text-right font-mono border-r border-blue-100 whitespace-nowrap">
+                                            {celNum(cuenta.mensual.saldo_deudor, 'text-blue-700', 'bg-blue-50')}
+                                        </td>
+                                        <td className="px-3 py-2 text-right font-mono border-r border-slate-200 whitespace-nowrap">
+                                            {celNum(cuenta.mensual.saldo_acreedor, 'text-blue-600', 'bg-blue-50')}
+                                        </td>
+                                        <td className="px-3 py-2 text-right font-mono border-r border-emerald-100 whitespace-nowrap">
+                                            {celNum(cuenta.acumulado.saldo_deudor, 'text-emerald-700', 'bg-emerald-50')}
+                                        </td>
+                                        <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
+                                            {celNum(cuenta.acumulado.saldo_acreedor, 'text-emerald-600', 'bg-emerald-50')}
                                         </td>
                                     </tr>
                                 ))
@@ -244,21 +282,33 @@ const BalanceComprobacion = () => {
                         </tbody>
                         {totales && (
                             <tfoot>
-                                <tr className={`text-xs font-bold border-t-2 border-slate-300 ${descuadrado ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700'}`}>
-                                    <td className="px-4 py-3 border-r border-slate-200" colSpan="3">
+                                <tr className={`text-xs font-bold border-t-2 border-slate-300 ${descuadrado ? 'bg-red-50 text-red-700' : 'text-slate-700'}`}>
+                                    <td className="px-3 py-3 border-r border-slate-200" colSpan="3">
                                         TOTALES
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono border-r border-slate-200">
-                                        {formatMoney(totales.debe) || '-'}
+                                    <td className={`px-3 py-3 text-right font-mono border-r border-amber-100 whitespace-nowrap ${descuadrado ? '' : 'bg-amber-50 text-amber-700'}`}>
+                                        {formatMoney(totales.anterior.saldo_deudor) || '-'}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono border-r border-slate-200">
-                                        {formatMoney(totales.haber) || '-'}
+                                    <td className={`px-3 py-3 text-right font-mono border-r border-slate-200 whitespace-nowrap ${descuadrado ? '' : 'bg-amber-50 text-amber-600'}`}>
+                                        {formatMoney(totales.anterior.saldo_acreedor) || '-'}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono border-r border-slate-200">
-                                        {formatMoney(totales.saldo_deudor) || '-'}
+                                    <td className={`px-3 py-3 text-right font-mono border-r border-blue-100 whitespace-nowrap ${descuadrado ? '' : 'bg-blue-50 text-blue-700'}`}>
+                                        {formatMoney(totales.mensual.debe) || '-'}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono">
-                                        {formatMoney(totales.saldo_acreedor) || '-'}
+                                    <td className={`px-3 py-3 text-right font-mono border-r border-blue-100 whitespace-nowrap ${descuadrado ? '' : 'bg-blue-50 text-blue-600'}`}>
+                                        {formatMoney(totales.mensual.haber) || '-'}
+                                    </td>
+                                    <td className={`px-3 py-3 text-right font-mono border-r border-blue-100 whitespace-nowrap ${descuadrado ? '' : 'bg-blue-50 text-blue-700'}`}>
+                                        {formatMoney(totales.mensual.saldo_deudor) || '-'}
+                                    </td>
+                                    <td className={`px-3 py-3 text-right font-mono border-r border-slate-200 whitespace-nowrap ${descuadrado ? '' : 'bg-blue-50 text-blue-600'}`}>
+                                        {formatMoney(totales.mensual.saldo_acreedor) || '-'}
+                                    </td>
+                                    <td className={`px-3 py-3 text-right font-mono border-r border-emerald-100 whitespace-nowrap ${descuadrado ? '' : 'bg-emerald-50 text-emerald-700'}`}>
+                                        {formatMoney(totales.acumulado.saldo_deudor) || '-'}
+                                    </td>
+                                    <td className={`px-3 py-3 text-right font-mono whitespace-nowrap ${descuadrado ? '' : 'bg-emerald-50 text-emerald-600'}`}>
+                                        {formatMoney(totales.acumulado.saldo_acreedor) || '-'}
                                     </td>
                                 </tr>
                             </tfoot>
