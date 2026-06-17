@@ -5,9 +5,11 @@ import { usePermisos } from '../../Contextos/Permisos';
 
 const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) => {
     const location = useLocation();
-    const { user, logout } = useAuth();
+    const { user, logout, misEmpresas, cambiarEmpresa } = useAuth();
     const { tieneAlgunPermiso, tieneModulo } = usePermisos();
     const [openMenu, setOpenMenu] = useState('');
+    const [cambiandoEmpresa, setCambiandoEmpresa] = useState(false);
+    const [errorEmpresa, setErrorEmpresa] = useState('');
 
     const menuGroups = [
         {
@@ -372,6 +374,18 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
         return name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
     };
 
+    const empresaActiva = misEmpresas.find(e => e.activa) ?? null;
+
+    const handleCambiarEmpresa = async (e) => {
+        const empresaId = Number(e.target.value);
+        if (!empresaId || empresaActiva?.id === empresaId) return;
+        setCambiandoEmpresa(true);
+        setErrorEmpresa('');
+        const ok = await cambiarEmpresa(empresaId);
+        setCambiandoEmpresa(false);
+        if (!ok) setErrorEmpresa('No se pudo cambiar la empresa.');
+    };
+
     return (
         <>
             <div
@@ -386,6 +400,32 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                         ERP<span className="text-emerald-500">CONTABLE</span>
                     </h1>
                 </div>
+
+                {misEmpresas.length > 1 && (
+                    <div className="px-3 pt-3 pb-2 border-b border-slate-800/50 shrink-0">
+                        <label className="block text-[10px] text-slate-500 mb-1 font-semibold uppercase tracking-wider">
+                            Empresa activa
+                        </label>
+                        <select
+                            value={empresaActiva?.id ?? ''}
+                            onChange={handleCambiarEmpresa}
+                            disabled={cambiandoEmpresa}
+                            className="w-full bg-slate-800 text-slate-200 text-xs rounded-lg px-2 py-2 border border-slate-700 focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            {misEmpresas.map(emp => (
+                                <option key={emp.id} value={emp.id}>
+                                    {emp.razon_social}
+                                </option>
+                            ))}
+                        </select>
+                        {cambiandoEmpresa && (
+                            <p className="text-[10px] text-slate-400 mt-1">Cambiando...</p>
+                        )}
+                        {errorEmpresa && !cambiandoEmpresa && (
+                            <p className="text-[10px] text-rose-400 mt-1">{errorEmpresa}</p>
+                        )}
+                    </div>
+                )}
 
                 <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto custom-scrollbar pb-6">
                     {menuGroups

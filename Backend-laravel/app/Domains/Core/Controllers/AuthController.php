@@ -285,16 +285,18 @@ class AuthController
         // Whitelist (misma forma que el login): no se expone toArray() completo
         // del usuario (tenri_user_id, module_keys, bloqueado_hasta, etc.).
         return response()->json([
-            'id'         => $user->id,
-            'nombre'     => $user->nombre,
-            'email'      => $user->email,
-            'empresa_id' => $user->empresa_id,
-            'rol_id'     => $user->rol_id,
-            'plan_slug'  => $user->plan_slug,
-            'module_keys' => $user->module_keys ?? [],
+            'id'                   => $user->id,
+            'nombre'               => $user->nombre,
+            'email'                => $user->email,
+            'empresa_id'           => $user->empresa_id,
+            'empresa_activa_id'    => $user->empresa_activa_id,
+            'rol_id'               => $user->rol_id,
+            'plan_slug'            => $user->plan_slug,
+            'module_keys'          => $user->module_keys ?? [],
             'subscription_status'  => $user->subscription_status,
             'subscription_ends_at' => $user->subscription_ends_at,
-            'permisos'   => $permisos,
+            'permisos'             => $permisos,
+            'empresas_count'       => $user->empresas()->count(),
         ]);
     }
 }

@@ -65,6 +65,7 @@ use App\Domains\Contabilidad\Controllers\Dj1947Controller;
 use App\Domains\Core\Controllers\PropietariosController;
 use App\Domains\Comercial\Controllers\HonorariosController;
 use App\Domains\Soporte\Controllers\SoporteController;
+use App\Domains\Core\Controllers\EmpresaCambioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -115,6 +116,14 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/consentimiento', [PrivacidadController::class, 'aceptar']);
         Route::delete('/consentimiento', [PrivacidadController::class, 'revocar']);
         Route::post('/politica', [PrivacidadController::class, 'crearPolitica'])->middleware('permiso:usuarios.gestionar');
+    });
+
+    // Cambio de empresa activa (multiempresa/multitenant).
+    // Sin check.subscription: el cambio debe ser posible incluso con plan vencido
+    // para que el usuario pueda navegar a otra empresa que sí esté activa.
+    Route::prefix('empresa')->group(function () {
+        Route::get('mis-empresas', [EmpresaCambioController::class, 'misEmpresas']);
+        Route::post('cambiar', [EmpresaCambioController::class, 'cambiar']);
     });
 });
 

@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [misEmpresas, setMisEmpresas] = useState([]);
 
     // Re-sincroniza el usuario (incluidos sus permisos) contra el backend para que
     // los cambios de rol/permisos surtan efecto sin necesidad de re-login.
@@ -49,10 +50,37 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    // Carga la lista de empresas accesibles por el usuario (multiempresa).
+    const cargarMisEmpresas = useCallback(async () => {
+        const storage = getSessionStorage();
+        if (!storage) return;
+        try {
+            const respuesta = await api.get('/empresa/mis-empresas');
+            setMisEmpresas(Array.isArray(respuesta?.data) ? respuesta.data : []);
+        } catch (_) {
+            // Errores de red o sin permisos: se ignoran silenciosamente.
+        }
+    }, []);
+
+    // Cambia la empresa activa del usuario en el servidor y refresca sesion y lista.
+    // Devuelve true si el cambio fue exitoso, false si hubo error (403 u otro).
+    const cambiarEmpresa = useCallback(async (empresaId) => {
+        try {
+            await api.post('/empresa/cambiar', { empresa_id: empresaId });
+            await refrescarSesion();
+            await cargarMisEmpresas();
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }, [refrescarSesion, cargarMisEmpresas]);
+
     // Refresco periodico y al recuperar el foco de la pestaña.
+    // También carga la lista de empresas del usuario al iniciar sesión.
     useEffect(() => {
         if (!user?.id) return;
         refrescarSesion();
+        cargarMisEmpresas();
         const intervalo = setInterval(refrescarSesion, REFRESCO_SESION_MS);
         const onFocus = () => refrescarSesion();
         window.addEventListener('focus', onFocus);
@@ -60,7 +88,7 @@ export const AuthProvider = ({ children }) => {
             clearInterval(intervalo);
             window.removeEventListener('focus', onFocus);
         };
-    }, [user?.id, refrescarSesion]);
+    }, [user?.id, refrescarSesion, cargarMisEmpresas]);
 
     // Si otra pestaña cierra sesion (erp_token pasa a null), invalidamos el
     // usuario en memoria de inmediato, sin esperar la recarga del navegador.
@@ -151,7 +179,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading, refrescarSesion }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading, refrescarSesion, misEmpresas, cambiarEmpresa }}>
             {children}
         </AuthContext.Provider>
     );
