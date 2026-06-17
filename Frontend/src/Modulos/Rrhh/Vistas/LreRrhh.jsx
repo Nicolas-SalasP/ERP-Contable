@@ -8,7 +8,7 @@ const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: 6 }, (_, i) => anioActual - i);
 
 const inputCls =
-    'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+    'w-full px-3 py-2 rounded-lg border border-slate-300 text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
 const BADGE_ESTADO = {
     GENERADO:          'bg-slate-100 text-slate-700',
@@ -162,7 +162,7 @@ const LreRrhh = () => {
     return (
         <div className="max-w-5xl mx-auto p-6 md:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex flex-wrap items-center gap-3">
                     <i className="fas fa-book text-emerald-600" />
                     Libro de Remuneraciones Electrónico (LRE)
                     <AyudaModulo moduloId="lre" />
@@ -258,7 +258,7 @@ const LreRrhh = () => {
                             <button
                                 onClick={handleValidar}
                                 disabled={validando}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold text-sm disabled:opacity-50"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold text-sm disabled:opacity-50 py-2.5"
                             >
                                 {validando
                                     ? <><i className="fas fa-spinner fa-spin" /> Validando...</>
@@ -270,7 +270,7 @@ const LreRrhh = () => {
                         <button
                             onClick={() => handleDescargar(lreActual)}
                             disabled={descargandoId === lreActual.id}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-sm disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-sm disabled:opacity-50 py-2.5"
                         >
                             {descargandoId === lreActual.id
                                 ? <><i className="fas fa-spinner fa-spin" /> Descargando...</>
@@ -394,7 +394,7 @@ const LreRrhh = () => {
                                                 onClick={() => handleDescargar(lre)}
                                                 disabled={descargandoId === lre.id}
                                                 title="Descargar archivo"
-                                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                                                className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                                             >
                                                 {descargandoId === lre.id
                                                     ? <i className="fas fa-spinner fa-spin text-xs" />

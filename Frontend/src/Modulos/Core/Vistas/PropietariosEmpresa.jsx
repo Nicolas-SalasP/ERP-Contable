@@ -3,7 +3,7 @@ import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { propietariosApi } from '../Servicios/propietariosApi';
 
 const inputCls =
-    'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+    'w-full px-3 py-2 rounded-lg border border-slate-300 text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
 const pctFmt = (v) => (v !== null && v !== undefined ? `${Number(v).toFixed(2)}%` : '—');
 
@@ -123,7 +123,7 @@ const PropietariosEmpresa = () => {
     return (
         <div className="max-w-4xl mx-auto p-6 md:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex flex-wrap items-center gap-3">
                     <i className="fas fa-users text-emerald-600" />
                     Propietarios de la Empresa
                     <AyudaModulo moduloId="propietariosEmpresa" />
@@ -274,14 +274,14 @@ const PropietariosEmpresa = () => {
                                                             onClick={() => handleGuardarEdicion(p.id)}
                                                             disabled={enviando}
                                                             title="Guardar cambios"
-                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
                                                         >
                                                             <i className="fas fa-check text-xs" />
                                                         </button>
                                                         <button
                                                             onClick={cancelarEdicion}
                                                             title="Cancelar"
-                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100"
+                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-500 hover:bg-slate-100"
                                                         >
                                                             <i className="fas fa-times text-xs" />
                                                         </button>
@@ -291,14 +291,14 @@ const PropietariosEmpresa = () => {
                                                         <button
                                                             onClick={() => iniciarEdicion(p)}
                                                             title="Editar"
-                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-600 hover:bg-slate-100"
+                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-600 hover:bg-slate-100"
                                                         >
                                                             <i className="fas fa-pencil-alt text-xs" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleEliminar(p.id, p.nombre)}
                                                             title="Eliminar"
-                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700"
+                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700"
                                                         >
                                                             <i className="fas fa-trash-alt text-xs" />
                                                         </button>

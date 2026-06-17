@@ -7,7 +7,7 @@ const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: anioActual - 2019 }, (_, i) => anioActual - i);
 
 const inputCls =
-    'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+    'w-full px-3 py-2 rounded-lg border border-slate-300 text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
 const BADGE_ESTADO = {
     GENERADO:    'bg-slate-100 text-slate-700',
@@ -148,7 +148,7 @@ const Dj1947 = () => {
     return (
         <div className="max-w-5xl mx-auto p-6 md:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex flex-wrap items-center gap-3">
                     <i className="fas fa-file-alt text-emerald-600" />
                     DJ 1947 — Propyme Transparente
                     <AyudaModulo moduloId="dj1947" />
@@ -240,7 +240,7 @@ const Dj1947 = () => {
                             <button
                                 onClick={handleValidar}
                                 disabled={validando}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold text-sm disabled:opacity-50"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold text-sm disabled:opacity-50 py-2.5"
                             >
                                 {validando
                                     ? <><i className="fas fa-spinner fa-spin" /> Validando...</>
@@ -252,7 +252,7 @@ const Dj1947 = () => {
                         <button
                             onClick={() => handleDescargar(envioActivo.id, envioActivo.anio)}
                             disabled={descargandoId === envioActivo.id}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-sm disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-sm disabled:opacity-50 py-2.5"
                         >
                             {descargandoId === envioActivo.id
                                 ? <><i className="fas fa-spinner fa-spin" /> Descargando...</>
@@ -360,7 +360,7 @@ const Dj1947 = () => {
                                                 onClick={() => handleDescargar(envio.id, envio.anio)}
                                                 disabled={descargandoId === envio.id}
                                                 title="Descargar archivo .txt"
-                                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                                                className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                                             >
                                                 {descargandoId === envio.id
                                                     ? <i className="fas fa-spinner fa-spin text-xs" />
