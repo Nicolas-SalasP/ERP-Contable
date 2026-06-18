@@ -13,8 +13,10 @@
       (function() {
         try {
           var t = localStorage.getItem('tenri_tema');
-          if (t === 'oscuro' || (t === 'sistema' || !t) && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          if (t === 'gris-oscuro' || t === 'oscuro' || ((t === 'sistema' || !t) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
+          } else if (t === 'claro') {
+            document.documentElement.classList.remove('dark');
           }
         } catch(e) {}
       })();

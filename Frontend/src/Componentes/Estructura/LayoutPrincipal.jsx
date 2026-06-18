@@ -32,7 +32,7 @@ const LayoutPrincipal = ({ children }) => {
     };
 
     return (
-        <div className="relative flex h-screen bg-gray-100 dark:bg-slate-950 overflow-hidden">
+        <div className="relative flex h-screen bg-gray-100 dark:bg-slate-900 overflow-hidden">
 
             <BarraLateral
                 isOpen={isSidebarOpen}
@@ -73,7 +73,7 @@ const LayoutPrincipal = ({ children }) => {
                 <BannerSuscripcion />
                 <BannerPrivacidad />
 
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-slate-900 p-3 sm:p-4 md:p-6 lg:p-8">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-slate-900 dark:text-slate-200 p-3 sm:p-4 md:p-6 lg:p-8">
                     <ErrorBoundary key={location.pathname} mensaje="Este módulo tuvo un problema. El resto del sistema sigue disponible.">
                         {children}
                     </ErrorBoundary>
