@@ -64,6 +64,7 @@ const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh')
 const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 const LreRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LreRrhh'));
+const EmrclRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/EmrclRrhh'));
 const Dj1887 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1887'));
 const HonorariosRecibidos = lazy(() => import('./Modulos/Comercial/Vistas/HonorariosRecibidos'));
 const Dj1879 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1879'));
@@ -725,6 +726,16 @@ function App() {
               <RutaPorModulo modulo="rrhh">
                 <RutaProtegida permiso="rrhh.remuneraciones.ver">
                   <LayoutPrincipal><LreRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/emrcl" element={
+            <RutaPrivada>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><EmrclRrhh /></LayoutPrincipal>
                 </RutaProtegida>
               </RutaPorModulo>
             </RutaPrivada>
