@@ -2,18 +2,17 @@
     RewriteEngine On
     RewriteBase /
 
-    # 1. EXCEPCIÓN PARA EL BACKEND (API REST)
-    # Evita que React intercepte las llamadas a la API
-    RewriteRule ^Backend/ - [L]
-
-    # 2. EXCEPCIÓN PARA ARCHIVOS FÍSICOS
-    # Deja pasar imágenes, CSS, JS
+    # 1. Archivos físicos pasan directo (JS, CSS, imágenes, favicon, etc.)
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # 3. REGLA PARA REACT ROUTER
-    # Redirige la navegación del usuario al index.html
+    # 2. Rutas Laravel → index.php (API REST + Sanctum + rutas internas)
+    RewriteRule ^api/ index.php [L]
+    RewriteRule ^sanctum/ index.php [L]
+    RewriteRule ^internal/ index.php [L]
+
+    # 3. Todo lo demás → React Router (index.html)
     RewriteRule ^ index.html [L]
 </IfModule>
 
