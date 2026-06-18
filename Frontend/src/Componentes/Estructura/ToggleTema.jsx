@@ -16,7 +16,7 @@ export function ToggleTema() {
             role="group"
             aria-label="Tema de color"
         >
-            {OPCIONES.map(({ valor, Icono, label }) => (
+            {OPCIONES.map(({ valor, Icono: IconoRender, label }) => (
                 <button
                     key={valor}
                     onClick={() => setTema(valor)}
@@ -27,7 +27,7 @@ export function ToggleTema() {
                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                     }`}
                 >
-                    <Icono size={13} strokeWidth={1.75} />
+                    <IconoRender size={13} strokeWidth={1.75} />
                     <span>{label}</span>
                 </button>
             ))}

@@ -33,7 +33,6 @@ export function TemaProvider({ children }) {
     // Sincroniza la clase dark con el tema almacenado al montar.
     useEffect(() => {
         aplicarTema(tema);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Escucha cambios del sistema cuando tema = 'sistema'.

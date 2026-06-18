@@ -68,7 +68,6 @@ const LreRrhh = () => {
     // Carga historial al montar el componente
     React.useEffect(() => {
         cargarHistorial();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Actualiza el LRE actual cuando cambia el período
