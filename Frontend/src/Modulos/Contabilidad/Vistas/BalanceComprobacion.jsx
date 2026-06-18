@@ -17,7 +17,6 @@ const BalanceComprobacion = () => {
     const [filtros, setFiltros] = useState({
         fecha_inicio: primerDiaMes,
         fecha_fin: hoy,
-        filtro: 1,
     });
 
     const [resultado, setResultado] = useState(null);
@@ -35,7 +34,7 @@ const BalanceComprobacion = () => {
             const params = new URLSearchParams({
                 fecha_inicio: filtros.fecha_inicio,
                 fecha_fin: filtros.fecha_fin,
-                filtro: filtros.filtro,
+                filtro: 1,
             }).toString();
 
             const res = await api.get(`/contabilidad/reportes/balance-comprobacion?${params}`);
@@ -159,18 +158,7 @@ const BalanceComprobacion = () => {
                         onChange={e => setFiltros({ ...filtros, fecha_fin: e.target.value })}
                     />
                 </div>
-                <div>
-                    <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Auditoria</label>
-                    <select
-                        className="border border-blue-200 bg-blue-50 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700"
-                        value={filtros.filtro}
-                        onChange={e => setFiltros({ ...filtros, filtro: Number(e.target.value) })}
-                    >
-                        <option value="1">1 - Conciliado / Validos</option>
-                        <option value="0">0 - Historia Completa (Todo)</option>
-                        <option value="2">2 - Anulados / Internos</option>
-                    </select>
-                </div>
+
                 <div className="flex gap-2">
                     <button
                         onClick={consultar}
