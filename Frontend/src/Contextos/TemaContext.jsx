@@ -29,7 +29,7 @@ export function TemaProvider({ children }) {
         try { localStorage.setItem(STORAGE_KEY, nuevoTema); } catch {}
         document.documentElement.classList.add('tema-animando');
         aplicarTema(nuevoTema);
-        setTimeout(() => document.documentElement.classList.remove('tema-animando'), 450);
+        setTimeout(() => document.documentElement.classList.remove('tema-animando'), 250);
     };
 
     // Sincroniza la clase dark con el tema almacenado al montar.
