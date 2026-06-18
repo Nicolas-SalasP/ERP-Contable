@@ -240,7 +240,7 @@ const VisorProveedor = () => {
                             <p className="text-xs text-slate-400 uppercase">Solicitud de Pago a Cuenta</p>
                         </div>
                     </div>
-                    <button onClick={() => setModalAnticipoAbierto(false)} className="text-slate-400 hover:text-white transition-colors">
+                    <button onClick={() => setModalAnticipoAbierto(false)} className="text-slate-400 hover:text-white transition-colors p-2" aria-label="Cerrar">
                         <i className="fas fa-times text-lg"></i>
                     </button>
                 </div>
@@ -251,7 +251,7 @@ const VisorProveedor = () => {
                         <p>Esta solicitud quedará en estado <b>PENDIENTE</b>. Para que el saldo figure a favor y pueda ser cruzado, deberá concretar el pago desde la Mesa de Conciliación en Tesorería.</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
                         <div>
                             <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Fecha Emisión</label>
                             <input type="date" value={formAnticipo.fecha} onChange={e => setFormAnticipo({ ...formAnticipo, fecha: e.target.value })} className="w-full bg-white border border-slate-300 p-2.5 rounded font-medium text-slate-800 outline-none focus:border-blue-500 transition-colors" />
@@ -395,7 +395,7 @@ const VisorProveedor = () => {
                             </p>
                         </div>
                     </div>
-                    <button onClick={() => setModalCruceAbierto(false)} className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 w-8 h-8 rounded flex items-center justify-center transition-colors relative z-10 border border-slate-700">
+                    <button onClick={() => setModalCruceAbierto(false)} className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 w-9 h-9 rounded flex items-center justify-center transition-colors relative z-10 border border-slate-700" aria-label="Cerrar">
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
@@ -615,7 +615,7 @@ const VisorProveedor = () => {
                         </div>
                     </div>
 
-                    <div className="flex flex-col justify-center gap-4 lg:min-w-[280px] shrink-0 border-l border-slate-800 lg:pl-8">
+                    <div className="flex flex-col justify-center gap-4 shrink-0 border-t border-slate-800 pt-4 lg:border-t-0 lg:border-l lg:min-w-[280px] lg:pt-0 lg:pl-8">
                         <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 relative overflow-hidden">
                             <div className={`absolute top-0 left-0 w-1 h-full ${esAcreedor ? 'bg-rose-500' : esDeudor ? 'bg-emerald-500' : 'bg-slate-500'}`}></div>
                             <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Saldo Contable Actual</p>
@@ -651,7 +651,7 @@ const VisorProveedor = () => {
                 </div>
 
                 <div className="bg-white p-4 border-b border-slate-100 flex flex-wrap gap-4 items-center">
-                    <div className="flex-1 min-w-[200px]">
+                    <div className="flex-1 min-w-full sm:min-w-[200px]">
                         <div className="relative w-full">
                             <i className="fas fa-filter absolute left-3 top-3 text-slate-400"></i>
                             <input type="text" placeholder="Filtrar N° Doc o Referencia..." value={filtroNumero} onChange={(e) => setFiltroNumero(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded text-sm outline-none focus:border-blue-500" />

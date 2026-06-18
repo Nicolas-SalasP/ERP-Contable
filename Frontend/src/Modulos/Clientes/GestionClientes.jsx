@@ -6,6 +6,7 @@ import FormularioCliente from './Componentes/FormularioCliente';
 import HistorialCotizaciones from './Componentes/HistorialCotizaciones';
 import Swal from 'sweetalert2';
 import { logger } from '../../Configuracion/logger';
+import { enmascararIdentificador } from '../../Utilidades/identificadores';
 
 const GestionClientes = () => {
     const [clientes, setClientes] = useState([]);
@@ -152,7 +153,7 @@ const GestionClientes = () => {
                                 
                                 <div className="pl-2 space-y-1.5 mb-4">
                                     <div className="text-sm font-mono text-slate-600 flex items-center gap-2">
-                                        <span className="font-bold text-xs text-slate-400 w-4">RUT</span> {c.rut}
+                                        <span className="font-bold text-xs text-slate-400 w-4">RUT</span> {enmascararIdentificador(c.rut)}
                                     </div>
                                     <div className="text-sm text-slate-700 flex items-center gap-2">
                                         <span className="font-bold text-xs text-slate-400 w-4">CTO</span> 
@@ -166,8 +167,9 @@ const GestionClientes = () => {
                                     </button>
                                     <button 
                                         onClick={() => handleToggleEstado(c)} 
-                                        className={`px-4 rounded-lg transition-colors border flex items-center justify-center ${c.estado === 'ACTIVO' ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 border-emerald-100'}`} 
+                                        className={`px-4 rounded-lg transition-colors border flex items-center justify-center ${c.estado === 'ACTIVO' ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 border-emerald-100'}`}
                                         title={c.estado === 'ACTIVO' ? 'Bloquear' : 'Activar'}
+                                        aria-label={c.estado === 'ACTIVO' ? 'Bloquear cliente' : 'Activar cliente'}
                                     >
                                         {c.estado === 'ACTIVO' ? (
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
@@ -181,6 +183,7 @@ const GestionClientes = () => {
                     </div>
 
                     <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="overflow-x-auto custom-scrollbar">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-slate-50">
                                 <tr>
@@ -196,7 +199,7 @@ const GestionClientes = () => {
                                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-xs font-bold text-emerald-600 font-mono mb-1">{c.codigo_cliente}</div>
-                                            <div className="text-sm font-mono text-slate-600">{c.rut}</div>
+                                            <div className="text-sm font-mono text-slate-600">{enmascararIdentificador(c.rut)}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-slate-800">{c.razon_social}</div>
@@ -218,8 +221,9 @@ const GestionClientes = () => {
                                                 </button>
                                                 <button 
                                                     onClick={() => handleToggleEstado(c)} 
-                                                    className={`p-1.5 rounded transition-colors border ${c.estado === 'ACTIVO' ? 'text-red-500 hover:text-red-700 bg-red-50 border-red-100 hover:bg-red-100' : 'text-emerald-500 hover:text-emerald-700 bg-emerald-50 border-emerald-100 hover:bg-emerald-100'}`} 
+                                                    className={`p-2 rounded transition-colors border ${c.estado === 'ACTIVO' ? 'text-red-500 hover:text-red-700 bg-red-50 border-red-100 hover:bg-red-100' : 'text-emerald-500 hover:text-emerald-700 bg-emerald-50 border-emerald-100 hover:bg-emerald-100'}`}
                                                     title={c.estado === 'ACTIVO' ? 'Bloquear Cliente' : 'Activar Cliente'}
+                                                    aria-label={c.estado === 'ACTIVO' ? 'Bloquear cliente' : 'Activar cliente'}
                                                 >
                                                     {c.estado === 'ACTIVO' ? (
                                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
@@ -233,6 +237,7 @@ const GestionClientes = () => {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </>
             )}
@@ -245,7 +250,7 @@ const GestionClientes = () => {
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                                 {editingId ? 'Gestionar Cliente' : 'Registro de Nuevo Cliente'}
                             </h2>
-                            <button onClick={() => setModalOpen(false)} className="text-emerald-200 hover:text-white transition-colors text-3xl leading-none">&times;</button>
+                            <button onClick={() => setModalOpen(false)} className="text-emerald-200 hover:text-white transition-colors text-3xl leading-none" aria-label="Cerrar">&times;</button>
                         </div>
                         <div className="flex overflow-x-auto border-b bg-slate-50 hide-scrollbar shrink-0">
                             <button onClick={() => setActiveTab('info')} className={`flex-1 py-3 px-4 text-sm font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'info' ? 'border-emerald-600 text-emerald-700 bg-white' : 'border-transparent text-slate-500 hover:bg-white'}`}>

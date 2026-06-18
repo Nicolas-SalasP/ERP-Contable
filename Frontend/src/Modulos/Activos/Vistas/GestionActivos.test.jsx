@@ -169,7 +169,7 @@ describe('GestionActivos - modal de edicion', () => {
         fireEvent.click(screen.getByRole('button', { name: /registrad/i }));
         await waitFor(() => screen.getByText('Notebook Lenovo T14'));
 
-        const botonesEditar = screen.getAllByTitle('Editar nombre/descripcion');
+        const botonesEditar = screen.getAllByLabelText('Editar activo');
         fireEvent.click(botonesEditar[0]);
 
         await waitFor(() => {
@@ -185,7 +185,7 @@ describe('GestionActivos - modal de edicion', () => {
         fireEvent.click(screen.getByRole('button', { name: /registrad/i }));
         await waitFor(() => screen.getByText('Notebook Lenovo T14'));
 
-        const botonesEditar = screen.getAllByTitle('Editar nombre/descripcion');
+        const botonesEditar = screen.getAllByLabelText('Editar activo');
         fireEvent.click(botonesEditar[0]);
 
         await waitFor(() => screen.getByText('Editar Activo'));
@@ -205,7 +205,7 @@ describe('GestionActivos - modal de edicion', () => {
         fireEvent.click(screen.getByRole('button', { name: /registrad/i }));
         await waitFor(() => screen.getByText('Notebook Lenovo T14'));
 
-        fireEvent.click(screen.getAllByTitle('Editar nombre/descripcion')[0]);
+        fireEvent.click(screen.getAllByLabelText('Editar activo')[0]);
 
         await waitFor(() => screen.getByText(/solo podes editar nombre y descripcion/i));
         expect(screen.getByText(/movimientos calculados/i)).toBeDefined();
@@ -219,7 +219,7 @@ describe('GestionActivos - modal de edicion', () => {
         fireEvent.click(screen.getByRole('button', { name: /registrad/i }));
         await waitFor(() => screen.getByText('Notebook Lenovo T14'));
 
-        fireEvent.click(screen.getAllByTitle('Editar nombre/descripcion')[0]);
+        fireEvent.click(screen.getAllByLabelText('Editar activo')[0]);
         await waitFor(() => screen.getByText('Editar Activo'));
 
         const inputNombre = screen.getByDisplayValue('Notebook Lenovo T14');
@@ -247,7 +247,7 @@ describe('GestionActivos - modal de edicion', () => {
         fireEvent.click(screen.getByRole('button', { name: /registrad/i }));
         await waitFor(() => screen.getByText('Notebook Lenovo T14'));
 
-        fireEvent.click(screen.getAllByTitle('Editar nombre/descripcion')[0]);
+        fireEvent.click(screen.getAllByLabelText('Editar activo')[0]);
         await waitFor(() => screen.getByText('Editar Activo'));
 
         const inputNombre = screen.getByDisplayValue('Notebook Lenovo T14');
@@ -276,7 +276,7 @@ describe('GestionActivos - modal de edicion', () => {
         fireEvent.click(screen.getByRole('button', { name: /registrad/i }));
         await waitFor(() => screen.getByText('Notebook Lenovo T14'));
 
-        fireEvent.click(screen.getAllByTitle('Editar nombre/descripcion')[0]);
+        fireEvent.click(screen.getAllByLabelText('Editar activo')[0]);
         await waitFor(() => screen.getByText('Editar Activo'));
 
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));

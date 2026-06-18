@@ -2,6 +2,8 @@
 
 namespace App\Domains\Comercial\Controllers;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Http\Controllers\Controller;
 use App\Domains\Comercial\Services\AnticipoProveedorService;
 use Illuminate\Http\Request;
@@ -47,6 +49,8 @@ class AnticipoProveedorController extends Controller
                 'message' => $e->getMessage(),
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -82,6 +86,8 @@ class AnticipoProveedorController extends Controller
                 'message' => $e->getMessage(),
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([
@@ -99,6 +105,8 @@ class AnticipoProveedorController extends Controller
                 $request->query('proveedor_id') ? (int) $request->query('proveedor_id') : null
             );
             return response()->json(['success' => true, 'data' => $anticipos]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }

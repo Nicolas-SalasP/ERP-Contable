@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validarIdentificador, formatearIdentificador } from './identificadores';
+import { validarIdentificador, formatearIdentificador, enmascararIdentificador } from './identificadores';
 
 describe('validarIdentificador - Chile (RUT)', () => {
     describe('casos validos', () => {
@@ -131,3 +131,49 @@ describe('formatearIdentificador - otros paises', () => {
         expect(formatearIdentificador('12345', 'XX')).toBe('12345');
     });
 });
+
+describe('enmascararIdentificador - Chile (RUT)', () => {
+    it('enmascara un RUT valido mostrando solo los 2 primeros digitos y el DV', () => {
+        // '12345678-5' → formatted '12.345.678-5' → masked '12.***.**8-5'
+        expect(enmascararIdentificador('12345678-5', 'CL')).toBe('12.***.**8-5');
+    });
+
+    it('enmascara usando input ya formateado con puntos', () => {
+        expect(enmascararIdentificador('12.345.678-5', 'CL')).toBe('12.***.**8-5');
+    });
+
+    it('el DV queda visible en el resultado', () => {
+        const resultado = enmascararIdentificador('12345678-5', 'CL');
+        expect(resultado.endsWith('-5')).toBe(true);
+    });
+
+    it('el DV K queda visible y en mayuscula', () => {
+        // '1000005-K'
+        const resultado = enmascararIdentificador('1000005-K', 'CL');
+        expect(resultado.endsWith('-K')).toBe(true);
+    });
+
+    it('RUT de un solo digito cuerpo devuelve el formateado sin crash', () => {
+        // '7-8' → formatted '7-8' → cuerpo '7' length < 3 → devuelve '7-8'
+        expect(enmascararIdentificador('7-8', 'CL')).toBe('7-8');
+    });
+
+    it('devuelve el valor sin cambios si el RUT es invalido', () => {
+        const invalido = '76.111.111-5'; // DV incorrecto
+        expect(enmascararIdentificador(invalido, 'CL')).toBe(invalido);
+    });
+
+    it('devuelve el valor sin cambios para pais no-CL', () => {
+        expect(enmascararIdentificador('123456789', 'US')).toBe('123456789');
+    });
+
+    it('devuelve el valor sin cambios para pais desconocido', () => {
+        expect(enmascararIdentificador('cualquier-cosa', 'XX')).toBe('cualquier-cosa');
+    });
+
+    it('RUT valido de 7 digitos cuerpo se enmascara correctamente', () => {
+        // '76.111.111-6': cuerpo='76.111.111', inicio='76', centro='.111.11', ultimo='1', dv='-6'
+        expect(enmascararIdentificador('76.111.111-6', 'CL')).toBe('76.***.**1-6');
+    });
+});
+

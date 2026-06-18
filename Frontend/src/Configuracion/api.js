@@ -216,9 +216,12 @@ const doFetch = async (url, init, options) => {
     try {
         const response = await fetch(url, { ...init, signal: ctrl.signal });
         return { response, timedOut: false };
-    } catch {
+    } catch (err) {
         if (ctrl.wasTimeout()) {
             return { response: null, timedOut: true };
+        }
+        if (err?.name === 'AbortError') {
+            return { response: null, timedOut: false, aborted: true };
         }
         return { response: null, timedOut: false, networkError: true };
     } finally {
@@ -241,7 +244,8 @@ const handle401 = () => {
     if (typeof window === 'undefined') return;
     clearAuth();
     if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${returnUrl}`;
     }
 };
 
@@ -373,15 +377,17 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     });
 }
 
+// Estado de suscripción en memoria del módulo.
+// AuthContext lo actualiza después de cada /auth/me vía setSubscriptionStatus().
+// No se lee localStorage: la fuente de verdad es el contexto React.
+let _subscriptionStatus = null;
+
+export const setSubscriptionStatus = (status) => {
+    _subscriptionStatus = status ?? null;
+};
+
 const esSuscripcionSoloLectura = () => {
-    try {
-        const raw = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_user'))
-            || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('erp_user'));
-        const user = raw ? JSON.parse(raw) : null;
-        return ['read_only', 'expired'].includes(user?.subscription_status);
-    } catch {
-        return false;
-    }
+    return ['read_only', 'expired'].includes(_subscriptionStatus);
 };
 
 const request = async (endpoint, method, body, options = {}) => {
@@ -425,15 +431,26 @@ const request = async (endpoint, method, body, options = {}) => {
         init.body = isFormData ? body : JSON.stringify(body);
     }
 
+    // Solo GET/HEAD son idempotentes: reintentar POST/PUT/PATCH/DELETE puede duplicar
+    // facturas, asientos o liquidaciones si el servidor procesó pero la respuesta se perdió.
+    const esIdempotente = ['GET', 'HEAD'].includes((method || '').toUpperCase());
+    const maxReintentos = esIdempotente ? MAX_RETRIES : 0;
+
     let attempt = 0;
     let lastError;
 
-    while (attempt <= MAX_RETRIES) {
-        const { response, timedOut, networkError } = await doFetch(url, init, options);
+    while (attempt <= maxReintentos) {
+        const { response, timedOut, networkError, aborted } = await doFetch(url, init, options);
+
+        if (aborted) {
+            const err = buildError(0, null, 'Aborted');
+            err.code = 'ERR_CANCELED';
+            return Promise.reject(err);
+        }
 
         if (timedOut) {
             lastError = buildError(408, null, 'Timeout');
-            if (attempt < MAX_RETRIES) {
+            if (attempt < maxReintentos) {
                 attempt++;
                 await sleep(RETRY_DELAY_MS * attempt);
                 continue;
@@ -443,7 +460,7 @@ const request = async (endpoint, method, body, options = {}) => {
 
         if (networkError) {
             lastError = buildError(0, null, 'Network error');
-            if (attempt < MAX_RETRIES) {
+            if (attempt < maxReintentos) {
                 attempt++;
                 await sleep(RETRY_DELAY_MS * attempt);
                 continue;
@@ -471,7 +488,7 @@ const request = async (endpoint, method, body, options = {}) => {
 
         lastError = buildError(response.status, payload, response.statusText);
 
-        if (RETRY_STATUSES.has(response.status) && attempt < MAX_RETRIES) {
+        if (RETRY_STATUSES.has(response.status) && attempt < maxReintentos) {
             attempt++;
             await sleep(RETRY_DELAY_MS * attempt);
             continue;

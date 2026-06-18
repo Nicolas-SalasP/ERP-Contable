@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\InventarioDespachoDetalle;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
@@ -15,7 +17,6 @@ use App\Domains\Inventario\Models\ReservaConsumoInventario;
 use App\Domains\Inventario\Models\ReservaDetalleInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Models\StockUbicacionInventario;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -74,7 +75,7 @@ class InventarioDespachoService
             ->find($id);
 
         if (!$orden) {
-            throw new Exception('La orden de despacho no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La orden de despacho no existe o no pertenece a la empresa.');
         }
 
         return $this->cargarOrden($orden);
@@ -191,11 +192,11 @@ class InventarioDespachoService
             $orden = InventarioDespachoOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de despacho no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de despacho no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeIniciarse()) {
-                throw new Exception('La orden de despacho no puede iniciarse en su estado actual.');
+                throw InventarioException::regla('La orden de despacho no puede iniciarse en su estado actual.');
             }
 
             $orden->update([
@@ -221,11 +222,11 @@ class InventarioDespachoService
                 ->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de despacho no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de despacho no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeConfirmarse()) {
-                throw new Exception('La orden de despacho no puede confirmarse en su estado actual.');
+                throw InventarioException::regla('La orden de despacho no puede confirmarse en su estado actual.');
             }
 
             if ($orden->packingOrden?->estado !== InventarioPackingOrden::ESTADO_EMPACADO) {
@@ -321,11 +322,11 @@ class InventarioDespachoService
             $orden = InventarioDespachoOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
-                throw new Exception('La orden de despacho no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La orden de despacho no existe o no pertenece a la empresa.');
             }
 
             if (!$orden->puedeCancelarse()) {
-                throw new Exception('La orden de despacho no puede cancelarse en su estado actual.');
+                throw InventarioException::regla('La orden de despacho no puede cancelarse en su estado actual.');
             }
 
             InventarioDespachoDetalle::where('empresa_id', $usuario->empresa_id)

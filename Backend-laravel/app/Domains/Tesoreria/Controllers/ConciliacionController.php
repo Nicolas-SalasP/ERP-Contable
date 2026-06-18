@@ -2,6 +2,8 @@
 
 namespace App\Domains\Tesoreria\Controllers;
 
+use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+
 use App\Domains\Tesoreria\Services\ConciliacionService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -30,6 +32,8 @@ class ConciliacionController
             return response()->json(['success' => true, 'message' => 'Factura pagada exitosamente.', 'data' => $factura], 200);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
@@ -43,6 +47,8 @@ class ConciliacionController
                 'success' => true,
                 'data' => $this->service->obtenerMovimientosPendientes($request->user()->empresa_id, $idCuenta)
             ]);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
             return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
@@ -56,6 +62,8 @@ class ConciliacionController
                 'success' => true,
                 'data' => $this->service->obtenerAnticiposPendientes($request->user()->empresa_id)
             ]);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 400);
         }
@@ -77,6 +85,8 @@ class ConciliacionController
             return response()->json(['success' => true, 'mensaje' => 'Movimiento conciliado.', 'data' => $asiento]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
             return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
@@ -95,6 +105,8 @@ class ConciliacionController
             return response()->json(['success' => true, 'mensaje' => 'Anticipo conciliado correctamente.']);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
             return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
@@ -106,6 +118,8 @@ class ConciliacionController
         try {
             $sugerencias = $this->service->obtenerSugerenciasConciliacion($request->user()->empresa_id, $id);
             return response()->json(['success' => true, 'data' => $sugerencias]);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -135,6 +149,8 @@ class ConciliacionController
             ]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }

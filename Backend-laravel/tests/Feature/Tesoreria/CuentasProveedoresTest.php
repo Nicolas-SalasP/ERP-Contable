@@ -110,7 +110,12 @@ class CuentasProveedoresTest extends TestCase
             'tipoCuenta' => 'Vista'
         ]);
         $this->assertTrue(in_array($response->getStatusCode(), [200, 201]));
-        $this->assertDatabaseHas('cuentas_bancarias_proveedores', ['numero_cuenta' => '777']);
+        // La BD almacena el número cifrado; verificamos mediante el accessor del modelo.
+        $cuenta = CuentaBancariaProveedor::where('proveedor_id', $this->proveedorA->id)
+            ->where('banco', 'Banco X')
+            ->first();
+        $this->assertNotNull($cuenta);
+        $this->assertSame('777', $cuenta->numero_cuenta);
     }
 
     public function test_rechaza_crear_cuenta_sin_id_proveedor()
@@ -207,7 +212,12 @@ class CuentasProveedoresTest extends TestCase
             'tipoCuenta' => 'C'
         ]);
         $this->assertTrue(in_array($response->getStatusCode(), [200, 201]));
-        $this->assertDatabaseHas('cuentas_bancarias_proveedores', ['numero_cuenta' => "1'; DROP TABLE"]);
+        // La BD almacena el número cifrado; verificamos mediante el accessor del modelo.
+        $cuenta = CuentaBancariaProveedor::where('proveedor_id', $this->proveedorA->id)
+            ->where('banco', 'B')
+            ->first();
+        $this->assertNotNull($cuenta);
+        $this->assertSame("1'; DROP TABLE", $cuenta->numero_cuenta);
     }
 
     public function test_previene_mass_assignment_en_crear_cuenta_proveedor()

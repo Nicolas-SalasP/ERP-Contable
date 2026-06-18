@@ -76,9 +76,11 @@ class EmitirDteService
         $folioUso = $this->cafService->reservarSiguienteFolio($dte->empresa_id, $dte->tipo_dte);
         $caf      = SiiCaf::findOrFail($folioUso->caf_id);
 
-        $disk    = config('sii.storage.disk', 'local');
+        $disk    = config('sii.storage.disk', env('SII_XML_DISK', 'sii_xml'));
         $xmlPath = null;
 
+        // A partir de aqui el folio ya esta reservado (tx committed). Cualquier
+        // excepcion posterior debe marcar el folio como HUERFANO y loguear.
         try {
             // Asignar folio reservado en memoria, sin save todavia.
             $dte->folio  = $folioUso->folio;

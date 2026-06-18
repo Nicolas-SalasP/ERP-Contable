@@ -2,11 +2,12 @@
 
 namespace App\Domains\Tesoreria\Services;
 
+use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Tesoreria\Services\BancoService;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class ConciliacionService
 {
@@ -31,13 +32,17 @@ class ConciliacionService
             $factura = $this->facturaService->obtenerFacturaPorId($datos['empresa_id'], $datos['factura_id']);
 
             if ($factura->estado === 'PAGADA') {
-                throw new Exception("La factura {$factura->numero_factura} ya está pagada.", 422);
+                throw TesoreriaException::regla("La factura {$factura->numero_factura} ya está pagada.");
             }
 
             $this->facturaService->cambiarEstado($datos['empresa_id'], $factura->id, 'PAGADA');
 
             $cuentaProveedores = $datos['cuenta_proveedor'] ?? '352105';
-            $codigoCuentaBanco = $cuentaBanco->cuenta_contable_codigo ?? '110101';
+            // Usa la cuenta contable real del banco; lanza excepción si no está configurada.
+            $codigoCuentaBanco = $this->bancoService->obtenerCuentaContableDeBanco(
+                $datos['empresa_id'],
+                $datos['cuenta_bancaria_id']
+            );
             $glosa = "Pago Factura N° {$factura->numero_factura} a Proveedor";
 
             $this->asientoService->registrarAsiento([
@@ -152,7 +157,7 @@ class ConciliacionService
                             ->exists();
 
                         if (!$proveedorValido) {
-                            throw new Exception("El proveedor indicado no pertenece a la empresa.", 422);
+                            throw TesoreriaException::regla("El proveedor indicado no pertenece a la empresa.");
                         }
 
                         DB::table('anticipos_proveedores')->insert([

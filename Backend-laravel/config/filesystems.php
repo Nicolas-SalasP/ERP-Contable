@@ -47,6 +47,11 @@ return [
             'report' => false,
         ],
 
+        'sii_xml' => [
+            'driver' => env('SII_XML_DISK_DRIVER', 'local'),
+            'root'   => storage_path('app/sii'),
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

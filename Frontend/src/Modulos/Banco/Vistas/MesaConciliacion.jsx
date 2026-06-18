@@ -388,7 +388,7 @@ const MesaConciliacion = () => {
                                 </h3>
                                 <p className="text-slate-400 text-xs mt-1 tracking-wider uppercase">Asignación Contable de Movimiento</p>
                             </div>
-                            <button onClick={() => setModalActivo(false)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-rose-500 p-2 rounded-full transition-all relative z-10">
+                            <button onClick={() => setModalActivo(false)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-rose-500 p-2.5 rounded-full transition-all relative z-10" aria-label="Cerrar">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
@@ -437,7 +437,8 @@ const MesaConciliacion = () => {
                                             />
                                         ) : sugerenciasFacturas.length > 0 ? (
                                             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                                                <table className="w-full text-left text-sm">
+                                                <div className="overflow-x-auto custom-scrollbar">
+                                                <table className="min-w-full text-left text-sm">
                                                     <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-widest border-b border-slate-200">
                                                         <tr>
                                                             <th className="px-5 py-4">Documento</th>
@@ -455,6 +456,7 @@ const MesaConciliacion = () => {
                                                         ))}
                                                     </tbody>
                                                 </table>
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="py-10 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-sm">
@@ -492,8 +494,8 @@ const MesaConciliacion = () => {
                                                             <p className="text-xs text-blue-600">Al confirmar, el monto completo quedará a su favor como <b>Anticipo Directo</b>.</p>
                                                         </div>
                                                     ) : (
-                                                        <div className="border border-slate-200 rounded-xl overflow-hidden max-h-56 overflow-y-auto shadow-inner">
-                                                            <table className="w-full text-sm text-left">
+                                                        <div className="border border-slate-200 rounded-xl overflow-x-auto overflow-y-auto max-h-56 shadow-inner">
+                                                            <table className="min-w-full text-sm text-left">
                                                                 <thead className="bg-slate-100 sticky top-0 border-b border-slate-200">
                                                                     <tr>
                                                                         <th className="px-4 py-3 w-12 text-center"><i className="fas fa-check-square text-slate-400"></i></th>
@@ -566,7 +568,8 @@ const MesaConciliacion = () => {
                                                 <i className="fas fa-balance-scale"></i> Vista Previa Contable
                                             </p>
                                         </div>
-                                        <table className="w-full text-sm text-left">
+                                        <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="min-w-full text-sm text-left">
                                             <thead className="bg-slate-50 border-b border-slate-100 text-[10px] text-slate-400 uppercase font-bold tracking-widest">
                                                 <tr>
                                                     <th className="px-5 py-3">Código y Nombre de Cuenta</th>
@@ -604,6 +607,7 @@ const MesaConciliacion = () => {
                                                 )}
                                             </tbody>
                                         </table>
+                                        </div>
                                     </div>
                                     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div>

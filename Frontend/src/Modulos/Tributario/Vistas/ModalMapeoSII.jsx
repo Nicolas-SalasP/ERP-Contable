@@ -115,7 +115,7 @@ const ModalMapeoSII = ({ onClose }) => {
                         </h3>
                         <p className="text-indigo-200 text-sm mt-1">Asigna tus cuentas contables a los conceptos tributarios del Formulario 22.</p>
                     </div>
-                    <button onClick={onClose} className="text-indigo-200 hover:text-white transition-colors text-2xl">
+                    <button onClick={onClose} className="text-indigo-200 hover:text-white transition-colors text-2xl" aria-label="Cerrar">
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
@@ -155,7 +155,7 @@ const ModalMapeoSII = ({ onClose }) => {
                                 color="indigo"
                                 tamano="md"
                                 textoCargando="Procesando..."
-                                className="whitespace-nowrap min-w-[160px]"
+                                className="whitespace-nowrap w-full sm:w-auto sm:min-w-[160px]"
                             >
                                 Agregar Mapeo
                             </BotonAccion>
@@ -174,7 +174,8 @@ const ModalMapeoSII = ({ onClose }) => {
                                 color="indigo"
                             />
                         ) : (
-                            <table className="w-full text-left text-sm">
+                            <div className="overflow-x-auto custom-scrollbar">
+                            <table className="min-w-full text-left text-sm">
                                 <thead className="bg-white border-b border-slate-100 text-slate-500 uppercase text-xs">
                                     <tr>
                                         <th className="px-5 py-3 font-bold">Código</th>
@@ -185,7 +186,10 @@ const ModalMapeoSII = ({ onClose }) => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {mapeadas.length === 0 ? (
-                                        <tr><td colSpan="4" className="text-center p-6 text-slate-400">No hay cuentas vinculadas.</td></tr>
+                                        <tr><td colSpan="4" className="text-center p-8 text-slate-400">
+                                            <i className="fas fa-link-slash text-2xl text-slate-300 mb-2 block"></i>
+                                            No hay cuentas vinculadas.
+                                        </td></tr>
                                     ) : (
                                         mapeadas.map(m => (
                                             <tr key={m.id} className="hover:bg-slate-50 transition-colors">
@@ -209,6 +213,7 @@ const ModalMapeoSII = ({ onClose }) => {
                                     )}
                                 </tbody>
                             </table>
+                            </div>
                         )}
                     </div>
 

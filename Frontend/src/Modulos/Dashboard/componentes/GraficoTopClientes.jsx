@@ -1,0 +1,119 @@
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+
+// Tonos de esmeralda para diferencias visuales entre barras (más oscuro al más claro)
+const COLORES_ESMERALDA = [
+  '#059669', // emerald-600
+  '#10b981', // emerald-500
+  '#34d399', // emerald-400
+  '#6ee7b7', // emerald-300
+  '#a7f3d0', // emerald-200
+];
+
+// Formatea monto abreviado para los ticks del eje X
+const formatAbreviado = (v) => {
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
+  return `$${v}`;
+};
+
+const formatCLP = new Intl.NumberFormat('es-CL', {
+  style: 'currency',
+  currency: 'CLP',
+  maximumFractionDigits: 0,
+});
+
+// Tooltip personalizado con monto completo en CLP
+const TooltipPersonalizado = ({ active, payload }) => {
+  if (!active || !payload || payload.length === 0) return null;
+  const { nombre, monto } = payload[0].payload;
+  return (
+    <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg max-w-[200px]">
+      <p className="font-medium mb-1 truncate">{nombre}</p>
+      <p>{formatCLP.format(monto)}</p>
+    </div>
+  );
+};
+
+// Trunca el nombre del cliente para que quepa en el eje Y
+const tickNombre = (valor) => {
+  if (!valor) return '';
+  return valor.length > 16 ? `${valor.slice(0, 15)}…` : valor;
+};
+
+/**
+ * Gráfico de barras horizontales: top clientes por monto facturado.
+ *
+ * @param {{ datos: Array<{nombre: string, monto: number}> }} props
+ */
+export default function GraficoTopClientes({ datos = [] }) {
+  const sinDatos =
+    !datos ||
+    datos.length === 0 ||
+    datos.every((d) => d.monto === 0);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+      <h3 className="text-sm font-semibold text-slate-700 mb-4">
+        Top clientes (últimos 12 meses)
+      </h3>
+
+      {sinDatos ? (
+        <div className="flex items-center justify-center h-[200px] text-sm text-slate-400">
+          Sin datos de clientes
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart
+            data={datos}
+            layout="vertical"
+            margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#1e293b"
+              strokeOpacity={0.12}
+              horizontal={false}
+            />
+            <XAxis
+              type="number"
+              tickFormatter={formatAbreviado}
+              tick={{ fontSize: 11, fill: '#64748b' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="nombre"
+              width={120}
+              tickFormatter={tickNombre}
+              tick={{ fontSize: 11, fill: '#334155' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip
+              content={<TooltipPersonalizado />}
+              cursor={{ fill: '#f1f5f9' }}
+            />
+            <Bar dataKey="monto" radius={[0, 4, 4, 0]}>
+              {datos.map((_, indice) => (
+                <Cell
+                  key={`celda-${indice}`}
+                  fill={COLORES_ESMERALDA[indice % COLORES_ESMERALDA.length]}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+}

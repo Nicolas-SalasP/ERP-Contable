@@ -4,7 +4,6 @@ namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Models\CentroCosto;
-use App\Domains\Contabilidad\Models\DetalleAsiento;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
@@ -37,24 +36,12 @@ class AsientoContableService
 
     private function validarMesAbierto(int $empresaId, string $fecha)
     {
-        $mes = date('n', strtotime($fecha));
-        $anio = date('Y', strtotime($fecha));
-
-        // El cierre del periodo lo genera ImpuestosService::ejecutarF29 con
-        // origen_modulo 'impuestos', estado 'MAYORIZADO' y glosa
-        // "Centralización F29 - MM/AAAA". Antes se buscaba "Cierre F29", que NUNCA
-        // coincidia, dejando el mes abierto para asientos retroactivos.
-        $mesCerrado = AsientoContable::where('empresa_id', $empresaId)
-            ->whereYear('fecha', $anio)
-            ->whereMonth('fecha', $mes)
-            ->where('origen_modulo', 'impuestos')
-            ->where('estado', 'MAYORIZADO')
-            ->where('glosa', 'like', '%Centralización F29%')
-            ->exists();
-
-        if ($mesCerrado) {
-            throw new Exception("El periodo {$mes}/{$anio} ya está cerrado tributariamente.");
-        }
+        // El bloqueo de periodo es ahora una accion MANUAL y explicita gestionada por
+        // PeriodoContableService (tabla periodos_contables). El observer de
+        // AsientoContable aplica la misma garantia a nivel de modelo; este guard a
+        // nivel de servicio se conserva para un mensaje temprano y claro.
+        app(\App\Domains\Contabilidad\Services\PeriodoContableService::class)
+            ->assertAbierto($empresaId, $fecha);
     }
 
     private function validarCentrosCosto(int $empresaId, array $detalles): void
@@ -156,44 +143,25 @@ class AsientoContableService
         });
     }
 
-    public function crearAsientoManual(array $datos)
+    /**
+     * Crea un asiento manual delegando en registrarAsiento para garantizar
+     * partida doble, existencia/pertenencia/imputabilidad de cuentas y
+     * validación de mes abierto (mismas reglas que cualquier asiento del sistema).
+     */
+    public function crearAsientoManual(array $datos): AsientoContable
     {
-        $this->validarMesAbierto($datos['empresa_id'], $datos['fecha']);
-        $this->validarCentrosCosto($datos['empresa_id'], $datos['detalles']);
+        $cabecera = [
+            'empresa_id'    => $datos['empresa_id'],
+            'usuario_id'    => $datos['usuario_id'] ?? null,
+            'fecha'         => $datos['fecha'],
+            'glosa'         => $datos['glosa'],
+            'tipo_asiento'  => $datos['tipo'] ?? $datos['tipo_asiento'] ?? 'traspaso',
+            'estado'        => $datos['estado'] ?? 'MAYORIZADO',
+            'origen_modulo' => $datos['origen_modulo'] ?? 'tesoreria',
+            'origen_id'     => $datos['origen_id'] ?? null,
+        ];
 
-        return DB::transaction(function () use ($datos) {
-            $tempNum = 'TMP-' . Str::uuid()->toString();
-
-            $asiento = AsientoContable::create([
-                'empresa_id' => $datos['empresa_id'],
-                'usuario_id' => $datos['usuario_id'],
-                'fecha' => $datos['fecha'],
-                'glosa' => $datos['glosa'],
-                'tipo_asiento' => $datos['tipo'] ?? 'traspaso',
-                'estado' => 'MAYORIZADO',
-                'numero_comprobante' => $tempNum,
-                'origen_modulo' => $datos['origen_modulo'] ?? 'tesoreria',
-                'origen_id' => $datos['origen_id'] ?? null,
-            ]);
-
-            $this->generarNumeroComprobante($asiento);
-
-            foreach ($datos['detalles'] as $detalle) {
-                DetalleAsiento::create([
-                    'asiento_id' => $asiento->id,
-                    'cuenta_contable' => $detalle['cuenta_contable'],
-                    'debe' => $detalle['debe'] ?? 0,
-                    'haber' => $detalle['haber'] ?? 0,
-                    'fecha' => $datos['fecha'],
-                    'tipo_operacion' => $detalle['tipo_operacion'] ?? ($detalle['debe'] > 0 ? 'DEBE' : 'HABER'),
-                    'descripcion_extensa' => $detalle['glosa_detalle'] ?? null,
-                    'centro_costo_id' => $detalle['centro_costo_id'] ?? null,
-                    'empleado_nombre' => $detalle['empleado_nombre'] ?? null,
-                ]);
-            }
-
-            return $asiento;
-        });
+        return $this->registrarAsiento($cabecera, $datos['detalles']);
     }
 
     public function existeAsientoPorOrigen(int $empresaId, string $modulo, int $origenId, string $fecha, string $glosa): bool

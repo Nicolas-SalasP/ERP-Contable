@@ -56,6 +56,7 @@ class EmpresaController extends Controller
                 'email' => 'nullable|email|max:100',
                 'color_primario' => 'nullable|string|max:20',
                 'regimen_tributario' => 'nullable|in:14_D3,14_D8,14_A',
+                'ppm_pct' => 'nullable|numeric|min:0|max:10',
             ]);
 
             $empresa = $this->empresaService->actualizarDatos($request->user()->empresa_id, $datos);
@@ -200,8 +201,16 @@ class EmpresaController extends Controller
     public function actualizarCentro(Request $request, $id)
     {
         try {
-            $centro = $this->empresaService->actualizarCentroCosto($request->user()->empresa_id, $id, $request->all());
+            $datos = $request->validate([
+                'codigo' => 'sometimes|required|string|max:20',
+                'nombre' => 'sometimes|required|string|max:100',
+                'activo' => 'sometimes|boolean',
+            ]);
+
+            $centro = $this->empresaService->actualizarCentroCosto($request->user()->empresa_id, $id, $datos);
             return response()->json(['success' => true, 'data' => $centro]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
         }
@@ -236,12 +245,25 @@ class EmpresaController extends Controller
             return response()->json(['success' => false, 'message' => 'Este usuario ya tiene una empresa asignada.'], 422);
         }
 
+        // Normalizar RUT antes de validar: el sistema almacena sin puntos (p.ej. "12345678-9").
+        // La normalización se hace aquí para que la regla de unicidad compare contra
+        // el formato real almacenado en la BD.
+        $rutNormalizado = null;
+        try {
+            $rutNormalizado = RutHelper::normalizar((string) $request->empresa_rut);
+        } catch (\Exception $e) {
+            // La validación de formato (RutHelper::validar) se encarga del error.
+        }
+
         $request->validate([
-            'empresa_rut'          => ['required', 'string', 'max:20', function ($attribute, $value, $fail) {
-                if (!RutHelper::validar($value)) {
-                    $fail('El RUT ingresado no es valido: revise el digito verificador.');
-                }
-            }],
+            'empresa_rut'          => [
+                'required', 'string', 'max:20',
+                function ($attribute, $value, $fail) {
+                    if (!RutHelper::validar($value)) {
+                        $fail('El RUT ingresado no es valido: revise el digito verificador.');
+                    }
+                },
+            ],
             'empresa_razon_social' => ['required', 'string', 'max:150'],
             'giro'                 => ['nullable', 'string', 'max:80'],
             'direccion'            => ['nullable', 'string', 'max:255'],
@@ -249,9 +271,17 @@ class EmpresaController extends Controller
             'regimen_tributario'   => ['nullable', 'in:14_D3,14_D8,14_A'],
         ]);
 
-        return DB::transaction(function () use ($request, $user) {
+        // Unicidad server-side sobre el RUT normalizado (sin puntos).
+        $rutParaGuardar = $rutNormalizado ?? $request->empresa_rut;
+        if (Empresa::where('rut', $rutParaGuardar)->exists()) {
+            throw ValidationException::withMessages([
+                'empresa_rut' => ['Este RUT ya está registrado en el sistema.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($request, $user, $rutParaGuardar) {
             $empresa = Empresa::create([
-                'rut'                => $request->empresa_rut,
+                'rut'                => $rutParaGuardar,
                 'razon_social'       => $request->empresa_razon_social,
                 'giro_emisor'        => $request->giro,
                 'direccion'          => $request->direccion,

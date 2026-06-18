@@ -4,6 +4,7 @@ namespace Tests\Feature\Core;
 
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
+use App\Support\HmacFirma;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
@@ -30,10 +31,13 @@ class SyncPasswordRevocaTokensTest extends TestCase
         $user->createToken('erp-token');
         $this->assertSame(1, $user->tokens()->count());
 
-        $this->postJson('/api/internal/web/sync-password', [
+        $payload = [
             'tenri_user_id' => 909,
             'password_hash' => bcrypt('nueva'),
-        ], ['X-WEB-API-KEY' => 'test-web-key'])->assertStatus(200);
+        ];
+        $headers = HmacFirma::headers('test-web-key', json_encode($payload));
+
+        $this->postJson('/api/internal/web/sync-password', $payload, $headers)->assertStatus(200);
 
         $this->assertSame(0, $user->fresh()->tokens()->count(), 'El cambio de password debe revocar todos los tokens del ERP');
     }

@@ -169,8 +169,12 @@ const GestionUsuarios = () => {
                                 </tr>
                             ) : usuarios.length === 0 ? (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-10 text-center text-slate-400">
-                                        No hay usuarios registrados en esta empresa.
+                                    <td colSpan="4" className="px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-3 text-slate-400">
+                                            <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87"></path></svg>
+                                            <p className="font-bold text-slate-500">No hay usuarios registrados</p>
+                                            <p className="text-sm">Invita a tu equipo para empezar a colaborar.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (
@@ -218,19 +222,21 @@ const GestionUsuarios = () => {
                                             <div className="flex justify-center gap-3">
                                                 <button
                                                     onClick={() => abrirPerfilUsuario(user)}
-                                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 hover:border-emerald-500 transition-all shadow-sm"
+                                                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 hover:border-emerald-500 transition-all shadow-sm"
                                                     title="Ver Perfil y Editar Rol"
+                                                    aria-label="Ver perfil y editar rol"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                 </button>
                                                 <button
                                                     onClick={() => handleDesvincular(user)}
                                                     disabled={user.id === currentUser.id}
-                                                    className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all shadow-sm border ${user.id === currentUser.id
+                                                    className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all shadow-sm border ${user.id === currentUser.id
                                                         ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
                                                         : 'bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white border-rose-200 hover:border-rose-500'
                                                         }`}
                                                     title="Desvincular"
+                                                    aria-label="Desvincular usuario"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                 </button>
@@ -249,7 +255,7 @@ const GestionUsuarios = () => {
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
                         <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
                             <h3 className="text-lg font-black text-slate-800">Invitar al Equipo</h3>
-                            <button onClick={() => setShowModalInvitar(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors">
+                            <button onClick={() => setShowModalInvitar(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors" aria-label="Cerrar">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
@@ -290,7 +296,7 @@ const GestionUsuarios = () => {
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
 
                         <div className="relative h-24 bg-gradient-to-r from-slate-800 to-slate-900 shrink-0">
-                            <button onClick={() => setShowModalEditar(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10">
+                            <button onClick={() => setShowModalEditar(false)} className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10" aria-label="Cerrar">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
@@ -310,7 +316,7 @@ const GestionUsuarios = () => {
                                 <p className="text-sm text-slate-500 font-medium">{usuarioSeleccionado.email}</p>
                             </div>
 
-                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 grid grid-cols-2 gap-4">
+                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado</p>
                                     {usuarioSeleccionado.estado_suscripcion_id === 1 ? (

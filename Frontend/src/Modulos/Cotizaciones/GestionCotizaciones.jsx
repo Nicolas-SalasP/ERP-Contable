@@ -259,7 +259,8 @@ const GestionCotizaciones = () => {
                     </div>
 
                     <div className="hidden md:block bg-white shadow-sm rounded-xl overflow-hidden border border-slate-200">
-                        <table className="w-full text-left">
+                        <div className="overflow-x-auto custom-scrollbar">
+                        <table className="min-w-full text-left">
                             <thead className="bg-slate-50 border-b border-slate-100">
                                 <tr>
                                     <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-wider">Folio</th>
@@ -322,6 +323,7 @@ const GestionCotizaciones = () => {
                                 })}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </>
             )}

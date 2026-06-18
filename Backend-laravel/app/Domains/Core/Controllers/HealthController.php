@@ -14,6 +14,10 @@ use Throwable;
  * el ERP (BD, cache, queue, storage) sin requerir SSH ni autenticación, para que el
  * equipo confirme "el sistema funciona" como hecho verificable. 200 si todo OK,
  * 503 si algún componente falla.
+ *
+ * En entornos no-local (staging, producción) la respuesta omite el detalle de cada
+ * check para no exponer versiones, nombres de bases de datos ni mensajes de error
+ * internos. Solo se retorna status + código HTTP.
  */
 class HealthController
 {
@@ -43,11 +47,18 @@ class HealthController
 
         $saludable = collect($checks)->every(fn ($check) => $check['ok'] === true);
 
-        return response()->json([
-            'status' => $saludable ? 'ok' : 'degraded',
-            'checks' => $checks,
-            'time' => now()->toIso8601String(),
-        ], $saludable ? 200 : 503);
+        // En producción/staging no exponemos detalle: solo status + HTTP code.
+        // En local el detalle completo ayuda a diagnosticar problemas de configuración.
+        $detalle = app()->environment('local') ? $checks : [];
+
+        $cuerpo = ['status' => $saludable ? 'ok' : 'degraded'];
+
+        if ($detalle !== []) {
+            $cuerpo['checks'] = $detalle;
+            $cuerpo['time'] = now()->toIso8601String();
+        }
+
+        return response()->json($cuerpo, $saludable ? 200 : 503);
     }
 
     private function verificar(callable $prueba): array

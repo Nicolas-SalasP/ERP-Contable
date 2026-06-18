@@ -2,10 +2,11 @@
 
 namespace App\Domains\Tesoreria\Services;
 
+use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+
 use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 use App\Domains\Comercial\Models\Proveedor;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Exception;
 
 class CuentaProveedorService
 {
@@ -42,7 +43,7 @@ class CuentaProveedorService
         $cuenta = CuentaBancariaProveedor::with('proveedor')->findOrFail($id);
 
         if (!$cuenta->proveedor || $cuenta->proveedor->empresa_id !== $empresaId) {
-            throw new Exception("Acceso denegado a esta cuenta.", 403);
+            throw TesoreriaException::noEncontrado("Acceso denegado a esta cuenta.");
         }
 
         return $cuenta->delete();

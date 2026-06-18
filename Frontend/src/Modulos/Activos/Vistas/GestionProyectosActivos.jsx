@@ -164,7 +164,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                                         <button
                                             onClick={() => handleEliminarProyecto(p)}
                                             className="text-rose-600 text-sm font-bold hover:text-white bg-rose-50 hover:bg-rose-600 p-2 rounded-lg transition-colors shadow-sm"
-                                            title="Eliminar proyecto (solo en construccion, sin facturas)"
+                                            aria-label="Eliminar proyecto"
                                         >
                                             <i className="fas fa-trash"></i>
                                         </button>
@@ -191,7 +191,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
                                 </div>
                                 Crear Proyecto
                             </h3>
-                            <button onClick={() => setModalAbierto(false)} className="text-slate-400 hover:text-rose-500 transition-colors text-xl">
+                            <button onClick={() => setModalAbierto(false)} className="text-slate-400 hover:text-rose-500 transition-colors p-2 rounded-lg" aria-label="Cerrar">
                                 <i className="fas fa-times"></i>
                             </button>
                         </div>

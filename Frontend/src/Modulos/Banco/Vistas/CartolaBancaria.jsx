@@ -277,7 +277,7 @@ const CartolaBancaria = () => {
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Fecha del Movimiento</label>
                                     <input 
@@ -387,7 +387,7 @@ const CartolaBancaria = () => {
                                     ))}
                                     {movimientos.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-10 text-center text-slate-400 italic">No hay movimientos en esta cuenta.</td>
+                                            <td colSpan="5" className="px-6 py-10 text-center text-slate-400"><i className="fas fa-exchange-alt text-slate-300 text-2xl mb-2 block"></i>No hay movimientos en esta cuenta.</td>
                                         </tr>
                                     )}
                                 </tbody>

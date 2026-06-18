@@ -2,6 +2,8 @@
 
 namespace App\Domains\Comercial\Controllers;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Services\ProveedorService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
@@ -59,6 +61,8 @@ class ProveedorController
                 'data' => $proveedor,
                 'codigo_generado' => $proveedor->codigo_interno
             ], 201);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -75,6 +79,8 @@ class ProveedorController
                 'success' => true,
                 'data' => $this->service->obtenerFichaProveedor($request->user()->empresa_id, (int) $id)
             ]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -107,6 +113,8 @@ class ProveedorController
             $proveedor = $this->service->actualizarProveedor($request->user()->empresa_id, $id, $datos);
 
             return response()->json(['success' => true, 'data' => $proveedor]);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
@@ -139,6 +147,8 @@ class ProveedorController
                 'message' => 'Faltan datos obligatorios',
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -163,6 +173,8 @@ class ProveedorController
             return response()->json(['success' => true, 'data' => $anticipo]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             if ($rutaPdf) {
                 $pathToDelete = str_replace('storage/', '', $rutaPdf);
@@ -200,6 +212,8 @@ class ProveedorController
                 'message' => $e->getMessage(),
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

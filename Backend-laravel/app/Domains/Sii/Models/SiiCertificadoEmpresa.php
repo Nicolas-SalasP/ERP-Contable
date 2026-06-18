@@ -2,6 +2,8 @@
 
 namespace App\Domains\Sii\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class SiiCertificadoEmpresa extends Model
 {
+    use HasEmpresaScope;
     public const ESTADO_ACTIVO     = 'activo';
     public const ESTADO_CUARENTENA = 'cuarentena';
     public const ESTADO_REVOCADO   = 'revocado';

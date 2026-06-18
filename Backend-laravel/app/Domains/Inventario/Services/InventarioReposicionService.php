@@ -2,12 +2,13 @@
 
 namespace App\Domains\Inventario\Services;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\ReglaReposicion;
 use App\Domains\Inventario\Models\StockProducto;
-use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -58,7 +59,7 @@ class InventarioReposicionService
             ->find($reglaId);
 
         if (!$regla) {
-            throw new Exception('La regla de reposición no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La regla de reposición no existe o no pertenece a la empresa.');
         }
 
         return $regla;
@@ -96,7 +97,7 @@ class InventarioReposicionService
             $regla = ReglaReposicion::where('empresa_id', $usuario->empresa_id)->find($reglaId);
 
             if (!$regla) {
-                throw new Exception('La regla de reposición no existe o no pertenece a la empresa.');
+                throw InventarioException::noEncontrado('La regla de reposición no existe o no pertenece a la empresa.');
             }
 
             $datos = $this->normalizarDatos($datos);
@@ -123,7 +124,7 @@ class InventarioReposicionService
         $regla = ReglaReposicion::where('empresa_id', $usuario->empresa_id)->find($reglaId);
 
         if (!$regla) {
-            throw new Exception('La regla de reposición no existe o no pertenece a la empresa.');
+            throw InventarioException::noEncontrado('La regla de reposición no existe o no pertenece a la empresa.');
         }
 
         $regla->delete();

@@ -651,7 +651,7 @@ const TomasFisicasInventario = () => {
                         </>
                     )}
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-6">
                         <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                             <p className="text-xs font-black text-slate-400 uppercase">Estado</p>
                             <div className="mt-2">

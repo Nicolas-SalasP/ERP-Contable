@@ -149,7 +149,8 @@ const ReclasificadorAsiento = () => {
                 </div>
 
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm pb-32">
-                    <table className="w-full border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar">
+                    <table className="min-w-full border-collapse">
                         <thead className="bg-slate-900 text-white text-[11px] uppercase tracking-widest font-bold">
                             <tr>
                                 <th className="px-6 py-4 text-left rounded-tl-2xl">Línea / Cuenta Actual</th>
@@ -209,6 +210,7 @@ const ReclasificadorAsiento = () => {
                             })}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

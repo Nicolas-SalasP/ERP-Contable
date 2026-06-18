@@ -25,11 +25,21 @@ class CorreccionMonetariaController
 
     public function guardarIndice(Request $request)
     {
+        // cm_indices_ipc es una tabla global (sin empresa_id): un índice erróneo
+        // afecta a TODAS las empresas. Solo staff interno (jerarquía >= 100) puede escribir.
+        $rol = $request->user()->rol;
+        if (!$rol || (int) ($rol->jerarquia ?? 0) < 100) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo el Super Admin puede modificar índices IPC globales.',
+            ], 403);
+        }
+
         try {
             $data = $request->validate([
                 'anio'        => 'required|integer|min:2000|max:2100',
                 'mes'         => 'required|integer|min:1|max:12',
-                'variacion'   => 'required|numeric|min:-20|max:50',
+                'variacion'   => 'required|numeric|min:-30|max:30',
                 'observacion' => 'nullable|string|max:500',
             ]);
 

@@ -3,9 +3,12 @@
 namespace App\Domains\Comercial\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CotizacionDetalle extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'cotizacion_detalles';
     public $timestamps = false;
 

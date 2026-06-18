@@ -158,7 +158,10 @@ class AislamientoMultiTenantTest extends TestCase
 
         $this->assertContains($response->getStatusCode(), [403, 404, 422]);
 
-        $cuentaActualizada = PlanCuenta::find($this->cuentaB->id);
+        // Verificacion sin scope: el aislamiento ahora impide que el usuario A vea
+        // datos de B, asi que para comprobar que la cuenta sigue intacta hay que
+        // consultar saltando el EmpresaScope.
+        $cuentaActualizada = PlanCuenta::withoutGlobalScopes()->find($this->cuentaB->id);
         $this->assertEquals('Cuenta secreta B', $cuentaActualizada->nombre);
     }
 
@@ -168,7 +171,7 @@ class AislamientoMultiTenantTest extends TestCase
 
         $this->assertContains($response->getStatusCode(), [403, 404]);
         $this->assertNotNull(
-            CentroCosto::find($this->centroCostoB->id),
+            CentroCosto::withoutGlobalScopes()->find($this->centroCostoB->id),
             'IDOR: usuario A pudo eliminar centro de costo de empresa B'
         );
     }

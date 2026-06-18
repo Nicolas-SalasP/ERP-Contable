@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class InventarioPickingOrden extends Model
 {
+    use HasEmpresaScope;
     protected $table = 'inventario_picking_ordenes';
 
     public const ESTADO_BORRADOR = 'BORRADOR';

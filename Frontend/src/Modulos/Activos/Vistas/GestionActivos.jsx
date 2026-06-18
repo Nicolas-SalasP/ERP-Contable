@@ -181,7 +181,8 @@ const GestionActivos = () => {
                 <div className="transition-all duration-300">
                     {tabActiva === 'PENDIENTES' && (
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <table className="w-full text-left border-collapse">
+                            <div className="overflow-x-auto custom-scrollbar">
+                            <table className="min-w-full text-left border-collapse">
                                 <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
                                     <tr>
                                         <th className="px-6 py-4 font-bold">Documento</th>
@@ -208,9 +209,10 @@ const GestionActivos = () => {
                                             </td>
                                         </tr>
                                     ))}
-                                    {activosPendientes.length === 0 && <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500 italic">No hay facturas pendientes de activar.</td></tr>}
+                                    {activosPendientes.length === 0 && <tr><td colSpan="5" className="px-6 py-10 text-center text-slate-400"><i className="fas fa-file-invoice text-slate-300 text-2xl mb-2 block"></i>No hay facturas pendientes de activar.</td></tr>}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     )}
 
@@ -240,7 +242,8 @@ const GestionActivos = () => {
                                 </BotonAccion>
                             </div>
                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                <table className="w-full text-left border-collapse">
+                                <div className="overflow-x-auto custom-scrollbar">
+                                <table className="min-w-full text-left border-collapse">
                                     <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
                                         <tr>
                                             <th className="px-6 py-4 font-bold">Código / Nombre</th>
@@ -281,7 +284,7 @@ const GestionActivos = () => {
                                                                 <button
                                                                     onClick={() => abrirModalEditar(activo)}
                                                                     className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-blue-200"
-                                                                    title="Editar nombre/descripcion"
+                                                                    aria-label="Editar activo"
                                                                 >
                                                                     <i className="fas fa-pen"></i>
                                                                 </button>
@@ -300,9 +303,10 @@ const GestionActivos = () => {
                                                 </tr>
                                             );
                                         })}
-                                        {activosRegistrados.length === 0 && <tr><td colSpan="6" className="px-6 py-10 text-center text-slate-400 italic">No hay activos registrados en el sistema.</td></tr>}
+                                        {activosRegistrados.length === 0 && <tr><td colSpan="6" className="px-6 py-10 text-center text-slate-400"><i className="fas fa-box-open text-slate-300 text-2xl mb-2 block"></i>No hay activos registrados en el sistema.</td></tr>}
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -320,7 +324,7 @@ const GestionActivos = () => {
                             <h3 className="text-xl font-black text-rose-800 flex items-center gap-2">
                                 <i className="fas fa-exclamation-triangle"></i> Retirar Activo Fijo
                             </h3>
-                            <button onClick={() => setModalBajaAbierto(false)} className="text-rose-400 hover:text-rose-600 transition-colors"><i className="fas fa-times"></i></button>
+                            <button onClick={() => setModalBajaAbierto(false)} className="text-rose-400 hover:text-rose-600 transition-colors p-2 rounded-lg" aria-label="Cerrar"><i className="fas fa-times"></i></button>
                         </div>
                         <div className="p-6">
                             <p className="text-sm text-slate-600 mb-4">

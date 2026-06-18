@@ -58,7 +58,10 @@ describe('FacturasSii (vista)', () => {
         await waitFor(() => {
             expect(siiApi.facturas.listar).toHaveBeenCalledTimes(1);
         });
-        expect(siiApi.facturas.listar).toHaveBeenCalledWith({ por_pagina: 25, pagina: 1 });
+        expect(siiApi.facturas.listar).toHaveBeenCalledWith(
+            { por_pagina: 25, pagina: 1 },
+            expect.objectContaining({ signal: expect.any(AbortSignal) }),
+        );
     });
 
     it('lista filas de facturas con numero, cliente, monto y badge estado SII', async () => {

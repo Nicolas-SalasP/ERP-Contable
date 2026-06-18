@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Auditoría Tenri ERP — Resumen Ejecutivo</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2933; font-size: 11px; line-height: 1.45; margin: 0; }
+  h1 { font-size: 26px; margin: 0 0 2px; color: #0f172a; }
+  h2 { font-size: 15px; margin: 22px 0 8px; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 4px; }
+  h3 { font-size: 12.5px; margin: 14px 0 5px; color: #1e293b; }
+  .sub { color: #64748b; font-size: 11px; margin-bottom: 14px; }
+  .cover { background: linear-gradient(120deg,#0f172a,#1e3a8a); color:#fff; padding: 26px 24px; border-radius: 10px; margin-bottom: 18px; }
+  .cover h1 { color:#fff; }
+  .cover .sub { color:#c7d2fe; }
+  .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:10px; font-weight:600; color:#fff; }
+  .c { background:#dc2626; } .h { background:#ea580c; } .m { background:#ca8a04; } .l { background:#16a34a; }
+  table { width:100%; border-collapse:collapse; margin:6px 0 4px; }
+  th,td { text-align:left; padding:6px 8px; border-bottom:1px solid #e2e8f0; vertical-align:top; }
+  th { background:#f1f5f9; font-size:10px; text-transform:uppercase; letter-spacing:.3px; color:#475569; }
+  td.sev { white-space:nowrap; }
+  .grid { display:flex; gap:12px; margin:8px 0; }
+  .card { flex:1; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; }
+  .card b { display:block; font-size:18px; color:#0f172a; }
+  .card span { color:#64748b; font-size:10px; }
+  .ok { color:#15803d; } .bad { color:#b91c1c; }
+  .muted { color:#64748b; }
+  .box { border-left:4px solid #2563eb; background:#f8fafc; padding:8px 12px; border-radius:0 6px 6px 0; margin:8px 0; }
+  ul { margin:4px 0 8px; padding-left:18px; }
+  li { margin:2px 0; }
+  .foot { margin-top:18px; color:#94a3b8; font-size:9px; border-top:1px solid #e2e8f0; padding-top:6px; }
+  .tag { font-size:9px; color:#2563eb; font-weight:600; }
+  .pagebreak { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>🔐 Auditoría de Seguridad e Integridad</h1>
+  <div class="sub">Tenri ERP Cloud · Resumen Ejecutivo · 10-jun-2026 · Rama dev</div>
+  <div style="margin-top:10px; font-size:11px; color:#e0e7ff;">
+    Backend Laravel 12 + Sanctum · Frontend React 19 · MySQL 8 · Arquitectura DDD multitenant ·
+    Metodología: panel de 5 auditorías especializadas + verificación manual directa.
+  </div>
+</div>
+
+<h2>Veredicto general</h2>
+<p>Tenri ERP es un sistema <b>bien construido para su etapa</b>: arquitectura DDD por dominios, 204 archivos de test,
+CI/CD con PHPStan + PHPUnit, Sentry, backups, cifrado de material SII en reposo y RBAC granular en dos capas.
+Los riesgos detectados <b>no son de diseño roto</b>, sino de <b>garantías que aún dependen de disciplina manual</b>
+en lugar de capas centrales <i>fail-safe</i>. Cerrar P0/P1 deja al sistema listo para escalar contribuyentes y
+para conectar TGR / Previred / Cajas con seguridad regulatoria.</p>
+
+<div class="grid">
+  <div class="card"><b class="bad">2</b><span>Críticos (🔴)</span></div>
+  <div class="card"><b style="color:#ea580c">9</b><span>Altos (🟠)</span></div>
+  <div class="card"><b style="color:#ca8a04">11</b><span>Medios (🟡)</span></div>
+  <div class="card"><b class="ok">8</b><span>Bajos (🟢)</span></div>
+  <div class="card"><b class="ok">✓</b><span>Sin secretos reales en el historial</span></div>
+</div>
+
+<h2>Veredicto por dominio</h2>
+<table>
+  <tr><th>Dominio</th><th>Estado</th><th>Riesgo residual principal</th></tr>
+  <tr><td>Autenticación / Sanctum</td><td>🟡 Aceptable con brechas</td><td>Login sin rate-limiting</td></tr>
+  <tr><td>Autorización / RBAC</td><td>🟢 Bien diseñado (2 capas)</td><td>Validar techos de plan en escalada</td></tr>
+  <tr><td><b>Aislamiento multitenant</b></td><td>🟠 Frágil por diseño</td><td>Scope global no es fail-safe; cobertura 6/51 modelos</td></tr>
+  <tr><td><b>Integridad contable</b></td><td>🟠 Controles incompletos</td><td>Reclasificación / soft-delete sin candado de período</td></tr>
+  <tr><td>SII / criptografía</td><td>🟢 Lo mejor logrado</td><td>Falta validar firma de respuestas / CAF</td></tr>
+  <tr><td>Secretos / CI-CD / config</td><td>🟡 Higiene mejorable</td><td>Credenciales de prueba commiteadas; faltan headers</td></tr>
+</table>
+
+<h2>Top riesgos a cerrar primero (P0)</h2>
+<table>
+  <tr><th>Sev</th><th>Riesgo</th><th>Evidencia</th><th>Conf.</th></tr>
+  <tr><td class="sev"><span class="pill c">CRÍTICO</span></td><td><b>Login sin rate-limiting</b> en <code>/auth/login</code> y <code>/auth/token-login</code> → fuerza bruta / credential stuffing ilimitado.</td><td>routes/api.php:55-56</td><td>✔</td></tr>
+  <tr><td class="sev"><span class="pill h">ALTO</span></td><td><b>Aislamiento multitenant frágil</b>: <code>EmpresaScope</code> no filtra en jobs/consola/onboarding y solo 6 de 51 modelos lo usan.</td><td>Core/Scopes/EmpresaScope.php</td><td>✔</td></tr>
+  <tr><td class="sev"><span class="pill c">CRÍTICO</span></td><td><b>Contabilidad mutable</b>: reclasificación de asientos y soft-delete de asientos/facturas pagadas sin candado de período cerrado.</td><td>FacturaService.php:238-283</td><td>✔/●</td></tr>
+  <tr><td class="sev"><span class="pill m">MEDIO</span></td><td><b>Credenciales de prueba commiteadas</b>: <code>superadmin@tenri.cl / password123</code> en <code>.env.e2e</code> y <code>UserSeeder</code> (×4 roles).</td><td>Frontend/.env.e2e:1-2</td><td>✔</td></tr>
+  <tr><td class="sev"><span class="pill h">ALTO</span></td><td><b>Sin cabeceras de seguridad</b> (CSP/HSTS/X-Frame) + token en <code>localStorage</code> (XSS).</td><td>config / api.js</td><td>●</td></tr>
+</table>
+<div class="muted"><span class="tag">Confianza:</span> ✔ verificado manualmente · ● reportado por revisión especializada (pendiente de validación puntual).</div>
+
+<div class="pagebreak"></div>
+
+<h2>Fortalezas confirmadas</h2>
+<ul>
+  <li><b>Cifrado SII en reposo</b>: certificados <code>.pfx</code>, contraseñas, clave RSA y XML del CAF cifrados con <code>Crypt</code> + marcados <code>$hidden</code>.</li>
+  <li><b>SSO con HMAC-SHA256</b> con timestamp + nonce (anti-replay).</li>
+  <li><b>RBAC en dos capas</b>: gate por permiso en ruta + lógica relativa por instancia en controller.</li>
+  <li><b>Deploy por SSH/SCP</b> con claves en GitHub Secrets (el README dice "FTP": desactualizado).</li>
+  <li><b>Sin <code>.env</code>/certificados/claves ni secretos reales</b> en el árbol ni en 347 commits de historial.</li>
+  <li><b>CORS con orígenes explícitos</b> (sin wildcard) · bcrypt rounds 12 · partida doble validada · <code>DECIMAL(15,2)</code>.</li>
+</ul>
+
+<h2>Plan de acción priorizado</h2>
+<h3>🔴 P0 — Bloqueantes (esta semana)</h3>
+<table>
+  <tr><th>Acción</th><th>Esfuerzo</th></tr>
+  <tr><td><code>throttle</code> en login y endpoints internos.</td><td>S</td></tr>
+  <tr><td>Rotar credenciales <code>superadmin/password123</code>; quitar <code>.env.e2e</code> del repo/historial; randomizar seeder.</td><td>S/M</td></tr>
+  <tr><td><code>EmpresaScope</code> fail-safe (denegar si no hay tenant en contexto web).</td><td>M</td></tr>
+  <tr><td>Candados de estado/período en reclasificación y soft-delete contables (*requiere diseñar feature de bloqueo de período).</td><td>M</td></tr>
+</table>
+<h3>🟠 P1 — Hardening multitenant (2-4 semanas)</h3>
+<ul>
+  <li>Aplicar <code>HasEmpresaScope</code> a los 45 modelos restantes + extender test de aislamiento a todos.</li>
+  <li>Middleware global de cabeceras de seguridad; migrar token a cookie HttpOnly o endurecer CSP.</li>
+  <li>Máquina de estados de factura + FK <code>movimientos_bancarios.asiento_id</code>; retirar fallback legacy <code>X-WEB-API-KEY</code>.</li>
+</ul>
+<h3>🟡 P2 — Robustez SII (1-2 meses)</h3>
+<ul>
+  <li>Validar firma del CAF y de respuestas SOAP contra CA raíz del SII; job de expiración de CAF; mitigar XXE.</li>
+  <li>Auditoría a nivel de campo (montos/fechas); rotación documentada de <code>APP_KEY</code>.</li>
+</ul>
+<h3>🟢 P3 — Higiene (continuo)</h3>
+<ul>
+  <li>Ignorar <code>_ide_helper*.php</code>; borrar <code>an optimizeclear</code>; pre-commit con gitleaks; <b>actualizar README</b>.</li>
+</ul>
+
+<h2>Preparación para TGR · Previred · Cajas de Compensación</h2>
+<div class="box">
+  <b>Regla de oro:</b> resolver el aislamiento multitenant (P0/P1) <b>antes</b> de conectar datos previsionales/fiscales —
+  una fuga cross-tenant ahí sería incidente regulatorio.
+</div>
+<ul>
+  <li><b>Base ya existente:</b> dominios DDD aislados + patrón de integración por eventos (outbox) en Inventario y SII.</li>
+  <li><b>Generalizar</b> la capa de credenciales cifradas del SII como servicio común reutilizable por cada organismo.</li>
+  <li><b>Adaptador por organismo</b> (interface + adaptadores sandbox/producción) con feature flags por plan.</li>
+  <li><b>Cola + outbox</b> para toda integración externa (idempotencia, reintentos, dead-letter); exige cache/locks en <code>database</code>/<code>redis</code>.</li>
+  <li><b>Verificación criptográfica</b> de respuestas y <b>auditoría a nivel de campo</b> como requisitos transversales.</li>
+</ul>
+
+<div class="foot">
+  Documento de respaldo completo: <code>docs/auditoria/AUDITORIA-SEGURIDAD-E-INTEGRIDAD-2026-06.md</code> (matriz completa de 30+ hallazgos por dominio).
+  Generado el 10-jun-2026. Hallazgos ● reportados conviene validarlos antes de remediar.
+</div>
+
+</body>
+</html>

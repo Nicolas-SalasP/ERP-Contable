@@ -605,20 +605,14 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
             ->assertSee('no existe');
     }
 
-    // PRUEBA: Bloqueo por Cierre de Periodo
-    public function test_rechaza_asientos_manuales_en_meses_ya_cerrados_tributariamente()
+    // PRUEBA: Bloqueo por Cierre de Periodo (ahora cierre MANUAL via PeriodoContableService)
+    public function test_rechaza_asientos_manuales_en_meses_ya_cerrados()
     {
         $cuenta = PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1001', 'nombre' => 'Caja', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
 
-        // Simula el asiento de cierre real que genera ImpuestosService::ejecutarF29.
-        AsientoContable::create([
-            'empresa_id' => $this->empresaA->id,
-            'numero_comprobante' => 'C-F29',
-            'fecha' => '2026-03-31',
-            'glosa' => 'Centralización F29 - 03/2026',
-            'origen_modulo' => 'impuestos',
-            'estado' => 'MAYORIZADO'
-        ]);
+        // Cierre manual del periodo 03/2026 (reemplaza la antigua deteccion por F29).
+        app(\App\Domains\Contabilidad\Services\PeriodoContableService::class)
+            ->cerrar($this->empresaA->id, 2026, 3, $this->usuarioContador->load('rol'));
 
         $response = $this->actingAs($this->usuarioContador)->postJson($this->rutaAsientos, [
             'fecha' => '2026-03-15',
@@ -629,7 +623,8 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
             ]
         ]);
 
-        $this->assertTrue(in_array($response->getStatusCode(), [403, 422]));
+        // El periodo cerrado rechaza la escritura (409 PERIODO_CERRADO; 403/422 por compat).
+        $this->assertTrue(in_array($response->getStatusCode(), [403, 409, 422]));
     }
 
     // PRUEBA: Independencia Multitenant en Cierre F29

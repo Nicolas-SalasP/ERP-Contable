@@ -298,7 +298,8 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
                     <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider">Detalle de Inversión (Netos)</h3>
                 </div>
-                <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto custom-scrollbar">
+                <table className="min-w-full text-left border-collapse">
                     <thead className="bg-white border-b border-slate-200 text-[10px] uppercase text-slate-400">
                         <tr>
                             <th className="px-6 py-3">N° Documento</th>
@@ -330,10 +331,11 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                 </tr>
                             ))
                         ) : (
-                            <tr><td colSpan={proyecto.estado === 'EN_CONSTRUCCION' ? 4 : 3} className="px-6 py-10 text-center text-slate-400 italic">No hay facturas vinculadas.</td></tr>
+                            <tr><td colSpan={proyecto.estado === 'EN_CONSTRUCCION' ? 4 : 3} className="px-6 py-10 text-center text-slate-400"><i className="fas fa-file-invoice text-slate-300 text-2xl mb-2 block"></i>No hay facturas vinculadas.</td></tr>
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {modalFacturasAbierto && (
@@ -341,7 +343,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up border border-slate-200">
                         <div className="p-6 border-b flex justify-between items-center">
                             <h3 className="text-xl font-black text-slate-800">Vincular Factura Neto</h3>
-                            <button onClick={() => setModalFacturasAbierto(false)} className="text-slate-400 hover:text-rose-500 transition-colors"><i className="fas fa-times"></i></button>
+                            <button onClick={() => setModalFacturasAbierto(false)} className="text-slate-400 hover:text-rose-500 transition-colors p-2 rounded-lg" aria-label="Cerrar"><i className="fas fa-times"></i></button>
                         </div>
                         <div className="p-6 bg-slate-50">
                             <form onSubmit={handleImputarFactura} className="space-y-5">

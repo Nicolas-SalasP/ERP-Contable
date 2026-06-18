@@ -52,7 +52,7 @@ class ComercialOperacionesTest extends TestCase
 
         // El pago directo fue deshabilitado: el endpoint rechaza y la factura
         // NO queda PAGADA (los pagos van por Tesoreria > Conciliacion Bancaria).
-        $response->assertStatus(400);
+        $response->assertStatus(422);
         $this->assertEquals('REGISTRADA', $factura->fresh()->estado);
     }
 
@@ -79,7 +79,7 @@ class ComercialOperacionesTest extends TestCase
         ]);
 
         // El pago directo esta deshabilitado: rechaza con 400 en cualquier caso.
-        $response->assertStatus(400);
+        $response->assertStatus(422);
     }
 
     public function test_ux_permite_visualizar_la_auditoria_completa_de_una_factura()

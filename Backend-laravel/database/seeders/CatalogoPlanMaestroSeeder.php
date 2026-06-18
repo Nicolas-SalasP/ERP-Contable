@@ -86,6 +86,11 @@ class CatalogoPlanMaestroSeeder extends Seeder
             ['codigo' => '353350', 'nombre' => 'IVA por Cobrar (Transito)', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '353360', 'nombre' => 'IVA Débito Fiscal', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '353365', 'nombre' => 'Impuestos a Pagar F29', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true], // AGREGADA
+            ['codigo' => '353248', 'nombre' => 'Retenciones Previsionales por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '353250', 'nombre' => 'Leyes Sociales Empleador por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '353255', 'nombre' => 'Descuentos Voluntarios por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '353260', 'nombre' => 'Provision Vacaciones por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
+            ['codigo' => '353265', 'nombre' => 'Provision Indemnizaciones por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
             ['codigo' => '353410', 'nombre' => 'Honorarios devengados por pagar', 'tipo' => 'PASIVO', 'nivel' => 4, 'imputable' => true],
 
             // =================================================================
@@ -126,6 +131,16 @@ class CatalogoPlanMaestroSeeder extends Seeder
             ['codigo' => '607125', 'nombre' => 'Electricidad', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
             ['codigo' => '607130', 'nombre' => 'Agua', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
             ['codigo' => '608010', 'nombre' => 'Gastos TI asignados', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+
+            // =================================================================
+            // CLASE 6: GASTOS DE PERSONAL (RRHH)
+            // =================================================================
+            ['codigo' => '62', 'nombre' => 'GASTOS DE PERSONAL', 'tipo' => 'GASTO', 'nivel' => 2, 'imputable' => false],
+            ['codigo' => '621005', 'nombre' => 'Gasto Remuneraciones', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '621010', 'nombre' => 'Gasto Leyes Sociales Empleador', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '621015', 'nombre' => 'Gasto Provision Vacaciones', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '621020', 'nombre' => 'Gasto Provision Indemnizaciones', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
+            ['codigo' => '621025', 'nombre' => 'Gasto Gratificaciones', 'tipo' => 'GASTO', 'nivel' => 3, 'imputable' => true],
 
             ['codigo' => '9', 'nombre' => 'GASTOS NO OPERACIONALES', 'tipo' => 'GASTO', 'nivel' => 1, 'imputable' => false],
             ['codigo' => '90', 'nombre' => 'GASTOS FINANCIEROS Y OTROS', 'tipo' => 'GASTO', 'nivel' => 2, 'imputable' => false],

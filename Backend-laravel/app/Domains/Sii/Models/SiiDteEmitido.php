@@ -2,6 +2,8 @@
 
 namespace App\Domains\Sii\Models;
 
+use App\Domains\Core\Traits\HasEmpresaScope;
+
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Core\Models\Empresa;
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SiiDteEmitido extends Model
 {
+    use HasEmpresaScope;
     use HasFactory;
 
     protected $table = 'sii_dte_emitido';

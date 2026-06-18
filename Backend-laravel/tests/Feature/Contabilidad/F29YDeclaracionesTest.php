@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Contabilidad;
 
+use App\Domains\Contabilidad\Services\ImpuestosService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Concerns\PreparaEntornoBase;
@@ -146,6 +147,29 @@ class F29YDeclaracionesTest extends TestCase
             ]);
 
         $this->assertContains($response->getStatusCode(), [400, 422, 500]);
+    }
+
+    public function test_segunda_ejecucion_f29_mismo_periodo_lanza_excepcion(): void
+    {
+        // Insertar un asiento de cierre F29 ya existente para el período 4/2026.
+        \App\Domains\Contabilidad\Models\AsientoContable::create([
+            'empresa_id'         => $this->empresa->id,
+            'numero_comprobante' => 'F29-001',
+            'fecha'              => '2026-04-30',
+            'glosa'              => 'Centralización F29 - 04/2026',
+            'tipo_asiento'       => 'traspaso',
+            'origen_modulo'      => 'impuestos',
+            'origen_id'          => null,
+            'usuario_id'         => $this->usuario->id,
+            'estado'             => 'MAYORIZADO',
+        ]);
+
+        $service = app(ImpuestosService::class);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessageMatches('/ya ha sido centralizado/i');
+
+        $service->ejecutarF29($this->empresa->id, $this->usuario->id, 4, 2026);
     }
 
     public function test_simulacion_f29_con_facturas_anuladas_no_las_incluye()

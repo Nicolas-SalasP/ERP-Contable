@@ -24,6 +24,11 @@ const SsoCallback = () => {
                     return;
                 }
 
+                if (!response.user || !response.user.id) {
+                    setError('No se recibió información del usuario. Por favor ingresa con tu email y contraseña.');
+                    return;
+                }
+
                 sessionStorage.setItem('erp_token', response.token);
                 sessionStorage.setItem('erp_user', JSON.stringify(response.user));
                 markTokenIssued(response.issued_at);

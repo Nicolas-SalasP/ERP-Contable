@@ -2,6 +2,8 @@
 
 namespace App\Domains\Tesoreria\Controllers;
 
+use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+
 use App\Domains\Tesoreria\Services\CuentaProveedorService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -26,6 +28,8 @@ class CuentaProveedorController
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Proveedor no encontrado.'], 404);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
@@ -51,6 +55,8 @@ class CuentaProveedorController
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Proveedor no encontrado.'], 404);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
@@ -64,6 +70,8 @@ class CuentaProveedorController
             return response()->json(['success' => true]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Cuenta bancaria no encontrada.'], 404);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);

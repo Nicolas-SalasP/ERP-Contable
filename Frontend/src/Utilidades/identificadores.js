@@ -111,3 +111,43 @@ export const formatearIdentificador = (numero, paisIso) => {
         default: return limpio;
     }
 };
+
+/**
+ * Enmascara un identificador fiscal para su presentación en listados (Ley 21.719).
+ * Para RUT chileno (CL): muestra los 2 primeros dígitos del cuerpo y el DV;
+ * enmascara el resto con asteriscos, preservando los puntos del formato.
+ *   Ejemplo: '12.345.678-5' → '12.***.**8-5'
+ * Para otros países o entradas inválidas: devuelve el valor sin cambios.
+ *
+ * @param {string} valor  - Número de identificador (con o sin formato).
+ * @param {string} pais   - ISO del país (por defecto 'CL').
+ * @returns {string}
+ */
+export const enmascararIdentificador = (valor, pais = 'CL') => {
+    if (!valor) return valor;
+
+    if (pais !== 'CL') return valor;
+
+    // Solo enmascarar RUTs válidos.
+    if (!validarIdentificador(valor, 'CL')) return valor;
+
+    // Obtener la representación canónica con puntos y guión.
+    const formateado = formatearIdentificador(valor, 'CL');
+
+    const guion = formateado.lastIndexOf('-');
+    if (guion < 0) return valor;
+
+    const cuerpo = formateado.slice(0, guion); // e.g. '12.345.678'
+    const dvConGuion = formateado.slice(guion); // e.g. '-5'
+
+    // Necesitamos al menos 3 caracteres en el cuerpo para mostrar inicio + final.
+    if (cuerpo.length < 3) return formateado;
+
+    const inicio = cuerpo.slice(0, 2);               // '12'
+    const ultimoDigito = cuerpo.slice(-1);            // '8'
+    // Centro: todo entre los 2 primeros chars y el último char del cuerpo.
+    const centro = cuerpo.slice(2, -1);               // '.345.67'
+    const centroEnmascarado = centro.replace(/\d/g, '*'); // '.***.**'
+
+    return `${inicio}${centroEnmascarado}${ultimoDigito}${dvConGuion}`;
+};

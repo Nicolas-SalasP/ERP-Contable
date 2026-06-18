@@ -14,11 +14,13 @@
         "laravel/tinker": "^2.10.1",
         "robrichards/xmlseclibs": "^3.1",
         "sentry/sentry-laravel": "^4.25",
-        "spatie/laravel-backup": "^9.3"
+        "spatie/laravel-backup": "^9.3",
+        "spatie/laravel-ciphersweet": "^1.7"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.7",
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.0",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
         "laravel/sail": "^1.41",
@@ -55,6 +57,7 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "stan": "phpstan analyse --memory-limit=512M",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

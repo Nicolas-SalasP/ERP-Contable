@@ -159,7 +159,8 @@ const CierreF29 = () => {
                             </div>
 
                             <div className="p-6">
-                                <table className="w-full text-sm text-left mb-6">
+                                <div className="overflow-x-auto custom-scrollbar">
+                                <table className="min-w-full text-sm text-left mb-6">
                                     <thead className="text-xs text-slate-400 border-b border-slate-100">
                                         <tr>
                                             <th className="pb-3 font-medium">Cuenta Contable</th>
@@ -205,6 +206,7 @@ const CierreF29 = () => {
                                         )}
                                     </tbody>
                                 </table>
+                                </div>
 
                                 <div className="border-t border-slate-100 pt-6 flex justify-end">
                                     <button

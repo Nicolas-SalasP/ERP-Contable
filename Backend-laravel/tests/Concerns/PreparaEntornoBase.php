@@ -115,6 +115,7 @@ trait PreparaEntornoBase
                 $this->permisosOperativosCompletos(),
                 $this->permisosInventarioCompletos(),
                 $this->permisosSiiAdministracion(),
+                $this->permisosRrhhCompletos(),
                 // H15: espejo de RolSeeder — el Administrador declara gestión de usuarios.
                 ['usuarios.ver', 'usuarios.gestionar'],
             ))),
@@ -305,6 +306,23 @@ trait PreparaEntornoBase
     }
 
     /**
+     * Permisos RRHH completos. Espejo de RolSeeder::permisosRrhhCompletos().
+     */
+    protected function permisosRrhhCompletos(): array
+    {
+        return [
+            'rrhh.empleados.ver',
+            'rrhh.empleados.crear',
+            'rrhh.empleados.editar',
+            'rrhh.contratos.crear',
+            'rrhh.remuneraciones.ver',
+            'rrhh.remuneraciones.procesar',
+            'rrhh.parametros.ver',
+            'rrhh.parametros.editar',
+        ];
+    }
+
+    /**
      * Crea una Empresa con un Usuario administrador asociado.
      *
      * @param array $datosEmpresa Override opcional de campos de la empresa
@@ -323,6 +341,7 @@ trait PreparaEntornoBase
             'email' => 'admin' . uniqid() . '@test.cl',
             'password' => bcrypt('password123'),
             'empresa_id' => $empresa->id,
+            'empresa_activa_id' => $empresa->id,
             'rol_id' => $this->rolAdministrador->id,
             'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
         ], $datosUsuario));
@@ -357,6 +376,7 @@ trait PreparaEntornoBase
             'email' => 'user' . uniqid() . '@test.cl',
             'password' => bcrypt('password123'),
             'empresa_id' => $empresa->id,
+            'empresa_activa_id' => $empresa->id,
             'rol_id' => $rol->id,
             'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
         ], $overrides));

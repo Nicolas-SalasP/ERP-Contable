@@ -288,7 +288,8 @@ class ConciliacionYMovimientosTest extends TestCase
             'cuenta_codigo' => '1111',
             'glosa' => 'Test'
         ]);
-        $this->assertTrue(in_array($response->getStatusCode(), [200, 400, 422, 500]));
+        // El movimiento 1 no existe en el setup → 404 (noEncontrado) es la respuesta correcta.
+        $this->assertTrue(in_array($response->getStatusCode(), [200, 400, 404, 422, 500]));
     }
 
     public function test_conciliar_anticipo_requiere_ambos_ids()

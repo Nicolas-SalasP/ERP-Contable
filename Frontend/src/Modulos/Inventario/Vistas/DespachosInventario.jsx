@@ -218,7 +218,7 @@ const DespachosInventario = () => {
 
             <ErrorNotice error={error} />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 <StatCard title="Despachos" value={formatNumber(resumen.total)} icon="fas fa-truck-ramp-box" />
                 <StatCard title="Pendientes" value={formatNumber(resumen.pendientes)} icon="fas fa-hourglass-half" tone="blue" />
                 <StatCard title="En despacho" value={formatNumber(resumen.enDespacho)} icon="fas fa-dolly" tone="amber" />
@@ -231,7 +231,7 @@ const DespachosInventario = () => {
 
             {mostrarFormulario && (
                 <Panel title="Generar despacho desde packing empacado" subtitle="Selecciona un packing finalizado y aún no despachado.">
-                    <form onSubmit={crearDespacho} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <form onSubmit={crearDespacho} className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                         <Field label="Packing empacado">
                             <select className={inputClass} value={form.packing_orden_id} onChange={(event) => setForm((current) => ({ ...current, packing_orden_id: event.target.value }))} required>
                                 <option value="">Seleccionar</option>

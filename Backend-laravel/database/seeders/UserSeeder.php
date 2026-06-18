@@ -5,13 +5,26 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Domains\Core\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
         $empresaId = 1;
-        $password = Hash::make('password123');
+
+        // No hardcodear credenciales en el repo. Se toma de DEMO_SEED_PASSWORD; si no
+        // esta definida, se genera una aleatoria y se informa por consola (la conoce
+        // solo quien corre el seed). En CI debe inyectarse via secret.
+        $plainPassword = env('DEMO_SEED_PASSWORD');
+        if (empty($plainPassword)) {
+            $plainPassword = Str::password(16);
+            $this->command?->warn(
+                "UserSeeder: DEMO_SEED_PASSWORD no definido. Password generado para usuarios demo: {$plainPassword}"
+            );
+        }
+
+        $password = Hash::make($plainPassword);
         $estadoActivo = 1;
 
         $usuarios = [

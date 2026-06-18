@@ -96,4 +96,35 @@ class ReporteController
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
     }
+
+    public function balanceComprobacion(Request $request)
+    {
+        try {
+            $request->validate([
+                'fecha_inicio' => 'required|date',
+                'fecha_fin'    => 'required|date|after_or_equal:fecha_inicio',
+                'filtro'       => 'nullable|integer',
+            ]);
+
+            $fechaInicio = $request->query('fecha_inicio');
+            $fechaFin    = $request->query('fecha_fin');
+            $filtro      = (int) $request->query('filtro', 1);
+            $empresaId   = $request->user()->empresa_id;
+
+            $resultado = $this->service->generarBalanceComprobacion($empresaId, $fechaInicio, $fechaFin, $filtro);
+
+            return response()->json(['success' => true, 'data' => $resultado]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Faltan parámetros obligatorios o son inválidos',
+                'errors'  => $e->errors(),
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
 }

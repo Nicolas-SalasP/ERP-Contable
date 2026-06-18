@@ -2,6 +2,8 @@
 
 namespace App\Domains\Tesoreria\Controllers;
 
+use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+
 use App\Domains\Tesoreria\Services\BancoService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -30,6 +32,8 @@ class BancoController
                 'success' => true,
                 'data' => $cuentas
             ]);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -61,6 +65,8 @@ class BancoController
 
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -86,6 +92,8 @@ class BancoController
 
             return response()->json(array_merge(['success' => true], $resultado));
 
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             Log::error('BancoController (importarCartola): ' . $e->getMessage());
             return response()->json(['success' => false, 'mensaje' => 'Error interno del servidor.'], 500);
@@ -112,6 +120,8 @@ class BancoController
             ], 201);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
@@ -140,6 +150,8 @@ class BancoController
                 'message' => "Proceso completado. Importados: {$resultado['importados']} | Ignorados (Duplicados): {$resultado['ignorados']}",
                 'data' => $resultado
             ]);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false, 
@@ -160,6 +172,8 @@ class BancoController
                 'success' => true,
                 'data' => $movimientos
             ]);
+        } catch (TesoreriaException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,

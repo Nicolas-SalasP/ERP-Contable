@@ -26,27 +26,31 @@ const FacturasSii = () => {
     const [error, setError] = useState(null);
     const [seleccionId, setSeleccionId] = useState(null);
 
-    const cargar = useCallback(async (paginaSolicitada) => {
+    const cargar = useCallback(async (paginaSolicitada, signal) => {
         setCargando(true);
         setError(null);
         try {
             const resp = await siiApi.facturas.listar({
                 por_pagina: POR_PAGINA_DEFECTO,
                 pagina: paginaSolicitada,
-            });
+            }, { signal });
             setFilas(resp?.data ?? []);
             setPaginacion(resp?.paginacion ?? {
                 total: 0, por_pagina: POR_PAGINA_DEFECTO, pagina_actual: 1, ultima_pagina: 1,
             });
         } catch (err) {
-            setError(err?.message ?? 'Error al cargar facturas');
+            if (err?.name !== 'AbortError' && err?.code !== 'ERR_CANCELED') {
+                setError(err?.message ?? 'Error al cargar facturas');
+            }
         } finally {
             setCargando(false);
         }
     }, []);
 
     useEffect(() => {
-        cargar(pagina);
+        const controller = new AbortController();
+        cargar(pagina, controller.signal);
+        return () => controller.abort();
     }, [pagina, cargar]);
 
     const irAnterior = () => {

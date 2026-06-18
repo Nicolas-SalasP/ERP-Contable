@@ -2,6 +2,8 @@
 
 namespace App\Domains\Comercial\Controllers;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Services\CotizacionService;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Core\Models\Empresa;
@@ -86,6 +88,8 @@ class CotizacionController
                 'message' => 'Errores de validación',
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -105,6 +109,8 @@ class CotizacionController
             $nombreLimpio = preg_replace('/[^a-zA-Z0-9\s\-_]/', '', $cotizacion->nombre_cliente);
             return $pdf->download('Cotizacion_' . $cotizacion->id . ' - ' . trim($nombreLimpio) . '.pdf');
 
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -157,6 +163,8 @@ class CotizacionController
                 'message' => 'Error de validación',
                 'errors' => $e->errors()
             ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([
@@ -191,6 +199,8 @@ class CotizacionController
             ]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -209,6 +219,8 @@ class CotizacionController
                 'message' => 'Factura de venta creada exitosamente.',
                 'data' => $factura
             ], 201);
+        } catch (ComercialException $e) {
+            throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([

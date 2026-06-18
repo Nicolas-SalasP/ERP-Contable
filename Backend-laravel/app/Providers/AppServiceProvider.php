@@ -11,6 +11,15 @@ use Illuminate\Support\ServiceProvider;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Rol;
 use App\Observers\EmpresaObserver;
+use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Contabilidad\Observers\AsientoContableObserver;
+use App\Domains\Core\Observers\AuditoriaPiiObserver;
+use App\Domains\Rrhh\Models\Empleado;
+use App\Domains\Rrhh\Models\Contrato;
+use App\Domains\Rrhh\Models\Liquidacion;
+use App\Domains\Rrhh\Models\CargaFamiliar;
+use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
+use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 
 use App\Domains\CorreccionMonetaria\Providers\IpcProviderInterface;
 use App\Domains\CorreccionMonetaria\Providers\ManualIpcProvider;
@@ -51,6 +60,19 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Empresa::observe(EmpresaObserver::class);
+
+        // Contabilidad — bloqueo de periodo cerrado (inmutabilidad, F-1/F-2).
+        AsientoContable::observe(AsientoContableObserver::class);
+
+        // Auditoria PII — Fase 3 (Ley 21.719): registra CREAR/ACTUALIZAR/ELIMINAR
+        // sobre modelos que contienen datos personales sensibles. Nunca almacena
+        // valores, solo nombres de campos (array_keys de getChanges()).
+        Empleado::observe(AuditoriaPiiObserver::class);
+        Contrato::observe(AuditoriaPiiObserver::class);
+        Liquidacion::observe(AuditoriaPiiObserver::class);
+        CargaFamiliar::observe(AuditoriaPiiObserver::class);
+        CuentaBancariaEmpresa::observe(AuditoriaPiiObserver::class);
+        CuentaBancariaProveedor::observe(AuditoriaPiiObserver::class);
 
         // Inventario — eventos de dominio
         Event::listen(StockMinimoPerforado::class, RegistrarEventoInventarioListener::class);

@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventario\Controllers;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
+
 use App\Domains\Inventario\Models\InventarioDevolucionOrden;
 use App\Domains\Inventario\Services\InventarioDevolucionService;
 use Exception;
@@ -32,6 +34,8 @@ class InventarioDevolucionController
             return response()->json($this->respuestaPaginada($this->service->listar($request->user(), $filtros)));
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -67,6 +71,8 @@ class InventarioDevolucionController
             ], 201);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -79,6 +85,8 @@ class InventarioDevolucionController
                 'success' => true,
                 'data' => $this->service->obtener($request->user(), $id),
             ]);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -93,6 +101,8 @@ class InventarioDevolucionController
             ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -119,6 +129,8 @@ class InventarioDevolucionController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -138,6 +150,8 @@ class InventarioDevolucionController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }
@@ -160,6 +174,8 @@ class InventarioDevolucionController
             ]);
         } catch (ValidationException $e) {
             return $this->respuestaValidacion($e);
+        } catch (InventarioException $e) {
+            throw $e;
         } catch (Exception $e) {
             return $this->respuestaError($e);
         }

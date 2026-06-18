@@ -6,6 +6,10 @@ return [
         'base_url' => env('TENRI_WEB_BASE_URL', 'http://localhost:8000'),
         'api_key' => env('ERP_INTEGRATION_KEY'),
         'web_integration_key' => env('WEB_INTEGRATION_KEY'),
+        // S-6: el canal interno autentica solo con firma HMAC. La llave estática
+        // legacy (X-WEB-API-KEY) queda deshabilitada por defecto; solo se acepta si
+        // se activa explícitamente este flag durante una migración coordinada.
+        'allow_legacy_key' => env('WEB_INTEGRATION_ALLOW_LEGACY_KEY', false),
     ],
 
     'postmark' => [

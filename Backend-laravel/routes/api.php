@@ -8,7 +8,9 @@ use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
 use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\AnulacionController;
+use App\Domains\Core\Controllers\AuditoriaController;
 use App\Domains\Core\Controllers\UsuarioController;
+use App\Domains\Core\Controllers\PrivacidadController;
 use App\Domains\Comercial\Controllers\ClienteController;
 use App\Domains\Comercial\Controllers\ProveedorController;
 use App\Domains\Comercial\Controllers\FacturaController;
@@ -18,12 +20,37 @@ use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
 use App\Domains\Contabilidad\Controllers\ReporteController;
 use App\Domains\Contabilidad\Controllers\ImpuestosController;
+use App\Domains\Contabilidad\Controllers\PeriodoContableController;
 use App\Domains\CorreccionMonetaria\Controllers\CorreccionMonetariaController;
+use App\Domains\Rrhh\Controllers\ArcoController;
+use App\Domains\Rrhh\Controllers\EmpleadoController;
+use App\Domains\Rrhh\Controllers\ContratoController;
+use App\Domains\Rrhh\Controllers\LiquidacionController;
+use App\Domains\Rrhh\Controllers\FiniquitoController;
+use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
+use App\Domains\Rrhh\Controllers\CentralizacionController;
+use App\Domains\Rrhh\Controllers\PreviredController;
+use App\Domains\Rrhh\Controllers\LreController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
 use App\Domains\Activos\Controllers\ActivoFijoController;
-use App\Domains\Inventario\Controllers\InventarioController;
+use App\Domains\Inventario\Controllers\ProductoController;
+use App\Domains\Inventario\Controllers\BodegaController;
+use App\Domains\Inventario\Controllers\MovimientoController;
+use App\Domains\Inventario\Controllers\KardexController;
+use App\Domains\Inventario\Controllers\ValorizacionController;
+use App\Domains\Inventario\Controllers\LoteController;
+use App\Domains\Inventario\Controllers\ReservaController;
+use App\Domains\Inventario\Controllers\TomaFisicaController;
+use App\Domains\Inventario\Controllers\DisponibilidadController;
+use App\Domains\Inventario\Controllers\ReposicionController;
+use App\Domains\Inventario\Controllers\AlertaController;
+use App\Domains\Inventario\Controllers\UbicacionController;
+use App\Domains\Inventario\Controllers\StockUbicacionController;
+use App\Domains\Inventario\Controllers\AjusteCriticoController;
+use App\Domains\Inventario\Controllers\DashboardController;
+use App\Domains\Inventario\Controllers\CatalogoController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
@@ -31,6 +58,15 @@ use App\Domains\Inventario\Controllers\InventarioEventoIntegracionController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\ReporteInventarioController;
+use App\Domains\Core\Controllers\IncidenteSeguridadController;
+use App\Domains\Contabilidad\Controllers\Dj1887Controller;
+use App\Domains\Contabilidad\Controllers\Dj1879Controller;
+use App\Domains\Contabilidad\Controllers\Dj1947Controller;
+use App\Domains\Core\Controllers\PropietariosController;
+use App\Domains\Comercial\Controllers\HonorariosController;
+use App\Domains\Soporte\Controllers\SoporteController;
+use App\Domains\Core\Controllers\EmpresaCambioController;
+use App\Domains\Core\Controllers\DashboardResumenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,11 +85,16 @@ use App\Domains\Inventario\Controllers\ReporteInventarioController;
 
 // Health check operativo (publico, sin auth): el equipo verifica el estado de los
 // servicios sin SSH. 200 = todo OK, 503 = algun componente caido.
-Route::get('/health', HealthController::class);
+// Throttle: 30 req/min por IP para evitar uso como oraculo o DDoS.
+Route::get('/health', HealthController::class)->middleware('throttle:30,1');
 
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/token-login', [AuthController::class, 'tokenLogin']);
+    // Rate-limiting contra fuerza bruta / credential stuffing: 6 intentos por minuto
+    // por IP. Sin esto los endpoints publicos de credenciales son atacables sin limite.
+    Route::middleware('throttle:6,1')->group(function () {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/token-login', [AuthController::class, 'tokenLogin']);
+    });
 
     Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -68,6 +109,23 @@ Route::prefix('auth')->group(function () {
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
     Route::get('/empresas/verificar-rut', [EmpresaController::class, 'verificarRut']);
     Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
+
+    // Política de privacidad y consentimiento — Ley 21.719 Fase 4
+    Route::prefix('privacidad')->group(function () {
+        Route::get('/politica', [PrivacidadController::class, 'politicaActiva']);
+        Route::get('/mi-consentimiento', [PrivacidadController::class, 'miConsentimiento']);
+        Route::post('/consentimiento', [PrivacidadController::class, 'aceptar']);
+        Route::delete('/consentimiento', [PrivacidadController::class, 'revocar']);
+        Route::post('/politica', [PrivacidadController::class, 'crearPolitica'])->middleware('permiso:usuarios.gestionar');
+    });
+
+    // Cambio de empresa activa (multiempresa/multitenant).
+    // Sin check.subscription: el cambio debe ser posible incluso con plan vencido
+    // para que el usuario pueda navegar a otra empresa que sí esté activa.
+    Route::prefix('empresa')->group(function () {
+        Route::get('mis-empresas', [EmpresaCambioController::class, 'misEmpresas']);
+        Route::post('cambiar', [EmpresaCambioController::class, 'cambiar']);
+    });
 });
 
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 'subscription.writable'])->group(function () {
@@ -84,26 +142,47 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/usuarios/roles', [UsuarioController::class, 'storeRol'])->middleware('permiso:usuarios.gestionar');
     Route::put('/usuarios/roles/{id}', [UsuarioController::class, 'updateRol'])->middleware('permiso:usuarios.gestionar');
 
-    // Empresa - Perfil (configuracion propia: solo requiere autenticacion)
+    // Empresa - Perfil: lectura libre (cualquier miembro); escritura restringida a
+    // usuarios.gestionar (mismo permiso que gestión de roles) dado que no existe
+    // una clave empresa.configurar en ModuloPermisos.
     Route::get('/empresas/perfil', [EmpresaController::class, 'perfil']);
-    Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil']);
-    Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo']);
+    Route::put('/empresas/perfil', [EmpresaController::class, 'actualizarPerfil'])->middleware('permiso:usuarios.gestionar');
+    Route::post('/empresas/logo', [EmpresaController::class, 'subirLogo'])->middleware('permiso:usuarios.gestionar');
     Route::get('/empresas/catalogo-bancos', [EmpresaController::class, 'catalogoBancos']);
 
-    // Empresa - Cuentas Bancarias
-    Route::post('/empresas/bancos', [EmpresaController::class, 'agregarBanco']);
-    Route::put('/empresas/bancos/{id}', [EmpresaController::class, 'actualizarBanco']);
-    Route::delete('/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco']);
+    // Empresa - Cuentas Bancarias: escritura con tesoreria.crear (vector de fraude
+    // si cualquier usuario de lectura pudiera añadir/editar cuentas bancarias propias).
+    Route::post('/empresas/bancos', [EmpresaController::class, 'agregarBanco'])->middleware('permiso:tesoreria.crear');
+    Route::put('/empresas/bancos/{id}', [EmpresaController::class, 'actualizarBanco'])->middleware('permiso:tesoreria.crear');
+    Route::delete('/empresas/bancos/{id}', [EmpresaController::class, 'eliminarBanco'])->middleware('permiso:tesoreria.crear');
 
-    // Empresa - Centros de Costos
+    // Empresa - Centros de Costos: escritura con contabilidad.crear (los CC son
+    // estructuras contables; no existe clave empresa.configurar en ModuloPermisos).
     Route::get('/empresas/centros-costo', [EmpresaController::class, 'listarCentros']);
     Route::get('/centros-costo', [EmpresaController::class, 'listarCentros']);
-    Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro']);
-    Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro']);
-    Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro']);
+    Route::post('/empresas/centros-costo', [EmpresaController::class, 'agregarCentro'])->middleware('permiso:contabilidad.crear');
+    Route::put('/empresas/centros-costo/{id}', [EmpresaController::class, 'actualizarCentro'])->middleware('permiso:contabilidad.crear');
+    Route::delete('/empresas/centros-costo/{id}', [EmpresaController::class, 'eliminarCentro'])->middleware('permiso:contabilidad.crear');
 
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
+
+    // Dashboard principal — resumen de KPIs, serie ventas, top clientes y facturas urgentes.
+    // Accesible a cualquier usuario autenticado con suscripción activa; el aislamiento
+    // multitenant lo garantiza EmpresaScope sobre los modelos consultados.
+    Route::get('/dashboard/resumen', [DashboardResumenController::class, 'resumen']);
+
+    // DPO — Auditoria PII (Ley 21.719 — Fase 3).
+    // Solo administradores (jerarquia >= 80, permiso usuarios.gestionar) pueden
+    // consultar el log. Las filas ya estan filtradas por empresa del solicitante.
+    Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('permiso:usuarios.gestionar');
+
+    // Registro de incidentes de seguridad (Fase 6 — Ley 21.663 / 21.719).
+    // Solo administradores (permiso usuarios.gestionar). Aislamiento multitenant
+    // garantizado por EmpresaScope sobre IncidenteSeguridad.
+    Route::get('/incidentes', [IncidenteSeguridadController::class, 'index'])->middleware('permiso:usuarios.gestionar');
+    Route::post('/incidentes', [IncidenteSeguridadController::class, 'store'])->middleware('permiso:usuarios.gestionar');
+    Route::put('/incidentes/{id}', [IncidenteSeguridadController::class, 'update'])->middleware('permiso:usuarios.gestionar');
 
     // ---------------------------------------------------------------------
     // Comercial - Clientes
@@ -217,9 +296,16 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/contabilidad/asientos/{id}/reversar', [AsientoContableController::class, 'reversar'])->middleware('permiso:contabilidad.crear');
     Route::post('/contabilidad/asiento-manual/avanzado', [AsientoContableController::class, 'storeAvanzado'])->middleware('permiso:contabilidad.crear');
 
+    // Contabilidad - Bloqueo de periodo (inmutabilidad). El cierre es manual; la
+    // reapertura exige jerarquia >= 80 (validada en el service) y queda auditada.
+    Route::get('/contabilidad/periodos', [PeriodoContableController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::post('/contabilidad/periodos/cerrar', [PeriodoContableController::class, 'cerrar'])->middleware('permiso:contabilidad.cerrar_periodo');
+    Route::post('/contabilidad/periodos/reabrir', [PeriodoContableController::class, 'reabrir'])->middleware('permiso:contabilidad.cerrar_periodo');
+
     // Contabilidad - Libros diarios y mayores
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario'])->middleware('permiso:contabilidad.ver');
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/reportes/balance-comprobacion', [ReporteController::class, 'balanceComprobacion'])->middleware('permiso:contabilidad.ver');
 
     // Contabilidad - Formularios 29 y 22 (Renta)
     Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29'])->middleware('permiso:tributario.ver');
@@ -275,7 +361,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // (autorizacion granular aplicada en los controllers via InventarioPermisoService)
     // ---------------------------------------------------------------------
     Route::prefix('inventario')->group(function () {
-        Route::get('/dashboard', [InventarioController::class, 'dashboard']);
+        Route::get('/dashboard', [DashboardController::class, 'dashboard']);
 
         Route::get('/auditoria', [InventarioAuditoriaController::class, 'index']);
         Route::get('/auditoria/resumen', [InventarioAuditoriaController::class, 'resumen']);
@@ -302,16 +388,16 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
         Route::get('/reportes/{tipo}/exportar-csv', [ReporteInventarioController::class, 'exportarReporteCsv']);
 
-        Route::get('/catalogos', [InventarioController::class, 'catalogos']);
+        Route::get('/catalogos', [CatalogoController::class, 'catalogos']);
 
-        Route::get('/ubicaciones', [InventarioController::class, 'ubicaciones']);
-        Route::post('/ubicaciones', [InventarioController::class, 'storeUbicacion']);
-        Route::get('/ubicaciones/{id}/stock', [InventarioController::class, 'stockUbicacion']);
-        Route::get('/ubicaciones/{id}', [InventarioController::class, 'showUbicacion']);
-        Route::put('/ubicaciones/{id}', [InventarioController::class, 'updateUbicacion']);
-        Route::get('/stock-ubicaciones', [InventarioController::class, 'stockUbicaciones']);
-        Route::post('/stock-ubicaciones/mover', [InventarioController::class, 'moverStockUbicacion']);
-        Route::post('/putaway/confirmar', [InventarioController::class, 'confirmarPutaway']);
+        Route::get('/ubicaciones', [UbicacionController::class, 'ubicaciones']);
+        Route::post('/ubicaciones', [UbicacionController::class, 'storeUbicacion']);
+        Route::get('/ubicaciones/{id}/stock', [UbicacionController::class, 'stockUbicacion']);
+        Route::get('/ubicaciones/{id}', [UbicacionController::class, 'showUbicacion']);
+        Route::put('/ubicaciones/{id}', [UbicacionController::class, 'updateUbicacion']);
+        Route::get('/stock-ubicaciones', [StockUbicacionController::class, 'stockUbicaciones']);
+        Route::post('/stock-ubicaciones/mover', [StockUbicacionController::class, 'moverStockUbicacion']);
+        Route::post('/putaway/confirmar', [StockUbicacionController::class, 'confirmarPutaway']);
 
         Route::get('/picking', [InventarioPickingController::class, 'index']);
         Route::post('/picking', [InventarioPickingController::class, 'store']);
@@ -342,67 +428,180 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::post('/devoluciones/{id}/confirmar', [InventarioDevolucionController::class, 'confirmar']);
         Route::post('/devoluciones/{id}/cancelar', [InventarioDevolucionController::class, 'cancelar']);
 
-        Route::get('/productos', [InventarioController::class, 'index']);
-        Route::post('/productos', [InventarioController::class, 'store']);
+        Route::get('/productos', [ProductoController::class, 'index']);
+        Route::post('/productos', [ProductoController::class, 'store']);
 
-        Route::get('/bodegas', [InventarioController::class, 'bodegas']);
-        Route::post('/bodegas', [InventarioController::class, 'storeBodega']);
+        Route::get('/bodegas', [BodegaController::class, 'bodegas']);
+        Route::post('/bodegas', [BodegaController::class, 'storeBodega']);
 
-        Route::get('/movimientos', [InventarioController::class, 'movimientos']);
-        Route::post('/movimientos', [InventarioController::class, 'registrarMovimiento']);
+        Route::get('/movimientos', [MovimientoController::class, 'movimientos']);
+        Route::post('/movimientos', [MovimientoController::class, 'registrarMovimiento']);
 
-        Route::get('/kardex', [InventarioController::class, 'kardex']);
-        Route::get('/productos/{id}/kardex', [InventarioController::class, 'kardexProducto']);
+        Route::get('/kardex', [KardexController::class, 'kardex']);
+        Route::get('/productos/{id}/kardex', [KardexController::class, 'kardexProducto']);
 
-        Route::get('/valorizacion', [InventarioController::class, 'valorizacion']);
-        Route::get('/productos/{id}/valorizacion', [InventarioController::class, 'valorizacionProducto']);
+        Route::get('/valorizacion', [ValorizacionController::class, 'valorizacion']);
+        Route::get('/productos/{id}/valorizacion', [ValorizacionController::class, 'valorizacionProducto']);
 
-        Route::get('/ajustes-criticos/tipos', [InventarioController::class, 'tiposAjusteCritico']);
-        Route::get('/ajustes-criticos', [InventarioController::class, 'ajustesCriticos']);
-        Route::post('/ajustes-criticos', [InventarioController::class, 'registrarAjusteCritico']);
-        Route::get('/ajustes-criticos/{id}', [InventarioController::class, 'verAjusteCritico']);
+        Route::get('/ajustes-criticos/tipos', [AjusteCriticoController::class, 'tiposAjusteCritico']);
+        Route::get('/ajustes-criticos', [AjusteCriticoController::class, 'ajustesCriticos']);
+        Route::post('/ajustes-criticos', [AjusteCriticoController::class, 'registrarAjusteCritico']);
+        Route::get('/ajustes-criticos/{id}', [AjusteCriticoController::class, 'verAjusteCritico']);
 
-        Route::get('/lotes', [InventarioController::class, 'lotes']);
-        Route::post('/lotes', [InventarioController::class, 'storeLote']);
-        Route::get('/lotes/{id}/stock', [InventarioController::class, 'stockLote']);
-        Route::get('/lotes/{id}', [InventarioController::class, 'showLote']);
-        Route::put('/lotes/{id}', [InventarioController::class, 'updateLote']);
+        Route::get('/lotes', [LoteController::class, 'lotes']);
+        Route::post('/lotes', [LoteController::class, 'storeLote']);
+        Route::get('/lotes/{id}/stock', [LoteController::class, 'stockLote']);
+        Route::get('/lotes/{id}', [LoteController::class, 'showLote']);
+        Route::put('/lotes/{id}', [LoteController::class, 'updateLote']);
 
-        Route::get('/productos/{id}/lotes', [InventarioController::class, 'lotesProducto']);
+        Route::get('/productos/{id}/lotes', [LoteController::class, 'lotesProducto']);
 
-        Route::get('/disponibilidad', [InventarioController::class, 'disponibilidad']);
-        Route::get('/productos/{id}/disponibilidad', [InventarioController::class, 'disponibilidadProducto']);
+        Route::get('/disponibilidad', [DisponibilidadController::class, 'disponibilidad']);
+        Route::get('/productos/{id}/disponibilidad', [DisponibilidadController::class, 'disponibilidadProducto']);
 
-        Route::get('/reglas-reposicion', [InventarioController::class, 'reglasReposicion']);
-        Route::post('/reglas-reposicion', [InventarioController::class, 'storeReglaReposicion']);
-        Route::get('/reglas-reposicion/{id}', [InventarioController::class, 'showReglaReposicion']);
-        Route::put('/reglas-reposicion/{id}', [InventarioController::class, 'updateReglaReposicion']);
-        Route::delete('/reglas-reposicion/{id}', [InventarioController::class, 'destroyReglaReposicion']);
-        Route::get('/alertas', [InventarioController::class, 'alertas']);
-        Route::get('/reposicion/sugerencias', [InventarioController::class, 'sugerenciasReposicion']);
+        Route::get('/reglas-reposicion', [ReposicionController::class, 'reglasReposicion']);
+        Route::post('/reglas-reposicion', [ReposicionController::class, 'storeReglaReposicion']);
+        Route::get('/reglas-reposicion/{id}', [ReposicionController::class, 'showReglaReposicion']);
+        Route::put('/reglas-reposicion/{id}', [ReposicionController::class, 'updateReglaReposicion']);
+        Route::delete('/reglas-reposicion/{id}', [ReposicionController::class, 'destroyReglaReposicion']);
+        Route::get('/alertas', [AlertaController::class, 'alertas']);
+        Route::get('/reposicion/sugerencias', [ReposicionController::class, 'sugerenciasReposicion']);
 
-        Route::get('/reservas', [InventarioController::class, 'reservas']);
-        Route::post('/reservas', [InventarioController::class, 'storeReserva']);
-        Route::get('/reservas/{id}', [InventarioController::class, 'showReserva']);
-        Route::post('/reservas/{id}/cancelar', [InventarioController::class, 'cancelarReserva']);
-        Route::post('/reservas/{id}/liberar', [InventarioController::class, 'liberarReserva']);
-        Route::post('/reservas/{id}/consumir', [InventarioController::class, 'consumirReserva']);
+        Route::get('/reservas', [ReservaController::class, 'reservas']);
+        Route::post('/reservas', [ReservaController::class, 'storeReserva']);
+        Route::get('/reservas/{id}', [ReservaController::class, 'showReserva']);
+        Route::post('/reservas/{id}/cancelar', [ReservaController::class, 'cancelarReserva']);
+        Route::post('/reservas/{id}/liberar', [ReservaController::class, 'liberarReserva']);
+        Route::post('/reservas/{id}/consumir', [ReservaController::class, 'consumirReserva']);
 
-        Route::get('/productos/{id}', [InventarioController::class, 'show']);
-        Route::put('/productos/{id}', [InventarioController::class, 'update']);
+        Route::get('/productos/{id}', [ProductoController::class, 'show']);
+        Route::put('/productos/{id}', [ProductoController::class, 'update']);
 
-        Route::get('/tomas-fisicas', [InventarioController::class, 'tomasFisicas']);
-        Route::post('/tomas-fisicas', [InventarioController::class, 'storeTomaFisica']);
-        Route::get('/tomas-fisicas/{id}', [InventarioController::class, 'showTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/iniciar', [InventarioController::class, 'iniciarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/conteos', [InventarioController::class, 'registrarConteosTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/cerrar', [InventarioController::class, 'cerrarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/ajustar', [InventarioController::class, 'ajustarTomaFisica']);
-        Route::post('/tomas-fisicas/{id}/cancelar', [InventarioController::class, 'cancelarTomaFisica']);
+        Route::get('/tomas-fisicas', [TomaFisicaController::class, 'tomasFisicas']);
+        Route::post('/tomas-fisicas', [TomaFisicaController::class, 'storeTomaFisica']);
+        Route::get('/tomas-fisicas/{id}', [TomaFisicaController::class, 'showTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/iniciar', [TomaFisicaController::class, 'iniciarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/conteos', [TomaFisicaController::class, 'registrarConteosTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cerrar', [TomaFisicaController::class, 'cerrarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/ajustar', [TomaFisicaController::class, 'ajustarTomaFisica']);
+        Route::post('/tomas-fisicas/{id}/cancelar', [TomaFisicaController::class, 'cancelarTomaFisica']);
+    });
+
+    // ---------------------------------------------------------------------
+    // RRHH y Remuneraciones (Chile)
+    // ---------------------------------------------------------------------
+    Route::prefix('rrhh')->group(function () {
+        // Personal (R1)
+        Route::get('/empleados', [EmpleadoController::class, 'index'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados', [EmpleadoController::class, 'store'])->middleware('permiso:rrhh.empleados.crear');
+        Route::get('/empleados/{id}', [EmpleadoController::class, 'show'])->middleware('permiso:rrhh.empleados.ver');
+        Route::put('/empleados/{id}', [EmpleadoController::class, 'update'])->middleware('permiso:rrhh.empleados.editar');
+        Route::delete('/empleados/{id}', [EmpleadoController::class, 'destroy'])->middleware('permiso:rrhh.empleados.editar');
+
+        // Derechos ARCO+ (Fase 5 — Ley 21.719)
+        Route::get('/empleados/{id}/datos-personales', [ArcoController::class, 'exportar'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados/{id}/bloquear', [ArcoController::class, 'bloquear'])->middleware('permiso:usuarios.gestionar');
+        Route::post('/empleados/{id}/anonimizar', [ArcoController::class, 'suprimir'])->middleware('permiso:usuarios.gestionar');
+
+        // Contratos (R1)
+        Route::get('/empleados/{empleadoId}/contratos', [ContratoController::class, 'indexPorEmpleado'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/empleados/{empleadoId}/contratos', [ContratoController::class, 'store'])->middleware('permiso:rrhh.contratos.crear');
+        Route::get('/contratos/{id}', [ContratoController::class, 'show'])->middleware('permiso:rrhh.empleados.ver');
+        Route::post('/contratos/{id}/terminar', [ContratoController::class, 'terminar'])->middleware('permiso:rrhh.contratos.crear');
+        Route::post('/contratos/{id}/haberes', [ContratoController::class, 'agregarHaber'])->middleware('permiso:rrhh.contratos.crear');
+
+        // Liquidaciones de sueldo (R3)
+        Route::get('/liquidaciones', [LiquidacionController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/liquidaciones/calcular', [LiquidacionController::class, 'calcular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/liquidaciones/{id}', [LiquidacionController::class, 'show'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/liquidaciones/{id}/emitir', [LiquidacionController::class, 'emitir'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/liquidaciones/{id}/anular', [LiquidacionController::class, 'anular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // Finiquitos (R4)
+        Route::get('/finiquitos', [FiniquitoController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/finiquitos/calcular', [FiniquitoController::class, 'calcular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/finiquitos/{id}', [FiniquitoController::class, 'show'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/finiquitos/{id}/firmar', [FiniquitoController::class, 'firmar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // Parametrización legal (R2): tasas, indicadores UF/UTM, tabla impuesto único
+        Route::get('/parametros', [ParametroPrevisionalController::class, 'indexParametros'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/parametros', [ParametroPrevisionalController::class, 'storeParametro'])->middleware('permiso:rrhh.parametros.editar');
+        Route::get('/indicadores', [ParametroPrevisionalController::class, 'indexIndicadores'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/indicadores', [ParametroPrevisionalController::class, 'storeIndicador'])->middleware('permiso:rrhh.parametros.editar');
+        Route::get('/tabla-impuesto', [ParametroPrevisionalController::class, 'indexImpuesto'])->middleware('permiso:rrhh.parametros.ver');
+
+        // R5 — Centralización contable de remuneraciones
+        Route::get('/mapeo-contable', [CentralizacionController::class, 'indexMapeo'])->middleware('permiso:rrhh.parametros.ver');
+        Route::post('/mapeo-contable', [CentralizacionController::class, 'upsertMapeo'])->middleware('permiso:rrhh.parametros.editar');
+        Route::delete('/mapeo-contable/{tipo}', [CentralizacionController::class, 'destroyMapeo'])->middleware('permiso:rrhh.parametros.editar');
+        Route::post('/centralizacion/{anio}/{mes}', [CentralizacionController::class, 'centralizar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // R6 — Previred: archivo previsional mensual
+        Route::get('/previred/{anio}/{mes}/archivo', [PreviredController::class, 'archivo'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/previred/{anio}/{mes}/preview', [PreviredController::class, 'preview'])->middleware('permiso:rrhh.remuneraciones.ver');
+
+        // R7 — LRE: Libro de Remuneraciones Electrónico
+        // El LRE se genera, valida y descarga desde aquí. La subida al portal Mi DT
+        // es manual; el empleador registra el número de confirmación en confirmar-dt.
+        Route::post('/lre/generar', [LreController::class, 'generar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/lre/{id}/validar', [LreController::class, 'validar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/lre/{id}/confirmar-dt', [LreController::class, 'confirmarDt'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/lre', [LreController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/lre/{id}/descargar', [LreController::class, 'descargar'])->middleware('permiso:rrhh.remuneraciones.ver');
     });
 });
 
-Route::prefix('internal/web')->middleware('web.api.key')->group(function () {
+// DJ 1887 - Declaración Jurada de Rentas (SII)
+Route::prefix('dj/1887')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                    [Dj1887Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                            [Dj1887Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                  [Dj1887Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                 [Dj1887Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',   [Dj1887Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1879 - Retenciones de honorarios (SII)
+Route::prefix('dj/1879')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1879Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1879Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1879Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1879Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1879Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1947 — Propyme Transparente 14D N°8
+Route::prefix('dj/1947')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1947Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1947Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1947Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1947Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1947Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// Propietarios de la empresa (para DJ 1947 / Propyme)
+Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription', 'permiso:contabilidad.ver'])->group(function () {
+    Route::get('/',                    [PropietariosController::class, 'index']);
+    Route::post('/',                   [PropietariosController::class, 'store'])->middleware('subscription.writable');
+    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware('subscription.writable');
+    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware('subscription.writable');
+});
+
+// Honorarios recibidos
+Route::prefix('honorarios')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                          [HonorariosController::class, 'index'])->middleware('permiso:compras.ver');
+    Route::post('/',                         [HonorariosController::class, 'store'])->middleware(['permiso:compras.crear', 'subscription.writable']);
+    Route::delete('/{honorariosRecibido}',   [HonorariosController::class, 'destroy'])->middleware(['permiso:compras.crear', 'subscription.writable']);
+});
+
+// Soporte — proxy hacia api.tenri.cl
+Route::prefix('soporte/tickets')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',          [SoporteController::class, 'index'])->middleware('permiso:soporte.ver');
+    Route::post('/',         [SoporteController::class, 'store'])->middleware(['permiso:soporte.crear', 'subscription.writable']);
+    Route::get('/{id}',      [SoporteController::class, 'show'])->middleware('permiso:soporte.ver')->whereNumber('id');
+    Route::post('/{id}/reply', [SoporteController::class, 'reply'])->middleware(['permiso:soporte.ver', 'subscription.writable'])->whereNumber('id');
+});
+
+Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {
     Route::post('/provision-user', [WebProvisioningController::class, 'provisionUser']);
     Route::post('/sync-plan',      [WebProvisioningController::class, 'syncPlan']);
     Route::post('/sync-password',  [WebProvisioningController::class, 'syncPassword']);

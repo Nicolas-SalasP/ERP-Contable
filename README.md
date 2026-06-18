@@ -1,74 +1,114 @@
 # 📊 Tenri ERP Cloud
 
-Sistema de Planificación de Recursos Empresariales (ERP) diseñado para escalar y automatizar la gestión financiera, contable y tributaria de las pymes en Chile.
+Sistema de Planificación de Recursos Empresariales (ERP) diseñado para escalar y automatizar la gestión financiera, contable, tributaria y de remuneraciones de las pymes en Chile.
 
 ![Estado](https://img.shields.io/badge/Estado-Beta_1.0_Cerrada-success)
-![Frontend](https://img.shields.io/badge/Frontend-React_+_Vite-blue)
-![Backend](https://img.shields.io/badge/Backend-PHP_8.2-777BB4)
+![Frontend](https://img.shields.io/badge/Frontend-React_19_+_Vite-blue)
+![Backend](https://img.shields.io/badge/Backend-Laravel_12_(PHP_8.2)-777BB4)
 ![Database](https://img.shields.io/badge/Database-MySQL_8.0-orange)
 
 ## 🏢 Arquitectura del Proyecto
 
-El proyecto está dividido en un frontend reactivo (Single Page Application) y una API RESTful en el backend.
+Monorepo (pnpm workspace) con una SPA en React y una API RESTful en Laravel 12.
 
 ```text
 / (Raíz del Proyecto)
-├── .github/                  # Configuración de GitHub Actions (Pipelines CI/CD)
-├── Backend/                  # API RESTful nativa
-│   ├── App/
-│   │   ├── Config/           # Conexión a BD, Router y Variables de Entorno (.env)
-│   │   ├── Controllers/      # Controladores de la API (Endpoints)
-│   │   ├── Helpers/          # Utilidades (JWT, Mailer, Fechas)
-│   │   ├── Middlewares/      # Filtros de seguridad (AuthMiddleware)
-│   │   ├── Repositories/     # Capa de acceso a datos (Consultas SQL PDO)
-│   │   └── Services/         # Lógica de negocio core
-│   ├── Public/               # Punto de entrada (index.php, Cabeceras de Seguridad)
-│   ├── Tests/                # Pruebas Unitarias y de Integración (PHPUnit)
-│   ├── vendor/               # Dependencias de Composer
-│   └── phpstan.neon          # Configuración de análisis estático
-├── Frontend/                 # Aplicación Web React
-│   ├── public/               # Assets estáticos (Favicon, logos)
-│   ├── src/                  # Componentes, Hooks, Contextos y Vistas
-│   ├── package.json          # Dependencias NPM
-│   └── vite.config.js        # Configuración del empaquetador
-└── Base de Datos/            # Estructura SQL y datos semilla para Testing/CI
+├── .github/workflows/        # CI/CD (ci-cd.yml: tests + deploy, e2e.yml: Playwright)
+├── Backend-laravel/           # API RESTful Laravel 12
+│   ├── app/
+│   │   ├── Domains/           # Código organizado por dominio de negocio
+│   │   │   ├── Core/          # Auth, usuarios, roles, empresas, suscripciones
+│   │   │   ├── Contabilidad/  # Plan de cuentas, asientos, períodos, reportes
+│   │   │   ├── Comercial/     # Clientes, proveedores, facturas, cotizaciones
+│   │   │   ├── Tesoreria/     # Bancos, conciliación, pagos
+│   │   │   ├── Rrhh/          # Empleados, contratos, liquidaciones, Previred
+│   │   │   ├── Inventario/    # Productos, bodegas, kardex, picking/packing
+│   │   │   ├── Sii/           # Integración Servicio de Impuestos Internos
+│   │   │   ├── Activos/       # Activos fijos y depreciación
+│   │   │   └── CorreccionMonetaria/
+│   │   ├── Http/Middleware/   # RBAC, suscripciones, API key HMAC
+│   │   └── Support/           # Utilidades transversales (firma HMAC, etc.)
+│   ├── routes/api.php         # Todas las rutas de la API
+│   ├── tests/                 # PHPUnit (Unit + Feature)
+│   └── phpunit.xml            # Tests contra SQLite en memoria por defecto
+├── Frontend/                  # Aplicación Web React 19
+│   ├── src/
+│   │   ├── Modulos/           # Vistas por módulo de negocio
+│   │   ├── Contextos/         # AuthContext, Permisos (RBAC)
+│   │   ├── Configuracion/     # Cliente axios central, logger
+│   │   ├── Componentes/       # Componentes compartidos
+│   │   └── Utilidades/        # Helpers (export Excel/PDF)
+│   ├── e2e/                   # Tests E2E Playwright
+│   └── vite.config.js
+├── Base de Datos/             # Estructura SQL y datos semilla
+└── docs/                      # Normativa SII, leyes RRHH, auditorías
 ```
 
 ## 🚀 Módulos Principales
 
-* **Seguridad (RBAC):** Control de Acceso Basado en Roles. Los menús y componentes de la UI reaccionan a la matriz de permisos configurada desde la base de datos.
+* **Seguridad (RBAC):** Control de Acceso Basado en Roles con permisos granulares por endpoint. Los menús y componentes de la UI reaccionan a la matriz de permisos.
+* **Multitenancy:** Aislamiento de datos por empresa (`empresa_id`) mediante global scope de Eloquent.
 * **Finanzas y Tesorería:** Importación de cartolas bancarias, conciliación inteligente, pagos masivos y gestión de anticipos.
-* **Contabilidad Avanzada:** Generación automática de asientos, Libro Mayor, Libro Diario y mantenedor de Plan de Cuentas.
-* **Activos Fijos:** Cálculo automatizado de depreciación mensual y costeo de proyectos en construcción.
-* **Cumplimiento Tributario:** Simulación de Formulario 29 (F29) y pre-cálculo para la Operación Renta Anual.
+* **Contabilidad Avanzada:** Generación automática de asientos, Libro Mayor, Libro Diario, mantenedor de Plan de Cuentas y bloqueo de períodos.
+* **RRHH y Remuneraciones:** Contratos, liquidaciones de sueldo, finiquitos, parámetros previsionales (AFP, salud, CCAF), archivo Previred y centralización contable.
+* **Inventario:** Multi-bodega, kardex valorizado, lotes, reservas, picking/packing y tomas físicas.
+* **Activos Fijos:** Cálculo automatizado de depreciación mensual.
+* **Cumplimiento Tributario:** Formulario 29 (F29), F22 y pre-cálculo para la Operación Renta.
+* **Suscripciones:** SSO e integración con tenri.cl; gating de funcionalidades por plan y estado de suscripción.
 
 ## 🛠️ Entorno de Desarrollo (Local)
 
 ### Prerrequisitos
-* PHP 8.2 o superior
-* Node.js 22 o superior
-* MySQL 8.0
-* Composer
+* PHP 8.2 o superior + Composer
+* Node.js 22 o superior + pnpm 11
+* MySQL 8.0 (opcional en local: los tests usan SQLite)
 
-### Configuración del Backend
-1. Navegar a la carpeta `Backend/`
-2. Instalar dependencias: `composer install`
-3. Duplicar `.env.example` a `.env` y configurar credenciales de BD.
-4. Levantar servidor local en el puerto 8002:
-
+### Backend
 ```bash
-php -S localhost:8002 -t Public
+cd Backend-laravel
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan serve          # API en http://localhost:8000
+# o todo junto (serve + queue + logs + vite):
+composer dev
 ```
 
-## Configuración del Frontend
-1. Navegar a la carpeta Frontend/
-2. Instalar dependencias: npm install
-3. Levantar entorno de desarrollo de Vite (Puerto 8001):
-
+### Frontend
 ```bash
-npm run dev
+cd Frontend
+pnpm install
+pnpm dev                   # Vite dev server
 ```
+
+### Tests
+```bash
+# Backend (SQLite en memoria, ~12s)
+cd Backend-laravel && php artisan test
+
+# Frontend
+cd Frontend && pnpm lint && pnpm test    # ESLint + Vitest
+pnpm e2e                                  # Playwright (requiere pnpm e2e:install)
+```
+
 ## 🔄 Integración y Despliegue Continuo (CI/CD)
-* Este repositorio cuenta con un pipeline automatizado vía GitHub Actions (ci-cd.yml).
-* Push a dev: Ejecuta entorno MySQL en contenedor, análisis estático con PHPStan (Nivel 5) y suite completa de PHPUnit.
-* Push a main: Ejecuta pruebas de calidad y, si son exitosas, compila el Frontend de React y despliega ambos ecosistemas a producción mediante FTP seguro.
+
+Pipeline automatizado vía GitHub Actions (`.github/workflows/ci-cd.yml`):
+
+* **Push a cualquier rama:** suite PHPUnit contra SQLite **y** contra MySQL 8 en contenedor (los tests deben pasar en ambos engines), más lint y build del frontend.
+* **Push a `staging`:** si todos los tests pasan, despliega a `staging.erp.tenri.cl` (mismo mecanismo FTP + SSH, secrets independientes).
+* **Push a `main`:** si todos los tests pasan, compila el frontend y despliega ambos ecosistemas a producción (FTP + SSH con migraciones y cache de Laravel).
+
+## Flujo de despliegue
+
+```
+feature/* → PR → staging → validación manual → PR → main → deploy producción
+```
+
+* Push a `staging` → deploy automático a `staging.erp.tenri.cl` (environment `staging` en GitHub).
+* Staging validado → merge a `main` → deploy a producción (environment `production` en GitHub, requiere aprobación de reviewer).
+
+> **Configuración requerida en GitHub → Settings → Environments:**
+> - `staging`: agregar los secrets `FTP_SERVER_STAGING`, `FTP_USERNAME_STAGING`, `FTP_PASSWORD_STAGING`, `SSH_HOST_STAGING`, `SSH_USERNAME_STAGING`, `SSH_PRIVATE_KEY_STAGING`.
+> - `production`: agregar una "environment protection rule" con al menos 1 required reviewer antes de hacer deploy a producción.

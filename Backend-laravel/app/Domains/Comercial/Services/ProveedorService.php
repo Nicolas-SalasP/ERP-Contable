@@ -2,12 +2,13 @@
 
 namespace App\Domains\Comercial\Services;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
+
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\AnticipoProveedor;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class ProveedorService
 {
@@ -42,7 +43,7 @@ class ProveedorService
                 ->exists();
 
             if ($rutExiste) {
-                throw new Exception("El proveedor con identificador {$datos['rut']} ya se encuentra registrado.");
+                throw ComercialException::regla("El proveedor con identificador {$datos['rut']} ya se encuentra registrado.");
             }
         }
 
@@ -73,7 +74,7 @@ class ProveedorService
             ->find($id);
 
         if (!$proveedor) {
-            throw new Exception("El proveedor solicitado no existe.");
+            throw ComercialException::noEncontrado("El proveedor solicitado no existe.");
         }
 
         $facturas = Factura::where('empresa_id', $empresaId)
@@ -103,7 +104,7 @@ class ProveedorService
                 ->exists();
 
             if ($existe) {
-                throw new Exception("El Identificador Fiscal ingresado ya pertenece a otro proveedor.");
+                throw ComercialException::regla("El Identificador Fiscal ingresado ya pertenece a otro proveedor.");
             }
         }
 
@@ -131,7 +132,7 @@ class ProveedorService
     public function adjuntarPdfAnticipo(int $empresaId, int $anticipoId, ?string $rutaArchivo)
     {
         if (!$rutaArchivo) {
-            throw new Exception("No se pudo procesar el archivo adjunto.");
+            throw ComercialException::regla("No se pudo procesar el archivo adjunto.");
         }
 
         $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)->findOrFail($anticipoId);
@@ -150,7 +151,7 @@ class ProveedorService
             $anticiposIds = $datos['anticipos_ids'] ?? [];
 
             if (empty($facturasIds) || (empty($ncIds) && empty($anticiposIds))) {
-                throw new Exception("Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.");
+                throw ComercialException::regla("Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.");
             }
 
             $totalDeuda = DB::table('facturas')
@@ -174,7 +175,7 @@ class ProveedorService
             $totalAFavor = $totalNC + $totalAnticipos;
 
             if ($totalAFavor > $totalDeuda) {
-                throw new Exception("El monto a favor seleccionado ($" . number_format($totalAFavor, 0, ',', '.') . ") excede la deuda a compensar ($" . number_format($totalDeuda, 0, ',', '.') . "). Por favor deseleccione algunos documentos a favor.");
+                throw ComercialException::regla("El monto a favor seleccionado ($" . number_format($totalAFavor, 0, ',', '.') . ") excede la deuda a compensar ($" . number_format($totalDeuda, 0, ',', '.') . "). Por favor deseleccione algunos documentos a favor.");
             }
 
             $nuevoEstadoFactura = ($totalAFavor == $totalDeuda) ? 'PAGADA' : 'ABONADA';

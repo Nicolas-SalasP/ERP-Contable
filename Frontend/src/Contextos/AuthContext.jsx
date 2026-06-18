@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api, markTokenIssued } from '../Configuracion/api';
+import { api, markTokenIssued, setSubscriptionStatus } from '../Configuracion/api';
 
 const AuthContext = createContext(null);
 
@@ -15,11 +15,23 @@ const REFRESCO_SESION_MS = 3 * 60 * 1000; // 3 minutos
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
-        const storedUser = localStorage.getItem('erp_user') || sessionStorage.getItem('erp_user');
-        return storedUser ? JSON.parse(storedUser) : null;
+        try {
+            const storedUser = localStorage.getItem('erp_user') || sessionStorage.getItem('erp_user');
+            const parsed = storedUser ? JSON.parse(storedUser) : null;
+            // Inicializa el guard de suscripción en api.js con el estado persistido.
+            setSubscriptionStatus(parsed?.subscription_status ?? null);
+            return parsed;
+        } catch {
+            ['erp_token', 'erp_user', 'token', 'erp_token_issued_at'].forEach((k) => {
+                localStorage.removeItem(k);
+                sessionStorage.removeItem(k);
+            });
+            return null;
+        }
     });
 
     const [loading, setLoading] = useState(false);
+    const [misEmpresas, setMisEmpresas] = useState([]);
 
     // Re-sincroniza el usuario (incluidos sus permisos) contra el backend para que
     // los cambios de rol/permisos surtan efecto sin necesidad de re-login.
@@ -30,6 +42,7 @@ export const AuthProvider = ({ children }) => {
             const me = await api.get('/auth/me');
             if (me && me.id) {
                 setUser(me);
+                setSubscriptionStatus(me.subscription_status ?? null);
                 storage.setItem('erp_user', JSON.stringify(me));
             }
         } catch (_) {
@@ -37,10 +50,37 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    // Carga la lista de empresas accesibles por el usuario (multiempresa).
+    const cargarMisEmpresas = useCallback(async () => {
+        const storage = getSessionStorage();
+        if (!storage) return;
+        try {
+            const respuesta = await api.get('/empresa/mis-empresas');
+            setMisEmpresas(Array.isArray(respuesta?.data) ? respuesta.data : []);
+        } catch (_) {
+            // Errores de red o sin permisos: se ignoran silenciosamente.
+        }
+    }, []);
+
+    // Cambia la empresa activa del usuario en el servidor y refresca sesion y lista.
+    // Devuelve true si el cambio fue exitoso, false si hubo error (403 u otro).
+    const cambiarEmpresa = useCallback(async (empresaId) => {
+        try {
+            await api.post('/empresa/cambiar', { empresa_id: empresaId });
+            await refrescarSesion();
+            await cargarMisEmpresas();
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }, [refrescarSesion, cargarMisEmpresas]);
+
     // Refresco periodico y al recuperar el foco de la pestaña.
+    // También carga la lista de empresas del usuario al iniciar sesión.
     useEffect(() => {
         if (!user?.id) return;
         refrescarSesion();
+        cargarMisEmpresas();
         const intervalo = setInterval(refrescarSesion, REFRESCO_SESION_MS);
         const onFocus = () => refrescarSesion();
         window.addEventListener('focus', onFocus);
@@ -48,7 +88,7 @@ export const AuthProvider = ({ children }) => {
             clearInterval(intervalo);
             window.removeEventListener('focus', onFocus);
         };
-    }, [user?.id, refrescarSesion]);
+    }, [user?.id, refrescarSesion, cargarMisEmpresas]);
 
     // Si otra pestaña cierra sesion (erp_token pasa a null), invalidamos el
     // usuario en memoria de inmediato, sin esperar la recarga del navegador.
@@ -89,7 +129,13 @@ export const AuthProvider = ({ children }) => {
                     }
                 } catch (_) {}
 
+                if (!usuarioRecibido || !usuarioRecibido.id) {
+                    storage.removeItem('erp_token');
+                    return { success: false, message: 'No se recibió información del usuario.', code: 'USER_MISSING' };
+                }
+
                 setUser(usuarioRecibido);
+                setSubscriptionStatus(usuarioRecibido.subscription_status ?? null);
                 storage.setItem('erp_user', JSON.stringify(usuarioRecibido));
 
                 return { success: true };
@@ -124,6 +170,7 @@ export const AuthProvider = ({ children }) => {
             sessionStorage.removeItem('erp_token_issued_at');
 
             setUser(null);
+            setSubscriptionStatus(null);
 
             if (typeof window !== 'undefined') {
                 window.location.href = '/login';
@@ -132,7 +179,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading, refrescarSesion }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading, refrescarSesion, misEmpresas, cambiarEmpresa }}>
             {children}
         </AuthContext.Provider>
     );
