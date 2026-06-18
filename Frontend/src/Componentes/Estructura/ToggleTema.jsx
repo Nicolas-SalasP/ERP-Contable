@@ -2,9 +2,9 @@ import { Sun, Monitor, CloudMoon } from 'lucide-react';
 import { useTema } from '../../hooks/useTema';
 
 const OPCIONES = [
-    { valor: 'claro',      Icono: Sun,       label: 'Claro' },
-    { valor: 'sistema',    Icono: Monitor,   label: 'Automático (sistema)' },
-    { valor: 'gris-oscuro', Icono: CloudMoon, label: 'Gris oscuro' },
+    { valor: 'claro',       Icono: Sun,       label: 'Claro' },
+    { valor: 'sistema',     Icono: Monitor,   label: 'Auto' },
+    { valor: 'gris-oscuro', Icono: CloudMoon, label: 'Oscuro' },
 ];
 
 export function ToggleTema() {
@@ -20,15 +20,15 @@ export function ToggleTema() {
                 <button
                     key={valor}
                     onClick={() => setTema(valor)}
-                    title={label}
                     aria-pressed={tema === valor}
-                    className={`p-1.5 rounded-md transition-colors ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md transition-colors text-xs font-medium ${
                         tema === valor
                             ? 'bg-white dark:bg-slate-500 text-slate-900 dark:text-slate-100 shadow-sm'
                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                     }`}
                 >
-                    <Icono size={14} strokeWidth={1.75} />
+                    <Icono size={13} strokeWidth={1.75} />
+                    <span>{label}</span>
                 </button>
             ))}
         </div>
