@@ -5,7 +5,7 @@
 /* Transición suave al cambiar de tema — solo activa durante el switch */
 html.tema-animando,
 html.tema-animando * {
-  transition: background-color 200ms ease-in-out, color 200ms ease-in-out, border-color 200ms ease-in-out !important;
+  transition: background-color 300ms ease-in-out, color 300ms ease-in-out, border-color 300ms ease-in-out;
 }
 
 /* Estilos globales para inputs robustos */
