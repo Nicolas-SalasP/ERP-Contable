@@ -66,6 +66,7 @@ use App\Domains\Core\Controllers\PropietariosController;
 use App\Domains\Comercial\Controllers\HonorariosController;
 use App\Domains\Soporte\Controllers\SoporteController;
 use App\Domains\Core\Controllers\EmpresaCambioController;
+use App\Domains\Core\Controllers\DashboardResumenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -165,6 +166,11 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
+
+    // Dashboard principal — resumen de KPIs, serie ventas, top clientes y facturas urgentes.
+    // Accesible a cualquier usuario autenticado con suscripción activa; el aislamiento
+    // multitenant lo garantiza EmpresaScope sobre los modelos consultados.
+    Route::get('/dashboard/resumen', [DashboardResumenController::class, 'resumen']);
 
     // DPO — Auditoria PII (Ley 21.719 — Fase 3).
     // Solo administradores (jerarquia >= 80, permiso usuarios.gestionar) pueden

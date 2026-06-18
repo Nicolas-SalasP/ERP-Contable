@@ -1,243 +1,397 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import { logger } from '../../Configuracion/logger';
-import EstadoCarga from '../../Componentes/EstadoCarga';
+import { usePermisos } from '../../Contextos/Permisos';
+import GraficoVentas from './componentes/GraficoVentas';
+import GraficoTopClientes from './componentes/GraficoTopClientes';
+import GraficoComprasVsVentas from './componentes/GraficoComprasVsVentas';
+import GraficoStock from './componentes/GraficoStock';
+import AlertasPendientes from './componentes/AlertasPendientes';
+import RhrrhResumen from './componentes/RhrrhResumen';
+import ExportacionDashboard from './componentes/ExportacionDashboard';
 
-const formatMoneda = (valor) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
+/* ------------------------------------------------------------------ */
+/* Utilidades de formato                                                */
+/* ------------------------------------------------------------------ */
+const formatMoneda = (valor) =>
+    new Intl.NumberFormat('es-CL', {
+        style: 'currency',
+        currency: 'CLP',
+        maximumFractionDigits: 0,
+    }).format(valor ?? 0);
 
-const Dashboard = () => {
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [metricas, setMetricas] = useState({
-        cotizacionesAprobadas: 0,
-        facturasPendientesMonto: 0,
-        clientesActivos: 0,
-        facturasPendientesCount: 0
+const formatFecha = (fecha) => {
+    if (!fecha) return '—';
+    return new Date(fecha + 'T00:00:00').toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
     });
-    const [facturasUrgentes, setFacturasUrgentes] = useState([]);
+};
 
-    useEffect(() => {
-        cargarDatosReales();
-    }, []);
+/* ------------------------------------------------------------------ */
+/* Selector de período                                                  */
+/* ------------------------------------------------------------------ */
+const PERIODOS = [
+    { valor: 'mes', etiqueta: 'Este mes' },
+    { valor: 'trimestre', etiqueta: 'Trimestre' },
+    { valor: 'año', etiqueta: 'Este año' },
+];
 
-    const cargarDatosReales = async () => {
-        setLoading(true);
+/* ------------------------------------------------------------------ */
+/* Badge de variación de ventas                                         */
+/* ------------------------------------------------------------------ */
+const BadgeVariacion = ({ pct }) => {
+    if (pct === null || pct === undefined) return null;
+
+    if (pct > 0) {
+        return (
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                <i className="fas fa-arrow-up text-[10px]" />
+                +{pct.toFixed(1)}%
+            </span>
+        );
+    }
+    if (pct < 0) {
+        return (
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                <i className="fas fa-arrow-down text-[10px]" />
+                {pct.toFixed(1)}%
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+            Sin variación
+        </span>
+    );
+};
+
+/* ------------------------------------------------------------------ */
+/* Tarjeta KPI genérica                                                 */
+/* ------------------------------------------------------------------ */
+const TarjetaKpi = ({ icono, etiqueta, valor, colorIcono = 'text-slate-400', bgIcono = 'bg-slate-100', children }) => (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-3 hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{etiqueta}</p>
+            <div className={`${bgIcono} ${colorIcono} w-9 h-9 rounded-xl flex items-center justify-center`}>
+                <i className={`${icono} text-sm`} />
+            </div>
+        </div>
+        <p className="text-3xl font-black text-slate-800 truncate" title={String(valor)}>
+            {valor}
+        </p>
+        {children && <div className="mt-1">{children}</div>}
+    </div>
+);
+
+/* ================================================================== */
+/* Componente principal                                                 */
+/* ================================================================== */
+const Dashboard = () => {
+    const [periodo, setPeriodo] = useState('mes');
+    const [resumen, setResumen] = useState(null);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
+
+    const { tieneAlgunPermiso } = usePermisos();
+    const tieneInventario = tieneAlgunPermiso(['inventario.productos.ver']);
+    const tieneRrhh = tieneAlgunPermiso(['rrhh.remuneraciones.ver']);
+
+    const cargarResumen = useCallback(async () => {
+        setCargando(true);
         setError(null);
         try {
-            const resClientes = await api.get('/clientes');
-            const totalClientes = resClientes.success && resClientes.data ? resClientes.data.length : 0;
-
-            const resCoti = await api.get('/cotizaciones');
-            let montoCotizaciones = 0;
-            if (resCoti.success && resCoti.data) {
-                montoCotizaciones = resCoti.data
-                    .filter(c => c.estado_nombre === 'ACEPTADA' || c.estado_nombre === 'APROBADA')
-                    .reduce((acc, curr) => acc + parseFloat(curr.total || 0), 0);
+            const res = await api.get(`/dashboard/resumen?periodo=${periodo}`);
+            if (res.success) {
+                setResumen(res.data);
+            } else {
+                throw new Error('Respuesta inesperada del servidor');
             }
-
-            const resFacturas = await api.get('/facturas/historial?estado=REGISTRADA');
-            let montoPendiente = 0;
-            let pendientesTop5 = [];
-            let totalPendientes = 0;
-
-            if (resFacturas.success && resFacturas.data) {
-                const facturas = resFacturas.data;
-                totalPendientes = facturas.length;
-                pendientesTop5 = facturas.slice(0, 5); // Tomamos solo las 5 más recientes para la tabla
-                montoPendiente = facturas.reduce((acc, curr) => acc + parseFloat(curr.monto_bruto || 0), 0);
-            }
-
-            setMetricas({
-                cotizacionesAprobadas: montoCotizaciones,
-                facturasPendientesMonto: montoPendiente,
-                clientesActivos: totalClientes,
-                facturasPendientesCount: totalPendientes
-            });
-            setFacturasUrgentes(pendientesTop5);
-
         } catch (err) {
-            logger.error("Error al cargar el dashboard:", err);
-            setError(err);
+            logger.error('Error al cargar resumen del dashboard:', err);
+            setError(err?.message ?? 'Error al conectar con el servidor');
         } finally {
-            setLoading(false);
+            setCargando(false);
         }
-    };
+    }, [periodo]);
 
-    if (loading || error) {
+    useEffect(() => {
+        cargarResumen();
+    }, [cargarResumen]);
+
+    /* ---- Estado de carga ---- */
+    if (cargando) {
         return (
-            <EstadoCarga
-                cargando={loading}
-                error={error}
-                onReintentar={cargarDatosReales}
-                mensajeCargando="Calculando métricas del sistema..."
-                color="emerald"
-            />
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-slate-500">
+                <svg className="animate-spin w-10 h-10 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                <span className="text-sm font-medium">Calculando métricas del período…</span>
+            </div>
         );
     }
 
+    /* ---- Estado de error ---- */
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="bg-red-50 text-red-600 rounded-2xl p-8 text-center max-w-sm">
+                    <i className="fas fa-exclamation-circle text-3xl mb-3 block" />
+                    <p className="font-bold text-lg mb-1">No se pudo cargar el dashboard</p>
+                    <p className="text-sm text-red-500 mb-4">{error}</p>
+                    <button
+                        onClick={cargarResumen}
+                        className="bg-red-600 text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-red-700 transition-colors"
+                    >
+                        Reintentar
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const kpis = resumen?.kpis ?? {};
+    const facturasUrgentes = resumen?.facturas_urgentes ?? [];
+
+    /* ---- Render principal ---- */
     return (
-        <div className="w-full max-w-full xl:max-w-[90rem] mx-auto px-2 sm:px-4 py-4 md:py-6 lg:py-8 font-sans text-slate-800 pb-10">
+        <div className="w-full max-w-full xl:max-w-[90rem] mx-auto px-2 sm:px-4 py-4 md:py-6 lg:py-8 font-sans text-slate-800 pb-12">
 
-            <div className="mb-8 md:mb-10">
-                <h1 className="text-3xl md:text-4xl font-black text-slate-900">Resumen Ejecutivo</h1>
-                <p className="text-slate-500 text-base mt-2">Radiografía financiera y operativa en tiempo real.</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-8 mb-10">
-
-                <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform">
-                        <svg className="w-32 h-32 text-emerald-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                    </div>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Ventas / Cot. Aprobadas</p>
-                    <h3 className="text-4xl font-black text-slate-800 truncate" title={formatMoneda(metricas.cotizacionesAprobadas)}>
-                        {formatMoneda(metricas.cotizacionesAprobadas)}
-                    </h3>
-                    <div className="mt-4 flex items-center text-sm font-bold text-emerald-600 bg-emerald-50 w-fit px-3 py-1 rounded-lg">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        Ingresos proyectados
-                    </div>
+            {/* ---- Encabezado con selector de período ---- */}
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900">Resumen Ejecutivo</h1>
+                    <p className="text-slate-500 text-base mt-2">Radiografía financiera y operativa en tiempo real.</p>
                 </div>
 
-                <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform">
-                        <svg className="w-32 h-32 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zm-7-2h-2v-4H8v-2h2V9h2v2h2v2h-2v4z"/></svg>
-                    </div>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Cuentas por Pagar</p>
-                    <h3 className="text-4xl font-black text-slate-800 truncate" title={formatMoneda(metricas.facturasPendientesMonto)}>
-                        {formatMoneda(metricas.facturasPendientesMonto)}
-                    </h3>
-                    <div className="mt-4 flex items-center text-sm font-bold text-red-600 bg-red-50 w-fit px-3 py-1 rounded-lg">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Deuda pendiente
-                    </div>
-                </div>
-
-                <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform">
-                        <svg className="w-32 h-32 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    </div>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Clientes Activos</p>
-                    <h3 className="text-4xl font-black text-slate-800">{metricas.clientesActivos}</h3>
-                    <div className="mt-4 flex items-center text-sm font-bold text-blue-600 bg-blue-50 w-fit px-3 py-1 rounded-lg">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        En la base de datos
-                    </div>
-                </div>
-
-                <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform">
-                        <svg className="w-32 h-32 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    </div>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Doc. por Pagar</p>
-                    <h3 className="text-4xl font-black text-slate-800">{metricas.facturasPendientesCount}</h3>
-                    <div className="mt-4 flex items-center text-sm font-bold text-amber-600 bg-amber-50 w-fit px-3 py-1 rounded-lg">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Requieren gestión
-                    </div>
+                <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 self-start sm:self-auto">
+                    {PERIODOS.map(({ valor, etiqueta }) => (
+                        <button
+                            key={valor}
+                            onClick={() => setPeriodo(valor)}
+                            className={`text-sm font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                                periodo === valor
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                        >
+                            {etiqueta}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                
-                <div className="xl:col-span-1 space-y-5">
-                    <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
-                        <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        Accesos Rápidos
+            {/* ---- Tarjetas KPI ---- */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+
+                <TarjetaKpi
+                    icono="fas fa-chart-line"
+                    etiqueta="Ventas del período"
+                    valor={formatMoneda(kpis.ventas_mes)}
+                    colorIcono="text-emerald-600"
+                    bgIcono="bg-emerald-50"
+                >
+                    <BadgeVariacion pct={kpis.variacion_pct} />
+                </TarjetaKpi>
+
+                <TarjetaKpi
+                    icono="fas fa-file-invoice"
+                    etiqueta="Facturas emitidas"
+                    valor={kpis.facturas_emitidas_mes ?? 0}
+                    colorIcono="text-blue-600"
+                    bgIcono="bg-blue-50"
+                />
+
+                <TarjetaKpi
+                    icono="fas fa-clock"
+                    etiqueta="Facturas pendientes"
+                    valor={kpis.facturas_pendientes ?? 0}
+                    colorIcono={(kpis.facturas_pendientes ?? 0) > 0 ? 'text-amber-600' : 'text-slate-400'}
+                    bgIcono={(kpis.facturas_pendientes ?? 0) > 0 ? 'bg-amber-50' : 'bg-slate-100'}
+                />
+
+                <TarjetaKpi
+                    icono="fas fa-users"
+                    etiqueta="Clientes activos"
+                    valor={kpis.clientes_activos ?? 0}
+                    colorIcono="text-purple-600"
+                    bgIcono="bg-purple-50"
+                />
+
+                <TarjetaKpi
+                    icono="fas fa-file-contract"
+                    etiqueta="Cotizaciones pendientes"
+                    valor={kpis.cotizaciones_pendientes ?? 0}
+                    colorIcono="text-indigo-600"
+                    bgIcono="bg-indigo-50"
+                />
+
+                {/* Acceso rápido — columna extra en grilla de 3 */}
+                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
+                    <p className="text-xs font-bold text-emerald-100 uppercase tracking-widest">Acciones rápidas</p>
+                    <div className="flex flex-col gap-2 mt-3">
+                        <Link to="/cotizaciones" className="text-sm font-bold text-white hover:text-emerald-100 flex items-center gap-2 transition-colors">
+                            <i className="fas fa-plus-circle text-emerald-200" /> Nueva cotización
+                        </Link>
+                        <Link to="/facturas/historial" className="text-sm font-bold text-white hover:text-emerald-100 flex items-center gap-2 transition-colors">
+                            <i className="fas fa-file-invoice text-emerald-200" /> Registrar factura
+                        </Link>
+                        <Link to="/clientes" className="text-sm font-bold text-white hover:text-emerald-100 flex items-center gap-2 transition-colors">
+                            <i className="fas fa-users text-emerald-200" /> Directorio clientes
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* ---- Gráficos ---- */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <h3 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <i className="fas fa-chart-area text-emerald-500" />
+                        Evolución de ventas — últimos 12 meses
                     </h3>
-                    
-                    <Link to="/cotizaciones" className="block w-full bg-white border border-slate-200 p-5 rounded-2xl hover:border-emerald-500 hover:shadow-lg transition-all group">
-                        <div className="flex items-center gap-5">
-                            <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            </div>
-                            <div>
-                                <h4 className="text-lg font-bold text-slate-800">Nueva Cotización</h4>
-                                <p className="text-sm text-slate-500 mt-1">Generar propuesta comercial a cliente</p>
-                            </div>
-                        </div>
-                    </Link>
-
-                    <Link to="/facturas/historial" className="block w-full bg-white border border-slate-200 p-5 rounded-2xl hover:border-blue-500 hover:shadow-lg transition-all group">
-                        <div className="flex items-center gap-5">
-                            <div className="bg-blue-50 text-blue-600 p-4 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            </div>
-                            <div>
-                                <h4 className="text-lg font-bold text-slate-800">Registrar Factura</h4>
-                                <p className="text-sm text-slate-500 mt-1">Ingresar documento de proveedor</p>
-                            </div>
-                        </div>
-                    </Link>
-
-                    <Link to="/clientes" className="block w-full bg-white border border-slate-200 p-5 rounded-2xl hover:border-purple-500 hover:shadow-lg transition-all group">
-                        <div className="flex items-center gap-5">
-                            <div className="bg-purple-50 text-purple-600 p-4 rounded-xl group-hover:bg-purple-500 group-hover:text-white transition-colors">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                            </div>
-                            <div>
-                                <h4 className="text-lg font-bold text-slate-800">Directorio de Clientes</h4>
-                                <p className="text-sm text-slate-500 mt-1">Administrar o registrar empresas</p>
-                            </div>
-                        </div>
-                    </Link>
+                    <GraficoVentas datos={resumen?.serie_ventas_12m ?? []} />
                 </div>
 
-                <div className="xl:col-span-2">
-                    <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
-                        <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        Atención Requerida (Facturas Pendientes)
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <h3 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <i className="fas fa-trophy text-amber-500" />
+                        Top clientes del período
                     </h3>
-                    
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100%-3rem)]">
-                        {facturasUrgentes.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center p-10 text-slate-400">
-                                <div className="bg-emerald-50 text-emerald-500 p-4 rounded-full mb-4">
-                                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-800">¡Todo al día!</h3>
-                                <p className="mt-2 text-center text-slate-500">No tienes facturas de proveedores marcadas como pendientes de pago en este momento.</p>
+                    <GraficoTopClientes datos={resumen?.top_clientes ?? []} />
+                </div>
+            </div>
+
+            {/* ---- Exportación ---- */}
+            <div className="mb-8">
+                <ExportacionDashboard resumen={resumen} periodo={periodo} />
+            </div>
+
+            {/* ---- Alertas pendientes (DJ, F29, RRHH) ---- */}
+            <AlertasPendientes alertas={resumen?.alertas_pendientes} />
+
+            {/* ---- Ventas vs Compras + secciones opcionales por permiso ---- */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                {/* Gráfico ventas vs compras — siempre visible */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 xl:col-span-1">
+                    <h3 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <i className="fas fa-chart-bar text-blue-500" />
+                        Ventas vs Compras — últimos 12 meses
+                    </h3>
+                    <GraficoComprasVsVentas
+                        ventas={resumen?.serie_ventas_12m ?? []}
+                        compras={resumen?.compras_12m ?? []}
+                    />
+                </div>
+
+                {/* Inventario — solo si tiene permiso y el backend devolvió datos */}
+                {tieneInventario && resumen?.inventario && (
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 xl:col-span-1">
+                        <h3 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i className="fas fa-boxes text-teal-500" />
+                            Estado de inventario
+                        </h3>
+                        <GraficoStock datos={resumen.inventario} />
+                    </div>
+                )}
+
+                {/* RRHH — solo si tiene permiso y el backend devolvió datos */}
+                {tieneRrhh && resumen?.rrhh && (
+                    <div className="xl:col-span-1">
+                        <RhrrhResumen datos={resumen.rrhh} />
+                    </div>
+                )}
+            </div>
+
+            {/* ---- Facturas urgentes ---- */}
+            <div>
+                <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
+                    <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Facturas que requieren atención
+                </h3>
+
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    {facturasUrgentes.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-14 px-6 text-slate-400">
+                            <div className="bg-emerald-50 text-emerald-500 p-4 rounded-full mb-4">
+                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                </svg>
                             </div>
-                        ) : (
-                            <>
-                                <div className="overflow-x-auto flex-1">
-                                    <table className="min-w-full w-full text-left">
-                                        <thead className="bg-slate-50 border-b border-slate-100">
-                                            <tr>
-                                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</th>
-                                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
-                                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Monto Bruto</th>
-                                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Acción</th>
+                            <h4 className="text-xl font-bold text-slate-800 mb-1">¡Todo al día!</h4>
+                            <p className="text-sm text-center text-slate-500 max-w-xs">
+                                No hay facturas pendientes de gestión en este período.
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full w-full text-left">
+                                    <thead className="bg-slate-50 border-b border-slate-100">
+                                        <tr>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">N° Factura</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Emisión</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Vencimiento</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Monto bruto</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estado</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {facturasUrgentes.map((fac) => (
+                                            <tr key={fac.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4 font-mono text-sm font-bold text-slate-600">
+                                                    {fac.numero_factura ?? `#${fac.id}`}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-slate-600">
+                                                    {formatFecha(fac.fecha_emision)}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-slate-600">
+                                                    {formatFecha(fac.fecha_vencimiento)}
+                                                </td>
+                                                <td className="px-6 py-4 text-base font-black text-slate-900 text-right whitespace-nowrap">
+                                                    {formatMoneda(fac.monto_bruto)}
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="inline-block text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                                        {fac.estado ?? 'REGISTRADA'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <Link
+                                                        to="/facturas/historial"
+                                                        className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-2 rounded-lg border border-emerald-200 transition-colors"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                        </svg>
+                                                        Gestionar
+                                                    </Link>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {facturasUrgentes.map(fac => (
-                                                <tr key={fac.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-4 font-mono text-sm font-bold text-slate-600">Fac. {fac.numero_factura}</td>
-                                                    <td className="px-6 py-4 text-sm font-bold text-slate-800 truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px]">{fac.nombre_proveedor}</td>
-                                                    <td className="px-6 py-4 text-base font-black text-slate-900 text-right">{formatMoneda(fac.monto_bruto)}</td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <Link to="/facturas/historial" className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-2 rounded-lg border border-emerald-200 transition-colors">
-                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                                            Pagar
-                                                        </Link>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div className="bg-slate-50 p-4 text-center border-t border-slate-200 mt-auto">
-                                    <Link to="/facturas/historial" className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2">
-                                        Ir al historial de compras <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                    </Link>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="bg-slate-50 p-4 text-center border-t border-slate-200">
+                                <Link
+                                    to="/facturas/historial"
+                                    className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors inline-flex items-center gap-2"
+                                >
+                                    Ver historial completo de facturas
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                    </svg>
+                                </Link>
+                            </div>
+                        </>
+                    )}
                 </div>
-                
             </div>
         </div>
     );
