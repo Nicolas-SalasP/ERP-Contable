@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.auth.login({ email, password });
 
-            if (response.token) {
+            if (response?.token) {
                 const tokenRecibido = response.token;
                 let usuarioRecibido = response.user;
 
