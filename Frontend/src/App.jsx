@@ -13,6 +13,7 @@ const RegistroFactura = lazy(() => import('./Modulos/Contabilidad/Componentes/Re
 const HistorialFacturas = lazy(() => import('./Modulos/Contabilidad/Vistas/HistorialFacturas'));
 import GestionProveedores from './Modulos/Proveedores/GestionProveedores';
 const LibroMayor = lazy(() => import('./Modulos/Contabilidad/Vistas/LibroMayor'));
+const BalanceComprobacion = lazy(() => import('./Modulos/Contabilidad/Vistas/BalanceComprobacion'));
 const AnulacionGeneral = lazy(() => import('./Modulos/Contabilidad/Vistas/AnulacionGeneral'));
 import GestionCotizaciones from './Modulos/Cotizaciones/GestionCotizaciones';
 import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
@@ -62,8 +63,16 @@ const FiniquitosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/FiniquitosRrhh')
 const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh'));
 const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
+const LreRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LreRrhh'));
+const Dj1887 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1887'));
+const HonorariosRecibidos = lazy(() => import('./Modulos/Comercial/Vistas/HonorariosRecibidos'));
+const Dj1879 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1879'));
+const Dj1947 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1947'));
+const PropietariosEmpresa = lazy(() => import('./Modulos/Core/Vistas/PropietariosEmpresa'));
 import Glosario from './Modulos/Glosario/Glosario';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
+const SoporteTickets = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTickets'));
+const SoporteTicketDetalle = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTicketDetalle'));
 
 // Si ya está autenticado, redirige al inicio (evita volver a /login sin logout).
 const RutaPublica = ({ children }) => {
@@ -236,6 +245,14 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/contabilidad/balance-comprobacion" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><BalanceComprobacion /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
           <Route path="/contabilidad/anulacion" element={
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.ver">
@@ -277,6 +294,46 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
                 <LayoutPrincipal><CorreccionMonetaria /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1887" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1887 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/comercial/honorarios-recibidos" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><HonorariosRecibidos /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1879" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1879 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1947" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1947 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/empresa/propietarios" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><PropietariosEmpresa /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -663,6 +720,16 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/rrhh/lre" element={
+            <RutaPrivada>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><LreRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
+            </RutaPrivada>
+          } />
+
           <Route path="/glosario" element={
             <RutaPrivada>
               <LayoutPrincipal><Glosario /></LayoutPrincipal>
@@ -673,6 +740,22 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="usuarios.gestionar">
                 <LayoutPrincipal><PanelDpo /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/soporte/tickets" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="soporte.ver">
+                <LayoutPrincipal><SoporteTickets /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/soporte/tickets/:id" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="soporte.ver">
+                <LayoutPrincipal><SoporteTicketDetalle /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />

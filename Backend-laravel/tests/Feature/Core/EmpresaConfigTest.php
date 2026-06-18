@@ -707,4 +707,30 @@ class EmpresaConfigTest extends TestCase
 
         $this->assertTrue(in_array($response->getStatusCode(), [422, 500]));
     }
+
+    // PRUEBA: Mass assignment — empresa_id en PUT centros-costo no puede sobrescribir el tenant
+    public function test_actualizar_centro_ignora_empresa_id_del_request()
+    {
+        $centro = CentroCosto::create([
+            'empresa_id' => $this->empresaA->id,
+            'codigo' => 'CC-ORIG',
+            'nombre' => 'Original',
+        ]);
+
+        Sanctum::actingAs($this->adminEmpresaA);
+
+        $response = $this->putJson("/api/empresas/centros-costo/{$centro->id}", [
+            'codigo'     => 'CC-ORIG',
+            'nombre'     => 'Nombre Actualizado',
+            'empresa_id' => $this->empresaB->id,
+        ]);
+
+        $response->assertStatus(200);
+
+        $this->assertEquals(
+            $this->empresaA->id,
+            $centro->fresh()->empresa_id,
+            'El empresa_id del centro no debe cambiar aunque venga en el request.'
+        );
+    }
 }

@@ -66,12 +66,14 @@ final class ModuloPermisos
         'rrhh.parametros' => ['rrhh.parametros.ver', 'rrhh.parametros.editar'],
         'rrhh.centralizacion' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
         'rrhh.previred' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
+        'contabilidad.dj' => ['contabilidad.dj.ver', 'contabilidad.dj.procesar'],
         'empresa.perfil' => [],
         'glosario' => [],
         'integraciones.api' => [],
         'dashboard.ejecutivo' => ['contabilidad.ver', 'tesoreria.ver', 'ventas.ver'],
         'white_label' => [],
         'modulos.custom' => [],
+        'soporte.tickets'    => ['soporte.ver', 'soporte.crear'],
     ];
 
     /**
@@ -145,6 +147,7 @@ final class ModuloPermisos
         'integraciones.api' => ['Integraciones API', 'Enterprise'],
         'white_label' => ['White-label', 'Enterprise'],
         'modulos.custom' => ['Módulos a medida', 'Enterprise'],
+        'soporte.tickets'    => ['Tickets de soporte', 'Soporte'],
     ];
 
     /**

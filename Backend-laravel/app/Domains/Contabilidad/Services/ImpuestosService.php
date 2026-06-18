@@ -77,8 +77,37 @@ class ImpuestosService
         $totalComprasNeto = $compras->sum('monto_neto');
         $ivaCredito = $compras->sum('monto_iva');
 
-        $retenciones = 0;
-        $tasaPpm = 1.00;
+        $retencionHonorarios = (int) \Illuminate\Support\Facades\DB::table('honorarios_recibidos')
+            ->where('empresa_id', $empresaId)
+            ->whereNull('deleted_at')
+            ->whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->sum('monto_retencion');
+        $empresaRow = DB::table('empresas')->where('id', $empresaId)->first();
+
+        // PPM diferenciado por régimen tributario
+        if (($empresaRow->regimen_tributario ?? '') === '14_D8') {
+            $tasaTabla = DB::table('tasas_ppm_propyme')->where('anio', $anio)->first();
+            if ($tasaTabla) {
+                // Ingresos del año anterior para determinar si supera umbral 50.000 UF
+                // Umbral aproximado en pesos (50.000 UF × ~$38.000 = $1.900.000.000)
+                $ingresosAnioAnterior = (float) DB::table('sii_dte_emitido')
+                    ->where('empresa_id', $empresaId)
+                    ->whereYear('fecha_emision', $anio - 1)
+                    ->whereIn('estado', ['FIRMADO', 'ENVIADO_SII', 'EN_PROCESO_SII', 'ACEPTADO', 'ACEPTADO_CON_REPAROS'])
+                    ->whereIn('tipo_dte', [33, 34, 39, 41, 56, 110, 111])
+                    ->sum('monto_neto');
+                $umbral50000UF = 1_900_000_000;
+                $tasaPpm = $ingresosAnioAnterior > $umbral50000UF
+                    ? (float) $tasaTabla->tasa_sobre_50000uf_pct
+                    : (float) $tasaTabla->tasa_base_pct;
+            } else {
+                $tasaPpm = 0.125; // fallback rebaja transitoria si no hay tabla configurada
+            }
+        } else {
+            $tasaPpm = (float) ($empresaRow->ppm_pct ?? 1.00);
+        }
+
         $montoPpm = round($totalVentasNeto * ($tasaPpm / 100));
 
         $ivaDeterminado = $ivaDebito - $ivaCredito;
@@ -86,10 +115,10 @@ class ImpuestosService
         $remanenteSiguienteMes = 0;
 
         if ($ivaDeterminado > 0) {
-            $totalAPagar = $ivaDeterminado + $retenciones + $montoPpm;
+            $totalAPagar = $ivaDeterminado + $retencionHonorarios + $montoPpm;
         } else {
             $remanenteSiguienteMes = abs($ivaDeterminado);
-            $totalAPagar = $retenciones + $montoPpm;
+            $totalAPagar = $retencionHonorarios + $montoPpm;
         }
 
         $glosaCierre = "Centralización F29 - " . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio";
@@ -100,7 +129,7 @@ class ImpuestosService
             'ya_cerrado' => $yaCerrado,
             'ventas' => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
             'compras' => ['cantidad' => $compras->count(), 'neto' => $totalComprasNeto, 'iva_credito' => $ivaCredito],
-            'retenciones' => $retenciones,
+            'retenciones' => $retencionHonorarios,
             'ppm' => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
             'resumen' => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar]
         ];

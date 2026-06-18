@@ -21,46 +21,57 @@ class CertificadoService
      */
     public function cargar(int $empresaId, string $pfxBinary, string $password): SiiCertificadoEmpresa
     {
-        $info = $this->leerPfxOFallar($pfxBinary, $password);
+        try {
+            $info = $this->leerPfxOFallar($pfxBinary, $password);
 
-        $parsed = openssl_x509_parse($info['cert']);
-        if ($parsed === false) {
-            throw CertificadoInvalidoException::pfxCorrupto('openssl_x509_parse devolvio false');
-        }
+            $parsed = openssl_x509_parse($info['cert']);
+            if ($parsed === false) {
+                throw CertificadoInvalidoException::pfxCorrupto('openssl_x509_parse devolvio false');
+            }
 
-        $subjectCn   = $parsed['subject']['CN'] ?? null;
-        $issuerCn    = $parsed['issuer']['CN']  ?? null;
-        $validoDesde = Carbon::createFromTimestamp($parsed['validFrom_time_t']);
-        $validoHasta = Carbon::createFromTimestamp($parsed['validTo_time_t']);
-        $fingerprint = openssl_x509_fingerprint($info['cert'], 'sha256') ?: null;
-        $subjectRut  = $this->extraerRut($parsed);
+            $subjectCn   = $parsed['subject']['CN'] ?? null;
+            $issuerCn    = $parsed['issuer']['CN']  ?? null;
+            $validoDesde = Carbon::createFromTimestamp($parsed['validFrom_time_t']);
+            $validoHasta = Carbon::createFromTimestamp($parsed['validTo_time_t']);
+            $fingerprint = openssl_x509_fingerprint($info['cert'], 'sha256') ?: null;
+            $subjectRut  = $this->extraerRut($parsed);
 
-        $cert = DB::transaction(function () use (
-            $empresaId, $pfxBinary, $password, $subjectRut, $subjectCn,
-            $issuerCn, $validoDesde, $validoHasta, $fingerprint
-        ) {
-            SiiCertificadoEmpresa::query()
-                ->where('empresa_id', $empresaId)
-                ->where('estado', SiiCertificadoEmpresa::ESTADO_ACTIVO)
-                ->update(['estado' => SiiCertificadoEmpresa::ESTADO_CUARENTENA]);
+            $cert = DB::transaction(function () use (
+                $empresaId, $pfxBinary, $password, $subjectRut, $subjectCn,
+                $issuerCn, $validoDesde, $validoHasta, $fingerprint
+            ) {
+                SiiCertificadoEmpresa::query()
+                    ->where('empresa_id', $empresaId)
+                    ->where('estado', SiiCertificadoEmpresa::ESTADO_ACTIVO)
+                    ->update(['estado' => SiiCertificadoEmpresa::ESTADO_CUARENTENA]);
 
-            return SiiCertificadoEmpresa::create([
-                'empresa_id'          => $empresaId,
-                'pfx_cifrado'         => Crypt::encryptString($pfxBinary),
-                'password_cifrada'    => Crypt::encryptString($password),
-                'subject_rut'         => $subjectRut,
-                'subject_common_name' => $subjectCn,
-                'issuer_common_name'  => $issuerCn,
-                'valido_desde'        => $validoDesde,
-                'valido_hasta'        => $validoHasta,
-                'fingerprint_sha256'  => $fingerprint,
-                'estado'              => SiiCertificadoEmpresa::ESTADO_ACTIVO,
+                return SiiCertificadoEmpresa::create([
+                    'empresa_id'          => $empresaId,
+                    'pfx_cifrado'         => Crypt::encryptString($pfxBinary),
+                    'password_cifrada'    => Crypt::encryptString($password),
+                    'subject_rut'         => $subjectRut,
+                    'subject_common_name' => $subjectCn,
+                    'issuer_common_name'  => $issuerCn,
+                    'valido_desde'        => $validoDesde,
+                    'valido_hasta'        => $validoHasta,
+                    'fingerprint_sha256'  => $fingerprint,
+                    'estado'              => SiiCertificadoEmpresa::ESTADO_ACTIVO,
+                ]);
+            });
+
+            $this->logearMismatchRutSiCorresponde($empresaId, $subjectRut);
+
+            return $cert;
+        } catch (CertificadoInvalidoException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::channel('sii')->error('Error inesperado al procesar certificado.', [
+                'empresa_id' => $empresaId,
+                'exception'  => $e::class,
+                'error'      => $e->getMessage(),
             ]);
-        });
-
-        $this->logearMismatchRutSiCorresponde($empresaId, $subjectRut);
-
-        return $cert;
+            throw CertificadoInvalidoException::pfxCorrupto($e->getMessage());
+        }
     }
 
     /**
@@ -73,21 +84,33 @@ class CertificadoService
      */
     public function extraerPlano(SiiCertificadoEmpresa $cert): array
     {
-        $pfx      = Crypt::decryptString($cert->pfx_cifrado);
-        $password = Crypt::decryptString($cert->password_cifrada);
+        try {
+            $pfx      = Crypt::decryptString($cert->pfx_cifrado);
+            $password = Crypt::decryptString($cert->password_cifrada);
 
-        $info = $this->leerPfxOFallar($pfx, $password);
+            $info = $this->leerPfxOFallar($pfx, $password);
 
-        $privateKeyPem = '';
-        // OpenSSL 3 requiere openssl.cnf accesible para openssl_pkey_export.
-        @openssl_pkey_export($info['pkey'], $privateKeyPem, null, $this->opcionesOpenssl());
+            $privateKeyPem = '';
+            // OpenSSL 3 requiere openssl.cnf accesible para openssl_pkey_export.
+            @openssl_pkey_export($info['pkey'], $privateKeyPem, null, $this->opcionesOpenssl());
 
-        return [
-            'pfx'             => $pfx,
-            'password'        => $password,
-            'cert_pem'        => $info['cert'],
-            'private_key_pem' => $privateKeyPem,
-        ];
+            return [
+                'pfx'             => $pfx,
+                'password'        => $password,
+                'cert_pem'        => $info['cert'],
+                'private_key_pem' => $privateKeyPem,
+            ];
+        } catch (CertificadoInvalidoException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::channel('sii')->error('Error inesperado al descifrar o leer certificado.', [
+                'cert_id'    => $cert->id,
+                'empresa_id' => $cert->empresa_id,
+                'exception'  => $e::class,
+                'error'      => $e->getMessage(),
+            ]);
+            throw CertificadoInvalidoException::pfxCorrupto($e->getMessage());
+        }
     }
 
     /**

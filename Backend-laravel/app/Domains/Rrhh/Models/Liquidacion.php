@@ -7,10 +7,11 @@ use App\Domains\Core\Traits\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Liquidacion extends Model
 {
-    use HasEmpresaScope;
+    use HasEmpresaScope, SoftDeletes;
 
     protected $table = 'liquidaciones';
 
@@ -42,6 +43,9 @@ class Liquidacion extends Model
         'salud_legal',
         'salud_adicional',
         'aporte_empleador_reforma',
+        'dias_trabajados',
+        'dias_licencia_medica',
+        'dias_vacaciones',
         'estado',
         'observaciones',
         'comprobante_contable',

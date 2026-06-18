@@ -1,0 +1,113 @@
+<?php
+
+namespace App\Domains\Contabilidad\Controllers;
+
+use App\Domains\Contabilidad\Exceptions\DjException;
+use App\Domains\Contabilidad\Models\DjEnvio;
+use App\Domains\Contabilidad\Services\Dj\DjEngine;
+use App\Domains\Contabilidad\Services\Dj\Dj1947Service;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+class Dj1947Controller extends Controller
+{
+    public function __construct(
+        private readonly DjEngine      $engine,
+        private readonly Dj1947Service $dj1947,
+    ) {}
+
+    public function index(Request $request): JsonResponse
+    {
+        $empresaId = $request->user()->empresa_id;
+
+        $envios = DjEnvio::where('empresa_id', $empresaId)
+            ->porCodigo('1947')
+            ->orderByDesc('anio')
+            ->get(['id', 'anio', 'estado', 'cantidad_registros', 'folio_presentacion', 'presentado_at', 'created_at']);
+
+        return response()->json(['data' => $envios]);
+    }
+
+    public function generar(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'anio' => 'required|integer|min:2020|max:2099',
+        ]);
+
+        try {
+            $envio = $this->engine->generar(
+                $this->dj1947,
+                $request->user()->empresa_id,
+                (int) $data['anio'],
+            );
+
+            return response()->json([
+                'mensaje' => 'DJ 1947 generada correctamente.',
+                'data'    => $envio,
+            ], 201);
+        } catch (DjException $e) {
+            return response()->json(['mensaje' => $e->getMessage()], 422);
+        }
+    }
+
+    public function validar(Request $request, DjEnvio $djEnvio): JsonResponse
+    {
+        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_id, 403);
+
+        try {
+            $errores = $this->engine->validar($this->dj1947, $djEnvio);
+
+            return response()->json([
+                'valido'  => empty($errores),
+                'errores' => $errores,
+            ]);
+        } catch (DjException $e) {
+            return response()->json(['mensaje' => $e->getMessage()], 422);
+        }
+    }
+
+    public function descargar(Request $request, DjEnvio $djEnvio)
+    {
+        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_id, 403);
+
+        if (! $djEnvio->archivo_path) {
+            return response()->json(['mensaje' => 'No hay archivo generado.'], 422);
+        }
+
+        $disco = config('sii.storage.disk', 'sii_xml');
+
+        if (! Storage::disk($disco)->exists($djEnvio->archivo_path)) {
+            return response()->json(['mensaje' => 'Archivo no encontrado en disco.'], 404);
+        }
+
+        $nombreArchivo = "DJ1947_{$djEnvio->anio}.txt";
+
+        return Storage::disk($disco)->download($djEnvio->archivo_path, $nombreArchivo);
+    }
+
+    public function confirmarPresentacion(Request $request, DjEnvio $djEnvio): JsonResponse
+    {
+        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_id, 403);
+
+        $data = $request->validate([
+            'folio_presentacion' => 'nullable|string|max:50',
+        ]);
+
+        if (! in_array($djEnvio->estado, [DjEnvio::ESTADO_VALIDADO, DjEnvio::ESTADO_GENERADO])) {
+            return response()->json(['mensaje' => 'El envío debe estar en estado VALIDADO o GENERADO para confirmar.'], 422);
+        }
+
+        $djEnvio->update([
+            'estado'             => DjEnvio::ESTADO_PRESENTADO,
+            'folio_presentacion' => $data['folio_presentacion'] ?? null,
+            'presentado_at'      => now(),
+        ]);
+
+        return response()->json([
+            'mensaje' => 'DJ 1947 marcada como presentada.',
+            'data'    => $djEnvio->fresh(),
+        ]);
+    }
+}

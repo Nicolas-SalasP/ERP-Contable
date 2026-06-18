@@ -19,6 +19,7 @@ class Empresa extends Model
         'color_primario', 
         'regimen_tributario',
         'tasa_impuesto',
+        'ppm_pct',
         'activa',
     ];
 

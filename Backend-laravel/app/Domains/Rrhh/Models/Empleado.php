@@ -49,6 +49,11 @@ class Empleado extends Model implements CipherSweetEncrypted
         'observaciones',
         'anonimizado_at',
         'bloqueado_at',
+        'comuna_codigo_lre',
+        'organismo_mutual_codigo',
+        'ccaf_codigo',
+        'pensionado_vejez',
+        'pensionado_invalidez',
     ];
 
     // Datos bancarios nunca salen en serialización (Ley 21.719)
@@ -154,7 +159,13 @@ class Empleado extends Model implements CipherSweetEncrypted
 
     public function contratoActivo(): HasMany
     {
-        return $this->hasMany(Contrato::class)->where('es_contrato_activo', true)->limit(1);
+        return $this->hasMany(Contrato::class)
+            ->where('es_contrato_activo', true)
+            ->where(function ($q) {
+                $q->whereNull('fecha_termino')
+                  ->orWhere('fecha_termino', '>=', now()->toDateString());
+            })
+            ->limit(1);
     }
 
     public function cargasFamiliares(): HasMany

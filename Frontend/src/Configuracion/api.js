@@ -216,9 +216,12 @@ const doFetch = async (url, init, options) => {
     try {
         const response = await fetch(url, { ...init, signal: ctrl.signal });
         return { response, timedOut: false };
-    } catch {
+    } catch (err) {
         if (ctrl.wasTimeout()) {
             return { response: null, timedOut: true };
+        }
+        if (err?.name === 'AbortError') {
+            return { response: null, timedOut: false, aborted: true };
         }
         return { response: null, timedOut: false, networkError: true };
     } finally {
@@ -374,15 +377,17 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     });
 }
 
+// Estado de suscripción en memoria del módulo.
+// AuthContext lo actualiza después de cada /auth/me vía setSubscriptionStatus().
+// No se lee localStorage: la fuente de verdad es el contexto React.
+let _subscriptionStatus = null;
+
+export const setSubscriptionStatus = (status) => {
+    _subscriptionStatus = status ?? null;
+};
+
 const esSuscripcionSoloLectura = () => {
-    try {
-        const raw = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_user'))
-            || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('erp_user'));
-        const user = raw ? JSON.parse(raw) : null;
-        return ['read_only', 'expired'].includes(user?.subscription_status);
-    } catch {
-        return false;
-    }
+    return ['read_only', 'expired'].includes(_subscriptionStatus);
 };
 
 const request = async (endpoint, method, body, options = {}) => {
@@ -435,7 +440,13 @@ const request = async (endpoint, method, body, options = {}) => {
     let lastError;
 
     while (attempt <= maxReintentos) {
-        const { response, timedOut, networkError } = await doFetch(url, init, options);
+        const { response, timedOut, networkError, aborted } = await doFetch(url, init, options);
+
+        if (aborted) {
+            const err = buildError(0, null, 'Aborted');
+            err.code = 'ERR_CANCELED';
+            return Promise.reject(err);
+        }
 
         if (timedOut) {
             lastError = buildError(408, null, 'Timeout');

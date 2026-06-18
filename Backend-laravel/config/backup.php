@@ -16,6 +16,7 @@ return [
                  */
                 'include' => [
                     base_path(),
+                    storage_path('app/sii'),
                 ],
 
                 /*

@@ -29,6 +29,9 @@ class CorreccionMonetariaService
         if ($anio < 2000 || $anio > 2100) {
             throw new Exception('El año debe estar entre 2000 y 2100.');
         }
+        if ($variacion < -30 || $variacion > 30) {
+            throw new Exception("La variación IPC ingresada ({$variacion}%) está fuera del rango permitido (−30% a +30%). Verifique el valor antes de continuar.");
+        }
 
         $indice = CmIndiceIpc::updateOrCreate(
             ['anio' => $anio, 'mes' => $mes],

@@ -15,6 +15,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'empresa_id',
+        'empresa_activa_id',
         'email',
         'password',
         'nombre',
@@ -44,9 +45,31 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if ($user->empresa_activa_id === null && $user->empresa_id !== null) {
+                $user->empresa_activa_id = $user->empresa_id;
+            }
+        });
+    }
+
+    public function empresas(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Empresa::class, 'empresa_user')
+            ->withPivot('rol_id', 'created_at');
+    }
+
+    public function empresaActiva(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Empresa::class, 'empresa_activa_id');
+    }
+
     public function empresa()
     {
-        return $this->belongsTo(Empresa::class);
+        // Apunta a empresa_activa_id para que $user->empresa devuelva siempre
+        // la empresa activa actual (igual a empresa_id en usuarios de una sola empresa).
+        return $this->belongsTo(Empresa::class, 'empresa_activa_id');
     }
 
     public function rol()

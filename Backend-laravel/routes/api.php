@@ -30,6 +30,7 @@ use App\Domains\Rrhh\Controllers\FiniquitoController;
 use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
 use App\Domains\Rrhh\Controllers\CentralizacionController;
 use App\Domains\Rrhh\Controllers\PreviredController;
+use App\Domains\Rrhh\Controllers\LreController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
@@ -58,6 +59,14 @@ use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
 use App\Domains\Inventario\Controllers\ReporteInventarioController;
 use App\Domains\Core\Controllers\IncidenteSeguridadController;
+use App\Domains\Contabilidad\Controllers\Dj1887Controller;
+use App\Domains\Contabilidad\Controllers\Dj1879Controller;
+use App\Domains\Contabilidad\Controllers\Dj1947Controller;
+use App\Domains\Core\Controllers\PropietariosController;
+use App\Domains\Comercial\Controllers\HonorariosController;
+use App\Domains\Soporte\Controllers\SoporteController;
+use App\Domains\Core\Controllers\EmpresaCambioController;
+use App\Domains\Core\Controllers\DashboardResumenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,7 +85,8 @@ use App\Domains\Core\Controllers\IncidenteSeguridadController;
 
 // Health check operativo (publico, sin auth): el equipo verifica el estado de los
 // servicios sin SSH. 200 = todo OK, 503 = algun componente caido.
-Route::get('/health', HealthController::class);
+// Throttle: 30 req/min por IP para evitar uso como oraculo o DDoS.
+Route::get('/health', HealthController::class)->middleware('throttle:30,1');
 
 Route::prefix('auth')->group(function () {
     // Rate-limiting contra fuerza bruta / credential stuffing: 6 intentos por minuto
@@ -107,6 +117,14 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
         Route::post('/consentimiento', [PrivacidadController::class, 'aceptar']);
         Route::delete('/consentimiento', [PrivacidadController::class, 'revocar']);
         Route::post('/politica', [PrivacidadController::class, 'crearPolitica'])->middleware('permiso:usuarios.gestionar');
+    });
+
+    // Cambio de empresa activa (multiempresa/multitenant).
+    // Sin check.subscription: el cambio debe ser posible incluso con plan vencido
+    // para que el usuario pueda navegar a otra empresa que sí esté activa.
+    Route::prefix('empresa')->group(function () {
+        Route::get('mis-empresas', [EmpresaCambioController::class, 'misEmpresas']);
+        Route::post('cambiar', [EmpresaCambioController::class, 'cambiar']);
     });
 });
 
@@ -148,6 +166,11 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
     // Core
     Route::get('/paises', [PaisController::class, 'index']);
+
+    // Dashboard principal — resumen de KPIs, serie ventas, top clientes y facturas urgentes.
+    // Accesible a cualquier usuario autenticado con suscripción activa; el aislamiento
+    // multitenant lo garantiza EmpresaScope sobre los modelos consultados.
+    Route::get('/dashboard/resumen', [DashboardResumenController::class, 'resumen']);
 
     // DPO — Auditoria PII (Ley 21.719 — Fase 3).
     // Solo administradores (jerarquia >= 80, permiso usuarios.gestionar) pueden
@@ -282,6 +305,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // Contabilidad - Libros diarios y mayores
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario'])->middleware('permiso:contabilidad.ver');
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/reportes/balance-comprobacion', [ReporteController::class, 'balanceComprobacion'])->middleware('permiso:contabilidad.ver');
 
     // Contabilidad - Formularios 29 y 22 (Renta)
     Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29'])->middleware('permiso:tributario.ver');
@@ -515,7 +539,66 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         // R6 — Previred: archivo previsional mensual
         Route::get('/previred/{anio}/{mes}/archivo', [PreviredController::class, 'archivo'])->middleware('permiso:rrhh.remuneraciones.ver');
         Route::get('/previred/{anio}/{mes}/preview', [PreviredController::class, 'preview'])->middleware('permiso:rrhh.remuneraciones.ver');
+
+        // R7 — LRE: Libro de Remuneraciones Electrónico
+        // El LRE se genera, valida y descarga desde aquí. La subida al portal Mi DT
+        // es manual; el empleador registra el número de confirmación en confirmar-dt.
+        Route::post('/lre/generar', [LreController::class, 'generar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/lre/{id}/validar', [LreController::class, 'validar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/lre/{id}/confirmar-dt', [LreController::class, 'confirmarDt'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::get('/lre', [LreController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/lre/{id}/descargar', [LreController::class, 'descargar'])->middleware('permiso:rrhh.remuneraciones.ver');
     });
+});
+
+// DJ 1887 - Declaración Jurada de Rentas (SII)
+Route::prefix('dj/1887')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                    [Dj1887Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                            [Dj1887Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                  [Dj1887Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                 [Dj1887Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',   [Dj1887Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1879 - Retenciones de honorarios (SII)
+Route::prefix('dj/1879')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1879Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1879Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1879Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1879Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1879Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1947 — Propyme Transparente 14D N°8
+Route::prefix('dj/1947')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1947Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1947Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1947Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1947Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1947Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// Propietarios de la empresa (para DJ 1947 / Propyme)
+Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription', 'permiso:contabilidad.ver'])->group(function () {
+    Route::get('/',                    [PropietariosController::class, 'index']);
+    Route::post('/',                   [PropietariosController::class, 'store'])->middleware('subscription.writable');
+    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware('subscription.writable');
+    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware('subscription.writable');
+});
+
+// Honorarios recibidos
+Route::prefix('honorarios')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                          [HonorariosController::class, 'index'])->middleware('permiso:compras.ver');
+    Route::post('/',                         [HonorariosController::class, 'store'])->middleware(['permiso:compras.crear', 'subscription.writable']);
+    Route::delete('/{honorariosRecibido}',   [HonorariosController::class, 'destroy'])->middleware(['permiso:compras.crear', 'subscription.writable']);
+});
+
+// Soporte — proxy hacia api.tenri.cl
+Route::prefix('soporte/tickets')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',          [SoporteController::class, 'index'])->middleware('permiso:soporte.ver');
+    Route::post('/',         [SoporteController::class, 'store'])->middleware(['permiso:soporte.crear', 'subscription.writable']);
+    Route::get('/{id}',      [SoporteController::class, 'show'])->middleware('permiso:soporte.ver')->whereNumber('id');
+    Route::post('/{id}/reply', [SoporteController::class, 'reply'])->middleware(['permiso:soporte.ver', 'subscription.writable'])->whereNumber('id');
 });
 
 Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {

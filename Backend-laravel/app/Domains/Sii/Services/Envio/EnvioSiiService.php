@@ -58,12 +58,12 @@ class EnvioSiiService
             ]);
         });
 
-        $envio = $envio->fresh(['dteEmitido.empresa']);
-        $dte   = $envio->dteEmitido;
-        /** @var Empresa $empresa */
-        $empresa = $dte->empresa;
-
         try {
+            $envio = $envio->fresh(['dteEmitido.empresa']);
+            $dte   = $envio->dteEmitido;
+            /** @var Empresa $empresa */
+            $empresa = $dte->empresa;
+
             $xmlEnvio = $this->integrityService->leerVerificado($dte->id);
 
             $sesion = $this->tokenService->obtenerSesionActiva($empresa);

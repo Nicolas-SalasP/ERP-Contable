@@ -97,7 +97,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                                     <dl className="space-y-3">
                                         {modulo.conceptos.map((c, i) => (
                                             <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                                                <dt className="font-bold text-slate-900">{c.termino}</dt>
+                                                <dt className="font-medium text-slate-900">{c.termino}</dt>
                                                 <dd className="text-sm text-slate-600 mt-1 leading-relaxed">
                                                     {c.definicion}
                                                 </dd>
@@ -127,7 +127,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                                                 key={i}
                                                 className="bg-amber-50 border border-amber-200 rounded-lg p-3"
                                             >
-                                                <p className="font-bold text-amber-900 text-sm">
+                                                <p className="text-amber-900 text-sm">
                                                     {e.problema}
                                                 </p>
                                                 <p className="text-sm text-amber-800 mt-1 leading-relaxed">
@@ -167,7 +167,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
 
 const Seccion = ({ titulo, emoji, children }) => (
     <section>
-        <h3 className="text-base font-black text-slate-900 mb-2 flex items-center gap-2">
+        <h3 className="text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
             <span aria-hidden="true">{emoji}</span>
             <span>{titulo}</span>
         </h3>

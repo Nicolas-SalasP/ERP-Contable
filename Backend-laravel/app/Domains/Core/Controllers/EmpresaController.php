@@ -56,6 +56,7 @@ class EmpresaController extends Controller
                 'email' => 'nullable|email|max:100',
                 'color_primario' => 'nullable|string|max:20',
                 'regimen_tributario' => 'nullable|in:14_D3,14_D8,14_A',
+                'ppm_pct' => 'nullable|numeric|min:0|max:10',
             ]);
 
             $empresa = $this->empresaService->actualizarDatos($request->user()->empresa_id, $datos);
@@ -200,8 +201,16 @@ class EmpresaController extends Controller
     public function actualizarCentro(Request $request, $id)
     {
         try {
-            $centro = $this->empresaService->actualizarCentroCosto($request->user()->empresa_id, $id, $request->all());
+            $datos = $request->validate([
+                'codigo' => 'sometimes|required|string|max:20',
+                'nombre' => 'sometimes|required|string|max:100',
+                'activo' => 'sometimes|boolean',
+            ]);
+
+            $centro = $this->empresaService->actualizarCentroCosto($request->user()->empresa_id, $id, $datos);
             return response()->json(['success' => true, 'data' => $centro]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
         }

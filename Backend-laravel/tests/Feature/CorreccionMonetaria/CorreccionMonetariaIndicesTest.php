@@ -172,17 +172,17 @@ class CorreccionMonetariaIndicesTest extends TestCase
         $res->assertUnprocessable();
     }
 
-    public function test_indices_rechaza_variacion_mayor_a_50()
+    public function test_indices_rechaza_variacion_mayor_a_30()
     {
         $res = $this->actingAs($this->usuarioSuperAdmin)
-            ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => 51]);
+            ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => 31]);
         $res->assertUnprocessable();
     }
 
-    public function test_indices_rechaza_variacion_menor_a_menos_20()
+    public function test_indices_rechaza_variacion_menor_a_menos_30()
     {
         $res = $this->actingAs($this->usuarioSuperAdmin)
-            ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => -21]);
+            ->postJson('/api/correccion-monetaria/indices', ['anio' => 2026, 'mes' => 1, 'variacion' => -31]);
         $res->assertUnprocessable();
     }
 

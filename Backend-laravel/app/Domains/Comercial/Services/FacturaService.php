@@ -264,9 +264,6 @@ class FacturaService
 
             // Guard de integridad: no se puede reclasificar el asiento de una factura
             // anulada (su efecto contable ya fue reversado).
-            // TODO (P1): agregar bloqueo de periodo contable cerrado sobre $datos['fecha']
-            // (F-1/F-2). El periodo cerrado se valida abajo, sobre la fecha original
-            // del asiento y sobre la nueva fecha destino.
             if (strtoupper((string) $factura->estado) === 'ANULADA') {
                 throw ComercialException::regla('No se puede reclasificar el asiento de una factura anulada.');
             }
@@ -365,9 +362,9 @@ class FacturaService
             ->toArray();
     }
 
-    public function obtenerAuditoriaCompleta(int $id): array
+    public function obtenerAuditoriaCompleta(int $empresaId, int $id): array
     {
-        $factura = Factura::with('proveedor')->findOrFail($id);
+        $factura = Factura::where('empresa_id', $empresaId)->with('proveedor')->findOrFail($id);
 
         $historial = DB::table('auditorias')
             ->where('auditable_type', Factura::class)
@@ -515,9 +512,22 @@ class FacturaService
             $provRut = $f->proveedor->rut ?? 'N/A';
             $emision = $f->fecha_emision ? $f->fecha_emision->format('Y-m-d') : '';
             $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
-            $csvData .= "{$f->id},{$f->numero_factura},\"{$provNombre}\",{$provRut},{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
+            $csvData .= "{$f->id},"
+                . $this->escaparCampoCsv((string) $f->numero_factura) . ","
+                . $this->escaparCampoCsv($provNombre) . ","
+                . $this->escaparCampoCsv($provRut) . ","
+                . "{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
         }
 
         return $csvData;
+    }
+
+    private function escaparCampoCsv(string $valor): string
+    {
+        $valor = str_replace('"', '""', $valor);
+        if (preg_match('/^[=+\-@\t\r]/', $valor)) {
+            $valor = "'" . $valor;
+        }
+        return '"' . $valor . '"';
     }
 }

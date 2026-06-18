@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { api } from './api';
+import { api, setSubscriptionStatus } from './api';
 import { setupFetchRouter, mockJsonResponse, cleanTestEnv } from '../test-utils';
 
 const swalMock = vi.hoisted(() => ({ fire: vi.fn().mockResolvedValue({ isConfirmed: true }) }));
 vi.mock('sweetalert2', () => ({ default: swalMock }));
 
 const sesionReadOnly = () => {
-    localStorage.setItem('erp_user', JSON.stringify({ id: 1, subscription_status: 'read_only' }));
+    setSubscriptionStatus('read_only');
     localStorage.setItem('erp_token', 'tok');
     localStorage.setItem('erp_token_issued_at', new Date().toISOString());
 };
@@ -14,6 +14,7 @@ const sesionReadOnly = () => {
 describe('api.js - guard de suscripcion en solo lectura', () => {
     beforeEach(() => {
         cleanTestEnv();
+        setSubscriptionStatus(null);
         swalMock.fire.mockClear();
         api.config({ showErrorToast: false });
     });

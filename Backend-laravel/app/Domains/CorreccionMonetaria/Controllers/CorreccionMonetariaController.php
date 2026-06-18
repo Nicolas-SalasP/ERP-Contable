@@ -39,7 +39,7 @@ class CorreccionMonetariaController
             $data = $request->validate([
                 'anio'        => 'required|integer|min:2000|max:2100',
                 'mes'         => 'required|integer|min:1|max:12',
-                'variacion'   => 'required|numeric|min:-20|max:50',
+                'variacion'   => 'required|numeric|min:-30|max:30',
                 'observacion' => 'nullable|string|max:500',
             ]);
 

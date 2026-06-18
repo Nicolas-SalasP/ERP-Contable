@@ -160,13 +160,15 @@ class AuthController
             }
 
             $user = $this->provisioner->provision([
-                'tenri_user_id' => $webResult['tenri_user_id'],
-                'email'         => $webResult['email'],
-                'name'          => $webResult['name'],
-                'password_hash' => $webResult['password_hash'],
-                'plan_slug'     => $webResult['plan_slug'],
-                'module_keys'   => $webResult['module_keys'],
-                'rol_erp'       => $webResult['rol_erp'],
+                'tenri_user_id'        => $webResult['tenri_user_id'],
+                'email'                => $webResult['email'],
+                'name'                 => $webResult['name'],
+                'password_hash'        => $webResult['password_hash'],
+                'plan_slug'            => $webResult['plan_slug'],
+                'module_keys'          => $webResult['module_keys'],
+                'rol_erp'              => $webResult['rol_erp'],
+                'subscription_status'  => $webResult['subscription_status'] ?? 'active',
+                'subscription_ends_at' => $webResult['subscription_ends_at'] ?? null,
             ]);
             $user->load(['rol', 'estadoSuscripcion']);
 
@@ -174,6 +176,13 @@ class AuthController
                 return response()->json([
                     'success' => false,
                     'message' => 'Cuenta inactiva o suspendida.',
+                ], 403);
+            }
+
+            if ($user->subscription_status === 'expired') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tu suscripción venció. Renueva tu plan en tenri.cl para volver a ingresar.',
                 ], 403);
             }
 
@@ -276,16 +285,18 @@ class AuthController
         // Whitelist (misma forma que el login): no se expone toArray() completo
         // del usuario (tenri_user_id, module_keys, bloqueado_hasta, etc.).
         return response()->json([
-            'id'         => $user->id,
-            'nombre'     => $user->nombre,
-            'email'      => $user->email,
-            'empresa_id' => $user->empresa_id,
-            'rol_id'     => $user->rol_id,
-            'plan_slug'  => $user->plan_slug,
-            'module_keys' => $user->module_keys ?? [],
+            'id'                   => $user->id,
+            'nombre'               => $user->nombre,
+            'email'                => $user->email,
+            'empresa_id'           => $user->empresa_id,
+            'empresa_activa_id'    => $user->empresa_activa_id,
+            'rol_id'               => $user->rol_id,
+            'plan_slug'            => $user->plan_slug,
+            'module_keys'          => $user->module_keys ?? [],
             'subscription_status'  => $user->subscription_status,
             'subscription_ends_at' => $user->subscription_ends_at,
-            'permisos'   => $permisos,
+            'permisos'             => $permisos,
+            'empresas_count'       => $user->empresas()->count(),
         ]);
     }
 }

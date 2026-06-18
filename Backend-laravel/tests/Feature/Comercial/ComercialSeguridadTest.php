@@ -90,6 +90,17 @@ class ComercialSeguridadTest extends TestCase
         $this->assertTrue(in_array($response->getStatusCode(), [404, 422]));
     }
 
+    public function test_no_puede_ver_auditoria_de_factura_de_otra_empresa(): void
+    {
+        $empresaB = Empresa::create(['rut' => '55.555.555-5', 'razon_social' => 'Empresa Ajena SpA']);
+        $provAjeno = Proveedor::create(['empresa_id' => $empresaB->id, 'codigo_interno' => 'PR-AJ', 'rut' => '66.666.666-6', 'razon_social' => 'Prov Ajeno', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+        $facturaAjena = Factura::create(['empresa_id' => $empresaB->id, 'proveedor_id' => $provAjeno->id, 'numero_factura' => 'F-AJENA-001', 'codigo_unico' => 98765, 'fecha_emision' => now(), 'monto_bruto' => 119, 'monto_neto' => 100, 'monto_iva' => 19, 'tipo' => 'COMPRA']);
+
+        $this->actingAs($this->usuarioAdmin)
+            ->getJson("/api/facturas/{$facturaAjena->id}/auditoria")
+            ->assertStatus(404);
+    }
+
     public function test_capa8_bloquea_descarga_de_pdf_de_cotizacion_ajena()
     {
         $empresaB = Empresa::create(['rut' => '7.7.7.7-7', 'razon_social' => 'Empresa Hacker']);

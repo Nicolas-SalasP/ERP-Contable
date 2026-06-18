@@ -240,10 +240,10 @@ class FacturaController
         }
     }
 
-    public function auditoria($id)
+    public function auditoria(Request $request, $id)
     {
         try {
-            $data = $this->service->obtenerAuditoriaCompleta($id);
+            $data = $this->service->obtenerAuditoriaCompleta($request->user()->empresa_id, $id);
             return response()->json([
                 'success' => true,
                 'data' => $data

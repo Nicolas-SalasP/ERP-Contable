@@ -6,10 +6,11 @@ use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Traits\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Finiquito extends Model
 {
-    use HasEmpresaScope;
+    use HasEmpresaScope, SoftDeletes;
 
     protected $table = 'finiquitos';
 

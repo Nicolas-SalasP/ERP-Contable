@@ -83,7 +83,7 @@ return [
     | a storage/app/private (ver config/filesystems.php).
     */
     'storage' => [
-        'disk'        => env('SII_DISK', 'local'),
+        'disk'        => env('SII_DISK', 'sii_xml'),
         'path_prefix' => 'sii',
     ],
 
@@ -95,6 +95,22 @@ return [
     'timeouts' => [
         'connect' => 10,
         'read'    => 30,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cliente HTTP — timeouts y reintentos de transporte
+    |--------------------------------------------------------------------------
+    | timeout              : segundos esperando la respuesta completa.
+    | connect_timeout      : segundos para establecer la conexion TCP.
+    | max_reintentos_polling: tope de ciclos de polling antes de marcar
+    |                         ERROR_TIMEOUT (fallback al limite temporal
+    |                         TIMEOUT_HORAS_ACUMULADAS del servicio).
+    */
+    'http' => [
+        'timeout'                => env('SII_HTTP_TIMEOUT', 30),
+        'connect_timeout'        => env('SII_HTTP_CONNECT_TIMEOUT', 10),
+        'max_reintentos_polling' => env('SII_MAX_REINTENTOS_POLLING', 48),
     ],
 
     /*
