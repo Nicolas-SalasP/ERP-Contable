@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../Contextos/AuthContext';
 import { usePermisos } from '../../Contextos/Permisos';
@@ -392,7 +392,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 transition-opacity lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={closeSidebar}
             ></div>
-            <div className={`fixed top-0 left-0 z-30 h-full bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-all duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static w-64 ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${colapsado ? 'lg:w-16' : 'lg:w-64'}`}>
+            <div className={`fixed top-0 left-0 z-30 h-full bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-all duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static w-64 overflow-hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${colapsado ? 'lg:w-16' : 'lg:w-64'}`}>
 
                 {/* Header con logo y botón de colapsar */}
                 <div className={`flex items-center h-16 border-b border-slate-800/50 bg-slate-950 shrink-0 relative ${colapsado ? 'lg:justify-center px-0' : 'justify-center px-4'}`}>
@@ -404,7 +404,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                         onClick={toggleColapsado}
                         aria-label={colapsado ? 'Expandir menú' : 'Colapsar menú'}
                         aria-expanded={!colapsado}
-                        className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 items-center justify-center w-7 h-7 rounded-md text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-all"
+                        className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 items-center justify-center w-7 h-7 rounded-md text-slate-300 bg-slate-800 border border-slate-700 hover:text-white hover:bg-slate-700 transition-all shadow-sm"
                     >
                         <i className={`fas ${colapsado ? 'fa-chevron-right' : 'fa-chevron-left'} text-xs`}></i>
                     </button>
