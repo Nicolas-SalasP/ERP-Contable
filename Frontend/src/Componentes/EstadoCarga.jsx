@@ -82,7 +82,7 @@ const EstadoCarga = ({
                 <h3 className={`${tamanoClases.texto} text-rose-700 mb-2`}>
                     Algo salio mal
                 </h3>
-                <p className="text-sm text-slate-600 max-w-md mb-4 px-4">
+                <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mb-4 px-4">
                     {mensajeError}
                 </p>
                 {onReintentar && (
@@ -124,7 +124,7 @@ const EstadoCarga = ({
                     {iconoVacio}
                 </div>
                 {tituloVacio && (
-                    <h3 className={`${tamanoClases.texto} text-slate-700 mb-1`}>
+                    <h3 className={`${tamanoClases.texto} text-slate-700 dark:text-slate-300 mb-1`}>
                         {tituloVacio}
                     </h3>
                 )}

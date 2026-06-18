@@ -147,37 +147,37 @@ const AsientoManual = () => {
     };
 
     return (
-        <div className="max-w-[95rem] mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 animate-fade-in pb-20">
+        <div className="max-w-[95rem] mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 dark:text-slate-200 animate-fade-in pb-20">
 
             <div className="mb-6 flex justify-between items-end">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Asiento Manual</h1>
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Asiento Manual</h1>
                         <AyudaModulo moduloId="asientoManual" size={28} />
                     </div>
-                    <p className="text-slate-500 font-medium mt-1">Ingreso de traspasos y ajustes contables de partida doble.</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Ingreso de traspasos y ajustes contables de partida doble.</p>
                 </div>
             </div>
 
             <div className="space-y-6">
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/4">
-                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Fecha Contable</label>
+                        <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Fecha Contable</label>
                         <input
                             type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 text-slate-800 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                         />
                     </div>
                     <div className="w-full md:w-3/4">
-                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Glosa General del Comprobante</label>
+                        <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Glosa General del Comprobante</label>
                         <input
                             type="text" value={glosaGeneral} onChange={(e) => setGlosaGeneral(e.target.value)} placeholder="Ej: Reconocimiento de gastos bancarios..." maxLength="255"
-                            className="w-full bg-slate-50 border border-slate-300 text-slate-800 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                         />
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                     <div className="bg-slate-900 px-6 py-3 border-b border-slate-800 flex justify-between items-center">
                         <h3 className="text-white font-bold text-sm tracking-wide flex items-center gap-2">
                             <List size={16} strokeWidth={1.75} className="text-indigo-400" />
@@ -194,11 +194,11 @@ const AsientoManual = () => {
                             </div>
                         ) : (
                             <table className="w-full text-left border-collapse whitespace-nowrap">
-                                <thead className="bg-slate-50 border-b border-slate-200">
+                                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
                                         <th className="px-3 py-2.5 font-black text-slate-400 text-[10px] uppercase w-8 text-center">#</th>
-                                        <th className="px-3 py-2.5 font-black text-slate-600 text-[11px] uppercase">Cuenta</th>
-                                        <th className="px-3 py-2.5 font-black text-slate-500 text-[11px] uppercase">Glosa Línea</th>
+                                        <th className="px-3 py-2.5 font-black text-slate-600 dark:text-slate-400 text-[11px] uppercase">Cuenta</th>
+                                        <th className="px-3 py-2.5 font-black text-slate-500 dark:text-slate-400 text-[11px] uppercase">Glosa Línea</th>
                                         <th className="px-3 py-2.5 font-black text-emerald-600 text-[11px] uppercase w-28 text-right">Debe</th>
                                         <th className="px-3 py-2.5 font-black text-rose-600 text-[11px] uppercase w-28 text-right">Haber</th>
                                         <th className="px-3 py-2.5 font-black text-slate-500 text-[11px] uppercase">C. Costo</th>
@@ -206,7 +206,7 @@ const AsientoManual = () => {
                                         <th className="px-3 py-2.5 font-black text-slate-400 text-[11px] uppercase text-center w-20">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                     {filas.map((fila, index) => (
                                         <tr
                                             key={fila.id}
@@ -214,8 +214,8 @@ const AsientoManual = () => {
                                             onDoubleClick={() => editarFila(fila)}
                                         >
                                             <td className="px-3 py-2 text-center text-xs font-bold text-slate-400">{index + 1}</td>
-                                            <td className="px-3 py-2 text-xs font-bold text-slate-700 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px]">{fila.cuenta.label}</td>
-                                            <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[180px] italic">{fila.glosa || '-'}</td>
+                                            <td className="px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px]">{fila.cuenta.label}</td>
+                                            <td className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[180px] italic">{fila.glosa || '-'}</td>
                                             <td className="px-3 py-2 text-xs font-mono font-black text-emerald-600 text-right">{fila.debe > 0 ? formatCurrency(fila.debe) : ''}</td>
                                             <td className="px-3 py-2 text-xs font-mono font-black text-rose-600 text-right">{fila.haber > 0 ? formatCurrency(fila.haber) : ''}</td>
                                             <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[80px] sm:max-w-[120px]">{fila.centroCosto ? fila.centroCosto.label : '-'}</td>
@@ -243,7 +243,7 @@ const AsientoManual = () => {
                         )}
                     </div>
 
-                    <div className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-12 pr-6">
+                    <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-end gap-12 pr-6">
                         <div className="text-right">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Debe</p>
                             <p className={`text-xl font-mono font-black ${totalDebe > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{formatCurrency(totalDebe)}</p>
@@ -290,7 +290,7 @@ const AsientoManual = () => {
                         <div className="md:col-span-2 lg:col-span-3">
                             <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Monto *</label>
                             <div className={`flex items-center bg-white border rounded-lg h-[42px] transition-all shadow-none overflow-hidden ${tipoMovimiento === 'debe' ? 'focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 border-slate-300' : 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-100 border-slate-300'}`}>
-                                <span className="bg-slate-100 text-slate-500 font-bold px-3 h-full flex items-center border-r border-slate-200 shrink-0">
+                                <span className="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-bold px-3 h-full flex items-center border-r border-slate-200 dark:border-slate-600 shrink-0">
                                     $
                                 </span>
                                 <input

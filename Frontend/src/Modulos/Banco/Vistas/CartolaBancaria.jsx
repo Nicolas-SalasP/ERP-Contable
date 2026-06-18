@@ -164,7 +164,7 @@ const CartolaBancaria = () => {
     const esIngreso = formManual.tipo_movimiento === 'INGRESO';
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 animate-fade-in pb-10">
+        <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 dark:text-slate-200 animate-fade-in pb-10">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -172,8 +172,8 @@ const CartolaBancaria = () => {
                             Tesorería y Finanzas
                         </span>
                     </div>
-                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Cartola y Movimientos</h1><AyudaModulo moduloId="cartolaBancaria" /></div>
-                    <p className="text-slate-500 font-medium mt-1">Registra ingresos manuales o importa la cartola del banco.</p>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Cartola y Movimientos</h1><AyudaModulo moduloId="cartolaBancaria" /></div>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Registra ingresos manuales o importa la cartola del banco.</p>
                 </div>
             </div>
 
@@ -204,15 +204,15 @@ const CartolaBancaria = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
-                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-2">
+                <div className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col h-full">
+                    <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-2">
                         <Upload size={20} strokeWidth={1.75} className="text-blue-500" />
                         Importar Cartola del Banco
                     </h3>
-                    <p className="text-sm text-slate-500 mb-6">Sube el archivo Excel descargado desde tu portal bancario para registrar abonos y cargos automáticamente.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Sube el archivo Excel descargado desde tu portal bancario para registrar abonos y cargos automáticamente.</p>
 
                     <div
-                        className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors flex-1 flex flex-col justify-center items-center ${archivo ? 'border-blue-500 bg-blue-50' : 'border-slate-300 hover:border-blue-400 bg-slate-50'}`}
+                        className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors flex-1 flex flex-col justify-center items-center ${archivo ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-600 hover:border-blue-400 bg-slate-50 dark:bg-slate-900'}`}
                     >
                         <input
                             type="file"
@@ -224,12 +224,12 @@ const CartolaBancaria = () => {
 
                         {!archivo ? (
                             <>
-                                <div className="bg-white p-4 rounded-full shadow-sm mb-4 text-blue-500">
+                                <div className="bg-white dark:bg-slate-700 p-4 rounded-full shadow-sm mb-4 text-blue-500">
                                     <FileText size={32} strokeWidth={1.75} />
                                 </div>
-                                <p className="font-bold text-slate-700 mb-1">Arrastra tu Excel aquí</p>
-                                <p className="text-xs text-slate-500 mb-4">Acepta archivos .xlsx, .xls y .csv</p>
-                                <button onClick={() => fileInputRef.current.click()} className="bg-white border border-slate-200 text-slate-700 font-bold py-2 px-6 rounded-lg hover:bg-slate-100 transition-colors shadow-sm text-sm">
+                                <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">Arrastra tu Excel aquí</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Acepta archivos .xlsx, .xls y .csv</p>
+                                <button onClick={() => fileInputRef.current.click()} className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-bold py-2 px-6 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm">
                                     Explorar Archivos
                                 </button>
                             </>
@@ -238,10 +238,10 @@ const CartolaBancaria = () => {
                                 <div className="bg-emerald-100 text-emerald-600 p-4 rounded-full mb-4">
                                     <Check size={32} strokeWidth={1.75} />
                                 </div>
-                                <p className="font-bold text-slate-800 mb-1">{archivo.name}</p>
-                                <p className="text-xs text-slate-500 mb-6">{(archivo.size / 1024).toFixed(1)} KB</p>
+                                <p className="font-bold text-slate-800 dark:text-slate-200 mb-1">{archivo.name}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">{(archivo.size / 1024).toFixed(1)} KB</p>
                                 <div className="flex gap-3 w-full max-w-xs">
-                                    <button onClick={() => { setArchivo(null); fileInputRef.current.value = ''; }} className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-2.5 rounded-lg hover:bg-slate-100 transition-colors text-sm">
+                                    <button onClick={() => { setArchivo(null); fileInputRef.current.value = ''; }} className="flex-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-sm">
                                         Cancelar
                                     </button>
                                     <button onClick={subirExcel} className="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-colors text-sm">
@@ -253,26 +253,26 @@ const CartolaBancaria = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
-                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-2">
+                <div className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col h-full">
+                    <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-2">
                         <Plus size={20} strokeWidth={1.75} className={esIngreso ? 'text-emerald-500' : 'text-rose-500'} />
                         Registro Manual
                     </h3>
-                    <p className="text-sm text-slate-500 mb-4">Ingresa transacciones aisladas que no pasaron por la importación masiva de la cartola.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Ingresa transacciones aisladas que no pasaron por la importación masiva de la cartola.</p>
 
                     <div className="space-y-4 flex-1 flex flex-col justify-between">
                         <div className="space-y-4">
 
-                            <div className="bg-slate-100 p-1 rounded-xl flex gap-1 mb-2">
+                            <div className="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex gap-1 mb-2">
                                 <button
                                     onClick={() => setFormManual({ ...formManual, tipo_movimiento: 'INGRESO' })}
-                                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${esIngreso ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${esIngreso ? 'bg-white dark:bg-slate-600 text-emerald-600 shadow-sm border border-slate-200 dark:border-slate-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
                                 >
                                     <i className="fas fa-arrow-down mr-1"></i> Ingreso (Abono)
                                 </button>
                                 <button
                                     onClick={() => setFormManual({ ...formManual, tipo_movimiento: 'EGRESO' })}
-                                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${!esIngreso ? 'bg-white text-rose-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${!esIngreso ? 'bg-white dark:bg-slate-600 text-rose-600 shadow-sm border border-slate-200 dark:border-slate-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
                                 >
                                     <i className="fas fa-arrow-up mr-1"></i> Salida (Cargo)
                                 </button>
@@ -280,17 +280,17 @@ const CartolaBancaria = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Fecha del Movimiento</label>
-                                    <input 
-                                        type="date" 
-                                        value={formManual.fecha} 
-                                        onChange={e => setFormManual({ ...formManual, fecha: e.target.value })} 
-                                        className={`w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 transition-all text-sm font-bold text-slate-700 ${esIngreso ? 'focus:ring-emerald-500/30 focus:border-emerald-500' : 'focus:ring-rose-500/30 focus:border-rose-500'}`} 
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Fecha del Movimiento</label>
+                                    <input
+                                        type="date"
+                                        value={formManual.fecha}
+                                        onChange={e => setFormManual({ ...formManual, fecha: e.target.value })}
+                                        className={`w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 outline-none focus:ring-2 transition-all text-sm font-bold text-slate-700 dark:text-slate-200 ${esIngreso ? 'focus:ring-emerald-500/30 focus:border-emerald-500' : 'focus:ring-rose-500/30 focus:border-rose-500'}`}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Monto de la Operación</label>
-                                    <div className={`flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 transition-all h-[46px] shadow-none ${esIngreso ? 'focus-within:ring-emerald-500/30 focus-within:border-emerald-500' : 'focus-within:ring-rose-500/30 focus-within:border-rose-500'}`}>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Monto de la Operación</label>
+                                    <div className={`flex items-center bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden focus-within:ring-2 transition-all h-[46px] shadow-none ${esIngreso ? 'focus-within:ring-emerald-500/30 focus-within:border-emerald-500' : 'focus-within:ring-rose-500/30 focus-within:border-rose-500'}`}>
                                         <span className="pl-4 text-slate-400 font-bold shrink-0">$</span>
                                         <input
                                             type="number"
@@ -303,23 +303,23 @@ const CartolaBancaria = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Descripción o Detalle</label>
-                                <input 
-                                    type="text" 
-                                    placeholder={esIngreso ? "Ej: Pago de cliente, Depósito por ventanilla..." : "Ej: Pago de servicios, Transferencia proveedor..."} 
-                                    value={formManual.descripcion} 
-                                    onChange={e => setFormManual({ ...formManual, descripcion: e.target.value })} 
-                                    className={`w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 text-sm text-slate-700 font-medium ${esIngreso ? 'focus:ring-emerald-500/30 focus:border-emerald-500' : 'focus:ring-rose-500/30 focus:border-rose-500'}`} 
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Descripción o Detalle</label>
+                                <input
+                                    type="text"
+                                    placeholder={esIngreso ? "Ej: Pago de cliente, Depósito por ventanilla..." : "Ej: Pago de servicios, Transferencia proveedor..."}
+                                    value={formManual.descripcion}
+                                    onChange={e => setFormManual({ ...formManual, descripcion: e.target.value })}
+                                    className={`w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 outline-none focus:ring-2 text-sm text-slate-700 dark:text-slate-200 font-medium ${esIngreso ? 'focus:ring-emerald-500/30 focus:border-emerald-500' : 'focus:ring-rose-500/30 focus:border-rose-500'}`}
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">N° Documento (Opcional)</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="N° Transacción, Cheque o TEF" 
-                                    value={formManual.nro_documento} 
-                                    onChange={e => setFormManual({ ...formManual, nro_documento: e.target.value })} 
-                                    className={`w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 text-sm text-slate-700 font-mono ${esIngreso ? 'focus:ring-emerald-500/30 focus:border-emerald-500' : 'focus:ring-rose-500/30 focus:border-rose-500'}`} 
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">N° Documento (Opcional)</label>
+                                <input
+                                    type="text"
+                                    placeholder="N° Transacción, Cheque o TEF"
+                                    value={formManual.nro_documento}
+                                    onChange={e => setFormManual({ ...formManual, nro_documento: e.target.value })}
+                                    className={`w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 outline-none focus:ring-2 text-sm text-slate-700 dark:text-slate-200 font-mono ${esIngreso ? 'focus:ring-emerald-500/30 focus:border-emerald-500' : 'focus:ring-rose-500/30 focus:border-rose-500'}`}
                                 />
                             </div>
                         </div>
@@ -344,31 +344,31 @@ const CartolaBancaria = () => {
                         color="indigo"
                     />
                 ) : (
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-widest">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <h3 className="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-widest">
                                 Historial de Movimientos
                             </h3>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-left text-sm">
-                                <thead className="bg-white border-b border-slate-100">
+                                <thead className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
                                     <tr>
-                                        <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-widest text-[10px]">Fecha</th>
-                                        <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-widest text-[10px]">Descripción</th>
-                                        <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-right">Cargo (Salida)</th>
-                                        <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-right">Abono (Entrada)</th>
-                                        <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-center">Estado</th>
+                                        <th className="px-6 py-4 font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Fecha</th>
+                                        <th className="px-6 py-4 font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Descripción</th>
+                                        <th className="px-6 py-4 font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px] text-right">Cargo (Salida)</th>
+                                        <th className="px-6 py-4 font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px] text-right">Abono (Entrada)</th>
+                                        <th className="px-6 py-4 font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px] text-center">Estado</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50">
+                                <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                     {movimientos.map(mov => (
-                                        <tr key={mov.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-6 py-4 font-medium text-slate-600">
+                                        <tr key={mov.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                            <td className="px-6 py-4 font-medium text-slate-600 dark:text-slate-400">
                                                 {new Date(mov.fecha).toLocaleDateString('es-CL')}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="font-bold text-slate-800">{mov.descripcion}</p>
+                                                <p className="font-bold text-slate-800 dark:text-slate-200">{mov.descripcion}</p>
                                                 {mov.nro_documento && <p className="text-[10px] text-slate-400 uppercase mt-0.5">Ref: {mov.nro_documento}</p>}
                                             </td>
                                             <td className="px-6 py-4 font-black text-rose-600 text-right">

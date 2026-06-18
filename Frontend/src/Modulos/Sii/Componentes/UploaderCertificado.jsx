@@ -67,14 +67,14 @@ const UploaderCertificado = ({ onSubidoExitosamente, deshabilitado = false }) =>
     return (
         <form
             onSubmit={handleSubmit}
-            className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5 animate-fade-in"
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-5 animate-fade-in"
             data-testid="uploader-cert"
         >
             <div>
-                <label htmlFor="cert-archivo" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="cert-archivo" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Archivo .pfx o .p12 <span className="text-rose-500">*</span>
                 </label>
-                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-emerald-400 transition-colors">
+                <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-emerald-400 transition-colors">
                     <input
                         id="cert-archivo"
                         data-testid="cert-archivo"
@@ -93,8 +93,8 @@ const UploaderCertificado = ({ onSubidoExitosamente, deshabilitado = false }) =>
                             <span className="text-sm text-emerald-700 font-bold">{archivo.name}</span>
                         ) : (
                             <>
-                                <span className="text-sm font-bold text-slate-700">Selecciona o arrastra tu certificado</span>
-                                <span className="text-xs text-slate-500">Maximo 50 KB. Extensiones .pfx o .p12.</span>
+                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Selecciona o arrastra tu certificado</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">Maximo 50 KB. Extensiones .pfx o .p12.</span>
                             </>
                         )}
                     </label>
@@ -105,7 +105,7 @@ const UploaderCertificado = ({ onSubidoExitosamente, deshabilitado = false }) =>
             </div>
 
             <div>
-                <label htmlFor="cert-password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="cert-password" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Contrasena del certificado <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -118,7 +118,7 @@ const UploaderCertificado = ({ onSubidoExitosamente, deshabilitado = false }) =>
                     autoComplete="off"
                     maxLength={256}
                 />
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     La contrasena se cifra con AES-256 (APP_KEY) antes de persistir. Jamas se almacena en claro.
                 </p>
             </div>

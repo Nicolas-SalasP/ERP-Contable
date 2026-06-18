@@ -111,15 +111,15 @@ const ReclasificadorAsiento = () => {
     });
 
     return (
-        <div className="p-6 bg-slate-50 min-h-screen">
+        <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
             <div className="max-w-6xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <div className="flex items-center gap-3"><h1 className="text-2xl font-black text-slate-900">Panel de Reclasificaciones</h1><AyudaModulo moduloId="reclasificadorAsiento" /></div>
-                        <p className="text-slate-500">Asiento #{cabecera.numero_comprobante} | Factura Origen ID {id}</p>
+                        <div className="flex items-center gap-3"><h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">Panel de Reclasificaciones</h1><AyudaModulo moduloId="reclasificadorAsiento" /></div>
+                        <p className="text-slate-500 dark:text-slate-400">Asiento #{cabecera.numero_comprobante} | Factura Origen ID {id}</p>
                     </div>
                     <div className="flex gap-3">
-                        <button onClick={() => navigate(`/contabilidad/factura/${id}/asiento`)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all">
+                        <button onClick={() => navigate(`/contabilidad/factura/${id}/asiento`)} className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
                             Cancelar
                         </button>
                         <button onClick={ejecutarReclasificacion} className="px-8 py-2.5 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all">
@@ -129,27 +129,27 @@ const ReclasificadorAsiento = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                         <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Glosa de Auditoría (Motivo del cambio)</label>
-                        <textarea 
-                            className="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
+                        <textarea
+                            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
                             rows="2"
                             value={form.glosa_auditoria}
                             onChange={(e) => setForm({...form, glosa_auditoria: e.target.value})}
                         />
                     </div>
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                         <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Fecha del Ajuste</label>
-                        <input 
-                            type="date" 
-                            className="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-100"
+                        <input
+                            type="date"
+                            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-100"
                             value={form.fecha_ajuste}
                             onChange={(e) => setForm({...form, fecha_ajuste: e.target.value})}
                         />
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm pb-32">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm pb-32">
                     <div className="overflow-x-auto custom-scrollbar">
                     <table className="min-w-full border-collapse">
                         <thead className="bg-slate-900 text-white text-[11px] uppercase tracking-widest font-bold">
@@ -160,20 +160,20 @@ const ReclasificadorAsiento = () => {
                                 <th className="px-6 py-4 text-left bg-slate-800 rounded-tr-2xl">Nueva Imputación</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {detalles.map((det, idx) => {
                                 const nombreFila = (det.cuenta_nombre || '').toUpperCase();
                                 const esAnulada = indicesAnulados.has(idx);
-                                const esBloqueada = 
+                                const esBloqueada =
                                     esAnulada ||
-                                    ['210101', '210201', '110401', '352105'].includes(det.cuenta_contable) || 
-                                    nombreFila.includes('IVA') || 
+                                    ['210101', '210201', '110401', '352105'].includes(det.cuenta_contable) ||
+                                    nombreFila.includes('IVA') ||
                                     nombreFila.includes('PROVEEDOR');
-                                
+
                                 return (
-                                    <tr key={det.id || idx} className={esBloqueada ? 'bg-slate-50' : 'hover:bg-blue-50/30'}>
+                                    <tr key={det.id || idx} className={esBloqueada ? 'bg-slate-50 dark:bg-slate-900' : 'hover:bg-blue-50/30 dark:hover:bg-slate-700'}>
                                         <td className="px-6 py-4">
-                                            <div className="font-bold text-slate-800">{det.cuenta_nombre}</div>
+                                            <div className="font-bold text-slate-800 dark:text-slate-200">{det.cuenta_nombre}</div>
                                             <div className="text-xs font-mono text-slate-400">{det.cuenta_contable}</div>
                                         </td>
                                         <td className="px-6 py-4 text-right font-mono text-emerald-600">
@@ -182,7 +182,7 @@ const ReclasificadorAsiento = () => {
                                         <td className="px-6 py-4 text-right font-mono text-red-600">
                                             {Number(det.haber) > 0 ? Number(det.haber).toLocaleString('es-CL') : '-'}
                                         </td>
-                                        <td className="px-6 py-4 bg-slate-50/50">
+                                        <td className="px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50">
                                             {esAnulada ? (
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase italic flex items-center gap-2">
                                                     <XCircle size={16} strokeWidth={1.75} className="text-slate-400" />

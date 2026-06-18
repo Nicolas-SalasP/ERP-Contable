@@ -18,7 +18,7 @@ import {
     Th,
 } from '../Componentes/InventarioUI';
 
-const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white';
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300';
 
 const acciones = [
     'PRODUCTO_CREADO',
@@ -63,7 +63,7 @@ const JsonBlock = ({ title, value }) => {
 
     return (
         <div>
-            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">{title}</h4>
+            <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{title}</h4>
             <pre className="max-h-80 overflow-auto rounded-2xl bg-slate-950 text-slate-100 p-4 text-xs leading-relaxed custom-scrollbar">
                 {JSON.stringify(value, null, 2)}
             </pre>
@@ -228,7 +228,7 @@ const AuditoriaInventario = () => {
                         <EmptyState title="Sin eventos" description="Aún no hay eventos para los filtros seleccionados." icon="fas fa-clipboard-check" />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50">
+                            <thead className="bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Fecha</Th>
                                     <Th>Acción</Th>
@@ -238,18 +238,18 @@ const AuditoriaInventario = () => {
                                     <Th align="right">Detalle</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {eventos.map((evento) => (
-                                    <tr key={evento.id} className="hover:bg-slate-50/80 transition-colors">
+                                    <tr key={evento.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700 transition-colors">
                                         <Td>{formatDate(evento.created_at)}</Td>
-                                        <Td className="font-black text-slate-700">{pretty(evento.accion)}</Td>
+                                        <Td className="font-black text-slate-700 dark:text-slate-300">{pretty(evento.accion)}</Td>
                                         <Td><EstadoBadge value={evento.severidad} /></Td>
                                         <Td>
-                                            <p className="font-bold text-slate-700">{String(evento.entidad_tipo || '').split('\\').pop()}</p>
+                                            <p className="font-bold text-slate-700 dark:text-slate-300">{String(evento.entidad_tipo || '').split('\\').pop()}</p>
                                             <p className="text-xs text-slate-400">ID #{evento.entidad_id ?? '-'}</p>
                                         </Td>
                                         <Td>
-                                            <p className="font-bold text-slate-700">{evento.usuario?.nombre || `Usuario #${evento.usuario_id ?? '-'}`}</p>
+                                            <p className="font-bold text-slate-700 dark:text-slate-300">{evento.usuario?.nombre || `Usuario #${evento.usuario_id ?? '-'}`}</p>
                                             {evento.ip && <p className="text-xs text-slate-400">IP {evento.ip}</p>}
                                         </Td>
                                         <Td align="right">
@@ -271,20 +271,20 @@ const AuditoriaInventario = () => {
                         <div className="space-y-5">
                             <div>
                                 <EstadoBadge value={seleccionado.severidad} />
-                                <h3 className="text-xl font-black text-slate-800 mt-3">{pretty(seleccionado.accion)}</h3>
-                                <p className="text-sm text-slate-500 font-medium mt-1">{seleccionado.descripcion}</p>
+                                <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 mt-3">{pretty(seleccionado.accion)}</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">{seleccionado.descripcion}</p>
                             </div>
 
                             <div className="grid grid-cols-1 gap-3 text-sm">
-                                <div className="rounded-2xl bg-slate-50 p-4">
+                                <div className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-4">
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Entidad</p>
-                                    <p className="font-bold text-slate-700">{seleccionado.entidad_tipo}</p>
-                                    <p className="text-slate-500">ID #{seleccionado.entidad_id ?? '-'}</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">{seleccionado.entidad_tipo}</p>
+                                    <p className="text-slate-500 dark:text-slate-400">ID #{seleccionado.entidad_id ?? '-'}</p>
                                 </div>
-                                <div className="rounded-2xl bg-slate-50 p-4">
+                                <div className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-4">
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Usuario / Origen</p>
-                                    <p className="font-bold text-slate-700">{seleccionado.usuario?.nombre || `Usuario #${seleccionado.usuario_id ?? '-'}`}</p>
-                                    <p className="text-slate-500">{seleccionado.ip || 'IP no registrada'}</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">{seleccionado.usuario?.nombre || `Usuario #${seleccionado.usuario_id ?? '-'}`}</p>
+                                    <p className="text-slate-500 dark:text-slate-400">{seleccionado.ip || 'IP no registrada'}</p>
                                     <p className="text-xs text-slate-400 break-all">{seleccionado.user_agent || 'User-agent no registrado'}</p>
                                 </div>
                             </div>

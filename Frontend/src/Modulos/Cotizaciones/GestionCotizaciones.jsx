@@ -139,15 +139,15 @@ const GestionCotizaciones = () => {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900">Historial de Cotizaciones</h2><AyudaModulo moduloId="cotizacion" size={26} /></div>
-                    <p className="text-slate-500 text-sm mt-1">Gestiona y filtra tus propuestas comerciales</p>
+                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">Historial de Cotizaciones</h2><AyudaModulo moduloId="cotizacion" size={26} /></div>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Gestiona y filtra tus propuestas comerciales</p>
                 </div>
                 <Link to="/cotizaciones/nueva" className="w-full sm:w-auto text-center bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold shadow hover:bg-emerald-700 transition-all active:scale-95">
                     + Nueva Cotización
                 </Link>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Búsqueda rápida</label>
                     <div className="relative">
@@ -157,7 +157,7 @@ const GestionCotizaciones = () => {
                         <input
                             type="text"
                             placeholder="Folio o Cliente..."
-                            className="w-full !pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            className="w-full !pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700"
                             value={filtros.busqueda}
                             onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
                         />
@@ -166,7 +166,7 @@ const GestionCotizaciones = () => {
                 <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Filtrar Estado</label>
                     <select
-                        className="w-full border border-slate-200 p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer bg-white"
+                        className="w-full border border-slate-200 dark:border-slate-600 p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer bg-white dark:bg-slate-700"
                         value={filtros.estado}
                         onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
                     >
@@ -181,7 +181,7 @@ const GestionCotizaciones = () => {
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Desde</label>
                     <input
                         type="date"
-                        className="w-full border border-slate-200 p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                        className="w-full border border-slate-200 dark:border-slate-600 p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700"
                         value={filtros.fechaInicio}
                         onChange={(e) => setFiltros({ ...filtros, fechaInicio: e.target.value })}
                     />
@@ -190,7 +190,7 @@ const GestionCotizaciones = () => {
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Hasta</label>
                     <input
                         type="date"
-                        className="w-full border border-slate-200 p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                        className="w-full border border-slate-200 dark:border-slate-600 p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700"
                         value={filtros.fechaFin}
                         onChange={(e) => setFiltros({ ...filtros, fechaFin: e.target.value })}
                     />
@@ -198,7 +198,7 @@ const GestionCotizaciones = () => {
             </div>
 
             {loading || cotizacionesFiltradas.length === 0 ? (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <EstadoCarga
                         cargando={loading}
                         vacio={!loading && cotizacionesFiltradas.length === 0}
@@ -215,13 +215,13 @@ const GestionCotizaciones = () => {
                         {cotizacionesFiltradas.map(c => {
                             const nombreEstado = c.estado?.nombre || 'Borrador';
                             return (
-                            <div key={c.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">
+                            <div key={c.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm relative overflow-hidden">
                                 <div className={`absolute top-0 left-0 w-1.5 h-full ${nombreEstado === 'ACEPTADA' ? 'bg-emerald-500' : nombreEstado === 'Rechazada' ? 'bg-rose-400' : 'bg-amber-400'}`}></div>
 
                                 <div className="flex justify-between items-start mb-2 pl-2">
                                     <div>
                                         <div className="text-xs font-bold text-slate-400 font-mono mb-0.5">{c.numero_cotizacion}</div>
-                                        <h3 className="font-bold text-slate-800 leading-tight">{c.nombre_cliente}</h3>
+                                        <h3 className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{c.nombre_cliente}</h3>
                                     </div>
                                     <span className={`inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full uppercase border ${getEstadoStyle(nombreEstado)}`}>
                                         {nombreEstado}
@@ -229,17 +229,17 @@ const GestionCotizaciones = () => {
                                 </div>
 
                                 <div className="pl-2 space-y-1.5 mb-4">
-                                    <div className="text-sm text-slate-600 flex items-center gap-2">
+                                    <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
                                         <Calendar size={16} strokeWidth={1.75} className="text-slate-400" />
                                         {formatearFecha(c.fecha_emision)}
                                     </div>
-                                    <div className="text-lg font-black text-slate-800 flex items-center gap-2">
+                                    <div className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                         <span className="text-emerald-500 font-bold">$</span>
                                         {parseFloat(c.total).toLocaleString('es-CL')}
                                     </div>
                                 </div>
 
-                                <div className="flex gap-2 pt-3 border-t border-slate-100 pl-2">
+                                <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-700 pl-2">
                                     {['Borrador', 'Enviada'].includes(nombreEstado) && (
                                         <>
                                             <button onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Aceptada', tipo: 'success' })} className="flex-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-xs py-2 rounded-lg transition-colors border border-emerald-100">
@@ -250,7 +250,7 @@ const GestionCotizaciones = () => {
                                             </button>
                                         </>
                                     )}
-                                    <button onClick={() => descargarPDF(c.id, c.nombre_cliente)} className={`flex-1 bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 font-bold text-xs py-2 rounded-lg transition-colors border border-slate-200 flex items-center justify-center gap-2`}>
+                                    <button onClick={() => descargarPDF(c.id, c.nombre_cliente)} className={`flex-1 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 font-bold text-xs py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-600 flex items-center justify-center gap-2`}>
                                         <FileText size={16} strokeWidth={1.75} />
                                         PDF
                                     </button>
@@ -259,31 +259,31 @@ const GestionCotizaciones = () => {
                         )})}
                     </div>
 
-                    <div className="hidden md:block bg-white shadow-sm rounded-xl overflow-hidden border border-slate-200">
+                    <div className="hidden md:block bg-white dark:bg-slate-800 shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
                         <div className="overflow-x-auto custom-scrollbar">
                         <table className="min-w-full text-left">
-                            <thead className="bg-slate-50 border-b border-slate-100">
+                            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
                                 <tr>
-                                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-wider">Folio</th>
-                                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-wider">Cliente</th>
-                                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-wider text-center">Fecha</th>
-                                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-wider text-right">Total</th>
-                                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-wider text-center">Estado</th>
-                                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-wider text-right">Acciones</th>
+                                    <th className="p-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">Folio</th>
+                                    <th className="p-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">Cliente</th>
+                                    <th className="p-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider text-center">Fecha</th>
+                                    <th className="p-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider text-right">Total</th>
+                                    <th className="p-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider text-center">Estado</th>
+                                    <th className="p-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider text-right">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {cotizacionesFiltradas.map(c => {
                                     const nombreEstado = c.estado?.nombre || 'Borrador';
 
                                     return (
-                                        <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="p-4 text-slate-500 font-mono text-sm">{c.numero_cotizacion || `#${c.id.toString().padStart(5, '0')}`}</td>
-                                            <td className="p-4 text-slate-900 font-bold">{c.nombre_cliente}</td>
-                                            <td className="p-4 text-slate-600 text-sm text-center">
+                                        <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                            <td className="p-4 text-slate-500 dark:text-slate-400 font-mono text-sm">{c.numero_cotizacion || `#${c.id.toString().padStart(5, '0')}`}</td>
+                                            <td className="p-4 text-slate-900 dark:text-slate-100 font-bold">{c.nombre_cliente}</td>
+                                            <td className="p-4 text-slate-600 dark:text-slate-400 text-sm text-center">
                                                 {formatearFecha(c.fecha_emision)}
                                             </td>
-                                            <td className="p-4 text-slate-900 font-black text-right">${parseFloat(c.total).toLocaleString('es-CL')}</td>
+                                            <td className="p-4 text-slate-900 dark:text-slate-100 font-black text-right">${parseFloat(c.total).toLocaleString('es-CL')}</td>
                                             <td className="p-4 text-center">
                                                 <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black border uppercase ${getEstadoStyle(nombreEstado)}`}>
                                                     {nombreEstado}
@@ -311,7 +311,7 @@ const GestionCotizaciones = () => {
                                                     )}
                                                     <button
                                                         onClick={() => descargarPDF(c.id, c.nombre_cliente)}
-                                                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all font-bold text-xs"
+                                                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all font-bold text-xs"
                                                         title="Descargar PDF"
                                                     >
                                                         <FileText size={16} strokeWidth={1.75} />

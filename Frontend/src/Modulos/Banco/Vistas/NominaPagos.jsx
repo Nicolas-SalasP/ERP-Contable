@@ -221,7 +221,7 @@ const NominaPagos = () => {
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 pb-10 animate-fade-in">
+        <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 dark:text-slate-200 pb-10 animate-fade-in">
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
@@ -230,16 +230,16 @@ const NominaPagos = () => {
                             Tesorería y Finanzas
                         </span>
                     </div>
-                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Nómina de Pagos</h1><AyudaModulo moduloId="nominaPagos" /></div>
-                    <p className="text-slate-500 font-medium mt-1">
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Nómina de Pagos</h1><AyudaModulo moduloId="nominaPagos" /></div>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">
                         Agrupa facturas de proveedores y genera archivos para pago bancario.
                     </p>
                 </div>
                 
                 {paso === 1 && facturas.length > 0 && (
-                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 w-full md:w-auto">
+                    <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4 w-full md:w-auto">
                         <div className="text-right">
-                            <p className="text-xs font-bold text-slate-400 uppercase">Total Seleccionado</p>
+                            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">Total Seleccionado</p>
                             <p className="text-xl font-black text-emerald-600">
                                 {formatCurrency(facturas.filter(f => seleccionadas.includes(f.id)).reduce((acc, f) => acc + parseFloat(f.monto_bruto), 0))}
                             </p>
@@ -254,14 +254,14 @@ const NominaPagos = () => {
                 )}
             </div>
 
-            <div className="flex items-center gap-4 mb-8 bg-slate-50 p-2 rounded-xl border border-slate-200 w-fit mx-auto md:mx-0">
-                <div className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 ${paso === 1 ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500'}`}>
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paso === 1 ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-500'}`}>1</span>
+            <div className="flex items-center gap-4 mb-8 bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-700 w-fit mx-auto md:mx-0">
+                <div className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 ${paso === 1 ? 'bg-white dark:bg-slate-700 text-blue-700 shadow-sm border border-slate-200 dark:border-slate-600' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paso === 1 ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>1</span>
                     Seleccionar Facturas Vencidas / Por Vencer
                 </div>
-                <ChevronRight size={20} strokeWidth={1.75} className="text-slate-300" />
-                <div className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 ${paso === 2 ? 'bg-white text-emerald-700 shadow-sm border border-slate-200' : 'text-slate-500'}`}>
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paso === 2 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>2</span>
+                <ChevronRight size={20} strokeWidth={1.75} className="text-slate-300 dark:text-slate-600" />
+                <div className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 ${paso === 2 ? 'bg-white dark:bg-slate-700 text-emerald-700 shadow-sm border border-slate-200 dark:border-slate-600' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paso === 2 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>2</span>
                     Resumen y Banco
                 </div>
             </div>
@@ -274,32 +274,32 @@ const NominaPagos = () => {
                     color="blue"
                 />
             ) : paso === 1 ? (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                         <label className="flex items-center gap-3 cursor-pointer group">
-                            <input 
-                                type="checkbox" 
-                                className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            <input
+                                type="checkbox"
+                                className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                 checked={seleccionadas.length === facturas.length && facturas.length > 0}
                                 onChange={toggleTodas}
                             />
-                            <span className="font-bold text-slate-700 group-hover:text-blue-600 transition-colors">Seleccionar Todas ({facturas.length})</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors">Seleccionar Todas ({facturas.length})</span>
                         </label>
-                        <span className="text-sm font-bold text-slate-400"><i className="fas fa-sort-amount-down-alt mr-1"></i> Ordenadas por urgencia</span>
+                        <span className="text-sm font-bold text-slate-400 dark:text-slate-500"><i className="fas fa-sort-amount-down-alt mr-1"></i> Ordenadas por urgencia</span>
                     </div>
 
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="min-w-full text-left">
-                            <thead className="bg-white border-b border-slate-100">
+                            <thead className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
                                 <tr>
                                     <th className="px-6 py-4 w-10"></th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado / Vencimiento</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total a Pagar</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Estado / Vencimiento</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Proveedor</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Documento</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Total a Pagar</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                 {facturas.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className="px-6 py-12 text-center">
@@ -313,13 +313,13 @@ const NominaPagos = () => {
                                     const isUrgente = fac.diasRestantes >= 0 && fac.diasRestantes <= 5;
                                     
                                     return (
-                                        <tr key={fac.id} onClick={() => toggleSeleccion(fac.id)} className={`cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
+                                        <tr key={fac.id} onClick={() => toggleSeleccion(fac.id)} className={`cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/50 dark:bg-blue-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
                                             <td className="px-6 py-4">
-                                                <input 
-                                                    type="checkbox" 
+                                                <input
+                                                    type="checkbox"
                                                     checked={isSelected}
                                                     onChange={() => {}} // Manejado por el onClick del TR
-                                                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer pointer-events-none"
+                                                    className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer pointer-events-none"
                                                 />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -329,19 +329,19 @@ const NominaPagos = () => {
                                                     ) : isUrgente ? (
                                                         <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-xs font-bold border border-amber-200">Vence en {fac.diasRestantes} días</span>
                                                     ) : (
-                                                        <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded text-xs font-bold border border-slate-200">Vence en {fac.diasRestantes} días</span>
+                                                        <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded text-xs font-bold border border-slate-200 dark:border-slate-600">Vence en {fac.diasRestantes} días</span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="font-bold text-slate-800">{fac.nombre_proveedor}</p>
+                                                <p className="font-bold text-slate-800 dark:text-slate-200">{fac.nombre_proveedor}</p>
                                                 <p className="text-xs font-mono text-slate-400 mt-0.5">{fac.rut_proveedor}</p>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="font-mono text-slate-700 font-bold bg-white border border-slate-200 px-2 py-1 rounded">Fac. {fac.numero_factura}</span>
+                                                <span className="font-mono text-slate-700 dark:text-slate-300 font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded">Fac. {fac.numero_factura}</span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                <p className={`text-base font-black ${isSelected ? 'text-blue-700' : 'text-slate-900'}`}>
+                                                <p className={`text-base font-black ${isSelected ? 'text-blue-700' : 'text-slate-900 dark:text-slate-100'}`}>
                                                     {formatCurrency(fac.monto_bruto)}
                                                 </p>
                                             </td>
@@ -359,29 +359,29 @@ const NominaPagos = () => {
                             {nominasAgrupadas.map(prov => {
                                 const cuentaInfo = cuentasProveedores[prov.proveedor_id];
                                 return (
-                                    <div key={prov.proveedor_id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                        <div className="bg-slate-50 p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                    <div key={prov.proveedor_id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+                                        <div className="bg-slate-50 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                             <div>
-                                                <h3 className="font-black text-slate-800 text-lg">{prov.nombre}</h3>
-                                                <p className="text-xs text-slate-500 font-mono mt-0.5">RUT: {prov.rut}</p>
+                                                <h3 className="font-black text-slate-800 dark:text-slate-200 text-lg">{prov.nombre}</h3>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">RUT: {prov.rut}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total a Transferir</p>
+                                                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total a Transferir</p>
                                                 <p className="text-2xl font-black text-emerald-600">{formatCurrency(prov.total_pagar)}</p>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
-                                                <div className="bg-white p-2 rounded-lg shadow-sm text-blue-500">
+                                                <div className="bg-white dark:bg-slate-700 p-2 rounded-lg shadow-sm text-blue-500">
                                                     <CreditCard size={20} strokeWidth={1.75} />
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Datos Bancarios</p>
                                                     {cuentaInfo ? (
                                                         <>
-                                                            <p className="font-bold text-slate-800 text-sm">{cuentaInfo.banco}</p>
-                                                            <p className="font-mono text-slate-600 text-xs mt-0.5">{cuentaInfo.tipo_cuenta} • {cuentaInfo.numero_cuenta}</p>
+                                                            <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{cuentaInfo.banco}</p>
+                                                            <p className="font-mono text-slate-600 dark:text-slate-400 text-xs mt-0.5">{cuentaInfo.tipo_cuenta} • {cuentaInfo.numero_cuenta}</p>
                                                         </>
                                                     ) : (
                                                         <p className="text-xs font-bold text-red-500 mt-1 flex items-center gap-1">
@@ -391,11 +391,11 @@ const NominaPagos = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Facturas a Pagar ({prov.facturas.length})</p>
+                                            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Facturas a Pagar ({prov.facturas.length})</p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {prov.facturas.map(f => (
-                                                        <span key={f.id} className="bg-white border border-slate-200 text-slate-600 font-mono text-xs font-bold px-2 py-1 rounded">
+                                                        <span key={f.id} className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-mono text-xs font-bold px-2 py-1 rounded">
                                                             #{f.numero_factura}
                                                         </span>
                                                     ))}

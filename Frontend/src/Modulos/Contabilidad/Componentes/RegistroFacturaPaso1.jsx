@@ -33,25 +33,25 @@ const RegistroFacturaPaso1 = ({
                                 value={busqueda}
                                 onChange={onBusquedaChange}
                                 onFocus={() => { if (busqueda) onMostrarSugerencias(true); }}
-                                className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm text-lg"
+                                className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm text-lg text-slate-800 dark:text-slate-200"
                                 autoFocus
                             />
                         </div>
 
                         {mostrarSugerencias && (
-                            <div className="absolute w-full bg-white border border-slate-200 mt-2 rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50">
+                            <div className="absolute w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 mt-2 rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50">
                                 {sugerencias.length > 0 ? sugerencias.map(p => (
                                     <div
                                         key={p.id}
                                         onClick={() => onSeleccionarProveedor(p)}
-                                        className="p-4 hover:bg-blue-50 cursor-pointer border-b last:border-0 border-slate-100 transition-colors group"
+                                        className="p-4 hover:bg-blue-50 cursor-pointer border-b last:border-0 border-slate-100 dark:border-slate-800 transition-colors group"
                                     >
-                                        <p className="font-bold text-slate-800 group-hover:text-blue-700">
+                                        <p className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-700">
                                             {p.razon_social}
                                         </p>
                                         <div className="flex justify-between items-center mt-1">
-                                            <span className="text-sm text-slate-500 font-mono">{p.rut}</span>
-                                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
+                                            <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">{p.rut}</span>
+                                            <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
                                                 #{p.codigo_interno}
                                             </span>
                                         </div>
@@ -103,14 +103,14 @@ const RegistroFacturaPaso1 = ({
             <div className="flex flex-col gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
                             Tipo Documento
                         </label>
                         <select
                             name="tipoDocumento"
                             value={formData.tipoDocumento}
                             onChange={onChange}
-                            className="w-full border border-slate-300 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700 bg-white"
+                            className="w-full border border-slate-300 dark:border-slate-600 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700"
                         >
                             <option value="FACTURA">Factura</option>
                             <option value="BOLETA">Boleta</option>
@@ -138,7 +138,7 @@ const RegistroFacturaPaso1 = ({
                         )}
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
                             N° Documento
                         </label>
                         <input
@@ -147,14 +147,14 @@ const RegistroFacturaPaso1 = ({
                             value={formData.numeroFactura}
                             onChange={onChange}
                             placeholder="Ej: 123456"
-                            className="w-full border border-slate-300 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700"
+                            className="w-full border border-slate-300 dark:border-slate-600 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700"
                         />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide" title="Fecha que aparece en el PDF">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide" title="Fecha que aparece en el PDF">
                             Emisión (Doc)
                         </label>
                         <input
@@ -162,7 +162,7 @@ const RegistroFacturaPaso1 = ({
                             name="fechaEmision"
                             value={formData.fechaEmision}
                             onChange={onChange}
-                            className="w-full border border-slate-300 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-600 font-medium"
+                            className="w-full border border-slate-300 dark:border-slate-600 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-600 dark:text-slate-400 font-medium bg-white dark:bg-slate-700"
                         />
                     </div>
                     <div>
@@ -180,7 +180,7 @@ const RegistroFacturaPaso1 = ({
                 </div>
 
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
                         Monto Bruto Total
                     </label>
                     <div className="relative rounded-lg shadow-sm">
@@ -193,7 +193,7 @@ const RegistroFacturaPaso1 = ({
                             value={formData.montoVisual}
                             onChange={onMontoChange}
                             placeholder="0"
-                            className="block w-full !pl-10 rounded-lg border border-slate-300 py-4 pl-10 pr-12 text-slate-800 placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-2xl font-bold outline-none tracking-wide"
+                            className="block w-full !pl-10 rounded-lg border border-slate-300 dark:border-slate-600 py-4 pl-10 pr-12 text-slate-800 dark:text-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-2xl font-bold outline-none tracking-wide bg-white dark:bg-slate-700"
                         />
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
                             <span className="text-slate-400 text-sm font-bold">CLP</span>

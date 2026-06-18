@@ -21,12 +21,12 @@ const FORM_VACIO = {
 
 const Campo = ({ label, children, full = false }) => (
     <div className={full ? 'sm:col-span-2' : ''}>
-        <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
+        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{label}</label>
         {children}
     </div>
 );
 
-const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
 const EmpleadosRrhh = () => {
     const { tienePermiso } = usePermisos();
@@ -108,13 +108,13 @@ const EmpleadosRrhh = () => {
             <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
                             <i className="fas fa-id-card-clip text-emerald-600" />
                             Ficha de Personal
                         </h1>
                         <AyudaModulo moduloId="empleadosRrhh" size={28} />
                     </div>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                         Empleados de la empresa: datos personales, previsionales y bancarios (cifrados).
                     </p>
                 </div>
@@ -133,16 +133,16 @@ const EmpleadosRrhh = () => {
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                         placeholder="Buscar por nombre o RUT completo..."
-                        className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                 </div>
             </div>
 
             <EstadoCarga cargando={cargando} mensajeCargando="Cargando empleados..." color="emerald" tamano="compacto">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-semibold">RUT</th>
                                     <th className="px-4 py-3 text-left font-semibold">Nombre</th>
@@ -153,7 +153,7 @@ const EmpleadosRrhh = () => {
                                     <th className="px-4 py-3 text-right font-semibold">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {empleados.length === 0 && (
                                     <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                                         <i className="fas fa-users-slash text-2xl mb-2 block" />
@@ -161,13 +161,13 @@ const EmpleadosRrhh = () => {
                                     </td></tr>
                                 )}
                                 {empleados.map((emp) => (
-                                    <tr key={emp.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 font-mono text-slate-700">{enmascararIdentificador(emp.rut)}</td>
-                                        <td className="px-4 py-3 font-medium text-slate-900">
+                                    <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                        <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">{enmascararIdentificador(emp.rut)}</td>
+                                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                                             {emp.nombres} {emp.apellido_paterno} {emp.apellido_materno || ''}
                                         </td>
-                                        <td className="px-4 py-3 text-slate-600">{emp.afp || '—'}</td>
-                                        <td className="px-4 py-3 text-slate-600">
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{emp.afp || '—'}</td>
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                                             {emp.tipo_salud === 'ISAPRE' ? (emp.isapre_nombre || 'ISAPRE') : (emp.tipo_salud || '—')}
                                         </td>
                                         <td className="px-4 py-3 text-slate-600">{formatFecha(emp.fecha_ingreso_empresa)}</td>
@@ -317,9 +317,9 @@ const EmpleadosRrhh = () => {
                         </div>
                     </fieldset>
 
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                         <button type="button" onClick={() => setModalAbierto(false)}
-                            className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 font-semibold text-sm hover:bg-slate-50">
+                            className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700">
                             Cancelar
                         </button>
                         <button type="submit" disabled={guardando}

@@ -25,7 +25,7 @@ const CAUSALES = [
     { v: 'DESAHUCIO', l: 'Desahucio (Art. 161 inc. 2)' },
 ];
 
-const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 const FORM_VACIO = {
     tipo: 'INDEFINIDO', fecha_inicio: '', fecha_termino: '', cargo: '', departamento: '',
     horas_semana: 44, tipo_jornada: 'COMPLETA', sueldo_base: '', observaciones: '',
@@ -121,13 +121,13 @@ const ContratosRrhh = () => {
         <div className="max-w-6xl mx-auto p-6 md:p-8">
             <header className="mb-6">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
                         <i className="fas fa-file-signature text-emerald-600" />
                         Contratos
                     </h1>
                     <AyudaModulo moduloId="contratosRrhh" size={28} />
                 </div>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Histórico de contratos por empleado. Crear un contrato nuevo desactiva el vigente.
                 </p>
             </header>
@@ -135,7 +135,7 @@ const ContratosRrhh = () => {
             <EstadoCarga cargando={cargandoEmpleados} mensajeCargando="Cargando empleados..." color="emerald" tamano="compacto">
                 <div className="flex flex-wrap items-end gap-3 mb-5">
                     <div className="flex-1 min-w-full sm:min-w-[260px]">
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Empleado</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado</label>
                         <select value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)} className={inputCls}>
                             <option value="">Selecciona un empleado...</option>
                             {empleados.map((emp) => (
@@ -154,16 +154,16 @@ const ContratosRrhh = () => {
                 </div>
 
                 {!empleadoId ? (
-                    <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl py-12 text-center text-slate-400">
+                    <div className="bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl py-12 text-center text-slate-400">
                         <i className="fas fa-hand-pointer text-2xl mb-2 block" />
                         Selecciona un empleado para ver sus contratos.
                     </div>
                 ) : (
                     <EstadoCarga cargando={cargandoContratos} mensajeCargando="Cargando contratos..." color="emerald" tamano="compacto">
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+                                    <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                         <tr>
                                             <th className="px-2 sm:px-4 py-3 text-left font-semibold">Tipo</th>
                                             <th className="px-2 sm:px-4 py-3 text-left font-semibold">Cargo</th>
@@ -174,19 +174,19 @@ const ContratosRrhh = () => {
                                             <th className="px-2 sm:px-4 py-3 text-right font-semibold">Acciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                         {contratos.length === 0 && (
                                             <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                                                 Este empleado no tiene contratos.
                                             </td></tr>
                                         )}
                                         {contratos.map((c) => (
-                                            <tr key={c.id} className="hover:bg-slate-50">
-                                                <td className="px-2 sm:px-4 py-3 text-slate-700">{TIPOS.find((t) => t.v === c.tipo)?.l || c.tipo}</td>
-                                                <td className="px-2 sm:px-4 py-3 text-slate-700">{c.cargo || '—'}</td>
-                                                <td className="px-2 sm:px-4 py-3 text-slate-600">{formatFecha(c.fecha_inicio)}</td>
-                                                <td className="px-2 sm:px-4 py-3 text-slate-600">{formatFecha(c.fecha_termino_real || c.fecha_termino)}</td>
-                                                <td className="px-2 sm:px-4 py-3 text-right font-medium text-slate-900">{formatPesos(c.sueldo_base)}</td>
+                                            <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                                <td className="px-2 sm:px-4 py-3 text-slate-700 dark:text-slate-300">{TIPOS.find((t) => t.v === c.tipo)?.l || c.tipo}</td>
+                                                <td className="px-2 sm:px-4 py-3 text-slate-700 dark:text-slate-300">{c.cargo || '—'}</td>
+                                                <td className="px-2 sm:px-4 py-3 text-slate-600 dark:text-slate-400">{formatFecha(c.fecha_inicio)}</td>
+                                                <td className="px-2 sm:px-4 py-3 text-slate-600 dark:text-slate-400">{formatFecha(c.fecha_termino_real || c.fecha_termino)}</td>
+                                                <td className="px-2 sm:px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{formatPesos(c.sueldo_base)}</td>
                                                 <td className="px-2 sm:px-4 py-3">
                                                     <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${colorEstado(c.estado)}`}>{c.estado}</span>
                                                 </td>
@@ -211,38 +211,38 @@ const ContratosRrhh = () => {
             <PanelModal abierto={modalAbierto} titulo="Nuevo contrato" icono="fas fa-file-signature" onClose={() => setModalAbierto(false)}>
                 <form onSubmit={crear} className="grid sm:grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Tipo de contrato *</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tipo de contrato *</label>
                         <select required value={form.tipo} onChange={(e) => setCampo('tipo', e.target.value)} className={inputCls}>
                             {TIPOS.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Sueldo base *</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Sueldo base *</label>
                         <input required type="number" min="0" value={form.sueldo_base} onChange={(e) => setCampo('sueldo_base', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha inicio *</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha inicio *</label>
                         <input required type="date" value={form.fecha_inicio} onChange={(e) => setCampo('fecha_inicio', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha término {form.tipo !== 'INDEFINIDO' && '*'}</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha término {form.tipo !== 'INDEFINIDO' && '*'}</label>
                         <input type="date" value={form.fecha_termino} onChange={(e) => setCampo('fecha_termino', e.target.value)}
                             required={form.tipo !== 'INDEFINIDO'} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Cargo</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Cargo</label>
                         <input value={form.cargo} onChange={(e) => setCampo('cargo', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Departamento</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Departamento</label>
                         <input value={form.departamento} onChange={(e) => setCampo('departamento', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Horas semanales</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Horas semanales</label>
                         <input type="number" min="1" max="60" value={form.horas_semana} onChange={(e) => setCampo('horas_semana', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Jornada</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Jornada</label>
                         <select value={form.tipo_jornada} onChange={(e) => setCampo('tipo_jornada', e.target.value)} className={inputCls}>
                             <option value="COMPLETA">Completa</option>
                             <option value="PARCIAL">Parcial</option>
@@ -250,12 +250,12 @@ const ContratosRrhh = () => {
                         </select>
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Observaciones</label>
                         <textarea rows={2} value={form.observaciones} onChange={(e) => setCampo('observaciones', e.target.value)} className={inputCls} />
                     </div>
-                    <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200">
+                    <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                         <button type="button" onClick={() => setModalAbierto(false)}
-                            className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 font-semibold text-sm hover:bg-slate-50">Cancelar</button>
+                            className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>
                         <button type="submit" disabled={guardando}
                             className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm disabled:opacity-60 inline-flex items-center gap-2">
                             {guardando && <i className="fas fa-spinner fa-spin" />} Crear contrato

@@ -22,7 +22,7 @@ import {
     Th,
 } from '../Componentes/InventarioUI';
 
-const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none';
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none';
 
 const PackingInventario = () => {
     const [loading, setLoading] = useState(true);
@@ -226,7 +226,7 @@ const PackingInventario = () => {
                     <EmptyState title="Sin órdenes de packing" description="Genera packing desde una orden de picking confirmada." />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Estado</Th>
@@ -236,30 +236,30 @@ const PackingInventario = () => {
                                 <Th align="right">Acciones</Th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {packingFiltrado.map((orden) => (
-                                <tr key={orden.id} className="hover:bg-slate-50/60 align-top">
+                                <tr key={orden.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700 align-top">
                                     <Td>
-                                        <p className="font-black text-slate-800">{orden.codigo}</p>
-                                        <p className="text-xs text-slate-500">{orden.observacion || 'Sin observación'}</p>
+                                        <p className="font-black text-slate-800 dark:text-slate-200">{orden.codigo}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{orden.observacion || 'Sin observación'}</p>
                                     </Td>
                                     <Td><EstadoBadge value={orden.estado} /></Td>
                                     <Td>
-                                        <p className="font-black text-slate-700">{orden.picking_orden?.codigo || orden.pickingOrden?.codigo || `Picking #${orden.picking_orden_id}`}</p>
-                                        <p className="text-xs text-slate-500">{orden.picking_orden?.estado || orden.pickingOrden?.estado || '-'}</p>
+                                        <p className="font-black text-slate-700 dark:text-slate-300">{orden.picking_orden?.codigo || orden.pickingOrden?.codigo || `Picking #${orden.picking_orden_id}`}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{orden.picking_orden?.estado || orden.pickingOrden?.estado || '-'}</p>
                                     </Td>
                                     <Td>
                                         {(orden.detalles || []).map((detalle) => (
-                                            <div key={detalle.id} className="mb-2 last:mb-0 text-xs text-slate-600">
-                                                <p className="font-black text-slate-700">{getProductoNombre(detalle)}</p>
+                                            <div key={detalle.id} className="mb-2 last:mb-0 text-xs text-slate-600 dark:text-slate-400">
+                                                <p className="font-black text-slate-700 dark:text-slate-300">{getProductoNombre(detalle)}</p>
                                                 <p>Pickeada: {formatNumber(detalle.cantidad_pickeada, 4)} · Empacada: {formatNumber(detalle.cantidad_empacada, 4)}</p>
                                                 <p>Ubicación: {detalle.ubicacion_origen?.codigo || detalle.ubicacionOrigen?.codigo || '-'}</p>
                                             </div>
                                         ))}
                                     </Td>
                                     <Td>
-                                        <p className="text-xs text-slate-500">Creación: {formatDate(orden.fecha_creacion)}</p>
-                                        <p className="text-xs text-slate-500">Confirmación: {formatDate(orden.fecha_confirmacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Creación: {formatDate(orden.fecha_creacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Confirmación: {formatDate(orden.fecha_confirmacion)}</p>
                                     </Td>
                                     <Td align="right">
                                         <div className="flex flex-wrap justify-end gap-2">

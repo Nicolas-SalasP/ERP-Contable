@@ -72,21 +72,21 @@ const TabIndicesIpc = ({ anioInicial }) => {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-xl font-black text-slate-800">Índices IPC Mensuales</h2>
-                    <p className="text-sm text-slate-500 mt-0.5">
+                    <h2 className="text-xl font-black text-slate-800 dark:text-slate-200">Índices IPC Mensuales</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                         Ingrese la variación mensual publicada por el INE.
                         {mesesCargados > 0 && <span className="ml-2 font-bold text-violet-600">{mesesCargados}/12 meses cargados</span>}
                     </p>
                 </div>
-                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
-                    <button onClick={() => setAnio(a => a - 1)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 font-bold" aria-label="Año anterior">
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 shadow-sm">
+                    <button onClick={() => setAnio(a => a - 1)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 font-bold" aria-label="Año anterior">
                         <i className="fas fa-chevron-left text-xs"></i>
                     </button>
-                    <span className="font-black text-slate-800 w-12 text-center">{anio}</span>
+                    <span className="font-black text-slate-800 dark:text-slate-200 w-12 text-center">{anio}</span>
                     <button
                         onClick={() => setAnio(a => a + 1)}
                         disabled={anio >= anioActual + 1}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 font-bold disabled:opacity-40"
+                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 font-bold disabled:opacity-40"
                         aria-label="Año siguiente"
                     >
                         <i className="fas fa-chevron-right text-xs"></i>
@@ -112,7 +112,7 @@ const TabIndicesIpc = ({ anioInicial }) => {
                     <i className="fas fa-spinner fa-spin text-2xl mr-3"></i> Cargando índices...
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto custom-scrollbar">
                     <table className="min-w-full text-sm">
                         <thead className="bg-slate-900 text-white">
@@ -124,13 +124,13 @@ const TabIndicesIpc = ({ anioInicial }) => {
                                 <th className="px-5 py-3.5 text-right text-[10px] font-black uppercase tracking-widest last:rounded-tr-xl">Acción</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {indices.map(indice => (
-                                <tr key={indice.mes} className={`transition-colors ${!indice.cargado ? 'bg-amber-50/30' : 'hover:bg-slate-50'}`}>
+                                <tr key={indice.mes} className={`transition-colors ${!indice.cargado ? 'bg-amber-50/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
                                     <td className="px-5 py-3.5">
                                         <div className="flex items-center gap-2.5">
                                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${indice.cargado ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-                                            <span className="font-bold text-slate-800">{MESES[indice.mes - 1]}</span>
+                                            <span className="font-bold text-slate-800 dark:text-slate-200">{MESES[indice.mes - 1]}</span>
                                             {indice.fuente === 'api_ine' && (
                                                 <span className="text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-black uppercase">INE</span>
                                             )}
@@ -148,7 +148,7 @@ const TabIndicesIpc = ({ anioInicial }) => {
                                                             value={formValues.variacion}
                                                             onChange={e => setFormValues(v => ({ ...v, variacion: e.target.value }))}
                                                             placeholder="0.4200"
-                                                            className="w-28 border border-violet-300 rounded-lg px-3 py-1.5 text-right font-mono text-sm focus:ring-2 focus:ring-violet-500 outline-none"
+                                                            className="w-28 border border-violet-300 dark:border-violet-500 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-1.5 text-right font-mono text-sm focus:ring-2 focus:ring-violet-500 outline-none"
                                                             autoFocus
                                                         />
                                                         <span className="text-slate-500 font-bold text-sm">%</span>
@@ -158,7 +158,7 @@ const TabIndicesIpc = ({ anioInicial }) => {
                                                         value={formValues.observacion}
                                                         onChange={e => setFormValues(v => ({ ...v, observacion: e.target.value }))}
                                                         placeholder="Observación (opcional)"
-                                                        className="w-44 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-violet-500 outline-none"
+                                                        className="w-44 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-violet-500 outline-none"
                                                     />
                                                 </div>
                                             </td>
@@ -188,12 +188,12 @@ const TabIndicesIpc = ({ anioInicial }) => {
                                                     <span className="text-amber-500 font-bold text-xs">Sin dato</span>
                                                 )}
                                             </td>
-                                            <td className="px-5 py-3.5 text-right font-mono text-slate-500 text-xs">
+                                            <td className="px-5 py-3.5 text-right font-mono text-slate-500 dark:text-slate-400 text-xs">
                                                 {indice.cargado ? Number(indice.factor_multiplicador).toFixed(6) : '—'}
                                             </td>
                                             <td className="px-5 py-3.5 text-right font-mono">
                                                 {indice.cargado ? (
-                                                    <span className="font-bold text-slate-700">
+                                                    <span className="font-bold text-slate-700 dark:text-slate-300">
                                                         {Number(indice.variacion_acumulada).toFixed(4)}%
                                                     </span>
                                                 ) : '—'}

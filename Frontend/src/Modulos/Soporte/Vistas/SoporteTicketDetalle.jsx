@@ -77,24 +77,24 @@ export default function SoporteTicketDetalle() {
         &larr; Volver a tickets
       </Link>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-5">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h1 className="text-base font-semibold text-slate-800">{ticket.subject}</h1>
+          <h1 className="text-base font-semibold text-slate-800 dark:text-slate-200">{ticket.subject}</h1>
           <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${COLOR_ESTADO[ticket.status] ?? 'bg-slate-100 text-slate-600'}`}>
             {ticket.status}
           </span>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           {ticket.ticket_code} · {ticket.category} · Prioridad: {ticket.priority}
         </p>
         {ticket.assignee && (
-          <p className="text-xs text-slate-500 mt-1">Asignado a: {ticket.assignee.name}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Asignado a: {ticket.assignee.name}</p>
         )}
       </div>
 
       <div
         ref={hiloRef}
-        className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100 max-h-[50vh] overflow-y-auto"
+        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl divide-y divide-slate-100 dark:divide-slate-700 max-h-[50vh] overflow-y-auto"
       >
         {(ticket.messages ?? []).map(m => {
           const esStaff = m.user_id !== null && m.user_id !== undefined;
@@ -103,9 +103,9 @@ export default function SoporteTicketDetalle() {
             : (m.autor_nombre ?? ticket.origen_nombre ?? 'Tu');
 
           return (
-            <div key={m.id} className={`p-4 ${esStaff ? 'bg-slate-50' : ''}`}>
+            <div key={m.id} className={`p-4 ${esStaff ? 'bg-slate-50 dark:bg-slate-900' : ''}`}>
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="text-xs font-medium text-slate-700">{autor}</span>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{autor}</span>
                 {esStaff && (
                   <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Soporte</span>
                 )}
@@ -113,20 +113,20 @@ export default function SoporteTicketDetalle() {
                   {new Date(m.created_at).toLocaleString('es-CL')}
                 </span>
               </div>
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{m.message}</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{m.message}</p>
             </div>
           );
         })}
       </div>
 
       {!cerrado ? (
-        <form onSubmit={responder} className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+        <form onSubmit={responder} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
           <textarea
             rows={4}
             value={mensaje}
             onChange={e => setMensaje(e.target.value)}
             placeholder="Escribe tu respuesta..."
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-base md:text-sm resize-none"
+            className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-base md:text-sm resize-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
             disabled={enviando}
           />
           {errorReply && <p className="text-red-600 text-sm">{errorReply}</p>}
@@ -141,7 +141,7 @@ export default function SoporteTicketDetalle() {
           </div>
         </form>
       ) : (
-        <p className="text-sm text-slate-500 text-center py-3">
+        <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-3">
           Este ticket esta {ticket.status}. No se pueden agregar mas respuestas.
         </p>
       )}

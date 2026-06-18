@@ -354,16 +354,16 @@ const TablaReporte = ({ rows, columns }) => {
 
     return (
         <TableShell>
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-50 dark:bg-slate-900">
                 <tr>
                     {columns.map((column) => (
                         <Th key={column.key} align={column.align}>{column.label}</Th>
                     ))}
                 </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {rows.map((row, index) => (
-                    <tr key={row.id || row.codigo_lote || row.codigo_reserva || row.codigo_toma || `${row.producto_id}-${row.bodega_id}-${index}`} className="hover:bg-slate-50/70 transition-colors">
+                    <tr key={row.id || row.codigo_lote || row.codigo_reserva || row.codigo_toma || `${row.producto_id}-${row.bodega_id}-${index}`} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
                         {columns.map((column) => (
                             <Td key={column.key} align={column.align} className={column.className || ''}>
                                 {renderValue(row, column)}
@@ -397,9 +397,9 @@ const ResumenReporte = ({ resumen }) => {
                             : value;
 
                 return (
-                    <div key={key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <p className="text-[11px] uppercase tracking-widest text-slate-400 font-black">{labelFromKey(key)}</p>
-                        <p className="text-2xl font-black text-slate-800 mt-1">{formatted}</p>
+                    <div key={key} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+                        <p className="text-[11px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-black">{labelFromKey(key)}</p>
+                        <p className="text-2xl font-black text-slate-800 dark:text-slate-200 mt-1">{formatted}</p>
                     </div>
                 );
             })}
@@ -527,7 +527,7 @@ const ReportesInventario = () => {
         if (key === 'producto_id') {
             return (
                 <Field key={key} label="Producto">
-                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white">
+                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                         <option value="">Todos</option>
                         {renderSelectOptions(productos, (item) => item.id, (item) => `${item.sku ? `${item.sku} · ` : ''}${item.nombre || `Producto #${item.id}`}`)}
                     </select>
@@ -538,7 +538,7 @@ const ReportesInventario = () => {
         if (key === 'bodega_id') {
             return (
                 <Field key={key} label="Bodega">
-                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white">
+                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                         <option value="">Todas</option>
                         {renderSelectOptions(bodegas, (item) => item.id, (item) => `${item.codigo ? `${item.codigo} · ` : ''}${item.nombre || `Bodega #${item.id}`}`)}
                     </select>
@@ -549,7 +549,7 @@ const ReportesInventario = () => {
         if (key === 'lote_id') {
             return (
                 <Field key={key} label="Lote">
-                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white">
+                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                         <option value="">Todos</option>
                         {renderSelectOptions(lotes, (item) => item.id, (item) => item.codigo_lote || `Lote #${item.id}`)}
                     </select>
@@ -560,7 +560,7 @@ const ReportesInventario = () => {
         if (key === 'tipo') {
             return (
                 <Field key={key} label="Tipo">
-                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white">
+                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                         <option value="">Todos</option>
                         {movimientoTipos.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                     </select>
@@ -572,7 +572,7 @@ const ReportesInventario = () => {
             const options = reporte.key === 'reservas' ? estadoReservaOptions : estadoTomaOptions;
             return (
                 <Field key={key} label="Estado">
-                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white">
+                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                         <option value="">Todos</option>
                         {options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                     </select>
@@ -583,7 +583,7 @@ const ReportesInventario = () => {
         if (key === 'estado_stock') {
             return (
                 <Field key={key} label="Estado stock">
-                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white">
+                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                         <option value="">Todos</option>
                         {estadoStockOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                     </select>
@@ -594,7 +594,7 @@ const ReportesInventario = () => {
         if (key === 'estado_lote') {
             return (
                 <Field key={key} label="Estado lote">
-                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white">
+                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                         <option value="">Todos</option>
                         {estadoLoteOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                     </select>
@@ -605,7 +605,7 @@ const ReportesInventario = () => {
         if (key === 'desde' || key === 'hasta') {
             return (
                 <Field key={key} label={key === 'desde' ? 'Desde' : 'Hasta'}>
-                    <input type="date" name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white" />
+                    <input type="date" name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" />
                 </Field>
             );
         }
@@ -613,7 +613,7 @@ const ReportesInventario = () => {
         if (key === 'limit') {
             return (
                 <Field key={key} label="Filas">
-                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white">
+                    <select name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                         {limitOptions.map((item) => <option key={item} value={item}>{item}</option>)}
                     </select>
                 </Field>
@@ -623,7 +623,7 @@ const ReportesInventario = () => {
         if (key === 'dias_vencimiento') {
             return (
                 <Field key={key} label="Días vencimiento">
-                    <input type="number" min="0" name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 bg-white" />
+                    <input type="number" min="0" name={key} value={filters[key]} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" />
                 </Field>
             );
         }
@@ -658,10 +658,10 @@ const ReportesInventario = () => {
                         onClick={() => setTipoReporte(item.key)}
                         className={`text-left rounded-2xl border p-4 transition-all ${tipoReporte === item.key
                             ? 'bg-emerald-50 border-emerald-300 shadow-sm text-emerald-800'
-                            : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'}`}
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`}
                     >
                         <div className="flex items-center gap-3">
-                            <span className="w-10 h-10 rounded-xl bg-white border border-current/10 flex items-center justify-center">
+                            <span className="w-10 h-10 rounded-xl bg-white dark:bg-slate-700 border border-current/10 flex items-center justify-center">
                                 <i className={`${item.icon}`}></i>
                             </span>
                             <div>

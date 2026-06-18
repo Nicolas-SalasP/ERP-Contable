@@ -43,17 +43,17 @@ const TabHistorial = ({ anioInicial }) => {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-xl font-black text-slate-800">Historial de Ejecuciones</h2>
-                    <p className="text-sm text-slate-500 mt-0.5">
+                    <h2 className="text-xl font-black text-slate-800 dark:text-slate-200">Historial de Ejecuciones</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                         {ejecuciones.length} ejecuciones registradas {anio ? `en ${anio}` : 'en total'}.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Filtrar año</label>
+                    <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Filtrar año</label>
                     <select
                         value={anio ?? ''}
                         onChange={e => setAnio(e.target.value ? parseInt(e.target.value) : null)}
-                        className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 bg-white focus:ring-2 focus:ring-violet-500 outline-none cursor-pointer"
+                        className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 focus:ring-2 focus:ring-violet-500 outline-none cursor-pointer"
                     >
                         <option value="">Todos</option>
                         {[anioActual - 2, anioActual - 1, anioActual, anioActual + 1].map(y => (
@@ -76,10 +76,10 @@ const TabHistorial = ({ anioInicial }) => {
             ) : (
                 <div className="space-y-3">
                     {ejecuciones.map(ej => (
-                        <div key={ej.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div key={ej.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                             <button
                                 onClick={() => toggleExpandido(ej.id)}
-                                className="w-full flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 text-left hover:bg-slate-50 transition-colors gap-3"
+                                className="w-full flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors gap-3"
                             >
                                 <div className="flex items-center gap-4 flex-wrap">
                                     <div className="flex items-center gap-2">
@@ -91,11 +91,11 @@ const TabHistorial = ({ anioInicial }) => {
                                         </span>
                                     </div>
                                     <div>
-                                        <p className="font-black text-slate-900">{ej.periodo}</p>
+                                        <p className="font-black text-slate-900 dark:text-slate-100">{ej.periodo}</p>
                                         <p className="text-xs text-slate-400">{ej.fecha} · {ej.usuario}</p>
                                     </div>
                                     {ej.asiento_comprobante && (
-                                        <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200">
+                                        <span className="font-mono text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600">
                                             {ej.asiento_comprobante}
                                         </span>
                                     )}
@@ -104,7 +104,7 @@ const TabHistorial = ({ anioInicial }) => {
                                 <div className="flex items-center gap-6 sm:ml-auto">
                                     <div className="text-right">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">IPC Aplicado</p>
-                                        <p className="font-bold text-slate-700">{Number(ej.variacion_pct).toFixed(4)}%</p>
+                                        <p className="font-bold text-slate-700 dark:text-slate-300">{Number(ej.variacion_pct).toFixed(4)}%</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total CM</p>
@@ -115,7 +115,7 @@ const TabHistorial = ({ anioInicial }) => {
                             </button>
 
                             {expandido === ej.id && (
-                                <div className="border-t border-slate-100 px-6 py-5 bg-slate-50/50">
+                                <div className="border-t border-slate-100 dark:border-slate-700 px-6 py-5 bg-slate-50/50 dark:bg-slate-900/50">
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                                         {[
                                             { label: 'Activos',      val: ej.total_activos,      color: 'text-blue-700' },
@@ -124,8 +124,8 @@ const TabHistorial = ({ anioInicial }) => {
                                             { label: 'Patrimonio',   val: ej.total_patrimonio,   color: 'text-violet-700' },
                                             { label: 'Pasivos',      val: ej.total_pasivos,      color: 'text-rose-700' },
                                         ].map(item => (
-                                            <div key={item.label} className={`bg-white rounded-xl border border-slate-200 px-4 py-3 ${parseFloat(item.val) <= 0 ? 'opacity-40' : ''}`}>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
+                                            <div key={item.label} className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 ${parseFloat(item.val) <= 0 ? 'opacity-40' : ''}`}>
+                                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{item.label}</p>
                                                 <p className={`font-black text-sm mt-0.5 ${item.color}`}>{formatCLP(item.val)}</p>
                                             </div>
                                         ))}

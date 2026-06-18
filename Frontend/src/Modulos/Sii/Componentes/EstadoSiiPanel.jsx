@@ -3,8 +3,8 @@ import useEstadoSii from '../Hooks/useEstadoSii';
 import ModalReintentarSii from './ModalReintentarSii';
 
 const ESTILO_POR_ESTADO = {
-    BORRADOR:              'bg-gray-100 text-gray-800 border-gray-300',
-    FOLIO_RESERVADO:       'bg-gray-100 text-gray-800 border-gray-300',
+    BORRADOR:              'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 border-gray-300 dark:border-slate-600',
+    FOLIO_RESERVADO:       'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 border-gray-300 dark:border-slate-600',
     XML_GENERADO:          'bg-blue-50 text-blue-700 border-blue-200',
     FIRMADO:               'bg-blue-100 text-blue-800 border-blue-300',
     ENVIADO_SII:           'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -32,9 +32,9 @@ function formatoFecha(iso) {
 
 function Fila({ etiqueta, valor, testid }) {
     return (
-        <div className="flex justify-between gap-4 py-1 text-sm border-b border-slate-100 last:border-b-0">
-            <span className="text-slate-500 font-medium">{etiqueta}</span>
-            <span className="text-slate-800 font-mono text-right" data-testid={testid}>
+        <div className="flex justify-between gap-4 py-1 text-sm border-b border-slate-100 dark:border-slate-700 last:border-b-0">
+            <span className="text-slate-500 dark:text-slate-400 font-medium">{etiqueta}</span>
+            <span className="text-slate-800 dark:text-slate-200 font-mono text-right" data-testid={testid}>
                 {valor ?? '—'}
             </span>
         </div>
@@ -61,7 +61,7 @@ export function EstadoSiiPanel({ facturaId }) {
     if (cargando) {
         return (
             <div
-                className="p-4 border border-slate-200 rounded bg-slate-50 text-slate-500 text-sm"
+                className="p-4 border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-sm"
                 data-testid="estado-sii-panel-cargando"
             >
                 <div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export function EstadoSiiPanel({ facturaId }) {
         return (
             <>
                 <div
-                    className="p-4 border border-slate-200 rounded bg-slate-50 text-slate-600 text-sm flex flex-wrap items-center justify-between gap-3"
+                    className="p-4 border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-sm flex flex-wrap items-center justify-between gap-3"
                     data-testid="estado-sii-panel-sin-dte"
                 >
                     <span>Esta factura aun no ha sido emitida al SII (sin DTE asociado).</span>
@@ -126,7 +126,7 @@ export function EstadoSiiPanel({ facturaId }) {
         );
     }
 
-    const estilo = ESTILO_POR_ESTADO[data.estado] ?? 'bg-gray-100 text-gray-800 border-gray-300';
+    const estilo = ESTILO_POR_ESTADO[data.estado] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 border-gray-300 dark:border-slate-600';
 
     return (
         <div
@@ -163,7 +163,7 @@ export function EstadoSiiPanel({ facturaId }) {
                 </button>
             </header>
 
-            <div className="px-4 py-3 bg-white/60 space-y-1">
+            <div className="px-4 py-3 bg-white/60 dark:bg-slate-800/60 space-y-1">
                 {data.estado_glosa_humana && (
                     <p
                         className="text-sm italic mb-2 text-slate-700"
@@ -216,7 +216,7 @@ export function EstadoSiiPanel({ facturaId }) {
 
                 {data.ultimo_evento && (
                     <div
-                        className="mt-3 p-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-700"
+                        className="mt-3 p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-700 dark:text-slate-300"
                         data-testid="estado-sii-panel-ultimo-evento"
                     >
                         <span className="font-bold">Ultimo evento: </span>

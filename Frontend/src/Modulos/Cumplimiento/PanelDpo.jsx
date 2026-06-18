@@ -53,20 +53,20 @@ const tipoCorto = (fqcn) => (fqcn ? String(fqcn).split('\\').pop() : '—');
 const HitoTimeline = ({ label, plazo, valor, onRegistrar }) => {
     const cumplido = Boolean(valor);
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 py-2 border-b border-slate-100 last:border-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
             <span
                 className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${
-                    cumplido ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400'
+                    cumplido ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
                 }`}
                 aria-hidden="true"
             >
                 {cumplido ? '✓' : '○'}
             </span>
             <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-slate-700">{label}</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{label}</p>
                 <p className="text-xs text-slate-400">{plazo}</p>
             </div>
-            <div className="text-xs text-slate-600 shrink-0">
+            <div className="text-xs text-slate-600 dark:text-slate-400 shrink-0">
                 {cumplido ? (
                     <span className="text-emerald-700 font-medium">{fmtFecha(valor)}</span>
                 ) : (
@@ -119,19 +119,19 @@ const TarjetaIncidente = ({ incidente, onActualizar }) => {
     };
 
     return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
             {/* Cabecera (siempre visible) */}
             <button
                 type="button"
                 aria-expanded={expandido}
                 onClick={() => setExpandido((v) => !v)}
-                className="w-full flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+                className="w-full flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                     <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${SEVERIDAD_ESTILOS[incidente.severidad] ?? 'bg-slate-100 text-slate-700'}`}>
                         {incidente.severidad}
                     </span>
-                    <span className="font-semibold text-sm text-slate-800 truncate">{incidente.titulo}</span>
+                    <span className="font-semibold text-sm text-slate-800 dark:text-slate-200 truncate">{incidente.titulo}</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${ESTADO_ESTILOS[incidente.estado] ?? 'bg-slate-100 text-slate-700'}`}>
@@ -144,10 +144,10 @@ const TarjetaIncidente = ({ incidente, onActualizar }) => {
 
             {/* Detalle expandible */}
             {expandido && (
-                <div className="border-t border-slate-100 px-4 py-4 space-y-4">
-                    <p className="text-sm text-slate-700">{incidente.descripcion}</p>
+                <div className="border-t border-slate-100 dark:border-slate-700 px-4 py-4 space-y-4">
+                    <p className="text-sm text-slate-700 dark:text-slate-300">{incidente.descripcion}</p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600 dark:text-slate-400">
                         {incidente.origen && (
                             <div><span className="font-semibold">Origen:</span> {incidente.origen}</div>
                         )}
@@ -166,8 +166,8 @@ const TarjetaIncidente = ({ incidente, onActualizar }) => {
                     </div>
 
                     {/* Línea de tiempo legal 3h / 72h */}
-                    <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
                             Línea de tiempo legal
                         </p>
                         <HitoTimeline
@@ -260,19 +260,19 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
         }
     };
 
-    const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 outline-none';
+    const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200';
 
     return (
         <form
             onSubmit={enviar}
-            className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 space-y-4 shadow-sm"
+            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 space-y-4 shadow-sm"
             aria-label="Registrar incidente de seguridad"
         >
-            <h3 className="text-base font-bold text-slate-800">Registrar nuevo incidente</h3>
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">Registrar nuevo incidente</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="inc-titulo">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="inc-titulo">
                         Título <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -289,7 +289,7 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
                 </div>
 
                 <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="inc-desc">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="inc-desc">
                         Descripción <span className="text-rose-500">*</span>
                     </label>
                     <textarea
@@ -306,7 +306,7 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
                 </div>
 
                 <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="inc-severidad">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="inc-severidad">
                         Severidad <span className="text-rose-500">*</span>
                     </label>
                     <select
@@ -325,7 +325,7 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
                 </div>
 
                 <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="inc-detectado">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="inc-detectado">
                         Fecha/hora detección <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -341,7 +341,7 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
                 </div>
 
                 <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="inc-origen">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="inc-origen">
                         Origen / vector
                     </label>
                     <input
@@ -356,7 +356,7 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
                 </div>
 
                 <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="inc-afectados">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="inc-afectados">
                         N.° afectados estimado
                     </label>
                     <input
@@ -373,7 +373,7 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
                 </div>
 
                 <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="inc-categorias">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="inc-categorias">
                         Categorías de datos afectados
                     </label>
                     <input
@@ -393,7 +393,7 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
                 <button
                     type="button"
                     onClick={onCancelar}
-                    className="px-4 py-2 border border-slate-300 text-slate-600 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 bg-white dark:bg-slate-800 transition-colors"
                 >
                     Cancelar
                 </button>
@@ -444,7 +444,7 @@ const TabAuditoria = () => {
     useEffect(() => { cargar(); }, [cargar]);
 
     const setF = (k, v) => setFiltros((prev) => ({ ...prev, [k]: v, page: 1 }));
-    const inputCls = 'border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500';
+    const inputCls = 'border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200';
 
     return (
         <div className="space-y-4">
@@ -508,9 +508,9 @@ const TabAuditoria = () => {
                 tamano="compacto"
                 onReintentar={cargar}
             >
-                <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <table className="min-w-full text-sm">
-                        <thead className="bg-slate-50 text-xs text-slate-600 uppercase tracking-wide">
+                        <thead className="bg-slate-50 dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                             <tr>
                                 <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Fecha</th>
                                 <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Operación</th>
@@ -520,19 +520,19 @@ const TabAuditoria = () => {
                                 <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Campos afectados</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 bg-white">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
                             {registros.map((r) => (
-                                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-xs">{fmtFecha(r.created_at)}</td>
+                                <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap text-xs">{fmtFecha(r.created_at)}</td>
                                     <td className="px-4 py-3">
                                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${OPERACION_ESTILOS[r.operacion] ?? 'bg-slate-100 text-slate-600'}`}>
                                             {r.operacion}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{tipoCorto(r.auditable_type)}</td>
-                                    <td className="px-4 py-3 text-slate-600 text-xs">{r.auditable_id ?? '—'}</td>
-                                    <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">{r.nombre_usuario ?? r.usuario ?? '—'}</td>
-                                    <td className="px-4 py-3 text-slate-500 text-xs max-w-xs truncate">
+                                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap">{tipoCorto(r.auditable_type)}</td>
+                                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs">{r.auditable_id ?? '—'}</td>
+                                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap">{r.nombre_usuario ?? r.usuario ?? '—'}</td>
+                                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs max-w-xs truncate">
                                         {r.campos_afectados
                                             ? (Array.isArray(r.campos_afectados)
                                                 ? r.campos_afectados.join(', ')
@@ -548,7 +548,7 @@ const TabAuditoria = () => {
                 {/* Paginación */}
                 {meta && meta.last_page > 1 && (
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 text-xs text-slate-500">
-                        <span>
+                        <span className="text-slate-500 dark:text-slate-400">
                             Página {meta.current_page} de {meta.last_page} — {meta.total} registros
                         </span>
                         <div className="flex gap-2">
@@ -556,7 +556,7 @@ const TabAuditoria = () => {
                                 type="button"
                                 disabled={meta.current_page <= 1}
                                 onClick={() => setFiltros((prev) => ({ ...prev, page: prev.page - 1 }))}
-                                className="px-3 py-1 border border-slate-300 rounded-md disabled:opacity-40 hover:bg-slate-100 transition-colors"
+                                className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-md disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300"
                             >
                                 ← Anterior
                             </button>
@@ -564,7 +564,7 @@ const TabAuditoria = () => {
                                 type="button"
                                 disabled={meta.current_page >= meta.last_page}
                                 onClick={() => setFiltros((prev) => ({ ...prev, page: prev.page + 1 }))}
-                                className="px-3 py-1 border border-slate-300 rounded-md disabled:opacity-40 hover:bg-slate-100 transition-colors"
+                                className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-md disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300"
                             >
                                 Siguiente →
                             </button>
@@ -707,7 +707,7 @@ const PanelDpo = () => {
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-slate-200">
+            <div className="border-b border-slate-200 dark:border-slate-700">
                 <nav className="flex gap-1" aria-label="Secciones del panel DPO">
                     {TABS.map((t) => (
                         <button
@@ -719,7 +719,7 @@ const PanelDpo = () => {
                             className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
                                 tab === t.id
                                     ? 'border-emerald-500 text-emerald-700'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300'
                             }`}
                         >
                             {t.label}

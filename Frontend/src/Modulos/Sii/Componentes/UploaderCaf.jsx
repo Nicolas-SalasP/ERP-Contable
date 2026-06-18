@@ -67,20 +67,20 @@ const UploaderCaf = ({ onSubidoExitosamente, deshabilitado = false }) => {
         <form
             onSubmit={handleSubmit}
             data-testid="uploader-caf"
-            className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4 animate-fade-in"
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-4 animate-fade-in"
         >
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <i className="fas fa-cloud-upload-alt text-emerald-600" /> Cargar Nuevo CAF
                     </h3>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         Sube el archivo XML del CAF descargado del SII. Maximo 100 KB.
                     </p>
                 </div>
             </div>
 
-            <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-emerald-400 transition-colors">
+            <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-emerald-400 transition-colors">
                 <input
                     id="caf-archivo"
                     data-testid="caf-archivo"
@@ -96,8 +96,8 @@ const UploaderCaf = ({ onSubidoExitosamente, deshabilitado = false }) => {
                         <span className="text-sm text-emerald-700 font-bold">{archivo.name}</span>
                     ) : (
                         <>
-                            <span className="text-sm font-bold text-slate-700">Selecciona o arrastra el archivo .xml</span>
-                            <span className="text-xs text-slate-500">CAFs reales pesan 5-15 KB</span>
+                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Selecciona o arrastra el archivo .xml</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">CAFs reales pesan 5-15 KB</span>
                         </>
                     )}
                 </label>

@@ -61,7 +61,7 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
 
     return (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
                 <div className="bg-slate-900 px-6 py-5 flex justify-between items-center text-white shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
@@ -83,13 +83,13 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                 <i className="fas fa-file-invoice"></i> Resumen de la Deuda
                             </h3>
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <div className="w-full md:w-auto">
                                     <p className="text-[10px] font-bold text-slate-400 uppercase">Proveedor</p>
-                                    <p className="font-bold text-slate-800 text-lg truncate max-w-[180px] sm:max-w-[250px]">{factura.nombre_proveedor}</p>
-                                    <p className="text-sm font-mono text-slate-500">Factura N° {factura.numero_factura}</p>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-lg truncate max-w-[180px] sm:max-w-[250px]">{factura.nombre_proveedor}</p>
+                                    <p className="text-sm font-mono text-slate-500 dark:text-slate-400">Factura N° {factura.numero_factura}</p>
                                 </div>
-                                <div className="w-full md:w-auto text-left md:text-right border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-6">
+                                <div className="w-full md:w-auto text-left md:text-right border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-700 pt-3 md:pt-0 md:pl-6">
                                     <p className="text-[10px] font-bold text-emerald-600 uppercase">Monto Total a Pagar</p>
                                     <p className="text-3xl font-black text-emerald-600 tracking-tight">{formatCurrency(factura.monto_bruto)}</p>
                                 </div>
@@ -103,12 +103,12 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
                                 <div className="md:col-span-2">
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Medio de Pago</label>
+                                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-2">Medio de Pago</label>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         {['TRANSFERENCIA', 'CHEQUE', 'EFECTIVO', 'TARJETA'].map((medio) => (
                                             <label
                                                 key={medio}
-                                                className={`cursor-pointer border rounded-xl p-3 text-center transition-all ${formPago.medioPago === medio ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}
+                                                className={`cursor-pointer border rounded-xl p-3 text-center transition-all ${formPago.medioPago === medio ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500'}`}
                                             >
                                                 <input
                                                     type="radio"
@@ -118,12 +118,12 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                                                     onChange={e => setFormPago({ ...formPago, medioPago: e.target.value })}
                                                     className="hidden"
                                                 />
-                                                <i className={`text-xl mb-1 block ${formPago.medioPago === medio ? 'text-indigo-600' : 'text-slate-400'} 
+                                                <i className={`text-xl mb-1 block ${formPago.medioPago === medio ? 'text-indigo-600' : 'text-slate-400'}
                                                     ${medio === 'TRANSFERENCIA' ? 'fas fa-exchange-alt' :
                                                         medio === 'CHEQUE' ? 'fas fa-money-check-alt' :
                                                             medio === 'EFECTIVO' ? 'fas fa-coins' : 'fas fa-credit-card'}`}>
                                                 </i>
-                                                <span className={`text-xs font-bold ${formPago.medioPago === medio ? 'text-indigo-800' : 'text-slate-600'}`}>
+                                                <span className={`text-xs font-bold ${formPago.medioPago === medio ? 'text-indigo-800' : 'text-slate-600 dark:text-slate-400'}`}>
                                                     {medio.charAt(0) + medio.slice(1).toLowerCase()}
                                                 </span>
                                             </label>
@@ -132,7 +132,7 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Fecha Exacta del Egreso</label>
+                                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-2">Fecha Exacta del Egreso</label>
                                     <div className="relative">
                                         <i className="fas fa-calendar-alt absolute left-4 top-3.5 text-slate-400"></i>
                                         <input
@@ -140,13 +140,13 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                                             required
                                             value={formPago.fechaPago}
                                             onChange={e => setFormPago({ ...formPago, fechaPago: e.target.value })}
-                                            className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white dark:bg-slate-700"
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">N° Ref. / Operación</label>
+                                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-2">N° Ref. / Operación</label>
                                     <div className="relative">
                                         <i className="fas fa-hashtag absolute left-4 top-3.5 text-slate-400"></i>
                                         <input
@@ -154,17 +154,17 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                                             placeholder="Ej: 884721"
                                             value={formPago.numeroOperacion}
                                             onChange={e => setFormPago({ ...formPago, numeroOperacion: e.target.value })}
-                                            className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl font-mono font-bold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl font-mono font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white dark:bg-slate-700"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Cuenta Contable / Banco de Origen</label>
+                                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-2">Cuenta Contable / Banco de Origen</label>
                                     <div className="relative">
                                         <i className="fas fa-university absolute left-4 top-3.5 text-slate-400"></i>
                                         <select
-                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium text-slate-600 outline-none bg-slate-50 cursor-not-allowed appearance-none"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl font-medium text-slate-600 dark:text-slate-400 outline-none bg-slate-50 dark:bg-slate-700 cursor-not-allowed appearance-none"
                                             value={formPago.cuentaOrigen}
                                             disabled
                                         >
@@ -177,11 +177,11 @@ const ModalPagoFactura = ({ isOpen, onClose, factura, onPagoExitoso }) => {
                     </form>
                 </div>
 
-                <div className="bg-slate-50 px-6 py-4 flex flex-col-reverse md:flex-row justify-end gap-3 border-t border-slate-200 shrink-0">
+                <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 flex flex-col-reverse md:flex-row justify-end gap-3 border-t border-slate-200 dark:border-slate-700 shrink-0">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-full md:w-auto px-6 py-3 text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-sm font-bold transition-all"
+                        className="w-full md:w-auto px-6 py-3 text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-sm font-bold transition-all"
                     >
                         Cancelar
                     </button>

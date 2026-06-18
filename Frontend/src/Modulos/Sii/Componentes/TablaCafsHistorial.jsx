@@ -56,18 +56,18 @@ const TablaCafsHistorial = ({ cafs, cargando, filtroTipo, onCambiarFiltro, onRev
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in" data-testid="historial-tabla">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden animate-fade-in" data-testid="historial-tabla">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <i className="fas fa-history text-slate-500" /> Historial de CAFs
                 </h3>
                 <label className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-600">Filtrar por tipo:</span>
+                    <span className="text-slate-600 dark:text-slate-400">Filtrar por tipo:</span>
                     <select
                         data-testid="filtro-tipo"
                         value={filtroTipo ?? ''}
                         onChange={handleFiltro}
-                        className="border border-slate-300 rounded-md px-2 py-1 text-sm bg-white"
+                        className="border border-slate-300 dark:border-slate-600 rounded-md px-2 py-1 text-sm bg-white dark:bg-slate-700 dark:text-slate-200"
                     >
                         <option value="">Todos</option>
                         {TIPOS_DTE.map((t) => (
@@ -89,8 +89,8 @@ const TablaCafsHistorial = ({ cafs, cargando, filtroTipo, onCambiarFiltro, onRev
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                            <tr className="text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                        <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                            <tr className="text-left text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                                 <th className="px-4 py-3">Tipo</th>
                                 <th className="px-4 py-3">Rango</th>
                                 <th className="px-4 py-3">Uso</th>
@@ -101,29 +101,29 @@ const TablaCafsHistorial = ({ cafs, cargando, filtroTipo, onCambiarFiltro, onRev
                                 <th className="px-4 py-3 text-right">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {cafs.map((caf) => {
                                 const total = caf.folio_hasta - caf.folio_desde + 1;
                                 const venc = badgeVencimiento(caf.fecha_vencimiento);
                                 return (
-                                    <tr key={caf.id} data-testid={`caf-row-${caf.id}`} className="hover:bg-slate-50/50">
+                                    <tr key={caf.id} data-testid={`caf-row-${caf.id}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50">
                                         <td className="px-4 py-3">
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded w-fit">{caf.tipo_dte}</span>
-                                                <span className="text-xs text-slate-500 mt-0.5">{NOMBRE_TIPO[caf.tipo_dte] ?? `Tipo ${caf.tipo_dte}`}</span>
+                                                <span className="text-xs font-mono bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded w-fit">{caf.tipo_dte}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{NOMBRE_TIPO[caf.tipo_dte] ?? `Tipo ${caf.tipo_dte}`}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{caf.folio_desde} - {caf.folio_hasta}</td>
+                                        <td className="px-4 py-3 font-mono text-xs text-slate-700 dark:text-slate-300">{caf.folio_desde} - {caf.folio_hasta}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2 text-xs">
-                                                <span className="font-mono text-slate-700">{caf.folios_usados}/{total}</span>
+                                                <span className="font-mono text-slate-700 dark:text-slate-300">{caf.folios_usados}/{total}</span>
                                                 <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                     <div className="h-full bg-blue-500" style={{ width: `${total > 0 ? (caf.folios_usados / total) * 100 : 0}%` }} />
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-xs text-slate-600 hidden md:table-cell">{caf.sii_idk}</td>
-                                        <td className="px-4 py-3 text-xs text-slate-600 hidden md:table-cell">{formatearFecha(caf.fecha_autorizacion)}</td>
+                                        <td className="px-4 py-3 font-mono text-xs text-slate-600 dark:text-slate-400 hidden md:table-cell">{caf.sii_idk}</td>
+                                        <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 hidden md:table-cell">{formatearFecha(caf.fecha_autorizacion)}</td>
                                         <td className="px-4 py-3">
                                             {venc ? (
                                                 <span className={`text-xs font-bold px-2 py-1 rounded-full border ${venc.clases}`}>{venc.texto}</span>

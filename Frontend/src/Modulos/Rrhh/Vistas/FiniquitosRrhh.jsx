@@ -7,7 +7,7 @@ import rrhhApi from '../Servicios/rrhhApi';
 import { colorEstado, formatFecha, formatPesos } from '../Utilidades/formato';
 import PanelModal from '../Componentes/PanelModal';
 
-const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
 const CAUSALES = [
     { v: 'NECESIDADES_EMPRESA', l: 'Necesidades de la empresa (Art. 161) — con indemnización' },
@@ -27,9 +27,9 @@ const FORM_VACIO = {
 };
 
 const Fila = ({ label, valor }) => (
-    <div className="flex justify-between py-1.5 text-sm border-b border-slate-100 last:border-0">
-        <span className="text-slate-600">{label}</span>
-        <span className="font-medium text-slate-900">{valor}</span>
+    <div className="flex justify-between py-1.5 text-sm border-b border-slate-100 dark:border-slate-700 last:border-0">
+        <span className="text-slate-600 dark:text-slate-400">{label}</span>
+        <span className="font-medium text-slate-900 dark:text-slate-100">{valor}</span>
     </div>
 );
 
@@ -148,13 +148,13 @@ const FiniquitosRrhh = () => {
             <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
                             <i className="fas fa-handshake-slash text-emerald-600" />
                             Finiquitos
                         </h1>
                         <AyudaModulo moduloId="finiquitosRrhh" size={28} />
                     </div>
-                    <p className="text-sm text-slate-500 mt-1">Indemnización por años de servicio, aviso previo y vacaciones proporcionales (Código del Trabajo).</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Indemnización por años de servicio, aviso previo y vacaciones proporcionales (Código del Trabajo).</p>
                 </div>
                 {puedeProcesar && (
                     <button onClick={() => { setForm(FORM_VACIO); setContratos([]); setModalCalc(true); }}
@@ -165,10 +165,10 @@ const FiniquitosRrhh = () => {
             </header>
 
             <EstadoCarga cargando={cargando} mensajeCargando="Cargando finiquitos..." color="emerald" tamano="compacto">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-semibold">Empleado</th>
                                     <th className="px-4 py-3 text-left font-semibold">Causal</th>
@@ -178,7 +178,7 @@ const FiniquitosRrhh = () => {
                                     <th className="px-4 py-3 text-right font-semibold">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {finiquitos.length === 0 && (
                                     <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">
                                         <i className="fas fa-file-circle-xmark text-2xl mb-2 block" />
@@ -186,13 +186,13 @@ const FiniquitosRrhh = () => {
                                     </td></tr>
                                 )}
                                 {finiquitos.map((fin) => (
-                                    <tr key={fin.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 font-medium text-slate-900">
+                                    <tr key={fin.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                                             {fin.empleado ? `${fin.empleado.nombres} ${fin.empleado.apellido_paterno}` : `#${fin.empleado_id}`}
                                         </td>
-                                        <td className="px-4 py-3 text-slate-600 text-xs">{fin.causal?.replaceAll('_', ' ')}</td>
-                                        <td className="px-4 py-3 text-slate-600">{formatFecha(fin.fecha_termino)}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-slate-900">{formatPesos(fin.total_neto)}</td>
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs">{fin.causal?.replaceAll('_', ' ')}</td>
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{formatFecha(fin.fecha_termino)}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-slate-900 dark:text-slate-100">{formatPesos(fin.total_neto)}</td>
                                         <td className="px-4 py-3">
                                             <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${colorEstado(fin.estado)}`}>{fin.estado}</span>
                                         </td>
@@ -218,39 +218,39 @@ const FiniquitosRrhh = () => {
             <PanelModal abierto={modalCalc} titulo="Calcular finiquito" icono="fas fa-calculator" onClose={() => setModalCalc(false)}>
                 <form onSubmit={calcular} className="grid sm:grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Empleado *</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado *</label>
                         <select required value={form.empleado_id} onChange={(e) => onEmpleado(e.target.value)} className={inputCls}>
                             <option value="">Selecciona...</option>
                             {empleados.map((emp) => <option key={emp.id} value={emp.id}>{emp.rut} — {emp.nombres} {emp.apellido_paterno}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Contrato vigente *</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Contrato vigente *</label>
                         <select required value={form.contrato_id} onChange={(e) => setCampo('contrato_id', e.target.value)} className={inputCls} disabled={!form.empleado_id}>
                             <option value="">{form.empleado_id ? 'Selecciona...' : 'Elige empleado primero'}</option>
                             {contratos.map((c) => <option key={c.id} value={c.id}>{c.cargo || c.tipo} — desde {formatFecha(c.fecha_inicio)}</option>)}
                         </select>
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Causal de término *</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Causal de término *</label>
                         <select required value={form.causal} onChange={(e) => setCampo('causal', e.target.value)} className={inputCls}>
                             {CAUSALES.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha de término *</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha de término *</label>
                         <input required type="date" value={form.fecha_termino} onChange={(e) => setCampo('fecha_termino', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Promedio remuneraciones variables</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Promedio remuneraciones variables</label>
                         <input type="number" min="0" value={form.promedio_variables} onChange={(e) => setCampo('promedio_variables', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Haberes pendientes</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Haberes pendientes</label>
                         <input type="number" min="0" value={form.haberes_pendientes} onChange={(e) => setCampo('haberes_pendientes', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Descuentos pendientes</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Descuentos pendientes</label>
                         <input type="number" min="0" value={form.descuentos_pendientes} onChange={(e) => setCampo('descuentos_pendientes', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2">
@@ -261,11 +261,11 @@ const FiniquitosRrhh = () => {
                         </label>
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Observaciones</label>
                         <textarea rows={2} value={form.observaciones} onChange={(e) => setCampo('observaciones', e.target.value)} className={inputCls} />
                     </div>
-                    <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200">
-                        <button type="button" onClick={() => setModalCalc(false)} className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 font-semibold text-sm hover:bg-slate-50">Cancelar</button>
+                    <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <button type="button" onClick={() => setModalCalc(false)} className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>
                         <button type="submit" disabled={calculando} className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm disabled:opacity-60 inline-flex items-center gap-2">
                             {calculando && <i className="fas fa-spinner fa-spin" />} Calcular
                         </button>
@@ -278,12 +278,12 @@ const FiniquitosRrhh = () => {
                 {detalle && (
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <p className="font-bold text-slate-900">
+                            <p className="font-bold text-slate-900 dark:text-slate-100">
                                 {detalle.empleado ? `${detalle.empleado.nombres} ${detalle.empleado.apellido_paterno}` : `Empleado #${detalle.empleado_id}`}
                             </p>
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${colorEstado(detalle.estado)}`}>{detalle.estado}</span>
                         </div>
-                        <div className="bg-slate-50 rounded-xl p-4">
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4">
                             <Fila label="Años de servicio" valor={`${detalle.anios_calculo} (${detalle.anios_servicio} completos + ${detalle.meses_fraccion} meses)`} />
                             <Fila label="Base de cálculo (tope 90 UF)" valor={formatPesos(detalle.remuneracion_base_calculo)} />
                             <Fila label="Indemnización años de servicio" valor={formatPesos(detalle.monto_indemnizacion_anos)} />
@@ -297,7 +297,7 @@ const FiniquitosRrhh = () => {
                             <p className="font-black text-emerald-700 text-lg">{formatPesos(detalle.total_neto)}</p>
                         </div>
                         {puedeProcesar && detalle.estado === 'BORRADOR' && (
-                            <div className="flex justify-end pt-2 border-t border-slate-200">
+                            <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-700">
                                 <button onClick={() => firmar(detalle)} className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm inline-flex items-center gap-2">
                                     <i className="fas fa-signature" /> Firmar finiquito
                                 </button>

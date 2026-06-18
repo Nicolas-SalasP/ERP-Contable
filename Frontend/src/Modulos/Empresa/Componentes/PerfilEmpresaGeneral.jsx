@@ -14,7 +14,7 @@ const PerfilEmpresaGeneral = ({
     return (
         <div className="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
             <div className="lg:col-span-1 flex flex-col items-center space-y-4">
-                <div className="w-56 h-56 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center bg-slate-50 overflow-hidden relative group transition-colors hover:border-blue-400">
+                <div className="w-56 h-56 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-slate-900 overflow-hidden relative group transition-colors hover:border-blue-400">
                     {imagenMostrada ? (
                         <img src={imagenMostrada} alt="Logo Empresa" className="w-full h-full object-contain p-4" />
                     ) : (
@@ -47,7 +47,7 @@ const PerfilEmpresaGeneral = ({
                             value={formData.rut}
                             onChange={onRutChange}
                             placeholder="76.123.456-K"
-                            className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 font-mono text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-700 font-mono text-sm outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200"
                         />
                     </div>
                     <div>
@@ -58,7 +58,7 @@ const PerfilEmpresaGeneral = ({
                             name="razon_social"
                             value={formData.razon_social}
                             onChange={onChange}
-                            className="w-full border border-slate-200 rounded-lg p-2.5 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         />
                     </div>
                 </div>
@@ -72,7 +72,7 @@ const PerfilEmpresaGeneral = ({
                         name="regimen_tributario"
                         value={formData.regimen_tributario}
                         onChange={onChange}
-                        className="w-full border border-blue-200 rounded-lg p-2.5 bg-white text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                        className="w-full border border-blue-200 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                     >
                         <option value="14_D3">Régimen Pro Pyme General (14 D N° 3)</option>
                         <option value="14_D8">Régimen Pro Pyme Transparente (14 D N° 8)</option>
@@ -91,7 +91,7 @@ const PerfilEmpresaGeneral = ({
                         name="direccion"
                         value={formData.direccion}
                         onChange={onChange}
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         placeholder="Calle, Número, Comuna..."
                     />
                 </div>
@@ -106,7 +106,7 @@ const PerfilEmpresaGeneral = ({
                             type="email"
                             value={formData.email}
                             onChange={onChange}
-                            className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         />
                     </div>
                     <div>
@@ -118,7 +118,7 @@ const PerfilEmpresaGeneral = ({
                             value={formData.telefono}
                             onChange={onTelefonoChange}
                             placeholder="+56 9 1234 5678"
-                            className="w-full border border-slate-200 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         />
                     </div>
                 </div>
@@ -140,13 +140,13 @@ const PerfilEmpresaGeneral = ({
                             name="color_primario"
                             value={formData.color_primario}
                             onChange={onChange}
-                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono uppercase w-28 focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm font-mono uppercase w-28 focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                             maxLength={7}
                         />
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
                     <BotonAccion
                         type="submit"
                         cargando={saving}

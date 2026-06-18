@@ -49,7 +49,7 @@ const initialMove = {
     observacion: '',
 };
 
-const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none';
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none';
 
 const normalizarLista = (response) => {
     const data = response?.data || [];
@@ -373,9 +373,9 @@ const UbicacionesInventario = () => {
                             <input type="number" min="0" step="0.01" name="capacidad_maxima" value={form.capacidad_maxima} onChange={handleFormChange} className={inputClass} />
                         </Field>
 
-                        <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 cursor-pointer hover:bg-slate-50">
+                        <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-600 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
                             <input type="checkbox" name="activo" checked={form.activo} onChange={handleFormChange} className="w-4 h-4 text-emerald-500 rounded" />
-                            <span className="text-sm font-black text-slate-700">Ubicación activa</span>
+                            <span className="text-sm font-black text-slate-700 dark:text-slate-300">Ubicación activa</span>
                         </label>
 
                         <div className="xl:col-span-4 flex justify-end">
@@ -479,7 +479,7 @@ const UbicacionesInventario = () => {
                     <EmptyState title="Sin ubicaciones" description="Aún no hay ubicaciones para los filtros seleccionados." icon="fas fa-location-dot" />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Nombre</Th>
@@ -490,10 +490,10 @@ const UbicacionesInventario = () => {
                                 <Th align="right">Capacidad</Th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {ubicacionesFiltradas.map((ubicacion) => (
-                                <tr key={ubicacion.id} className="hover:bg-slate-50/80 transition-colors">
-                                    <Td className="font-black text-slate-800">{ubicacion.codigo}</Td>
+                                <tr key={ubicacion.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700 transition-colors">
+                                    <Td className="font-black text-slate-800 dark:text-slate-200">{ubicacion.codigo}</Td>
                                     <Td>{ubicacion.nombre}</Td>
                                     <Td>{getBodegaNombre(bodegas, ubicacion.bodega_id)}</Td>
                                     <Td><EstadoBadge value={ubicacion.tipo} /></Td>
@@ -512,7 +512,7 @@ const UbicacionesInventario = () => {
                     <EmptyState title="Sin stock por ubicación" description="Registra entradas con ubicación o movimientos internos para poblar esta vista." icon="fas fa-box-open" />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Producto</Th>
                                 <Th>Bodega</Th>
@@ -525,10 +525,10 @@ const UbicacionesInventario = () => {
                                 <Th align="right">Tránsito</Th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {stockFiltrado.map((item) => (
-                                <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                                    <Td className="font-black text-slate-800">{item.producto?.nombre || `Producto #${item.producto_id}`}</Td>
+                                <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700 transition-colors">
+                                    <Td className="font-black text-slate-800 dark:text-slate-200">{item.producto?.nombre || `Producto #${item.producto_id}`}</Td>
                                     <Td>{item.bodega?.nombre || getBodegaNombre(bodegas, item.bodega_id)}</Td>
                                     <Td>{item.ubicacion?.codigo ? `${item.ubicacion.codigo} · ${item.ubicacion.nombre}` : getUbicacionNombre(ubicaciones, item.ubicacion_id)}</Td>
                                     <Td align="right">{formatNumber(item.stock_actual, 2)}</Td>

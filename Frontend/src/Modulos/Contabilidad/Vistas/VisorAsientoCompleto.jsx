@@ -79,16 +79,16 @@ const VisorAsientoCompleto = () => {
     };
 
     return (
-        <div className="p-6 bg-slate-50 min-h-screen animate-fade-in-up">
-            <div className="bg-white p-5 rounded-t-lg shadow-sm border border-slate-200 mb-4 flex justify-between items-start">
+        <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-screen animate-fade-in-up">
+            <div className="bg-white dark:bg-slate-800 p-5 rounded-t-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-4 flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 mb-1">
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1">
                         Comprobante Contable #{cabecera.numero_comprobante || cabecera.id}
                     </h1>
-                    <p className="text-slate-500 text-sm font-medium">
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
                         Fecha: {formatoFechaCorta(cabecera.fecha)} | Estado: <span className="text-emerald-600">{cabecera.estado}</span>
                     </p>
-                    <p className="text-slate-700 mt-2 text-sm">{cabecera.glosa}</p>
+                    <p className="text-slate-700 dark:text-slate-300 mt-2 text-sm">{cabecera.glosa}</p>
                 </div>
 
                 <div className="flex flex-col items-end gap-3">
@@ -96,7 +96,7 @@ const VisorAsientoCompleto = () => {
                         <button onClick={manejarReclasificacion} className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded shadow transition-colors">
                             Reclasificar
                         </button>
-                        <button onClick={() => navigate("/facturas/historial")} className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-sm font-bold rounded shadow-sm transition-colors">
+                        <button onClick={() => navigate("/facturas/historial")} className="px-4 py-2 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 text-sm font-bold rounded shadow-sm transition-colors">
                             Volver
                         </button>
                     </div>
@@ -104,7 +104,7 @@ const VisorAsientoCompleto = () => {
                     <select
                         value={vistaActiva}
                         onChange={(e) => setVistaActiva(Number(e.target.value))}
-                        className="w-48 px-3 py-2 bg-slate-50 border border-slate-300 rounded text-sm font-bold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all cursor-pointer"
+                        className="w-48 px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all cursor-pointer"
                     >
                         <option value={1}>Vista 1 (Básica)</option>
                         <option value={2}>Vista 2 (Extendida)</option>
@@ -113,13 +113,13 @@ const VisorAsientoCompleto = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-x-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <table className="w-full border-collapse text-sm whitespace-nowrap">
-                    <thead className="bg-slate-100 text-slate-700">
+                    <thead className="bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300">
                         <tr>
-                            <th className="border-b border-r border-slate-300 px-3 py-2 text-left font-bold">CUENTA</th>
+                            <th className="border-b border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-bold">CUENTA</th>
                             {vistaActiva >= 2 && (
-                                <th className="border-b border-r border-slate-300 px-3 py-2 text-left font-bold">NOMBRE CUENTA</th>
+                                <th className="border-b border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-bold">NOMBRE CUENTA</th>
                             )}
                             <th className="border-b border-r border-slate-300 px-3 py-2 text-left font-bold w-full">DESCRIPCIÓN</th>
 
@@ -131,17 +131,17 @@ const VisorAsientoCompleto = () => {
                             )}
 
                             <th className="border-b border-r border-slate-300 px-3 py-2 text-right font-bold">DEBE</th>
-                            <th className="border-b border-slate-300 px-3 py-2 text-right font-bold">HABER</th>
+                            <th className="border-b border-slate-300 dark:border-slate-600 px-3 py-2 text-right font-bold">HABER</th>
                         </tr>
                     </thead>
                     <tbody>
                         {detalles.map((fila, index) => (
-                            <tr key={index} className="hover:bg-blue-50 transition-colors">
-                                <td className="border-b border-r border-slate-200 px-3 py-1.5 font-mono text-slate-600">
+                            <tr key={index} className="hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
+                                <td className="border-b border-r border-slate-200 dark:border-slate-700 px-3 py-1.5 font-mono text-slate-600 dark:text-slate-400">
                                     {fila.cuenta_contable}
                                 </td>
                                 {vistaActiva >= 2 && (
-                                    <td className="border-b border-r border-slate-200 px-3 py-1.5 text-slate-700">
+                                    <td className="border-b border-r border-slate-200 dark:border-slate-700 px-3 py-1.5 text-slate-700 dark:text-slate-300">
                                         {fila.cuenta_nombre}
                                     </td>
                                 )}
@@ -151,29 +151,29 @@ const VisorAsientoCompleto = () => {
 
                                 {vistaActiva === 3 && (
                                     <>
-                                        <td className="border-b border-r border-slate-200 px-3 py-1.5 text-center text-slate-500 bg-amber-50/30">CLP</td>
-                                        <td className="border-b border-r border-slate-200 px-3 py-1.5 text-right text-slate-500 bg-amber-50/30">1.00</td>
+                                        <td className="border-b border-r border-slate-200 dark:border-slate-700 px-3 py-1.5 text-center text-slate-500 dark:text-slate-400 bg-amber-50/30">CLP</td>
+                                        <td className="border-b border-r border-slate-200 dark:border-slate-700 px-3 py-1.5 text-right text-slate-500 dark:text-slate-400 bg-amber-50/30">1.00</td>
                                     </>
                                 )}
 
-                                <td className="border-b border-r border-slate-200 px-3 py-1.5 text-right font-medium text-slate-800">
+                                <td className="border-b border-r border-slate-200 dark:border-slate-700 px-3 py-1.5 text-right font-medium text-slate-800 dark:text-slate-200">
                                     {Number(fila.debe).toLocaleString('es-CL')}
                                 </td>
-                                <td className="border-b border-slate-200 px-3 py-1.5 text-right font-medium text-slate-800">
+                                <td className="border-b border-slate-200 dark:border-slate-700 px-3 py-1.5 text-right font-medium text-slate-800 dark:text-slate-200">
                                     {Number(fila.haber).toLocaleString('es-CL')}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
-                    <tfoot className="bg-slate-50 font-bold border-t-2 border-slate-400">
+                    <tfoot className="bg-slate-50 dark:bg-slate-900 font-bold border-t-2 border-slate-400 dark:border-slate-600">
                         <tr>
                             <td
                                 colSpan={vistaActiva === 1 ? 2 : (vistaActiva === 2 ? 3 : 5)}
-                                className="px-3 py-2 text-right border-r border-slate-300 text-slate-600"
+                                className="px-3 py-2 text-right border-r border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400"
                             >
                                 TOTALES:
                             </td>
-                            <td className="px-3 py-2 text-right border-r border-slate-300 text-blue-700">
+                            <td className="px-3 py-2 text-right border-r border-slate-300 dark:border-slate-600 text-blue-700">
                                 {totalDebe.toLocaleString('es-CL')}
                             </td>
                             <td className="px-3 py-2 text-right text-blue-700">
@@ -184,9 +184,9 @@ const VisorAsientoCompleto = () => {
                 </table>
             </div>
 
-            <div className="mt-6 flex justify-between items-end text-xs text-slate-500">
+            <div className="mt-6 flex justify-between items-end text-xs text-slate-500 dark:text-slate-400">
                 <p>Módulo: <span className="uppercase font-semibold">{cabecera.origen_modulo}</span></p>
-                <div className="text-right bg-slate-200/50 p-2 rounded border border-slate-200">
+                <div className="text-right bg-slate-200/50 dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700">
                     Última modificación por: <strong>{cabecera.usuario ? cabecera.usuario.nombre : `Usuario ID ${cabecera.usuario_id || 'Sistema'}`}</strong><br />
                     {formatoFechaHora(cabecera.updated_at || cabecera.created_at)}
                 </div>

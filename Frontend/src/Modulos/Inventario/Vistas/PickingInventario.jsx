@@ -33,7 +33,7 @@ const initialForm = {
     cantidad: '',
 };
 
-const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none';
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none';
 
 const PickingInventario = () => {
     const [loading, setLoading] = useState(true);
@@ -273,7 +273,7 @@ const PickingInventario = () => {
                     <EmptyState title="Sin órdenes de picking" description="Crea una orden para comenzar la operación de bodega." />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Estado</Th>
@@ -283,22 +283,22 @@ const PickingInventario = () => {
                                 <Th align="right">Acciones</Th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {ordenesFiltradas.map((orden) => (
-                                <tr key={orden.id} className="hover:bg-slate-50/60 align-top">
+                                <tr key={orden.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700 align-top">
                                     <Td>
-                                        <p className="font-black text-slate-800">{orden.codigo}</p>
-                                        <p className="text-xs text-slate-500">{orden.referencia || 'Sin referencia'}</p>
+                                        <p className="font-black text-slate-800 dark:text-slate-200">{orden.codigo}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{orden.referencia || 'Sin referencia'}</p>
                                     </Td>
                                     <Td><EstadoBadge value={orden.estado} /></Td>
                                     <Td>{getBodegaNombre(orden)}</Td>
                                     <Td>
                                         {(orden.detalles || []).map((detalle) => (
-                                            <div key={detalle.id} className="mb-2 last:mb-0 text-xs text-slate-600">
-                                                <p className="font-black text-slate-700">{getProductoNombre(detalle)}</p>
+                                            <div key={detalle.id} className="mb-2 last:mb-0 text-xs text-slate-600 dark:text-slate-400">
+                                                <p className="font-black text-slate-700 dark:text-slate-300">{getProductoNombre(detalle)}</p>
                                                 <p>Solicitada: {formatNumber(detalle.cantidad_solicitada, 4)} · Asignada: {formatNumber(detalle.cantidad_asignada, 4)} · Pickeada: {formatNumber(detalle.cantidad_pickeada, 4)}</p>
                                                 {(detalle.asignaciones || []).length > 0 ? (
-                                                    <div className="mt-1 rounded-lg bg-slate-50 border border-slate-100 p-2 space-y-1">
+                                                    <div className="mt-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-2 space-y-1">
                                                         {(detalle.asignaciones || []).map((asignacion) => (
                                                             <p key={asignacion.id}>
                                                                 <span className="font-bold">{asignacion.ubicacion_origen?.codigo || asignacion.ubicacionOrigen?.codigo || '-'}</span>
@@ -314,8 +314,8 @@ const PickingInventario = () => {
                                         ))}
                                     </Td>
                                     <Td>
-                                        <p className="text-xs text-slate-500">Creación: {formatDate(orden.fecha_creacion)}</p>
-                                        <p className="text-xs text-slate-500">Confirmación: {formatDate(orden.fecha_confirmacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Creación: {formatDate(orden.fecha_creacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Confirmación: {formatDate(orden.fecha_confirmacion)}</p>
                                     </Td>
                                     <Td align="right">
                                         <div className="flex flex-wrap justify-end gap-2">

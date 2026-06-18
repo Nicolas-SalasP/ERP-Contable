@@ -301,30 +301,30 @@ const PerfilEmpresa = () => {
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 pb-10">
+        <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 dark:text-slate-200 pb-10">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Mi Empresa</h1><AyudaModulo moduloId="perfilEmpresa" /></div>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Mi Empresa</h1><AyudaModulo moduloId="perfilEmpresa" /></div>
                     <p className="text-slate-500 font-medium mt-1">Configuración general, tributaria y contable</p>
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 bg-slate-100 p-1.5 rounded-xl w-fit mb-6">
-                <button onClick={() => setActiveTab('general')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'general' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>
+            <div className="flex flex-wrap gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl w-fit mb-6">
+                <button onClick={() => setActiveTab('general')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'general' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                     <Building2 size={16} strokeWidth={1.75} className="inline-block mr-2" />
                     Información & Logo
                 </button>
-                <button onClick={() => setActiveTab('bancos')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'bancos' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setActiveTab('bancos')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'bancos' ? 'bg-white dark:bg-slate-700 shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                     <CreditCard size={16} strokeWidth={1.75} className="inline-block mr-2" />
                     Cuentas Bancarias
                 </button>
-                <button onClick={() => setActiveTab('centros')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'centros' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setActiveTab('centros')} className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'centros' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                     <Layers size={16} strokeWidth={1.75} className="inline-block mr-2" />
                     Centros de Costo
                 </button>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 {activeTab === 'general' && (
                     <PerfilEmpresaGeneral
                         formData={formData}

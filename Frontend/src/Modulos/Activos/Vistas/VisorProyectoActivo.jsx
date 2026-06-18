@@ -186,12 +186,12 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
-            <div className="flex items-center gap-4 border-b border-slate-200 pb-4">
-                <button onClick={onVolver} className="h-10 w-10 bg-slate-200 hover:bg-slate-300 rounded-full flex items-center justify-center transition-colors text-slate-600">
+            <div className="flex items-center gap-4 border-b border-slate-200 dark:border-slate-700 pb-4">
+                <button onClick={onVolver} className="h-10 w-10 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition-colors text-slate-600 dark:text-slate-300">
                     <i className="fas fa-arrow-left"></i>
                 </button>
                 <div>
-                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">{proyecto.nombre}</h2>
+                    <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">{proyecto.nombre}</h2>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold inline-block mt-1 ${proyecto.estado === 'EN_CONSTRUCCION' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
                         {proyecto.estado?.replace('_', ' ')}
                     </span>
@@ -199,21 +199,21 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
-                    <p className="text-xs font-bold text-slate-500 uppercase">Inversión Neta Acumulada</p>
-                    <h3 className="text-2xl font-black text-slate-800 mt-1">{formatCurrency(valorOriginal)}</h3>
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm border-l-4 border-l-indigo-500">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Inversión Neta Acumulada</p>
+                    <h3 className="text-2xl font-black text-slate-800 dark:text-slate-200 mt-1">{formatCurrency(valorOriginal)}</h3>
                 </div>
 
-                <div className={`lg:col-span-2 p-5 rounded-xl border shadow-sm flex flex-col justify-center ${!configuracionCompleta ? 'bg-rose-50 border-rose-200 border-l-4 border-l-rose-500' : 'bg-white border-slate-200 border-l-4 border-l-slate-400'}`}>
+                <div className={`lg:col-span-2 p-5 rounded-xl border shadow-sm flex flex-col justify-center ${!configuracionCompleta ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 border-l-4 border-l-rose-500' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 border-l-4 border-l-slate-400'}`}>
                     <div className="flex justify-between items-start">
                         <div className="w-full mr-4">
-                            <p className="text-xs font-bold text-slate-500 uppercase mb-2">Clasificación Contable</p>
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Clasificación Contable</p>
                             {editandoCuenta ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 animate-fade-in">
                                     <div>
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase">1. Cuenta de Activo (Bien)</p>
+                                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">1. Cuenta de Activo (Bien)</p>
                                         <select
-                                            className="w-full mt-1 p-2 border rounded text-xs font-bold text-slate-700 bg-white"
+                                            className="w-full mt-1 p-2 border border-slate-300 dark:border-slate-600 rounded text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700"
                                             value={proyecto.tipo_activo_id || ''}
                                             onChange={(e) => handleCambiarCuenta(e.target.value, 'tipo_activo_id')}
                                         >
@@ -222,9 +222,9 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                         </select>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase">2. Cuenta Deprec. Acumulada</p>
+                                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">2. Cuenta Deprec. Acumulada</p>
                                         <select
-                                            className="w-full mt-1 p-2 border rounded text-xs font-bold text-slate-700 bg-white"
+                                            className="w-full mt-1 p-2 border border-slate-300 dark:border-slate-600 rounded text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700"
                                             value={proyecto.cuenta_depreciacion_id || ''}
                                             onChange={(e) => handleCambiarCuenta(e.target.value, 'cuenta_depreciacion_id')}
                                         >
@@ -233,9 +233,9 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                         </select>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase">3. Cuenta Gasto (Pérdida por Depreciación)</p>
+                                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">3. Cuenta Gasto (Pérdida por Depreciación)</p>
                                         <select
-                                            className="w-full mt-1 p-2 border rounded text-xs font-bold text-slate-700 bg-white"
+                                            className="w-full mt-1 p-2 border border-slate-300 dark:border-slate-600 rounded text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700"
                                             value={proyecto.cuenta_gasto_id || ''}
                                             onChange={(e) => handleCambiarCuenta(e.target.value, 'cuenta_gasto_id')}
                                         >
@@ -246,13 +246,13 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                 </div>
                             ) : (
                                 <div className="mt-2 space-y-1">
-                                    <p className="text-sm font-bold text-slate-700 flex items-center">
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center">
                                         <i className="fas fa-cube w-5 text-slate-400"></i> Activo: {cuentaAsignada ? `${cuentaAsignada.codigo} - ${cuentaAsignada.nombre}` : <span className="text-rose-500 ml-1">Falta asignar</span>}
                                     </p>
-                                    <p className="text-sm font-bold text-slate-700 flex items-center">
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center">
                                         <i className="fas fa-chart-line w-5 text-slate-400"></i> Deprec: {cuentaDepreAsignada ? `${cuentaDepreAsignada.codigo} - ${cuentaDepreAsignada.nombre}` : <span className="text-rose-500 ml-1">Falta asignar</span>}
                                     </p>
-                                    <p className="text-sm font-bold text-slate-700 flex items-center">
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center">
                                         <i className="fas fa-receipt w-5 text-slate-400"></i> Gasto: {cuentaGastoAsignada ? `${cuentaGastoAsignada.codigo} - ${cuentaGastoAsignada.nombre}` : <span className="text-rose-500 ml-1">Falta asignar</span>}
                                     </p>
                                 </div>
@@ -260,7 +260,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                         </div>
                         <button
                             onClick={() => setEditandoCuenta(!editandoCuenta)}
-                            className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all border border-slate-200 whitespace-nowrap mt-2"
+                            className="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg font-bold transition-all border border-slate-200 dark:border-slate-600 whitespace-nowrap mt-2"
                         >
                             {editandoCuenta ? 'Cerrar Edición' : 'Editar Cuentas'}
                         </button>
@@ -294,13 +294,13 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 </div>
             )}
 
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                    <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider">Detalle de Inversión (Netos)</h3>
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                    <h3 className="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider">Detalle de Inversión (Netos)</h3>
                 </div>
                 <div className="overflow-x-auto custom-scrollbar">
                 <table className="min-w-full text-left border-collapse">
-                    <thead className="bg-white border-b border-slate-200 text-[10px] uppercase text-slate-400">
+                    <thead className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[10px] uppercase text-slate-400 dark:text-slate-500">
                         <tr>
                             <th className="px-6 py-3">N° Documento</th>
                             <th className="px-6 py-3">Proveedor</th>
@@ -310,13 +310,13 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                             )}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
                         {proyecto.facturas && proyecto.facturas.length > 0 ? (
                             proyecto.facturas.map((f, i) => (
-                                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                     <td className="px-6 py-4 font-bold text-indigo-600">{f.numero}</td>
-                                    <td className="px-6 py-4 text-slate-600">{f.proveedor}</td>
-                                    <td className="px-6 py-4 font-black text-slate-800 text-right">{formatCurrency(f.monto)}</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{f.proveedor}</td>
+                                    <td className="px-6 py-4 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(f.monto)}</td>
                                     {proyecto.estado === 'EN_CONSTRUCCION' && (
                                         <td className="px-6 py-4 text-center">
                                             <button
@@ -340,16 +340,16 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
 
             {modalFacturasAbierto && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up border border-slate-200">
-                        <div className="p-6 border-b flex justify-between items-center">
-                            <h3 className="text-xl font-black text-slate-800">Vincular Factura Neto</h3>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up border border-slate-200 dark:border-slate-700">
+                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <h3 className="text-xl font-black text-slate-800 dark:text-slate-200">Vincular Factura Neto</h3>
                             <button onClick={() => setModalFacturasAbierto(false)} className="text-slate-400 hover:text-rose-500 transition-colors p-2 rounded-lg" aria-label="Cerrar"><i className="fas fa-times"></i></button>
                         </div>
-                        <div className="p-6 bg-slate-50">
+                        <div className="p-6 bg-slate-50 dark:bg-slate-900">
                             <form onSubmit={handleImputarFactura} className="space-y-5">
                                 <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase mb-2">Factura Disponible</label>
-                                    <select required value={facturaSeleccionadaId} onChange={handleSelectFactura} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-700 bg-white">
+                                    <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-2">Factura Disponible</label>
+                                    <select required value={facturaSeleccionadaId} onChange={handleSelectFactura} className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700">
                                         <option value="">Seleccione...</option>
                                         {facturasDisponibles.map(f => (
                                             <option key={f.factura_id} value={f.factura_id}>Doc. {f.numero_factura} - {formatCurrency(f.monto)}</option>
@@ -357,12 +357,12 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase mb-2">Monto a Capitalizar</label>
-                                    <input type="number" required value={montoImputar} onChange={(e) => setMontoImputar(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-black text-xl text-indigo-700" />
-                                    <p className="text-[10px] text-slate-400 mt-2">* El sistema rechazará montos distintos al Neto Real de la factura.</p>
+                                    <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-2">Monto a Capitalizar</label>
+                                    <input type="number" required value={montoImputar} onChange={(e) => setMontoImputar(e.target.value)} className="w-full p-3 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-black text-xl text-indigo-700" />
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2">* El sistema rechazará montos distintos al Neto Real de la factura.</p>
                                 </div>
                                 <div className="flex gap-3 pt-4">
-                                    <button type="button" onClick={() => setModalFacturasAbierto(false)} className="w-1/2 py-3 bg-white border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all">Cancelar</button>
+                                    <button type="button" onClick={() => setModalFacturasAbierto(false)} className="w-1/2 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 transition-all">Cancelar</button>
                                     <button type="submit" className="w-1/2 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">Imputar Costo</button>
                                 </div>
                             </form>
@@ -373,17 +373,17 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
 
             {modalActivacionAbierto && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up border border-slate-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up border border-slate-200 dark:border-slate-700">
                         <div className="p-8 text-center">
                             <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner">
                                 <i className="fas fa-check-circle"></i>
                             </div>
-                            <h3 className="text-2xl font-black text-slate-800 mb-2">¿Confirmar Capitalización?</h3>
-                            <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2">¿Confirmar Capitalización?</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 leading-relaxed">
                                 El activo se registrará con un valor de <b>{formatCurrency(valorOriginal)}</b> usando la cuenta <b>{cuentaAsignada?.nombre}</b>. Esta acción es irreversible.
                             </p>
                             <div className="flex gap-4">
-                                <button onClick={() => setModalActivacionAbierto(false)} className="w-1/2 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all uppercase text-xs tracking-widest">Cancelar</button>
+                                <button onClick={() => setModalActivacionAbierto(false)} className="w-1/2 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-all uppercase text-xs tracking-widest">Cancelar</button>
                                 <button onClick={confirmarActivacion} className="w-1/2 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all uppercase text-xs tracking-widest">Confirmar</button>
                             </div>
                         </div>

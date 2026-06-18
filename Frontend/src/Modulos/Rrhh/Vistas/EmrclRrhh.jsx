@@ -7,14 +7,14 @@ const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: 6 }, (_, i) => anioActual - i);
 
 const inputCls =
-    'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+    'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
 const pesos = (valor) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(valor ?? 0);
 
-const thCls = 'px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide bg-slate-50';
-const tdCls = 'px-4 py-3 text-sm text-slate-700';
-const tdNumCls = 'px-4 py-3 text-sm text-slate-700 text-right font-mono';
+const thCls = 'px-4 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide bg-slate-50 dark:bg-slate-900';
+const tdCls = 'px-4 py-3 text-sm text-slate-700 dark:text-slate-300';
+const tdNumCls = 'px-4 py-3 text-sm text-slate-700 dark:text-slate-300 text-right font-mono';
 
 const EmrclRrhh = () => {
     const [filtros, setFiltros] = useState({ anio: anioActual, mes: new Date().getMonth() + 1 });
@@ -80,11 +80,11 @@ const EmrclRrhh = () => {
     return (
         <div className="max-w-5xl mx-auto p-6 md:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
                     <i className="fas fa-building-columns text-emerald-600" />
                     Reporte EMRCL — INE
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Encuesta de Remuneraciones y Costo de la Mano de Obra. Período {nombreMes(filtros.mes)} {filtros.anio}.
                 </p>
             </header>
@@ -96,10 +96,10 @@ const EmrclRrhh = () => {
                 </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Año</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
                         <select
                             value={filtros.anio}
                             onChange={(e) => setFiltros((f) => ({ ...f, anio: Number(e.target.value) }))}
@@ -109,7 +109,7 @@ const EmrclRrhh = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Mes</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
                         <select
                             value={filtros.mes}
                             onChange={(e) => setFiltros((f) => ({ ...f, mes: Number(e.target.value) }))}
@@ -158,7 +158,7 @@ const EmrclRrhh = () => {
             )}
 
             {!datos && !cargando && !error && (
-                <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl py-12 text-center text-slate-400">
+                <div className="bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl py-12 text-center text-slate-400">
                     <i className="fas fa-building-columns text-3xl mb-3 block" />
                     Selecciona un período y genera el reporte.
                 </div>
@@ -166,9 +166,9 @@ const EmrclRrhh = () => {
 
             {datos && (
                 <div className="space-y-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-200 bg-slate-50">
-                            <h2 className="font-bold text-slate-800 text-sm">Cuadro N°1 — Trabajadores</h2>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                            <h2 className="font-bold text-slate-800 dark:text-slate-200 text-sm">Cuadro N°1 — Trabajadores</h2>
                         </div>
                         <table className="w-full">
                             <thead>
@@ -190,9 +190,9 @@ const EmrclRrhh = () => {
                         </table>
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-200 bg-slate-50">
-                            <h2 className="font-bold text-slate-800 text-sm">Cuadro N°2 — Remuneraciones y costos <span className="text-slate-400 font-normal">(en pesos)</span></h2>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                            <h2 className="font-bold text-slate-800 dark:text-slate-200 text-sm">Cuadro N°2 — Remuneraciones y costos <span className="text-slate-400 font-normal">(en pesos)</span></h2>
                         </div>
                         <table className="w-full">
                             <thead>
@@ -202,7 +202,7 @@ const EmrclRrhh = () => {
                                     <th className={`${thCls} text-right`}>Hombres</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 <tr>
                                     <td className={tdCls}>Remuneraciones ordinarias</td>
                                     <td className={tdNumCls}>{pesos(datos.cuadro2_remuneraciones.mujeres.remuneraciones_ordinarias)}</td>
@@ -217,9 +217,9 @@ const EmrclRrhh = () => {
                         </table>
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-200 bg-slate-50">
-                            <h2 className="font-bold text-slate-800 text-sm">Cuadro N°3 — Deducciones legales <span className="text-slate-400 font-normal">(en pesos)</span></h2>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                            <h2 className="font-bold text-slate-800 dark:text-slate-200 text-sm">Cuadro N°3 — Deducciones legales <span className="text-slate-400 font-normal">(en pesos)</span></h2>
                         </div>
                         <table className="w-full">
                             <thead>
@@ -229,7 +229,7 @@ const EmrclRrhh = () => {
                                     <th className={`${thCls} text-right`}>Hombres</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 <tr>
                                     <td className={tdCls}>Cotización AFP (incluye comisión)</td>
                                     <td className={tdNumCls}>{pesos(datos.cuadro3_deducciones.mujeres.afp)}</td>
@@ -256,7 +256,7 @@ const EmrclRrhh = () => {
 
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
-                            <h2 className="font-bold text-slate-800 text-sm">Cuadro N°4 — Horas pagadas</h2>
+                            <h2 className="font-bold text-slate-800 dark:text-slate-200 text-sm">Cuadro N°4 — Horas pagadas</h2>
                             {(datos.cuadro4_horas.mujeres.derivado || datos.cuadro4_horas.hombres.derivado) && (
                                 <span className="text-amber-500 text-xs flex items-center gap-1">
                                     <i className="fas fa-triangle-exclamation" /> Horas derivadas

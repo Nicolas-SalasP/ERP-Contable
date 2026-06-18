@@ -135,7 +135,7 @@ const GestionUsuarios = () => {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4 overflow-hidden">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Gestión de Equipo</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Gestión de Equipo</h1>
                     <p className="text-slate-500 text-sm mt-1">Administra los accesos y roles de tu empresa.</p>
                 </div>
                 <button
@@ -147,18 +147,18 @@ const GestionUsuarios = () => {
                 </button>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[750px]">
                         <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 text-xs uppercase tracking-wider font-bold">
                                 <th className="px-6 py-4 whitespace-nowrap">Usuario</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Rol en el Sistema</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Estado</th>
                                 <th className="px-6 py-4 whitespace-nowrap text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
                             {loading ? (
                                 <tr>
                                     <td colSpan="4" className="px-6 py-10 text-center text-slate-400">
@@ -180,14 +180,14 @@ const GestionUsuarios = () => {
                                 </tr>
                             ) : (
                                 usuarios.map((user) => (
-                                    <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-bold text-sm shrink-0">
+                                                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 flex items-center justify-center font-bold text-sm shrink-0">
                                                     {getIniciales(user.nombre)}
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-slate-800 flex items-center gap-2">
+                                                    <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                                         {user.nombre}
                                                         {user.id === currentUser.id && <span className="text-[10px] bg-emerald-100 text-emerald-700 font-black px-2 py-0.5 rounded-md uppercase tracking-widest">Tú</span>}
                                                     </div>
@@ -196,7 +196,7 @@ const GestionUsuarios = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 border border-slate-200 text-slate-700">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300">
                                                 <Shield size={16} strokeWidth={1.75} className="text-slate-400" />
                                                 {roles.find(r => r.id === user.rol_id)?.nombre || 'Desconocido'}
                                             </span>
@@ -253,10 +253,10 @@ const GestionUsuarios = () => {
 
             {showModalInvitar && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fadeIn">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
-                        <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
-                            <h3 className="text-lg font-black text-slate-800">Invitar al Equipo</h3>
-                            <button onClick={() => setShowModalInvitar(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors" aria-label="Cerrar">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+                        <div className="p-5 md:p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center shrink-0">
+                            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">Invitar al Equipo</h3>
+                            <button onClick={() => setShowModalInvitar(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-800 transition-colors" aria-label="Cerrar">
                                 <X size={16} strokeWidth={1.75} />
                             </button>
                         </div>
@@ -264,7 +264,7 @@ const GestionUsuarios = () => {
                             <form onSubmit={handleInvitar} className="space-y-4 md:space-y-5">
                                 <div>
                                     <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Correo Electrónico</label>
-                                    <input type="email" required value={formInvitar.email} onChange={(e) => setFormInvitar({ ...formInvitar, email: e.target.value })} placeholder="correo@ejemplo.com" className="w-full border border-slate-200 rounded-xl p-3 md:p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition-all font-bold text-slate-800" />
+                                    <input type="email" required value={formInvitar.email} onChange={(e) => setFormInvitar({ ...formInvitar, email: e.target.value })} placeholder="correo@ejemplo.com" className="w-full border border-slate-200 dark:border-slate-600 rounded-xl p-3 md:p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 dark:bg-slate-700 transition-all font-bold text-slate-800 dark:text-slate-200" />
                                     <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
                                         <Info size={12} strokeWidth={1.75} />
                                         Si no tiene cuenta en Tenri ERP Cloud, se registrará al ingresar este correo.
@@ -272,14 +272,14 @@ const GestionUsuarios = () => {
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Rol Asignado Inicialmente</label>
-                                    <select value={formInvitar.rol_id} onChange={(e) => setFormInvitar({ ...formInvitar, rol_id: e.target.value })} className="w-full border border-slate-200 rounded-xl p-3 md:p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 cursor-pointer transition-all font-bold text-slate-800">
+                                    <select value={formInvitar.rol_id} onChange={(e) => setFormInvitar({ ...formInvitar, rol_id: e.target.value })} className="w-full border border-slate-200 dark:border-slate-600 rounded-xl p-3 md:p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 dark:bg-slate-700 cursor-pointer transition-all font-bold text-slate-800 dark:text-slate-200">
                                         {roles.map(rol => (
                                             <option key={rol.id} value={rol.id}>{rol.nombre}</option>
                                         ))}
                                     </select>
                                 </div>
                                 <div className="pt-2 flex flex-col-reverse sm:flex-row gap-3">
-                                    <button type="button" onClick={() => setShowModalInvitar(false)} className="w-full sm:flex-1 bg-slate-100 text-slate-600 font-bold py-3 md:py-4 rounded-xl hover:bg-slate-200 transition-all text-sm">
+                                    <button type="button" onClick={() => setShowModalInvitar(false)} className="w-full sm:flex-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-3 md:py-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-all text-sm">
                                         Cancelar
                                     </button>
                                     <button type="submit" className="w-full sm:flex-1 bg-emerald-500 text-white font-bold py-3 md:py-4 rounded-xl hover:bg-emerald-600 shadow-lg shadow-emerald-500/30 transition-all text-sm">
@@ -294,7 +294,7 @@ const GestionUsuarios = () => {
 
             {showModalEditar && usuarioSeleccionado && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fadeIn">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
 
                         <div className="relative h-24 bg-gradient-to-r from-slate-800 to-slate-900 shrink-0">
                             <button onClick={() => setShowModalEditar(false)} className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10" aria-label="Cerrar">
@@ -303,8 +303,8 @@ const GestionUsuarios = () => {
                         </div>
 
                         <div className="flex justify-center -mt-12 relative z-10">
-                            <div className="w-24 h-24 rounded-full bg-white p-1.5 shadow-sm">
-                                <div className="w-full h-full rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-3xl font-black text-slate-400">
+                            <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-700 p-1.5 shadow-sm">
+                                <div className="w-full h-full rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-3xl font-black text-slate-400">
                                     {getIniciales(usuarioSeleccionado.nombre)}
                                 </div>
                             </div>
@@ -313,11 +313,11 @@ const GestionUsuarios = () => {
                         <div className="px-6 pb-6 pt-4 relative flex-1 overflow-y-auto custom-scrollbar">
 
                             <div className="text-center mb-6">
-                                <h3 className="text-xl font-black text-slate-800">{usuarioSeleccionado.nombre}</h3>
+                                <h3 className="text-xl font-black text-slate-800 dark:text-slate-200">{usuarioSeleccionado.nombre}</h3>
                                 <p className="text-sm text-slate-500 font-medium">{usuarioSeleccionado.email}</p>
                             </div>
 
-                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado</p>
                                     {usuarioSeleccionado.estado_suscripcion_id === 1 ? (
@@ -339,11 +339,11 @@ const GestionUsuarios = () => {
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Último Acceso</p>
-                                    <p className="text-xs font-bold text-slate-700">{formatearFecha(usuarioSeleccionado.ultimo_acceso)}</p>
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{formatearFecha(usuarioSeleccionado.ultimo_acceso)}</p>
                                 </div>
                             </div>
 
-                            <hr className="border-slate-100 mb-6" />
+                            <hr className="border-slate-100 dark:border-slate-700 mb-6" />
 
                             <form onSubmit={handleActualizarRol} className="space-y-5">
                                 <div>
@@ -354,7 +354,7 @@ const GestionUsuarios = () => {
                                     <select
                                         value={usuarioSeleccionado.nuevo_rol_id}
                                         onChange={(e) => setUsuarioSeleccionado({ ...usuarioSeleccionado, nuevo_rol_id: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white shadow-sm cursor-pointer transition-all font-bold text-slate-800"
+                                        className="w-full border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 shadow-sm cursor-pointer transition-all font-bold text-slate-800 dark:text-slate-200"
                                         disabled={usuarioSeleccionado.id === currentUser.id}
                                     >
                                         {roles.map(rol => (

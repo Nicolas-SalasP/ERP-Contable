@@ -29,34 +29,34 @@ const WorkbenchReclasificacion = ({
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-visible animate-fade-in flex flex-col">
-            <div className="bg-slate-50 p-4 md:p-8 border-b border-slate-200 rounded-t-2xl">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-visible animate-fade-in flex flex-col">
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 md:p-8 border-b border-slate-200 dark:border-slate-700 rounded-t-2xl">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div>
-                        <h2 className="text-xl font-black text-slate-800">
+                        <h2 className="text-xl font-black text-slate-800 dark:text-slate-200">
                             Asiento Contable N° {facturaActiva?.codigo_asiento}
                         </h2>
-                        <p className="text-sm text-slate-500 font-medium">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                             {facturaActiva?.tipo_documento === 'NOTA_CREDITO' ? 'NC' : 'Factura'} N° {facturaActiva?.numero_factura} - {facturaActiva?.proveedor?.razon_social}
                         </p>
                     </div>
                     <button
                         onClick={onCancelar}
-                        className="w-full md:w-auto text-slate-500 hover:text-red-500 transition-colors px-4 py-2.5 bg-white rounded-lg border border-slate-200 shadow-sm font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5"
+                        className="w-full md:w-auto text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors px-4 py-2.5 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5"
                     >
                         <X size={16} strokeWidth={1.75} />
                         Cancelar
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-white p-4 md:p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-white dark:bg-slate-800 p-4 md:p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                             Fecha del Ajuste
                         </label>
                         <input
                             type="date"
-                            className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 transition-all text-sm"
+                            className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 dark:text-slate-300 transition-all text-sm bg-white dark:bg-slate-700"
                             value={formCambio.fechaContableCambio}
                             min={facturaActiva?.fecha_emision}
                             onChange={(e) => onFormCambioChange({ ...formCambio, fechaContableCambio: e.target.value })}
@@ -66,12 +66,12 @@ const WorkbenchReclasificacion = ({
                         </span>
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                             Glosa de Auditoría
                         </label>
                         <input
                             type="text"
-                            className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 transition-all text-sm"
+                            className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 dark:text-slate-300 transition-all text-sm bg-white dark:bg-slate-700"
                             value={formCambio.nuevaGlosa}
                             onChange={(e) => onFormCambioChange({ ...formCambio, nuevaGlosa: e.target.value })}
                             placeholder="Motivo del cambio..."
@@ -83,8 +83,8 @@ const WorkbenchReclasificacion = ({
                 </div>
             </div>
 
-            <div className="p-4 md:p-8 flex-1 bg-white">
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4">
+            <div className="p-4 md:p-8 flex-1 bg-white dark:bg-slate-800">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide mb-4">
                     Líneas del Asiento Original
                 </h3>
 
@@ -94,7 +94,7 @@ const WorkbenchReclasificacion = ({
                         <p>Cargando detalles...</p>
                     </div>
                 ) : (
-                    <div className="border border-slate-200 rounded-xl overflow-visible shadow-sm">
+                    <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-visible shadow-sm">
                         <div className="hidden md:block pb-24">
                             <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -106,17 +106,17 @@ const WorkbenchReclasificacion = ({
                                         <th className="p-4 bg-slate-800 last:rounded-tr-xl">Nueva Imputación (Buscador)</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 text-sm font-medium">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm font-medium">
                                     {asientoReclasificacion?.detalles?.map((linea, index) => {
                                         const isBloqueada = esBloqueada(linea.cuenta_contable);
                                         return (
                                             <tr
                                                 key={index}
-                                                className={isBloqueada ? 'bg-slate-50 opacity-80' : 'bg-white hover:bg-blue-50/20'}
+                                                className={isBloqueada ? 'bg-slate-50 dark:bg-slate-900 opacity-80' : 'bg-white dark:bg-slate-800 hover:bg-blue-50/20'}
                                             >
                                                 <td className="p-4">
-                                                    <div className="text-slate-800 font-bold">{linea.nombre_cuenta}</div>
-                                                    <div className="text-xs text-slate-500 font-mono mt-0.5 bg-white border border-slate-200 px-2 py-0.5 rounded w-max">
+                                                    <div className="text-slate-800 dark:text-slate-200 font-bold">{linea.nombre_cuenta}</div>
+                                                    <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded w-max">
                                                         {linea.cuenta_contable}
                                                     </div>
                                                 </td>
@@ -130,7 +130,7 @@ const WorkbenchReclasificacion = ({
                                                     {isBloqueada ? (
                                                         <div
                                                             onClick={onIntentarBloqueada}
-                                                            className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer hover:text-red-500 transition-colors bg-slate-100 border border-slate-200 w-fit px-3 py-2 rounded-lg"
+                                                            className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer hover:text-red-500 transition-colors bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 w-fit px-3 py-2 rounded-lg"
                                                         >
                                                             <Lock size={16} strokeWidth={1.75} />
                                                             Cuenta Restringida
@@ -151,18 +151,18 @@ const WorkbenchReclasificacion = ({
                             </div>
                         </div>
 
-                        <div className="md:hidden flex flex-col divide-y divide-slate-100 pb-10">
+                        <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-700 pb-10">
                             {asientoReclasificacion?.detalles?.map((linea, index) => {
                                 const isBloqueada = esBloqueada(linea.cuenta_contable);
                                 return (
                                     <div
                                         key={index}
-                                        className={`p-4 flex flex-col gap-3 ${isBloqueada ? 'bg-slate-50' : 'bg-white'}`}
+                                        className={`p-4 flex flex-col gap-3 ${isBloqueada ? 'bg-slate-50 dark:bg-slate-900' : 'bg-white dark:bg-slate-800'}`}
                                     >
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <div className="text-slate-800 font-bold text-sm">{linea.nombre_cuenta}</div>
-                                                <div className="text-xs text-slate-500 font-mono mt-1">{linea.cuenta_contable}</div>
+                                                <div className="text-slate-800 dark:text-slate-200 font-bold text-sm">{linea.nombre_cuenta}</div>
+                                                <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">{linea.cuenta_contable}</div>
                                             </div>
                                             <div className="text-right">
                                                 {parseFloat(linea.debe) > 0 && (
@@ -173,12 +173,12 @@ const WorkbenchReclasificacion = ({
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="pt-2 border-t border-slate-100 overflow-visible relative">
+                                        <div className="pt-2 border-t border-slate-100 dark:border-slate-700 overflow-visible relative">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Mover a cuenta:</p>
                                             {isBloqueada ? (
                                                 <div
                                                     onClick={onIntentarBloqueada}
-                                                    className="flex items-center justify-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer bg-slate-100 border border-slate-200 w-full py-2.5 rounded-lg"
+                                                    className="flex items-center justify-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 w-full py-2.5 rounded-lg"
                                                 >
                                                     <Lock size={16} strokeWidth={1.75} />
                                                     Restringida
@@ -199,7 +199,7 @@ const WorkbenchReclasificacion = ({
                 )}
             </div>
 
-            <div className="bg-slate-50 p-4 md:p-6 border-t border-slate-200 mt-auto rounded-b-2xl">
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 md:p-6 border-t border-slate-200 dark:border-slate-700 mt-auto rounded-b-2xl">
                 <button
                     onClick={onConfirmar}
                     disabled={!formCambio.nuevaCuenta}

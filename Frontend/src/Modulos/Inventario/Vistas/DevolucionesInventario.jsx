@@ -22,7 +22,7 @@ import {
     Th,
 } from '../Componentes/InventarioUI';
 
-const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none';
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300';
 
 const tipos = [
     'DEVOLUCION',
@@ -352,8 +352,8 @@ const DevolucionesInventario = () => {
                         </div>
 
                         {reversable && (
-                            <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                                <div className="bg-slate-50 px-4 py-3 text-sm font-black text-slate-700 flex justify-between gap-3">
+                            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 text-sm font-black text-slate-700 dark:text-slate-300 flex justify-between gap-3">
                                     <span>Detalles reversables · Total: {formatNumber(reversable.total_reversable, 4)}</span>
                                     <span>{reversable.despacho?.codigo}</span>
                                 </div>
@@ -361,7 +361,7 @@ const DevolucionesInventario = () => {
                                     <div className="p-4"><EmptyState title="Sin saldo reversable" description="El despacho seleccionado no tiene cantidades pendientes de reversar." icon="fas fa-box-open" /></div>
                                 ) : (
                                     <TableShell>
-                                        <thead className="bg-slate-50">
+                                        <thead className="bg-slate-50 dark:bg-slate-900">
                                             <tr>
                                                 <Th>Producto</Th>
                                                 <Th align="right">Reversable</Th>
@@ -370,12 +370,12 @@ const DevolucionesInventario = () => {
                                                 <Th>Observación</Th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-100">
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                             {form.detalles.map((detalle, index) => (
                                                 <tr key={detalle.despacho_detalle_id} className="align-top">
                                                     <Td>
-                                                        <p className="font-black text-slate-700">{getProductoNombre(detalle)}</p>
-                                                        <p className="text-xs text-slate-500">Detalle despacho #{detalle.despacho_detalle_id}</p>
+                                                        <p className="font-black text-slate-700 dark:text-slate-300">{getProductoNombre(detalle)}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">Detalle despacho #{detalle.despacho_detalle_id}</p>
                                                     </Td>
                                                     <Td align="right">{formatNumber(detalle.cantidad_reversable, 4)}</Td>
                                                     <Td>
@@ -437,7 +437,7 @@ const DevolucionesInventario = () => {
                     <EmptyState title="Sin devoluciones/reversas" description="Crea una orden post-despacho desde un despacho confirmado." icon="fas fa-rotate-left" />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Estado</Th>
@@ -447,23 +447,23 @@ const DevolucionesInventario = () => {
                                 <Th align="right">Acciones</Th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {devolucionesFiltradas.map((orden) => (
-                                <tr key={orden.id} className="hover:bg-slate-50/60 align-top">
+                                <tr key={orden.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700 align-top">
                                     <Td>
-                                        <p className="font-black text-slate-800">{orden.codigo}</p>
-                                        <p className="text-xs text-slate-500">{orden.tipo}</p>
-                                        <p className="text-xs text-slate-500">{orden.motivo}</p>
+                                        <p className="font-black text-slate-800 dark:text-slate-200">{orden.codigo}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{orden.tipo}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{orden.motivo}</p>
                                     </Td>
                                     <Td><EstadoBadge value={orden.estado} /></Td>
                                     <Td>
-                                        <p className="font-black text-slate-700">{orden.despacho?.codigo || `#${orden.despacho_orden_id}`}</p>
-                                        <p className="text-xs text-slate-500">{orden.referencia || 'Sin referencia'}</p>
+                                        <p className="font-black text-slate-700 dark:text-slate-300">{orden.despacho?.codigo || `#${orden.despacho_orden_id}`}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{orden.referencia || 'Sin referencia'}</p>
                                     </Td>
                                     <Td>
                                         {(orden.detalles || []).map((detalle) => (
-                                            <div key={detalle.id} className="mb-2 last:mb-0 text-xs text-slate-600">
-                                                <p className="font-black text-slate-700">{getProductoNombre(detalle)}</p>
+                                            <div key={detalle.id} className="mb-2 last:mb-0 text-xs text-slate-600 dark:text-slate-400">
+                                                <p className="font-black text-slate-700 dark:text-slate-300">{getProductoNombre(detalle)}</p>
                                                 <p>Solicitada: {formatNumber(detalle.cantidad_devolver, 4)} · Aceptada: {formatNumber(detalle.cantidad_aceptada, 4)} · Rechazada: {formatNumber(detalle.cantidad_rechazada, 4)}</p>
                                                 <p>Destino: {detalle.ubicacion_destino?.codigo || detalle.ubicacionDestino?.codigo || '-'}</p>
                                                 <p><EstadoBadge value={detalle.estado} /></p>
@@ -471,9 +471,9 @@ const DevolucionesInventario = () => {
                                         ))}
                                     </Td>
                                     <Td>
-                                        <p className="text-xs text-slate-500">Creación: {formatDate(orden.fecha_creacion)}</p>
-                                        <p className="text-xs text-slate-500">Confirmación: {formatDate(orden.fecha_confirmacion)}</p>
-                                        <p className="text-xs text-slate-500">Cancelación: {formatDate(orden.fecha_cancelacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Creación: {formatDate(orden.fecha_creacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Confirmación: {formatDate(orden.fecha_confirmacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Cancelación: {formatDate(orden.fecha_cancelacion)}</p>
                                     </Td>
                                     <Td align="right">
                                         <div className="flex flex-wrap justify-end gap-2">

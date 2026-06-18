@@ -107,14 +107,14 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
 
     return (
         <div className="space-y-8">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                    <h3 className="font-black text-slate-800">Configuración General</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">Define cómo se ejecuta la corrección monetaria para esta empresa.</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 className="font-black text-slate-800 dark:text-slate-200">Configuración General</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Define cómo se ejecuta la corrección monetaria para esta empresa.</p>
                 </div>
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Aplica CM</label>
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Aplica CM</label>
                         <div className="flex gap-3">
                             {[{ val: true, label: 'Sí' }, { val: false, label: 'No (14D8)' }].map(opt => (
                                 <button
@@ -123,7 +123,7 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                                     className={`flex-1 py-2.5 rounded-xl font-bold text-sm border transition-all ${
                                         formConfig.aplica_cm === opt.val
                                             ? 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-200'
-                                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                            : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
                                     }`}
                                 >
                                     {opt.label}
@@ -133,7 +133,7 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Modalidad</label>
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Modalidad</label>
                         <div className="flex gap-3">
                             {[{ val: 'mensual', label: 'Mensual' }, { val: 'anual', label: 'Anual' }].map(opt => (
                                 <button
@@ -142,7 +142,7 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                                     className={`flex-1 py-2.5 rounded-xl font-bold text-sm border transition-all ${
                                         formConfig.modalidad === opt.val
                                             ? 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-200'
-                                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                            : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
                                     }`}
                                 >
                                     {opt.label}
@@ -159,11 +159,11 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
 
                     {formConfig.modalidad === 'anual' && (
                         <div>
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Mes de Cierre Anual</label>
+                            <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Mes de Cierre Anual</label>
                             <select
                                 value={formConfig.mes_cierre}
                                 onChange={e => setFormConfig(f => ({ ...f, mes_cierre: parseInt(e.target.value) }))}
-                                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 bg-white focus:ring-2 focus:ring-violet-500 outline-none"
+                                className="w-full border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 focus:ring-2 focus:ring-violet-500 outline-none"
                             >
                                 {MESES.map((m, i) => (
                                     <option key={i + 1} value={i + 1}>{m}</option>
@@ -174,7 +174,7 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                 </div>
 
                 <div className="px-6 pb-6">
-                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Cuentas de Resultado CM</h4>
+                    <h4 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Cuentas de Resultado CM</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {[
                             { key: 'cuenta_activos_codigo',     label: 'Resultado Activos (Ingreso)' },
@@ -184,12 +184,12 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                             { key: 'cuenta_pasivos_codigo',     label: 'Resultado Pasivos (Gasto)' },
                         ].map(field => (
                             <div key={field.key}>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{field.label}</label>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{field.label}</label>
                                 <input
                                     type="text"
                                     value={formConfig[field.key] || ''}
                                     onChange={e => setFormConfig(f => ({ ...f, [field.key]: e.target.value }))}
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-violet-500 outline-none"
+                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-violet-500 outline-none"
                                 />
                             </div>
                         ))}
@@ -207,18 +207,18 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center gap-3">
                     <div>
-                        <h3 className="font-black text-slate-800">Cuentas Participantes en CM</h3>
-                        <p className="text-xs text-slate-500 mt-0.5">Activá o desactivá cada cuenta del plan que entra en el cálculo.</p>
+                        <h3 className="font-black text-slate-800 dark:text-slate-200">Cuentas Participantes en CM</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Activá o desactivá cada cuenta del plan que entra en el cálculo.</p>
                     </div>
                 </div>
 
                 {loadingCuentas ? (
                     <div className="flex items-center justify-center py-12 text-slate-400"><i className="fas fa-spinner fa-spin text-xl mr-2"></i>Cargando...</div>
                 ) : (
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-700">
                         {ROLES_CM.map(rol => {
                             const cuentasRol = cuentasPorRol(rol.value);
                             if (cuentasRol.length === 0) return null;
@@ -226,11 +226,11 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                                 <div key={rol.value} className="px-6 py-4">
                                     <div className="flex items-center gap-2 mb-3">
                                         {badgeRol(rol.value)}
-                                        <span className="text-xs text-slate-400">{cuentasRol.filter(c => c.aplica).length}/{cuentasRol.length} activas</span>
+                                        <span className="text-xs text-slate-400 dark:text-slate-500">{cuentasRol.filter(c => c.aplica).length}/{cuentasRol.length} activas</span>
                                     </div>
                                     <div className="space-y-2">
                                         {cuentasRol.map(cuenta => (
-                                            <div key={cuenta.cuenta_codigo} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${cuenta.aplica ? 'bg-slate-50 border-slate-200' : 'bg-white border-dashed border-slate-200 opacity-60'}`}>
+                                            <div key={cuenta.cuenta_codigo} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${cuenta.aplica ? 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700' : 'bg-white dark:bg-slate-800 border-dashed border-slate-200 dark:border-slate-600 opacity-60'}`}>
                                                 <div className="flex items-center gap-3">
                                                     <button
                                                         onClick={() => toggleCuenta(cuenta.cuenta_codigo, !cuenta.aplica)}
@@ -238,8 +238,8 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                                                     >
                                                         <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${cuenta.aplica ? 'translate-x-4' : 'translate-x-1'}`} />
                                                     </button>
-                                                    <span className="font-mono text-xs text-slate-500">{cuenta.cuenta_codigo}</span>
-                                                    <span className="font-bold text-sm text-slate-800">{cuenta.nombre_cuenta}</span>
+                                                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{cuenta.cuenta_codigo}</span>
+                                                    <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{cuenta.nombre_cuenta}</span>
                                                 </div>
                                                 {cuenta.factor_override !== null && (
                                                     <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold border border-amber-200">
@@ -255,20 +255,20 @@ const TabConfiguracion = ({ config, onConfigChange }) => {
                     </div>
                 )}
 
-                <div className="px-6 pb-6 pt-2 border-t border-slate-100">
-                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Agregar Cuenta</p>
+                <div className="px-6 pb-6 pt-2 border-t border-slate-100 dark:border-slate-700">
+                    <p className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Agregar Cuenta</p>
                     <div className="flex flex-col sm:flex-row gap-3">
                         <input
                             type="text"
                             value={nuevaCuenta.cuenta_codigo}
                             onChange={e => setNuevaCuenta(n => ({ ...n, cuenta_codigo: e.target.value.toUpperCase() }))}
                             placeholder="Código (ej: 112005)"
-                            className="flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-violet-500 outline-none"
+                            className="flex-1 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-violet-500 outline-none"
                         />
                         <select
                             value={nuevaCuenta.rol_cm}
                             onChange={e => setNuevaCuenta(n => ({ ...n, rol_cm: e.target.value }))}
-                            className="flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 bg-white focus:ring-2 focus:ring-violet-500 outline-none"
+                            className="flex-1 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 focus:ring-2 focus:ring-violet-500 outline-none"
                         >
                             <option value="">Seleccionar rol...</option>
                             {ROLES_CM.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}

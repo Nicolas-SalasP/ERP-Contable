@@ -39,7 +39,7 @@ const Login = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
 
-            <div className="max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
+            <div className="max-w-4xl w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
                 <div className="w-full md:w-1/2 bg-blue-600 p-12 flex flex-col justify-between text-white relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-40 h-40 bg-white opacity-10 rounded-full -translate-x-10 -translate-y-10"></div>
                     <div className="absolute bottom-0 right-0 w-60 h-60 bg-white opacity-10 rounded-full translate-x-20 translate-y-20"></div>
@@ -62,7 +62,7 @@ const Login = () => {
 
                 <div className="w-full md:w-1/2 p-8 md:p-12">
                     <div className="text-center mb-10">
-                        <h3 className="text-3xl font-bold text-slate-800 mb-2">Bienvenido</h3>
+                        <h3 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-2">Bienvenido</h3>
                         <p className="text-slate-500">Ingresa tus credenciales para acceder</p>
                     </div>
 
@@ -75,14 +75,14 @@ const Login = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">Correo Electrónico</label>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">Correo Electrónico</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Mail size={20} strokeWidth={1.75} className="text-slate-400" />
                                 </div>
                                 <input
                                     type="email"
-                                    className={`w-full  pl-10 pr-4 py-3 rounded-lg border ${error ? 'border-red-300 focus:ring-red-200' : 'border-slate-300 focus:ring-blue-200'} focus:border-blue-500 focus:ring-4 outline-none transition-all text-slate-700`}
+                                    className={`w-full  pl-10 pr-4 py-3 rounded-lg border ${error ? 'border-red-300 focus:ring-red-200' : 'border-slate-300 dark:border-slate-600 focus:ring-blue-200'} focus:border-blue-500 focus:ring-4 outline-none transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700`}
                                     placeholder="ejemplo@empresa.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
@@ -92,14 +92,14 @@ const Login = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">Contraseña</label>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">Contraseña</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Lock size={20} strokeWidth={1.75} className="text-slate-400" />
                                 </div>
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    className={`w-full pr-12 py-3 rounded-lg border ${error ? 'border-red-300 focus:ring-red-200' : 'border-slate-300 focus:ring-blue-200'} focus:border-blue-500 focus:ring-4 outline-none transition-all text-slate-700`}
+                                    className={`w-full pr-12 py-3 rounded-lg border ${error ? 'border-red-300 focus:ring-red-200' : 'border-slate-300 dark:border-slate-600 focus:ring-blue-200'} focus:border-blue-500 focus:ring-4 outline-none transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700`}
                                     style={{ paddingLeft: '3rem', height: '3rem' }}
                                     placeholder="••••••••"
                                     value={password}
@@ -121,7 +121,7 @@ const Login = () => {
                         </div>
 
                         <div className="flex items-center justify-between text-sm">
-                            <label className="flex items-center text-slate-600 cursor-pointer select-none">
+                            <label className="flex items-center text-slate-600 dark:text-slate-400 cursor-pointer select-none">
                                 <input
                                     type="checkbox"
                                     className="mr-2 rounded border-slate-300 text-blue-600 focus:ring-blue-500"

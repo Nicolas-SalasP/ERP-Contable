@@ -8,7 +8,7 @@ const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: 6 }, (_, i) => anioActual - i);
 
 const inputCls =
-    'w-full px-3 py-2 rounded-lg border border-slate-300 text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+    'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
 const BADGE_ESTADO = {
     GENERADO:          'bg-slate-100 text-slate-700',
@@ -162,12 +162,12 @@ const LreRrhh = () => {
     return (
         <div className="max-w-5xl mx-auto p-6 md:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex flex-wrap items-center gap-3">
                     <i className="fas fa-book text-emerald-600" />
                     Libro de Remuneraciones Electrónico (LRE)
                     <AyudaModulo moduloId="lre" />
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Genera, valida y descarga el LRE mensual para subir al portal Mi DT del Ministerio del Trabajo.
                 </p>
             </header>
@@ -185,11 +185,11 @@ const LreRrhh = () => {
             )}
 
             {/* Selector de período y acción generar */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
-                <h2 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Período</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
+                <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Período</h2>
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Año</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
                         <select
                             value={periodo.anio}
                             onChange={(e) => setPeriodo((p) => ({ ...p, anio: Number(e.target.value) }))}
@@ -199,7 +199,7 @@ const LreRrhh = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Mes</label>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
                         <select
                             value={periodo.mes}
                             onChange={(e) => setPeriodo((p) => ({ ...p, mes: Number(e.target.value) }))}
@@ -225,30 +225,30 @@ const LreRrhh = () => {
 
             {/* Panel del LRE del período actual */}
             {lreActual ? (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="font-bold text-slate-900">
+                        <h2 className="font-bold text-slate-900 dark:text-slate-100">
                             LRE — {nombreMes(lreActual.mes)} {lreActual.anio}
                         </h2>
                         <BadgeEstado estado={lreActual.estado} />
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-sm">
-                        <div className="bg-slate-50 rounded-lg p-3">
-                            <div className="text-xs text-slate-500 mb-1">Trabajadores</div>
-                            <div className="font-bold text-slate-900">{lreActual.cantidad_trabajadores ?? '—'}</div>
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Trabajadores</div>
+                            <div className="font-bold text-slate-900 dark:text-slate-100">{lreActual.cantidad_trabajadores ?? '—'}</div>
                         </div>
-                        <div className="bg-slate-50 rounded-lg p-3">
-                            <div className="text-xs text-slate-500 mb-1">Estado</div>
-                            <div className="font-bold text-slate-900">{lreActual.estado}</div>
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Estado</div>
+                            <div className="font-bold text-slate-900 dark:text-slate-100">{lreActual.estado}</div>
                         </div>
-                        <div className="bg-slate-50 rounded-lg p-3">
-                            <div className="text-xs text-slate-500 mb-1">Confirmación DT</div>
-                            <div className="font-bold text-slate-900">{lreActual.numero_confirmacion_dt ?? '—'}</div>
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Confirmación DT</div>
+                            <div className="font-bold text-slate-900 dark:text-slate-100">{lreActual.numero_confirmacion_dt ?? '—'}</div>
                         </div>
-                        <div className="bg-slate-50 rounded-lg p-3">
-                            <div className="text-xs text-slate-500 mb-1">Fecha confirmación</div>
-                            <div className="font-bold text-slate-900">{formatFecha(lreActual.confirmado_at)}</div>
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Fecha confirmación</div>
+                            <div className="font-bold text-slate-900 dark:text-slate-100">{formatFecha(lreActual.confirmado_at)}</div>
                         </div>
                     </div>
 
@@ -270,7 +270,7 @@ const LreRrhh = () => {
                         <button
                             onClick={() => handleDescargar(lreActual)}
                             disabled={descargandoId === lreActual.id}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-sm disabled:opacity-50 py-2.5"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-sm disabled:opacity-50 py-2.5"
                         >
                             {descargandoId === lreActual.id
                                 ? <><i className="fas fa-spinner fa-spin" /> Descargando...</>
@@ -299,16 +299,16 @@ const LreRrhh = () => {
 
                     {/* Formulario confirmar envío a DT */}
                     {puedeProcesar && lreActual.estado === 'VALIDADO' && (
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                            <h3 className="text-sm font-bold text-slate-700 mb-3">
+                        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">
                                 Confirmar envío a Mi DT
                             </h3>
-                            <p className="text-xs text-slate-500 mb-3">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                                 Una vez subido el archivo al portal Mi DT del Ministerio del Trabajo, ingresa el número de confirmación que entrega el portal (opcional).
                             </p>
                             <div className="flex flex-wrap items-end gap-3">
                                 <div className="flex-1 min-w-[200px]">
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Número de confirmación (opcional)
                                     </label>
                                     <input
@@ -335,7 +335,7 @@ const LreRrhh = () => {
                     )}
                 </div>
             ) : (
-                <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl py-10 text-center text-slate-400 mb-6">
+                <div className="bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl py-10 text-center text-slate-400 mb-6">
                     <i className="fas fa-book text-3xl mb-3 block" />
                     No hay LRE generado para {nombreMes(periodo.mes)} {periodo.anio}.
                     {puedeProcesar && <span className="block text-sm mt-1">Usa el botón "Generar LRE" para crear uno.</span>}
@@ -343,9 +343,9 @@ const LreRrhh = () => {
             )}
 
             {/* Historial */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                    <h2 className="font-bold text-slate-900">Historial de LRE</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <h2 className="font-bold text-slate-900 dark:text-slate-100">Historial de LRE</h2>
                     <button
                         onClick={cargarHistorial}
                         className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1"
@@ -361,7 +361,7 @@ const LreRrhh = () => {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-semibold">Período</th>
                                     <th className="px-4 py-3 text-left font-semibold">Estado</th>
@@ -371,22 +371,22 @@ const LreRrhh = () => {
                                     <th className="px-4 py-3 text-center font-semibold">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {historial.map((lre) => (
-                                    <tr key={lre.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 font-medium text-slate-900">
+                                    <tr key={lre.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                                             {nombreMes(lre.mes)} {lre.anio}
                                         </td>
                                         <td className="px-4 py-3">
                                             <BadgeEstado estado={lre.estado} />
                                         </td>
-                                        <td className="px-4 py-3 text-right text-slate-700">
+                                        <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
                                             {lre.cantidad_trabajadores ?? '—'}
                                         </td>
-                                        <td className="px-4 py-3 text-slate-700 font-mono text-xs">
+                                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300 font-mono text-xs">
                                             {lre.numero_confirmacion_dt ?? '—'}
                                         </td>
-                                        <td className="px-4 py-3 text-slate-600">
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                                             {formatFecha(lre.confirmado_at)}
                                         </td>
                                         <td className="px-4 py-3 text-center">
@@ -394,7 +394,7 @@ const LreRrhh = () => {
                                                 onClick={() => handleDescargar(lre)}
                                                 disabled={descargandoId === lre.id}
                                                 title="Descargar archivo"
-                                                className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                                                className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
                                             >
                                                 {descargandoId === lre.id
                                                     ? <i className="fas fa-spinner fa-spin text-xs" />

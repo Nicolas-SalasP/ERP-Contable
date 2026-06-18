@@ -33,7 +33,7 @@ const BuscadorCuentasReclasificar = ({ cuentas, valor, onChange }) => {
                     className={`w-full border p-2.5 rounded-lg text-sm outline-none transition-all font-bold pr-8 ${
                         valor
                             ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                            : 'border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-slate-700'
+                            : 'border-blue-300 dark:border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-slate-700 dark:text-slate-300'
                     }`}
                     placeholder="Escriba código o nombre de la cuenta..."
                     value={busqueda}
@@ -53,12 +53,12 @@ const BuscadorCuentasReclasificar = ({ cuentas, valor, onChange }) => {
             </div>
 
             {abierto && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 shadow-2xl max-h-56 overflow-y-auto rounded-lg rounded-tl-none animate-fade-in custom-scrollbar">
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl max-h-56 overflow-y-auto rounded-lg rounded-tl-none animate-fade-in custom-scrollbar">
                     {filtradas.length > 0 ? (
                         filtradas.map(c => (
                             <div
                                 key={c.codigo}
-                                className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-50 last:border-0 transition-colors flex flex-col"
+                                className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors flex flex-col"
                                 onClick={() => {
                                     onChange(c.codigo);
                                     setBusqueda(`${c.codigo} - ${c.nombre}`);
@@ -66,7 +66,7 @@ const BuscadorCuentasReclasificar = ({ cuentas, valor, onChange }) => {
                                 }}
                             >
                                 <span className="font-mono font-bold text-blue-600">{c.codigo}</span>
-                                <span className="text-slate-700 font-medium">{c.nombre}</span>
+                                <span className="text-slate-700 dark:text-slate-300 font-medium">{c.nombre}</span>
                             </div>
                         ))
                     ) : (

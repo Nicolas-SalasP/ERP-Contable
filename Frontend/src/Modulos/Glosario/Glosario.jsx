@@ -9,9 +9,9 @@ const Glosario = () => {
     const modulosVisibles = busqueda.trim() ? buscarModulos(busqueda) : listarModulos();
 
     return (
-        <div className="max-w-[95rem] mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 animate-fade-in pb-20">
+        <div className="max-w-[95rem] mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 dark:text-slate-200 animate-fade-in pb-20">
             <div className="mb-6">
-                <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
+                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                     📚 Glosario del Sistema
                 </h1>
                 <p className="text-slate-500 font-medium mt-1">
@@ -26,7 +26,7 @@ const Glosario = () => {
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                         placeholder="Buscar concepto, modulo o termino..."
-                        className="w-full bg-white border border-slate-300 rounded-xl pl-12 pr-4 py-3 text-slate-800 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
+                        className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl pl-12 pr-4 py-3 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                     />
                     <Search size={20} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 </div>
@@ -47,7 +47,7 @@ const Glosario = () => {
 const GridModulos = ({ modulos, onSeleccionar }) => {
     if (modulos.length === 0) {
         return (
-            <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
+            <div className="bg-white dark:bg-slate-800 p-12 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
                 <p className="text-slate-500">No se encontraron modulos que coincidan con la busqueda.</p>
             </div>
         );
@@ -60,14 +60,14 @@ const GridModulos = ({ modulos, onSeleccionar }) => {
                     key={m.id}
                     type="button"
                     onClick={() => onSeleccionar(m)}
-                    className="text-left bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-400 hover:shadow-md transition-all group focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className="text-left bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:border-indigo-400 hover:shadow-md transition-all group focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 >
                     <div className="flex items-start gap-3">
                         <div className="text-3xl" aria-hidden="true">
                             {m.icono}
                         </div>
                         <div className="flex-1">
-                            <h3 className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+                            <h3 className="font-black text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 transition-colors">
                                 {m.titulo}
                             </h3>
                             <p className="text-sm text-slate-500 mt-1 leading-relaxed">
@@ -82,7 +82,7 @@ const GridModulos = ({ modulos, onSeleccionar }) => {
 };
 
 const DetalleModulo = ({ modulo, onVolver }) => (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white px-6 py-5 flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
                 <div className="text-5xl leading-none" aria-hidden="true">
@@ -102,7 +102,7 @@ const DetalleModulo = ({ modulo, onVolver }) => (
             </button>
         </div>
 
-        <div className="p-6 space-y-6 text-slate-700">
+        <div className="p-6 space-y-6 text-slate-700 dark:text-slate-300">
             <Seccion titulo="¿Que es?" emoji="📖">
                 <p className="leading-relaxed">{modulo.queEs}</p>
             </Seccion>
@@ -111,9 +111,9 @@ const DetalleModulo = ({ modulo, onVolver }) => (
                 <Seccion titulo="Conceptos clave" emoji="🔑">
                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {modulo.conceptos.map((c, i) => (
-                            <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                                <dt className="font-bold text-slate-900">{c.termino}</dt>
-                                <dd className="text-sm text-slate-600 mt-1 leading-relaxed">
+                            <div key={i} className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3 border border-slate-100 dark:border-slate-700">
+                                <dt className="font-bold text-slate-900 dark:text-slate-100">{c.termino}</dt>
+                                <dd className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
                                     {c.definicion}
                                 </dd>
                             </div>
@@ -163,7 +163,7 @@ const DetalleModulo = ({ modulo, onVolver }) => (
 
 const Seccion = ({ titulo, emoji, children }) => (
     <section>
-        <h3 className="text-lg font-black text-slate-900 mb-3 flex items-center gap-2">
+        <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
             <span aria-hidden="true">{emoji}</span>
             <span>{titulo}</span>
         </h3>

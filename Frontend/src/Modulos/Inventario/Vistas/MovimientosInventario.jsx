@@ -278,7 +278,7 @@ const MovimientosInventario = () => {
                                 name="tipo"
                                 value={form.tipo}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 required
                             >
                                 {tiposMovimiento.map((tipo) => (
@@ -294,7 +294,7 @@ const MovimientosInventario = () => {
                                 name="producto_id"
                                 value={form.producto_id}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 required
                             >
                                 <option value="">Seleccionar producto</option>
@@ -312,7 +312,7 @@ const MovimientosInventario = () => {
                                     name="bodega_origen_id"
                                     value={form.bodega_origen_id}
                                     onChange={handleChange}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                     required
                                 >
                                     <option value="">Seleccionar origen</option>
@@ -331,7 +331,7 @@ const MovimientosInventario = () => {
                                     name="bodega_destino_id"
                                     value={form.bodega_destino_id}
                                     onChange={handleChange}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                     required
                                 >
                                     <option value="">Seleccionar destino</option>
@@ -349,7 +349,7 @@ const MovimientosInventario = () => {
                                 name="lote_id"
                                 value={form.lote_id}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                             >
                                 <option value="">Sin lote</option>
                                 {lotesDelProducto.map((lote) => (
@@ -368,7 +368,7 @@ const MovimientosInventario = () => {
                                 step="1"
                                 value={form.cantidad}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 required
                             />
                         </Field>
@@ -382,7 +382,7 @@ const MovimientosInventario = () => {
                                     step="1"
                                     value={form.costo_unitario}
                                     onChange={handleChange}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                     required
                                 />
                             </Field>
@@ -394,7 +394,7 @@ const MovimientosInventario = () => {
                                 name="referencia"
                                 value={form.referencia}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="ENT-DEMO-001"
                             />
                         </Field>
@@ -405,7 +405,7 @@ const MovimientosInventario = () => {
                                 name="motivo"
                                 value={form.motivo}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="compra, venta, ajuste..."
                             />
                         </Field>
@@ -417,7 +417,7 @@ const MovimientosInventario = () => {
                                     value={form.observacion}
                                     onChange={handleChange}
                                     rows="3"
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none"
                                     placeholder="Detalle operacional del movimiento"
                                 />
                             </Field>
@@ -445,7 +445,7 @@ const MovimientosInventario = () => {
                         <select
                             value={filtroTipo}
                             onChange={(event) => setFiltroTipo(event.target.value)}
-                            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                         >
                             <option value="">Todos los tipos</option>
                             {tiposMovimiento.map((tipo) => (
@@ -459,7 +459,7 @@ const MovimientosInventario = () => {
                             type="text"
                             value={busqueda}
                             onChange={(event) => setBusqueda(event.target.value)}
-                            className="w-full md:w-80 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full md:w-80 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                             placeholder="Buscar producto, bodega o referencia..."
                         />
                     </div>
@@ -473,7 +473,7 @@ const MovimientosInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Fecha</Th>
                                 <Th>Tipo</Th>
@@ -486,10 +486,10 @@ const MovimientosInventario = () => {
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {movimientosFiltrados.map((movimiento) => (
-                                <tr key={movimiento.id} className="hover:bg-slate-50/70 transition-colors">
-                                    <Td className="text-slate-500 font-semibold">
+                                <tr key={movimiento.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                    <Td className="text-slate-500 dark:text-slate-400 font-semibold">
                                         {formatDate(movimiento.fecha_movimiento || movimiento.created_at)}
                                     </Td>
 
@@ -499,7 +499,7 @@ const MovimientosInventario = () => {
                                         </span>
                                     </Td>
 
-                                    <Td className="font-black text-slate-800">
+                                    <Td className="font-black text-slate-800 dark:text-slate-200">
                                         {getProductoNombre(movimiento)}
                                     </Td>
 
@@ -511,15 +511,15 @@ const MovimientosInventario = () => {
                                         {getBodegaDestino(movimiento)}
                                     </Td>
 
-                                    <Td align="right" className="font-black text-slate-800">
+                                    <Td align="right" className="font-black text-slate-800 dark:text-slate-200">
                                         {formatNumber(movimiento.cantidad, 2)}
                                     </Td>
 
-                                    <Td align="right" className="font-black text-slate-700">
+                                    <Td align="right" className="font-black text-slate-700 dark:text-slate-300">
                                         {formatCurrency(movimiento.costo_unitario || 0)}
                                     </Td>
 
-                                    <Td className="text-slate-500">
+                                    <Td className="text-slate-500 dark:text-slate-400">
                                         {movimiento.referencia || '-'}
                                     </Td>
                                 </tr>

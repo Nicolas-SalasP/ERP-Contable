@@ -73,17 +73,17 @@ export function ModalReintentarSii({
                 />
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full animate-fade-in-up">
+                <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full animate-fade-in-up">
                     <div className="px-6 pt-6 pb-4">
                         <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                                 <i className="fas fa-redo text-amber-600" />
                             </div>
                             <div className="flex-1">
-                                <h3 id="reintentar-sii-titulo" className="text-lg font-bold text-slate-900">
+                                <h3 id="reintentar-sii-titulo" className="text-lg font-bold text-slate-900 dark:text-slate-100">
                                     Reintentar emision al SII
                                 </h3>
-                                <p className="text-sm text-slate-600 mt-1">
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                                     Se encolara una nueva accion para esta factura.
                                     El proceso es asincrono; el panel se actualizara cuando
                                     el job termine.
@@ -92,9 +92,9 @@ export function ModalReintentarSii({
                                     <dl className="mt-3 text-xs space-y-1">
                                         {resumenEstado.estado && (
                                             <div className="flex justify-between gap-4">
-                                                <dt className="text-slate-500">Estado DTE actual</dt>
+                                                <dt className="text-slate-500 dark:text-slate-400">Estado DTE actual</dt>
                                                 <dd
-                                                    className="text-slate-800 font-mono"
+                                                    className="text-slate-800 dark:text-slate-200 font-mono"
                                                     data-testid="reintentar-sii-estado-actual"
                                                 >
                                                     {resumenEstado.estado}
@@ -103,9 +103,9 @@ export function ModalReintentarSii({
                                         )}
                                         {resumenEstado.ultimo_envio_estado && (
                                             <div className="flex justify-between gap-4">
-                                                <dt className="text-slate-500">Ultimo envio</dt>
+                                                <dt className="text-slate-500 dark:text-slate-400">Ultimo envio</dt>
                                                 <dd
-                                                    className="text-slate-800 font-mono"
+                                                    className="text-slate-800 dark:text-slate-200 font-mono"
                                                     data-testid="reintentar-sii-ultimo-envio"
                                                 >
                                                     {resumenEstado.ultimo_envio_estado}
@@ -118,7 +118,7 @@ export function ModalReintentarSii({
                         </div>
 
                         <div className="mt-4">
-                            <label htmlFor="razon-reintento" className="block text-sm font-medium text-slate-700 mb-1">
+                            <label htmlFor="razon-reintento" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                 Razon del reintento <span className="text-slate-400">(opcional)</span>
                             </label>
                             <textarea
@@ -130,7 +130,7 @@ export function ModalReintentarSii({
                                 maxLength={RAZON_MAX}
                                 rows={3}
                                 placeholder="Ej: error transitorio de red, sesion SII expirada, etc."
-                                className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-amber-500 focus:ring-amber-500"
+                                className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-md p-2 text-sm focus:border-amber-500 focus:ring-amber-500"
                             />
                             <div className="flex justify-between text-xs mt-1">
                                 <span className="text-slate-500">
@@ -152,7 +152,7 @@ export function ModalReintentarSii({
                         )}
                     </div>
 
-                    <div className="bg-slate-50 px-6 py-3 sm:flex sm:flex-row-reverse gap-2">
+                    <div className="bg-slate-50 dark:bg-slate-900 px-6 py-3 sm:flex sm:flex-row-reverse gap-2">
                         <button
                             type="button"
                             data-testid="btn-confirmar-reintento"
@@ -171,7 +171,7 @@ export function ModalReintentarSii({
                             data-testid="btn-cancelar-reintento"
                             onClick={onCerrar}
                             disabled={enviando}
-                            className="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-50"
+                            className="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
                         >
                             Cancelar
                         </button>

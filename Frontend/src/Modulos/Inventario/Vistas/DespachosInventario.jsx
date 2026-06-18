@@ -22,7 +22,7 @@ import {
     Th,
 } from '../Componentes/InventarioUI';
 
-const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none';
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300';
 
 const DespachosInventario = () => {
     const [loading, setLoading] = useState(true);
@@ -271,7 +271,7 @@ const DespachosInventario = () => {
                     <EmptyState title="Sin despachos" description="Genera un despacho desde un packing empacado." icon="fas fa-truck-ramp-box" />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Estado</Th>
@@ -281,24 +281,24 @@ const DespachosInventario = () => {
                                 <Th align="right">Acciones</Th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {despachosFiltrados.map((orden) => (
-                                <tr key={orden.id} className="hover:bg-slate-50/60 align-top">
+                                <tr key={orden.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700 align-top">
                                     <Td>
-                                        <p className="font-black text-slate-800">{orden.codigo}</p>
-                                        <p className="text-xs text-slate-500">{orden.referencia || 'Sin referencia'}</p>
-                                        <p className="text-xs text-slate-500">{orden.motivo || 'despacho_interno'}</p>
+                                        <p className="font-black text-slate-800 dark:text-slate-200">{orden.codigo}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{orden.referencia || 'Sin referencia'}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{orden.motivo || 'despacho_interno'}</p>
                                     </Td>
                                     <Td><EstadoBadge value={orden.estado} /></Td>
                                     <Td>
-                                        <p className="font-black text-slate-700">Packing: {orden.packing_orden?.codigo || orden.packingOrden?.codigo || `#${orden.packing_orden_id}`}</p>
-                                        <p className="text-xs text-slate-500">Picking: {orden.picking_orden?.codigo || orden.pickingOrden?.codigo || `#${orden.picking_orden_id}`}</p>
-                                        <p className="text-xs text-slate-500">Reserva: {orden.reserva?.codigo_reserva || '-'}</p>
+                                        <p className="font-black text-slate-700 dark:text-slate-300">Packing: {orden.packing_orden?.codigo || orden.packingOrden?.codigo || `#${orden.packing_orden_id}`}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Picking: {orden.picking_orden?.codigo || orden.pickingOrden?.codigo || `#${orden.picking_orden_id}`}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Reserva: {orden.reserva?.codigo_reserva || '-'}</p>
                                     </Td>
                                     <Td>
                                         {(orden.detalles || []).map((detalle) => (
-                                            <div key={detalle.id} className="mb-2 last:mb-0 text-xs text-slate-600">
-                                                <p className="font-black text-slate-700">{getProductoNombre(detalle)}</p>
+                                            <div key={detalle.id} className="mb-2 last:mb-0 text-xs text-slate-600 dark:text-slate-400">
+                                                <p className="font-black text-slate-700 dark:text-slate-300">{getProductoNombre(detalle)}</p>
                                                 <p>Empacada: {formatNumber(detalle.cantidad_empacada, 4)} · Despachada: {formatNumber(detalle.cantidad_despachada, 4)} · Faltante: {formatNumber(detalle.cantidad_faltante, 4)}</p>
                                                 <p>Ubicación: {detalle.ubicacion_origen?.codigo || detalle.ubicacionOrigen?.codigo || '-'}</p>
                                                 <p><EstadoBadge value={detalle.estado} /></p>
@@ -306,9 +306,9 @@ const DespachosInventario = () => {
                                         ))}
                                     </Td>
                                     <Td>
-                                        <p className="text-xs text-slate-500">Creación: {formatDate(orden.fecha_creacion)}</p>
-                                        <p className="text-xs text-slate-500">Inicio: {formatDate(orden.fecha_inicio)}</p>
-                                        <p className="text-xs text-slate-500">Confirmación: {formatDate(orden.fecha_confirmacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Creación: {formatDate(orden.fecha_creacion)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Inicio: {formatDate(orden.fecha_inicio)}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Confirmación: {formatDate(orden.fecha_confirmacion)}</p>
                                     </Td>
                                     <Td align="right">
                                         <div className="flex flex-wrap justify-end gap-2">

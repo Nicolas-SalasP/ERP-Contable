@@ -123,7 +123,7 @@ const BalanceComprobacion = () => {
     };
 
     return (
-        <div className="max-w-full mx-auto p-6 font-sans text-slate-800">
+        <div className="max-w-full mx-auto p-6 font-sans text-slate-800 dark:text-slate-200">
 
             <ModalGenerico
                 isOpen={notificacion.show}
@@ -135,26 +135,26 @@ const BalanceComprobacion = () => {
 
             <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
-                    <h1 className="text-3xl font-bold text-slate-900">Balance de Comprobacion y Saldos</h1>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Balance de Comprobacion y Saldos</h1>
                     <AyudaModulo moduloId="balanceComprobacion" size={26} />
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha Inicio</label>
+                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Inicio</label>
                     <input
                         type="date"
-                        className="border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                        className="border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         value={filtros.fecha_inicio}
                         onChange={e => setFiltros({ ...filtros, fecha_inicio: e.target.value })}
                     />
                 </div>
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha Fin</label>
+                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Fin</label>
                     <input
                         type="date"
-                        className="border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                        className="border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         value={filtros.fecha_fin}
                         onChange={e => setFiltros({ ...filtros, fecha_fin: e.target.value })}
                     />
@@ -183,14 +183,14 @@ const BalanceComprobacion = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead className="text-[10px] uppercase font-bold border-b border-slate-200">
                             <tr>
-                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Codigo</th>
-                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Cuenta</th>
-                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Tipo</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 align-middle whitespace-nowrap">Codigo</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 align-middle whitespace-nowrap">Cuenta</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 align-middle whitespace-nowrap">Tipo</th>
                                 <th colSpan="2" className="px-3 py-2 bg-amber-50 text-amber-700 text-center border-r border-amber-200 whitespace-nowrap">Periodo Anterior</th>
                                 <th colSpan="4" className="px-3 py-2 bg-blue-50 text-blue-700 text-center border-r border-blue-200 whitespace-nowrap">Movimientos Periodo</th>
                                 <th colSpan="2" className="px-3 py-2 bg-emerald-50 text-emerald-700 text-center whitespace-nowrap">Acumulado Año</th>
@@ -206,7 +206,7 @@ const BalanceComprobacion = () => {
                                 <th className="px-3 py-2 bg-emerald-50 text-emerald-600 text-right whitespace-nowrap">SA</th>
                             </tr>
                         </thead>
-                        <tbody className="text-xs divide-y divide-slate-100">
+                        <tbody className="text-xs divide-y divide-slate-100 dark:divide-slate-700">
                             {loading ? (
                                 <tr>
                                     <td colSpan="11" className="p-8 text-center text-slate-400">
@@ -229,14 +229,14 @@ const BalanceComprobacion = () => {
                                 </tr>
                             ) : (
                                 resultado.cuentas.map((cuenta, idx) => (
-                                    <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-3 py-2 font-mono font-bold text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                        <td className="px-3 py-2 font-mono font-bold text-slate-600 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700 whitespace-nowrap">
                                             {cuenta.codigo}
                                         </td>
-                                        <td className="px-3 py-2 border-r border-slate-100 text-slate-700">
+                                        <td className="px-3 py-2 border-r border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                                             {cuenta.nombre}
                                         </td>
-                                        <td className="px-3 py-2 border-r border-slate-100 text-slate-500 whitespace-nowrap">
+                                        <td className="px-3 py-2 border-r border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                             {cuenta.tipo}
                                         </td>
                                         <td className="px-3 py-2 text-right font-mono border-r border-amber-100 whitespace-nowrap">

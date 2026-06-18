@@ -146,23 +146,23 @@ const AnulacionGeneral = () => {
     };
 
     return (
-        <div className="max-w-5xl mx-auto font-sans text-slate-800 pb-10">
+        <div className="max-w-5xl mx-auto font-sans text-slate-800 dark:text-slate-200 pb-10">
 
             <div className="mb-8">
-                <div className="flex items-center gap-3"><h1 className="text-2xl font-bold text-slate-900">Anulación de Documentos</h1><AyudaModulo moduloId="anulacion" /></div>
-                <p className="text-slate-500 text-sm mt-1">Busque cualquier documento por su código único (Ej: 2626... o 2610...) para proceder con su reversa contable.</p>
+                <div className="flex items-center gap-3"><h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Anulación de Documentos</h1><AyudaModulo moduloId="anulacion" /></div>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Busque cualquier documento por su código único (Ej: 2626... o 2610...) para proceder con su reversa contable.</p>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
                 <form onSubmit={buscarDocumento} className="flex flex-col md:flex-row gap-4 items-end">
                     <div className="flex-1 w-full">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                             Código Único del Documento
                         </label>
                         <div className="relative group">
                             <input
                                 type="text"
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg font-bold text-slate-700 placeholder-slate-300"
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg font-bold text-slate-700 dark:text-slate-300 placeholder-slate-300"
                                 placeholder="Ej: 2626000001"
                                 value={codigo}
                                 onChange={(e) => setCodigo(e.target.value)}
@@ -207,7 +207,7 @@ const AnulacionGeneral = () => {
 
                     <div className="lg:col-span-2 space-y-6">
 
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                             <div className={`px-6 py-4 border-b flex justify-between items-center ${documento.tipo === 'FACTURA' ? 'bg-blue-50 border-blue-100' : 'bg-purple-50 border-purple-100'}`}>
                                 <div className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg ${documento.tipo === 'FACTURA' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
@@ -218,7 +218,7 @@ const AnulacionGeneral = () => {
                                     </div>
                                     <div>
                                         <p className="text-xs font-bold uppercase tracking-wider opacity-60">Tipo de Documento</p>
-                                        <p className="font-bold text-slate-800">{documento.tipo === 'FACTURA' ? 'Factura de Compra' : 'Asiento Contable'}</p>
+                                        <p className="font-bold text-slate-800 dark:text-slate-200">{documento.tipo === 'FACTURA' ? 'Factura de Compra' : 'Asiento Contable'}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -237,7 +237,7 @@ const AnulacionGeneral = () => {
                             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                 <div>
                                     <p className="text-xs text-slate-400 font-bold uppercase">Descripción / Glosa</p>
-                                    <p className="text-slate-800 font-medium mt-1">{documento.descripcion}</p>
+                                    <p className="text-slate-800 dark:text-slate-200 font-medium mt-1">{documento.descripcion}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-slate-400 font-bold uppercase">Entidad Relacionada</p>
@@ -254,24 +254,24 @@ const AnulacionGeneral = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="px-6 py-3 bg-slate-50 border-b border-slate-200">
-                                <h3 className="font-bold text-slate-700 text-sm uppercase">Detalle del Asiento Original</h3>
+                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <div className="px-6 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                <h3 className="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase">Detalle del Asiento Original</h3>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-white text-slate-400 border-b border-slate-100">
+                                    <thead className="bg-white dark:bg-slate-800 text-slate-400 border-b border-slate-100 dark:border-slate-700">
                                         <tr>
                                             <th className="px-6 py-3 text-left font-normal text-xs uppercase">Cuenta</th>
                                             <th className="px-6 py-3 text-right font-normal text-xs uppercase w-32">Debe</th>
                                             <th className="px-6 py-3 text-right font-normal text-xs uppercase w-32">Haber</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                         {documento.detalles && documento.detalles.map((linea, i) => (
-                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                                 <td className="px-6 py-3">
-                                                    <div className="font-bold text-slate-700">{linea.cuenta_contable}</div>
+                                                    <div className="font-bold text-slate-700 dark:text-slate-300">{linea.cuenta_contable}</div>
                                                     <div className="text-xs text-slate-400">{linea.cuenta?.nombre || 'Cuenta Contable'}</div>
                                                 </td>
                                                 <td className="px-6 py-3 text-right font-mono text-emerald-600 bg-emerald-50/30">
@@ -307,12 +307,12 @@ const AnulacionGeneral = () => {
                                 ) : (
                                     <>
                                         <div className="mb-4">
-                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+                                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
                                                 Fecha Contable del Reverso <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="date"
-                                                className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm bg-slate-50 focus:bg-white transition-colors"
+                                                className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300"
                                                 value={fechaAnulacion}
                                                 min={documento.fecha}
                                                 onChange={(e) => setFechaAnulacion(e.target.value)}
@@ -324,11 +324,11 @@ const AnulacionGeneral = () => {
                                         </div>
 
                                         <div className="mb-4">
-                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+                                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
                                                 Motivo de la Anulación <span className="text-red-500">*</span>
                                             </label>
                                             <textarea
-                                                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm min-h-[100px] bg-slate-50 focus:bg-white transition-colors"
+                                                className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm min-h-[100px] bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-700 transition-colors text-slate-800 dark:text-slate-200"
                                                 placeholder="Describa claramente por qué se está anulando este documento (error de digitación, devolución, etc.)"
                                                 value={motivo}
                                                 onChange={(e) => setMotivo(e.target.value)}

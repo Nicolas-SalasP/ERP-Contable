@@ -34,11 +34,11 @@ const TarjetaCertificadoActivo = ({ certificado, onRevocar }) => {
         return (
             <div
                 data-testid="tarjeta-cert-placeholder"
-                className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-10 text-center animate-fade-in"
+                className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 p-10 text-center animate-fade-in"
             >
                 <div className="text-6xl mb-3">🔐</div>
-                <h3 className="text-xl font-bold text-slate-700 mb-2">Sin certificado digital</h3>
-                <p className="text-sm text-slate-500 max-w-md mx-auto">
+                <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">Sin certificado digital</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                     Sube tu certificado <b>.pfx</b> o <b>.p12</b> emitido por una entidad acreditada por el SII para
                     comenzar a emitir documentos tributarios electronicos.
                 </p>
@@ -67,15 +67,15 @@ const TarjetaCertificadoActivo = ({ certificado, onRevocar }) => {
     return (
         <div
             data-testid="tarjeta-cert-activo"
-            className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 animate-fade-in"
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 animate-fade-in"
         >
             <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <i className="fas fa-certificate text-emerald-600" />
                         {certificado.subject_common_name || 'Certificado sin nombre'}
                     </h3>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                         RUT titular: <span className="font-mono">{certificado.subject_rut || '—'}</span>
                     </p>
                 </div>
@@ -89,23 +89,23 @@ const TarjetaCertificadoActivo = ({ certificado, onRevocar }) => {
 
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                    <dt className="text-slate-500 text-xs uppercase tracking-wide">Emisor</dt>
-                    <dd className="text-slate-800 font-medium">{certificado.issuer_common_name || '—'}</dd>
+                    <dt className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Emisor</dt>
+                    <dd className="text-slate-800 dark:text-slate-200 font-medium">{certificado.issuer_common_name || '—'}</dd>
                 </div>
                 <div>
-                    <dt className="text-slate-500 text-xs uppercase tracking-wide">Estado</dt>
+                    <dt className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Estado</dt>
                     <dd className="text-slate-800 font-medium capitalize">{certificado.estado}</dd>
                 </div>
                 <div>
-                    <dt className="text-slate-500 text-xs uppercase tracking-wide">Valido desde</dt>
-                    <dd className="text-slate-800 font-medium">{formatearFechaCorta(certificado.valido_desde)}</dd>
+                    <dt className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Valido desde</dt>
+                    <dd className="text-slate-800 dark:text-slate-200 font-medium">{formatearFechaCorta(certificado.valido_desde)}</dd>
                 </div>
                 <div>
-                    <dt className="text-slate-500 text-xs uppercase tracking-wide">Valido hasta</dt>
-                    <dd className="text-slate-800 font-medium">{formatearFechaCorta(certificado.valido_hasta)}</dd>
+                    <dt className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Valido hasta</dt>
+                    <dd className="text-slate-800 dark:text-slate-200 font-medium">{formatearFechaCorta(certificado.valido_hasta)}</dd>
                 </div>
                 <div className="sm:col-span-2">
-                    <dt className="text-slate-500 text-xs uppercase tracking-wide">Fingerprint SHA-256</dt>
+                    <dt className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Fingerprint SHA-256</dt>
                     <dd className="text-slate-800 font-mono text-xs">{abreviarFingerprint(certificado.fingerprint_sha256)}</dd>
                 </div>
             </dl>

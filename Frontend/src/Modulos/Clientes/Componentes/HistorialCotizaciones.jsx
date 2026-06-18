@@ -28,7 +28,7 @@ const HistorialCotizaciones = ({ clienteId }) => {
                 setLoading(false);
             }
         };
-        
+
         fetchHistorial();
     }, [clienteId]);
 
@@ -64,9 +64,9 @@ const HistorialCotizaciones = ({ clienteId }) => {
     }
 
     return (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
             <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 uppercase text-xs">
                     <tr>
                         <th className="px-4 py-3 font-bold tracking-wider">Fecha</th>
                         <th className="px-4 py-3 font-bold tracking-wider">Folio</th>
@@ -75,7 +75,7 @@ const HistorialCotizaciones = ({ clienteId }) => {
                         <th className="px-4 py-3 text-center"></th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {cotizaciones.map(cot => {
                         const fechaReal = cot.fecha || cot.fecha_emision || cot.created_at || '';
                         let fechaFormateada = '---';
@@ -90,7 +90,7 @@ const HistorialCotizaciones = ({ clienteId }) => {
 
                         const estadoCot = (cot.estado_nombre || 'PENDIENTE').toUpperCase();
                         let colorClases = 'bg-amber-50 text-amber-700 border-amber-200';
-                        
+
                         if (['ACEPTADA', 'APROBADA', 'FACTURADA'].includes(estadoCot)) {
                             colorClases = 'bg-emerald-50 text-emerald-700 border-emerald-200';
                         } else if (['RECHAZADA', 'ANULADA', 'VENCIDA'].includes(estadoCot)) {
@@ -98,19 +98,19 @@ const HistorialCotizaciones = ({ clienteId }) => {
                         }
 
                         return (
-                            <tr 
-                                key={cot.id} 
-                                onClick={() => navigate(`/cotizaciones`)} 
-                                className="hover:bg-emerald-50 transition-colors cursor-pointer group"
+                            <tr
+                                key={cot.id}
+                                onClick={() => navigate(`/cotizaciones`)}
+                                className="hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors cursor-pointer group"
                                 title="Abrir cotización completa"
                             >
-                                <td className="px-4 py-3 font-medium text-slate-600 group-hover:text-emerald-700 transition-colors">
+                                <td className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400 group-hover:text-emerald-700 transition-colors">
                                     {fechaFormateada}
                                 </td>
                                 <td className="px-4 py-3 font-mono font-bold text-emerald-600">
                                     {folioDisplay}
                                 </td>
-                                <td className="px-4 py-3 font-black text-slate-800 text-right">
+                                <td className="px-4 py-3 font-black text-slate-800 dark:text-slate-200 text-right">
                                     {formatCurrency(cot.total || 0)}
                                 </td>
                                 <td className="px-4 py-3 text-center">

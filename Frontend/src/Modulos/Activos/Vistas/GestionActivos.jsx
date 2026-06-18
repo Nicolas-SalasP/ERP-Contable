@@ -138,11 +138,11 @@ const GestionActivos = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto bg-slate-50 min-h-screen pb-20">
+        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto bg-slate-50 dark:bg-slate-900 min-h-screen pb-20">
             <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Activos Fijos</h1><AyudaModulo moduloId="activoFijo" size={26} /></div>
-                    <p className="text-slate-500 font-medium text-sm md:text-base mt-1">
+                    <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Activos Fijos</h1><AyudaModulo moduloId="activoFijo" size={26} /></div>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm md:text-base mt-1">
                         Gestión patrimonial, depreciación y control de proyectos en construcción.
                     </p>
                 </div>
@@ -155,16 +155,16 @@ const GestionActivos = () => {
                 </div>
             )}
 
-            <div className="flex overflow-x-auto hide-scrollbar border-b border-slate-200 mb-6 gap-6">
-                <button onClick={() => setTabActiva('PENDIENTES')} className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors relative ${tabActiva === 'PENDIENTES' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>
+            <div className="flex overflow-x-auto hide-scrollbar border-b border-slate-200 dark:border-slate-700 mb-6 gap-6">
+                <button onClick={() => setTabActiva('PENDIENTES')} className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors relative ${tabActiva === 'PENDIENTES' ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                     <i className="fas fa-inbox mr-2"></i> Pendientes ({activosPendientes.length})
                     {tabActiva === 'PENDIENTES' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>}
                 </button>
-                <button onClick={() => setTabActiva('REGISTRADOS')} className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors relative ${tabActiva === 'REGISTRADOS' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setTabActiva('REGISTRADOS')} className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors relative ${tabActiva === 'REGISTRADOS' ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                     <i className="fas fa-cubes mr-2"></i> Activos Registrados ({activosRegistrados.filter(a => a.estado === 'ACTIVO').length})
                     {tabActiva === 'REGISTRADOS' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>}
                 </button>
-                <button onClick={() => setTabActiva('PROYECTOS')} className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors relative ${tabActiva === 'PROYECTOS' ? 'text-emerald-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setTabActiva('PROYECTOS')} className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors relative ${tabActiva === 'PROYECTOS' ? 'text-emerald-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                     <i className="fas fa-hard-hat mr-2"></i> Proyectos en Curso
                     {tabActiva === 'PROYECTOS' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600 rounded-t-full"></span>}
                 </button>
@@ -180,10 +180,10 @@ const GestionActivos = () => {
             ) : (
                 <div className="transition-all duration-300">
                     {tabActiva === 'PENDIENTES' && (
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                             <div className="overflow-x-auto custom-scrollbar">
                             <table className="min-w-full text-left border-collapse">
-                                <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
+                                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs uppercase text-slate-500 dark:text-slate-400">
                                     <tr>
                                         <th className="px-6 py-4 font-bold">Documento</th>
                                         <th className="px-6 py-4 font-bold">Proveedor</th>
@@ -192,13 +192,13 @@ const GestionActivos = () => {
                                         <th className="px-6 py-4 font-bold text-center">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 text-sm">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
                                     {activosPendientes.map((activo, idx) => (
-                                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                             <td className="px-6 py-4 font-bold text-indigo-600">{activo.numero_factura}</td>
-                                            <td className="px-6 py-4 text-slate-700">{activo.proveedor}</td>
-                                            <td className="px-6 py-4 text-slate-500"><span className="bg-slate-100 px-2 py-1 rounded text-xs">{activo.nombre_cuenta}</span></td>
-                                            <td className="px-6 py-4 font-black text-slate-800 text-right">{formatCurrency(activo.valor_adquisicion)}</td>
+                                            <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{activo.proveedor}</td>
+                                            <td className="px-6 py-4 text-slate-500 dark:text-slate-400"><span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs">{activo.nombre_cuenta}</span></td>
+                                            <td className="px-6 py-4 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(activo.valor_adquisicion)}</td>
                                             <td className="px-6 py-4 text-center">
                                                 <button 
                                                     onClick={() => alert("Próxima mejora: Transformación automática a Proyecto Activo.")}
@@ -220,12 +220,12 @@ const GestionActivos = () => {
                         <div className="space-y-4">
                             <div className="flex justify-end items-center gap-3">
                                 <div className="flex flex-col items-end">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Período a Depreciar</label>
-                                    <input 
-                                        type="month" 
+                                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Período a Depreciar</label>
+                                    <input
+                                        type="month"
                                         value={mesDepreciacion}
                                         onChange={(e) => setMesDepreciacion(e.target.value)}
-                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all bg-white"
+                                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all bg-white dark:bg-slate-700"
                                     />
                                 </div>
                                 <BotonAccion
@@ -241,10 +241,10 @@ const GestionActivos = () => {
                                     Ejecutar Depreciación
                                 </BotonAccion>
                             </div>
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                                 <div className="overflow-x-auto custom-scrollbar">
                                 <table className="min-w-full text-left border-collapse">
-                                    <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
+                                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs uppercase text-slate-500 dark:text-slate-400">
                                         <tr>
                                             <th className="px-6 py-4 font-bold">Código / Nombre</th>
                                             <th className="px-6 py-4 font-bold">Clasificación</th>
@@ -254,29 +254,29 @@ const GestionActivos = () => {
                                             <th className="px-6 py-4 font-bold text-center">Acciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 text-sm">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
                                         {activosRegistrados.map((activo) => {
                                             const valorActual = (activo.valor_adquisicion || 0) - (activo.depreciacion_acumulada || 0);
                                             const dadoDeBaja = activo.estado === 'DADO_DE_BAJA';
 
                                             return (
-                                                <tr key={activo.id} className={`transition-colors ${dadoDeBaja ? 'bg-slate-50 opacity-60' : 'hover:bg-slate-50'}`}>
+                                                <tr key={activo.id} className={`transition-colors ${dadoDeBaja ? 'bg-slate-50 dark:bg-slate-900 opacity-60' : 'hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
                                                     <td className="px-6 py-4">
-                                                        <p className={`font-bold ${dadoDeBaja ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                                                        <p className={`font-bold ${dadoDeBaja ? 'text-slate-500 line-through' : 'text-slate-800 dark:text-slate-200'}`}>
                                                             <span className="text-xs text-slate-400 font-normal mr-2">{activo.codigo}</span>
                                                             {activo.nombre}
                                                         </p>
-                                                        <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wider">{activo.cuenta?.nombre || 'Sin cuenta'}</p>
+                                                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wider">{activo.cuenta?.nombre || 'Sin cuenta'}</p>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <span className="text-slate-600 bg-slate-100 px-2 py-1 rounded text-[10px] font-bold uppercase">
+                                                        <span className="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-[10px] font-bold uppercase">
                                                             {activo.cuenta?.categoria_sii || 'General'}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-slate-600 font-medium">
+                                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
                                                         {dadoDeBaja ? '-' : <><span className="font-bold">{calcularVidaUtilRestante(activo)}</span> / {activo.vida_util_meses || 0}m</>}
                                                     </td>
-                                                    <td className="px-6 py-4 font-black text-slate-500 text-right">{formatCurrency(activo.valor_adquisicion)}</td>
+                                                    <td className="px-6 py-4 font-black text-slate-500 dark:text-slate-400 text-right">{formatCurrency(activo.valor_adquisicion)}</td>
                                                     <td className={`px-6 py-4 font-black text-right ${dadoDeBaja ? 'text-slate-400' : 'text-emerald-600'}`}>{formatCurrency(valorActual)}</td>
                                                     <td className="px-6 py-4 text-center">
                                                         {!dadoDeBaja ? (
@@ -319,47 +319,47 @@ const GestionActivos = () => {
 
             {modalBajaAbierto && activoABajar && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up border border-slate-200">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-rose-50">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up border border-slate-200 dark:border-slate-700">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-rose-50 dark:bg-rose-900/30">
                             <h3 className="text-xl font-black text-rose-800 flex items-center gap-2">
                                 <i className="fas fa-exclamation-triangle"></i> Retirar Activo Fijo
                             </h3>
                             <button onClick={() => setModalBajaAbierto(false)} className="text-rose-400 hover:text-rose-600 transition-colors p-2 rounded-lg" aria-label="Cerrar"><i className="fas fa-times"></i></button>
                         </div>
                         <div className="p-6">
-                            <p className="text-sm text-slate-600 mb-4">
-                                Estás a punto de dar de baja el activo <strong className="text-slate-800">{activoABajar.codigo} - {activoABajar.nombre}</strong>.
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                Estás a punto de dar de baja el activo <strong className="text-slate-800 dark:text-slate-200">{activoABajar.codigo} - {activoABajar.nombre}</strong>.
                             </p>
-                            
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5 space-y-2">
+
+                            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-5 space-y-2">
                                 <div className="flex justify-between text-xs">
-                                    <span className="text-slate-500">Valor Adquisición:</span>
-                                    <span className="font-bold text-slate-700">{formatCurrency(activoABajar.valor_adquisicion)}</span>
+                                    <span className="text-slate-500 dark:text-slate-400">Valor Adquisición:</span>
+                                    <span className="font-bold text-slate-700 dark:text-slate-300">{formatCurrency(activoABajar.valor_adquisicion)}</span>
                                 </div>
                                 <div className="flex justify-between text-xs">
-                                    <span className="text-slate-500">Depreciación Acumulada:</span>
-                                    <span className="font-bold text-slate-700">-{formatCurrency(activoABajar.depreciacion_acumulada)}</span>
+                                    <span className="text-slate-500 dark:text-slate-400">Depreciación Acumulada:</span>
+                                    <span className="font-bold text-slate-700 dark:text-slate-300">-{formatCurrency(activoABajar.depreciacion_acumulada)}</span>
                                 </div>
-                                <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
-                                    <span className="font-bold text-slate-700">Pérdida al Castigar:</span>
+                                <div className="flex justify-between text-sm pt-2 border-t border-slate-200 dark:border-slate-700">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300">Pérdida al Castigar:</span>
                                     <span className="font-black text-rose-600">{formatCurrency(activoABajar.valor_adquisicion - activoABajar.depreciacion_acumulada)}</span>
                                 </div>
                             </div>
 
                             <form onSubmit={confirmarBajaActivo}>
                                 <div className="mb-6">
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-2">Motivo de la Baja (Opcional)</label>
-                                    <input 
-                                        type="text" 
+                                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-2">Motivo de la Baja (Opcional)</label>
+                                    <input
+                                        type="text"
                                         value={motivoBaja}
                                         onChange={(e) => setMotivoBaja(e.target.value)}
                                         placeholder="Ej: Obsolescencia, Destrucción, Robo..."
-                                        className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none text-slate-700 font-medium" 
+                                        className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 font-medium"
                                     />
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <button type="button" onClick={() => setModalBajaAbierto(false)} className="w-1/2 py-3 bg-white border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all">Cancelar</button>
+                                    <button type="button" onClick={() => setModalBajaAbierto(false)} className="w-1/2 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 transition-all">Cancelar</button>
                                     <button type="submit" className="w-1/2 py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-200 transition-all">Confirmar Baja</button>
                                 </div>
                             </form>
@@ -370,7 +370,7 @@ const GestionActivos = () => {
 
             {modalEditarAbierto && activoEditando && (
                 <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
                         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 px-6 py-4 flex justify-between items-center">
                             <div>
                                 <h3 className="font-black text-xl text-white">Editar Activo</h3>
@@ -386,14 +386,14 @@ const GestionActivos = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
+                                <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">
                                     Nombre del activo
                                 </label>
                                 <input
                                     type="text"
                                     value={formEditar.nombre}
                                     onChange={(e) => setFormEditar({ ...formEditar, nombre: e.target.value })}
-                                    className="w-full border border-slate-300 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                    className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                                     placeholder="Ej: Notebook Lenovo T14"
                                     maxLength={255}
                                     required
@@ -402,13 +402,13 @@ const GestionActivos = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
+                                <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">
                                     Descripcion (opcional)
                                 </label>
                                 <textarea
                                     value={formEditar.descripcion}
                                     onChange={(e) => setFormEditar({ ...formEditar, descripcion: e.target.value })}
-                                    className="w-full border border-slate-300 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
+                                    className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
                                     placeholder="Detalles adicionales del activo"
                                     rows={3}
                                 />
@@ -419,7 +419,7 @@ const GestionActivos = () => {
                                     type="button"
                                     onClick={cerrarModalEditar}
                                     disabled={guardandoEdicion}
-                                    className="w-1/2 py-3 bg-white border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all disabled:opacity-50"
+                                    className="w-1/2 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 transition-all disabled:opacity-50"
                                 >
                                     Cancelar
                                 </button>
