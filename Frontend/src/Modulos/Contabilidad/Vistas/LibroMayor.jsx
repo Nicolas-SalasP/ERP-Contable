@@ -5,6 +5,7 @@ import * as XLSX from "@e965/xlsx";
 import { logger } from '../../../Configuracion/logger';
 import { Eye, Download, ArrowLeft } from 'lucide-react';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { useToast } from '../../../Contextos/ToastContext';
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
@@ -349,7 +350,7 @@ const LibroMayor = () => {
                 <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 overflow-hidden z-10 relative">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-100 dark:bg-slate-900 text-[11px] uppercase text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700">
+                            <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-[11px] uppercase text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700">
                                 <tr>
                                     <th className="px-4 py-3 w-32 border-r border-slate-200 dark:border-slate-700">Comprobante</th>
                                     <th className="px-4 py-3 w-28 border-r border-slate-200 dark:border-slate-700 text-center">Fecha</th>
@@ -362,7 +363,7 @@ const LibroMayor = () => {
                             </thead>
                             <tbody className="text-xs divide-y divide-slate-100 dark:divide-slate-700">
                                 {loading ? <TablaSkeleton filas={8} columnas={7} /> :
-                                    asientos.length === 0 ? <tr><td colSpan="7" className="p-8 text-center text-slate-400"><i className="fas fa-book-open text-slate-300 text-2xl mb-2 block"></i>No hay movimientos.</td></tr> : (
+                                    asientos.length === 0 ? <EstadoVacio mensaje="Sin movimientos en el período" detalle="Ajusta el rango de fechas o selecciona otra cuenta." /> : (
                                         asientos.map((row, idx) => {
                                             const esAnulado = row.estado === 'ANULADO' || row.estado === 'RECLASIFICADO';
                                             return (
