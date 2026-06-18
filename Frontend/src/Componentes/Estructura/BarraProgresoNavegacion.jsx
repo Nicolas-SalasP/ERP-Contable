@@ -1,47 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 export function BarraProgresoNavegacion() {
-    const navigation = useNavigation();
+    const location = useLocation();
     const [width, setWidth] = useState(0);
     const [visible, setVisible] = useState(false);
-    const t1 = useRef(null);
-    const t2 = useRef(null);
-    const t3 = useRef(null);
+    const montado = useRef(false);
+    const timers = useRef([]);
+
+    const limpiar = () => timers.current.forEach(clearTimeout);
 
     useEffect(() => {
-        if (navigation.state === 'loading') {
-            setVisible(true);
-            setWidth(15);
-            t1.current = setTimeout(() => setWidth(50), 150);
-            t2.current = setTimeout(() => setWidth(75), 500);
-        } else if (navigation.state === 'idle' && visible) {
-            clearTimeout(t1.current);
-            clearTimeout(t2.current);
-            setWidth(100);
-            t3.current = setTimeout(() => {
-                setVisible(false);
-                setWidth(0);
-            }, 300);
-        }
+        // Ignorar montaje inicial
+        if (!montado.current) { montado.current = true; return; }
 
-        return () => {
-            clearTimeout(t1.current);
-            clearTimeout(t2.current);
-            clearTimeout(t3.current);
-        };
-    }, [navigation.state]);
+        limpiar();
+        setVisible(true);
+        setWidth(20);
+
+        timers.current = [
+            setTimeout(() => setWidth(60), 120),
+            setTimeout(() => setWidth(85), 300),
+            setTimeout(() => setWidth(100), 500),
+            setTimeout(() => { setVisible(false); setWidth(0); }, 720),
+        ];
+
+        return limpiar;
+    }, [location.pathname]);
 
     if (!visible) return null;
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-[9999] h-[2px] bg-transparent pointer-events-none">
+        <div className="fixed top-0 left-0 right-0 z-[9999] h-[2px] pointer-events-none">
             <div
                 className="h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all ease-out"
-                style={{
-                    width: `${width}%`,
-                    transitionDuration: width === 100 ? '200ms' : '500ms',
-                }}
+                style={{ width: `${width}%`, transitionDuration: width === 100 ? '180ms' : '400ms' }}
             />
         </div>
     );
