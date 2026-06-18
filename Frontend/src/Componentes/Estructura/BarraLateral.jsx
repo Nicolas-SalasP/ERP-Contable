@@ -279,6 +279,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/rrhh/centralizacion', label: 'Centralización Contable', permisosRequeridos: ['rrhh.parametros.ver'] },
                 { path: '/rrhh/previred', label: 'Archivo Previred', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
                 { path: '/rrhh/lre', label: 'LRE — Libro de Remuneraciones', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
+                { path: '/rrhh/emrcl', label: 'EMRCL — Encuesta INE', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
             ]
         },
         {
