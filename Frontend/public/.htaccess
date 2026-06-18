@@ -1,0 +1,20 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # 1. EXCEPCIÓN PARA EL BACKEND (API REST)
+    # Evita que React intercepte las llamadas a la API
+    RewriteRule ^Backend/ - [L]
+
+    # 2. EXCEPCIÓN PARA ARCHIVOS FÍSICOS
+    # Deja pasar imágenes, CSS, JS
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 3. REGLA PARA REACT ROUTER
+    # Redirige la navegación del usuario al index.html
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+Options -Indexes
