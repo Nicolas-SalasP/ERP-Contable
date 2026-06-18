@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import BotonAccion from '../../../Componentes/BotonAccion';
 import GestionProyectosActivos from './GestionProyectosActivos';
 import { logger } from '../../../Configuracion/logger';
@@ -183,7 +185,7 @@ const GestionActivos = () => {
                         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                             <div className="overflow-x-auto custom-scrollbar">
                             <table className="min-w-full text-left border-collapse">
-                                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs uppercase text-slate-500 dark:text-slate-400">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs uppercase text-slate-500 dark:text-slate-400">
                                     <tr>
                                         <th className="px-6 py-4 font-bold">Documento</th>
                                         <th className="px-6 py-4 font-bold">Proveedor</th>
@@ -209,7 +211,7 @@ const GestionActivos = () => {
                                             </td>
                                         </tr>
                                     ))}
-                                    {activosPendientes.length === 0 && <tr><td colSpan="5" className="px-6 py-10 text-center text-slate-400"><i className="fas fa-file-invoice text-slate-300 text-2xl mb-2 block"></i>No hay facturas pendientes de activar.</td></tr>}
+                                    {activosPendientes.length === 0 && <EstadoVacio mensaje="Sin activos registrados." />}
                                 </tbody>
                             </table>
                             </div>
@@ -244,7 +246,7 @@ const GestionActivos = () => {
                             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                                 <div className="overflow-x-auto custom-scrollbar">
                                 <table className="min-w-full text-left border-collapse">
-                                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs uppercase text-slate-500 dark:text-slate-400">
+                                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs uppercase text-slate-500 dark:text-slate-400">
                                         <tr>
                                             <th className="px-6 py-4 font-bold">Código / Nombre</th>
                                             <th className="px-6 py-4 font-bold">Clasificación</th>
@@ -303,7 +305,7 @@ const GestionActivos = () => {
                                                 </tr>
                                             );
                                         })}
-                                        {activosRegistrados.length === 0 && <tr><td colSpan="6" className="px-6 py-10 text-center text-slate-400"><i className="fas fa-box-open text-slate-300 text-2xl mb-2 block"></i>No hay activos registrados en el sistema.</td></tr>}
+                                        {activosRegistrados.length === 0 && <EstadoVacio mensaje="Sin activos registrados." />}
                                     </tbody>
                                 </table>
                                 </div>

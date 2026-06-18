@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import ModalGenerico from '../../Componentes/ModalGenerico';
@@ -7,7 +7,11 @@ import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { logger } from '../../Configuracion/logger';
 import { Search, Calendar, FileText, Check, X } from 'lucide-react';
+import { TablaSkeleton } from '../../Componentes/Skeleton';
+import { EstadoVacio } from '../../Componentes/EstadoVacio';
+import { useToast } from '../../Contextos/ToastContext';
 const GestionCotizaciones = () => {
+    const { toast } = useToast();
     const [cotizaciones, setCotizaciones] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -16,13 +20,6 @@ const GestionCotizaciones = () => {
         id: null,
         nuevoEstado: '',
         tipo: 'info'
-    });
-
-    const [notificacion, setNotificacion] = useState({
-        show: false,
-        title: '',
-        message: '',
-        type: 'info'
     });
 
     const formatearFecha = (fechaRaw) => {
@@ -62,12 +59,7 @@ const GestionCotizaciones = () => {
             });
             if (res.success) {
                 setConfirmarAccion({ ...confirmarAccion, show: false });
-                setNotificacion({
-                    show: true,
-                    title: 'Operación Exitosa',
-                    message: `La cotización #${String(confirmarAccion.id).padStart(5, '0')} ha sido marcada como ${confirmarAccion.nuevoEstado}.`,
-                    type: 'success'
-                });
+                toast(`La cotización #${String(confirmarAccion.id).padStart(5, '0')} ha sido marcada como ${confirmarAccion.nuevoEstado}.`, 'success');
                 fetchCotizaciones();
             }
         } catch (error) {
@@ -116,14 +108,6 @@ const GestionCotizaciones = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-6">
-
-            <ModalGenerico
-                isOpen={notificacion.show}
-                onClose={() => setNotificacion({ ...notificacion, show: false })}
-                title={notificacion.title}
-                message={notificacion.message}
-                type={notificacion.type}
-            />
 
             <ModalGenerico
                 isOpen={confirmarAccion.show}
@@ -262,7 +246,7 @@ const GestionCotizaciones = () => {
                     <div className="hidden md:block bg-white dark:bg-slate-800 shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
                         <div className="overflow-x-auto custom-scrollbar">
                         <table className="min-w-full text-left">
-                            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
                                 <tr>
                                     <th className="p-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">Folio</th>
                                     <th className="p-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">Cliente</th>

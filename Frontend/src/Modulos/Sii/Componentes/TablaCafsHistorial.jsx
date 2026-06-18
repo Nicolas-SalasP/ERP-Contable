@@ -1,4 +1,6 @@
-import React from 'react';
+﻿import React from 'react';
+import { TablaSkeleton } from '../../Componentes/Skeleton';
+import { EstadoVacioDiv } from '../../Componentes/EstadoVacio';
 
 // Espeja SiiDteEmitido del backend.
 const TIPOS_DTE = [
@@ -78,18 +80,13 @@ const TablaCafsHistorial = ({ cafs, cargando, filtroTipo, onCambiarFiltro, onRev
             </div>
 
             {cargando ? (
-                <div data-testid="historial-loading" className="p-8 text-center text-sm text-slate-400">
-                    <i className="fas fa-spinner fa-spin mr-2" /> Cargando historial...
-                </div>
+                <div data-testid="historial-loading" className="py-8 text-center text-slate-400">Cargando...</div>
             ) : cafs.length === 0 ? (
-                <div data-testid="historial-empty" className="p-10 text-center">
-                    <div className="text-4xl mb-2">📂</div>
-                    <p className="text-sm text-slate-500">No hay CAFs cargados para el filtro seleccionado.</p>
-                </div>
+                <EstadoVacioDiv data-testid="historial-empty" mensaje="Sin folios CAF registrados." />
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                             <tr className="text-left text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                                 <th className="px-4 py-3">Tipo</th>
                                 <th className="px-4 py-3">Rango</th>

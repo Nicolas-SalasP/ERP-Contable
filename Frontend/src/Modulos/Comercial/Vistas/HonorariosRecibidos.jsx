@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { honorarios } from '../Servicios/comercialApi';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 
 const TASAS = { 2024: 13.75, 2025: 14.50, 2026: 15.25, 2027: 16.25, 2028: 17.00 };
 
@@ -295,73 +297,67 @@ const HonorariosRecibidos = () => {
                     </button>
                 </div>
 
-                {cargando ? (
-                    <div className="py-10 text-center text-slate-400 text-sm">
-                        <i className="fas fa-spinner fa-spin mr-2" />Cargando...
-                    </div>
-                ) : lista.length === 0 ? (
-                    <div className="py-10 text-center text-slate-400 text-sm">
-                        Sin honorarios registrados en este período.
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
-                                <tr>
-                                    <th className="px-4 py-3 text-left font-semibold">Fecha</th>
-                                    <th className="px-4 py-3 text-left font-semibold">RUT</th>
-                                    <th className="px-4 py-3 text-left font-semibold">Nombre</th>
-                                    <th className="px-4 py-3 text-left font-semibold">N° Boleta</th>
-                                    <th className="px-4 py-3 text-right font-semibold">Bruto</th>
-                                    <th className="px-4 py-3 text-right font-semibold">Tasa%</th>
-                                    <th className="px-4 py-3 text-right font-semibold">Retención</th>
-                                    <th className="px-4 py-3 text-right font-semibold">Líquido</th>
-                                    <th className="px-4 py-3 text-center font-semibold">Eliminar</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                {lista.map((h) => {
-                                    const anioH    = h.fecha ? new Date(h.fecha).getFullYear() : null;
-                                    const tasaH    = TASAS[anioH] ?? h.tasa ?? null;
-                                    const brutoH   = h.monto_bruto ?? 0;
-                                    const retH     = h.monto_retencion ?? (tasaH ? Math.round(brutoH * tasaH / 100) : null);
-                                    const liqH     = h.monto_liquido  ?? (retH !== null ? brutoH - retH : null);
-                                    return (
-                                        <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                                            <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
-                                                {h.fecha ? new Date(h.fecha).toLocaleDateString('es-CL') : '—'}
-                                            </td>
-                                            <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">{h.rut_prestador ?? '—'}</td>
-                                            <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{h.nombre_prestador ?? '—'}</td>
-                                            <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{h.numero_boleta ?? '—'}</td>
-                                            <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-slate-100">
-                                                {clpFmt.format(brutoH)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                                {tasaH !== null ? `${tasaH}%` : '—'}
-                                            </td>
-                                            <td className="px-4 py-3 text-right font-mono text-red-700">
-                                                {retH !== null ? clpFmt.format(retH) : '—'}
-                                            </td>
-                                            <td className="px-4 py-3 text-right font-mono text-emerald-700">
-                                                {liqH !== null ? clpFmt.format(liqH) : '—'}
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <button
-                                                    onClick={() => handleEliminar(h.id)}
-                                                    title="Eliminar"
-                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700"
-                                                >
-                                                    <i className="fas fa-trash-alt text-xs" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                            <tr>
+                                <th className="px-4 py-3 text-left font-semibold">Fecha</th>
+                                <th className="px-4 py-3 text-left font-semibold">RUT</th>
+                                <th className="px-4 py-3 text-left font-semibold">Nombre</th>
+                                <th className="px-4 py-3 text-left font-semibold">N° Boleta</th>
+                                <th className="px-4 py-3 text-right font-semibold">Bruto</th>
+                                <th className="px-4 py-3 text-right font-semibold">Tasa%</th>
+                                <th className="px-4 py-3 text-right font-semibold">Retención</th>
+                                <th className="px-4 py-3 text-right font-semibold">Líquido</th>
+                                <th className="px-4 py-3 text-center font-semibold">Eliminar</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                            {cargando ? (
+                                <TablaSkeleton filas={6} columnas={9} />
+                            ) : lista.length === 0 ? (
+                                <EstadoVacio mensaje="Sin boletas de honorarios." />
+                            ) : lista.map((h) => {
+                                const anioH    = h.fecha ? new Date(h.fecha).getFullYear() : null;
+                                const tasaH    = TASAS[anioH] ?? h.tasa ?? null;
+                                const brutoH   = h.monto_bruto ?? 0;
+                                const retH     = h.monto_retencion ?? (tasaH ? Math.round(brutoH * tasaH / 100) : null);
+                                const liqH     = h.monto_liquido  ?? (retH !== null ? brutoH - retH : null);
+                                return (
+                                    <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                                            {h.fecha ? new Date(h.fecha).toLocaleDateString('es-CL') : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">{h.rut_prestador ?? '—'}</td>
+                                        <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{h.nombre_prestador ?? '—'}</td>
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{h.numero_boleta ?? '—'}</td>
+                                        <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-slate-100">
+                                            {clpFmt.format(brutoH)}
+                                        </td>
+                                        <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                                            {tasaH !== null ? `${tasaH}%` : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-mono text-red-700">
+                                            {retH !== null ? clpFmt.format(retH) : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-mono text-emerald-700">
+                                            {liqH !== null ? clpFmt.format(liqH) : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <button
+                                                onClick={() => handleEliminar(h.id)}
+                                                title="Eliminar"
+                                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700"
+                                            >
+                                                <i className="fas fa-trash-alt text-xs" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

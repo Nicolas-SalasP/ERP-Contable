@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { X } from 'lucide-react';
 
 const formatCurrency = (amount) =>
@@ -72,7 +72,7 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
                             </div>
                             <div className="flex-1 overflow-auto custom-scrollbar">
                                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
-                                    <thead className="bg-white dark:bg-slate-800 sticky top-0 z-10 shadow-sm">
+                                    <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 sticky top-0 z-10 shadow-sm">
                                         <tr>
                                             <th className="px-4 md:px-8 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
                                                 Cuenta Contable

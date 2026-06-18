@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
@@ -250,7 +250,7 @@ const AdministradorCuentas = () => {
 
                         <div className="hidden md:block overflow-x-auto w-full custom-scrollbar">
                             <table className="min-w-full text-left border-collapse">
-                                <thead className="bg-slate-900 text-white text-xs uppercase tracking-wider">
+                                <thead className="sticky top-0 z-10 bg-slate-900 text-white text-xs uppercase tracking-wider">
                                     <tr>
                                         <th className="px-6 py-4 font-bold">Código</th>
                                         <th className="px-6 py-4 font-bold">Nombre de la Cuenta</th>

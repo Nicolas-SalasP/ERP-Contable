@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { propietariosApi } from '../Servicios/propietariosApi';
 
 const inputCls =
@@ -220,18 +222,14 @@ const PropietariosEmpresa = () => {
                 </div>
 
                 {cargando ? (
-                    <div className="py-10 text-center text-slate-400 text-sm">
-                        <i className="fas fa-spinner fa-spin mr-2" />Cargando...
-                    </div>
+                    <TablaSkeleton filas={6} columnas={4} />
                 ) : lista.length === 0 ? (
-                    <div className="py-10 text-center text-slate-400 text-sm">
-                        Sin propietarios registrados. Usa el formulario de arriba para agregar.
-                    </div>
+                    <EstadoVacio mensaje="Sin propietarios registrados." />
                 ) : (
                     <>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-3 text-left font-semibold">RUT</th>
                                         <th className="px-4 py-3 text-left font-semibold">Nombre</th>

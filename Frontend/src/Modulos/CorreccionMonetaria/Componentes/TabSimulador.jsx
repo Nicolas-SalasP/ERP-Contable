@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 
@@ -164,7 +164,7 @@ const TabSimulador = ({ config }) => {
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
+                                <thead className="sticky top-0 z-10 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
                                     <tr>
                                         <th className="px-5 py-3 text-left">Cuenta</th>
                                         <th className="px-5 py-3 text-right text-emerald-600">Debe</th>
@@ -232,7 +232,7 @@ const TabSimulador = ({ config }) => {
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
+                                    <thead className="sticky top-0 z-10 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
                                         <tr>
                                             <th className="px-5 py-3 text-left">Cuenta</th>
                                             <th className="px-5 py-3 text-left">Rol</th>

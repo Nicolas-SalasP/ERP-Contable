@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import BuscadorCuentasReclasificar from './BuscadorCuentasReclasificar';
 import { X, Lock, Download } from 'lucide-react';
 
@@ -98,7 +98,7 @@ const WorkbenchReclasificacion = ({
                         <div className="hidden md:block pb-24">
                             <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-slate-900 text-white text-xs uppercase tracking-wider font-bold">
+                                <thead className="sticky top-0 z-10 bg-slate-900 text-white text-xs uppercase tracking-wider font-bold">
                                     <tr>
                                         <th className="p-4 w-1/3 first:rounded-tl-xl">Cuenta Original</th>
                                         <th className="p-4 text-right w-32">Debe</th>

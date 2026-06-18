@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import Swal from 'sweetalert2';
@@ -300,7 +300,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 </div>
                 <div className="overflow-x-auto custom-scrollbar">
                 <table className="min-w-full text-left border-collapse">
-                    <thead className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[10px] uppercase text-slate-400 dark:text-slate-500">
+                    <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[10px] uppercase text-slate-400 dark:text-slate-500">
                         <tr>
                             <th className="px-6 py-3">N° Documento</th>
                             <th className="px-6 py-3">Proveedor</th>

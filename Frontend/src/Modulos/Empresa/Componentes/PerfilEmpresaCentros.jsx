@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 const PerfilEmpresaCentros = ({
     centros,
@@ -55,7 +55,7 @@ const PerfilEmpresaCentros = ({
 
             <div className="overflow-x-auto custom-scrollbar border border-slate-200 rounded-2xl">
                 <table className="min-w-full text-left bg-white dark:bg-slate-800">
-                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                         <tr>
                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">
                                 Código

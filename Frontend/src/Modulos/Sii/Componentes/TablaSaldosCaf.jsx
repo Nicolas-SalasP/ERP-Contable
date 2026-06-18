@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const colorPorcentaje = (disponibles, total) => {
     if (!total || total <= 0) return { bar: 'bg-slate-300', tag: 'bg-slate-100 text-slate-600' };
@@ -38,7 +38,7 @@ const TablaSaldosCaf = ({ saldos, cargando }) => {
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden animate-fade-in" data-testid="saldos-tabla">
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                         <tr className="text-left text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                             <th className="px-4 py-3">Tipo DTE</th>
                             <th className="px-4 py-3 text-right">Total</th>

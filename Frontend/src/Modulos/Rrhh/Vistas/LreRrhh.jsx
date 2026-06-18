@@ -1,6 +1,8 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { usePermisos } from '../../../Contextos/Permisos';
 import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import rrhhApi from '../Servicios/rrhhApi';
 import { MESES, nombreMes, formatFecha } from '../Utilidades/formato';
 
@@ -355,13 +357,13 @@ const LreRrhh = () => {
                 </div>
 
                 {historial.length === 0 ? (
-                    <div className="py-10 text-center text-slate-400 text-sm">
-                        {historialCargado ? 'Sin registros LRE aún.' : 'Cargando...'}
-                    </div>
+                    historialCargado
+                        ? <EstadoVacio mensaje="Sin registros LRE aún." />
+                        : <div className="py-8 text-center text-slate-400">Cargando...</div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-semibold">Período</th>
                                     <th className="px-4 py-3 text-left font-semibold">Estado</th>

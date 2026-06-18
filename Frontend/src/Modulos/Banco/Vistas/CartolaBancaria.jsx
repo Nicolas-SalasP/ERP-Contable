@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { logger } from '../../../Configuracion/logger';
@@ -352,7 +354,7 @@ const CartolaBancaria = () => {
                         </div>
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-left text-sm">
-                                <thead className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                                <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
                                     <tr>
                                         <th className="px-6 py-4 font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Fecha</th>
                                         <th className="px-6 py-4 font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Descripción</th>
@@ -387,9 +389,7 @@ const CartolaBancaria = () => {
                                         </tr>
                                     ))}
                                     {movimientos.length === 0 && (
-                                        <tr>
-                                            <td colSpan="5" className="px-6 py-10 text-center text-slate-400"><i className="fas fa-exchange-alt text-slate-300 text-2xl mb-2 block"></i>No hay movimientos en esta cuenta.</td>
-                                        </tr>
+                                        <EstadoVacio mensaje="Sin movimientos en el período." />
                                     )}
                                 </tbody>
                             </table>

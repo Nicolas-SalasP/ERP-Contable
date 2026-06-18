@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { useNavigate } from 'react-router-dom';
@@ -371,7 +371,7 @@ const HistorialFacturas = () => {
 
                                 <div className="hidden md:block overflow-x-auto pb-10">
                                     <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
-                                        <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                                             {vistaActual === 1 ? (
                                                 <tr>
                                                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider first:rounded-tl-xl">Fecha</th>

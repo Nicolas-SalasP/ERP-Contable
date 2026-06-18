@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
+import { EstadoVacioDiv } from '../../../Componentes/EstadoVacio';
 
 const ESTADOS = [
   { value: '', label: 'Todos los estados' },
@@ -107,17 +108,9 @@ export default function SoporteTickets() {
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
       {cargando ? (
-        <p className="text-slate-500 text-sm">Cargando...</p>
+        <div className="py-8 text-center text-slate-400">Cargando...</div>
       ) : tickets.length === 0 ? (
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center">
-          <p className="text-slate-500 dark:text-slate-400 text-sm">No hay tickets de soporte.</p>
-          <button
-            onClick={abrirCrear}
-            className="mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg"
-          >
-            Crear primer ticket
-          </button>
-        </div>
+        <EstadoVacioDiv mensaje="Sin tickets de soporte." />
       ) : (
         <div className="space-y-2">
           {tickets.map(t => (

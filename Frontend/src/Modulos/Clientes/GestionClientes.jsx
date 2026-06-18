@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
+import { TablaSkeleton } from '../../Componentes/Skeleton';
+import { EstadoVacio } from '../../Componentes/EstadoVacio';
 import { api } from '../../Configuracion/api';
 import FormularioCliente from './Componentes/FormularioCliente';
 import HistorialCotizaciones from './Componentes/HistorialCotizaciones';
@@ -186,7 +188,7 @@ const GestionClientes = () => {
                     <div className="hidden md:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                         <div className="overflow-x-auto custom-scrollbar">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                            <thead className="bg-slate-50 dark:bg-slate-900">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código / Identificador</th>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Razón Social / Empresa</th>

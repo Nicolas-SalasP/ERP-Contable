@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, AlertTriangle, Check, Wallet, ArrowRight } from 'lucide-react';
 import { api } from '../../Configuracion/api';
@@ -326,7 +326,7 @@ const Dashboard = () => {
                         <>
                             <div className="overflow-x-auto">
                                 <table className="min-w-full w-full text-left">
-                                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
+                                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
                                         <tr>
                                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">N° Factura</th>
                                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Emisión</th>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
@@ -7,6 +7,8 @@ import rrhhApi from '../Servicios/rrhhApi';
 import { colorEstado, formatFecha } from '../Utilidades/formato';
 import PanelModal from '../Componentes/PanelModal';
 import { enmascararIdentificador } from '../../../Utilidades/identificadores';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 
 const AFPS = ['Capital', 'Cuprum', 'Habitat', 'Modelo', 'PlanVital', 'ProVida', 'Uno'];
 
@@ -142,7 +144,7 @@ const EmpleadosRrhh = () => {
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-semibold">RUT</th>
                                     <th className="px-4 py-3 text-left font-semibold">Nombre</th>
@@ -155,10 +157,7 @@ const EmpleadosRrhh = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {empleados.length === 0 && (
-                                    <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">
-                                        <i className="fas fa-users-slash text-2xl mb-2 block" />
-                                        No hay empleados registrados.
-                                    </td></tr>
+                                    <EstadoVacio mensaje="Sin empleados registrados." />
                                 )}
                                 {empleados.map((emp) => (
                                     <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">

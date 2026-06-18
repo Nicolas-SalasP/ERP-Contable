@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
@@ -194,7 +194,7 @@ const AsientoManual = () => {
                             </div>
                         ) : (
                             <table className="w-full text-left border-collapse whitespace-nowrap">
-                                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
                                         <th className="px-3 py-2.5 font-black text-slate-400 text-[10px] uppercase w-8 text-center">#</th>
                                         <th className="px-3 py-2.5 font-black text-slate-600 dark:text-slate-400 text-[11px] uppercase">Cuenta</th>

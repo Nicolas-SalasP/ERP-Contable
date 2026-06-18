@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { usePermisos } from '../../../Contextos/Permisos';
 import rrhhApi from '../Servicios/rrhhApi';
 import { MESES, nombreMes } from '../Utilidades/formato';
@@ -93,7 +95,7 @@ const PreviredRrhh = () => {
                     <div className="overflow-x-auto">
                         {/* Filas posicionales del archivo de 105 campos (sin encabezado) */}
                         <table className="w-full text-xs whitespace-nowrap">
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 uppercase">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 uppercase">
                                 <tr>
                                     {(preview.filas?.[0] ?? []).map((_, idx) => (
                                         <th key={idx} className="px-3 py-2 text-left font-semibold">{idx + 1}</th>

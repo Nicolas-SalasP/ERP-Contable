@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
-import ModalGenerico from '../../../Componentes/ModalGenerico';
 import { logger } from '../../../Configuracion/logger';
 import { Download } from 'lucide-react';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
+import { useToast } from '../../../Contextos/ToastContext';
 
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
@@ -15,6 +17,7 @@ const hoy = new Date().toISOString().split('T')[0];
 const primerDiaMes = new Date().toISOString().slice(0, 7) + '-01';
 
 const BalanceComprobacion = () => {
+    const { toast } = useToast();
     const [filtros, setFiltros] = useState({
         fecha_inicio: primerDiaMes,
         fecha_fin: hoy,
@@ -22,12 +25,6 @@ const BalanceComprobacion = () => {
 
     const [resultado, setResultado] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [notificacion, setNotificacion] = useState({
-        show: false,
-        title: '',
-        message: '',
-        type: 'info',
-    });
 
     const consultar = async () => {
         setLoading(true);
@@ -44,22 +41,12 @@ const BalanceComprobacion = () => {
                 setResultado(res.data);
             } else {
                 setResultado(null);
-                setNotificacion({
-                    show: true,
-                    title: 'Error',
-                    message: res.message || 'No se pudieron cargar los datos.',
-                    type: 'danger',
-                });
+                toast(res.message || 'No se pudieron cargar los datos.', 'error');
             }
         } catch (error) {
             logger.error('Error cargando balance de comprobacion', error);
             setResultado(null);
-            setNotificacion({
-                show: true,
-                title: 'Error',
-                message: 'No se pudo conectar con el servidor.',
-                type: 'danger',
-            });
+            toast('No se pudo conectar con el servidor.', 'error');
         } finally {
             setLoading(false);
         }
@@ -67,12 +54,7 @@ const BalanceComprobacion = () => {
 
     const exportarExcel = () => {
         if (!resultado || resultado.cuentas.length === 0) {
-            setNotificacion({
-                show: true,
-                title: 'Sin datos',
-                message: 'No hay cuentas para exportar en el rango seleccionado.',
-                type: 'warning',
-            });
+            toast('No hay cuentas para exportar en el rango seleccionado.', 'warning');
             return;
         }
 
@@ -124,14 +106,6 @@ const BalanceComprobacion = () => {
 
     return (
         <div className="max-w-full mx-auto p-6 font-sans text-slate-800 dark:text-slate-200">
-
-            <ModalGenerico
-                isOpen={notificacion.show}
-                onClose={() => setNotificacion({ ...notificacion, show: false })}
-                title={notificacion.title}
-                message={notificacion.message}
-                type={notificacion.type}
-            />
 
             <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -186,7 +160,7 @@ const BalanceComprobacion = () => {
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead className="text-[10px] uppercase font-bold border-b border-slate-200">
+                        <thead className="sticky top-0 z-10 text-[10px] uppercase font-bold border-b border-slate-200">
                             <tr>
                                 <th rowSpan="2" className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 align-middle whitespace-nowrap">Codigo</th>
                                 <th rowSpan="2" className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 align-middle whitespace-nowrap">Cuenta</th>
@@ -208,25 +182,11 @@ const BalanceComprobacion = () => {
                         </thead>
                         <tbody className="text-xs divide-y divide-slate-100 dark:divide-slate-700">
                             {loading ? (
-                                <tr>
-                                    <td colSpan="11" className="p-8 text-center text-slate-400">
-                                        <i className="fas fa-spinner fa-spin text-slate-300 text-2xl mb-2 block"></i>
-                                        Cargando...
-                                    </td>
-                                </tr>
+                                <TablaSkeleton filas={6} columnas={11} />
                             ) : !resultado ? (
-                                <tr>
-                                    <td colSpan="11" className="p-8 text-center text-slate-400">
-                                        <i className="fas fa-table text-slate-300 text-2xl mb-2 block"></i>
-                                        Seleccione un periodo y presione Consultar.
-                                    </td>
-                                </tr>
+                                <EstadoVacio mensaje="Seleccione un periodo y presione Consultar." />
                             ) : resultado.cuentas.length === 0 ? (
-                                <tr>
-                                    <td colSpan="11" className="p-8 text-center text-slate-400">
-                                        No hay cuentas con movimientos en el periodo seleccionado.
-                                    </td>
-                                </tr>
+                                <EstadoVacio mensaje="No hay cuentas con movimientos en el periodo seleccionado." />
                             ) : (
                                 resultado.cuentas.map((cuenta, idx) => (
                                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">

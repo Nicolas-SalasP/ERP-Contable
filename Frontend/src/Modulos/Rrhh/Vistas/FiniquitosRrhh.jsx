@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
@@ -6,6 +6,8 @@ import { usePermisos } from '../../../Contextos/Permisos';
 import rrhhApi from '../Servicios/rrhhApi';
 import { colorEstado, formatFecha, formatPesos } from '../Utilidades/formato';
 import PanelModal from '../Componentes/PanelModal';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 
 const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
@@ -168,7 +170,7 @@ const FiniquitosRrhh = () => {
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-semibold">Empleado</th>
                                     <th className="px-4 py-3 text-left font-semibold">Causal</th>
@@ -180,10 +182,7 @@ const FiniquitosRrhh = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {finiquitos.length === 0 && (
-                                    <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">
-                                        <i className="fas fa-file-circle-xmark text-2xl mb-2 block" />
-                                        No hay finiquitos calculados.
-                                    </td></tr>
+                                    <EstadoVacio mensaje="Sin finiquitos calculados." />
                                 )}
                                 {finiquitos.map((fin) => (
                                     <tr key={fin.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
@@ -115,7 +115,7 @@ const VisorAsientoCompleto = () => {
 
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <table className="w-full border-collapse text-sm whitespace-nowrap">
-                    <thead className="bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300">
+                    <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300">
                         <tr>
                             <th className="border-b border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-bold">CUENTA</th>
                             {vistaActiva >= 2 && (

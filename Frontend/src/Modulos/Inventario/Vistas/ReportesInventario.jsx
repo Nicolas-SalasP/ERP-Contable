@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
 import { usePermisos } from '../../../Contextos/Permisos';
@@ -354,7 +354,7 @@ const TablaReporte = ({ rows, columns }) => {
 
     return (
         <TableShell>
-            <thead className="bg-slate-50 dark:bg-slate-900">
+            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                 <tr>
                     {columns.map((column) => (
                         <Th key={column.key} align={column.align}>{column.label}</Th>

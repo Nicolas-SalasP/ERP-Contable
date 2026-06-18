@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import EstadoCarga from '../../Componentes/EstadoCarga';
+import { TablaSkeleton } from '../../Componentes/Skeleton';
+import { EstadoVacio } from '../../Componentes/EstadoVacio';
 import Swal from 'sweetalert2';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -679,7 +681,7 @@ const VisorProveedor = () => {
                         </div>
                     ) : (
                         <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                                 <tr>
                                     <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs">Fecha</th>
                                     <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs">Documento</th>

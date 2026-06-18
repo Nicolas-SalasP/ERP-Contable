@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { usePermisos } from '../../Contextos/Permisos';
 import cumplimientoApi from './cumplimientoApi';
@@ -510,7 +510,7 @@ const TabAuditoria = () => {
             >
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <table className="min-w-full text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                             <tr>
                                 <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Fecha</th>
                                 <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Operación</th>

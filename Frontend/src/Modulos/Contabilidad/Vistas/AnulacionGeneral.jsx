@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import BotonAccion from '../../../Componentes/BotonAccion';
 import Swal from 'sweetalert2';
@@ -260,7 +260,7 @@ const AnulacionGeneral = () => {
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-white dark:bg-slate-800 text-slate-400 border-b border-slate-100 dark:border-slate-700">
+                                    <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 text-slate-400 border-b border-slate-100 dark:border-slate-700">
                                         <tr>
                                             <th className="px-6 py-3 text-left font-normal text-xs uppercase">Cuenta</th>
                                             <th className="px-6 py-3 text-right font-normal text-xs uppercase w-32">Debe</th>

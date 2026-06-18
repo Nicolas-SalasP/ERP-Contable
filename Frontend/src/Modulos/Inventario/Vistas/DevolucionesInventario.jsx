@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
@@ -361,7 +361,7 @@ const DevolucionesInventario = () => {
                                     <div className="p-4"><EmptyState title="Sin saldo reversable" description="El despacho seleccionado no tiene cantidades pendientes de reversar." icon="fas fa-box-open" /></div>
                                 ) : (
                                     <TableShell>
-                                        <thead className="bg-slate-50 dark:bg-slate-900">
+                                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                             <tr>
                                                 <Th>Producto</Th>
                                                 <Th align="right">Reversable</Th>
@@ -437,7 +437,7 @@ const DevolucionesInventario = () => {
                     <EmptyState title="Sin devoluciones/reversas" description="Crea una orden post-despacho desde un despacho confirmado." icon="fas fa-rotate-left" />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50 dark:bg-slate-900">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Estado</Th>

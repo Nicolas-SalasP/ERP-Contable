@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
@@ -6,6 +6,8 @@ import { usePermisos } from '../../../Contextos/Permisos';
 import rrhhApi from '../Servicios/rrhhApi';
 import { colorEstado, formatFecha, formatPesos } from '../Utilidades/formato';
 import PanelModal from '../Componentes/PanelModal';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 
 const TIPOS = [
     { v: 'INDEFINIDO', l: 'Indefinido' },
@@ -163,7 +165,7 @@ const ContratosRrhh = () => {
                         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                         <tr>
                                             <th className="px-2 sm:px-4 py-3 text-left font-semibold">Tipo</th>
                                             <th className="px-2 sm:px-4 py-3 text-left font-semibold">Cargo</th>
@@ -176,9 +178,7 @@ const ContratosRrhh = () => {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                         {contratos.length === 0 && (
-                                            <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">
-                                                Este empleado no tiene contratos.
-                                            </td></tr>
+                                            <EstadoVacio mensaje="Sin contratos para este empleado." />
                                         )}
                                         {contratos.map((c) => (
                                             <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">

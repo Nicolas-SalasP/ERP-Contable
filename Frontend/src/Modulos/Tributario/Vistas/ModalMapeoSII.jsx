@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import BotonAccion from '../../../Componentes/BotonAccion';
@@ -176,7 +176,7 @@ const ModalMapeoSII = ({ onClose }) => {
                         ) : (
                             <div className="overflow-x-auto custom-scrollbar">
                             <table className="min-w-full text-left text-sm">
-                                <thead className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 uppercase text-xs">
+                                <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 uppercase text-xs">
                                     <tr>
                                         <th className="px-5 py-3 font-bold">Código</th>
                                         <th className="px-5 py-3 font-bold">Nombre Cuenta</th>

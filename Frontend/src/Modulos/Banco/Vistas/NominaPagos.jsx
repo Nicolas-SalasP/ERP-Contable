@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import * as XLSX from "@e965/xlsx";
@@ -290,7 +292,7 @@ const NominaPagos = () => {
 
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="min-w-full text-left">
-                            <thead className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                            <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
                                 <tr>
                                     <th className="px-6 py-4 w-10"></th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Estado / Vencimiento</th>
@@ -301,12 +303,7 @@ const NominaPagos = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                 {facturas.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" className="px-6 py-12 text-center">
-                                            <p className="text-slate-500 font-bold text-lg">No hay facturas urgentes por pagar</p>
-                                            <p className="text-slate-400 text-sm mt-1">¡Todo está al día en tu contabilidad!</p>
-                                        </td>
-                                    </tr>
+                                    <EstadoVacio mensaje="Sin movimientos en el período." />
                                 ) : facturas.map(fac => {
                                     const isSelected = seleccionadas.includes(fac.id);
                                     const isVencida = fac.diasRestantes < 0;

@@ -1,7 +1,9 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { usePermisos } from '../../../Contextos/Permisos';
 import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { dj1887 } from '../Servicios/tributarioApi';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: anioActual - 2019 }, (_, i) => anioActual - i);
@@ -342,7 +344,7 @@ const Dj1887 = () => {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-semibold">Año</th>
                                     <th className="px-4 py-3 text-left font-semibold">Estado</th>

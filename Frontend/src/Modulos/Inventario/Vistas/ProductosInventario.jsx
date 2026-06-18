@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
@@ -330,7 +330,7 @@ const ProductosInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50 dark:bg-slate-900">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>SKU</Th>
                                 <Th>Producto</Th>

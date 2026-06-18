@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
@@ -161,7 +161,7 @@ const CierreF29 = () => {
                             <div className="p-6">
                                 <div className="overflow-x-auto custom-scrollbar">
                                 <table className="min-w-full text-sm text-left mb-6">
-                                    <thead className="text-xs text-slate-400 border-b border-slate-100 dark:border-slate-700">
+                                    <thead className="sticky top-0 z-10 text-xs text-slate-400 border-b border-slate-100 dark:border-slate-700">
                                         <tr>
                                             <th className="pb-3 font-medium">Cuenta Contable</th>
                                             <th className="pb-3 font-medium text-right">Debe</th>

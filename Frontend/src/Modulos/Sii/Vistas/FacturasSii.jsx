@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import siiApi from '../Servicios/siiApi';
 import EstadoSiiBadge from '../Componentes/EstadoSiiBadge';
 import EstadoSiiPanel from '../Componentes/EstadoSiiPanel';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacioDiv } from '../../../Componentes/EstadoVacio';
 
 const POR_PAGINA_DEFECTO = 25;
 
@@ -98,25 +100,17 @@ const FacturasSii = () => {
             >
                 {cargando ? (
                     <div
-                        className="p-8 text-center text-sm text-slate-400"
+                        className="py-8 text-center text-slate-400"
                         data-testid="facturas-sii-cargando"
                     >
-                        <i className="fas fa-spinner fa-spin mr-2" /> Cargando facturas...
+                        Cargando...
                     </div>
                 ) : filas.length === 0 ? (
-                    <div
-                        className="p-10 text-center"
-                        data-testid="facturas-sii-vacio"
-                    >
-                        <div className="text-4xl mb-2">📄</div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                            No hay facturas registradas para esta empresa.
-                        </p>
-                    </div>
+                    <EstadoVacioDiv data-testid="facturas-sii-vacio" mensaje="Sin documentos tributarios." />
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                                 <tr className="text-left text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                                     <th className="px-4 py-3">Numero</th>
                                     <th className="px-4 py-3">Fecha</th>

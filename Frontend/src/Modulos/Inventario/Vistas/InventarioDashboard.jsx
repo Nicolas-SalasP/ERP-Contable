@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import inventarioApi from '../Servicios/inventarioApi';
 import {
     AlertBox,
@@ -303,7 +303,7 @@ const InventarioDashboard = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50 dark:bg-slate-900">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Bodega</Th>
                                     <Th align="right">Stock</Th>
@@ -402,7 +402,7 @@ const InventarioDashboard = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50 dark:bg-slate-900">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Producto</Th>
                                     <Th>Bodega</Th>
@@ -438,7 +438,7 @@ const InventarioDashboard = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50 dark:bg-slate-900">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Tipo</Th>
                                     <Th>Producto</Th>
@@ -476,7 +476,7 @@ const InventarioDashboard = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50 dark:bg-slate-900">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Tipo</Th>
                                     <Th>Producto</Th>
@@ -513,7 +513,7 @@ const InventarioDashboard = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50 dark:bg-slate-900">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Tipo</Th>

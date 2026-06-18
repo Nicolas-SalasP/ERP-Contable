@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { usePermisos } from '../../../Contextos/Permisos';
 import { api } from '../../../Configuracion/api';
 import BuscadorCuentaContable from '../../Contabilidad/Componentes/BuscadorCuentaContable';

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import inventarioApi from '../Servicios/inventarioApi';
 import { usePermisos } from '../../../Contextos/Permisos';
 import {
@@ -228,7 +228,7 @@ const AuditoriaInventario = () => {
                         <EmptyState title="Sin eventos" description="Aún no hay eventos para los filtros seleccionados." icon="fas fa-clipboard-check" />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50 dark:bg-slate-900">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Fecha</Th>
                                     <Th>Acción</Th>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../../Configuracion/api';
@@ -152,7 +152,7 @@ const ReclasificadorAsiento = () => {
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm pb-32">
                     <div className="overflow-x-auto custom-scrollbar">
                     <table className="min-w-full border-collapse">
-                        <thead className="bg-slate-900 text-white text-[11px] uppercase tracking-widest font-bold">
+                        <thead className="sticky top-0 z-10 bg-slate-900 text-white text-[11px] uppercase tracking-widest font-bold">
                             <tr>
                                 <th className="px-6 py-4 text-left rounded-tl-2xl">Línea / Cuenta Actual</th>
                                 <th className="px-6 py-4 text-right">Debe</th>

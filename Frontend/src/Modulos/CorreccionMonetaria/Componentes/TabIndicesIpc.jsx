@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 
@@ -115,7 +115,7 @@ const TabIndicesIpc = ({ anioInicial }) => {
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto custom-scrollbar">
                     <table className="min-w-full text-sm">
-                        <thead className="bg-slate-900 text-white">
+                        <thead className="sticky top-0 z-10 bg-slate-900 text-white">
                             <tr>
                                 <th className="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest first:rounded-tl-xl">Mes</th>
                                 <th className="px-5 py-3.5 text-right text-[10px] font-black uppercase tracking-widest">Variación Mensual</th>

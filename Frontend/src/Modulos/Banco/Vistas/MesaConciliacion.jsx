@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import Select from 'react-select';
 import { CreditCard, X, Check } from 'lucide-react';
 
@@ -349,7 +351,7 @@ const MesaConciliacion = () => {
                     </div>
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-left text-sm">
-                            <thead className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                            <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
                                 <tr>
                                     <th className="px-6 py-4 font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-xs">Fecha</th>
                                     <th className="px-6 py-4 font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-xs">Descripción</th>
@@ -440,7 +442,7 @@ const MesaConciliacion = () => {
                                             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-sm">
                                                 <div className="overflow-x-auto custom-scrollbar">
                                                 <table className="min-w-full text-left text-sm">
-                                                    <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-200 dark:border-slate-700">
+                                                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-200 dark:border-slate-700">
                                                         <tr>
                                                             <th className="px-5 py-4">Documento</th>
                                                             <th className="px-5 py-4">Entidad</th>
@@ -497,7 +499,7 @@ const MesaConciliacion = () => {
                                                     ) : (
                                                         <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-x-auto overflow-y-auto max-h-56 shadow-inner">
                                                             <table className="min-w-full text-sm text-left">
-                                                                <thead className="bg-slate-100 dark:bg-slate-900 sticky top-0 border-b border-slate-200 dark:border-slate-700">
+                                                                <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 sticky top-0 border-b border-slate-200 dark:border-slate-700">
                                                                     <tr>
                                                                         <th className="px-4 py-3 w-12 text-center"><i className="fas fa-check-square text-slate-400"></i></th>
                                                                         <th className="px-4 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Doc N°</th>
@@ -571,7 +573,7 @@ const MesaConciliacion = () => {
                                         </div>
                                         <div className="overflow-x-auto custom-scrollbar">
                                         <table className="min-w-full text-sm text-left">
-                                            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-widest">
+                                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-widest">
                                                 <tr>
                                                     <th className="px-5 py-3">Código y Nombre de Cuenta</th>
                                                     <th className="px-5 py-3 text-right">Debe</th>
