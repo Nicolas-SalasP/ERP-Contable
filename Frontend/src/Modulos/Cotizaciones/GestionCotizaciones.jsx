@@ -1,7 +1,6 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
-import ModalGenerico from '../../Componentes/ModalGenerico';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
@@ -14,13 +13,6 @@ const GestionCotizaciones = () => {
     const { toast } = useToast();
     const [cotizaciones, setCotizaciones] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    const [confirmarAccion, setConfirmarAccion] = useState({
-        show: false,
-        id: null,
-        nuevoEstado: '',
-        tipo: 'info'
-    });
 
     const formatearFecha = (fechaRaw) => {
         if (!fechaRaw) return '-';
@@ -52,18 +44,17 @@ const GestionCotizaciones = () => {
         fetchCotizaciones();
     }, []);
 
-    const handleCambiarEstado = async () => {
+    const handleCambiarEstado = async (id, nuevoEstado) => {
+        if (!window.confirm(`¿Estás seguro de que deseas marcar la cotización #${String(id).padStart(5, '0')} como ${nuevoEstado}?`)) return;
         try {
-            const res = await api.put(`/cotizaciones/${confirmarAccion.id}/estado`, {
-                estado: confirmarAccion.nuevoEstado
+            const res = await api.put(`/cotizaciones/${id}/estado`, {
+                estado: nuevoEstado
             });
             if (res.success) {
-                setConfirmarAccion({ ...confirmarAccion, show: false });
-                toast(`La cotización #${String(confirmarAccion.id).padStart(5, '0')} ha sido marcada como ${confirmarAccion.nuevoEstado}.`, 'success');
+                toast(`La cotización #${String(id).padStart(5, '0')} ha sido marcada como ${nuevoEstado}.`, 'success');
                 fetchCotizaciones();
             }
         } catch (error) {
-            setConfirmarAccion({ ...confirmarAccion, show: false });
             Swal.fire('Error', error.response?.data?.message || 'No se pudo actualizar el estado de la cotización.', 'error');
         }
     };
@@ -108,18 +99,6 @@ const GestionCotizaciones = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-6">
-
-            <ModalGenerico
-                isOpen={confirmarAccion.show}
-                onClose={() => setConfirmarAccion({ ...confirmarAccion, show: false })}
-                onConfirm={handleCambiarEstado}
-                title={`Confirmar ${confirmarAccion.nuevoEstado}`}
-                message={`¿Estás seguro de que deseas marcar la cotización #${String(confirmarAccion.id).padStart(5, '0')} como ${confirmarAccion.nuevoEstado}?`}
-                type={confirmarAccion.tipo}
-                showCancel={true}
-                confirmText="Sí, Confirmar"
-                cancelText="Volver"
-            />
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
@@ -226,10 +205,10 @@ const GestionCotizaciones = () => {
                                 <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-700 pl-2">
                                     {['Borrador', 'Enviada'].includes(nombreEstado) && (
                                         <>
-                                            <button onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Aceptada', tipo: 'success' })} className="flex-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-xs py-2 rounded-lg transition-colors border border-emerald-100">
+                                            <button onClick={() => handleCambiarEstado(c.id, 'Aceptada')} className="flex-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-xs py-2 rounded-lg transition-colors border border-emerald-100">
                                                 Aceptar
                                             </button>
-                                            <button onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Rechazada', tipo: 'danger' })} className="flex-1 bg-rose-50 text-rose-500 hover:bg-rose-100 font-bold text-xs py-2 rounded-lg transition-colors border border-rose-100">
+                                            <button onClick={() => handleCambiarEstado(c.id, 'Rechazada')} className="flex-1 bg-rose-50 text-rose-500 hover:bg-rose-100 font-bold text-xs py-2 rounded-lg transition-colors border border-rose-100">
                                                 Rechazar
                                             </button>
                                         </>
@@ -278,14 +257,14 @@ const GestionCotizaciones = () => {
                                                     {['Borrador', 'Enviada'].includes(nombreEstado) && (
                                                         <>
                                                             <button
-                                                                onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Aceptada', tipo: 'success' })}
+                                                                onClick={() => handleCambiarEstado(c.id, 'Aceptada')}
                                                                 className="p-2 bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg transition-all"
                                                                 title="Aceptar Cotización"
                                                             >
                                                                 <Check size={16} strokeWidth={1.75} />
                                                             </button>
                                                             <button
-                                                                onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Rechazada', tipo: 'danger' })}
+                                                                onClick={() => handleCambiarEstado(c.id, 'Rechazada')}
                                                                 className="p-2 bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-100 hover:text-rose-600 rounded-lg transition-all"
                                                                 title="Rechazar Cotización"
                                                             >

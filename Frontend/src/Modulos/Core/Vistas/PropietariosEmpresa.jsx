@@ -3,6 +3,7 @@ import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { propietariosApi } from '../Servicios/propietariosApi';
+import { BotonEliminar } from '../../../Componentes/ConfirmacionInline';
 
 const inputCls =
     'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
@@ -107,8 +108,7 @@ const PropietariosEmpresa = () => {
         }
     };
 
-    const handleEliminar = async (id, nombreProp) => {
-        if (!window.confirm(`¿Eliminar al propietario "${nombreProp}"?`)) return;
+    const eliminarPropietario = async (id) => {
         try {
             await propietariosApi.eliminar(id);
             mostrarMensaje('exito', 'Propietario eliminado.');
@@ -293,13 +293,7 @@ const PropietariosEmpresa = () => {
                                                         >
                                                             <i className="fas fa-pencil-alt text-xs" />
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleEliminar(p.id, p.nombre)}
-                                                            title="Eliminar"
-                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700"
-                                                        >
-                                                            <i className="fas fa-trash-alt text-xs" />
-                                                        </button>
+                                                        <BotonEliminar onConfirmar={() => eliminarPropietario(p.id)} />
                                                     </div>
                                                 )}
                                             </td>

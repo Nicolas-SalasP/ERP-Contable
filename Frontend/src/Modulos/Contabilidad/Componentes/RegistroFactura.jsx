@@ -10,6 +10,7 @@ import RegistroFacturaPaso3 from './RegistroFacturaPaso3';
 import { useRegistroFactura } from '../Hooks/useRegistroFactura';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
+import { useToast } from '../../../Contextos/ToastContext';
 const formatCurrency = (value) => {
     if (!value && value !== 0) return '';
     return new Intl.NumberFormat('es-CL').format(value.toString().replace(/\D/g, ''));
@@ -21,12 +22,12 @@ const cleanNumber = (value) => {
 };
 
 const RegistroFactura = () => {
+    const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(1);
     const [saving, setSaving] = useState(false);
     const [checkingDuplicate, setCheckingDuplicate] = useState(false);
 
     const [showIvaModal, setShowIvaModal] = useState(false);
-    const [duplicateWarning, setDuplicateWarning] = useState(false);
     const [successData, setSuccessData] = useState(null);
 
     const [formData, setFormData] = useState({
@@ -138,7 +139,7 @@ const RegistroFactura = () => {
                 const url = `/facturas/check?proveedor_id=${formData.proveedorId}&numero_factura=${formData.numeroFactura}`;
                 const data = await api.get(url);
                 if (data.exists) {
-                    setDuplicateWarning(true);
+                    toast(`El documento ${formData.numeroFactura} ya existe para este proveedor. Agregue un punto (.) al final si es una corrección.`, 'warning');
                 } else {
                     setCurrentStep(prev => prev + 1);
                 }
@@ -214,15 +215,6 @@ const RegistroFactura = () => {
                 onConfirm={finalSave}
                 calculado={formData.tieneIva ? (parseInt(formData.montoBruto) - Math.round(parseInt(formData.montoBruto) / 1.19)) : 0}
                 ingresado={formData.montoIva}
-            />
-
-            <ModalGenerico
-                isOpen={duplicateWarning}
-                onClose={() => setDuplicateWarning(false)}
-                type="warning"
-                title="Factura Duplicada"
-                message={<span>El documento <b>{formData.numeroFactura}</b> ya existe para este proveedor.<br />Agregue un punto (.) al final si es una corrección.</span>}
-                confirmText="Entendido"
             />
 
             <ModalGenerico

@@ -3,6 +3,7 @@ import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
 import { honorarios } from '../Servicios/comercialApi';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
+import { BotonEliminar } from '../../../Componentes/ConfirmacionInline';
 
 const TASAS = { 2024: 13.75, 2025: 14.50, 2026: 15.25, 2027: 16.25, 2028: 17.00 };
 
@@ -111,8 +112,7 @@ const HonorariosRecibidos = () => {
         }
     };
 
-    const handleEliminar = async (id) => {
-        if (!window.confirm('¿Eliminar este registro de honorario?')) return;
+    const eliminarHonorario = async (id) => {
         try {
             await honorarios.eliminar(id);
             mostrarMensaje('exito', 'Honorario eliminado.');
@@ -344,13 +344,7 @@ const HonorariosRecibidos = () => {
                                             {liqH !== null ? clpFmt.format(liqH) : '—'}
                                         </td>
                                         <td className="px-4 py-3 text-center">
-                                            <button
-                                                onClick={() => handleEliminar(h.id)}
-                                                title="Eliminar"
-                                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700"
-                                            >
-                                                <i className="fas fa-trash-alt text-xs" />
-                                            </button>
+                                            <BotonEliminar onConfirmar={() => eliminarHonorario(h.id)} />
                                         </td>
                                     </tr>
                                 );
