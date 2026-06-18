@@ -3,8 +3,8 @@ import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
 import ModalGenerico from '../../../Componentes/ModalGenerico';
-
 import { logger } from '../../../Configuracion/logger';
+import { Eye, Download, ArrowLeft } from 'lucide-react';
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -264,7 +264,7 @@ const LibroMayor = () => {
                         onClick={abrirComprobante}
                         className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 transition-colors"
                     >
-                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <Eye size={16} strokeWidth={1.75} className="text-slate-400" />
                         Abrir Comprobante
                     </button>
                 </div>
@@ -371,7 +371,7 @@ const LibroMayor = () => {
                     <div className="flex gap-2">
                         <button onClick={cargarLibroDiario} className="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 text-sm shadow-sm transition-all active:scale-95">Consultar</button>
                         <button onClick={exportarExcel} className="bg-emerald-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-emerald-700 text-sm flex items-center gap-2 shadow-sm transition-all active:scale-95">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <Download size={16} strokeWidth={1.75} />
                             Excel
                         </button>
                     </div>
@@ -434,7 +434,7 @@ const LibroMayor = () => {
                         onClick={() => setActiveTab('diario')}
                         className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-blue-600 px-4 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition-all active:scale-95"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                        <ArrowLeft size={16} strokeWidth={1.75} />
                         Volver al Libro Diario
                     </button>
 

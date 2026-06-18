@@ -4,6 +4,7 @@ import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { logger } from '../../../Configuracion/logger';
+import { CreditCard, Upload, FileText, Check, Plus } from 'lucide-react';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const CartolaBancaria = () => {
@@ -179,7 +180,7 @@ const CartolaBancaria = () => {
             <div className="bg-slate-900 rounded-2xl p-6 shadow-xl text-white mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="w-full md:w-1/2">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        <CreditCard size={16} strokeWidth={1.75} className="text-blue-400" />
                         Cuenta Bancaria de Trabajo
                     </label>
                     <select
@@ -205,7 +206,7 @@ const CartolaBancaria = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
                     <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-2">
-                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <Upload size={20} strokeWidth={1.75} className="text-blue-500" />
                         Importar Cartola del Banco
                     </h3>
                     <p className="text-sm text-slate-500 mb-6">Sube el archivo Excel descargado desde tu portal bancario para registrar abonos y cargos automáticamente.</p>
@@ -224,7 +225,7 @@ const CartolaBancaria = () => {
                         {!archivo ? (
                             <>
                                 <div className="bg-white p-4 rounded-full shadow-sm mb-4 text-blue-500">
-                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    <FileText size={32} strokeWidth={1.75} />
                                 </div>
                                 <p className="font-bold text-slate-700 mb-1">Arrastra tu Excel aquí</p>
                                 <p className="text-xs text-slate-500 mb-4">Acepta archivos .xlsx, .xls y .csv</p>
@@ -235,7 +236,7 @@ const CartolaBancaria = () => {
                         ) : (
                             <>
                                 <div className="bg-emerald-100 text-emerald-600 p-4 rounded-full mb-4">
-                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                                    <Check size={32} strokeWidth={1.75} />
                                 </div>
                                 <p className="font-bold text-slate-800 mb-1">{archivo.name}</p>
                                 <p className="text-xs text-slate-500 mb-6">{(archivo.size / 1024).toFixed(1)} KB</p>
@@ -254,7 +255,7 @@ const CartolaBancaria = () => {
 
                 <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
                     <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-2">
-                        <svg className={`w-5 h-5 ${esIngreso ? 'text-emerald-500' : 'text-rose-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        <Plus size={20} strokeWidth={1.75} className={esIngreso ? 'text-emerald-500' : 'text-rose-500'} />
                         Registro Manual
                     </h3>
                     <p className="text-sm text-slate-500 mb-4">Ingresa transacciones aisladas que no pasaron por la importación masiva de la cartola.</p>
@@ -327,7 +328,7 @@ const CartolaBancaria = () => {
                             onClick={guardarIngresoManual} 
                             className={`w-full mt-4 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2 ${esIngreso ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30' : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30'}`}
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
+                            <Check size={20} strokeWidth={1.75} />
                             Confirmar Registro {esIngreso ? 'de Ingreso' : 'de Salida'}
                         </button>
                     </div>

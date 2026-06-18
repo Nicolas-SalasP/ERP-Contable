@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import Select from 'react-select';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import BotonAccion from '../../../Componentes/BotonAccion';
+import { List, Inbox, Pencil, Trash2, Plus, SlidersHorizontal, Save } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -179,7 +180,7 @@ const AsientoManual = () => {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="bg-slate-900 px-6 py-3 border-b border-slate-800 flex justify-between items-center">
                         <h3 className="text-white font-bold text-sm tracking-wide flex items-center gap-2">
-                            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                            <List size={16} strokeWidth={1.75} className="text-indigo-400" />
                             Detalle del Asiento
                         </h3>
                         <span className="text-slate-400 text-xs font-bold bg-slate-800 px-3 py-1 rounded-full">{filas.length} líneas</span>
@@ -188,7 +189,7 @@ const AsientoManual = () => {
                     <div className="overflow-x-auto">
                         {filas.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-                                <svg className="w-10 h-10 mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                                <Inbox size={40} strokeWidth={1.75} className="mb-3 text-slate-300" />
                                 <p className="font-medium text-sm">El asiento está vacío.</p>
                             </div>
                         ) : (
@@ -225,14 +226,14 @@ const AsientoManual = () => {
                                                     className="w-7 h-7 flex items-center justify-center rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100"
                                                     title="Editar Línea"
                                                 >
-                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                    <Pencil size={14} strokeWidth={1.75} />
                                                 </button>
                                                 <button
                                                     onClick={(e) => eliminarFila(fila.id, e)}
                                                     className="w-7 h-7 flex items-center justify-center rounded bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors border border-rose-100"
                                                     title="Eliminar Línea"
                                                 >
-                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    <Trash2 size={14} strokeWidth={1.75} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -256,7 +257,7 @@ const AsientoManual = () => {
 
                 <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-6 shadow-inner">
                     <h4 className="text-indigo-800 font-bold text-sm mb-4 uppercase tracking-wider flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <SlidersHorizontal size={16} strokeWidth={1.75} />
                         Panel de Ingreso de Cuentas
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-end mb-4">
@@ -339,7 +340,7 @@ const AsientoManual = () => {
                                 onClick={agregarLinea}
                                 className="w-full h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-lg flex justify-center items-center gap-2 shadow-sm transition-all"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                <Plus size={16} strokeWidth={1.75} />
                                 AGREGAR LÍNEA (Enter ↵)
                             </button>
                         </div>
@@ -355,11 +356,7 @@ const AsientoManual = () => {
                             color="slate"
                             tamano="lg"
                             textoCargando="Contabilizando..."
-                            icono={
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                                </svg>
-                            }
+                            icono={<Save size={20} strokeWidth={1.75} />}
                             className="font-black"
                         >
                             CONTABILIZAR ASIENTO

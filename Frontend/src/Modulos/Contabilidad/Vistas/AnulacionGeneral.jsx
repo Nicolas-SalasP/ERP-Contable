@@ -4,6 +4,7 @@ import BotonAccion from '../../../Componentes/BotonAccion';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
+import { AlertCircle, CheckCircle, FileText, Pencil, AlertTriangle } from 'lucide-react';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -184,7 +185,7 @@ const AnulacionGeneral = () => {
 
                 {error && (
                     <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg border border-red-100 flex items-start gap-3 animate-fade-in">
-                        <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <AlertCircle size={20} strokeWidth={1.75} className="mt-0.5 flex-shrink-0" />
                         <div>
                             <span className="font-bold">Error:</span> {error}
                         </div>
@@ -193,7 +194,7 @@ const AnulacionGeneral = () => {
 
                 {exito && (
                     <div className="mt-4 p-4 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 flex items-start gap-3 animate-fade-in">
-                        <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <CheckCircle size={20} strokeWidth={1.75} className="mt-0.5 flex-shrink-0" />
                         <div>
                             <span className="font-bold">¡Operación Exitosa!</span> {exito}
                         </div>
@@ -211,8 +212,8 @@ const AnulacionGeneral = () => {
                                 <div className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg ${documento.tipo === 'FACTURA' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
                                         {documento.tipo === 'FACTURA'
-                                            ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                            : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                            ? <FileText size={20} strokeWidth={1.75} />
+                                            : <Pencil size={20} strokeWidth={1.75} />
                                         }
                                     </div>
                                     <div>
@@ -292,8 +293,8 @@ const AnulacionGeneral = () => {
                             <div className="p-5 border-b border-inherit">
                                 <h3 className={`font-bold flex items-center gap-2 ${documento.estado === 'ANULADO' ? 'text-slate-500' : 'text-red-700'}`}>
                                     {documento.estado === 'ANULADO'
-                                        ? <><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Documento Anulado</>
-                                        : <><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> Zona de Anulación</>
+                                        ? <><CheckCircle size={20} strokeWidth={1.75} /> Documento Anulado</>
+                                        : <><AlertTriangle size={20} strokeWidth={1.75} /> Zona de Anulación</>
                                     }
                                 </h3>
                             </div>

@@ -4,6 +4,7 @@ import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import * as XLSX from "@e965/xlsx";
+import { ChevronRight, CreditCard, AlertTriangle, Download, CheckCircle } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -247,7 +248,7 @@ const NominaPagos = () => {
                             onClick={irAResumen}
                             className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all flex items-center gap-2"
                         >
-                            Siguiente <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+                            Siguiente <ChevronRight size={16} strokeWidth={1.75} />
                         </button>
                     </div>
                 )}
@@ -258,7 +259,7 @@ const NominaPagos = () => {
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paso === 1 ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-500'}`}>1</span>
                     Seleccionar Facturas Vencidas / Por Vencer
                 </div>
-                <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                <ChevronRight size={20} strokeWidth={1.75} className="text-slate-300" />
                 <div className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 ${paso === 2 ? 'bg-white text-emerald-700 shadow-sm border border-slate-200' : 'text-slate-500'}`}>
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paso === 2 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>2</span>
                     Resumen y Banco
@@ -373,7 +374,7 @@ const NominaPagos = () => {
                                         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
                                                 <div className="bg-white p-2 rounded-lg shadow-sm text-blue-500">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                                                    <CreditCard size={20} strokeWidth={1.75} />
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Datos Bancarios</p>
@@ -384,7 +385,7 @@ const NominaPagos = () => {
                                                         </>
                                                     ) : (
                                                         <p className="text-xs font-bold text-red-500 mt-1 flex items-center gap-1">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> Sin cuenta registrada
+                                                            <AlertTriangle size={16} strokeWidth={1.75} /> Sin cuenta registrada
                                                         </p>
                                                     )}
                                                 </div>
@@ -427,7 +428,7 @@ const NominaPagos = () => {
 
                                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700">
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                        <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path></svg>
+                                        <CreditCard size={14} strokeWidth={1.75} className="text-blue-400" />
                                         Pagar Desde Cuenta:
                                     </label>
                                     <select
@@ -447,7 +448,7 @@ const NominaPagos = () => {
                                         onClick={exportarExcelBanco}
                                         className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-700 shadow-sm"
                                     >
-                                        <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        <Download size={20} strokeWidth={1.75} className="text-emerald-400" />
                                         Generar Excel para el Banco
                                     </button>
 
@@ -455,7 +456,7 @@ const NominaPagos = () => {
                                         onClick={ejecutarPagoMasivo}
                                         className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2"
                                     >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        <CheckCircle size={20} strokeWidth={1.75} />
                                         Contabilizar Pagos
                                     </button>
                                     

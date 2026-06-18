@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { Loader2, AlertTriangle, Check, Wallet, ArrowRight } from 'lucide-react';
 import { api } from '../../Configuracion/api';
 import { logger } from '../../Configuracion/logger';
 import { usePermisos } from '../../Contextos/Permisos';
@@ -125,10 +126,7 @@ const Dashboard = () => {
     if (cargando) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-slate-500">
-                <svg className="animate-spin w-10 h-10 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
+                <Loader2 size={40} strokeWidth={1.75} className="animate-spin text-emerald-500" />
                 <span className="text-sm font-medium">Calculando métricas del período…</span>
             </div>
         );
@@ -309,9 +307,7 @@ const Dashboard = () => {
             {/* ---- Facturas urgentes ---- */}
             <div>
                 <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
-                    <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                    <AlertTriangle size={24} strokeWidth={1.75} className="text-amber-500" />
                     Facturas que requieren atención
                 </h3>
 
@@ -319,9 +315,7 @@ const Dashboard = () => {
                     {facturasUrgentes.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-14 px-6 text-slate-400">
                             <div className="bg-emerald-50 text-emerald-500 p-4 rounded-full mb-4">
-                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                </svg>
+                                <Check size={48} strokeWidth={1.75} />
                             </div>
                             <h4 className="text-xl font-bold text-slate-800 mb-1">¡Todo al día!</h4>
                             <p className="text-sm text-center text-slate-500 max-w-xs">
@@ -367,9 +361,7 @@ const Dashboard = () => {
                                                         to="/facturas/historial"
                                                         className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-2 rounded-lg border border-emerald-200 transition-colors"
                                                     >
-                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                        </svg>
+                                                        <Wallet size={14} strokeWidth={1.75} />
                                                         Gestionar
                                                     </Link>
                                                 </td>
@@ -384,9 +376,7 @@ const Dashboard = () => {
                                     className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors inline-flex items-center gap-2"
                                 >
                                     Ver historial completo de facturas
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                    </svg>
+                                    <ArrowRight size={16} strokeWidth={1.75} />
                                 </Link>
                             </div>
                         </>

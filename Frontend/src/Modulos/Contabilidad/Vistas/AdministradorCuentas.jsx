@@ -5,6 +5,7 @@ import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import BotonAccion from '../../../Componentes/BotonAccion';
 import { logger } from '../../../Configuracion/logger';
+import { Plus, Search, Settings, X, Check } from 'lucide-react';
 
 const AdministradorCuentas = () => {
     const [cuentas, setCuentas] = useState([]);
@@ -150,7 +151,7 @@ const AdministradorCuentas = () => {
                     onClick={abrirCreacion}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    <Plus size={20} strokeWidth={1.75} />
                     Nueva Cuenta
                 </button>
             </div>
@@ -158,7 +159,7 @@ const AdministradorCuentas = () => {
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col lg:flex-row gap-4">
                 <div className="flex-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <Search size={20} strokeWidth={1.75} className="text-slate-400" />
                     </div>
                     <input
                         type="text"
@@ -238,7 +239,7 @@ const AdministradorCuentas = () => {
 
                                         <div className="pt-3 border-t border-slate-100 pl-2">
                                             <button onClick={() => abrirEdicion(cuenta)} className="w-full bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 font-bold text-sm py-2 rounded-lg transition-colors border border-slate-200 flex items-center justify-center gap-2">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                <Settings size={16} strokeWidth={1.75} />
                                                 Configurar
                                             </button>
                                         </div>
@@ -291,7 +292,7 @@ const AdministradorCuentas = () => {
                                                         className="flex items-center gap-1.5 ml-auto bg-white border border-slate-200 hover:bg-blue-50 text-slate-600 hover:text-blue-700 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-xs shadow-sm"
                                                         title="Configurar Cuenta"
                                                     >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                        <Settings size={16} strokeWidth={1.75} />
                                                         Configurar
                                                     </button>
                                                 </td>
@@ -311,13 +312,13 @@ const AdministradorCuentas = () => {
                         <div className="bg-slate-900 px-6 py-5 flex justify-between items-center text-white">
                             <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                                 {cuentaEditando ? (
-                                    <><svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg> Propiedades de Cuenta</>
+                                    <><Settings size={20} strokeWidth={1.75} className="text-blue-400" /> Propiedades de Cuenta</>
                                 ) : (
-                                    <><svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg> Nueva Cuenta Contable</>
+                                    <><Plus size={20} strokeWidth={1.75} className="text-blue-400" /> Nueva Cuenta Contable</>
                                 )}
                             </h2>
                             <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <X size={24} strokeWidth={1.75} />
                             </button>
                         </div>
 
@@ -406,11 +407,7 @@ const AdministradorCuentas = () => {
                                 color="slate"
                                 tamano="md"
                                 textoCargando="Guardando..."
-                                icono={
-                                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                }
+                                icono={<Check size={16} strokeWidth={1.75} className="text-emerald-400" />}
                                 className="w-full sm:w-auto"
                             >
                                 {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}

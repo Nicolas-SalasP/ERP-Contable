@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 
 const RegistroFacturaPaso1 = ({
     formData,
@@ -92,9 +93,7 @@ const RegistroFacturaPaso1 = ({
                                 className="text-slate-400 hover:text-red-500 hover:bg-white p-2 rounded-full transition-all shadow-sm"
                                 title="Cambiar proveedor"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <X size={20} strokeWidth={1.75} />
                             </button>
                         </div>
                     </div>

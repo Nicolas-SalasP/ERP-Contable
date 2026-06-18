@@ -7,6 +7,7 @@ import HistorialCotizaciones from './Componentes/HistorialCotizaciones';
 import Swal from 'sweetalert2';
 import { logger } from '../../Configuracion/logger';
 import { enmascararIdentificador } from '../../Utilidades/identificadores';
+import { Search, UserPlus, Ban, Check } from 'lucide-react';
 
 const GestionClientes = () => {
     const [clientes, setClientes] = useState([]);
@@ -110,7 +111,7 @@ const GestionClientes = () => {
             <div className="mb-6">
                 <div className="relative w-full">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <Search size={20} strokeWidth={1.75} className="text-slate-400" />
                     </div>
                     <input 
                         type="text" 
@@ -172,9 +173,9 @@ const GestionClientes = () => {
                                         aria-label={c.estado === 'ACTIVO' ? 'Bloquear cliente' : 'Activar cliente'}
                                     >
                                         {c.estado === 'ACTIVO' ? (
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                            <Ban size={20} strokeWidth={1.75} />
                                         ) : (
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                            <Check size={20} strokeWidth={1.75} />
                                         )}
                                     </button>
                                 </div>
@@ -226,9 +227,9 @@ const GestionClientes = () => {
                                                     aria-label={c.estado === 'ACTIVO' ? 'Bloquear cliente' : 'Activar cliente'}
                                                 >
                                                     {c.estado === 'ACTIVO' ? (
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                        <Ban size={20} strokeWidth={1.75} />
                                                     ) : (
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                                        <Check size={20} strokeWidth={1.75} />
                                                     )}
                                                 </button>
                                             </div>
@@ -247,7 +248,7 @@ const GestionClientes = () => {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] animate-slide-up">
                         <div className="bg-emerald-600 p-4 md:p-5 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                                <UserPlus size={20} strokeWidth={1.75} />
                                 {editingId ? 'Gestionar Cliente' : 'Registro de Nuevo Cliente'}
                             </h2>
                             <button onClick={() => setModalOpen(false)} className="text-emerald-200 hover:text-white transition-colors text-3xl leading-none" aria-label="Cerrar">&times;</button>

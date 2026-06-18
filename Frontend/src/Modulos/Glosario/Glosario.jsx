@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { listarModulos, buscarModulos } from '../../Utilidades/glosario';
+import { Search } from 'lucide-react';
 
 const Glosario = () => {
     const [busqueda, setBusqueda] = useState('');
@@ -27,14 +28,7 @@ const Glosario = () => {
                         placeholder="Buscar concepto, modulo o termino..."
                         className="w-full bg-white border border-slate-300 rounded-xl pl-12 pr-4 py-3 text-slate-800 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                     />
-                    <svg
-                        className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+                    <Search size={20} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
                     {modulosVisibles.length} {modulosVisibles.length === 1 ? 'modulo' : 'modulos'}

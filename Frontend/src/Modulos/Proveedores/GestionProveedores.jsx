@@ -5,6 +5,7 @@ import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { formatearIdentificador, validarIdentificador, enmascararIdentificador } from '../../Utilidades/identificadores';
 import { logger } from '../../Configuracion/logger';
+import { CreditCard, AlertCircle, Trash2, Plus, Settings, Building2 } from 'lucide-react';
 const BANCOS_CHILE = [
     "Banco de Chile", "Banco Estado", "Banco Santander", "BCI", "Scotiabank", "Itaú",
     "Banco Security", "Banco BICE", "Banco Falabella", "Banco Ripley", "Banco Consorcio",
@@ -98,7 +99,7 @@ const BankAccountsTab = ({ proveedorId }) => {
         <div className="space-y-6">
             <div>
                 <h3 className="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    <CreditCard size={16} strokeWidth={1.75} className="text-slate-400" />
                     Cuentas Registradas
                 </h3>
 
@@ -106,7 +107,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                     <EstadoCarga cargando mensajeCargando="" tamano="inline" color="emerald" />
                 ) : loadError ? (
                     <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <AlertCircle size={16} strokeWidth={1.75} className="shrink-0" />
                         {loadError}
                         <button onClick={loadAccounts} className="ml-auto underline text-red-600 font-semibold">Reintentar</button>
                     </div>
@@ -130,7 +131,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                                     </div>
                                     <div className="font-mono font-bold text-slate-600 text-sm mb-4 pl-2">{acc.numero_cuenta}</div>
                                     <button onClick={() => handleDelete(acc.id)} className="w-full bg-red-50 text-red-600 border border-red-100 font-bold py-2 rounded-lg text-xs hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        <Trash2 size={14} strokeWidth={1.75} />
                                         Eliminar
                                     </button>
                                 </div>
@@ -157,7 +158,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                                             </td>
                                             <td className="px-5 py-3 text-right">
                                                 <button onClick={() => handleDelete(acc.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Eliminar" aria-label="Eliminar cuenta bancaria">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    <Trash2 size={16} strokeWidth={1.75} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -205,7 +206,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                         onClick={handleAdd}
                         className="bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 shadow-md transition-colors py-2.5 px-4 w-full flex items-center justify-center gap-2"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg> Agregar
+                        <Plus size={16} strokeWidth={1.75} /> Agregar
                     </button>
                 </div>
             </div>
@@ -398,7 +399,7 @@ const GestionProveedores = () => {
 
             {errorCarga && (
                 <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-3">
-                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <AlertCircle size={20} strokeWidth={1.75} className="shrink-0" />
                     <span className="flex-1">{errorCarga}</span>
                     <button onClick={loadData} className="underline font-semibold text-red-600 hover:text-red-800">Reintentar</button>
                 </div>
@@ -440,7 +441,7 @@ const GestionProveedores = () => {
                                     </div>
                                     <div className="border-t border-slate-100 pt-3 pl-2">
                                         <button onClick={() => openEdit(prov)} className="w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-sm py-2 rounded-lg transition-colors border border-emerald-100 flex items-center justify-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                            <Settings size={16} strokeWidth={1.75} />
                                             Gestionar
                                         </button>
                                     </div>
@@ -475,7 +476,7 @@ const GestionProveedores = () => {
                                             </td>
                                             <td className="px-6 py-4 text-right whitespace-nowrap">
                                                 <button onClick={() => openEdit(prov)} className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 font-bold text-sm px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 ml-auto shadow-sm">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                    <Settings size={16} strokeWidth={1.75} />
                                                     Gestionar
                                                 </button>
                                             </td>
@@ -493,7 +494,7 @@ const GestionProveedores = () => {
 
                         <div className="bg-slate-900 p-4 md:p-5 border-b border-slate-800 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
-                                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                <Building2 size={20} strokeWidth={1.75} className="text-emerald-400" />
                                 {editingId ? 'Gestionar Proveedor' : 'Alta de Nuevo Proveedor'}
                             </h2>
                             <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors text-3xl leading-none" aria-label="Cerrar">&times;</button>

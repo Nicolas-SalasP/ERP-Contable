@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import Select from 'react-select';
+import { CreditCard, X, Check } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -310,7 +311,7 @@ const MesaConciliacion = () => {
                 </div>
                 <div className="w-full md:w-auto bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
                     <span className="text-xs font-bold text-slate-400 uppercase ml-2 flex items-center gap-1">
-                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        <CreditCard size={16} strokeWidth={1.75} className="text-blue-500" />
                         Cuenta:
                     </span>
                     <select
@@ -333,7 +334,7 @@ const MesaConciliacion = () => {
             ) : movimientos.length === 0 ? (
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-16 text-center">
                     <div className="bg-emerald-50 text-emerald-500 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                        <Check size={48} strokeWidth={1.75} />
                     </div>
                     <h3 className="text-2xl font-black text-slate-800">¡Banco 100% Cuadrado!</h3>
                     <p className="text-slate-500 mt-2">No tienes movimientos pendientes por conciliar en esta cuenta.</p>
@@ -389,7 +390,7 @@ const MesaConciliacion = () => {
                                 <p className="text-slate-400 text-xs mt-1 tracking-wider uppercase">Asignación Contable de Movimiento</p>
                             </div>
                             <button onClick={() => setModalActivo(false)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-rose-500 p-2.5 rounded-full transition-all relative z-10" aria-label="Cerrar">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <X size={20} strokeWidth={1.75} />
                             </button>
                         </div>
 

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
-
 import { logger } from '../../../Configuracion/logger';
+import { ChevronLeft, MoreVertical } from 'lucide-react';
 const VisorAuditoriaFactura = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -69,9 +69,7 @@ const VisorAuditoriaFactura = () => {
                 onClick={() => navigate(-1)}
                 className="mb-4 flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm transition-colors group"
             >
-                <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path>
-                </svg>
+                <ChevronLeft size={20} strokeWidth={1.75} className="transform group-hover:-translate-x-1 transition-transform" />
                 Volver al Historial
             </button>
 
@@ -94,9 +92,7 @@ const VisorAuditoriaFactura = () => {
                         onClick={() => setMenuAbierto(!menuAbierto)}
                         className="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all border border-slate-700 hover:border-slate-500 focus:outline-none"
                     >
-                        <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01"></path>
-                        </svg>
+                        <MoreVertical size={24} strokeWidth={1.75} className="text-slate-300" />
                     </button>
 
                     {menuAbierto && (

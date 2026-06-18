@@ -9,6 +9,7 @@ import ModalAsiento from '../Componentes/ModalAsiento';
 import HistorialFiltros from '../Componentes/HistorialFiltros';
 import WorkbenchReclasificacion from '../Componentes/WorkbenchReclasificacion';
 import { useFacturasHistorial } from '../Hooks/useFacturasHistorial';
+import { Calendar, BookOpen, ArrowLeftRight, Clock, MoreVertical, FileText, ChevronLeft, ChevronRight, CircleDollarSign } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 const formatDate = (dateString) => {
@@ -307,7 +308,7 @@ const HistorialFacturas = () => {
 
                                                 <div className="pl-2 mb-4">
                                                     <div className="text-sm text-slate-600 flex items-center gap-2 mb-2">
-                                                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                                        <Calendar size={16} strokeWidth={1.75} className="text-slate-400" />
                                                         {formatDate(fac.fecha_emision)}
                                                     </div>
 
@@ -342,23 +343,23 @@ const HistorialFacturas = () => {
                                                 <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 pl-2">
                                                     {fac.estado === 'REGISTRADA' && !isNotaCredito && (
                                                         <button onClick={() => abrirModalPago(fac)} className="w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs py-2.5 rounded-lg transition-colors border border-emerald-100 flex items-center justify-center gap-2">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                            <CircleDollarSign size={16} strokeWidth={1.75} />
                                                             Pagar Documento
                                                         </button>
                                                     )}
                                                     <div className={`grid ${(!isNotaCredito && fac.estado === 'REGISTRADA') ? 'grid-cols-2' : 'grid-cols-3'} gap-2`}>
                                                         <button onClick={() => verAsientoContable(fac.id)} className="bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold text-xs py-2.5 rounded-lg transition-colors border border-slate-200 flex items-center justify-center gap-1.5">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                                                            <BookOpen size={16} strokeWidth={1.75} />
                                                             <span className="hidden sm:inline">Asiento</span>
                                                         </button>
                                                         {fac.estado !== 'ANULADA' && (
                                                             <button onClick={() => iniciarCambio(fac)} className="bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold text-xs py-2.5 rounded-lg transition-colors border border-amber-200 flex items-center justify-center gap-1.5">
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                                                <ArrowLeftRight size={16} strokeWidth={1.75} />
                                                                 <span className="hidden sm:inline">Reclasificar</span>
                                                             </button>
                                                         )}
                                                         <button onClick={() => navigate(`/facturas/${fac.id}/auditoria`)} className={`bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs py-2.5 rounded-lg transition-colors border border-blue-200 flex items-center justify-center gap-1.5 ${fac.estado === 'ANULADA' ? 'col-span-2' : ''}`} title="Auditoría">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                            <Clock size={16} strokeWidth={1.75} />
                                                             <span className="hidden sm:inline">Auditoría</span>
                                                         </button>
                                                     </div>
@@ -459,9 +460,7 @@ const HistorialFacturas = () => {
                                                                 className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
                                                                 title="Opciones"
                                                             >
-                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01"></path>
-                                                                </svg>
+                                                                <MoreVertical size={20} strokeWidth={1.75} />
                                                             </button>
 
                                                             {menuAbiertoId === fac.id && (
@@ -473,7 +472,7 @@ const HistorialFacturas = () => {
                                                                                     onClick={() => abrirModalPago(fac)}
                                                                                     className="w-full text-left px-4 py-2.5 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-3 font-bold text-emerald-600 border-b border-slate-100"
                                                                                 >
-                                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                                                    <CircleDollarSign size={16} strokeWidth={1.75} />
                                                                                     Pagar Documento
                                                                                 </button>
                                                                             </li>
@@ -484,7 +483,7 @@ const HistorialFacturas = () => {
                                                                                 onClick={() => navigate(`/contabilidad/factura/${fac.id}/asiento`)}
                                                                                 className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-3"
                                                                             >
-                                                                                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 2.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                                                                <FileText size={16} strokeWidth={1.75} className="text-blue-500" />
                                                                                 Ver Asiento
                                                                             </button>
                                                                         </li>
@@ -494,7 +493,7 @@ const HistorialFacturas = () => {
                                                                                     onClick={() => navigate(`/contabilidad/factura/${fac.id}/reclasificar`)}
                                                                                     className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-amber-600 transition-colors flex items-center gap-3"
                                                                                 >
-                                                                                    <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                                                                    <ArrowLeftRight size={16} strokeWidth={1.75} className="text-amber-500" />
                                                                                     Reclasificar
                                                                                 </button>
                                                                             </li>
@@ -507,7 +506,7 @@ const HistorialFacturas = () => {
                                                                                 }}
                                                                                 className="w-full text-left px-4 py-2.5 hover:bg-slate-50 hover:text-emerald-600 transition-colors flex items-center gap-3 border-t border-slate-100"
                                                                             >
-                                                                                <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                                                <Clock size={16} strokeWidth={1.75} className="text-emerald-500" />
                                                                                 Ver Auditoría
                                                                             </button>
                                                                         </li>
@@ -530,7 +529,7 @@ const HistorialFacturas = () => {
                                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                                     className="w-full sm:w-auto px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-colors shadow-sm flex items-center justify-center gap-2"
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg> Anterior
+                                    <ChevronLeft size={16} strokeWidth={1.75} /> Anterior
                                 </button>
                                 <span className="text-sm font-medium text-slate-500">Página <span className="font-bold text-slate-800">{pagination.page}</span> de {pagination.totalPages}</span>
                                 <button
@@ -538,7 +537,7 @@ const HistorialFacturas = () => {
                                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                                     className="w-full sm:w-auto px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-colors shadow-sm flex items-center justify-center gap-2"
                                 >
-                                    Siguiente <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                                    Siguiente <ChevronRight size={16} strokeWidth={1.75} />
                                 </button>
                             </div>
                         )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
+import { UserPlus, Loader2, Users, Shield, CheckCircle, X, Clock, Pencil, Trash2, Info } from 'lucide-react';
 
 const GestionUsuarios = () => {
     const [usuarios, setUsuarios] = useState([]);
@@ -141,7 +142,7 @@ const GestionUsuarios = () => {
                     onClick={() => setShowModalInvitar(true)}
                     className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 sm:py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-500/30 transition-all flex items-center justify-center gap-2"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                    <UserPlus size={20} strokeWidth={1.75} />
                     Invitar Usuario
                 </button>
             </div>
@@ -162,7 +163,7 @@ const GestionUsuarios = () => {
                                 <tr>
                                     <td colSpan="4" className="px-6 py-10 text-center text-slate-400">
                                         <div className="flex justify-center items-center gap-2">
-                                            <svg className="animate-spin h-5 p-5 text-emerald-500" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            <Loader2 size={20} strokeWidth={1.75} className="animate-spin text-emerald-500" />
                                             Cargando equipo...
                                         </div>
                                     </td>
@@ -171,7 +172,7 @@ const GestionUsuarios = () => {
                                 <tr>
                                     <td colSpan="4" className="px-6 py-12 text-center">
                                         <div className="flex flex-col items-center gap-3 text-slate-400">
-                                            <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87"></path></svg>
+                                            <Users size={48} strokeWidth={1.75} className="text-slate-300" />
                                             <p className="font-bold text-slate-500">No hay usuarios registrados</p>
                                             <p className="text-sm">Invita a tu equipo para empezar a colaborar.</p>
                                         </div>
@@ -196,24 +197,24 @@ const GestionUsuarios = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 border border-slate-200 text-slate-700">
-                                                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                                <Shield size={16} strokeWidth={1.75} className="text-slate-400" />
                                                 {roles.find(r => r.id === user.rol_id)?.nombre || 'Desconocido'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {user.estado_suscripcion_id === 1 ? (
                                                 <span className="text-emerald-600 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 inline-flex">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <CheckCircle size={16} strokeWidth={1.75} />
                                                     Activo
                                                 </span>
                                             ) : user.estado_suscripcion_id === 2 ? (
                                                 <span className="text-rose-600 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 inline-flex">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                    <X size={16} strokeWidth={1.75} />
                                                     Inactivo
                                                 </span>
                                             ) : (
                                                 <span className="text-amber-600 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 inline-flex">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <Clock size={16} strokeWidth={1.75} />
                                                     Pendiente
                                                 </span>
                                             )}
@@ -226,7 +227,7 @@ const GestionUsuarios = () => {
                                                     title="Ver Perfil y Editar Rol"
                                                     aria-label="Ver perfil y editar rol"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                    <Pencil size={16} strokeWidth={1.75} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDesvincular(user)}
@@ -238,7 +239,7 @@ const GestionUsuarios = () => {
                                                     title="Desvincular"
                                                     aria-label="Desvincular usuario"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    <Trash2 size={16} strokeWidth={1.75} />
                                                 </button>
                                             </div>
                                         </td>
@@ -256,7 +257,7 @@ const GestionUsuarios = () => {
                         <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
                             <h3 className="text-lg font-black text-slate-800">Invitar al Equipo</h3>
                             <button onClick={() => setShowModalInvitar(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors" aria-label="Cerrar">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <X size={16} strokeWidth={1.75} />
                             </button>
                         </div>
                         <div className="p-5 md:p-6 overflow-y-auto custom-scrollbar">
@@ -265,7 +266,7 @@ const GestionUsuarios = () => {
                                     <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Correo Electrónico</label>
                                     <input type="email" required value={formInvitar.email} onChange={(e) => setFormInvitar({ ...formInvitar, email: e.target.value })} placeholder="correo@ejemplo.com" className="w-full border border-slate-200 rounded-xl p-3 md:p-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition-all font-bold text-slate-800" />
                                     <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        <Info size={12} strokeWidth={1.75} />
                                         Si no tiene cuenta en Tenri ERP Cloud, se registrará al ingresar este correo.
                                     </p>
                                 </div>
@@ -297,7 +298,7 @@ const GestionUsuarios = () => {
 
                         <div className="relative h-24 bg-gradient-to-r from-slate-800 to-slate-900 shrink-0">
                             <button onClick={() => setShowModalEditar(false)} className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10" aria-label="Cerrar">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <X size={16} strokeWidth={1.75} />
                             </button>
                         </div>
 
@@ -321,17 +322,17 @@ const GestionUsuarios = () => {
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado</p>
                                     {usuarioSeleccionado.estado_suscripcion_id === 1 ? (
                                         <span className="text-emerald-600 font-bold text-xs flex items-center gap-1.5">
-                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            <CheckCircle size={14} strokeWidth={1.75} />
                                             Activo
                                         </span>
                                     ) : usuarioSeleccionado.estado_suscripcion_id === 2 ? (
                                         <span className="text-rose-600 font-bold text-xs flex items-center gap-1.5">
-                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            <X size={14} strokeWidth={1.75} />
                                             Inactivo
                                         </span>
                                     ) : (
                                         <span className="text-amber-600 font-bold text-xs flex items-center gap-1.5">
-                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            <Clock size={14} strokeWidth={1.75} />
                                             Pendiente
                                         </span>
                                     )}
@@ -347,7 +348,7 @@ const GestionUsuarios = () => {
                             <form onSubmit={handleActualizarRol} className="space-y-5">
                                 <div>
                                     <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                        <Shield size={14} strokeWidth={1.75} />
                                         Rol del Sistema
                                     </label>
                                     <select

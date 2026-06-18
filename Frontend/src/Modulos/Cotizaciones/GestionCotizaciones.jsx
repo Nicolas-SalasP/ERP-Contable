@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { logger } from '../../Configuracion/logger';
+import { Search, Calendar, FileText, Check, X } from 'lucide-react';
 const GestionCotizaciones = () => {
     const [cotizaciones, setCotizaciones] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -151,7 +152,7 @@ const GestionCotizaciones = () => {
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Búsqueda rápida</label>
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <Search size={16} strokeWidth={1.75} className="text-slate-400" />
                         </div>
                         <input
                             type="text"
@@ -229,7 +230,7 @@ const GestionCotizaciones = () => {
 
                                 <div className="pl-2 space-y-1.5 mb-4">
                                     <div className="text-sm text-slate-600 flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        <Calendar size={16} strokeWidth={1.75} className="text-slate-400" />
                                         {formatearFecha(c.fecha_emision)}
                                     </div>
                                     <div className="text-lg font-black text-slate-800 flex items-center gap-2">
@@ -250,7 +251,7 @@ const GestionCotizaciones = () => {
                                         </>
                                     )}
                                     <button onClick={() => descargarPDF(c.id, c.nombre_cliente)} className={`flex-1 bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 font-bold text-xs py-2 rounded-lg transition-colors border border-slate-200 flex items-center justify-center gap-2`}>
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                        <FileText size={16} strokeWidth={1.75} />
                                         PDF
                                     </button>
                                 </div>
@@ -297,14 +298,14 @@ const GestionCotizaciones = () => {
                                                                 className="p-2 bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg transition-all"
                                                                 title="Aceptar Cotización"
                                                             >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                                <Check size={16} strokeWidth={1.75} />
                                                             </button>
                                                             <button
                                                                 onClick={() => setConfirmarAccion({ show: true, id: c.id, nuevoEstado: 'Rechazada', tipo: 'danger' })}
                                                                 className="p-2 bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-100 hover:text-rose-600 rounded-lg transition-all"
                                                                 title="Rechazar Cotización"
                                                             >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                                <X size={16} strokeWidth={1.75} />
                                                             </button>
                                                         </>
                                                     )}
@@ -313,7 +314,7 @@ const GestionCotizaciones = () => {
                                                         className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all font-bold text-xs"
                                                         title="Descargar PDF"
                                                     >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                                        <FileText size={16} strokeWidth={1.75} />
                                                         PDF
                                                     </button>
                                                 </div>
