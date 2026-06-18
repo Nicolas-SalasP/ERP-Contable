@@ -47,7 +47,7 @@ class SoporteController extends Controller
             'empresa_id'     => $empresaId,
             'empresa_nombre' => $empresa?->razon_social ?? 'Sin nombre',
             'origen_email'   => $usuario->email,
-            'origen_nombre'  => $usuario->name,
+            'origen_nombre'  => $usuario->nombre,
             'subject'        => $validated['subject'],
             'category'       => $validated['category'] ?? 'ERP',
             'priority'       => $validated['priority'] ?? 'media',
@@ -91,7 +91,7 @@ class SoporteController extends Controller
             $id,
             $validated['message'],
             $usuario->email,
-            $usuario->name,
+            $usuario->nombre,
         );
 
         if ($resultado === null) {
