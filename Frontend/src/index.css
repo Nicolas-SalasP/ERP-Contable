@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Transición suave al cambiar de tema — solo activa durante el switch */
+html.tema-animando,
+html.tema-animando * {
+  transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease !important;
+}
+
 /* Estilos globales para inputs robustos */
 @layer base {
 
