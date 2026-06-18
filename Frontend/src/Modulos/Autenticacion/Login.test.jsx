@@ -10,6 +10,7 @@ import { cleanTestEnv } from '../../test-utils';
 vi.mock('../../Configuracion/api', () => ({
     api: { auth: { login: vi.fn() }, get: vi.fn() },
     markTokenIssued: vi.fn(),
+    setSubscriptionStatus: vi.fn(),
 }));
 
 const renderLogin = () =>

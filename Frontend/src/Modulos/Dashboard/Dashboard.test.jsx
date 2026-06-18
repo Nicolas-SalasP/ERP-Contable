@@ -29,7 +29,6 @@ const facturasMock = [
         id: 1,
         numero_factura: 'F-500',
         nombre_proveedor: 'Comercial Loncomilla SpA',
-        proveedor: { id: 1, razon_social: 'Comercial Loncomilla SpA' },
         monto_bruto: 119000,
         estado: 'REGISTRADA',
     },
@@ -37,7 +36,6 @@ const facturasMock = [
         id: 2,
         numero_factura: 'FE-94376',
         nombre_proveedor: 'Servicios del Sur Ltda',
-        proveedor: { id: 2, razon_social: 'Servicios del Sur Ltda' },
         monto_bruto: 101150,
         estado: 'REGISTRADA',
     },
@@ -45,20 +43,30 @@ const facturasMock = [
         id: 3,
         numero_factura: 'F-8821',
         nombre_proveedor: 'Distribuidora Andes',
-        proveedor: { id: 3, razon_social: 'Distribuidora Andes' },
         monto_bruto: 297500,
         estado: 'REGISTRADA',
     },
 ];
 
+const resumenMock = {
+    kpis: {
+        ventas_mes: 517650,
+        variacion_pct: 5.2,
+        facturas_emitidas_mes: 3,
+        facturas_pendientes: 3,
+        clientes_activos: 2,
+        cotizaciones_pendientes: 0,
+    },
+    facturas_urgentes: facturasMock,
+    serie_ventas_12m: [],
+    top_clientes: [],
+    alertas_pendientes: [],
+};
+
 const setupMocks = () =>
     setupFetchRouter({
-        'GET /clientes': () =>
-            mockJsonResponse(200, { success: true, data: [{ id: 1 }, { id: 2 }] }),
-        'GET /cotizaciones': () =>
-            mockJsonResponse(200, { success: true, data: [] }),
-        'GET /facturas/historial': () =>
-            mockJsonResponse(200, { success: true, data: facturasMock }),
+        'GET /dashboard/resumen': () =>
+            mockJsonResponse(200, { success: true, data: resumenMock }),
     });
 
 // =====================================================================
@@ -77,30 +85,26 @@ describe('Dashboard - render basico', () => {
         });
     });
 
-    it('llama a los endpoints clientes, cotizaciones, facturas al montar', async () => {
+    it('llama al endpoint resumen al montar', async () => {
         const fetchMock = setupMocks();
         renderWithRouter(<Dashboard />);
 
         await waitFor(() => {
             const llamadas = fetchMock.mock.calls.map(([url]) => url);
-            expect(llamadas.some((u) => u.includes('/clientes'))).toBe(true);
-            expect(llamadas.some((u) => u.includes('/cotizaciones'))).toBe(true);
-            expect(
-                llamadas.some((u) => u.includes('/facturas/historial?estado=REGISTRADA'))
-            ).toBe(true);
+            expect(llamadas.some((u) => u.includes('/dashboard/resumen'))).toBe(true);
         });
     });
 });
 
 describe('Dashboard - Atencion Requerida (BUG FE-BE arreglado)', () => {
-    it('renderiza el nombre del proveedor en la tabla', async () => {
+    it('renderiza los numeros de factura en la tabla', async () => {
         setupMocks();
         renderWithRouter(<Dashboard />);
 
         await waitFor(() => {
-            expect(screen.getByText('Comercial Loncomilla SpA')).toBeDefined();
-            expect(screen.getByText('Servicios del Sur Ltda')).toBeDefined();
-            expect(screen.getByText('Distribuidora Andes')).toBeDefined();
+            expect(screen.getByText('F-500')).toBeDefined();
+            expect(screen.getByText('FE-94376')).toBeDefined();
+            expect(screen.getByText('F-8821')).toBeDefined();
         });
     });
 
@@ -127,19 +131,20 @@ describe('Dashboard - Atencion Requerida (BUG FE-BE arreglado)', () => {
 
     it('si el backend devuelve facturas sin nombre_proveedor, NO crashea', async () => {
         setupFetchRouter({
-            'GET /clientes': () => mockJsonResponse(200, { success: true, data: [] }),
-            'GET /cotizaciones': () => mockJsonResponse(200, { success: true, data: [] }),
-            'GET /facturas/historial': () =>
+            'GET /dashboard/resumen': () =>
                 mockJsonResponse(200, {
                     success: true,
-                    data: [
-                        {
-                            id: 99,
-                            numero_factura: 'F-SIN-NOMBRE',
-                            monto_bruto: 50000,
-                            estado: 'REGISTRADA',
-                        },
-                    ],
+                    data: {
+                        ...resumenMock,
+                        facturas_urgentes: [
+                            {
+                                id: 99,
+                                numero_factura: 'F-SIN-NOMBRE',
+                                monto_bruto: 50000,
+                                estado: 'REGISTRADA',
+                            },
+                        ],
+                    },
                 }),
         });
 
@@ -152,22 +157,23 @@ describe('Dashboard - Atencion Requerida (BUG FE-BE arreglado)', () => {
 
     it('cuando no hay facturas pendientes muestra estado vacio amigable', async () => {
         setupFetchRouter({
-            'GET /clientes': () => mockJsonResponse(200, { success: true, data: [] }),
-            'GET /cotizaciones': () => mockJsonResponse(200, { success: true, data: [] }),
-            'GET /facturas/historial': () =>
-                mockJsonResponse(200, { success: true, data: [] }),
+            'GET /dashboard/resumen': () =>
+                mockJsonResponse(200, {
+                    success: true,
+                    data: { ...resumenMock, facturas_urgentes: [] },
+                }),
         });
 
         renderWithRouter(<Dashboard />);
 
         await waitFor(() => {
-            expect(screen.getByText(/No tienes facturas/i)).toBeDefined();
+            expect(screen.getByText(/No hay facturas pendientes/i)).toBeDefined();
         });
     });
 });
 
 describe('Dashboard - metricas KPI', () => {
-    it('suma correctamente el total pendiente', async () => {
+    it('muestra el KPI de ventas del periodo formateado', async () => {
         setupMocks();
         renderWithRouter(<Dashboard />);
         await waitFor(() => {

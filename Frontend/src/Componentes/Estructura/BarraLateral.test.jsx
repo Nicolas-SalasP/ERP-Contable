@@ -10,6 +10,8 @@ vi.mock('../../Contextos/AuthContext', () => ({
     useAuth: () => ({
         user: { nombre: 'Usuario Demo' },
         logout: logoutMock,
+        misEmpresas: [],
+        cambiarEmpresa: vi.fn(),
     }),
 }));
 
