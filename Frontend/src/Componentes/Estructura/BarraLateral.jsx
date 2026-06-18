@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../Contextos/AuthContext';
 import { usePermisos } from '../../Contextos/Permisos';
 
-const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) => {
+const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, colapsado = false, toggleColapsado }) => {
     const location = useLocation();
     const { user, logout, misEmpresas, cambiarEmpresa } = useAuth();
     const { tieneAlgunPermiso, tieneModulo } = usePermisos();
@@ -392,17 +392,27 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                 className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 transition-opacity lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={closeSidebar}
             ></div>
-            <div className={`fixed top-0 left-0 z-30 h-full w-56 sm:w-64 bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-transform duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed top-0 left-0 z-30 h-full bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-all duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static w-64 ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${colapsado ? 'lg:w-16' : 'lg:w-64'}`}>
 
-                <div className="flex items-center justify-center h-16 border-b border-slate-800/50 bg-slate-950 shrink-0">
-                    <h1 className="text-xl font-black tracking-widest text-white flex items-center gap-2">
-                        <i className="fas fa-layer-group text-emerald-500"></i>
+                {/* Header con logo y botón de colapsar */}
+                <div className={`flex items-center h-16 border-b border-slate-800/50 bg-slate-950 shrink-0 relative ${colapsado ? 'lg:justify-center px-0' : 'justify-center px-4'}`}>
+                    <i className="fas fa-layer-group text-emerald-500 text-xl"></i>
+                    <h1 className={`ml-2 text-xl font-black tracking-widest text-white flex items-center gap-2 ${colapsado ? 'lg:hidden' : ''}`}>
                         ERP<span className="text-emerald-500">CONTABLE</span>
                     </h1>
+                    <button
+                        onClick={toggleColapsado}
+                        aria-label={colapsado ? 'Expandir menú' : 'Colapsar menú'}
+                        aria-expanded={!colapsado}
+                        className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 items-center justify-center w-7 h-7 rounded-md text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-all"
+                    >
+                        <i className={`fas ${colapsado ? 'fa-chevron-right' : 'fa-chevron-left'} text-xs`}></i>
+                    </button>
                 </div>
 
+                {/* Selector de empresa — oculto en desktop cuando colapsado */}
                 {misEmpresas.length > 1 && (
-                    <div className="px-3 pt-3 pb-2 border-b border-slate-800/50 shrink-0">
+                    <div className={`px-3 pt-3 pb-2 border-b border-slate-800/50 shrink-0 ${colapsado ? 'lg:hidden' : ''}`}>
                         <label className="block text-[10px] text-slate-500 mb-1 font-semibold uppercase tracking-wider">
                             Empresa activa
                         </label>
@@ -427,7 +437,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                     </div>
                 )}
 
-                <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto custom-scrollbar pb-6">
+                <nav className={`flex-1 mt-4 space-y-1 overflow-y-auto custom-scrollbar pb-6 ${colapsado ? 'lg:px-1' : 'px-3'}`}>
                     {menuGroups
                         .filter(canShowGroup)
                         .map((group) => {
@@ -442,32 +452,40 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                                             type="button"
                                             aria-expanded={open}
                                             aria-controls={`menu-${group.id}`}
-                                            onClick={() => toggleMenu(group.id, true)}
-                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all duration-200 ${active
+                                            title={colapsado ? group.label : undefined}
+                                            onClick={() => {
+                                                if (colapsado) {
+                                                    toggleColapsado();
+                                                } else {
+                                                    toggleMenu(group.id, true);
+                                                }
+                                            }}
+                                            className={`w-full flex items-center px-3 py-2.5 rounded-lg border transition-all duration-200 ${colapsado ? 'lg:justify-center lg:px-0' : 'justify-between'} ${active
                                                     ? 'bg-emerald-500/10 text-emerald-400 font-bold border-emerald-500/20'
                                                     : open
                                                         ? 'bg-slate-800/80 text-white shadow-inner border-transparent'
                                                         : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border-transparent'
                                                 }`}
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div className={`flex items-center gap-3 ${colapsado ? 'lg:gap-0' : ''}`}>
                                                 <i className={`${group.icon} w-5 text-center text-lg`}></i>
-                                                <span className="text-xs sm:text-sm">{group.label}</span>
+                                                <span className={`text-xs sm:text-sm ${colapsado ? 'lg:hidden' : ''}`}>{group.label}</span>
                                             </div>
-                                            <i className={`fas fa-chevron-down text-[10px] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}></i>
+                                            <i className={`fas fa-chevron-down text-[10px] transition-transform duration-300 ${open ? 'rotate-180' : ''} ${colapsado ? 'lg:hidden' : ''}`}></i>
                                         </button>
                                     ) : (
                                         <Link
                                             to={group.path}
+                                            title={colapsado ? group.label : undefined}
                                             onClick={() => toggleMenu(group.id, false)}
-                                            className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive(group.path)
+                                            className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${isActive(group.path)
                                                     ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 font-bold'
                                                     : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                                                 }`}
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div className={`flex items-center gap-3 ${colapsado ? 'lg:gap-0' : ''}`}>
                                                 <i className={`${group.icon} w-5 text-center text-lg`}></i>
-                                                <span className="text-xs sm:text-sm">{group.label}</span>
+                                                <span className={`text-xs sm:text-sm ${colapsado ? 'lg:hidden' : ''}`}>{group.label}</span>
                                             </div>
                                         </Link>
                                     )}
@@ -475,7 +493,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                                     {group.subItems && (
                                         <div
                                             id={`menu-${group.id}`}
-                                            className={`grid transition-all duration-300 ease-in-out ${open ? 'grid-rows-[1fr] opacity-100 mt-1 mb-2' : 'grid-rows-[0fr] opacity-0'}`}
+                                            className={`grid transition-all duration-300 ease-in-out ${(open && !colapsado) ? 'grid-rows-[1fr] opacity-100 mt-1 mb-2' : 'grid-rows-[0fr] opacity-0'}`}
                                         >
                                             <div className="overflow-hidden">
                                                 <div className="pl-11 pr-2 space-y-1 border-l-2 border-slate-800 ml-5 py-1">
@@ -503,18 +521,19 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
                         })}
                 </nav>
 
-                <div className="p-4 border-t border-slate-800/50 bg-slate-950 shrink-0">
-                    <div className="flex items-center justify-between gap-2">
+                {/* Footer usuario */}
+                <div className={`border-t border-slate-800/50 bg-slate-950 shrink-0 ${colapsado ? 'lg:p-2 p-4' : 'p-4'}`}>
+                    <div className={`flex items-center gap-2 ${colapsado ? 'lg:flex-col lg:justify-center' : 'justify-between'}`}>
                         <Link
                             to="/empresa/perfil"
-                            className="flex items-center gap-3 flex-1 hover:bg-slate-900 p-2 rounded-lg transition-colors overflow-hidden group"
+                            className={`flex items-center gap-3 hover:bg-slate-900 p-2 rounded-lg transition-colors group ${colapsado ? 'lg:justify-center' : 'flex-1 overflow-hidden'}`}
                             title="Ir a Configuración de Empresa"
                             onClick={closeSidebarOnMobile}
                         >
                             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-xs font-black text-white flex-shrink-0 shadow-sm">
                                 {getInitials(user?.nombre || 'User')}
                             </div>
-                            <div className="overflow-hidden">
+                            <div className={`overflow-hidden ${colapsado ? 'lg:hidden' : ''}`}>
                                 <p className="text-xs text-slate-200 font-bold truncate group-hover:text-emerald-400 transition-colors">
                                     {user?.nombre || 'Usuario Admin'}
                                 </p>
@@ -524,7 +543,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar }) =
 
                         <button
                             onClick={logout}
-                            className="text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 h-10 w-10 flex items-center justify-center rounded-lg transition-all"
+                            className="text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 h-10 w-10 flex items-center justify-center rounded-lg transition-all flex-shrink-0"
                             title="Cerrar Sesión"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

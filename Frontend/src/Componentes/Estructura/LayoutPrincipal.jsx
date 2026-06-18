@@ -7,11 +7,27 @@ import ErrorBoundary from '../ErrorBoundary';
 
 const LayoutPrincipal = ({ children }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [colapsado, setColapsado] = useState(() => {
+        try {
+            const stored = localStorage.getItem('tenri_sidebar_colapsado');
+            return stored !== null ? stored === 'true' : false;
+        } catch {
+            return false;
+        }
+    });
     const location = useLocation();
 
     const openSidebar = () => setSidebarOpen(true);
     const closeSidebar = () => setSidebarOpen(false);
     const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+
+    const toggleColapsado = () => {
+        setColapsado(prev => {
+            const next = !prev;
+            try { localStorage.setItem('tenri_sidebar_colapsado', String(next)); } catch {}
+            return next;
+        });
+    };
 
     return (
         <div className="flex h-screen bg-gray-100 overflow-hidden">
@@ -20,6 +36,8 @@ const LayoutPrincipal = ({ children }) => {
                 isOpen={isSidebarOpen}
                 toggleSidebar={toggleSidebar}
                 closeSidebar={closeSidebar}
+                colapsado={colapsado}
+                toggleColapsado={toggleColapsado}
             />
 
             <div className="flex-1 flex flex-col overflow-hidden">
