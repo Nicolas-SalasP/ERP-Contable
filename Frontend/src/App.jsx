@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Contextos/AuthContext';
 import { TemaProvider } from './Contextos/TemaContext';
+import { ToastProvider } from './Contextos/ToastContext';
 import { usePermisos } from './Contextos/Permisos';
 import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 import ErrorBoundary from './Componentes/ErrorBoundary';
@@ -171,6 +172,7 @@ function App() {
   return (
     <ErrorBoundary>
       <TemaProvider>
+      <ToastProvider>
       <AuthProvider>
         <BrowserRouter>
         <Suspense fallback={<div>Cargando...</div>}>
@@ -778,6 +780,7 @@ function App() {
         </Suspense>
         </BrowserRouter>
       </AuthProvider>
+      </ToastProvider>
       </TemaProvider>
     </ErrorBoundary>
   );

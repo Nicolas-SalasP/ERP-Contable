@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
-import ModalGenerico from '../../../Componentes/ModalGenerico';
 import { logger } from '../../../Configuracion/logger';
 import { Eye, Download, ArrowLeft } from 'lucide-react';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { useToast } from '../../../Contextos/ToastContext';
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -22,6 +23,7 @@ const formatDate = (dateString) => {
 };
 
 const LibroMayor = () => {
+    const { toast } = useToast();
     const [activeTab, setActiveTab] = useState('diario');
     const [asientos, setAsientos] = useState([]);
     const [planCuentas, setPlanCuentas] = useState([]);
@@ -45,13 +47,6 @@ const LibroMayor = () => {
     const wrapperRef = useRef(null);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, asientoId: null });
     const [asientoSeleccionado, setAsientoSeleccionado] = useState(null);
-
-    const [notificacion, setNotificacion] = useState({
-        show: false,
-        title: '',
-        message: '',
-        type: 'info'
-    });
 
     useEffect(() => {
         cargarPlanCuentas();
@@ -96,12 +91,7 @@ const LibroMayor = () => {
         const diffTime = Math.abs(new Date(filtros.hasta) - new Date(filtros.desde));
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays > 366) {
-            return setNotificacion({
-                show: true,
-                title: 'Rango Excedido',
-                message: 'Por seguridad y rendimiento, consulta un máximo de 366 días a la vez.',
-                type: 'warning'
-            });
+            return toast('Rango excedido: consulta máximo 366 días a la vez.', 'warning');
         }
 
         setLoading(true);
@@ -167,12 +157,7 @@ const LibroMayor = () => {
                 setAsientos(datosAplanados);
             } else {
                 setAsientos([]);
-                setNotificacion({
-                    show: true,
-                    title: 'Error',
-                    message: res.message || 'No se pudieron cargar los datos',
-                    type: 'danger'
-                });
+                toast(res.message || 'No se pudieron cargar los datos.', 'error');
             }
         } catch (error) {
             logger.error("Error cargando diario", error);
@@ -202,12 +187,7 @@ const LibroMayor = () => {
                 setActiveTab('visor');
             }
         } catch (error) {
-            setNotificacion({
-                show: true,
-                title: 'Error',
-                message: 'No se pudo cargar el detalle del asiento.',
-                type: 'danger'
-            });
+            toast('No se pudo cargar el detalle del asiento.', 'error');
         } finally {
             setLoading(false);
         }
@@ -215,12 +195,7 @@ const LibroMayor = () => {
 
     const exportarExcel = () => {
         if (asientos.length === 0) {
-            setNotificacion({
-                show: true,
-                title: 'Sin datos',
-                message: 'No hay movimientos para exportar en el rango seleccionado.',
-                type: 'warning'
-            });
+            toast('No hay movimientos para exportar en el rango seleccionado.', 'warning');
             return;
         }
 
@@ -246,14 +221,6 @@ const LibroMayor = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-6 font-sans text-slate-800 dark:text-slate-200 relative">
-
-            <ModalGenerico
-                isOpen={notificacion.show}
-                onClose={() => setNotificacion({ ...notificacion, show: false })}
-                title={notificacion.title}
-                message={notificacion.message}
-                type={notificacion.type}
-            />
 
             {contextMenu.visible && (
                 <div
@@ -394,7 +361,7 @@ const LibroMayor = () => {
                                 </tr>
                             </thead>
                             <tbody className="text-xs divide-y divide-slate-100 dark:divide-slate-700">
-                                {loading ? <tr><td colSpan="7" className="p-8 text-center text-slate-400"><i className="fas fa-spinner fa-spin text-slate-300 text-2xl mb-2 block"></i>Cargando...</td></tr> :
+                                {loading ? <TablaSkeleton filas={8} columnas={7} /> :
                                     asientos.length === 0 ? <tr><td colSpan="7" className="p-8 text-center text-slate-400"><i className="fas fa-book-open text-slate-300 text-2xl mb-2 block"></i>No hay movimientos.</td></tr> : (
                                         asientos.map((row, idx) => {
                                             const esAnulado = row.estado === 'ANULADO' || row.estado === 'RECLASIFICADO';

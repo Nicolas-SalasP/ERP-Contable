@@ -6,6 +6,7 @@ import BannerSuscripcion from '../BannerSuscripcion';
 import BannerPrivacidad from './BannerPrivacidad';
 import ErrorBoundary from '../ErrorBoundary';
 import { ToggleTema } from './ToggleTema';
+import { BarraProgresoNavegacion } from './BarraProgresoNavegacion';
 
 const LayoutPrincipal = ({ children }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -33,6 +34,7 @@ const LayoutPrincipal = ({ children }) => {
 
     return (
         <div className="relative flex h-screen bg-gray-100 dark:bg-slate-900 overflow-hidden">
+            <BarraProgresoNavegacion />
 
             <BarraLateral
                 isOpen={isSidebarOpen}
