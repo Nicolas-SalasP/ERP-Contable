@@ -2,6 +2,7 @@
 
 namespace App\Domains\Rrhh\Controllers;
 
+use App\Domains\Core\Models\User;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Services\Emrcl\GenerarEmrclService;
 use App\Http\Controllers\Controller;
@@ -32,8 +33,10 @@ class EmrclController extends Controller
         }
 
         try {
+            /** @var User $usuario */
+            $usuario = $request->user();
             $reporte = $this->servicio->generar(
-                $request->user()->empresa_id,
+                $usuario->empresa_id,
                 $anio,
                 $mes,
             );

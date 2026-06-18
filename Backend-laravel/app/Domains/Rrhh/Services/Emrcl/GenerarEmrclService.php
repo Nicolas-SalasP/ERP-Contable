@@ -3,7 +3,10 @@
 namespace App\Domains\Rrhh\Services\Emrcl;
 
 use App\Domains\Rrhh\Exceptions\RrhhException;
+use App\Domains\Rrhh\Models\Contrato;
+use App\Domains\Rrhh\Models\Empleado;
 use App\Domains\Rrhh\Models\Liquidacion;
+use App\Domains\Rrhh\Models\LiquidacionDetalle;
 
 class GenerarEmrclService
 {
@@ -39,7 +42,9 @@ class GenerarEmrclService
         $haySexoIndefinido  = false;
 
         foreach ($liquidaciones as $liq) {
-            $sexo  = $liq->empleado?->sexo;
+            /** @var Empleado|null $empleado */
+            $empleado = $liq->empleado;
+            $sexo  = $empleado?->sexo;
             $grupo = $sexo === 'F' ? 'mujeres' : 'hombres';
 
             if (! in_array($sexo, ['M', 'F'], true)) {
@@ -60,19 +65,31 @@ class GenerarEmrclService
             );
 
             // Cuadro 3 — deducciones legales del trabajador
+            /** @var \Illuminate\Database\Eloquent\Collection<string, LiquidacionDetalle> $detallesPorCodigo */
             $detallesPorCodigo = $liq->detalles->keyBy('codigo_concepto');
 
+            /** @var LiquidacionDetalle|null $afpCotizacion */
+            $afpCotizacion = $detallesPorCodigo->get('AFP_COTIZACION');
+            /** @var LiquidacionDetalle|null $afpComision */
+            $afpComision = $detallesPorCodigo->get('AFP_COMISION');
+            /** @var LiquidacionDetalle|null $afcTrabajador */
+            $afcTrabajador = $detallesPorCodigo->get('AFC_TRABAJADOR');
+            /** @var LiquidacionDetalle|null $impuestoUnico */
+            $impuestoUnico = $detallesPorCodigo->get('IMPUESTO_UNICO');
+
             $cuadro3[$grupo]['afp'] += (int) (
-                ($detallesPorCodigo['AFP_COTIZACION']?->monto ?? 0)
-                + ($detallesPorCodigo['AFP_COMISION']?->monto ?? 0)
+                ($afpCotizacion !== null ? $afpCotizacion->monto : 0)
+                + ($afpComision !== null ? $afpComision->monto : 0)
             );
             $cuadro3[$grupo]['salud']    += (int) ($liq->salud_legal ?? 0);
-            $cuadro3[$grupo]['afc']      += (int) ($detallesPorCodigo['AFC_TRABAJADOR']?->monto ?? 0);
-            $cuadro3[$grupo]['impuesto'] += (int) ($detallesPorCodigo['IMPUESTO_UNICO']?->monto ?? 0);
+            $cuadro3[$grupo]['afc']      += (int) ($afcTrabajador !== null ? $afcTrabajador->monto : 0);
+            $cuadro3[$grupo]['impuesto'] += (int) ($impuestoUnico !== null ? $impuestoUnico->monto : 0);
 
             // Cuadro 4 — horas pagadas derivadas de días trabajados × (horas_semana ÷ 5)
             $diasTrabajados = (int) ($liq->dias_trabajados ?? 0);
-            $horasSemana    = (int) ($liq->contrato?->horas_semana ?? 45);
+            /** @var Contrato|null $contrato */
+            $contrato    = $liq->contrato;
+            $horasSemana = (int) ($contrato !== null ? $contrato->horas_semana : 45);
             $horasPorDia    = $horasSemana > 0 ? round($horasSemana / 5, 2) : 9.0;
             $cuadro4[$grupo]['horas_pagadas'] += (int) round($diasTrabajados * $horasPorDia);
         }

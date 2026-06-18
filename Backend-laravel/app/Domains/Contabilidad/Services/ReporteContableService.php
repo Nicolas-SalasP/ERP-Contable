@@ -121,8 +121,8 @@ class ReporteContableService
 
         foreach ($codigos as $codigo) {
             $cuentaCatalogo = $catalogo[$codigo] ?? null;
-            $nombreFallback = $cuentaCatalogo?->nombre ?? '';
-            $tipoFallback   = $cuentaCatalogo?->tipo   ?? '';
+            $nombreFallback = $cuentaCatalogo !== null ? $cuentaCatalogo->nombre : '';
+            $tipoFallback   = $cuentaCatalogo !== null ? $cuentaCatalogo->tipo   : '';
 
             $ant = $mapAnterior[$codigo] ?? ['nombre' => $nombreFallback, 'tipo' => $tipoFallback, 'debe' => 0.0, 'haber' => 0.0];
             $men = $mapMensual[$codigo]  ?? ['nombre' => $nombreFallback, 'tipo' => $tipoFallback, 'debe' => 0.0, 'haber' => 0.0];
