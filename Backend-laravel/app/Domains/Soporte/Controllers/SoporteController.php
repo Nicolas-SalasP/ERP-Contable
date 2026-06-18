@@ -16,7 +16,9 @@ class SoporteController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        /** @var \App\Domains\Core\Models\User $authUser */
+        $authUser  = $request->user();
+        $empresaId = (int) $authUser->empresa_id;
         $resultado = $this->soporteCliente->listar($empresaId, $request->only(['status', 'category', 'page']));
 
         if ($resultado === null) {
@@ -28,6 +30,7 @@ class SoporteController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        /** @var \App\Domains\Core\Models\User $usuario */
         $usuario   = $request->user();
         $empresaId = (int) $usuario->empresa_id;
 
@@ -42,7 +45,7 @@ class SoporteController extends Controller
 
         $payload = [
             'empresa_id'     => $empresaId,
-            'empresa_nombre' => $empresa?->nombre ?? 'Sin nombre',
+            'empresa_nombre' => $empresa?->razon_social ?? 'Sin nombre',
             'origen_email'   => $usuario->email,
             'origen_nombre'  => $usuario->name,
             'subject'        => $validated['subject'],
@@ -62,7 +65,9 @@ class SoporteController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        /** @var \App\Domains\Core\Models\User $authUser */
+        $authUser  = $request->user();
+        $empresaId = (int) $authUser->empresa_id;
         $resultado = $this->soporteCliente->ver($empresaId, $id);
 
         if ($resultado === null) {
@@ -74,6 +79,7 @@ class SoporteController extends Controller
 
     public function reply(Request $request, int $id): JsonResponse
     {
+        /** @var \App\Domains\Core\Models\User $usuario */
         $usuario = $request->user();
 
         $validated = $request->validate([

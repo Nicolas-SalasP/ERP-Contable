@@ -315,7 +315,7 @@ parameters:
 		-
 			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
 			identifier: class.notFound
-			count: 3
+			count: 4
 			path: app/Domains/Contabilidad/Controllers/ReporteController.php
 
 		-
@@ -679,10 +679,34 @@ parameters:
 			path: app/Domains/Core/Observers/AuditoriaPiiObserver.php
 
 		-
-			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
+			message: '#^Access to property \$empresa_activa_id on an unknown class App\\Models\\User\.$#'
 			identifier: class.notFound
 			count: 1
 			path: app/Domains/Core/Scopes/EmpresaScope.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\Comercial\\Models\\Factura\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Domains/Core/Services/DashboardResumenService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Comercial\\Models\\Factura\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Core/Services/DashboardResumenService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Comercial\\Models\\Factura\:\:\$monto\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Core/Services/DashboardResumenService.php
+
+		-
+			message: '#^Using nullsafe method call on non-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Domains/Core/Services/DashboardResumenService.php
 
 		-
 			message: '#^Access to an undefined property App\\Domains\\Contabilidad\\Models\\AsientoContable\:\:\$detalles\.$#'
@@ -3327,7 +3351,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiCertificadoEmpresa\:\:\$empresa_id\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Domains/Sii/Services/Certificado/CertificadoService.php
 
 		-
@@ -4361,6 +4385,12 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: app/Domains/Sii/Services/Xml/XmlDsigSigner.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>razon_social" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Soporte/Controllers/SoporteController.php
 
 		-
 			message: '#^Access to property \$empresa_id on an unknown class App\\Models\\User\.$#'
