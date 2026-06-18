@@ -30,7 +30,8 @@ class DashboardResumenController
             'periodo' => 'sometimes|string|in:mes,trimestre,año',
         ]);
 
-        $periodo   = $request->get('periodo', 'mes');
+        $periodo = $request->get('periodo', 'mes');
+        /** @var \App\Domains\Core\Models\User $usuario */
         $usuario   = $request->user();
         $empresaId = $usuario->empresa_activa_id ?? $usuario->empresa_id;
         $permisos  = ModuloPermisos::permisosUsuario($usuario);

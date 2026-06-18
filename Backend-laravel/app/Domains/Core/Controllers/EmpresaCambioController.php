@@ -14,6 +14,7 @@ class EmpresaCambioController
      */
     public function misEmpresas(Request $request)
     {
+        /** @var \App\Domains\Core\Models\User $user */
         $user = $request->user();
 
         $empresas = DB::table('empresa_user')
@@ -49,6 +50,7 @@ class EmpresaCambioController
             'empresa_id' => 'required|integer',
         ]);
 
+        /** @var \App\Domains\Core\Models\User $user */
         $user      = $request->user();
         $empresaId = (int) $request->input('empresa_id');
 
