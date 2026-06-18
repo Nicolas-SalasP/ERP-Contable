@@ -358,7 +358,7 @@ const LibroMayor = () => {
                     <div>
                         <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Auditoría</label>
                         <select
-                            className="border border-blue-200 bg-blue-50 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700"
+                            className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700 dark:text-blue-300"
                             value={filtros.auditoria}
                             onChange={e => setFiltros({ ...filtros, auditoria: Number(e.target.value) })}
                         >
@@ -402,22 +402,22 @@ const LibroMayor = () => {
                                                 <tr
                                                     key={idx}
                                                     onContextMenu={(e) => handleContextMenu(e, row.asiento_id)}
-                                                    className={`transition-colors cursor-context-menu ${esAnulado ? 'bg-red-50/60 hover:bg-red-100/80 opacity-80' : 'hover:bg-blue-50'}`}
+                                                    className={`transition-colors cursor-context-menu ${esAnulado ? 'bg-red-50/60 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/40 opacity-80' : 'hover:bg-blue-50 dark:hover:bg-slate-700/60'}`}
                                                     title={esAnulado ? 'Asiento Anulado/Interno' : 'Click derecho para opciones'}
                                                 >
-                                                    <td className="px-4 py-2 font-mono text-blue-600 font-bold border-r border-slate-100 dark:border-slate-700">
+                                                    <td className="px-4 py-2 font-mono text-blue-600 dark:text-blue-400 font-bold border-r border-slate-100 dark:border-slate-700">
                                                         {row.codigo_unico || row.asiento_id}
-                                                        {esAnulado && <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] bg-red-200 text-red-700">R</span>}
+                                                        {esAnulado && <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] bg-red-200 dark:bg-red-900/60 text-red-700 dark:text-red-400">R</span>}
                                                     </td>
                                                     <td className="px-4 py-2 text-center text-slate-500 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700 whitespace-nowrap">{formatDate(row.fecha)}</td>
                                                     <td className="px-4 py-2 border-r border-slate-100 dark:border-slate-700">
-                                                        <div className={`font-mono font-bold ${esAnulado ? 'text-red-700' : 'text-slate-600'}`}>{row.cuenta_codigo}</div>
-                                                        <div className={`truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px] ${esAnulado ? 'text-red-500' : 'text-slate-400'}`}>{row.cuenta_nombre}</div>
+                                                        <div className={`font-mono font-bold ${esAnulado ? 'text-red-700 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}`}>{row.cuenta_codigo}</div>
+                                                        <div className={`truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px] ${esAnulado ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'}`}>{row.cuenta_nombre}</div>
                                                     </td>
-                                                    <td className={`px-4 py-2 border-r border-slate-100 dark:border-slate-700 ${esAnulado ? 'text-red-800 line-through decoration-red-300' : 'text-slate-700 dark:text-slate-300'}`}>{row.glosa}</td>
+                                                    <td className={`px-4 py-2 border-r border-slate-100 dark:border-slate-700 ${esAnulado ? 'text-red-800 dark:text-red-400 line-through decoration-red-300' : 'text-slate-700 dark:text-slate-300'}`}>{row.glosa}</td>
                                                     <td className="px-4 py-2 text-center text-slate-500 dark:text-slate-400 font-mono border-r border-slate-100 dark:border-slate-700">{row.numero_documento || '-'}</td>
-                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50' : 'text-emerald-600 bg-emerald-50/30'}`}>{formatMoney(row.debe)}</td>
-                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50' : 'text-slate-600 bg-slate-50/30'}`}>{formatMoney(row.haber)}</td>
+                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50 dark:bg-red-900/30 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/20'}`}>{formatMoney(row.debe)}</td>
+                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50 dark:bg-red-900/30 dark:text-red-400' : 'text-slate-600 dark:text-slate-300 bg-slate-50/30 dark:bg-slate-700/30'}`}>{formatMoney(row.haber)}</td>
                                                 </tr>
                                             );
                                         })

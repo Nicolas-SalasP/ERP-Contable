@@ -6,13 +6,14 @@ function aplicarTema(tema) {
     const el = document.documentElement;
     if (tema === 'gris-oscuro') {
         el.classList.add('dark');
+        el.style.colorScheme = 'dark';
     } else if (tema === 'claro') {
         el.classList.remove('dark');
+        el.style.colorScheme = 'light';
     } else {
-        // sistema — sigue prefers-color-scheme
-        window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? el.classList.add('dark')
-            : el.classList.remove('dark');
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        isDark ? el.classList.add('dark') : el.classList.remove('dark');
+        el.style.colorScheme = 'normal';
     }
 }
 
