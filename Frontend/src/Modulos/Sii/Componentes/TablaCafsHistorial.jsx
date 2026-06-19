@@ -1,6 +1,6 @@
 ﻿import React from 'react';
-import { TablaSkeleton } from '../../Componentes/Skeleton';
-import { EstadoVacioDiv } from '../../Componentes/EstadoVacio';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacioDiv } from '../../../Componentes/EstadoVacio';
 
 // Espeja SiiDteEmitido del backend.
 const TIPOS_DTE = [
