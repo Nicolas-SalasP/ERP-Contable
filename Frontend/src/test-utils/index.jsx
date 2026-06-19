@@ -2,10 +2,15 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
+import { ToastProvider } from '../Contextos/ToastContext';
 
 export const renderWithRouter = (ui, options = {}) => {
     return render(ui, {
-        wrapper: ({ children }) => <BrowserRouter>{children}</BrowserRouter>,
+        wrapper: ({ children }) => (
+            <BrowserRouter>
+                <ToastProvider>{children}</ToastProvider>
+            </BrowserRouter>
+        ),
         ...options,
     });
 };
