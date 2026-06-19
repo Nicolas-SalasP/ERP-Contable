@@ -34,28 +34,28 @@ const ModalRevocarCaf = ({ abierto, caf, onCerrar, onConfirmar, revocando = fals
                 />
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full animate-fade-in-up">
+                <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full animate-fade-in-up">
                     <div className="px-6 pt-6 pb-4">
                         <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
                                 <i className="fas fa-exclamation-triangle text-rose-600" />
                             </div>
                             <div className="flex-1">
-                                <h3 id="revocar-caf-titulo" className="text-lg font-bold text-slate-900">
+                                <h3 id="revocar-caf-titulo" className="text-lg font-bold text-slate-900 dark:text-slate-100">
                                     Revocar CAF #{caf.id}
                                 </h3>
                                 <dl className="mt-3 text-sm space-y-1">
                                     <div className="flex justify-between gap-4">
-                                        <dt className="text-slate-500">Tipo DTE</dt>
-                                        <dd className="text-slate-800 font-mono">{caf.tipo_dte}</dd>
+                                        <dt className="text-slate-500 dark:text-slate-400">Tipo DTE</dt>
+                                        <dd className="text-slate-800 dark:text-slate-200 font-mono">{caf.tipo_dte}</dd>
                                     </div>
                                     <div className="flex justify-between gap-4">
-                                        <dt className="text-slate-500">Rango de folios</dt>
-                                        <dd className="text-slate-800 font-mono">{caf.folio_desde} - {caf.folio_hasta}</dd>
+                                        <dt className="text-slate-500 dark:text-slate-400">Rango de folios</dt>
+                                        <dd className="text-slate-800 dark:text-slate-200 font-mono">{caf.folio_desde} - {caf.folio_hasta}</dd>
                                     </div>
                                     <div className="flex justify-between gap-4">
-                                        <dt className="text-slate-500">Folios ya usados</dt>
-                                        <dd className="text-slate-800 font-mono">{caf.folios_usados}</dd>
+                                        <dt className="text-slate-500 dark:text-slate-400">Folios ya usados</dt>
+                                        <dd className="text-slate-800 dark:text-slate-200 font-mono">{caf.folios_usados}</dd>
                                     </div>
                                 </dl>
                             </div>
@@ -69,7 +69,7 @@ const ModalRevocarCaf = ({ abierto, caf, onCerrar, onConfirmar, revocando = fals
                         </div>
 
                         <div className="mt-4">
-                            <label htmlFor="motivo-revocacion" className="block text-sm font-medium text-slate-700 mb-1">
+                            <label htmlFor="motivo-revocacion" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                 Motivo de la revocacion <span className="text-rose-500">*</span>
                             </label>
                             <textarea
@@ -81,7 +81,7 @@ const ModalRevocarCaf = ({ abierto, caf, onCerrar, onConfirmar, revocando = fals
                                 maxLength={MOTIVO_MAX}
                                 rows={3}
                                 placeholder="Ej: Cambio de razon social, CAF descontinuado, etc."
-                                className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-rose-500 focus:ring-rose-500"
+                                className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-md p-2 text-sm focus:border-rose-500 focus:ring-rose-500"
                             />
                             <div className="flex justify-between text-xs mt-1">
                                 <span className={motivo.trim().length < MOTIVO_MIN ? 'text-rose-600' : 'text-slate-500'}>
@@ -94,7 +94,7 @@ const ModalRevocarCaf = ({ abierto, caf, onCerrar, onConfirmar, revocando = fals
                         </div>
                     </div>
 
-                    <div className="bg-slate-50 px-6 py-3 sm:flex sm:flex-row-reverse gap-2">
+                    <div className="bg-slate-50 dark:bg-slate-900 px-6 py-3 sm:flex sm:flex-row-reverse gap-2">
                         <button
                             type="button"
                             data-testid="btn-confirmar-revocar"
@@ -109,7 +109,7 @@ const ModalRevocarCaf = ({ abierto, caf, onCerrar, onConfirmar, revocando = fals
                             data-testid="btn-cancelar-revocar"
                             onClick={onCerrar}
                             disabled={revocando}
-                            className="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-50"
+                            className="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
                         >
                             Cancelar
                         </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import inventarioApi from '../Servicios/inventarioApi';
 import {
     AlertBox,
@@ -94,7 +94,7 @@ const getFecha = (item) => item?.fecha_movimiento || item?.fecha || item?.fecha_
 
 const MiniMetric = ({ label, value, helper, tone = 'slate' }) => {
     const tones = {
-        slate: 'bg-slate-50 border-slate-200 text-slate-700',
+        slate: 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300',
         emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700',
         amber: 'bg-amber-50 border-amber-200 text-amber-700',
         rose: 'bg-rose-50 border-rose-200 text-rose-700',
@@ -303,21 +303,21 @@ const InventarioDashboard = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Bodega</Th>
                                     <Th align="right">Stock</Th>
                                     <Th align="right">Valor</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {stockPorBodega.map((item) => (
-                                    <tr key={item.bodega_id || item.bodega_codigo} className="hover:bg-slate-50/70 transition-colors">
-                                        <Td className="font-black text-slate-800">
+                                    <tr key={item.bodega_id || item.bodega_codigo} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                        <Td className="font-black text-slate-800 dark:text-slate-200">
                                             {item.bodega_nombre || item.nombre_bodega || `Bodega #${item.bodega_id ?? '-'}`}
                                             {item.bodega_codigo && <span className="block text-xs text-slate-400 font-bold">{item.bodega_codigo}</span>}
                                         </Td>
-                                        <Td align="right" className="font-black text-slate-700">{formatNumber(item.stock_total, 2)}</Td>
+                                        <Td align="right" className="font-black text-slate-700 dark:text-slate-300">{formatNumber(item.stock_total, 2)}</Td>
                                         <Td align="right" className="font-black text-emerald-700">{formatCurrency(item.valor_total)}</Td>
                                     </tr>
                                 ))}
@@ -339,11 +339,11 @@ const InventarioDashboard = () => {
                     ) : (
                         <div className="space-y-3">
                             {stockPorLote.slice(0, 6).map((item) => (
-                                <div key={`${item.lote_id}-${item.producto_id}-${item.bodega_id}`} className="rounded-2xl border border-slate-100 p-4 bg-slate-50/60">
+                                <div key={`${item.lote_id}-${item.producto_id}-${item.bodega_id}`} className="rounded-2xl border border-slate-100 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-900">
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
-                                            <p className="font-black text-slate-800">{getLoteCodigo(item)}</p>
-                                            <p className="text-xs text-slate-500 font-bold mt-1">{getProductoNombre(item)}</p>
+                                            <p className="font-black text-slate-800 dark:text-slate-200">{getLoteCodigo(item)}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">{getProductoNombre(item)}</p>
                                             <p className="text-xs text-slate-400 font-semibold">{getBodegaNombre(item)}</p>
                                         </div>
                                         <span className="text-sm font-black text-emerald-700">{formatNumber(item.stock_actual, 2)}</span>
@@ -379,9 +379,9 @@ const InventarioDashboard = () => {
                                             {alerta.tipo || 'ALERTA'}
                                         </span>
                                     </div>
-                                    <p className="font-black text-slate-800">{alerta.titulo || alerta.descripcion || 'Alerta de inventario'}</p>
-                                    {alerta.descripcion && <p className="text-sm text-slate-600 font-medium mt-1">{alerta.descripcion}</p>}
-                                    <p className="text-xs text-slate-500 font-bold mt-2">
+                                    <p className="font-black text-slate-800 dark:text-slate-200">{alerta.titulo || alerta.descripcion || 'Alerta de inventario'}</p>
+                                    {alerta.descripcion && <p className="text-sm text-slate-600 dark:text-slate-400 font-medium mt-1">{alerta.descripcion}</p>}
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-2">
                                         {alerta.producto_nombre || '-'} · {alerta.bodega_nombre || '-'}
                                     </p>
                                 </div>
@@ -402,7 +402,7 @@ const InventarioDashboard = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Producto</Th>
                                     <Th>Bodega</Th>
@@ -410,12 +410,12 @@ const InventarioDashboard = () => {
                                     <Th align="right">Sugerida</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {sugerenciasReposicion.map((item, index) => (
-                                    <tr key={`${item.producto_id}-${item.bodega_id}-${index}`} className="hover:bg-slate-50/70 transition-colors">
-                                        <Td className="font-bold text-slate-700">{getProductoNombre(item)}</Td>
-                                        <Td className="text-slate-500 font-semibold">{getBodegaNombre(item)}</Td>
-                                        <Td align="right" className="font-black text-slate-700">{formatNumber(item.stock_actual, 2)}</Td>
+                                    <tr key={`${item.producto_id}-${item.bodega_id}-${index}`} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                        <Td className="font-bold text-slate-700 dark:text-slate-300">{getProductoNombre(item)}</Td>
+                                        <Td className="text-slate-500 dark:text-slate-400 font-semibold">{getBodegaNombre(item)}</Td>
+                                        <Td align="right" className="font-black text-slate-700 dark:text-slate-300">{formatNumber(item.stock_actual, 2)}</Td>
                                         <Td align="right" className="font-black text-emerald-700">{formatNumber(item.cantidad_sugerida, 2)}</Td>
                                     </tr>
                                 ))}
@@ -438,7 +438,7 @@ const InventarioDashboard = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Tipo</Th>
                                     <Th>Producto</Th>
@@ -447,16 +447,16 @@ const InventarioDashboard = () => {
                                     <Th>Fecha</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {movimientos.map((movimiento) => (
-                                    <tr key={movimiento.id} className="hover:bg-slate-50/70 transition-colors">
+                                    <tr key={movimiento.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
                                         <Td><EstadoBadge value={movimiento.tipo} /></Td>
-                                        <Td className="font-bold text-slate-700">{getProductoNombre(movimiento)}</Td>
-                                        <Td className="text-slate-500 font-semibold">
+                                        <Td className="font-bold text-slate-700 dark:text-slate-300">{getProductoNombre(movimiento)}</Td>
+                                        <Td className="text-slate-500 dark:text-slate-400 font-semibold">
                                             {getBodegaDestino(movimiento) !== '-' ? getBodegaDestino(movimiento) : getBodegaOrigen(movimiento)}
                                         </Td>
-                                        <Td align="right" className="font-black text-slate-800">{formatNumber(movimiento.cantidad, 2)}</Td>
-                                        <Td className="text-slate-500">{formatDate(movimiento.fecha_movimiento)}</Td>
+                                        <Td align="right" className="font-black text-slate-800 dark:text-slate-200">{formatNumber(movimiento.cantidad, 2)}</Td>
+                                        <Td className="text-slate-500 dark:text-slate-400">{formatDate(movimiento.fecha_movimiento)}</Td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -476,7 +476,7 @@ const InventarioDashboard = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Tipo</Th>
                                     <Th>Producto</Th>
@@ -485,13 +485,13 @@ const InventarioDashboard = () => {
                                     <Th align="right">Costo</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {ajustes.map((ajuste) => (
-                                    <tr key={ajuste.id} className="hover:bg-slate-50/70 transition-colors">
-                                        <Td className="font-bold text-slate-700">{getTipoAjuste(ajuste)}</Td>
-                                        <Td className="font-bold text-slate-700">{getProductoNombre(ajuste)}</Td>
-                                        <Td className="text-slate-500 font-semibold">{getBodegaNombre(ajuste)}</Td>
-                                        <Td align="right" className="font-black text-slate-800">{formatNumber(ajuste.cantidad, 2)}</Td>
+                                    <tr key={ajuste.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                        <Td className="font-bold text-slate-700 dark:text-slate-300">{getTipoAjuste(ajuste)}</Td>
+                                        <Td className="font-bold text-slate-700 dark:text-slate-300">{getProductoNombre(ajuste)}</Td>
+                                        <Td className="text-slate-500 dark:text-slate-400 font-semibold">{getBodegaNombre(ajuste)}</Td>
+                                        <Td align="right" className="font-black text-slate-800 dark:text-slate-200">{formatNumber(ajuste.cantidad, 2)}</Td>
                                         <Td align="right" className="font-black text-rose-700">{formatCurrency(ajuste.costo_total)}</Td>
                                     </tr>
                                 ))}
@@ -513,7 +513,7 @@ const InventarioDashboard = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Tipo</Th>
@@ -524,16 +524,16 @@ const InventarioDashboard = () => {
                                 <Th>Fecha</Th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {tomas.map((toma) => (
-                                <tr key={toma.id} className="hover:bg-slate-50/70 transition-colors">
-                                    <Td className="font-black text-slate-800">{toma.codigo_toma || `TF-${toma.id}`}</Td>
-                                    <Td className="font-bold text-slate-600">{toma.tipo || '-'}</Td>
+                                <tr key={toma.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                    <Td className="font-black text-slate-800 dark:text-slate-200">{toma.codigo_toma || `TF-${toma.id}`}</Td>
+                                    <Td className="font-bold text-slate-600 dark:text-slate-400">{toma.tipo || '-'}</Td>
                                     <Td><EstadoBadge value={toma.estado} /></Td>
-                                    <Td className="text-slate-500 font-semibold">{getBodegaNombre(toma)}</Td>
-                                    <Td align="right" className="font-black text-slate-700">{formatNumber(toma.detalles_count ?? toma.detalles, 0)}</Td>
+                                    <Td className="text-slate-500 dark:text-slate-400 font-semibold">{getBodegaNombre(toma)}</Td>
+                                    <Td align="right" className="font-black text-slate-700 dark:text-slate-300">{formatNumber(toma.detalles_count ?? toma.detalles, 0)}</Td>
                                     <Td align="right" className="font-black text-amber-700">{formatNumber(toma.detalles_con_diferencia_count ?? toma.detalles_con_diferencia, 0)}</Td>
-                                    <Td className="text-slate-500">{formatDate(getFecha(toma))}</Td>
+                                    <Td className="text-slate-500 dark:text-slate-400">{formatDate(getFecha(toma))}</Td>
                                 </tr>
                             ))}
                         </tbody>

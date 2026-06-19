@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
 import {
@@ -189,7 +189,7 @@ const ValorizacionInventario = () => {
                     <select
                         value={productoFiltro}
                         onChange={(event) => setProductoFiltro(event.target.value)}
-                        className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                        className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                     >
                         <option value="">Todos los productos</option>
                         {productos.map((producto) => (
@@ -202,7 +202,7 @@ const ValorizacionInventario = () => {
                     <select
                         value={bodegaFiltro}
                         onChange={(event) => setBodegaFiltro(event.target.value)}
-                        className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                        className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                     >
                         <option value="">Todas las bodegas</option>
                         {bodegas.map((bodega) => (
@@ -216,7 +216,7 @@ const ValorizacionInventario = () => {
                         type="text"
                         value={busqueda}
                         onChange={(event) => setBusqueda(event.target.value)}
-                        className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                        className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                         placeholder="Buscar producto, SKU o bodega..."
                     />
                 </div>
@@ -234,7 +234,7 @@ const ValorizacionInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Producto</Th>
                                 <Th>Bodega</Th>
@@ -244,12 +244,12 @@ const ValorizacionInventario = () => {
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {valorizacionFiltrada.map((item, index) => (
-                                <tr key={item.id || `${item.producto_id}-${item.bodega_id}-${index}`} className="hover:bg-slate-50/70 transition-colors">
+                                <tr key={item.id || `${item.producto_id}-${item.bodega_id}-${index}`} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
                                     <Td>
                                         <div>
-                                            <p className="font-black text-slate-800">
+                                            <p className="font-black text-slate-800 dark:text-slate-200">
                                                 {getProductoNombre(item)}
                                             </p>
 
@@ -261,15 +261,15 @@ const ValorizacionInventario = () => {
                                         </div>
                                     </Td>
 
-                                    <Td className="font-semibold text-slate-500">
+                                    <Td className="font-semibold text-slate-500 dark:text-slate-400">
                                         {getBodegaNombre(item)}
                                     </Td>
 
-                                    <Td align="right" className="font-black text-slate-800">
+                                    <Td align="right" className="font-black text-slate-800 dark:text-slate-200">
                                         {formatNumber(getStock(item), 2)}
                                     </Td>
 
-                                    <Td align="right" className="font-black text-slate-700">
+                                    <Td align="right" className="font-black text-slate-700 dark:text-slate-300">
                                         {formatCurrency(getCostoPromedio(item))}
                                     </Td>
 

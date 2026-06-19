@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
 import {
@@ -209,7 +209,7 @@ const KardexInventario = () => {
                             name="producto_id"
                             value={filtros.producto_id}
                             onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                         >
                             <option value="">Todos</option>
                             {productos.map((producto) => (
@@ -225,7 +225,7 @@ const KardexInventario = () => {
                             name="bodega_id"
                             value={filtros.bodega_id}
                             onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                         >
                             <option value="">Todas</option>
                             {bodegas.map((bodega) => (
@@ -241,7 +241,7 @@ const KardexInventario = () => {
                             name="lote_id"
                             value={filtros.lote_id}
                             onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                         >
                             <option value="">Todos</option>
                             {lotesFiltrados.map((lote) => (
@@ -257,7 +257,7 @@ const KardexInventario = () => {
                             name="tipo"
                             value={filtros.tipo}
                             onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                         >
                             <option value="">Todos</option>
                             {tiposMovimiento.map((tipo) => (
@@ -274,7 +274,7 @@ const KardexInventario = () => {
                             name="fecha_desde"
                             value={filtros.fecha_desde}
                             onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                         />
                     </Field>
 
@@ -284,7 +284,7 @@ const KardexInventario = () => {
                             name="fecha_hasta"
                             value={filtros.fecha_hasta}
                             onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                         />
                     </Field>
 
@@ -313,7 +313,7 @@ const KardexInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Fecha</Th>
                                 <Th>Tipo</Th>
@@ -327,10 +327,10 @@ const KardexInventario = () => {
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {kardex.map((item) => (
-                                <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                                    <Td className="text-slate-500 font-semibold">
+                                <tr key={item.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                    <Td className="text-slate-500 dark:text-slate-400 font-semibold">
                                         {formatDate(item.fecha_movimiento || item.fecha || item.created_at)}
                                     </Td>
 
@@ -340,11 +340,11 @@ const KardexInventario = () => {
                                         </span>
                                     </Td>
 
-                                    <Td className="font-black text-slate-800">
+                                    <Td className="font-black text-slate-800 dark:text-slate-200">
                                         {getProductoNombre(item)}
                                     </Td>
 
-                                    <Td className="font-semibold text-slate-500">
+                                    <Td className="font-semibold text-slate-500 dark:text-slate-400">
                                         {getBodegaNombre(item)}
                                     </Td>
 
@@ -356,13 +356,13 @@ const KardexInventario = () => {
                                         {getSalida(item) > 0 ? formatNumber(getSalida(item), 2) : '-'}
                                     </Td>
 
-                                    <Td align="right" className="font-black text-slate-800">
+                                    <Td align="right" className="font-black text-slate-800 dark:text-slate-200">
                                         {typeof getSaldo(item) === 'number'
                                             ? formatNumber(getSaldo(item), 2)
                                             : getSaldo(item)}
                                     </Td>
 
-                                    <Td className="text-slate-500">
+                                    <Td className="text-slate-500 dark:text-slate-400">
                                     <span
                                         className="block max-w-[120px] sm:max-w-[180px] md:max-w-[250px] truncate"
                                         title={item.referencia || '-'}
@@ -371,7 +371,7 @@ const KardexInventario = () => {
                                     </span>
                                 </Td>
 
-                                    <Td className="text-slate-500">
+                                    <Td className="text-slate-500 dark:text-slate-400">
                                         {item.motivo || '-'}
                                     </Td>
                                 </tr>

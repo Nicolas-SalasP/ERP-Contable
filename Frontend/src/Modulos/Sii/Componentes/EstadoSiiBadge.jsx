@@ -2,8 +2,8 @@ import React from 'react';
 import useEstadoSii from '../Hooks/useEstadoSii';
 
 const ESTILO_POR_ESTADO = {
-    BORRADOR:              'bg-gray-200 text-gray-800',
-    FOLIO_RESERVADO:       'bg-gray-200 text-gray-800',
+    BORRADOR:              'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-slate-200',
+    FOLIO_RESERVADO:       'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-slate-200',
     XML_GENERADO:          'bg-blue-50 text-blue-700',
     FIRMADO:               'bg-blue-100 text-blue-800',
     ENVIADO_SII:           'bg-yellow-100 text-yellow-800 animate-pulse',
@@ -26,7 +26,7 @@ export function EstadoSiiBadge({ facturaId }) {
     if (cargando) {
         return (
             <span
-                className="inline-block px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded"
+                className="inline-block px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-xs rounded"
                 data-testid="estado-sii-cargando"
             >
                 Cargando...
@@ -49,7 +49,7 @@ export function EstadoSiiBadge({ facturaId }) {
     if (!data?.tiene_dte) {
         return (
             <span
-                className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+                className="inline-block px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400 text-xs rounded"
                 data-testid="estado-sii-sin-dte"
             >
                 Sin DTE
@@ -57,7 +57,7 @@ export function EstadoSiiBadge({ facturaId }) {
         );
     }
 
-    const estilo = ESTILO_POR_ESTADO[data.estado] ?? 'bg-gray-100 text-gray-600';
+    const estilo = ESTILO_POR_ESTADO[data.estado] ?? 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400';
 
     return (
         <span

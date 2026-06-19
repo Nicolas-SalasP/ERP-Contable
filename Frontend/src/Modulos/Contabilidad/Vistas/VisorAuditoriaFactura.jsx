@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
-
 import { logger } from '../../../Configuracion/logger';
+import { ChevronLeft, MoreVertical } from 'lucide-react';
 const VisorAuditoriaFactura = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -63,15 +63,13 @@ const VisorAuditoriaFactura = () => {
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6 font-sans pb-10">
+        <div className="max-w-6xl mx-auto p-4 md:p-6 font-sans pb-10 text-slate-800 dark:text-slate-200">
 
             <button
                 onClick={() => navigate(-1)}
-                className="mb-4 flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm transition-colors group"
+                className="mb-4 flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold text-sm transition-colors group"
             >
-                <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path>
-                </svg>
+                <ChevronLeft size={20} strokeWidth={1.75} className="transform group-hover:-translate-x-1 transition-transform" />
                 Volver al Historial
             </button>
 
@@ -94,18 +92,16 @@ const VisorAuditoriaFactura = () => {
                         onClick={() => setMenuAbierto(!menuAbierto)}
                         className="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all border border-slate-700 hover:border-slate-500 focus:outline-none"
                     >
-                        <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01"></path>
-                        </svg>
+                        <MoreVertical size={24} strokeWidth={1.75} className="text-slate-300" />
                     </button>
 
                     {menuAbierto && (
-                        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[99] animate-fade-in origin-top-right">
-                            <ul className="text-sm font-medium text-slate-700 py-1">
+                        <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden z-[99] animate-fade-in origin-top-right">
+                            <ul className="text-sm font-medium text-slate-700 dark:text-slate-300 py-1">
                                 <li>
                                     <button
                                         onClick={() => navigate(`/contabilidad/factura/${id}/asiento`)}
-                                        className="w-full text-left px-5 py-3.5 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-3"
+                                        className="w-full text-left px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center gap-3"
                                     >
                                         <i className="fas fa-file-invoice-dollar w-4 text-center"></i> Consultar Asiento Original
                                     </button>
@@ -113,7 +109,7 @@ const VisorAuditoriaFactura = () => {
                                 <li>
                                     <button
                                         onClick={() => navigate(`/contabilidad/factura/${id}/reclasificar`)}
-                                        className="w-full text-left px-5 py-3.5 hover:bg-slate-50 hover:text-amber-600 transition-colors flex items-center gap-3 border-t border-slate-100"
+                                        className="w-full text-left px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-amber-600 transition-colors flex items-center gap-3 border-t border-slate-100 dark:border-slate-700"
                                     >
                                         <i className="fas fa-sync-alt w-4 text-center"></i> Corregir / Reclasificar
                                     </button>
@@ -124,48 +120,48 @@ const VisorAuditoriaFactura = () => {
                 </div>
             </div>
 
-            <div className="bg-white border-x border-b border-slate-200 rounded-b-2xl shadow-sm p-4 md:p-8">
-                <h3 className="text-lg font-bold text-slate-800 mb-8 border-b border-slate-100 pb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 border-x border-b border-slate-200 dark:border-slate-700 rounded-b-2xl shadow-sm p-4 md:p-8">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-8 border-b border-slate-100 dark:border-slate-700 pb-4 flex items-center gap-2">
                     <i className="fas fa-fingerprint text-slate-400"></i> Cadena de Custodia del Documento
                 </h3>
 
-                <div className="relative border-l-2 border-slate-100 ml-3 md:ml-6 space-y-8 md:space-y-12 pb-4">
+                <div className="relative border-l-2 border-slate-100 dark:border-slate-700 ml-3 md:ml-6 space-y-8 md:space-y-12 pb-4">
                     {historial.length > 0 ? historial.map((log, index) => (
                         <div key={log.id} className="relative pl-6 md:pl-10">
-                            <div className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-4 border-white shadow-sm ${index === 0 ? 'bg-blue-600 ring-4 ring-blue-50' : 'bg-slate-200'}`}></div>
+                            <div className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-4 border-white dark:border-slate-800 shadow-sm ${index === 0 ? 'bg-blue-600 ring-4 ring-blue-50' : 'bg-slate-200 dark:bg-slate-600'}`}></div>
 
-                            <div className={`bg-white border rounded-2xl p-5 hover:border-slate-300 transition-all ${index === 0 ? 'border-blue-200 shadow-sm bg-blue-50/10' : 'border-slate-100'}`}>
+                            <div className={`bg-white dark:bg-slate-800 border rounded-2xl p-5 hover:border-slate-300 dark:hover:border-slate-600 transition-all ${index === 0 ? 'border-blue-200 shadow-sm bg-blue-50/10' : 'border-slate-100 dark:border-slate-700'}`}>
                                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4">
                                     <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                                        <span className={`font-black text-xs md:text-sm uppercase tracking-widest ${index === 0 ? 'text-blue-700' : 'text-slate-700'}`}>
+                                        <span className={`font-black text-xs md:text-sm uppercase tracking-widest ${index === 0 ? 'text-blue-700' : 'text-slate-700 dark:text-slate-300'}`}>
                                             {log.operacion}
                                         </span>
                                         {log.asiento && (
-                                            <span className="text-[10px] bg-slate-100 border border-slate-200 text-slate-600 px-2.5 py-1 rounded-lg font-mono font-black">
+                                            <span className="text-[10px] bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg font-mono font-black">
                                                 ID ASIENTO: {log.asiento}
                                             </span>
                                         )}
                                     </div>
-                                    <div className="text-[11px] text-slate-500 font-mono font-bold flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full w-fit">
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono font-bold flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 px-3 py-1.5 rounded-full w-fit">
                                         <i className="far fa-calendar-alt"></i> {log.fecha}
                                     </div>
                                 </div>
 
-                                <p className="text-slate-600 text-sm mb-6 leading-relaxed italic border-l-4 border-slate-200 pl-4">
+                                <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 leading-relaxed italic border-l-4 border-slate-200 dark:border-slate-700 pl-4">
                                     "{log.detalle}"
                                 </p>
 
                                 <div className="flex flex-wrap items-center gap-3 text-xs">
-                                    <div className="flex items-center gap-2 bg-slate-100/50 px-3 py-2 rounded-xl border border-slate-100 w-fit">
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">
+                                    <div className="flex items-center gap-2 bg-slate-100/50 dark:bg-slate-900/50 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-700 w-fit">
+                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
                                             <i className="fas fa-user text-[10px] text-slate-500"></i>
                                         </div>
                                         <span className="text-slate-400 font-bold uppercase text-[9px] tracking-tighter">Ejecutado por:</span>
-                                        <span className="font-black text-slate-800">{log.usuario}</span>
+                                        <span className="font-black text-slate-800 dark:text-slate-200">{log.usuario}</span>
                                     </div>
 
                                     {log.estado_ant && log.estado_ant !== '-' && (
-                                        <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 w-fit">
+                                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-700 w-fit">
                                             <span className="text-slate-400 line-through font-bold text-[10px]">{log.estado_ant}</span>
                                             <i className="fas fa-chevron-right text-slate-300 text-[10px]"></i>
                                             <span className="font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md uppercase text-[10px]">{log.estado_nue}</span>

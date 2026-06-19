@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
@@ -419,7 +419,7 @@ const TomasFisicasInventario = () => {
                                 name="tipo"
                                 value={form.tipo}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 required
                             >
                                 <option value="GENERAL">GENERAL</option>
@@ -434,7 +434,7 @@ const TomasFisicasInventario = () => {
                                     name="bodega_id"
                                     value={form.bodega_id}
                                     onChange={handleChange}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                     required
                                 >
                                     <option value="">Seleccionar bodega</option>
@@ -453,7 +453,7 @@ const TomasFisicasInventario = () => {
                                 name="referencia"
                                 value={form.referencia}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="TF-DEMO-001"
                             />
                         </Field>
@@ -464,7 +464,7 @@ const TomasFisicasInventario = () => {
                                 name="motivo"
                                 value={form.motivo}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                             />
                         </Field>
 
@@ -475,7 +475,7 @@ const TomasFisicasInventario = () => {
                                     value={form.observacion}
                                     onChange={handleChange}
                                     rows="3"
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none"
                                     placeholder="Toma física demo por bodega"
                                 />
                             </Field>
@@ -503,7 +503,7 @@ const TomasFisicasInventario = () => {
                         <select
                             value={estadoFiltro}
                             onChange={(event) => setEstadoFiltro(event.target.value)}
-                            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                         >
                             <option value="">Todos los estados</option>
                             <option value="BORRADOR">BORRADOR</option>
@@ -516,7 +516,7 @@ const TomasFisicasInventario = () => {
                         <select
                             value={tipoFiltro}
                             onChange={(event) => setTipoFiltro(event.target.value)}
-                            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                         >
                             <option value="">Todos los tipos</option>
                             <option value="GENERAL">GENERAL</option>
@@ -528,7 +528,7 @@ const TomasFisicasInventario = () => {
                             type="text"
                             value={busqueda}
                             onChange={(event) => setBusqueda(event.target.value)}
-                            className="w-full xl:w-80 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full xl:w-80 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                             placeholder="Buscar toma, referencia o bodega..."
                         />
                     </div>
@@ -542,7 +542,7 @@ const TomasFisicasInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Tipo</Th>
@@ -555,12 +555,12 @@ const TomasFisicasInventario = () => {
 
                         <tbody className="divide-y divide-slate-100">
                             {tomasFiltradas.map((toma) => (
-                                <tr key={toma.id} className="hover:bg-slate-50/70 transition-colors">
-                                    <Td className="font-black text-slate-800">
+                                <tr key={toma.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                    <Td className="font-black text-slate-800 dark:text-slate-200">
                                         {getCodigoToma(toma)}
                                     </Td>
 
-                                    <Td className="font-black text-slate-600">
+                                    <Td className="font-black text-slate-600 dark:text-slate-400">
                                         {toma.tipo}
                                     </Td>
 
@@ -568,11 +568,11 @@ const TomasFisicasInventario = () => {
                                         <EstadoBadge value={toma.estado} />
                                     </Td>
 
-                                    <Td className="text-slate-500 font-semibold">
+                                    <Td className="text-slate-500 dark:text-slate-400 font-semibold">
                                         {getBodegaNombre(toma)}
                                     </Td>
 
-                                    <Td className="text-slate-500">
+                                    <Td className="text-slate-500 dark:text-slate-400">
                                         {toma.referencia || '-'}
                                     </Td>
 
@@ -581,7 +581,7 @@ const TomasFisicasInventario = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => cargarDetalleToma(toma.id)}
-                                                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black"
+                                                className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black"
                                             >
                                                 Ver
                                             </button>
@@ -652,26 +652,26 @@ const TomasFisicasInventario = () => {
                     )}
                 >
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-6">
-                        <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                        <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4">
                             <p className="text-xs font-black text-slate-400 uppercase">Estado</p>
                             <div className="mt-2">
                                 <EstadoBadge value={tomaSeleccionada.estado} />
                             </div>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                        <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4">
                             <p className="text-xs font-black text-slate-400 uppercase">Tipo</p>
-                            <p className="font-black text-slate-800 mt-2">{tomaSeleccionada.tipo}</p>
+                            <p className="font-black text-slate-800 dark:text-slate-200 mt-2">{tomaSeleccionada.tipo}</p>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                        <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4">
                             <p className="text-xs font-black text-slate-400 uppercase">Bodega</p>
-                            <p className="font-black text-slate-800 mt-2">{getBodegaNombre(tomaSeleccionada)}</p>
+                            <p className="font-black text-slate-800 dark:text-slate-200 mt-2">{getBodegaNombre(tomaSeleccionada)}</p>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                        <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4">
                             <p className="text-xs font-black text-slate-400 uppercase">Referencia</p>
-                            <p className="font-black text-slate-800 mt-2">{tomaSeleccionada.referencia || '-'}</p>
+                            <p className="font-black text-slate-800 dark:text-slate-200 mt-2">{tomaSeleccionada.referencia || '-'}</p>
                         </div>
                     </div>
 
@@ -683,7 +683,7 @@ const TomasFisicasInventario = () => {
                         />
                     ) : (
                         <TableShell>
-                            <thead className="bg-slate-50">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                 <tr>
                                     <Th>Producto</Th>
                                     <Th>Bodega</Th>
@@ -695,22 +695,22 @@ const TomasFisicasInventario = () => {
                                 </tr>
                             </thead>
 
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {tomaSeleccionada.detalles.map((detalle) => (
-                                    <tr key={detalle.id} className="hover:bg-slate-50/70 transition-colors">
-                                        <Td className="font-black text-slate-800">
+                                    <tr key={detalle.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                        <Td className="font-black text-slate-800 dark:text-slate-200">
                                             {getProductoNombre(detalle)}
                                         </Td>
 
-                                        <Td className="font-semibold text-slate-500">
+                                        <Td className="font-semibold text-slate-500 dark:text-slate-400">
                                             {getBodegaNombre(detalle)}
                                         </Td>
 
-                                        <Td className="text-slate-500">
+                                        <Td className="text-slate-500 dark:text-slate-400">
                                             {detalle.lote?.codigo_lote || detalle.lote?.codigo || (detalle.lote_id ? `Lote #${detalle.lote_id}` : '-')}
                                         </Td>
 
-                                        <Td align="right" className="font-black text-slate-800">
+                                        <Td align="right" className="font-black text-slate-800 dark:text-slate-200">
                                             {formatNumber(detalle.stock_sistema, 2)}
                                         </Td>
 
@@ -725,10 +725,10 @@ const TomasFisicasInventario = () => {
                                                         ...current,
                                                         [detalle.id]: event.target.value,
                                                     }))}
-                                                    className="w-28 rounded-xl border border-slate-200 px-3 py-2 text-right text-sm font-black focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                                    className="w-28 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-3 py-2 text-right text-sm font-black focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                                 />
                                             ) : (
-                                                <span className="font-black text-slate-800">
+                                                <span className="font-black text-slate-800 dark:text-slate-200">
                                                     {detalle.stock_contado === null || detalle.stock_contado === undefined
                                                         ? '-'
                                                         : formatNumber(detalle.stock_contado, 2)}
@@ -740,7 +740,7 @@ const TomasFisicasInventario = () => {
                                             {formatNumber(detalle.diferencia || 0, 2)}
                                         </Td>
 
-                                        <Td className="text-slate-500">
+                                        <Td className="text-slate-500 dark:text-slate-400">
                                             {detalle.movimiento_ajuste_id
                                                 ? `Movimiento #${detalle.movimiento_ajuste_id}`
                                                 : '-'}

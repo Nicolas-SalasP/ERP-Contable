@@ -204,41 +204,41 @@ const DashboardRenta = () => {
     const { resumen, desglose, tasa_impuesto, correccion_monetaria: cm } = datosRenta;
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto bg-slate-50 min-h-screen animate-fade-in">
+        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto bg-slate-50 dark:bg-slate-900 min-h-screen animate-fade-in">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-2xl shadow-sm shrink-0">
                         <i className="fas fa-landmark"></i>
                     </div>
                     <div>
-                        <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Operación Renta</h1><AyudaModulo moduloId="dashboardRenta" /></div>
-                        <p className="text-slate-500 font-medium text-sm md:text-base mt-0.5">
+                        <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Operación Renta</h1><AyudaModulo moduloId="dashboardRenta" /></div>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium text-sm md:text-base mt-0.5">
                             Régimen {nombreRegimen} • Base {esFlujoCaja ? 'Percibida/Pagada' : 'Devengada'}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                    <div className="flex bg-white rounded-lg border border-slate-200 shadow-sm p-1">
+                    <div className="flex bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1">
                         <button onClick={handleExportarPDF} className="px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded font-bold text-sm transition-colors flex items-center gap-2" title="Descargar Papel de Trabajo PDF">
                             <i className="fas fa-file-pdf"></i> PDF
                         </button>
-                        <div className="w-px bg-slate-200 mx-1"></div>
+                        <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
                         <button onClick={handleExportarExcel} className="px-3 py-1.5 text-emerald-600 hover:bg-emerald-50 rounded font-bold text-sm transition-colors flex items-center gap-2" title="Exportar a Excel">
                             <i className="fas fa-file-excel"></i> Excel
                         </button>
                     </div>
 
-                    <button onClick={() => setMostrarMapeo(true)} className="w-full sm:w-auto px-4 py-2 bg-white text-indigo-600 font-bold border border-slate-200 hover:bg-indigo-50 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => setMostrarMapeo(true)} className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-bold border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
                         <i className="fas fa-project-diagram"></i> Mapear Cuentas
                     </button>
 
                     <button onClick={() => setMostrarManual(true)} className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white font-bold border border-indigo-700 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
                         <i className="fas fa-book-open"></i> Guía Tributaria
                     </button>
-                    <div className="w-full sm:w-auto bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-3 ml-2">
-                        <span className="text-sm font-bold text-slate-600 uppercase">Año:</span>
-                        <select value={anio} onChange={(e) => setAnio(parseInt(e.target.value))} className="bg-slate-50 border border-slate-200 text-slate-800 font-bold py-1.5 px-3 rounded-md outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                    <div className="w-full sm:w-auto bg-white dark:bg-slate-800 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3 ml-2">
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase">Año:</span>
+                        <select value={anio} onChange={(e) => setAnio(parseInt(e.target.value))} className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-bold py-1.5 px-3 rounded-md outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
                             <option value={2025}>2025 (AT 2026)</option>
                             <option value={2026}>2026 (AT 2027)</option>
                             <option value={2027}>2027 (AT 2028)</option>
@@ -258,14 +258,14 @@ const DashboardRenta = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-emerald-500 relative group">
-                    <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5"><i className="fas fa-arrow-down text-emerald-500"></i> Ingresos {esFlujoCaja ? 'Percibidos' : 'Devengados'}</p>
-                    <h3 className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(resumen.total_ingresos)}</h3>
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 border-b-4 border-b-emerald-500 relative group">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5"><i className="fas fa-arrow-down text-emerald-500"></i> Ingresos {esFlujoCaja ? 'Percibidos' : 'Devengados'}</p>
+                    <h3 className="text-2xl font-black text-slate-800 dark:text-slate-200 mt-2">{formatCurrency(resumen.total_ingresos)}</h3>
                     <p className="text-[10px] text-slate-400 mt-1">{esFlujoCaja ? 'Ventas cobradas en el año.' : 'Todas las facturas emitidas, pagadas o no.'}</p>
                 </div>
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-rose-500">
-                    <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5"><i className="fas fa-arrow-up text-rose-500"></i> Egresos {esFlujoCaja ? 'Pagados' : 'Devengados'}</p>
-                    <h3 className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(resumen.total_egresos)}</h3>
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 border-b-4 border-b-rose-500">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5"><i className="fas fa-arrow-up text-rose-500"></i> Egresos {esFlujoCaja ? 'Pagados' : 'Devengados'}</p>
+                    <h3 className="text-2xl font-black text-slate-800 dark:text-slate-200 mt-2">{formatCurrency(resumen.total_egresos)}</h3>
                     <p className="text-[10px] text-slate-400 mt-1">{esFlujoCaja ? 'Compras efectivamente pagadas.' : 'Gastos facturados totales.'}</p>
                 </div>
                 <div className="bg-indigo-600 p-5 rounded-2xl shadow-md text-white relative overflow-hidden">
@@ -287,31 +287,31 @@ const DashboardRenta = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                     <div className="bg-emerald-50 px-5 py-4 border-b border-emerald-100 flex justify-between items-center">
                         <h3 className="font-bold text-emerald-800"><i className="fas fa-plus-circle mr-2"></i>Detalle de Ingresos</h3>
                         <span className="text-sm font-black text-emerald-700">{formatCurrency(resumen.total_ingresos)}</span>
                     </div>
                     <div className="p-0 flex-grow overflow-x-auto custom-scrollbar">
                         <table className="min-w-full text-left text-sm">
-                            <tbody className="divide-y divide-slate-100">
-                                <tr className="hover:bg-slate-50">
-                                    <td className="px-5 py-4"><p className="text-slate-700 font-bold">Ingresos del Giro (Ventas)</p></td>
-                                    <td className="px-5 py-4 font-black text-slate-800 text-right">{formatCurrency(desglose.ingresos_giro)}</td>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                <tr className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                    <td className="px-5 py-4"><p className="text-slate-700 dark:text-slate-300 font-bold">Ingresos del Giro (Ventas)</p></td>
+                                    <td className="px-5 py-4 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(desglose.ingresos_giro)}</td>
                                 </tr>
                                 <tr className="hover:bg-slate-50">
                                     <td className="px-5 py-4"><p className="text-slate-700 font-bold">Otros Ingresos</p></td>
-                                    <td className="px-5 py-4 font-black text-slate-800 text-right">{formatCurrency(desglose.otros_ingresos)}</td>
+                                    <td className="px-5 py-4 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(desglose.otros_ingresos)}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div className="p-4 bg-slate-50 border-t border-slate-100 text-xs text-slate-500">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
                         <i className="fas fa-info-circle text-emerald-500 mr-1"></i> <strong>Regla del Régimen:</strong> {esFlujoCaja ? 'Solo se consideran ventas pagadas por el cliente.' : 'Se consideran TODAS las ventas facturadas, independiente de su cobro.'}
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                     <div className="bg-rose-50 px-5 py-4 border-b border-rose-100 flex justify-between items-center">
                         <h3 className="font-bold text-rose-800"><i className="fas fa-minus-circle mr-2"></i>Detalle de Egresos</h3>
                         <span className="text-sm font-black text-rose-700">{formatCurrency(resumen.total_egresos)}</span>
@@ -319,32 +319,32 @@ const DashboardRenta = () => {
                     <div className="p-0 flex-grow overflow-x-auto custom-scrollbar">
                         <table className="min-w-full text-left text-sm">
                             <tbody className="divide-y divide-slate-100">
-                                <tr className="hover:bg-slate-50">
-                                    <td className="px-5 py-3"><p className="text-slate-700 font-bold">Compras y Proveedores</p></td>
-                                    <td className="px-5 py-3 font-black text-slate-800 text-right">{formatCurrency(desglose.compras)}</td>
+                                <tr className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                    <td className="px-5 py-3"><p className="text-slate-700 dark:text-slate-300 font-bold">Compras y Proveedores</p></td>
+                                    <td className="px-5 py-3 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(desglose.compras)}</td>
                                 </tr>
                                 <tr className="hover:bg-slate-50">
                                     <td className="px-5 py-3">
                                         <p className="text-slate-700 font-bold">{esFlujoCaja ? 'Depreciación Instantánea (Activos)' : 'Depreciación Contable Normal'}</p>
                                     </td>
-                                    <td className="px-5 py-3 font-black text-slate-800 text-right">{formatCurrency(desglose.depreciacion)}</td>
+                                    <td className="px-5 py-3 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(desglose.depreciacion)}</td>
                                 </tr>
-                                <tr className="hover:bg-slate-50">
-                                    <td className="px-5 py-3"><p className="text-slate-700 font-bold">Remuneraciones Pagadas</p></td>
-                                    <td className="px-5 py-3 font-black text-slate-800 text-right">{formatCurrency(desglose.remuneraciones_pagadas)}</td>
+                                <tr className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                    <td className="px-5 py-3"><p className="text-slate-700 dark:text-slate-300 font-bold">Remuneraciones Pagadas</p></td>
+                                    <td className="px-5 py-3 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(desglose.remuneraciones_pagadas)}</td>
                                 </tr>
-                                <tr className="hover:bg-slate-50">
-                                    <td className="px-5 py-3"><p className="text-slate-700 font-bold">Honorarios Pagados</p></td>
-                                    <td className="px-5 py-3 font-black text-slate-800 text-right">{formatCurrency(desglose.honorarios_pagados)}</td>
+                                <tr className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                    <td className="px-5 py-3"><p className="text-slate-700 dark:text-slate-300 font-bold">Honorarios Pagados</p></td>
+                                    <td className="px-5 py-3 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(desglose.honorarios_pagados)}</td>
                                 </tr>
-                                <tr className="hover:bg-slate-50">
-                                    <td className="px-5 py-3"><p className="text-slate-700 font-bold">Gastos Generales y Arriendos</p></td>
-                                    <td className="px-5 py-3 font-black text-slate-800 text-right">{formatCurrency(desglose.arriendos_pagados + desglose.gastos_generales)}</td>
+                                <tr className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                    <td className="px-5 py-3"><p className="text-slate-700 dark:text-slate-300 font-bold">Gastos Generales y Arriendos</p></td>
+                                    <td className="px-5 py-3 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(desglose.arriendos_pagados + desglose.gastos_generales)}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div className="p-4 bg-slate-50 border-t border-slate-100 text-xs text-slate-500">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
                         <i className="fas fa-info-circle text-rose-500 mr-1"></i> <strong>Regla del Régimen:</strong> {esFlujoCaja ? 'Los gastos se rebajan solo al pagarse desde el banco.' : 'Los gastos se rebajan al momento de facturarse.'}
                     </div>
                 </div>
@@ -380,20 +380,20 @@ const DashboardRenta = () => {
                     </div>
 
                     {cm.ejecutada && (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-slate-700">
                             <div className="px-5 py-4">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
                                     <i className="fas fa-arrow-up text-emerald-500 mr-1"></i>Ingresos CM
                                 </p>
                                 <p className="text-xl font-black text-emerald-700">{formatCurrency(cm.ingreso_cm)}</p>
-                                <p className="text-xs text-slate-400 mt-0.5">Revalorización activos + existencias</p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Revalorización activos + existencias</p>
                             </div>
                             <div className="px-5 py-4">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
                                     <i className="fas fa-arrow-down text-rose-500 mr-1"></i>Gastos CM
                                 </p>
                                 <p className="text-xl font-black text-rose-600">{formatCurrency(cm.gasto_cm)}</p>
-                                <p className="text-xs text-slate-400 mt-0.5">Revalorización depreciac. + patrimonio</p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Revalorización depreciac. + patrimonio</p>
                             </div>
                             <div className="px-5 py-4 bg-violet-50/40">
                                 <p className="text-[10px] font-black text-violet-500 uppercase tracking-widest mb-1">
@@ -402,7 +402,7 @@ const DashboardRenta = () => {
                                 <p className={`text-xl font-black ${cm.resultado_neto >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                                     {cm.resultado_neto >= 0 ? '+' : ''}{formatCurrency(cm.resultado_neto)}
                                 </p>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                                     {cm.resultado_neto >= 0
                                         ? 'Aumenta la base imponible'
                                         : 'Reduce la base imponible'}
@@ -419,7 +419,7 @@ const DashboardRenta = () => {
 
             {mostrarManual && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-fade-in-up">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-fade-in-up">
                         <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-indigo-600 text-white">
                             <h3 className="text-xl font-black flex items-center gap-3">
                                 <i className="fas fa-university text-indigo-200"></i>
@@ -430,8 +430,8 @@ const DashboardRenta = () => {
                             </button>
                         </div>
 
-                        <div className="p-6 overflow-y-auto bg-slate-50 space-y-6 text-slate-700">
-                            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="p-6 overflow-y-auto bg-slate-50 dark:bg-slate-900 space-y-6 text-slate-700 dark:text-slate-300">
+                            <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                                 <h4 className="font-bold text-indigo-700 mb-2 flex items-center gap-2">
                                     <i className="fas fa-info-circle"></i> ¿Qué significa este régimen?
                                 </h4>
@@ -443,8 +443,8 @@ const DashboardRenta = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                                    <h5 className="font-black text-[10px] uppercase tracking-widest text-slate-400 mb-3">Reconocimiento de Ingresos</h5>
+                                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <h5 className="font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Reconocimiento de Ingresos</h5>
                                     <div className="flex items-start gap-3">
                                         <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${esFlujoCaja ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
                                         <p className="text-xs font-medium">
@@ -454,8 +454,8 @@ const DashboardRenta = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                                    <h5 className="font-black text-[10px] uppercase tracking-widest text-slate-400 mb-3">Tratamiento de Activos</h5>
+                                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <h5 className="font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Tratamiento de Activos</h5>
                                     <div className="flex items-start gap-3">
                                         <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${esFlujoCaja ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
                                         <p className="text-xs font-medium">
@@ -482,7 +482,7 @@ const DashboardRenta = () => {
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-slate-100 bg-white flex justify-end">
+                        <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-end">
                             <button onClick={() => setMostrarManual(false)} className="px-8 py-3 bg-slate-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-lg text-sm">
                                 Entendido, cerrar guía
                             </button>

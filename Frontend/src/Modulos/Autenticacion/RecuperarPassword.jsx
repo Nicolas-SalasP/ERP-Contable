@@ -58,10 +58,10 @@ const RecuperarPassword = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-            <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 animate-fade-in-up">
+            <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 animate-fade-in-up">
                 
                 <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-slate-800">Recuperar Cuenta</h2>
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Recuperar Cuenta</h2>
                     <p className="text-slate-500 text-sm mt-2">
                         {step === 1 ? 'Ingresa tu correo para recibir un código.' : 'Ingresa el código recibido y tu nueva clave.'}
                     </p>
@@ -70,12 +70,12 @@ const RecuperarPassword = () => {
                 {step === 1 ? (
                     <form onSubmit={handleSolicitarCodigo} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Correo Electrónico</label>
-                            <input 
-                                type="email" 
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Correo Electrónico</label>
+                            <input
+                                type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                                 required
                             />
                         </div>
@@ -93,34 +93,34 @@ const RecuperarPassword = () => {
                             Enviamos un código a: <strong>{email}</strong>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">Código de 6 dígitos</label>
-                            <input 
-                                type="text" 
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Código de 6 dígitos</label>
+                            <input
+                                type="text"
                                 value={codigo}
                                 onChange={(e) => setCodigo(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-center tracking-widest text-lg"
+                                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-center tracking-widest text-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                                 maxLength={6}
                                 placeholder="000000"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">Nueva Contraseña</label>
-                            <input 
-                                type="password" 
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Nueva Contraseña</label>
+                            <input
+                                type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">Confirmar Contraseña</label>
-                            <input 
-                                type="password" 
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Confirmar Contraseña</label>
+                            <input
+                                type="password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                                 required
                             />
                         </div>

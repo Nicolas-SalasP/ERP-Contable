@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
@@ -182,7 +182,7 @@ const ProductosInventario = () => {
                                 name="sku"
                                 value={form.sku}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="SKU-001"
                                 required
                             />
@@ -194,7 +194,7 @@ const ProductosInventario = () => {
                                 name="nombre"
                                 value={form.nombre}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="Producto demo"
                                 required
                             />
@@ -205,7 +205,7 @@ const ProductosInventario = () => {
                                 name="unidad_medida_id"
                                 value={form.unidad_medida_id}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 required
                             >
                                 <option value="">Seleccionar</option>
@@ -225,7 +225,7 @@ const ProductosInventario = () => {
                                 onChange={handleChange}
                                 min="0"
                                 step="1"
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="0"
                             />
                         </Field>
@@ -238,7 +238,7 @@ const ProductosInventario = () => {
                                 onChange={handleChange}
                                 min="0"
                                 step="1"
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="0"
                             />
                         </Field>
@@ -249,13 +249,13 @@ const ProductosInventario = () => {
                                 name="descripcion"
                                 value={form.descripcion}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="Descripción opcional"
                             />
                         </Field>
 
                         <div className="md:col-span-2 xl:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 cursor-pointer hover:bg-slate-50">
+                            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-600 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
                                 <input
                                     type="checkbox"
                                     name="maneja_lotes"
@@ -263,12 +263,12 @@ const ProductosInventario = () => {
                                     onChange={handleChange}
                                     className="w-4 h-4 accent-emerald-500"
                                 />
-                                <span className="font-black text-slate-700 text-sm">
+                                <span className="font-black text-slate-700 dark:text-slate-300 text-sm">
                                     Maneja lotes
                                 </span>
                             </label>
 
-                            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 cursor-pointer hover:bg-slate-50">
+                            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-600 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
                                 <input
                                     type="checkbox"
                                     name="requiere_fecha_vencimiento"
@@ -276,12 +276,12 @@ const ProductosInventario = () => {
                                     onChange={handleChange}
                                     className="w-4 h-4 accent-emerald-500"
                                 />
-                                <span className="font-black text-slate-700 text-sm">
+                                <span className="font-black text-slate-700 dark:text-slate-300 text-sm">
                                     Requiere vencimiento
                                 </span>
                             </label>
 
-                            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 cursor-pointer hover:bg-slate-50">
+                            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-600 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
                                 <input
                                     type="checkbox"
                                     name="activo"
@@ -289,7 +289,7 @@ const ProductosInventario = () => {
                                     onChange={handleChange}
                                     className="w-4 h-4 accent-emerald-500"
                                 />
-                                <span className="font-black text-slate-700 text-sm">
+                                <span className="font-black text-slate-700 dark:text-slate-300 text-sm">
                                     Producto activo
                                 </span>
                             </label>
@@ -317,7 +317,7 @@ const ProductosInventario = () => {
                         type="text"
                         value={busqueda}
                         onChange={(event) => setBusqueda(event.target.value)}
-                        className="w-full md:w-80 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                        className="w-full md:w-80 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                         placeholder="Buscar por SKU, nombre o unidad..."
                     />
                 )}
@@ -330,7 +330,7 @@ const ProductosInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>SKU</Th>
                                 <Th>Producto</Th>
@@ -342,10 +342,10 @@ const ProductosInventario = () => {
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {productosFiltrados.map((producto) => (
-                                <tr key={producto.id} className="hover:bg-slate-50/70 transition-colors">
-                                    <Td className="font-black text-slate-800">
+                                <tr key={producto.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                    <Td className="font-black text-slate-800 dark:text-slate-200">
                                         {producto.sku}
                                     </Td>
 
@@ -363,15 +363,15 @@ const ProductosInventario = () => {
                                         </div>
                                     </Td>
 
-                                    <Td className="font-bold text-slate-500">
+                                    <Td className="font-bold text-slate-500 dark:text-slate-400">
                                         {producto.unidad_medida?.nombre || producto.unidad?.nombre || '-'}
                                     </Td>
 
-                                    <Td align="right" className="font-black text-slate-800">
+                                    <Td align="right" className="font-black text-slate-800 dark:text-slate-200">
                                         {formatCurrency(producto.costo_promedio || 0)}
                                     </Td>
 
-                                    <Td align="right" className="font-black text-slate-700">
+                                    <Td align="right" className="font-black text-slate-700 dark:text-slate-300">
                                         {formatNumber(producto.stock_minimo || 0, 2)}
                                     </Td>
 
@@ -393,7 +393,7 @@ const ProductosInventario = () => {
                                         <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-black uppercase border ${
                                             producto.activo
                                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                : 'bg-slate-100 text-slate-500 border-slate-200'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                                         }`}
                                         >
                                             {producto.activo ? 'Activo' : 'Inactivo'}

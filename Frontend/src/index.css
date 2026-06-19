@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* Estilos globales para inputs robustos */
 @layer base {
 

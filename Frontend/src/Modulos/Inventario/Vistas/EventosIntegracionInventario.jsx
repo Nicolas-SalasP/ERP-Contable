@@ -20,7 +20,7 @@ import {
     StatCard,
 } from '../Componentes/InventarioUI';
 
-const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white';
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300';
 
 const eventos = [
     'INVENTARIO_MOVIMIENTO_CREADO',
@@ -64,7 +64,7 @@ const JsonBlock = ({ title, value }) => {
 
     return (
         <div>
-            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">{title}</h4>
+            <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{title}</h4>
             <pre className="max-h-80 overflow-auto rounded-2xl bg-slate-950 text-slate-100 p-4 text-xs leading-relaxed custom-scrollbar">
                 {JSON.stringify(value, null, 2)}
             </pre>
@@ -319,15 +319,15 @@ const EventosIntegracionInventario = () => {
                             </thead>
                             <tbody>
                                 {registros.map((evento) => (
-                                    <tr key={evento.id} className="border-t border-slate-100 hover:bg-slate-50/70">
+                                    <tr key={evento.id} className="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50/70 dark:hover:bg-slate-700">
                                         <Td>
-                                            <div className="font-black text-slate-800 text-xs uppercase tracking-wide">{pretty(evento.evento)}</div>
+                                            <div className="font-black text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wide">{pretty(evento.evento)}</div>
                                             <div className="text-[11px] text-slate-400 mt-1">Corr: {evento.correlacion_id || '-'}</div>
                                         </Td>
                                         <Td><EstadoBadge value={evento.estado} /></Td>
                                         <Td><EstadoBadge value={evento.prioridad} /></Td>
                                         <Td>
-                                            <div className="text-xs font-bold text-slate-700">{String(evento.entidad_tipo || '-').split('\\').pop()}</div>
+                                            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">{String(evento.entidad_tipo || '-').split('\\').pop()}</div>
                                             <div className="text-[11px] text-slate-400">ID {evento.entidad_id || '-'}</div>
                                         </Td>
                                         <Td>{evento.usuario?.nombre || evento.usuario_id || '-'}</Td>
@@ -356,15 +356,15 @@ const EventosIntegracionInventario = () => {
                         <EmptyState title="Selecciona un evento" description="El detalle permite revisar payload, metadata, origen y correlación." icon="fas fa-code-branch" />
                     ) : (
                         <div className="space-y-5">
-                            <div className="rounded-2xl border border-slate-100 p-4 bg-slate-50">
+                            <div className="rounded-2xl border border-slate-100 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-900">
                                 <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Evento</div>
-                                <div className="font-black text-slate-800">{pretty(seleccionado.evento)}</div>
+                                <div className="font-black text-slate-800 dark:text-slate-200">{pretty(seleccionado.evento)}</div>
                                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">
-                                    <div><span className="font-bold text-slate-500">Estado:</span> {seleccionado.estado}</div>
-                                    <div><span className="font-bold text-slate-500">Prioridad:</span> {seleccionado.prioridad}</div>
-                                    <div><span className="font-bold text-slate-500">Empresa:</span> {seleccionado.empresa_id}</div>
-                                    <div><span className="font-bold text-slate-500">Usuario:</span> {seleccionado.usuario?.nombre || seleccionado.usuario_id || '-'}</div>
-                                    <div className="col-span-2"><span className="font-bold text-slate-500">Correlación:</span> {seleccionado.correlacion_id || '-'}</div>
+                                    <div><span className="font-bold text-slate-500 dark:text-slate-400">Estado:</span> {seleccionado.estado}</div>
+                                    <div><span className="font-bold text-slate-500 dark:text-slate-400">Prioridad:</span> {seleccionado.prioridad}</div>
+                                    <div><span className="font-bold text-slate-500 dark:text-slate-400">Empresa:</span> {seleccionado.empresa_id}</div>
+                                    <div><span className="font-bold text-slate-500 dark:text-slate-400">Usuario:</span> {seleccionado.usuario?.nombre || seleccionado.usuario_id || '-'}</div>
+                                    <div className="col-span-2"><span className="font-bold text-slate-500 dark:text-slate-400">Correlación:</span> {seleccionado.correlacion_id || '-'}</div>
                                 </div>
                             </div>
 

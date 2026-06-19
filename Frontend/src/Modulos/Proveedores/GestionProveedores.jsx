@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
+import { TablaSkeleton } from '../../Componentes/Skeleton';
+import { EstadoVacio } from '../../Componentes/EstadoVacio';
 import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { formatearIdentificador, validarIdentificador, enmascararIdentificador } from '../../Utilidades/identificadores';
 import { logger } from '../../Configuracion/logger';
+import { CreditCard, AlertCircle, Trash2, Plus, Settings, Building2 } from 'lucide-react';
 const BANCOS_CHILE = [
     "Banco de Chile", "Banco Estado", "Banco Santander", "BCI", "Scotiabank", "Itaú",
     "Banco Security", "Banco BICE", "Banco Falabella", "Banco Ripley", "Banco Consorcio",
@@ -97,8 +100,8 @@ const BankAccountsTab = ({ proveedorId }) => {
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase mb-3 flex items-center gap-2">
+                    <CreditCard size={16} strokeWidth={1.75} className="text-slate-400" />
                     Cuentas Registradas
                 </h3>
 
@@ -106,7 +109,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                     <EstadoCarga cargando mensajeCargando="" tamano="inline" color="emerald" />
                 ) : loadError ? (
                     <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <AlertCircle size={16} strokeWidth={1.75} className="shrink-0" />
                         {loadError}
                         <button onClick={loadAccounts} className="ml-auto underline text-red-600 font-semibold">Reintentar</button>
                     </div>
@@ -122,24 +125,24 @@ const BankAccountsTab = ({ proveedorId }) => {
                     <>
                         <div className="grid grid-cols-1 gap-3 md:hidden">
                             {accounts.map(acc => (
-                                <div key={acc.id} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm relative overflow-hidden">
+                                <div key={acc.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-sm relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
                                     <div className="flex justify-between items-center mb-2 pl-2">
-                                        <span className="font-bold text-slate-800">{acc.banco}</span>
-                                        <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded uppercase border border-slate-200">{acc.tipo_cuenta}</span>
+                                        <span className="font-bold text-slate-800 dark:text-slate-200">{acc.banco}</span>
+                                        <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-bold px-2 py-1 rounded uppercase border border-slate-200 dark:border-slate-600">{acc.tipo_cuenta}</span>
                                     </div>
-                                    <div className="font-mono font-bold text-slate-600 text-sm mb-4 pl-2">{acc.numero_cuenta}</div>
+                                    <div className="font-mono font-bold text-slate-600 dark:text-slate-400 text-sm mb-4 pl-2">{acc.numero_cuenta}</div>
                                     <button onClick={() => handleDelete(acc.id)} className="w-full bg-red-50 text-red-600 border border-red-100 font-bold py-2 rounded-lg text-xs hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        <Trash2 size={14} strokeWidth={1.75} />
                                         Eliminar
                                     </button>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="hidden md:block border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                            <table className="min-w-full divide-y divide-slate-200">
-                                <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider font-bold">
+                        <div className="hidden md:block border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">
                                     <tr>
                                         <th className="px-5 py-3 text-left">Banco</th>
                                         <th className="px-5 py-3 text-left">N° Cuenta</th>
@@ -147,17 +150,17 @@ const BankAccountsTab = ({ proveedorId }) => {
                                         <th className="px-5 py-3 text-right">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white text-sm divide-y divide-slate-100">
+                                <tbody className="bg-white dark:bg-slate-800 text-sm divide-y divide-slate-100 dark:divide-slate-700">
                                     {accounts.map(acc => (
-                                        <tr key={acc.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-5 py-3 font-bold text-slate-800">{acc.banco}</td>
-                                            <td className="px-5 py-3 font-mono text-slate-600">{acc.numero_cuenta}</td>
-                                            <td className="px-5 py-3 text-slate-600">
-                                                <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded uppercase border border-slate-200">{acc.tipo_cuenta}</span>
+                                        <tr key={acc.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                            <td className="px-5 py-3 font-bold text-slate-800 dark:text-slate-200">{acc.banco}</td>
+                                            <td className="px-5 py-3 font-mono text-slate-600 dark:text-slate-400">{acc.numero_cuenta}</td>
+                                            <td className="px-5 py-3 text-slate-600 dark:text-slate-400">
+                                                <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-bold px-2 py-1 rounded uppercase border border-slate-200 dark:border-slate-600">{acc.tipo_cuenta}</span>
                                             </td>
                                             <td className="px-5 py-3 text-right">
                                                 <button onClick={() => handleDelete(acc.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Eliminar" aria-label="Eliminar cuenta bancaria">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    <Trash2 size={16} strokeWidth={1.75} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -169,14 +172,14 @@ const BankAccountsTab = ({ proveedorId }) => {
                 )}
             </div>
 
-            <div className="bg-slate-50 p-4 md:p-5 rounded-xl border border-slate-200 shadow-sm">
-                <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wide">Agregar Nueva Cuenta</h4>
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 md:p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wide">Agregar Nueva Cuenta</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
                     <div>
                         <input
                             list="lista-bancos-datalist"
-                            className="border border-slate-300 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full bg-white"
+                            className="border border-slate-300 dark:border-slate-600 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full bg-white dark:bg-slate-700"
                             placeholder="Seleccione Banco..."
                             value={newAccount.banco}
                             onChange={e => setNewAccount({ ...newAccount, banco: e.target.value })}
@@ -187,13 +190,13 @@ const BankAccountsTab = ({ proveedorId }) => {
                     </div>
 
                     <input
-                        className="border border-slate-300 p-2.5 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full"
+                        className="border border-slate-300 dark:border-slate-600 p-2.5 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full bg-white dark:bg-slate-700"
                         placeholder="N° de Cuenta"
                         value={newAccount.numeroCuenta}
                         onChange={e => setNewAccount({ ...newAccount, numeroCuenta: e.target.value })}
                     />
                     <select
-                        className="border border-slate-300 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full bg-white"
+                        className="border border-slate-300 dark:border-slate-600 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 w-full bg-white dark:bg-slate-700"
                         value={newAccount.tipoCuenta}
                         onChange={e => setNewAccount({ ...newAccount, tipoCuenta: e.target.value })}
                     >
@@ -205,7 +208,7 @@ const BankAccountsTab = ({ proveedorId }) => {
                         onClick={handleAdd}
                         className="bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 shadow-md transition-colors py-2.5 px-4 w-full flex items-center justify-center gap-2"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg> Agregar
+                        <Plus size={16} strokeWidth={1.75} /> Agregar
                     </button>
                 </div>
             </div>
@@ -385,11 +388,11 @@ const GestionProveedores = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6 font-sans text-gray-800 pb-10">
+        <div className="max-w-6xl mx-auto p-4 md:p-6 font-sans text-gray-800 dark:text-slate-200 pb-10">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-bold text-slate-900">Proveedores</h1><AyudaModulo moduloId="gestionProveedores" /></div>
-                    <p className="text-slate-500 text-sm mt-1">Base de datos global de acreedores</p>
+                    <div className="flex items-center gap-3"><h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">Proveedores</h1><AyudaModulo moduloId="gestionProveedores" /></div>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Base de datos global de acreedores</p>
                 </div>
                 <button onClick={openCreate} className="w-full sm:w-auto bg-emerald-600 text-white px-5 py-2.5 rounded-lg shadow hover:bg-emerald-700 font-bold flex justify-center gap-2 items-center transition-transform active:scale-95">
                     <span className="text-lg leading-none">+</span> Nuevo Proveedor
@@ -398,12 +401,12 @@ const GestionProveedores = () => {
 
             {errorCarga && (
                 <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-3">
-                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <AlertCircle size={20} strokeWidth={1.75} className="shrink-0" />
                     <span className="flex-1">{errorCarga}</span>
                     <button onClick={loadData} className="underline font-semibold text-red-600 hover:text-red-800">Reintentar</button>
                 </div>
             )}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 {loading || proveedores.length === 0 ? (
                     <EstadoCarga
                         cargando={loading}
@@ -416,31 +419,31 @@ const GestionProveedores = () => {
                     />
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50">
+                        <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50 dark:bg-slate-900">
                             {proveedores.map(prov => (
-                                <div key={prov.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative">
+                                <div key={prov.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm relative">
                                     <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-xl bg-slate-400"></div>
                                     <div className="flex justify-between items-start mb-2 pl-2">
                                         <div>
                                             <div className="text-xs font-bold text-emerald-600 font-mono mb-0.5">{prov.codigo_interno}</div>
-                                            <h3 className="font-bold text-slate-800 leading-tight">{prov.razon_social}</h3>
+                                            <h3 className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{prov.razon_social}</h3>
                                         </div>
-                                        <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 rounded text-slate-600 border border-slate-200 uppercase">
+                                        <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 uppercase">
                                             {prov.pais_iso}
                                         </span>
                                     </div>
                                     <div className="space-y-1.5 mb-4 pl-2 mt-3">
-                                        <div className="text-sm font-mono text-slate-600 flex items-center gap-2">
+                                        <div className="text-sm font-mono text-slate-600 dark:text-slate-400 flex items-center gap-2">
                                             <span className="font-bold text-xs text-slate-400 w-6">ID:</span> {enmascararIdentificador(prov.rut, prov.pais_iso)}
                                         </div>
-                                        <div className="text-sm text-slate-700 flex items-center gap-2">
+                                        <div className="text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                             <span className="font-bold text-xs text-slate-400 w-6">CTO:</span>
                                             <span className="truncate">{prov.nombre_contacto || 'Sin contacto'}</span>
                                         </div>
                                     </div>
-                                    <div className="border-t border-slate-100 pt-3 pl-2">
+                                    <div className="border-t border-slate-100 dark:border-slate-700 pt-3 pl-2">
                                         <button onClick={() => openEdit(prov)} className="w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-sm py-2 rounded-lg transition-colors border border-emerald-100 flex items-center justify-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                            <Settings size={16} strokeWidth={1.75} />
                                             Gestionar
                                         </button>
                                     </div>
@@ -449,33 +452,33 @@ const GestionProveedores = () => {
                         </div>
 
                         <div className="hidden md:block overflow-x-auto">
-                            <table className="min-w-full divide-y divide-slate-200">
-                                <thead className="bg-slate-50">
+                            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Código</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Empresa / Razón Social</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Identificador Fiscal</th>
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">País</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Código</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Empresa / Razón Social</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Identificador Fiscal</th>
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">País</th>
+                                        <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-slate-100">
+                                <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
                                     {proveedores.map(prov => (
-                                        <tr key={prov.id} className="hover:bg-slate-50 transition-colors group">
+                                        <tr key={prov.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
                                             <td className="px-6 py-4 font-mono font-bold text-emerald-600 text-sm whitespace-nowrap">{prov.codigo_interno}</td>
                                             <td className="px-6 py-4">
-                                                <div className="font-bold text-slate-800">{prov.razon_social}</div>
+                                                <div className="font-bold text-slate-800 dark:text-slate-200">{prov.razon_social}</div>
                                                 <div className="text-xs text-slate-400 mt-0.5"><i className="fas fa-user mr-1"></i> {prov.nombre_contacto || '---'}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-slate-600 font-mono whitespace-nowrap">{enmascararIdentificador(prov.rut, prov.pais_iso)}</td>
+                                            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">{enmascararIdentificador(prov.rut, prov.pais_iso)}</td>
                                             <td className="px-6 py-4 text-center whitespace-nowrap">
-                                                <span className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 rounded text-slate-600 border border-slate-200 uppercase">
+                                                <span className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 uppercase">
                                                     {prov.pais_iso}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right whitespace-nowrap">
                                                 <button onClick={() => openEdit(prov)} className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 font-bold text-sm px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 ml-auto shadow-sm">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                    <Settings size={16} strokeWidth={1.75} />
                                                     Gestionar
                                                 </button>
                                             </td>
@@ -489,41 +492,41 @@ const GestionProveedores = () => {
             </div>
             {modalOpen && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-6 animate-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] min-h-[500px] animate-slide-up">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] min-h-[500px] animate-slide-up">
 
                         <div className="bg-slate-900 p-4 md:p-5 border-b border-slate-800 flex justify-between items-center text-white shrink-0">
                             <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
-                                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                <Building2 size={20} strokeWidth={1.75} className="text-emerald-400" />
                                 {editingId ? 'Gestionar Proveedor' : 'Alta de Nuevo Proveedor'}
                             </h2>
                             <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors text-3xl leading-none" aria-label="Cerrar">&times;</button>
                         </div>
 
-                        <div className="flex overflow-x-auto border-b bg-slate-50 hide-scrollbar shrink-0">
-                            <button onClick={() => setActiveTab('info')} className={`flex-1 py-3 px-4 text-sm font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'info' ? 'border-emerald-500 text-emerald-700 bg-white' : 'border-transparent text-slate-500 hover:bg-white'}`}>
+                        <div className="flex overflow-x-auto border-b bg-slate-50 dark:bg-slate-900 hide-scrollbar shrink-0">
+                            <button onClick={() => setActiveTab('info')} className={`flex-1 py-3 px-4 text-sm font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'info' ? 'border-emerald-500 text-emerald-700 bg-white dark:bg-slate-800' : 'border-transparent text-slate-500 hover:bg-white dark:hover:bg-slate-800'}`}>
                                 <i className="fas fa-info-circle mr-2"></i> Datos Generales
                             </button>
-                            <button onClick={() => setActiveTab('bank')} disabled={!editingId} className={`flex-1 py-3 px-4 text-sm font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'bank' ? 'border-emerald-500 text-emerald-700 bg-white' : 'border-transparent text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white'}`}>
+                            <button onClick={() => setActiveTab('bank')} disabled={!editingId} className={`flex-1 py-3 px-4 text-sm font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'bank' ? 'border-emerald-500 text-emerald-700 bg-white dark:bg-slate-800' : 'border-transparent text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-slate-800'}`}>
                                 <i className="fas fa-university mr-2"></i> Datos Bancarios
                             </button>
                         </div>
 
-                        <div className="p-4 md:p-6 overflow-y-auto bg-white flex-grow custom-scrollbar">
+                        <div className="p-4 md:p-6 overflow-y-auto bg-white dark:bg-slate-800 flex-grow custom-scrollbar">
                             {activeTab === 'info' && (
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                                         <div className="sm:col-span-1">
-                                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Código Sistema</label>
-                                            <input className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-100 font-mono font-bold text-slate-500 text-center outline-none cursor-not-allowed" value={formData.codigo || 'AUTO'} disabled />
+                                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Código Sistema</label>
+                                            <input className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 bg-slate-100 dark:bg-slate-700 font-mono font-bold text-slate-500 dark:text-slate-400 text-center outline-none cursor-not-allowed" value={formData.codigo || 'AUTO'} disabled />
                                         </div>
                                         <div className="sm:col-span-2">
-                                            <label className="block text-xs font-bold text-slate-500 mb-1.5 flex justify-between uppercase tracking-wide">
+                                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 flex justify-between uppercase tracking-wide">
                                                 <span>{getEtiquetaId(formData.paisIso)} <span className="text-slate-400 font-normal normal-case ml-1">(Fiscal ID)</span></span>
                                                 {idError && <span className="text-red-500 animate-pulse font-black">FORMATO INVÁLIDO</span>}
                                             </label>
                                             <input
                                                 className={`w-full border rounded-lg p-2.5 font-mono text-base outline-none transition-all
-                                                    ${idError ? 'border-red-500 bg-red-50 focus:ring-red-200' : 'border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100'}`}
+                                                    ${idError ? 'border-red-500 bg-red-50 focus:ring-red-200' : 'border-slate-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:bg-slate-700'}`}
                                                 value={formData.rut}
                                                 onChange={handleIdChange}
                                                 placeholder="Ingrese número..."
@@ -534,22 +537,22 @@ const GestionProveedores = () => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Razón Social / Nombre Fantasía</label>
-                                        <input className="w-full border border-slate-300 rounded-lg p-2.5 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-slate-800 font-medium" value={formData.razonSocial} onChange={e => setFormData({ ...formData, razonSocial: e.target.value })} placeholder="Ej: Importadora Comercializadora..." />
+                                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Razón Social / Nombre Fantasía</label>
+                                        <input className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-slate-800 dark:text-slate-200 font-medium bg-white dark:bg-slate-700" value={formData.razonSocial} onChange={e => setFormData({ ...formData, razonSocial: e.target.value })} placeholder="Ej: Importadora Comercializadora..." />
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">País de Residencia</label>
-                                            <select className="w-full border border-slate-300 rounded-lg p-2.5 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium text-slate-700" value={formData.paisIso} onChange={handlePaisChange}>
+                                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">País de Residencia</label>
+                                            <select className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium text-slate-700 dark:text-slate-300" value={formData.paisIso} onChange={handlePaisChange}>
                                                 {paises.map(p => (
                                                     <option key={p.iso} value={p.iso}>{p.nombre}</option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Moneda de Pago</label>
-                                            <select className="w-full border border-slate-300 rounded-lg p-2.5 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium text-slate-700 font-mono" value={formData.moneda} onChange={e => setFormData({ ...formData, moneda: e.target.value })}>
+                                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Moneda de Pago</label>
+                                            <select className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 font-mono" value={formData.moneda} onChange={e => setFormData({ ...formData, moneda: e.target.value })}>
                                                 <option value="CLP">CLP - Peso Chileno</option>
                                                 <option value="USD">USD - Dólar Americano</option>
                                                 <option value="EUR">EUR - Euro</option>
@@ -561,24 +564,24 @@ const GestionProveedores = () => {
                                         </div>
                                     </div>
 
-                                    <div className="border-t border-slate-100 pt-5 mt-2">
+                                    <div className="border-t border-slate-100 dark:border-slate-700 pt-5 mt-2">
                                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                                             <i className="fas fa-address-book"></i> Datos de Contacto
                                         </h4>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1.5">Nombre Representante</label>
-                                                <input className="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700" value={formData.nombreContacto} onChange={e => setFormData({ ...formData, nombreContacto: e.target.value })} placeholder="Persona de contacto..." />
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Nombre Representante</label>
+                                                <input className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" value={formData.nombreContacto} onChange={e => setFormData({ ...formData, nombreContacto: e.target.value })} placeholder="Persona de contacto..." />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1.5">Email de Facturación / Pagos</label>
-                                                <input type="email" className="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700" value={formData.emailContacto} onChange={e => setFormData({ ...formData, emailContacto: e.target.value })} placeholder="pagos@empresa.com" />
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Email de Facturación / Pagos</label>
+                                                <input type="email" className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" value={formData.emailContacto} onChange={e => setFormData({ ...formData, emailContacto: e.target.value })} placeholder="pagos@empresa.com" />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-6 flex flex-col sm:flex-row justify-end border-t border-slate-100 mt-6 gap-3">
-                                        <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-6 py-2.5 text-slate-500 hover:bg-slate-100 rounded-lg font-bold transition-colors">Cancelar</button>
+                                    <div className="pt-6 flex flex-col sm:flex-row justify-end border-t border-slate-100 dark:border-slate-700 mt-6 gap-3">
+                                        <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-6 py-2.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg font-bold transition-colors">Cancelar</button>
                                         <button onClick={handleSaveInfo} className="w-full sm:w-auto bg-emerald-600 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 hover:shadow-emerald-600/50 transition-all flex items-center justify-center gap-2">
                                             <i className="fas fa-save"></i> {editingId ? 'Guardar Cambios' : 'Guardar Proveedor'}
                                         </button>

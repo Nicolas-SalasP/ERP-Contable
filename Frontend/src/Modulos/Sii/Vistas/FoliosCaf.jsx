@@ -52,17 +52,17 @@ const FoliosCaf = () => {
     return (
         <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-6">
             <header>
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
                     <i className="fas fa-file-code text-emerald-600" />
                     Folios CAF
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Gestion de Codigos de Autorizacion de Folios autorizados por el SII.
                 </p>
             </header>
 
             <section data-testid="seccion-saldos">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600 mb-2">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-2">
                     Saldos por tipo de DTE
                 </h2>
                 <TablaSaldosCaf saldos={saldos} cargando={cargando} />

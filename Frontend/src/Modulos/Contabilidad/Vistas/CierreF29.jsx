@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
@@ -75,7 +75,7 @@ const CierreF29 = () => {
     const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 animate-fade-in pb-10">
+        <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 dark:text-slate-200 animate-fade-in pb-10">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -83,14 +83,14 @@ const CierreF29 = () => {
                             Impuestos Mensuales
                         </span>
                     </div>
-                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Cierre de IVA (F29)</h1><AyudaModulo moduloId="cierreF29" size={28} /></div>
-                    <p className="text-slate-500 font-medium mt-1">Calcula y centraliza tus impuestos mensuales automáticamente.</p>
+                    <div className="flex items-center gap-3"><h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Cierre de IVA (F29)</h1><AyudaModulo moduloId="cierreF29" size={28} /></div>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Calcula y centraliza tus impuestos mensuales automáticamente.</p>
                 </div>
 
-                <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3 w-full md:w-auto">
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3 w-full md:w-auto">
                     <div className="flex flex-col">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Mes</label>
-                        <select value={mes} onChange={e => setMes(e.target.value)} className="bg-slate-50 border-none font-bold text-slate-700 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500">
+                        <select value={mes} onChange={e => setMes(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border-none font-bold text-slate-700 dark:text-slate-300 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500">
                             {nombresMeses.map((nombre, i) => {
                                 const mesNum = (i + 1).toString().padStart(2, '0');
                                 return <option key={mesNum} value={mesNum}>{nombre}</option>;
@@ -100,7 +100,7 @@ const CierreF29 = () => {
                     <div className="w-px h-10 bg-slate-200"></div>
                     <div className="flex flex-col">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Año</label>
-                        <select value={anio} onChange={e => setAnio(e.target.value)} className="bg-slate-50 border-none font-bold text-slate-700 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500">
+                        <select value={anio} onChange={e => setAnio(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border-none font-bold text-slate-700 dark:text-slate-300 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500">
                             {[anioActual - 1, anioActual, anioActual + 1].map(y => (
                                 <option key={y} value={y}>{y}</option>
                             ))}
@@ -119,21 +119,21 @@ const CierreF29 = () => {
             ) : (
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 text-rose-500 transform group-hover:scale-110 transition-transform">
                                 <i className="fas fa-arrow-up text-6xl"></i>
                             </div>
                             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1 relative z-10">Generado por Ventas</p>
-                            <h3 className="text-lg font-bold text-slate-700 mb-2 relative z-10">IVA Débito Fiscal</h3>
+                            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2 relative z-10">IVA Débito Fiscal</h3>
                             <p className="text-3xl font-black text-rose-600 relative z-10">{formatCurrency(datosCierre.ventas.iva_debito)}</p>
                         </div>
 
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 text-emerald-500 transform group-hover:scale-110 transition-transform">
                                 <i className="fas fa-arrow-down text-6xl"></i>
                             </div>
                             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1 relative z-10">A Favor por Compras</p>
-                            <h3 className="text-lg font-bold text-slate-700 mb-2 relative z-10">IVA Crédito Fiscal</h3>
+                            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2 relative z-10">IVA Crédito Fiscal</h3>
                             <p className="text-3xl font-black text-emerald-600 relative z-10">{formatCurrency(datosCierre.compras.iva_credito)}</p>
                         </div>
 
@@ -149,30 +149,30 @@ const CierreF29 = () => {
                     </div>
 
                     {!datosCierre.ya_cerrado && (datosCierre.ventas.iva_debito > 0 || datosCierre.compras.iva_credito > 0) && (
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
-                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mt-8">
+                            <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                     <i className="fas fa-book-open text-indigo-500"></i>
                                     Vista Previa del Asiento de Centralización
                                 </h3>
-                                <p className="text-xs text-slate-500 mt-1">Este asiento dejará en cero las cuentas mensuales y registrará el PPM como activo.</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Este asiento dejará en cero las cuentas mensuales y registrará el PPM como activo.</p>
                             </div>
 
                             <div className="p-6">
                                 <div className="overflow-x-auto custom-scrollbar">
                                 <table className="min-w-full text-sm text-left mb-6">
-                                    <thead className="text-xs text-slate-400 border-b border-slate-100">
+                                    <thead className="sticky top-0 z-10 text-xs text-slate-400 border-b border-slate-100 dark:border-slate-700">
                                         <tr>
                                             <th className="pb-3 font-medium">Cuenta Contable</th>
                                             <th className="pb-3 font-medium text-right">Debe</th>
                                             <th className="pb-3 font-medium text-right">Haber</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                         {datosCierre.ventas.iva_debito > 0 && (
                                             <tr>
-                                                <td className="py-3 font-bold text-slate-700">[210201] IVA Débito Fiscal</td>
-                                                <td className="py-3 font-black text-slate-800 text-right">{formatCurrency(datosCierre.ventas.iva_debito)}</td>
+                                                <td className="py-3 font-bold text-slate-700 dark:text-slate-300">[210201] IVA Débito Fiscal</td>
+                                                <td className="py-3 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(datosCierre.ventas.iva_debito)}</td>
                                                 <td className="py-3 text-right text-slate-300">-</td>
                                             </tr>
                                         )}
@@ -192,7 +192,7 @@ const CierreF29 = () => {
                                         )}
                                         {datosCierre.compras.iva_credito > 0 && (
                                             <tr>
-                                                <td className="py-3 font-bold text-slate-700">[110001] IVA Crédito Fiscal</td>
+                                                <td className="py-3 font-bold text-slate-700 dark:text-slate-300">[110001] IVA Crédito Fiscal</td>
                                                 <td className="py-3 text-right text-slate-300">-</td>
                                                 <td className="py-3 font-black text-slate-800 text-right">{formatCurrency(datosCierre.compras.iva_credito)}</td>
                                             </tr>

@@ -2,13 +2,15 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { usePermisos } from '../../../Contextos/Permisos';
 import { api } from '../../../Configuracion/api';
 import BuscadorCuentaContable from '../../Contabilidad/Componentes/BuscadorCuentaContable';
 import rrhhApi from '../Servicios/rrhhApi';
 import { MESES, nombreMes } from '../Utilidades/formato';
 
-const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: 6 }, (_, i) => anioActual - i);
 
@@ -114,21 +116,21 @@ const CentralizacionRrhh = () => {
         <div className="max-w-5xl mx-auto p-6 md:p-8">
             <header className="mb-6">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
                         <i className="fas fa-book-bookmark text-emerald-600" />
                         Centralización Contable
                     </h1>
                     <AyudaModulo moduloId="centralizacionRrhh" size={28} />
                 </div>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Genera el asiento mensual de remuneraciones (partida doble) desde las liquidaciones emitidas.
                 </p>
             </header>
 
             <EstadoCarga cargando={cargando} mensajeCargando="Cargando configuración..." color="emerald" tamano="compacto">
                 {/* Ejecutar centralización */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
-                    <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><i className="fas fa-play-circle text-emerald-600" /> Ejecutar centralización</h3>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
+                    <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><i className="fas fa-play-circle text-emerald-600" /> Ejecutar centralización</h3>
                     {faltantes.length > 0 && (
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-800 text-sm mb-3">
                             <i className="fas fa-triangle-exclamation mr-2" />
@@ -137,13 +139,13 @@ const CentralizacionRrhh = () => {
                     )}
                     <div className="flex flex-wrap items-end gap-3">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Año</label>
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
                             <select value={periodo.anio} onChange={(e) => setPeriodo((p) => ({ ...p, anio: Number(e.target.value) }))} className={inputCls}>
                                 {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Mes</label>
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
                             <select value={periodo.mes} onChange={(e) => setPeriodo((p) => ({ ...p, mes: Number(e.target.value) }))} className={inputCls}>
                                 {MESES.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
                             </select>
@@ -158,24 +160,24 @@ const CentralizacionRrhh = () => {
                 </div>
 
                 {/* Mapeo de cuentas */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-200">
-                        <h3 className="font-bold text-slate-900 flex items-center gap-2"><i className="fas fa-sitemap text-emerald-600" /> Mapeo contable</h3>
-                        <p className="text-xs text-slate-500 mt-1">Asocia cada categoría RRHH a una cuenta imputable de tu Plan de Cuentas.</p>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+                        <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><i className="fas fa-sitemap text-emerald-600" /> Mapeo contable</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Asocia cada categoría RRHH a una cuenta imputable de tu Plan de Cuentas.</p>
                     </div>
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-700">
                         {(todos.length ? todos : Object.keys(LABELS)).map((tipo) => {
                             const esRequerido = requeridos.includes(tipo);
                             const codigoActual = codigoDe(tipo);
                             return (
                                 <div key={tipo} className="flex flex-wrap items-center gap-3 px-5 py-3">
                                     <div className="flex-1 min-w-full sm:min-w-[240px]">
-                                        <span className="text-sm font-medium text-slate-800">{LABELS[tipo] || tipo}</span>
+                                        <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{LABELS[tipo] || tipo}</span>
                                         {esRequerido && <span className="ml-2 text-[10px] font-bold uppercase text-red-500">obligatorio</span>}
                                     </div>
 
                                     {!puedeEditar ? (
-                                        <span className="font-mono text-sm text-slate-700">{codigoActual || '—'}</span>
+                                        <span className="font-mono text-sm text-slate-700 dark:text-slate-300">{codigoActual || '—'}</span>
                                     ) : hayPlan ? (
                                         <div className="flex items-center gap-2 w-full sm:w-80">
                                             <div className="flex-1">
@@ -200,7 +202,7 @@ const CentralizacionRrhh = () => {
                                                 onChange={(e) => setManual((m) => ({ ...m, [tipo]: e.target.value }))}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') guardarMapeo(tipo, manual[tipo]); }}
                                                 placeholder="Código cuenta"
-                                                className="w-36 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                className="w-36 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none"
                                             />
                                             <button onClick={() => guardarMapeo(tipo, manual[tipo])} disabled={!(tipo in manual)}
                                                 className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-40" aria-label="Guardar mapeo">

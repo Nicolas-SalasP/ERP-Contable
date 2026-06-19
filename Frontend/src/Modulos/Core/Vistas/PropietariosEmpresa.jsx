@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { propietariosApi } from '../Servicios/propietariosApi';
+import { BotonEliminar } from '../../../Componentes/ConfirmacionInline';
 
 const inputCls =
-    'w-full px-3 py-2 rounded-lg border border-slate-300 text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+    'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
 const pctFmt = (v) => (v !== null && v !== undefined ? `${Number(v).toFixed(2)}%` : '—');
 
@@ -105,8 +108,7 @@ const PropietariosEmpresa = () => {
         }
     };
 
-    const handleEliminar = async (id, nombreProp) => {
-        if (!window.confirm(`¿Eliminar al propietario "${nombreProp}"?`)) return;
+    const eliminarPropietario = async (id) => {
         try {
             await propietariosApi.eliminar(id);
             mostrarMensaje('exito', 'Propietario eliminado.');
@@ -123,12 +125,12 @@ const PropietariosEmpresa = () => {
     return (
         <div className="max-w-4xl mx-auto p-6 md:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex flex-wrap items-center gap-3">
                     <i className="fas fa-users text-emerald-600" />
                     Propietarios de la Empresa
                     <AyudaModulo moduloId="propietariosEmpresa" />
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Registro de socios o propietarios con su porcentaje de participación. Requerido para DJ 1947 (Propyme Transparente).
                 </p>
             </header>
@@ -145,12 +147,12 @@ const PropietariosEmpresa = () => {
             )}
 
             {/* Formulario agregar */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
-                <h2 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">Agregar propietario</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
+                <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 uppercase tracking-wide">Agregar propietario</h2>
                 <form onSubmit={handleAgregar}>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 RUT <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -164,7 +166,7 @@ const PropietariosEmpresa = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 Nombre <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -178,7 +180,7 @@ const PropietariosEmpresa = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 % Participación <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -208,9 +210,9 @@ const PropietariosEmpresa = () => {
             </div>
 
             {/* Tabla propietarios */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                    <h2 className="font-bold text-slate-900">Propietarios registrados</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <h2 className="font-bold text-slate-900 dark:text-slate-100">Propietarios registrados</h2>
                     <button
                         onClick={cargarLista}
                         className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1"
@@ -220,18 +222,14 @@ const PropietariosEmpresa = () => {
                 </div>
 
                 {cargando ? (
-                    <div className="py-10 text-center text-slate-400 text-sm">
-                        <i className="fas fa-spinner fa-spin mr-2" />Cargando...
-                    </div>
+                    <TablaSkeleton filas={6} columnas={4} />
                 ) : lista.length === 0 ? (
-                    <div className="py-10 text-center text-slate-400 text-sm">
-                        Sin propietarios registrados. Usa el formulario de arriba para agregar.
-                    </div>
+                    <EstadoVacio mensaje="Sin propietarios registrados." />
                 ) : (
                     <>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-3 text-left font-semibold">RUT</th>
                                         <th className="px-4 py-3 text-left font-semibold">Nombre</th>
@@ -239,11 +237,11 @@ const PropietariosEmpresa = () => {
                                         <th className="px-4 py-3 text-center font-semibold">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                     {lista.map((p) => (
-                                        <tr key={p.id} className="hover:bg-slate-50">
-                                            <td className="px-4 py-3 font-mono text-slate-700">{p.rut}</td>
-                                            <td className="px-4 py-3 text-slate-900">
+                                        <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                            <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">{p.rut}</td>
+                                            <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
                                                 {editandoId === p.id ? (
                                                     <input
                                                         type="text"
@@ -254,7 +252,7 @@ const PropietariosEmpresa = () => {
                                                     />
                                                 ) : p.nombre}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono text-slate-900">
+                                            <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-slate-100">
                                                 {editandoId === p.id ? (
                                                     <input
                                                         type="number"
@@ -281,7 +279,7 @@ const PropietariosEmpresa = () => {
                                                         <button
                                                             onClick={cancelarEdicion}
                                                             title="Cancelar"
-                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-500 hover:bg-slate-100"
+                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                                                         >
                                                             <i className="fas fa-times text-xs" />
                                                         </button>
@@ -291,17 +289,11 @@ const PropietariosEmpresa = () => {
                                                         <button
                                                             onClick={() => iniciarEdicion(p)}
                                                             title="Editar"
-                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-600 hover:bg-slate-100"
+                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                                                         >
                                                             <i className="fas fa-pencil-alt text-xs" />
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleEliminar(p.id, p.nombre)}
-                                                            title="Eliminar"
-                                                            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700"
-                                                        >
-                                                            <i className="fas fa-trash-alt text-xs" />
-                                                        </button>
+                                                        <BotonEliminar onConfirmar={() => eliminarPropietario(p.id)} />
                                                     </div>
                                                 )}
                                             </td>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
@@ -287,18 +287,18 @@ const ReservasInventario = () => {
             </AlertBox>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Reservas totales</p>
-                    <h3 className="text-3xl font-black text-slate-800 mt-2">{formatNumber(reservas.length)}</h3>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                    <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Reservas totales</p>
+                    <h3 className="text-3xl font-black text-slate-800 dark:text-slate-200 mt-2">{formatNumber(reservas.length)}</h3>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Reservas activas</p>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                    <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Reservas activas</p>
                     <h3 className="text-3xl font-black text-emerald-600 mt-2">{formatNumber(reservasActivas)}</h3>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Registros disponibilidad</p>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                    <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Registros disponibilidad</p>
                     <h3 className="text-3xl font-black text-blue-600 mt-2">{formatNumber(disponibilidad.length)}</h3>
                 </div>
             </div>
@@ -313,7 +313,7 @@ const ReservasInventario = () => {
                                 name="producto_id"
                                 value={form.producto_id}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 required
                             >
                                 <option value="">Seleccionar producto</option>
@@ -330,7 +330,7 @@ const ReservasInventario = () => {
                                 name="bodega_id"
                                 value={form.bodega_id}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 required
                             >
                                 <option value="">Seleccionar bodega</option>
@@ -347,7 +347,7 @@ const ReservasInventario = () => {
                                 name="lote_id"
                                 value={form.lote_id}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                             >
                                 <option value="">Sin lote</option>
                                 {lotesDelProducto.map((lote) => (
@@ -366,7 +366,7 @@ const ReservasInventario = () => {
                                 onChange={handleChange}
                                 min="1"
                                 step="1"
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 required
                             />
                         </Field>
@@ -377,7 +377,7 @@ const ReservasInventario = () => {
                                 name="referencia"
                                 value={form.referencia}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                                 placeholder="PED-DEMO-001"
                             />
                         </Field>
@@ -388,7 +388,7 @@ const ReservasInventario = () => {
                                 name="motivo"
                                 value={form.motivo}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                             />
                         </Field>
 
@@ -398,7 +398,7 @@ const ReservasInventario = () => {
                                 name="fecha_expiracion"
                                 value={form.fecha_expiracion}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                             />
                         </Field>
 
@@ -409,7 +409,7 @@ const ReservasInventario = () => {
                                     value={form.observacion}
                                     onChange={handleChange}
                                     rows="3"
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none"
                                     placeholder="Detalle comercial u operacional de la reserva"
                                 />
                             </Field>
@@ -437,7 +437,7 @@ const ReservasInventario = () => {
                         <select
                             value={estadoFiltro}
                             onChange={(event) => setEstadoFiltro(event.target.value)}
-                            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                         >
                             <option value="">Todos los estados</option>
                             <option value="ACTIVA">Activa</option>
@@ -451,7 +451,7 @@ const ReservasInventario = () => {
                             type="text"
                             value={busqueda}
                             onChange={(event) => setBusqueda(event.target.value)}
-                            className="w-full md:w-80 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full md:w-80 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
                             placeholder="Buscar reserva, referencia o motivo..."
                         />
                     </div>
@@ -465,7 +465,7 @@ const ReservasInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Estado</Th>
@@ -477,13 +477,13 @@ const ReservasInventario = () => {
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {reservasFiltradas.map((reserva) => {
                                 const puedeOperar = ['ACTIVA', 'ACTIVA_RESERVA', 'PARCIAL'].includes(reserva.estado);
 
                                 return (
-                                    <tr key={reserva.id} className="hover:bg-slate-50/70 transition-colors">
-                                        <Td className="font-black text-slate-800">
+                                    <tr key={reserva.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                        <Td className="font-black text-slate-800 dark:text-slate-200">
                                             {getCodigoReserva(reserva)}
                                         </Td>
 
@@ -491,19 +491,19 @@ const ReservasInventario = () => {
                                             <EstadoBadge value={reserva.estado} />
                                         </Td>
 
-                                        <Td className="text-slate-500 font-semibold">
+                                        <Td className="text-slate-500 dark:text-slate-400 font-semibold">
                                             {reserva.referencia || '-'}
                                         </Td>
 
-                                        <Td className="text-slate-500">
+                                        <Td className="text-slate-500 dark:text-slate-400">
                                             {reserva.motivo || '-'}
                                         </Td>
 
-                                        <Td className="text-slate-500">
+                                        <Td className="text-slate-500 dark:text-slate-400">
                                             {formatDate(reserva.fecha_reserva || reserva.created_at)}
                                         </Td>
 
-                                        <Td className="text-slate-500">
+                                        <Td className="text-slate-500 dark:text-slate-400">
                                             {formatDate(reserva.fecha_expiracion)}
                                         </Td>
 
@@ -513,7 +513,7 @@ const ReservasInventario = () => {
                                                     type="button"
                                                     disabled={!puedeOperar}
                                                     onClick={() => ejecutarAccion(reserva, 'liberar')}
-                                                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 text-xs font-black"
+                                                    className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-300 text-xs font-black"
                                                 >
                                                     Liberar
                                                 </button>

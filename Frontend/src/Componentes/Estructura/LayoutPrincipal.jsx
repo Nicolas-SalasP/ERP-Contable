@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { ChevronRight, ChevronLeft, Menu } from 'lucide-react';
 import BarraLateral from './BarraLateral';
 import BannerSuscripcion from '../BannerSuscripcion';
 import BannerPrivacidad from './BannerPrivacidad';
 import ErrorBoundary from '../ErrorBoundary';
+import { ToggleTema } from './ToggleTema';
+import { BarraProgresoNavegacion } from './BarraProgresoNavegacion';
 
 const LayoutPrincipal = ({ children }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -30,7 +33,8 @@ const LayoutPrincipal = ({ children }) => {
     };
 
     return (
-        <div className="relative flex h-screen bg-gray-100 overflow-hidden">
+        <div className="relative flex h-screen bg-gray-100 dark:bg-slate-900 overflow-hidden">
+            <BarraProgresoNavegacion />
 
             <BarraLateral
                 isOpen={isSidebarOpen}
@@ -48,29 +52,30 @@ const LayoutPrincipal = ({ children }) => {
                 style={{ left: colapsado ? '50px' : '242px', transition: 'left 300ms ease-in-out' }}
             >
                 {colapsado ? (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"/>
-                    </svg>
+                    <ChevronRight size={12} strokeWidth={1.75} />
                 ) : (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"/>
-                    </svg>
+                    <ChevronLeft size={12} strokeWidth={1.75} />
                 )}
             </button>
 
             <div className="flex-1 flex flex-col overflow-hidden">
-                <header className="lg:hidden bg-white shadow-sm p-4 flex items-center justify-between z-10">
-                    <button onClick={openSidebar} className="text-slate-600 focus:outline-none">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <header className="lg:hidden bg-white dark:bg-slate-900 shadow-sm p-4 flex items-center justify-between z-10">
+                    <button onClick={openSidebar} className="text-slate-600 dark:text-slate-300 focus:outline-none">
+                        <Menu size={24} strokeWidth={1.75} />
                     </button>
-                    <span className="font-bold text-slate-800">ERP Contable</span>
-                    <div className="w-6"></div>
+                    <span className="font-bold text-slate-800 dark:text-slate-100">ERP Contable</span>
+                    <ToggleTema />
                 </header>
+
+                {/* Toggle de tema visible en desktop (sidebar ya ocupa el lateral) */}
+                <div className="hidden lg:flex justify-end items-center px-4 py-1 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                    <ToggleTema />
+                </div>
 
                 <BannerSuscripcion />
                 <BannerPrivacidad />
 
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-3 sm:p-4 md:p-6 lg:p-8">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-slate-900 dark:text-slate-200 p-3 sm:p-4 md:p-6 lg:p-8">
                     <ErrorBoundary key={location.pathname} mensaje="Este módulo tuvo un problema. El resto del sistema sigue disponible.">
                         {children}
                     </ErrorBoundary>

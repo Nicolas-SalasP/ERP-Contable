@@ -118,8 +118,8 @@ const FormularioConfiguracionSii = ({ configuracion, onSubmit, guardando }) => {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in" data-testid="form-sii-configuracion">
-            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                     <i className="fas fa-building text-emerald-600" /> Datos de Emision
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -148,8 +148,8 @@ const FormularioConfiguracionSii = ({ configuracion, onSubmit, guardando }) => {
                 </div>
             </section>
 
-            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                     <i className="fas fa-stamp text-blue-600" /> Resolucion SII
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -164,8 +164,8 @@ const FormularioConfiguracionSii = ({ configuracion, onSubmit, guardando }) => {
                 </div>
             </section>
 
-            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                     <i className="fas fa-sliders text-amber-600" /> Configuracion Operacional
                 </h3>
                 <div className="space-y-5">

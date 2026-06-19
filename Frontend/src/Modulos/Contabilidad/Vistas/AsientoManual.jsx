@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
 import Select from 'react-select';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import BotonAccion from '../../../Componentes/BotonAccion';
+import { List, Inbox, Pencil, Trash2, Plus, SlidersHorizontal, Save } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -146,40 +147,40 @@ const AsientoManual = () => {
     };
 
     return (
-        <div className="max-w-[95rem] mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 animate-fade-in pb-20">
+        <div className="max-w-[95rem] mx-auto p-4 md:p-6 lg:p-8 font-sans text-slate-800 dark:text-slate-200 animate-fade-in pb-20">
 
             <div className="mb-6 flex justify-between items-end">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Asiento Manual</h1>
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Asiento Manual</h1>
                         <AyudaModulo moduloId="asientoManual" size={28} />
                     </div>
-                    <p className="text-slate-500 font-medium mt-1">Ingreso de traspasos y ajustes contables de partida doble.</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Ingreso de traspasos y ajustes contables de partida doble.</p>
                 </div>
             </div>
 
             <div className="space-y-6">
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/4">
-                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Fecha Contable</label>
+                        <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Fecha Contable</label>
                         <input
                             type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 text-slate-800 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                         />
                     </div>
                     <div className="w-full md:w-3/4">
-                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Glosa General del Comprobante</label>
+                        <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Glosa General del Comprobante</label>
                         <input
                             type="text" value={glosaGeneral} onChange={(e) => setGlosaGeneral(e.target.value)} placeholder="Ej: Reconocimiento de gastos bancarios..." maxLength="255"
-                            className="w-full bg-slate-50 border border-slate-300 text-slate-800 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                         />
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                     <div className="bg-slate-900 px-6 py-3 border-b border-slate-800 flex justify-between items-center">
                         <h3 className="text-white font-bold text-sm tracking-wide flex items-center gap-2">
-                            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                            <List size={16} strokeWidth={1.75} className="text-indigo-400" />
                             Detalle del Asiento
                         </h3>
                         <span className="text-slate-400 text-xs font-bold bg-slate-800 px-3 py-1 rounded-full">{filas.length} líneas</span>
@@ -188,16 +189,16 @@ const AsientoManual = () => {
                     <div className="overflow-x-auto">
                         {filas.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-                                <svg className="w-10 h-10 mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                                <Inbox size={40} strokeWidth={1.75} className="mb-3 text-slate-300" />
                                 <p className="font-medium text-sm">El asiento está vacío.</p>
                             </div>
                         ) : (
                             <table className="w-full text-left border-collapse whitespace-nowrap">
-                                <thead className="bg-slate-50 border-b border-slate-200">
+                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
                                         <th className="px-3 py-2.5 font-black text-slate-400 text-[10px] uppercase w-8 text-center">#</th>
-                                        <th className="px-3 py-2.5 font-black text-slate-600 text-[11px] uppercase">Cuenta</th>
-                                        <th className="px-3 py-2.5 font-black text-slate-500 text-[11px] uppercase">Glosa Línea</th>
+                                        <th className="px-3 py-2.5 font-black text-slate-600 dark:text-slate-400 text-[11px] uppercase">Cuenta</th>
+                                        <th className="px-3 py-2.5 font-black text-slate-500 dark:text-slate-400 text-[11px] uppercase">Glosa Línea</th>
                                         <th className="px-3 py-2.5 font-black text-emerald-600 text-[11px] uppercase w-28 text-right">Debe</th>
                                         <th className="px-3 py-2.5 font-black text-rose-600 text-[11px] uppercase w-28 text-right">Haber</th>
                                         <th className="px-3 py-2.5 font-black text-slate-500 text-[11px] uppercase">C. Costo</th>
@@ -205,7 +206,7 @@ const AsientoManual = () => {
                                         <th className="px-3 py-2.5 font-black text-slate-400 text-[11px] uppercase text-center w-20">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                     {filas.map((fila, index) => (
                                         <tr
                                             key={fila.id}
@@ -213,8 +214,8 @@ const AsientoManual = () => {
                                             onDoubleClick={() => editarFila(fila)}
                                         >
                                             <td className="px-3 py-2 text-center text-xs font-bold text-slate-400">{index + 1}</td>
-                                            <td className="px-3 py-2 text-xs font-bold text-slate-700 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px]">{fila.cuenta.label}</td>
-                                            <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[180px] italic">{fila.glosa || '-'}</td>
+                                            <td className="px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px]">{fila.cuenta.label}</td>
+                                            <td className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[180px] italic">{fila.glosa || '-'}</td>
                                             <td className="px-3 py-2 text-xs font-mono font-black text-emerald-600 text-right">{fila.debe > 0 ? formatCurrency(fila.debe) : ''}</td>
                                             <td className="px-3 py-2 text-xs font-mono font-black text-rose-600 text-right">{fila.haber > 0 ? formatCurrency(fila.haber) : ''}</td>
                                             <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[80px] sm:max-w-[120px]">{fila.centroCosto ? fila.centroCosto.label : '-'}</td>
@@ -225,14 +226,14 @@ const AsientoManual = () => {
                                                     className="w-7 h-7 flex items-center justify-center rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100"
                                                     title="Editar Línea"
                                                 >
-                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                    <Pencil size={14} strokeWidth={1.75} />
                                                 </button>
                                                 <button
                                                     onClick={(e) => eliminarFila(fila.id, e)}
                                                     className="w-7 h-7 flex items-center justify-center rounded bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors border border-rose-100"
                                                     title="Eliminar Línea"
                                                 >
-                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    <Trash2 size={14} strokeWidth={1.75} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -242,7 +243,7 @@ const AsientoManual = () => {
                         )}
                     </div>
 
-                    <div className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-12 pr-6">
+                    <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-end gap-12 pr-6">
                         <div className="text-right">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Debe</p>
                             <p className={`text-xl font-mono font-black ${totalDebe > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{formatCurrency(totalDebe)}</p>
@@ -256,7 +257,7 @@ const AsientoManual = () => {
 
                 <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-6 shadow-inner">
                     <h4 className="text-indigo-800 font-bold text-sm mb-4 uppercase tracking-wider flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <SlidersHorizontal size={16} strokeWidth={1.75} />
                         Panel de Ingreso de Cuentas
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-end mb-4">
@@ -289,7 +290,7 @@ const AsientoManual = () => {
                         <div className="md:col-span-2 lg:col-span-3">
                             <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Monto *</label>
                             <div className={`flex items-center bg-white border rounded-lg h-[42px] transition-all shadow-none overflow-hidden ${tipoMovimiento === 'debe' ? 'focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 border-slate-300' : 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-100 border-slate-300'}`}>
-                                <span className="bg-slate-100 text-slate-500 font-bold px-3 h-full flex items-center border-r border-slate-200 shrink-0">
+                                <span className="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-bold px-3 h-full flex items-center border-r border-slate-200 dark:border-slate-600 shrink-0">
                                     $
                                 </span>
                                 <input
@@ -339,7 +340,7 @@ const AsientoManual = () => {
                                 onClick={agregarLinea}
                                 className="w-full h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-lg flex justify-center items-center gap-2 shadow-sm transition-all"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                <Plus size={16} strokeWidth={1.75} />
                                 AGREGAR LÍNEA (Enter ↵)
                             </button>
                         </div>
@@ -355,11 +356,7 @@ const AsientoManual = () => {
                             color="slate"
                             tamano="lg"
                             textoCargando="Contabilizando..."
-                            icono={
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                                </svg>
-                            }
+                            icono={<Save size={20} strokeWidth={1.75} />}
                             className="font-black"
                         >
                             CONTABILIZAR ASIENTO

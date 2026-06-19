@@ -167,7 +167,7 @@ const GestionRoles = () => {
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto animate-fadeIn">
             <div className="mb-8">
-                <h1 className="text-3xl font-black text-slate-800 tracking-tight">Roles y Permisos</h1>
+                <h1 className="text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Roles y Permisos</h1>
                 <p className="text-slate-500 font-medium">Define qué módulos puede utilizar cada perfil de tu equipo.</p>
             </div>
 
@@ -181,7 +181,7 @@ const GestionRoles = () => {
                             className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center justify-between group ${
                                 rolSeleccionado?.id === rol.id
                                 ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
-                                : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
+                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-300'
                             }`}
                         >
                             <span className="font-bold flex items-center gap-2">
@@ -195,18 +195,18 @@ const GestionRoles = () => {
                     ))}
                     <button
                         onClick={crearRol}
-                        className="w-full p-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-500 transition-all"
+                        className="w-full p-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-500 transition-all"
                     >
                         + Crear Nuevo Rol
                     </button>
                 </div>
 
-                <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                     {rolSeleccionado ? (
                         <>
-                            <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center gap-4">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between items-center gap-4">
                                 <div>
-                                    <h2 className="text-xl font-black text-slate-800">Configurando: {rolSeleccionado.nombre}</h2>
+                                    <h2 className="text-xl font-black text-slate-800 dark:text-slate-200">Configurando: {rolSeleccionado.nombre}</h2>
                                     <p className="text-xs text-slate-500 font-medium mt-1">
                                         {esRolSistema
                                             ? 'Rol del sistema (solo lectura). Duplícalo para crear una versión editable.'
@@ -239,7 +239,7 @@ const GestionRoles = () => {
                                         </h4>
                                         <div className="space-y-2">
                                             {grupo.keys.map(key => (
-                                                <label key={key} className={`flex items-center gap-3 p-2 rounded-lg transition-colors group ${esRolSistema ? 'cursor-default' : 'hover:bg-slate-50 cursor-pointer'}`}>
+                                                <label key={key} className={`flex items-center gap-3 p-2 rounded-lg transition-colors group ${esRolSistema ? 'cursor-default' : 'hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'}`}>
                                                     <div className="relative flex items-center">
                                                         <input
                                                             type="checkbox"
@@ -249,7 +249,7 @@ const GestionRoles = () => {
                                                             className="w-5 h-5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer disabled:cursor-default"
                                                         />
                                                     </div>
-                                                    <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 capitalize">
+                                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-100 capitalize">
                                                         {key.split('.').slice(1).join(' ').replaceAll('_', ' ')}
                                                     </span>
                                                 </label>

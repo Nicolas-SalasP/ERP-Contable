@@ -107,14 +107,14 @@ export const PageHeader = ({ eyebrow = 'Inventario', title, description, actions
                 </span>
 
                 <div className="flex items-center gap-3 mt-3">
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-800 dark:text-slate-200 tracking-tight">
                         {title}
                     </h1>
                     {helpModuloId && <AyudaModulo moduloId={helpModuloId} size={28} />}
                 </div>
 
                 {description && (
-                    <p className="text-slate-500 font-medium mt-2 max-w-3xl">
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 max-w-3xl">
                         {description}
                     </p>
                 )}
@@ -139,19 +139,19 @@ export const StatCard = ({ title, value, icon = 'fas fa-chart-simple', helper, t
     };
 
     return (
-        <div className="group bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
+        <div className="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
                         {title}
                     </p>
 
-                    <h3 className="text-3xl font-black text-slate-800 mt-2">
+                    <h3 className="text-3xl font-black text-slate-800 dark:text-slate-200 mt-2">
                         {value}
                     </h3>
 
                     {helper && (
-                        <p className="text-sm text-slate-500 mt-2 font-medium">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
                             {helper}
                         </p>
                     )}
@@ -167,18 +167,18 @@ export const StatCard = ({ title, value, icon = 'fas fa-chart-simple', helper, t
 
 export const Panel = ({ title, subtitle, children, actions, className = '' }) => {
     return (
-        <div className={`bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden ${className}`}>
+        <div className={`bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden ${className}`}>
             {(title || actions) && (
-                <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/80 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         {title && (
-                            <h2 className="text-lg font-black text-slate-800">
+                            <h2 className="text-lg font-black text-slate-800 dark:text-slate-200">
                                 {title}
                             </h2>
                         )}
 
                         {subtitle && (
-                            <p className="text-sm text-slate-500 font-medium mt-1">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
                                 {subtitle}
                             </p>
                         )}
@@ -201,7 +201,7 @@ export const Panel = ({ title, subtitle, children, actions, className = '' }) =>
 
 export const LoadingState = ({ text = 'Cargando información...' }) => {
     return (
-        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm">
             <EstadoCarga
                 cargando={true}
                 mensajeCargando={text}
@@ -260,7 +260,7 @@ export const SecondaryButton = ({ children, className = '', ...props }) => {
     return (
         <button
             {...props}
-            className={`inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-slate-700 border border-slate-200 font-black py-2.5 px-5 rounded-xl transition-all text-sm ${className}`}
+            className={`inline-flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 disabled:cursor-not-allowed text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-black py-2.5 px-5 rounded-xl transition-all text-sm ${className}`}
         >
             {children}
         </button>
@@ -281,7 +281,7 @@ export const DangerButton = ({ children, className = '', ...props }) => {
 export const Field = ({ label, children }) => {
     return (
         <label className="block">
-            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+            <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                 {label}
             </span>
 
@@ -324,7 +324,7 @@ export const ErrorNotice = ({ error }) => {
 
 export const TableShell = ({ children }) => {
     return (
-        <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-slate-100">
+        <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-slate-100 dark:border-slate-800">
             <table className="min-w-full text-left">
                 {children}
             </table>
@@ -334,7 +334,7 @@ export const TableShell = ({ children }) => {
 
 export const Th = ({ children, align = 'left' }) => {
     return (
-        <th className={`px-5 py-4 text-xs font-black text-slate-500 uppercase tracking-wider ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'}`}>
+        <th className={`px-5 py-4 text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'}`}>
             {children}
         </th>
     );
