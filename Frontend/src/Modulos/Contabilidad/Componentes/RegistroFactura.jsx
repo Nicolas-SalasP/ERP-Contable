@@ -10,6 +10,7 @@ import RegistroFacturaPaso3 from './RegistroFacturaPaso3';
 import { useRegistroFactura } from '../Hooks/useRegistroFactura';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
+import { useToast } from '../../../Contextos/ToastContext';
 const formatCurrency = (value) => {
     if (!value && value !== 0) return '';
     return new Intl.NumberFormat('es-CL').format(value.toString().replace(/\D/g, ''));
@@ -21,12 +22,12 @@ const cleanNumber = (value) => {
 };
 
 const RegistroFactura = () => {
+    const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(1);
     const [saving, setSaving] = useState(false);
     const [checkingDuplicate, setCheckingDuplicate] = useState(false);
 
     const [showIvaModal, setShowIvaModal] = useState(false);
-    const [duplicateWarning, setDuplicateWarning] = useState(false);
     const [successData, setSuccessData] = useState(null);
 
     const [formData, setFormData] = useState({
@@ -138,7 +139,7 @@ const RegistroFactura = () => {
                 const url = `/facturas/check?proveedor_id=${formData.proveedorId}&numero_factura=${formData.numeroFactura}`;
                 const data = await api.get(url);
                 if (data.exists) {
-                    setDuplicateWarning(true);
+                    toast(`El documento ${formData.numeroFactura} ya existe para este proveedor. Agregue un punto (.) al final si es una corrección.`, 'warning');
                 } else {
                     setCurrentStep(prev => prev + 1);
                 }
@@ -207,22 +208,13 @@ const RegistroFactura = () => {
     const handleSuccessClose = () => { setSuccessData(null); window.location.reload(); };
 
     return (
-        <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden mt-8 border border-slate-200 font-sans">
+        <div className="max-w-6xl mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-xl overflow-hidden mt-8 border border-slate-200 dark:border-slate-700 font-sans">
             <IvaWarningModal
                 isOpen={showIvaModal}
                 onClose={() => setShowIvaModal(false)}
                 onConfirm={finalSave}
                 calculado={formData.tieneIva ? (parseInt(formData.montoBruto) - Math.round(parseInt(formData.montoBruto) / 1.19)) : 0}
                 ingresado={formData.montoIva}
-            />
-
-            <ModalGenerico
-                isOpen={duplicateWarning}
-                onClose={() => setDuplicateWarning(false)}
-                type="warning"
-                title="Factura Duplicada"
-                message={<span>El documento <b>{formData.numeroFactura}</b> ya existe para este proveedor.<br />Agregue un punto (.) al final si es una corrección.</span>}
-                confirmText="Entendido"
             />
 
             <ModalGenerico
@@ -234,9 +226,9 @@ const RegistroFactura = () => {
                 onClose={handleSuccessClose}
                 message={successData ? (
                     <div className="text-center mt-4">
-                        <div className="bg-slate-100 p-4 rounded-lg inline-block">
-                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Se ha generado el siguiente comprobante contable:</p>
-                            <p className="text-3xl font-mono font-bold text-slate-800">{successData.codigo}</p>
+                        <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg inline-block">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Se ha generado el siguiente comprobante contable:</p>
+                            <p className="text-3xl font-mono font-bold text-slate-800 dark:text-slate-200">{successData.codigo}</p>
                         </div>
                     </div>
                 ) : null}
@@ -309,11 +301,11 @@ const RegistroFactura = () => {
                 )}
             </div>
 
-            <div className="bg-slate-50 rounded-b-xl relative z-10 p-4 md:px-8 md:py-6 flex flex-col md:flex-row justify-between border-t border-slate-200 gap-3">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-b-xl relative z-10 p-4 md:px-8 md:py-6 flex flex-col md:flex-row justify-between border-t border-slate-200 dark:border-slate-700 gap-3">
                 <button
                     onClick={prevStep}
                     disabled={currentStep === 1}
-                    className="w-full md:w-auto px-6 py-3 border border-slate-300 rounded-xl bg-white text-slate-700 font-semibold hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="w-full md:w-auto px-6 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                     Atrás
                 </button>

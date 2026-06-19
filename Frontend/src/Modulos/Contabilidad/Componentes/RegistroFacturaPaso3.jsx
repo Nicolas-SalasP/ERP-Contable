@@ -21,7 +21,7 @@ const RegistroFacturaPaso3 = ({
         <div className="animate-fade-in-up">
             <div className="flex justify-center mb-6 md:mb-10">
                 <label className={`flex w-full md:w-auto justify-center items-center space-x-3 cursor-pointer px-6 py-3 rounded-full border transition-all select-none ${
-                    formData.tieneIva ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200 opacity-75'
+                    formData.tieneIva ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 opacity-75'
                 }`}>
                     <input
                         type="checkbox"
@@ -29,26 +29,26 @@ const RegistroFacturaPaso3 = ({
                         onChange={(e) => onTieneIvaChange(e.target.checked)}
                         className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                     />
-                    <span className="text-sm font-bold text-slate-700">Documento Afecto a IVA (19%)</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Documento Afecto a IVA (19%)</span>
                 </label>
             </div>
 
-            <div className="max-w-5xl mx-auto border border-slate-200 rounded-xl shadow-lg bg-white mb-36">
-                <div className="bg-slate-50 rounded-t-xl px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <h3 className="font-bold text-slate-700">Previsualización y Clasificación del Asiento</h3>
+            <div className="max-w-5xl mx-auto border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg bg-white dark:bg-slate-800 mb-36">
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-t-xl px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <h3 className="font-bold text-slate-700 dark:text-slate-300">Previsualización y Clasificación del Asiento</h3>
                     <span className="text-xs font-mono text-slate-400 mt-1 md:mt-0">OBLIGATORIO</span>
                 </div>
 
                 <div className="flex flex-col">
-                    <div className="hidden md:flex bg-white text-xs font-bold text-slate-500 uppercase tracking-wider py-3 px-6 border-b border-slate-100">
+                    <div className="hidden md:flex bg-white dark:bg-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider py-3 px-6 border-b border-slate-100 dark:border-slate-800">
                         <div className="w-1/2">Cuenta Contable (Clasificación)</div>
                         <div className="w-1/4 text-right text-emerald-600">Debe</div>
                         <div className="w-1/4 text-right text-red-600">Haber</div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-white border-b border-slate-100 transition relative z-30">
+                    <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 transition relative z-30">
                         <div className="w-full md:w-1/2 pr-0 md:pr-10">
-                            <span className="font-bold text-slate-800 block text-xs uppercase mb-1">1. Cuenta Destino (Gasto / Activo)</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs uppercase mb-1">1. Cuenta Destino (Gasto / Activo)</span>
                             <BuscadorCuentaContable
                                 cuentaSeleccionada={formData.cuentaDestino}
                                 setCuentaSeleccionada={onCuentaDestinoChange}
@@ -58,7 +58,7 @@ const RegistroFacturaPaso3 = ({
                             <div className="w-full md:w-1/2 flex justify-between md:block text-right md:pr-6">
                                 <span className="md:hidden text-xs font-bold text-gray-400 uppercase">Debe:</span>
                                 {!esNotaCredito ? (
-                                    <span className="font-bold text-slate-900 text-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1 rounded shadow-sm">
+                                    <span className="font-bold text-slate-900 dark:text-slate-100 text-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1 rounded shadow-sm">
                                         {formatCurrency(formData.montoNeto)}
                                     </span>
                                 ) : <span className="text-slate-300">-</span>}
@@ -79,7 +79,7 @@ const RegistroFacturaPaso3 = ({
                             ivaInvalido ? 'bg-red-50' : 'hover:bg-blue-50/30'
                         }`}>
                             <div className="w-full md:w-1/2 pr-0 md:pr-10">
-                                <span className="font-bold text-slate-800 block text-xs uppercase mb-1">2. Cuenta de Impuesto (IVA CF)</span>
+                                <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs uppercase mb-1">2. Cuenta de Impuesto (IVA CF)</span>
                                 <BuscadorCuentaContable
                                     cuentaSeleccionada={formData.cuentaIva}
                                     setCuentaSeleccionada={onCuentaIvaChange}
@@ -127,9 +127,9 @@ const RegistroFacturaPaso3 = ({
                         </div>
                     )}
 
-                    <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-slate-50 transition rounded-b-xl relative z-10">
+                    <div className="flex flex-col md:flex-row p-5 md:py-4 md:px-6 gap-4 md:gap-0 items-start md:items-center bg-slate-50 dark:bg-slate-900 transition rounded-b-xl relative z-10">
                         <div className="w-full md:w-1/2 pr-0 md:pr-10">
-                            <span className="font-bold text-slate-800 block text-xs uppercase mb-1">3. Cuenta Proveedor (Pasivo)</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs uppercase mb-1">3. Cuenta Proveedor (Pasivo)</span>
                             <BuscadorCuentaContable
                                 cuentaSeleccionada={formData.cuentaProveedor}
                                 setCuentaSeleccionada={onCuentaProveedorChange}

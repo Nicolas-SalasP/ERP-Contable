@@ -55,14 +55,15 @@ const tickNombre = (valor) => {
  * @param {{ datos: Array<{nombre: string, monto: number}> }} props
  */
 export default function GraficoTopClientes({ datos = [] }) {
+  const oscuro = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const sinDatos =
     !datos ||
     datos.length === 0 ||
     datos.every((d) => d.monto === 0);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-      <h3 className="text-sm font-semibold text-slate-700 mb-4">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
         Top clientes (últimos 12 meses)
       </h3>
 
@@ -79,14 +80,14 @@ export default function GraficoTopClientes({ datos = [] }) {
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="#1e293b"
-              strokeOpacity={0.12}
+              stroke={oscuro ? '#334155' : '#e2e8f0'}
+              strokeOpacity={1}
               horizontal={false}
             />
             <XAxis
               type="number"
               tickFormatter={formatAbreviado}
-              tick={{ fontSize: 11, fill: '#64748b' }}
+              tick={{ fontSize: 11, fill: oscuro ? '#94a3b8' : '#64748b' }}
               axisLine={false}
               tickLine={false}
             />
@@ -95,13 +96,13 @@ export default function GraficoTopClientes({ datos = [] }) {
               dataKey="nombre"
               width={120}
               tickFormatter={tickNombre}
-              tick={{ fontSize: 11, fill: '#334155' }}
+              tick={{ fontSize: 11, fill: oscuro ? '#94a3b8' : '#334155' }}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
               content={<TooltipPersonalizado />}
-              cursor={{ fill: '#f1f5f9' }}
+              cursor={{ fill: oscuro ? '#1e293b' : '#f1f5f9' }}
             />
             <Bar dataKey="monto" radius={[0, 4, 4, 0]}>
               {datos.map((_, indice) => (

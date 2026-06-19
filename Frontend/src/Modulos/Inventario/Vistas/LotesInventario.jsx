@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
@@ -235,7 +235,7 @@ const LotesInventario = () => {
                                 name="producto_id"
                                 value={form.producto_id}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                                 required
                             >
                                 <option value="">Seleccionar producto</option>
@@ -253,7 +253,7 @@ const LotesInventario = () => {
                                 name="codigo_lote"
                                 value={form.codigo_lote}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                                 placeholder="LOTE-001"
                                 required
                             />
@@ -265,7 +265,7 @@ const LotesInventario = () => {
                                 name="fecha_fabricacion"
                                 value={form.fecha_fabricacion}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                             />
                         </Field>
 
@@ -275,7 +275,7 @@ const LotesInventario = () => {
                                 name="fecha_vencimiento"
                                 value={form.fecha_vencimiento}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                             />
                         </Field>
 
@@ -286,7 +286,7 @@ const LotesInventario = () => {
                                     value={form.observacion}
                                     onChange={handleChange}
                                     rows="3"
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                                     placeholder="Detalle o nota del lote"
                                 />
                             </Field>
@@ -314,7 +314,7 @@ const LotesInventario = () => {
                         <select
                             value={productoFiltro}
                             onChange={(event) => setProductoFiltro(event.target.value)}
-                            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                         >
                             <option value="">Todos los productos</option>
                             {productosConLotes.map((producto) => (
@@ -328,7 +328,7 @@ const LotesInventario = () => {
                             type="text"
                             value={busqueda}
                             onChange={(event) => setBusqueda(event.target.value)}
-                            className="w-full md:w-80 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                            className="w-full md:w-80 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                             placeholder="Buscar lote o producto..."
                         />
                     </div>
@@ -342,7 +342,7 @@ const LotesInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código lote</Th>
                                 <Th>Producto</Th>
@@ -354,26 +354,26 @@ const LotesInventario = () => {
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {lotesFiltrados.map((lote) => {
                                 const estado = getEstadoVencimiento(lote.fecha_vencimiento);
                                 const stock = getStockLote(lote);
 
                                 return (
-                                    <tr key={lote.id} className="hover:bg-slate-50/70 transition-colors">
-                                        <Td className="font-black text-slate-800">
+                                    <tr key={lote.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                        <Td className="font-black text-slate-800 dark:text-slate-200">
                                             {getCodigoLote(lote)}
                                         </Td>
 
-                                        <Td className="font-black text-slate-800">
+                                        <Td className="font-black text-slate-800 dark:text-slate-200">
                                             {getProductoNombre(lote)}
                                         </Td>
 
-                                        <Td className="text-slate-500 font-semibold">
+                                        <Td className="text-slate-500 dark:text-slate-400 font-semibold">
                                             {formatDate(lote.fecha_fabricacion)}
                                         </Td>
 
-                                        <Td className="text-slate-500 font-semibold">
+                                        <Td className="text-slate-500 dark:text-slate-400 font-semibold">
                                             {formatDate(lote.fecha_vencimiento)}
                                         </Td>
 
@@ -383,11 +383,11 @@ const LotesInventario = () => {
                                             </span>
                                         </Td>
 
-                                        <Td align="right" className="font-black text-slate-800">
+                                        <Td align="right" className="font-black text-slate-800 dark:text-slate-200">
                                             {stock === null ? '-' : formatNumber(stock, 2)}
                                         </Td>
 
-                                        <Td className="text-slate-500 max-w-md">
+                                        <Td className="text-slate-500 dark:text-slate-400 max-w-md">
                                             {lote.observacion || '-'}
                                         </Td>
                                     </tr>

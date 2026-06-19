@@ -1,4 +1,5 @@
 import React from 'react';
+import { ImageIcon, Camera, Building2, Check } from 'lucide-react';
 import BotonAccion from '../../../Componentes/BotonAccion';
 const PerfilEmpresaGeneral = ({
     formData,
@@ -13,23 +14,18 @@ const PerfilEmpresaGeneral = ({
     return (
         <div className="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
             <div className="lg:col-span-1 flex flex-col items-center space-y-4">
-                <div className="w-56 h-56 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center bg-slate-50 overflow-hidden relative group transition-colors hover:border-blue-400">
+                <div className="w-56 h-56 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-slate-900 overflow-hidden relative group transition-colors hover:border-blue-400">
                     {imagenMostrada ? (
                         <img src={imagenMostrada} alt="Logo Empresa" className="w-full h-full object-contain p-4" />
                     ) : (
                         <div className="text-center text-slate-400">
-                            <svg className="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                            <ImageIcon size={48} strokeWidth={1.75} className="mx-auto mb-2 text-slate-300" />
                             <p className="text-sm font-bold">Sin Logo</p>
                         </div>
                     )}
                     <label className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
                         <span className="text-sm font-bold flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
+                            <Camera size={20} strokeWidth={1.75} />
                             Cambiar Imagen
                         </span>
                         <input type="file" className="hidden" accept="image/*" onChange={onSeleccionarLogo} />
@@ -51,7 +47,7 @@ const PerfilEmpresaGeneral = ({
                             value={formData.rut}
                             onChange={onRutChange}
                             placeholder="76.123.456-K"
-                            className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 font-mono text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-700 font-mono text-sm outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200"
                         />
                     </div>
                     <div>
@@ -62,23 +58,21 @@ const PerfilEmpresaGeneral = ({
                             name="razon_social"
                             value={formData.razon_social}
                             onChange={onChange}
-                            className="w-full border border-slate-200 rounded-lg p-2.5 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         />
                     </div>
                 </div>
 
                 <div className="bg-blue-50 p-5 border border-blue-100 rounded-xl">
                     <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                        </svg>
+                        <Building2 size={14} strokeWidth={1.75} />
                         Régimen Tributario (SII)
                     </label>
                     <select
                         name="regimen_tributario"
                         value={formData.regimen_tributario}
                         onChange={onChange}
-                        className="w-full border border-blue-200 rounded-lg p-2.5 bg-white text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                        className="w-full border border-blue-200 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                     >
                         <option value="14_D3">Régimen Pro Pyme General (14 D N° 3)</option>
                         <option value="14_D8">Régimen Pro Pyme Transparente (14 D N° 8)</option>
@@ -97,7 +91,7 @@ const PerfilEmpresaGeneral = ({
                         name="direccion"
                         value={formData.direccion}
                         onChange={onChange}
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         placeholder="Calle, Número, Comuna..."
                     />
                 </div>
@@ -112,7 +106,7 @@ const PerfilEmpresaGeneral = ({
                             type="email"
                             value={formData.email}
                             onChange={onChange}
-                            className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         />
                     </div>
                     <div>
@@ -124,7 +118,7 @@ const PerfilEmpresaGeneral = ({
                             value={formData.telefono}
                             onChange={onTelefonoChange}
                             placeholder="+56 9 1234 5678"
-                            className="w-full border border-slate-200 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         />
                     </div>
                 </div>
@@ -146,13 +140,13 @@ const PerfilEmpresaGeneral = ({
                             name="color_primario"
                             value={formData.color_primario}
                             onChange={onChange}
-                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono uppercase w-28 focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm font-mono uppercase w-28 focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                             maxLength={7}
                         />
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
                     <BotonAccion
                         type="submit"
                         cargando={saving}
@@ -160,9 +154,7 @@ const PerfilEmpresaGeneral = ({
                         tamano="lg"
                         textoCargando="Guardando..."
                         icono={
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                            </svg>
+                            <Check size={16} strokeWidth={1.75} />
                         }
                     >
                         Guardar Cambios

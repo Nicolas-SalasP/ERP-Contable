@@ -360,7 +360,7 @@ const AlertasInventario = () => {
             <Panel title="Filtros operativos" subtitle="Los datos base de productos y bodegas se reutilizan desde cache del módulo.">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                     <Field label="Tipo de alerta">
-                        <select value={tipoFiltro} onChange={(e) => setTipoFiltro(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700">
+                        <select value={tipoFiltro} onChange={(e) => setTipoFiltro(e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                             <option value="">Todas</option>
                             {Object.entries(tipoLabels).map(([key, label]) => (
                                 <option key={key} value={key}>{label}</option>
@@ -369,7 +369,7 @@ const AlertasInventario = () => {
                     </Field>
 
                     <Field label="Severidad">
-                        <select value={severidadFiltro} onChange={(e) => setSeveridadFiltro(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700">
+                        <select value={severidadFiltro} onChange={(e) => setSeveridadFiltro(e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                             <option value="">Todas</option>
                             <option value="critica">Crítica</option>
                             <option value="alta">Alta</option>
@@ -379,7 +379,7 @@ const AlertasInventario = () => {
                     </Field>
 
                     <Field label="Producto">
-                        <select value={productoFiltro} onChange={(e) => setProductoFiltro(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700">
+                        <select value={productoFiltro} onChange={(e) => setProductoFiltro(e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                             <option value="">Todos</option>
                             {productos.map((producto) => (
                                 <option key={producto.id} value={producto.id}>{producto.sku} — {producto.nombre}</option>
@@ -388,7 +388,7 @@ const AlertasInventario = () => {
                     </Field>
 
                     <Field label="Bodega">
-                        <select value={bodegaFiltro} onChange={(e) => setBodegaFiltro(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700">
+                        <select value={bodegaFiltro} onChange={(e) => setBodegaFiltro(e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                             <option value="">Todas</option>
                             {bodegas.map((bodega) => (
                                 <option key={bodega.id} value={bodega.id}>{bodega.nombre}</option>
@@ -397,7 +397,7 @@ const AlertasInventario = () => {
                     </Field>
 
                     <Field label="Buscar en resultados">
-                        <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Producto, bodega, lote..." className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700" />
+                        <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Producto, bodega, lote..." className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 placeholder-slate-400 dark:placeholder-slate-500" />
                     </Field>
                 </div>
 
@@ -424,7 +424,7 @@ const AlertasInventario = () => {
                     <form onSubmit={guardarRegla} className="space-y-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                             <Field label="Producto">
-                                <select name="producto_id" value={form.producto_id} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700">
+                                <select name="producto_id" value={form.producto_id} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                                     <option value="">Seleccionar</option>
                                     {productos.map((producto) => (
                                         <option key={producto.id} value={producto.id}>{producto.sku} — {producto.nombre}</option>
@@ -433,7 +433,7 @@ const AlertasInventario = () => {
                             </Field>
 
                             <Field label="Bodega opcional">
-                                <select name="bodega_id" value={form.bodega_id} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700">
+                                <select name="bodega_id" value={form.bodega_id} onChange={handleChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700">
                                     <option value="">Global por producto</option>
                                     {bodegas.map((bodega) => (
                                         <option key={bodega.id} value={bodega.id}>{bodega.nombre}</option>
@@ -442,23 +442,23 @@ const AlertasInventario = () => {
                             </Field>
 
                             <Field label="Stock mínimo">
-                                <input name="stock_minimo" type="number" min="0" step="0.0001" value={form.stock_minimo} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700" />
+                                <input name="stock_minimo" type="number" min="0" step="0.0001" value={form.stock_minimo} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" />
                             </Field>
 
                             <Field label="Stock objetivo">
-                                <input name="stock_objetivo" type="number" min="0" step="0.0001" value={form.stock_objetivo} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700" />
+                                <input name="stock_objetivo" type="number" min="0" step="0.0001" value={form.stock_objetivo} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" />
                             </Field>
 
                             <Field label="Punto de reorden">
-                                <input name="punto_reorden" type="number" min="0" step="0.0001" value={form.punto_reorden} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700" />
+                                <input name="punto_reorden" type="number" min="0" step="0.0001" value={form.punto_reorden} onChange={handleChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" />
                             </Field>
 
                             <Field label="Días alerta vencimiento">
-                                <input name="dias_alerta_vencimiento" type="number" min="0" max="3650" value={form.dias_alerta_vencimiento} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700" />
+                                <input name="dias_alerta_vencimiento" type="number" min="0" max="3650" value={form.dias_alerta_vencimiento} onChange={handleChange} className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" />
                             </Field>
 
                             <Field label="Estado">
-                                <label className="inline-flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700 w-full">
+                                <label className="inline-flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 w-full">
                                     <input name="activo" type="checkbox" checked={form.activo} onChange={handleChange} />
                                     Regla activa
                                 </label>
@@ -499,16 +499,16 @@ const AlertasInventario = () => {
                                     <Td><SeveridadBadge value={alerta.severidad} /></Td>
                                     <Td><TipoBadge value={alerta.tipo} /></Td>
                                     <Td>
-                                        <div className="font-black text-slate-800">{alerta.titulo}</div>
-                                        <div className="text-xs text-slate-500 font-semibold mt-1 max-w-xl">{alerta.descripcion}</div>
+                                        <div className="font-black text-slate-800 dark:text-slate-200">{alerta.titulo}</div>
+                                        <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 max-w-xl">{alerta.descripcion}</div>
                                         {alerta.lote_codigo && <div className="text-xs text-indigo-600 font-black mt-1">Lote: {alerta.lote_codigo}</div>}
                                     </Td>
                                     <Td>
-                                        <div className="font-black text-slate-800">{alerta.producto_nombre || '-'}</div>
-                                        <div className="text-xs text-slate-500 font-semibold">{alerta.bodega_nombre || 'Regla global / sin bodega'}</div>
+                                        <div className="font-black text-slate-800 dark:text-slate-200">{alerta.producto_nombre || '-'}</div>
+                                        <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{alerta.bodega_nombre || 'Regla global / sin bodega'}</div>
                                     </Td>
                                     <Td>
-                                        <div className="text-sm font-black text-slate-800">Actual: {formatNumber(alerta.cantidad_actual, 2)}</div>
+                                        <div className="text-sm font-black text-slate-800 dark:text-slate-200">Actual: {formatNumber(alerta.cantidad_actual, 2)}</div>
                                         {alerta.cantidad_sugerida !== null && alerta.cantidad_sugerida !== undefined && (
                                             <div className="text-xs text-emerald-600 font-black">Sugerida: {formatNumber(alerta.cantidad_sugerida, 2)}</div>
                                         )}
@@ -543,8 +543,8 @@ const AlertasInventario = () => {
                             {reglas.map((regla) => (
                                 <tr key={regla.id}>
                                     <Td>
-                                        <div className="font-black text-slate-800">{regla.producto?.nombre || `Producto #${regla.producto_id}`}</div>
-                                        <div className="text-xs text-slate-500 font-semibold">{regla.producto?.sku || '-'}</div>
+                                        <div className="font-black text-slate-800 dark:text-slate-200">{regla.producto?.nombre || `Producto #${regla.producto_id}`}</div>
+                                        <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{regla.producto?.sku || '-'}</div>
                                     </Td>
                                     <Td>{regla.bodega?.nombre || 'Global por producto'}</Td>
                                     <Td align="right">{formatNumber(regla.stock_minimo, 2)}</Td>

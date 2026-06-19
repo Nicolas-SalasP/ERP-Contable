@@ -1,4 +1,5 @@
-import React from 'react';
+﻿import React from 'react';
+import { X } from 'lucide-react';
 
 const formatCurrency = (amount) =>
     new Intl.NumberFormat('es-CL', {
@@ -18,7 +19,7 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700">
                 <div className="bg-slate-900 text-white px-4 md:px-8 py-5 flex justify-between items-center">
                     <div>
                         <div className="flex items-center gap-3">
@@ -41,9 +42,7 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
                         onClick={onClose}
                         className="text-slate-400 hover:text-white transition-colors p-2 rounded-full hover:bg-slate-800"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <X size={24} strokeWidth={1.75} />
                     </button>
                 </div>
                 {loading ? (
@@ -53,29 +52,29 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
                 ) : (
                     data && (
                         <>
-                            <div className="bg-slate-50 px-4 md:px-8 py-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="bg-slate-50 dark:bg-slate-900 px-4 md:px-8 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div className="flex-1">
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">
                                         Glosa / Descripción
                                     </p>
-                                    <p className="text-slate-800 italic font-medium mt-1 text-sm md:text-base">
+                                    <p className="text-slate-800 dark:text-slate-200 italic font-medium mt-1 text-sm md:text-base">
                                         "{data.cabecera.glosa}"
                                     </p>
                                 </div>
                                 <div className="text-left md:text-right w-full md:w-auto">
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">
                                         Fecha Contable
                                     </p>
-                                    <p className="text-slate-800 font-mono font-bold mt-1">
+                                    <p className="text-slate-800 dark:text-slate-200 font-mono font-bold mt-1">
                                         {formatDate(data.cabecera.fecha_contable)}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex-1 overflow-auto custom-scrollbar">
-                                <table className="min-w-full divide-y divide-slate-100">
-                                    <thead className="bg-white sticky top-0 z-10 shadow-sm">
+                                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
+                                    <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 sticky top-0 z-10 shadow-sm">
                                         <tr>
-                                            <th className="px-4 md:px-8 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            <th className="px-4 md:px-8 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
                                                 Cuenta Contable
                                             </th>
                                             <th className="px-4 md:px-8 py-3 text-right text-xs font-bold text-emerald-600 uppercase tracking-wider w-32 md:w-40 whitespace-nowrap">
@@ -86,14 +85,14 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-slate-50 text-sm">
+                                    <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-50 dark:divide-slate-700 text-sm">
                                         {data.detalles.map((det, idx) => (
                                             <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
                                                 <td className="px-4 md:px-8 py-4">
-                                                    <div className="font-bold text-slate-800">
+                                                    <div className="font-bold text-slate-800 dark:text-slate-200">
                                                         {det.nombre_cuenta}
                                                     </div>
-                                                    <div className="text-xs text-slate-500 font-mono mt-1 bg-slate-100 px-2 py-0.5 rounded inline-block border border-slate-200">
+                                                    <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded inline-block border border-slate-200 dark:border-slate-600">
                                                         {det.cuenta_contable}
                                                     </div>
                                                 </td>
@@ -106,9 +105,9 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
                                             </tr>
                                         ))}
                                     </tbody>
-                                    <tfoot className="bg-slate-50 font-bold text-slate-800 border-t border-slate-200">
+                                    <tfoot className="bg-slate-50 dark:bg-slate-900 font-bold text-slate-800 dark:text-slate-200 border-t border-slate-200 dark:border-slate-700">
                                         <tr>
-                                            <td className="px-4 md:px-8 py-4 text-right uppercase text-xs tracking-wider text-slate-500">
+                                            <td className="px-4 md:px-8 py-4 text-right uppercase text-xs tracking-wider text-slate-500 dark:text-slate-400">
                                                 Totales
                                             </td>
                                             <td className="px-4 md:px-8 py-4 text-right text-emerald-700 bg-emerald-100/50 whitespace-nowrap">
@@ -134,7 +133,7 @@ const ModalAsiento = ({ isOpen, onClose, data, loading }) => {
                         </>
                     )
                 )}
-                <div className="p-4 bg-gray-50 border-t border-slate-200 flex justify-end">
+                <div className="p-4 bg-gray-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex justify-end">
                     <button
                         onClick={onClose}
                         className="px-6 py-2.5 bg-slate-800 text-white rounded-lg hover:bg-slate-900 font-bold transition-colors shadow-sm text-sm w-full md:w-auto"

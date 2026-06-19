@@ -1,6 +1,8 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Contextos/AuthContext';
+import { TemaProvider } from './Contextos/TemaContext';
+import { ToastProvider } from './Contextos/ToastContext';
 import { usePermisos } from './Contextos/Permisos';
 import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 import ErrorBoundary from './Componentes/ErrorBoundary';
@@ -64,6 +66,7 @@ const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh')
 const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 const LreRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LreRrhh'));
+const EmrclRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/EmrclRrhh'));
 const Dj1887 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1887'));
 const HonorariosRecibidos = lazy(() => import('./Modulos/Comercial/Vistas/HonorariosRecibidos'));
 const Dj1879 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1879'));
@@ -168,6 +171,8 @@ const InventarioLayout = ({ children }) => (
 function App() {
   return (
     <ErrorBoundary>
+      <TemaProvider>
+      <ToastProvider>
       <AuthProvider>
         <BrowserRouter>
         <Suspense fallback={<div>Cargando...</div>}>
@@ -730,6 +735,16 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/rrhh/emrcl" element={
+            <RutaPrivada>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><EmrclRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
+            </RutaPrivada>
+          } />
+
           <Route path="/glosario" element={
             <RutaPrivada>
               <LayoutPrincipal><Glosario /></LayoutPrincipal>
@@ -765,6 +780,8 @@ function App() {
         </Suspense>
         </BrowserRouter>
       </AuthProvider>
+      </ToastProvider>
+      </TemaProvider>
     </ErrorBoundary>
   );
 }

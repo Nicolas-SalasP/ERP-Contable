@@ -132,7 +132,7 @@ const ExportacionDashboard = ({ resumen, periodo = 'mes' }) => {
             <button
                 type="button"
                 onClick={() => exportarVentas12mExcel(serieVentas, periodo)}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
                 title="Descargar serie de ventas de los últimos 12 meses en Excel"
             >
                 <i className="fas fa-file-excel text-green-600"></i>
@@ -142,7 +142,7 @@ const ExportacionDashboard = ({ resumen, periodo = 'mes' }) => {
             <button
                 type="button"
                 onClick={() => exportarTopClientesExcel(topClientes, periodo)}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
                 title="Descargar ranking de mejores clientes en Excel"
             >
                 <i className="fas fa-file-excel text-green-600"></i>
@@ -152,7 +152,7 @@ const ExportacionDashboard = ({ resumen, periodo = 'mes' }) => {
             <button
                 type="button"
                 onClick={() => exportarFacturasUrgentesExcel(facturasUrgentes, periodo)}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
                 title="Descargar listado de facturas urgentes en Excel"
             >
                 <i className="fas fa-file-excel text-green-600"></i>
@@ -162,7 +162,7 @@ const ExportacionDashboard = ({ resumen, periodo = 'mes' }) => {
             <button
                 type="button"
                 onClick={() => exportarResumenPDF(kpis, periodo)}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
                 title="Descargar resumen ejecutivo de KPIs en PDF"
             >
                 <i className="fas fa-file-pdf text-rose-600"></i>

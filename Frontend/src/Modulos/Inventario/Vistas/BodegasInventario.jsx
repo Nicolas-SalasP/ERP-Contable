@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import inventarioApi from '../Servicios/inventarioApi';
 import { useInventarioData } from '../Hooks/useInventarioData';
@@ -178,7 +178,7 @@ const BodegasInventario = () => {
                                 name="codigo"
                                 value={form.codigo}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                                 placeholder="BOD-001"
                                 required
                             />
@@ -190,7 +190,7 @@ const BodegasInventario = () => {
                                 name="nombre"
                                 value={form.nombre}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                                 placeholder="Bodega central"
                                 required
                             />
@@ -202,13 +202,13 @@ const BodegasInventario = () => {
                                 name="ubicacion"
                                 value={form.ubicacion}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                                 placeholder="Santiago, piso 1, rack A"
                             />
                         </Field>
 
                         <div className="flex items-end">
-                            <label className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 p-4 cursor-pointer hover:bg-slate-50">
+                            <label className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-600 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
                                 <input
                                     type="checkbox"
                                     name="activa"
@@ -216,7 +216,7 @@ const BodegasInventario = () => {
                                     onChange={handleChange}
                                     className="w-4 h-4 accent-emerald-500"
                                 />
-                                <span className="font-black text-slate-700 text-sm">
+                                <span className="font-black text-slate-700 dark:text-slate-300 text-sm">
                                     Bodega activa
                                 </span>
                             </label>
@@ -229,7 +229,7 @@ const BodegasInventario = () => {
                                     value={form.descripcion}
                                     onChange={handleChange}
                                     rows="3"
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none resize-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                                     placeholder="Descripción opcional de la bodega"
                                 />
                             </Field>
@@ -257,7 +257,7 @@ const BodegasInventario = () => {
                         type="text"
                         value={busqueda}
                         onChange={(event) => setBusqueda(event.target.value)}
-                        className="w-full md:w-80 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                        className="w-full md:w-80 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                         placeholder="Buscar por código, nombre o ubicación..."
                     />
                 )}
@@ -270,7 +270,7 @@ const BodegasInventario = () => {
                     />
                 ) : (
                     <TableShell>
-                        <thead className="bg-slate-50">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <Th>Código</Th>
                                 <Th>Nombre</Th>
@@ -280,25 +280,25 @@ const BodegasInventario = () => {
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {bodegasFiltradas.map((bodega) => {
                                 const activa = esBodegaActiva(bodega);
 
                                 return (
-                                    <tr key={bodega.id} className="hover:bg-slate-50/70 transition-colors">
-                                        <Td className="font-black text-slate-800">
+                                    <tr key={bodega.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700 transition-colors">
+                                        <Td className="font-black text-slate-800 dark:text-slate-200">
                                             {bodega.codigo}
                                         </Td>
 
-                                        <Td className="font-black text-slate-800">
+                                        <Td className="font-black text-slate-800 dark:text-slate-200">
                                             {bodega.nombre}
                                         </Td>
 
-                                        <Td className="font-semibold text-slate-500">
+                                        <Td className="font-semibold text-slate-500 dark:text-slate-400">
                                             {bodega.ubicacion || '-'}
                                         </Td>
 
-                                        <Td className="text-slate-500 max-w-md">
+                                        <Td className="text-slate-500 dark:text-slate-400 max-w-md">
                                             {bodega.descripcion || '-'}
                                         </Td>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import BotonAccion from '../../../Componentes/BotonAccion';
@@ -106,7 +106,7 @@ const ModalMapeoSII = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] animate-fade-in-up">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] animate-fade-in-up">
                 
                 <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-indigo-600 text-white">
                     <div>
@@ -120,28 +120,28 @@ const ModalMapeoSII = ({ onClose }) => {
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto bg-slate-50 flex-grow">
+                <div className="p-6 overflow-y-auto bg-slate-50 dark:bg-slate-900 flex-grow">
                     
-                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6">
-                        <h4 className="font-bold text-slate-700 mb-4"><i className="fas fa-link text-indigo-500 mr-2"></i>Vincular Nueva Cuenta</h4>
+                    <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6">
+                        <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-4"><i className="fas fa-link text-indigo-500 mr-2"></i>Vincular Nueva Cuenta</h4>
                         <form onSubmit={handleGuardar} className="flex flex-col md:flex-row gap-4 items-end">
                             <div className="flex-1">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">1. Cuenta de Ingreso o Gasto</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">1. Cuenta de Ingreso o Gasto</label>
                                 <select 
                                     required value={nuevoMapeo.codigo_cuenta} 
                                     onChange={(e) => setNuevoMapeo({...nuevoMapeo, codigo_cuenta: e.target.value})}
-                                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                                    className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
                                 >
                                     <option value="">Seleccione cuenta disponible...</option>
                                     {disponibles.map(c => <option key={c.codigo} value={c.codigo}>{c.codigo} - {c.nombre}</option>)}
                                 </select>
                             </div>
                             <div className="flex-1">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">2. Asignar al Concepto SII</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">2. Asignar al Concepto SII</label>
                                 <select 
                                     required value={nuevoMapeo.concepto_sii} 
                                     onChange={(e) => setNuevoMapeo({...nuevoMapeo, concepto_sii: e.target.value})}
-                                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                                    className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
                                 >
                                     <option value="">Seleccione concepto tributario...</option>
                                     {Object.entries(conceptos).map(([key, label]) => (
@@ -162,9 +162,9 @@ const ModalMapeoSII = ({ onClose }) => {
                         </form>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
-                            <h4 className="font-bold text-slate-700">Cuentas Mapeadas Actualmente</h4>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                        <div className="bg-slate-50 dark:bg-slate-900 px-5 py-3 border-b border-slate-200 dark:border-slate-700">
+                            <h4 className="font-bold text-slate-700 dark:text-slate-300">Cuentas Mapeadas Actualmente</h4>
                         </div>
                         {loading ? (
                             <EstadoCarga
@@ -176,7 +176,7 @@ const ModalMapeoSII = ({ onClose }) => {
                         ) : (
                             <div className="overflow-x-auto custom-scrollbar">
                             <table className="min-w-full text-left text-sm">
-                                <thead className="bg-white border-b border-slate-100 text-slate-500 uppercase text-xs">
+                                <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 uppercase text-xs">
                                     <tr>
                                         <th className="px-5 py-3 font-bold">Código</th>
                                         <th className="px-5 py-3 font-bold">Nombre Cuenta</th>
@@ -184,7 +184,7 @@ const ModalMapeoSII = ({ onClose }) => {
                                         <th className="px-5 py-3 font-bold text-center">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                     {mapeadas.length === 0 ? (
                                         <tr><td colSpan="4" className="text-center p-8 text-slate-400">
                                             <i className="fas fa-link-slash text-2xl text-slate-300 mb-2 block"></i>
@@ -192,9 +192,9 @@ const ModalMapeoSII = ({ onClose }) => {
                                         </td></tr>
                                     ) : (
                                         mapeadas.map(m => (
-                                            <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-5 py-3 font-mono text-slate-600">{m.codigo_cuenta}</td>
-                                                <td className="px-5 py-3 font-bold text-slate-800">{m.nombre}</td>
+                                            <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                                <td className="px-5 py-3 font-mono text-slate-600 dark:text-slate-400">{m.codigo_cuenta}</td>
+                                                <td className="px-5 py-3 font-bold text-slate-800 dark:text-slate-200">{m.nombre}</td>
                                                 <td className="px-5 py-3">
                                                     <span className={`px-2.5 py-1 rounded text-xs font-bold ${m.concepto_sii.includes('INGRESO') ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
                                                         {conceptos[m.concepto_sii] || m.concepto_sii}
@@ -219,7 +219,7 @@ const ModalMapeoSII = ({ onClose }) => {
 
                 </div>
 
-                <div className="p-5 border-t border-slate-100 bg-white flex justify-end">
+                <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-end">
                     <button onClick={onClose} className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg transition-colors">
                         Cerrar y Actualizar Dashboard
                     </button>

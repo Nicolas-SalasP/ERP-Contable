@@ -1,4 +1,5 @@
 import React from 'react';
+import { Check, AlertTriangle, Info } from 'lucide-react';
 
 const ModalGenerico = ({ 
     isOpen, 
@@ -29,23 +30,23 @@ const ModalGenerico = ({
 
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle max-w-[90vw] sm:max-w-lg w-full animate-fade-in-up">
-                    <div className="bg-white p-3 sm:p-4 sm:pb-4">
+                <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle max-w-[90vw] sm:max-w-lg w-full animate-fade-in-up">
+                    <div className="bg-white dark:bg-slate-800 p-3 sm:p-4 sm:pb-4">
                         <div className="sm:flex sm:items-start">
 
                             <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full ${currentStyle.bg} sm:mx-0 sm:h-10 sm:w-10`}>
-                                {type === 'success' && <svg className={`h-6 w-6 ${currentStyle.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>}
-                                {type === 'danger' && <svg className={`h-6 w-6 ${currentStyle.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
-                                {type === 'warning' && <svg className={`h-6 w-6 ${currentStyle.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
-                                {type === 'info' && <svg className={`h-6 w-6 ${currentStyle.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                                {type === 'success' && <Check size={24} strokeWidth={1.75} className={currentStyle.text} />}
+                                {type === 'danger' && <AlertTriangle size={24} strokeWidth={1.75} className={currentStyle.text} />}
+                                {type === 'warning' && <AlertTriangle size={24} strokeWidth={1.75} className={currentStyle.text} />}
+                                {type === 'info' && <Info size={24} strokeWidth={1.75} className={currentStyle.text} />}
                             </div>
 
                             <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-slate-100" id="modal-title">
                                     {title}
                                 </h3>
                                 <div className="mt-2">
-                                    <div className="text-sm text-gray-500">
+                                    <div className="text-sm text-gray-500 dark:text-slate-400">
                                         {message}
                                     </div>
                                 </div>
@@ -53,7 +54,7 @@ const ModalGenerico = ({
                         </div>
                     </div>
                     
-                    <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <div className="bg-gray-50 dark:bg-slate-900 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                         <button 
                             type="button" 
                             onClick={onConfirm || onClose}
@@ -66,7 +67,7 @@ const ModalGenerico = ({
                             <button 
                                 type="button" 
                                 onClick={onClose}
-                                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                             >
                                 {cancelText}
                             </button>

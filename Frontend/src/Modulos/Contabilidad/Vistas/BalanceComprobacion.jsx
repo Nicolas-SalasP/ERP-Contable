@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
-import ModalGenerico from '../../../Componentes/ModalGenerico';
 import { logger } from '../../../Configuracion/logger';
+import { Download } from 'lucide-react';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
+import { useToast } from '../../../Contextos/ToastContext';
 
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
@@ -14,20 +17,14 @@ const hoy = new Date().toISOString().split('T')[0];
 const primerDiaMes = new Date().toISOString().slice(0, 7) + '-01';
 
 const BalanceComprobacion = () => {
+    const { toast } = useToast();
     const [filtros, setFiltros] = useState({
         fecha_inicio: primerDiaMes,
         fecha_fin: hoy,
-        filtro: 1,
     });
 
     const [resultado, setResultado] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [notificacion, setNotificacion] = useState({
-        show: false,
-        title: '',
-        message: '',
-        type: 'info',
-    });
 
     const consultar = async () => {
         setLoading(true);
@@ -35,7 +32,7 @@ const BalanceComprobacion = () => {
             const params = new URLSearchParams({
                 fecha_inicio: filtros.fecha_inicio,
                 fecha_fin: filtros.fecha_fin,
-                filtro: filtros.filtro,
+                filtro: 1,
             }).toString();
 
             const res = await api.get(`/contabilidad/reportes/balance-comprobacion?${params}`);
@@ -44,22 +41,12 @@ const BalanceComprobacion = () => {
                 setResultado(res.data);
             } else {
                 setResultado(null);
-                setNotificacion({
-                    show: true,
-                    title: 'Error',
-                    message: res.message || 'No se pudieron cargar los datos.',
-                    type: 'danger',
-                });
+                toast(res.message || 'No se pudieron cargar los datos.', 'error');
             }
         } catch (error) {
             logger.error('Error cargando balance de comprobacion', error);
             setResultado(null);
-            setNotificacion({
-                show: true,
-                title: 'Error',
-                message: 'No se pudo conectar con el servidor.',
-                type: 'danger',
-            });
+            toast('No se pudo conectar con el servidor.', 'error');
         } finally {
             setLoading(false);
         }
@@ -67,12 +54,7 @@ const BalanceComprobacion = () => {
 
     const exportarExcel = () => {
         if (!resultado || resultado.cuentas.length === 0) {
-            setNotificacion({
-                show: true,
-                title: 'Sin datos',
-                message: 'No hay cuentas para exportar en el rango seleccionado.',
-                type: 'warning',
-            });
+            toast('No hay cuentas para exportar en el rango seleccionado.', 'warning');
             return;
         }
 
@@ -123,54 +105,35 @@ const BalanceComprobacion = () => {
     };
 
     return (
-        <div className="max-w-full mx-auto p-6 font-sans text-slate-800">
-
-            <ModalGenerico
-                isOpen={notificacion.show}
-                onClose={() => setNotificacion({ ...notificacion, show: false })}
-                title={notificacion.title}
-                message={notificacion.message}
-                type={notificacion.type}
-            />
+        <div className="max-w-full mx-auto p-6 font-sans text-slate-800 dark:text-slate-200">
 
             <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
-                    <h1 className="text-3xl font-bold text-slate-900">Balance de Comprobacion y Saldos</h1>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Balance de Comprobacion y Saldos</h1>
                     <AyudaModulo moduloId="balanceComprobacion" size={26} />
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha Inicio</label>
+                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Inicio</label>
                     <input
                         type="date"
-                        className="border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                        className="border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         value={filtros.fecha_inicio}
                         onChange={e => setFiltros({ ...filtros, fecha_inicio: e.target.value })}
                     />
                 </div>
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha Fin</label>
+                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Fin</label>
                     <input
                         type="date"
-                        className="border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                        className="border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         value={filtros.fecha_fin}
                         onChange={e => setFiltros({ ...filtros, fecha_fin: e.target.value })}
                     />
                 </div>
-                <div>
-                    <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Auditoria</label>
-                    <select
-                        className="border border-blue-200 bg-blue-50 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700"
-                        value={filtros.filtro}
-                        onChange={e => setFiltros({ ...filtros, filtro: Number(e.target.value) })}
-                    >
-                        <option value="1">1 - Conciliado / Validos</option>
-                        <option value="0">0 - Historia Completa (Todo)</option>
-                        <option value="2">2 - Anulados / Internos</option>
-                    </select>
-                </div>
+
                 <div className="flex gap-2">
                     <button
                         onClick={consultar}
@@ -182,9 +145,7 @@ const BalanceComprobacion = () => {
                         onClick={exportarExcel}
                         className="bg-emerald-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-emerald-700 text-sm flex items-center gap-2 shadow-sm transition-all active:scale-95"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
+                        <Download size={16} strokeWidth={1.75} />
                         Excel
                     </button>
                 </div>
@@ -196,14 +157,14 @@ const BalanceComprobacion = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead className="text-[10px] uppercase font-bold border-b border-slate-200">
+                        <thead className="sticky top-0 z-10 text-[10px] uppercase font-bold border-b border-slate-200">
                             <tr>
-                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Codigo</th>
-                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Cuenta</th>
-                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 text-slate-500 border-r border-slate-200 align-middle whitespace-nowrap">Tipo</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 align-middle whitespace-nowrap">Codigo</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 align-middle whitespace-nowrap">Cuenta</th>
+                                <th rowSpan="2" className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 align-middle whitespace-nowrap">Tipo</th>
                                 <th colSpan="2" className="px-3 py-2 bg-amber-50 text-amber-700 text-center border-r border-amber-200 whitespace-nowrap">Periodo Anterior</th>
                                 <th colSpan="4" className="px-3 py-2 bg-blue-50 text-blue-700 text-center border-r border-blue-200 whitespace-nowrap">Movimientos Periodo</th>
                                 <th colSpan="2" className="px-3 py-2 bg-emerald-50 text-emerald-700 text-center whitespace-nowrap">Acumulado Año</th>
@@ -219,37 +180,23 @@ const BalanceComprobacion = () => {
                                 <th className="px-3 py-2 bg-emerald-50 text-emerald-600 text-right whitespace-nowrap">SA</th>
                             </tr>
                         </thead>
-                        <tbody className="text-xs divide-y divide-slate-100">
+                        <tbody className="text-xs divide-y divide-slate-100 dark:divide-slate-700">
                             {loading ? (
-                                <tr>
-                                    <td colSpan="11" className="p-8 text-center text-slate-400">
-                                        <i className="fas fa-spinner fa-spin text-slate-300 text-2xl mb-2 block"></i>
-                                        Cargando...
-                                    </td>
-                                </tr>
+                                <TablaSkeleton filas={6} columnas={11} />
                             ) : !resultado ? (
-                                <tr>
-                                    <td colSpan="11" className="p-8 text-center text-slate-400">
-                                        <i className="fas fa-table text-slate-300 text-2xl mb-2 block"></i>
-                                        Seleccione un periodo y presione Consultar.
-                                    </td>
-                                </tr>
+                                <EstadoVacio mensaje="Seleccione un periodo y presione Consultar." />
                             ) : resultado.cuentas.length === 0 ? (
-                                <tr>
-                                    <td colSpan="11" className="p-8 text-center text-slate-400">
-                                        No hay cuentas con movimientos en el periodo seleccionado.
-                                    </td>
-                                </tr>
+                                <EstadoVacio mensaje="No hay cuentas con movimientos en el periodo seleccionado." />
                             ) : (
                                 resultado.cuentas.map((cuenta, idx) => (
-                                    <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-3 py-2 font-mono font-bold text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                        <td className="px-3 py-2 font-mono font-bold text-slate-600 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700 whitespace-nowrap">
                                             {cuenta.codigo}
                                         </td>
-                                        <td className="px-3 py-2 border-r border-slate-100 text-slate-700">
+                                        <td className="px-3 py-2 border-r border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                                             {cuenta.nombre}
                                         </td>
-                                        <td className="px-3 py-2 border-r border-slate-100 text-slate-500 whitespace-nowrap">
+                                        <td className="px-3 py-2 border-r border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                             {cuenta.tipo}
                                         </td>
                                         <td className="px-3 py-2 text-right font-mono border-r border-amber-100 whitespace-nowrap">

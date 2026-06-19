@@ -20,13 +20,13 @@ const RhrrhResumen = ({ datos }) => {
     const sinPendientes = !datos || datos.liquidaciones_pendientes === 0;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 h-full flex flex-col gap-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 border border-gray-100 dark:border-slate-700 h-full flex flex-col gap-4">
             {/* Título */}
             <div className="flex items-center gap-2">
                 <div className="bg-purple-50 text-purple-600 w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
                     <i className="fas fa-users text-sm" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
                     RRHH — Remuneraciones
                 </h3>
             </div>
@@ -53,7 +53,7 @@ const RhrrhResumen = ({ datos }) => {
                     {/* Total a pagar */}
                     <div>
                         <p className="text-xs text-slate-500 mb-0.5">Total a pagar</p>
-                        <p className="text-2xl font-black text-slate-800">
+                        <p className="text-2xl font-black text-slate-800 dark:text-slate-200">
                             {formatMoneda(datos.total_liquido_pendiente)}
                         </p>
                     </div>

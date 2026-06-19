@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import BotonAccion from '../../../Componentes/BotonAccion';
 import { logger } from '../../../Configuracion/logger';
+import { Plus, Search, Settings, X, Check } from 'lucide-react';
 
 const AdministradorCuentas = () => {
     const [cuentas, setCuentas] = useState([]);
@@ -143,26 +144,26 @@ const AdministradorCuentas = () => {
         <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans pb-10">
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900">Configuración: Plan de Cuentas</h2><AyudaModulo moduloId="planCuentas" size={26} /></div>
-                    <p className="text-slate-500 text-sm mt-1">Administra la visibilidad, nombres y comportamiento de tus cuentas contables.</p>
+                    <div className="flex items-center gap-3"><h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">Configuración: Plan de Cuentas</h2><AyudaModulo moduloId="planCuentas" size={26} /></div>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Administra la visibilidad, nombres y comportamiento de tus cuentas contables.</p>
                 </div>
                 <button
                     onClick={abrirCreacion}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    <Plus size={20} strokeWidth={1.75} />
                     Nueva Cuenta
                 </button>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col lg:flex-row gap-4">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 flex flex-col lg:flex-row gap-4">
                 <div className="flex-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <Search size={20} strokeWidth={1.75} className="text-slate-400" />
                     </div>
                     <input
                         type="text"
-                        className="w-full !pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm"
+                        className="w-full !pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 text-sm"
                         placeholder="Buscar por código o nombre..."
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
@@ -171,7 +172,7 @@ const AdministradorCuentas = () => {
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="w-full sm:w-48">
                         <select
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm cursor-pointer"
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 text-sm cursor-pointer"
                             value={filtroTipo}
                             onChange={(e) => setFiltroTipo(e.target.value)}
                         >
@@ -185,7 +186,7 @@ const AdministradorCuentas = () => {
                     </div>
                     <div className="w-full sm:w-48">
                         <select
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 text-sm cursor-pointer"
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 text-sm cursor-pointer"
                             value={filtroEstado}
                             onChange={(e) => setFiltroEstado(e.target.value)}
                         >
@@ -197,7 +198,7 @@ const AdministradorCuentas = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 {loading || cuentasFiltradas.length === 0 ? (
                     <EstadoCarga
                         cargando={loading}
@@ -210,17 +211,17 @@ const AdministradorCuentas = () => {
                     />
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50">
+                        <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50 dark:bg-slate-900">
                             {cuentasFiltradas.map((cuenta) => {
                                 const isActiva = cuenta.activo === undefined || cuenta.activo == 1;
                                 return (
-                                    <div key={cuenta.id} className={`bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative ${!isActiva ? 'opacity-70' : ''}`}>
+                                    <div key={cuenta.id} className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm relative ${!isActiva ? 'opacity-70' : ''}`}>
                                         <div className={`absolute top-0 left-0 w-1.5 h-full rounded-l-xl ${isActiva ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
 
                                         <div className="flex justify-between items-start mb-2 pl-2">
                                             <div>
-                                                <div className="text-xs font-bold text-slate-500 font-mono mb-0.5">{cuenta.codigo}</div>
-                                                <h3 className={`font-bold leading-tight ${isActiva ? 'text-slate-800' : 'text-slate-400 line-through'}`}>{cuenta.nombre}</h3>
+                                                <div className="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono mb-0.5">{cuenta.codigo}</div>
+                                                <h3 className={`font-bold leading-tight ${isActiva ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 line-through'}`}>{cuenta.nombre}</h3>
                                             </div>
                                         </div>
 
@@ -236,9 +237,9 @@ const AdministradorCuentas = () => {
                                             </span>
                                         </div>
 
-                                        <div className="pt-3 border-t border-slate-100 pl-2">
-                                            <button onClick={() => abrirEdicion(cuenta)} className="w-full bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 font-bold text-sm py-2 rounded-lg transition-colors border border-slate-200 flex items-center justify-center gap-2">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                        <div className="pt-3 border-t border-slate-100 dark:border-slate-700 pl-2">
+                                            <button onClick={() => abrirEdicion(cuenta)} className="w-full bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 font-bold text-sm py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
+                                                <Settings size={16} strokeWidth={1.75} />
                                                 Configurar
                                             </button>
                                         </div>
@@ -249,7 +250,7 @@ const AdministradorCuentas = () => {
 
                         <div className="hidden md:block overflow-x-auto w-full custom-scrollbar">
                             <table className="min-w-full text-left border-collapse">
-                                <thead className="bg-slate-900 text-white text-xs uppercase tracking-wider">
+                                <thead className="sticky top-0 z-10 bg-slate-900 text-white text-xs uppercase tracking-wider">
                                     <tr>
                                         <th className="px-6 py-4 font-bold">Código</th>
                                         <th className="px-6 py-4 font-bold">Nombre de la Cuenta</th>
@@ -259,13 +260,13 @@ const AdministradorCuentas = () => {
                                         <th className="px-6 py-4 font-bold text-right">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 text-sm">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
                                     {cuentasFiltradas.map((cuenta) => {
                                         const isActiva = cuenta.activo === undefined || cuenta.activo == 1;
                                         return (
-                                            <tr key={cuenta.id} className={`hover:bg-slate-50 transition-colors ${!isActiva ? 'opacity-60 bg-slate-50' : 'bg-white'}`}>
-                                                <td className="px-6 py-4 font-mono font-bold text-slate-600 whitespace-nowrap">{cuenta.codigo}</td>
-                                                <td className={`px-6 py-4 font-bold ${isActiva ? 'text-slate-800' : 'text-slate-500 line-through decoration-slate-300'}`}>
+                                            <tr key={cuenta.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${!isActiva ? 'opacity-60 bg-slate-50 dark:bg-slate-900' : 'bg-white dark:bg-slate-800'}`}>
+                                                <td className="px-6 py-4 font-mono font-bold text-slate-600 dark:text-slate-400 whitespace-nowrap">{cuenta.codigo}</td>
+                                                <td className={`px-6 py-4 font-bold ${isActiva ? 'text-slate-800 dark:text-slate-200' : 'text-slate-500 line-through decoration-slate-300'}`}>
                                                     {cuenta.nombre}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -288,10 +289,10 @@ const AdministradorCuentas = () => {
                                                 <td className="px-6 py-4 text-right whitespace-nowrap">
                                                     <button
                                                         onClick={() => abrirEdicion(cuenta)}
-                                                        className="flex items-center gap-1.5 ml-auto bg-white border border-slate-200 hover:bg-blue-50 text-slate-600 hover:text-blue-700 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-xs shadow-sm"
+                                                        className="flex items-center gap-1.5 ml-auto bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 text-slate-600 dark:text-slate-400 hover:text-blue-700 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-xs shadow-sm"
                                                         title="Configurar Cuenta"
                                                     >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                        <Settings size={16} strokeWidth={1.75} />
                                                         Configurar
                                                     </button>
                                                 </td>
@@ -307,51 +308,51 @@ const AdministradorCuentas = () => {
 
             {modalOpen && (
                 <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-slide-up">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700 animate-slide-up">
                         <div className="bg-slate-900 px-6 py-5 flex justify-between items-center text-white">
                             <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                                 {cuentaEditando ? (
-                                    <><svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg> Propiedades de Cuenta</>
+                                    <><Settings size={20} strokeWidth={1.75} className="text-blue-400" /> Propiedades de Cuenta</>
                                 ) : (
-                                    <><svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg> Nueva Cuenta Contable</>
+                                    <><Plus size={20} strokeWidth={1.75} className="text-blue-400" /> Nueva Cuenta Contable</>
                                 )}
                             </h2>
                             <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white transition-colors">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <X size={24} strokeWidth={1.75} />
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-5 bg-white">
+                        <div className="p-6 space-y-5 bg-white dark:bg-slate-800">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Código Contable</label>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Código Contable</label>
                                     <input
                                         type="text"
                                         value={formEdit.codigo}
                                         onChange={e => setFormEdit({ ...formEdit, codigo: e.target.value.replace(/[^0-9.-]/g, '') })}
                                         disabled={!!cuentaEditando}
-                                        className={`w-full border rounded-lg p-3 font-mono font-bold outline-none transition-all ${cuentaEditando ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' : 'bg-white border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-slate-800'}`}
+                                        className={`w-full border rounded-lg p-3 font-mono font-bold outline-none transition-all ${cuentaEditando ? 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-600 cursor-not-allowed' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-slate-800 dark:text-slate-200'}`}
                                         placeholder="Ej: 110101"
                                     />
                                     {cuentaEditando && <span className="text-[10px] text-slate-400 mt-1 block">El código no es editable.</span>}
                                 </div>
                                 <div className="col-span-2 sm:col-span-1">
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Nivel (1 al 6)</label>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Nivel (1 al 6)</label>
                                     <input
                                         type="number"
                                         min="1" max="6"
                                         value={formEdit.nivel}
                                         onChange={e => setFormEdit({ ...formEdit, nivel: e.target.value })}
-                                        className="w-full border border-slate-300 rounded-lg p-3 font-bold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-3 font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Tipo de Cuenta</label>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Tipo de Cuenta</label>
                                     <select
                                         value={formEdit.tipo}
                                         onChange={e => setFormEdit({ ...formEdit, tipo: e.target.value })}
                                         disabled={!!cuentaEditando}
-                                        className={`w-full border rounded-lg p-3 font-bold outline-none transition-all ${cuentaEditando ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed' : 'bg-white border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-slate-800 cursor-pointer'}`}
+                                        className={`w-full border rounded-lg p-3 font-bold outline-none transition-all ${cuentaEditando ? 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-600 cursor-not-allowed' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-slate-800 dark:text-slate-200 cursor-pointer'}`}
                                     >
                                         <option value="ACTIVO">ACTIVO</option>
                                         <option value="PASIVO">PASIVO</option>
@@ -363,24 +364,24 @@ const AdministradorCuentas = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Nombre de la Cuenta</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Nombre de la Cuenta</label>
                                 <input
                                     type="text"
                                     value={formEdit.nombre}
                                     onChange={e => setFormEdit({ ...formEdit, nombre: e.target.value })}
-                                    className="w-full border border-slate-300 rounded-lg p-3 font-bold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                                    className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-3 font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                                     placeholder="Ej: Banco Santander, Caja, etc."
                                 />
                             </div>
 
-                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
                                 <div>
-                                    <p className="font-bold text-slate-800 text-sm">Cuenta Imputable</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Permite recibir asientos contables.</p>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">Cuenta Imputable</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Permite recibir asientos contables.</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" className="sr-only peer" disabled={parseInt(formEdit.nivel) === 1} checked={formEdit.imputable === 1} onChange={() => setFormEdit({ ...formEdit, imputable: formEdit.imputable === 1 ? 0 : 1 })} />
-                                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    <div className="w-11 h-6 bg-slate-300 dark:bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
 
@@ -396,8 +397,8 @@ const AdministradorCuentas = () => {
                             </div>
                         </div>
 
-                        <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-3">
-                            <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-sm font-bold transition-all text-center">
+                        <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-end gap-3">
+                            <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm font-bold transition-all text-center">
                                 Cancelar
                             </button>
                             <BotonAccion
@@ -406,11 +407,7 @@ const AdministradorCuentas = () => {
                                 color="slate"
                                 tamano="md"
                                 textoCargando="Guardando..."
-                                icono={
-                                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                }
+                                icono={<Check size={16} strokeWidth={1.75} className="text-emerald-400" />}
                                 className="w-full sm:w-auto"
                             >
                                 {cuentaEditando ? 'Guardar Cambios' : 'Crear Cuenta'}

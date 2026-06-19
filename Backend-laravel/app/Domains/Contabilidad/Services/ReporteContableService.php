@@ -97,9 +97,20 @@ class ReporteContableService
 
         $mapMensual = $this->consultarBalancePeriodo($empresaId, $fechaInicio, $fechaFin, $filtro);
 
-        $codigos = array_unique(array_merge(array_keys($mapAnterior), array_keys($mapMensual)));
+        // Incluir TODAS las cuentas del plan, aunque no tengan movimientos en el período
+        $catalogo = PlanCuenta::where('empresa_id', $empresaId)
+            ->orderBy('codigo')
+            ->get(['codigo', 'nombre', 'tipo'])
+            ->keyBy('codigo');
+
+        $codigos = $catalogo->keys()
+            ->merge(array_keys($mapAnterior))
+            ->merge(array_keys($mapMensual))
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
         $codigos = array_map('strval', $codigos);
-        sort($codigos);
 
         $cuentas = [];
         $totales = [
@@ -109,8 +120,12 @@ class ReporteContableService
         ];
 
         foreach ($codigos as $codigo) {
-            $ant = $mapAnterior[$codigo] ?? ['nombre' => ($mapMensual[$codigo]['nombre'] ?? ''), 'tipo' => ($mapMensual[$codigo]['tipo'] ?? ''), 'debe' => 0.0, 'haber' => 0.0];
-            $men = $mapMensual[$codigo]  ?? ['nombre' => ($mapAnterior[$codigo]['nombre'] ?? ''), 'tipo' => ($mapAnterior[$codigo]['tipo'] ?? ''), 'debe' => 0.0, 'haber' => 0.0];
+            $cuentaCatalogo = $catalogo[$codigo] ?? null;
+            $nombreFallback = $cuentaCatalogo !== null ? $cuentaCatalogo->nombre : '';
+            $tipoFallback   = $cuentaCatalogo !== null ? $cuentaCatalogo->tipo   : '';
+
+            $ant = $mapAnterior[$codigo] ?? ['nombre' => $nombreFallback, 'tipo' => $tipoFallback, 'debe' => 0.0, 'haber' => 0.0];
+            $men = $mapMensual[$codigo]  ?? ['nombre' => $nombreFallback, 'tipo' => $tipoFallback, 'debe' => 0.0, 'haber' => 0.0];
 
             $antSaldo  = $this->calcularSaldoBalance((float) $ant['debe'], (float) $ant['haber']);
             $menSaldo  = $this->calcularSaldoBalance((float) $men['debe'], (float) $men['haber']);

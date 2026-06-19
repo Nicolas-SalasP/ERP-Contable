@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
-import ModalGenerico from '../../../Componentes/ModalGenerico';
-
 import { logger } from '../../../Configuracion/logger';
+import { Eye, Download, ArrowLeft } from 'lucide-react';
+import { TablaSkeleton } from '../../../Componentes/Skeleton';
+import { EstadoVacio } from '../../../Componentes/EstadoVacio';
+import { useToast } from '../../../Contextos/ToastContext';
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -22,6 +24,7 @@ const formatDate = (dateString) => {
 };
 
 const LibroMayor = () => {
+    const { toast } = useToast();
     const [activeTab, setActiveTab] = useState('diario');
     const [asientos, setAsientos] = useState([]);
     const [planCuentas, setPlanCuentas] = useState([]);
@@ -45,13 +48,6 @@ const LibroMayor = () => {
     const wrapperRef = useRef(null);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, asientoId: null });
     const [asientoSeleccionado, setAsientoSeleccionado] = useState(null);
-
-    const [notificacion, setNotificacion] = useState({
-        show: false,
-        title: '',
-        message: '',
-        type: 'info'
-    });
 
     useEffect(() => {
         cargarPlanCuentas();
@@ -96,12 +92,7 @@ const LibroMayor = () => {
         const diffTime = Math.abs(new Date(filtros.hasta) - new Date(filtros.desde));
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays > 366) {
-            return setNotificacion({
-                show: true,
-                title: 'Rango Excedido',
-                message: 'Por seguridad y rendimiento, consulta un máximo de 366 días a la vez.',
-                type: 'warning'
-            });
+            return toast('Rango excedido: consulta máximo 366 días a la vez.', 'warning');
         }
 
         setLoading(true);
@@ -167,12 +158,7 @@ const LibroMayor = () => {
                 setAsientos(datosAplanados);
             } else {
                 setAsientos([]);
-                setNotificacion({
-                    show: true,
-                    title: 'Error',
-                    message: res.message || 'No se pudieron cargar los datos',
-                    type: 'danger'
-                });
+                toast(res.message || 'No se pudieron cargar los datos.', 'error');
             }
         } catch (error) {
             logger.error("Error cargando diario", error);
@@ -202,12 +188,7 @@ const LibroMayor = () => {
                 setActiveTab('visor');
             }
         } catch (error) {
-            setNotificacion({
-                show: true,
-                title: 'Error',
-                message: 'No se pudo cargar el detalle del asiento.',
-                type: 'danger'
-            });
+            toast('No se pudo cargar el detalle del asiento.', 'error');
         } finally {
             setLoading(false);
         }
@@ -215,12 +196,7 @@ const LibroMayor = () => {
 
     const exportarExcel = () => {
         if (asientos.length === 0) {
-            setNotificacion({
-                show: true,
-                title: 'Sin datos',
-                message: 'No hay movimientos para exportar en el rango seleccionado.',
-                type: 'warning'
-            });
+            toast('No hay movimientos para exportar en el rango seleccionado.', 'warning');
             return;
         }
 
@@ -245,35 +221,27 @@ const LibroMayor = () => {
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-6 font-sans text-slate-800 relative">
-
-            <ModalGenerico
-                isOpen={notificacion.show}
-                onClose={() => setNotificacion({ ...notificacion, show: false })}
-                title={notificacion.title}
-                message={notificacion.message}
-                type={notificacion.type}
-            />
+        <div className="max-w-7xl mx-auto p-6 font-sans text-slate-800 dark:text-slate-200 relative">
 
             {contextMenu.visible && (
                 <div
-                    className="fixed bg-white shadow-xl border border-slate-200 rounded-lg py-1 z-50 w-56 animate-fade-in"
+                    className="fixed bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 rounded-lg py-1 z-50 w-56 animate-fade-in"
                     style={{ top: contextMenu.y, left: contextMenu.x }}
                 >
                     <button
                         onClick={abrirComprobante}
-                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-600 flex items-center gap-3 transition-colors"
                     >
-                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <Eye size={16} strokeWidth={1.75} className="text-slate-400" />
                         Abrir Comprobante
                     </button>
                 </div>
             )}
 
             <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-900">Libros Contables</h1><AyudaModulo moduloId="libroMayor" size={26} /></div>
-                <div className="flex bg-white rounded-lg shadow-sm border p-1">
-                    <button onClick={() => setActiveTab('diario')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition ${activeTab === 'diario' ? 'bg-slate-800 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>Libro Diario / Mayor</button>
+                <div className="flex items-center gap-3"><h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Libros Contables</h1><AyudaModulo moduloId="libroMayor" size={26} /></div>
+                <div className="flex bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-1">
+                    <button onClick={() => setActiveTab('diario')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition ${activeTab === 'diario' ? 'bg-slate-800 text-white' : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>Libro Diario / Mayor</button>
                     {activeTab === 'visor' && (
                         <button className="px-4 py-1.5 text-sm font-bold rounded-md bg-emerald-600 text-white flex items-center gap-2 animate-pulse">
                             <span className="w-2 h-2 bg-white rounded-full"></span>
@@ -284,23 +252,23 @@ const LibroMayor = () => {
             </div>
 
             {activeTab === 'diario' && (
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end z-20 relative">
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 flex flex-wrap gap-4 items-end z-20 relative">
                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Desde</label>
-                        <input type="date" className="border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.desde} onChange={e => setFiltros({ ...filtros, desde: e.target.value })} />
+                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Desde</label>
+                        <input type="date" className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.desde} onChange={e => setFiltros({ ...filtros, desde: e.target.value })} />
                     </div>
                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hasta</label>
-                        <input type="date" className="border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.hasta} onChange={e => setFiltros({ ...filtros, hasta: e.target.value })} />
+                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Hasta</label>
+                        <input type="date" className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.hasta} onChange={e => setFiltros({ ...filtros, hasta: e.target.value })} />
                     </div>
 
                     <div className="flex-1 min-w-full sm:min-w-[250px] relative" ref={wrapperRef}>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buscar Cuenta (Vacío para ver todo)</label>
+                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Buscar Cuenta (Vacío para ver todo)</label>
                         <div className="relative">
                             <input
                                 type="text"
                                 placeholder="Escribe 'Caja' o '1101'..."
-                                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-mono"
+                                className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-mono"
                                 value={busquedaCuenta}
                                 onChange={(e) => {
                                     setBusquedaCuenta(e.target.value);
@@ -324,8 +292,8 @@ const LibroMayor = () => {
                             )}
                         </div>
                         {mostrarLista && sugerencias.length > 0 && (
-                            <div className="absolute top-full left-0 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto z-50">
-                                <ul className="py-1 text-sm text-slate-700">
+                            <div className="absolute top-full left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto z-50">
+                                <ul className="py-1 text-sm text-slate-700 dark:text-slate-300">
                                     {sugerencias.map(cta => (
                                         <li
                                             key={cta.id}
@@ -335,10 +303,10 @@ const LibroMayor = () => {
                                                 localStorage.setItem('ultimaCuentaLibroDiario', cta.codigo);
                                                 setMostrarLista(false);
                                             }}
-                                            className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex justify-between border-b border-slate-50"
+                                            className="px-4 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between border-b border-slate-50 dark:border-slate-700"
                                         >
                                             <span className="font-medium">{cta.nombre}</span>
-                                            <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">{cta.codigo}</span>
+                                            <span className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">{cta.codigo}</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -346,10 +314,10 @@ const LibroMayor = () => {
                         )}
                     </div>
                     <div className="flex-1 min-w-full sm:min-w-[180px]">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Palabra en Glosa</label>
+                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Palabra en Glosa</label>
                         <input
                             type="text"
-                            className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                            className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
                             placeholder="Ej: Traspaso, Pago..."
                             value={filtros.search}
                             onChange={e => setFiltros({ ...filtros, search: e.target.value })}
@@ -358,7 +326,7 @@ const LibroMayor = () => {
                     <div>
                         <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Auditoría</label>
                         <select
-                            className="border border-blue-200 bg-blue-50 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700"
+                            className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700 dark:text-blue-300"
                             value={filtros.auditoria}
                             onChange={e => setFiltros({ ...filtros, auditoria: Number(e.target.value) })}
                         >
@@ -371,7 +339,7 @@ const LibroMayor = () => {
                     <div className="flex gap-2">
                         <button onClick={cargarLibroDiario} className="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 text-sm shadow-sm transition-all active:scale-95">Consultar</button>
                         <button onClick={exportarExcel} className="bg-emerald-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-emerald-700 text-sm flex items-center gap-2 shadow-sm transition-all active:scale-95">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <Download size={16} strokeWidth={1.75} />
                             Excel
                         </button>
                     </div>
@@ -379,45 +347,45 @@ const LibroMayor = () => {
             )}
 
             {activeTab === 'diario' && (
-                <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden z-10 relative">
+                <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 overflow-hidden z-10 relative">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-100 text-[11px] uppercase text-slate-500 font-bold border-b border-slate-200">
+                            <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-[11px] uppercase text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700">
                                 <tr>
-                                    <th className="px-4 py-3 w-32 border-r border-slate-200">Comprobante</th>
-                                    <th className="px-4 py-3 w-28 border-r border-slate-200 text-center">Fecha</th>
-                                    <th className="px-4 py-3 w-64 border-r border-slate-200">Cuenta Contable</th>
-                                    <th className="px-4 py-3 border-r border-slate-200">Descripción / Glosa</th>
-                                    <th className="px-4 py-3 w-28 border-r border-slate-200 text-center">Ref. Doc</th>
-                                    <th className="px-4 py-3 w-32 text-right border-r border-slate-200">Debe</th>
+                                    <th className="px-4 py-3 w-32 border-r border-slate-200 dark:border-slate-700">Comprobante</th>
+                                    <th className="px-4 py-3 w-28 border-r border-slate-200 dark:border-slate-700 text-center">Fecha</th>
+                                    <th className="px-4 py-3 w-64 border-r border-slate-200 dark:border-slate-700">Cuenta Contable</th>
+                                    <th className="px-4 py-3 border-r border-slate-200 dark:border-slate-700">Descripción / Glosa</th>
+                                    <th className="px-4 py-3 w-28 border-r border-slate-200 dark:border-slate-700 text-center">Ref. Doc</th>
+                                    <th className="px-4 py-3 w-32 text-right border-r border-slate-200 dark:border-slate-700">Debe</th>
                                     <th className="px-4 py-3 w-32 text-right">Haber</th>
                                 </tr>
                             </thead>
-                            <tbody className="text-xs divide-y divide-slate-100">
-                                {loading ? <tr><td colSpan="7" className="p-8 text-center text-slate-400"><i className="fas fa-spinner fa-spin text-slate-300 text-2xl mb-2 block"></i>Cargando...</td></tr> :
-                                    asientos.length === 0 ? <tr><td colSpan="7" className="p-8 text-center text-slate-400"><i className="fas fa-book-open text-slate-300 text-2xl mb-2 block"></i>No hay movimientos.</td></tr> : (
+                            <tbody className="text-xs divide-y divide-slate-100 dark:divide-slate-700">
+                                {loading ? <TablaSkeleton filas={8} columnas={7} /> :
+                                    asientos.length === 0 ? <EstadoVacio mensaje="Sin movimientos en el período" detalle="Ajusta el rango de fechas o selecciona otra cuenta." /> : (
                                         asientos.map((row, idx) => {
                                             const esAnulado = row.estado === 'ANULADO' || row.estado === 'RECLASIFICADO';
                                             return (
                                                 <tr
                                                     key={idx}
                                                     onContextMenu={(e) => handleContextMenu(e, row.asiento_id)}
-                                                    className={`transition-colors cursor-context-menu ${esAnulado ? 'bg-red-50/60 hover:bg-red-100/80 opacity-80' : 'hover:bg-blue-50'}`}
+                                                    className={`transition-colors cursor-context-menu ${esAnulado ? 'bg-red-50/60 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/40 opacity-80' : 'hover:bg-blue-50 dark:hover:bg-slate-700/60'}`}
                                                     title={esAnulado ? 'Asiento Anulado/Interno' : 'Click derecho para opciones'}
                                                 >
-                                                    <td className="px-4 py-2 font-mono text-blue-600 font-bold border-r border-slate-100">
+                                                    <td className="px-4 py-2 font-mono text-blue-600 dark:text-blue-400 font-bold border-r border-slate-100 dark:border-slate-700">
                                                         {row.codigo_unico || row.asiento_id}
-                                                        {esAnulado && <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] bg-red-200 text-red-700">R</span>}
+                                                        {esAnulado && <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] bg-red-200 dark:bg-red-900/60 text-red-700 dark:text-red-400">R</span>}
                                                     </td>
-                                                    <td className="px-4 py-2 text-center text-slate-500 border-r border-slate-100 whitespace-nowrap">{formatDate(row.fecha)}</td>
-                                                    <td className="px-4 py-2 border-r border-slate-100">
-                                                        <div className={`font-mono font-bold ${esAnulado ? 'text-red-700' : 'text-slate-600'}`}>{row.cuenta_codigo}</div>
-                                                        <div className={`truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px] ${esAnulado ? 'text-red-500' : 'text-slate-400'}`}>{row.cuenta_nombre}</div>
+                                                    <td className="px-4 py-2 text-center text-slate-500 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700 whitespace-nowrap">{formatDate(row.fecha)}</td>
+                                                    <td className="px-4 py-2 border-r border-slate-100 dark:border-slate-700">
+                                                        <div className={`font-mono font-bold ${esAnulado ? 'text-red-700 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}`}>{row.cuenta_codigo}</div>
+                                                        <div className={`truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px] ${esAnulado ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'}`}>{row.cuenta_nombre}</div>
                                                     </td>
-                                                    <td className={`px-4 py-2 border-r border-slate-100 ${esAnulado ? 'text-red-800 line-through decoration-red-300' : 'text-slate-700'}`}>{row.glosa}</td>
-                                                    <td className="px-4 py-2 text-center text-slate-500 font-mono border-r border-slate-100">{row.numero_documento || '-'}</td>
-                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50' : 'text-emerald-600 bg-emerald-50/30'}`}>{formatMoney(row.debe)}</td>
-                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50' : 'text-slate-600 bg-slate-50/30'}`}>{formatMoney(row.haber)}</td>
+                                                    <td className={`px-4 py-2 border-r border-slate-100 dark:border-slate-700 ${esAnulado ? 'text-red-800 dark:text-red-400 line-through decoration-red-300' : 'text-slate-700 dark:text-slate-300'}`}>{row.glosa}</td>
+                                                    <td className="px-4 py-2 text-center text-slate-500 dark:text-slate-400 font-mono border-r border-slate-100 dark:border-slate-700">{row.numero_documento || '-'}</td>
+                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50 dark:bg-red-900/30 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/20'}`}>{formatMoney(row.debe)}</td>
+                                                    <td className={`px-4 py-2 text-right font-mono ${esAnulado ? 'text-red-600 bg-red-100/50 dark:bg-red-900/30 dark:text-red-400' : 'text-slate-600 dark:text-slate-300 bg-slate-50/30 dark:bg-slate-700/30'}`}>{formatMoney(row.haber)}</td>
                                                 </tr>
                                             );
                                         })
@@ -432,46 +400,46 @@ const LibroMayor = () => {
                 <div className="space-y-6 animate-fade-in-up">
                     <button
                         onClick={() => setActiveTab('diario')}
-                        className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-blue-600 px-4 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition-all active:scale-95"
+                        className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 px-4 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition-all active:scale-95"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                        <ArrowLeft size={16} strokeWidth={1.75} />
                         Volver al Libro Diario
                     </button>
 
-                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-                        <div className="bg-slate-50 p-6 border-b border-slate-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <div className="bg-slate-50 dark:bg-slate-900 p-6 border-b border-slate-200 dark:border-slate-700">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-slate-800">Comprobante Contable</h2>
-                                    <p className="text-slate-500 mt-1">N° Único: <span className="font-mono font-bold text-slate-700">{asientoSeleccionado.cabecera?.codigo_unico || asientoSeleccionado.cabecera?.numero_comprobante}</span></p>
+                                    <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Comprobante Contable</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 mt-1">N° Único: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{asientoSeleccionado.cabecera?.codigo_unico || asientoSeleccionado.cabecera?.numero_comprobante}</span></p>
                                 </div>
                                 <div className="text-right">
                                     <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-2 ${asientoSeleccionado.cabecera?.estado === 'ANULADO' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
                                         {asientoSeleccionado.cabecera?.estado === 'ANULADO' ? 'ANULADO / REVERSO' : (asientoSeleccionado.cabecera?.tipo_asiento || asientoSeleccionado.cabecera?.tipo)}
                                     </div>
-                                    <p className="text-sm text-slate-500">Fecha: {formatDate(asientoSeleccionado.cabecera?.fecha)}</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">Fecha: {formatDate(asientoSeleccionado.cabecera?.fecha)}</p>
                                 </div>
                             </div>
-                            <div className="mt-4 bg-white p-3 rounded border border-slate-200">
+                            <div className="mt-4 bg-white dark:bg-slate-800 p-3 rounded border border-slate-200 dark:border-slate-700">
                                 <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Glosa / Descripción</span>
-                                <p className="text-slate-700 italic">"{asientoSeleccionado.cabecera?.glosa}"</p>
+                                <p className="text-slate-700 dark:text-slate-300 italic">"{asientoSeleccionado.cabecera?.glosa}"</p>
                             </div>
                         </div>
 
                         <table className="w-full text-left">
-                            <thead className="bg-white border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
+                            <thead className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">
                                 <tr>
                                     <th className="px-6 py-4">Cuenta</th>
                                     <th className="px-6 py-4 text-right">Debe</th>
                                     <th className="px-6 py-4 text-right">Haber</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 text-sm">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
                                 {asientoSeleccionado.detalles?.map((det, idx) => (
-                                    <tr key={idx} className="hover:bg-slate-50">
+                                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                                         <td className="px-6 py-3">
-                                            <div className="font-bold font-mono text-slate-700">{det.cuenta_contable}</div>
-                                            <div className="text-slate-500">{det.cuenta_nombre || det.cuenta?.nombre}</div>
+                                            <div className="font-bold font-mono text-slate-700 dark:text-slate-300">{det.cuenta_contable}</div>
+                                            <div className="text-slate-500 dark:text-slate-400">{det.cuenta_nombre || det.cuenta?.nombre}</div>
                                         </td>
                                         <td className="px-6 py-3 text-right font-mono text-emerald-600 font-medium">
                                             {parseFloat(det.debe) > 0 ? formatMoney(det.debe) : '-'}
@@ -482,9 +450,9 @@ const LibroMayor = () => {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot className="bg-slate-50 border-t border-slate-200">
+                            <tfoot className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
                                 <tr>
-                                    <td className="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs">Totales Iguales</td>
+                                    <td className="px-6 py-4 text-right font-bold text-slate-500 dark:text-slate-400 uppercase text-xs">Totales Iguales</td>
                                     <td className="px-6 py-4 text-right font-bold font-mono text-emerald-700">
                                         {formatMoney(asientoSeleccionado.detalles?.reduce((acc, d) => acc + parseFloat(d.debe), 0))}
                                     </td>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 
@@ -89,23 +89,23 @@ const TabSimulador = ({ config }) => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-end gap-5">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-end gap-5">
                 <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Mes</label>
+                    <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Mes</label>
                     <select
                         value={mes}
                         onChange={e => { setMes(parseInt(e.target.value)); setResultado(null); setEstado(null); }}
-                        className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 bg-slate-50 focus:ring-2 focus:ring-violet-500 outline-none cursor-pointer"
+                        className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-violet-500 outline-none cursor-pointer"
                     >
                         {MESES.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Año</label>
+                    <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Año</label>
                     <select
                         value={anio}
                         onChange={e => { setAnio(parseInt(e.target.value)); setResultado(null); setEstado(null); }}
-                        className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 bg-slate-50 focus:ring-2 focus:ring-violet-500 outline-none cursor-pointer"
+                        className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-violet-500 outline-none cursor-pointer"
                     >
                         {[anioActual - 2, anioActual - 1, anioActual, anioActual + 1].map(y => (
                             <option key={y} value={y}>{y}</option>
@@ -134,8 +134,8 @@ const TabSimulador = ({ config }) => {
                             { label: 'Patrimonio',   val: resultado.totales?.patrimonio,   color: 'purple' },
                             { label: 'Pasivos',      val: resultado.totales?.pasivos,      color: 'red' },
                         ].map(item => (
-                            <div key={item.label} className={`bg-white rounded-xl border border-slate-200 p-4 ${item.val <= 0 ? 'opacity-50' : ''}`}>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
+                            <div key={item.label} className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 ${item.val <= 0 ? 'opacity-50' : ''}`}>
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{item.label}</p>
                                 <p className={`text-lg font-black mt-1 ${badgeColor[item.color]?.split(' ')[1] || 'text-slate-800'}`}>
                                     {formatCLP(item.val)}
                                 </p>
@@ -143,38 +143,38 @@ const TabSimulador = ({ config }) => {
                         ))}
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                        <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center gap-3">
                             <div>
-                                <h3 className="font-black text-slate-800">
+                                <h3 className="font-black text-slate-800 dark:text-slate-200">
                                     Vista Previa del Asiento
                                     <span className="ml-2 text-[11px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded font-black border border-violet-200">
                                         IPC {resultado.variacion_pct?.toFixed(4)}% ({resultado.tipo})
                                     </span>
                                 </h3>
-                                <p className="text-xs text-slate-500 mt-0.5">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                     {MESES[mes - 1]} {anio} · {resultado.modalidad} · {resultado.proveedor_ipc}
                                 </p>
                             </div>
                             <div className="sm:ml-auto text-right">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total CM Neto</p>
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total CM Neto</p>
                                 <p className="text-2xl font-black text-violet-700">{formatCLP(resultado.totales?.neto)}</p>
                             </div>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                <thead className="sticky top-0 z-10 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
                                     <tr>
                                         <th className="px-5 py-3 text-left">Cuenta</th>
                                         <th className="px-5 py-3 text-right text-emerald-600">Debe</th>
                                         <th className="px-5 py-3 text-right text-rose-600">Haber</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50">
+                                <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                     {resultado.asiento_preview?.map((linea, i) => (
-                                        <tr key={i} className="hover:bg-slate-50">
-                                            <td className="px-5 py-3 font-mono text-slate-600 text-xs">{linea.cuenta_contable}</td>
+                                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                            <td className="px-5 py-3 font-mono text-slate-600 dark:text-slate-400 text-xs">{linea.cuenta_contable}</td>
                                             <td className="px-5 py-3 text-right font-mono font-bold">
                                                 {linea.debe > 0 ? <span className="text-emerald-700">{formatCLP(linea.debe)}</span> : <span className="text-slate-300">—</span>}
                                             </td>
@@ -184,9 +184,9 @@ const TabSimulador = ({ config }) => {
                                         </tr>
                                     ))}
                                 </tbody>
-                                <tfoot className="border-t-2 border-slate-200 bg-slate-50">
+                                <tfoot className="border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                                     <tr>
-                                        <td className="px-5 py-3 font-black text-slate-700 text-xs uppercase tracking-widest">Total</td>
+                                        <td className="px-5 py-3 font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-widest">Total</td>
                                         <td className="px-5 py-3 text-right font-black text-emerald-700">{formatCLP(resultado.totales?.neto)}</td>
                                         <td className="px-5 py-3 text-right font-black text-rose-600">{formatCLP(resultado.totales?.neto)}</td>
                                     </tr>
@@ -194,7 +194,7 @@ const TabSimulador = ({ config }) => {
                             </table>
                         </div>
 
-                        <div className="px-6 py-5 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                             {estado.ya_ejecutada && (
                                 <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-xl">
                                     <i className="fas fa-check-circle"></i>
@@ -225,14 +225,14 @@ const TabSimulador = ({ config }) => {
                     </div>
 
                     {resultado.lineas?.length > 0 && (
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                                <h3 className="font-black text-slate-800">Detalle por Cuenta</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">{resultado.lineas.length} cuentas incluidas en el cálculo.</p>
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                            <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                                <h3 className="font-black text-slate-800 dark:text-slate-200">Detalle por Cuenta</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{resultado.lineas.length} cuentas incluidas en el cálculo.</p>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                    <thead className="sticky top-0 z-10 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
                                         <tr>
                                             <th className="px-5 py-3 text-left">Cuenta</th>
                                             <th className="px-5 py-3 text-left">Rol</th>
@@ -241,20 +241,20 @@ const TabSimulador = ({ config }) => {
                                             <th className="px-5 py-3 text-right">Ajuste CM</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                         {resultado.lineas.map((linea, i) => (
-                                            <tr key={i} className="hover:bg-slate-50">
+                                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                                                 <td className="px-5 py-3">
-                                                    <span className="font-mono text-xs text-slate-500 mr-2">{linea.cuenta_codigo}</span>
-                                                    <span className="font-bold text-slate-800">{linea.nombre_cuenta}</span>
+                                                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400 mr-2">{linea.cuenta_codigo}</span>
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200">{linea.nombre_cuenta}</span>
                                                 </td>
                                                 <td className="px-5 py-3">
                                                     <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase ${badgeColor[COLORES_ROL[linea.rol_cm]] || 'bg-slate-100 text-slate-600'}`}>
                                                         {linea.label_rol}
                                                     </span>
                                                 </td>
-                                                <td className="px-5 py-3 text-right font-mono text-slate-600">{formatCLP(linea.saldo_ajustable)}</td>
-                                                <td className="px-5 py-3 text-right font-mono text-slate-500 text-xs">{Number(linea.variacion_usada).toFixed(4)}%</td>
+                                                <td className="px-5 py-3 text-right font-mono text-slate-600 dark:text-slate-400">{formatCLP(linea.saldo_ajustable)}</td>
+                                                <td className="px-5 py-3 text-right font-mono text-slate-500 dark:text-slate-400 text-xs">{Number(linea.variacion_usada).toFixed(4)}%</td>
                                                 <td className="px-5 py-3 text-right font-black text-violet-700">{formatCLP(linea.ajuste)}</td>
                                             </tr>
                                         ))}

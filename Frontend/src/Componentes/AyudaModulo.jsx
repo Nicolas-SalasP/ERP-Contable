@@ -60,7 +60,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby={`ayuda-titulo-${modulo.id}`}
-                        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+                        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                         data-testid="ayuda-modulo-modal"
                     >
@@ -87,7 +87,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto p-6 space-y-5 text-slate-700">
+                        <div className="overflow-y-auto p-6 space-y-5 text-slate-700 dark:text-slate-300">
                             <Seccion titulo="¿Que es?" emoji="📖">
                                 <p className="leading-relaxed">{modulo.queEs}</p>
                             </Seccion>
@@ -96,9 +96,9 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                                 <Seccion titulo="Conceptos clave" emoji="🔑">
                                     <dl className="space-y-3">
                                         {modulo.conceptos.map((c, i) => (
-                                            <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                                                <dt className="font-medium text-slate-900">{c.termino}</dt>
-                                                <dd className="text-sm text-slate-600 mt-1 leading-relaxed">
+                                            <div key={i} className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+                                                <dt className="font-medium text-slate-900 dark:text-slate-100">{c.termino}</dt>
+                                                <dd className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
                                                     {c.definicion}
                                                 </dd>
                                             </div>
@@ -149,7 +149,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                             )}
                         </div>
 
-                        <div className="border-t border-slate-200 px-6 py-3 bg-slate-50 flex justify-end">
+                        <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-3 bg-slate-50 dark:bg-slate-900 flex justify-end">
                             <button
                                 type="button"
                                 onClick={cerrar}
@@ -167,7 +167,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
 
 const Seccion = ({ titulo, emoji, children }) => (
     <section>
-        <h3 className="text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
             <span aria-hidden="true">{emoji}</span>
             <span>{titulo}</span>
         </h3>

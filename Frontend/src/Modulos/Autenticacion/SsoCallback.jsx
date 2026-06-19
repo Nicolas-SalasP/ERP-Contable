@@ -45,12 +45,12 @@ const SsoCallback = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-red-100 max-w-md w-full text-center">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-red-100 max-w-md w-full text-center">
                     <p className="text-red-600 font-semibold mb-4">{error}</p>
                     <button
                         onClick={() => navigate('/login', { replace: true })}
-                        className="text-sm text-gray-500 underline hover:text-gray-700"
+                        className="text-sm text-gray-500 dark:text-slate-400 underline hover:text-gray-700 dark:hover:text-slate-300"
                     >
                         Ir al login
                     </button>
@@ -60,10 +60,10 @@ const SsoCallback = () => {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
             <div className="text-center space-y-3">
                 <div className="w-10 h-10 border-4 border-tenri-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-gray-600 font-medium text-sm">Iniciando sesión automáticamente...</p>
+                <p className="text-gray-600 dark:text-slate-400 font-medium text-sm">Iniciando sesión automáticamente...</p>
             </div>
         </div>
     );

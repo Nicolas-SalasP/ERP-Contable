@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const colorPorcentaje = (disponibles, total) => {
     if (!total || total <= 0) return { bar: 'bg-slate-300', tag: 'bg-slate-100 text-slate-600' };
@@ -11,7 +11,7 @@ const colorPorcentaje = (disponibles, total) => {
 const TablaSaldosCaf = ({ saldos, cargando }) => {
     if (cargando) {
         return (
-            <div data-testid="saldos-loading" className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div data-testid="saldos-loading" className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <div className="animate-pulse space-y-3">
                     <div className="h-4 bg-slate-200 rounded w-1/4" />
                     <div className="h-3 bg-slate-100 rounded" />
@@ -26,20 +26,20 @@ const TablaSaldosCaf = ({ saldos, cargando }) => {
 
     if (tipos.length === 0) {
         return (
-            <div data-testid="saldos-empty" className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-10 text-center animate-fade-in">
+            <div data-testid="saldos-empty" className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 p-10 text-center animate-fade-in">
                 <div className="text-5xl mb-3">📭</div>
-                <h3 className="text-lg font-bold text-slate-700">Aun no has cargado CAFs</h3>
-                <p className="text-sm text-slate-500 mt-1">Carga tu primer CAF abajo para empezar a emitir DTEs.</p>
+                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">Aun no has cargado CAFs</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Carga tu primer CAF abajo para empezar a emitir DTEs.</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in" data-testid="saldos-tabla">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden animate-fade-in" data-testid="saldos-tabla">
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr className="text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                        <tr className="text-left text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                             <th className="px-4 py-3">Tipo DTE</th>
                             <th className="px-4 py-3 text-right">Total</th>
                             <th className="px-4 py-3">Disponibles</th>
@@ -48,19 +48,19 @@ const TablaSaldosCaf = ({ saldos, cargando }) => {
                             <th className="px-4 py-3 text-center">CAFs Activos</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                         {tipos.map((s) => {
                             const color = colorPorcentaje(s.disponibles, s.total_autorizado);
                             const pct = s.total_autorizado > 0 ? Math.min(100, Math.round((s.disponibles / s.total_autorizado) * 100)) : 0;
                             return (
-                                <tr key={s.tipo_dte} data-testid={`saldo-${s.tipo_dte}`} className="hover:bg-slate-50/50">
+                                <tr key={s.tipo_dte} data-testid={`saldo-${s.tipo_dte}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{s.tipo_dte}</span>
-                                            <span className="font-medium text-slate-800">{s.nombre}</span>
+                                            <span className="text-xs font-mono bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">{s.tipo_dte}</span>
+                                            <span className="font-medium text-slate-800 dark:text-slate-200">{s.nombre}</span>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono text-slate-700">{s.total_autorizado}</td>
+                                    <td className="px-4 py-3 text-right font-mono text-slate-700 dark:text-slate-300">{s.total_autorizado}</td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
                                             <span className={`text-xs font-bold px-2 py-0.5 rounded ${color.tag}`} data-testid={`saldo-${s.tipo_dte}-disponibles-tag`}>{s.disponibles}</span>

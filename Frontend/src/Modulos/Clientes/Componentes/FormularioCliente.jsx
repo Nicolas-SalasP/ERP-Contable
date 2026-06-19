@@ -45,7 +45,7 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (idError) {
             alert("El identificador fiscal ingresado no es válido.");
             return;
@@ -70,29 +70,29 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b pb-2">Identificación Legal</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 ml-1 flex justify-between">
+                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1 flex justify-between">
                             <span>RUT / ID Fiscal</span>
                             {idError && <span className="text-red-500 animate-pulse text-[10px]">INVÁLIDO</span>}
                         </label>
-                        <input 
-                            name="rut" 
-                            value={formData.rut} 
-                            onChange={handleIdChange} 
-                            required 
+                        <input
+                            name="rut"
+                            value={formData.rut}
+                            onChange={handleIdChange}
+                            required
                             className={`w-full border rounded p-2.5 font-mono outline-none transition-all ${
-                                idError ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100'
+                                idError ? 'border-red-500 bg-red-50' : 'border-gray-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700'
                             }`}
                             placeholder="Ingrese número..."
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 ml-1">Razón Social</label>
-                        <input 
-                            name="razon_social" 
-                            value={formData.razon_social} 
-                            onChange={handleChange} 
-                            required 
-                            className="w-full border border-gray-300 rounded p-2.5 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all" 
+                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Razón Social</label>
+                        <input
+                            name="razon_social"
+                            value={formData.razon_social}
+                            onChange={handleChange}
+                            required
+                            className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all bg-white dark:bg-slate-700"
                             placeholder="Nombre de la empresa"
                         />
                     </div>
@@ -103,16 +103,16 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b pb-2">Personal de Contacto</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="col-span-2 space-y-1">
-                        <label className="text-xs font-bold text-slate-600 ml-1">Nombre Completo</label>
-                        <input name="contacto_nombre" value={formData.contacto_nombre} onChange={handleChange} className="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Nombre Completo</label>
+                        <input name="contacto_nombre" value={formData.contacto_nombre} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 ml-1">Email Contacto</label>
-                        <input type="email" name="contacto_email" value={formData.contacto_email} onChange={handleChange} className="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Email Contacto</label>
+                        <input type="email" name="contacto_email" value={formData.contacto_email} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 ml-1">Teléfono</label>
-                        <input name="contacto_telefono" value={formData.contacto_telefono} onChange={handleChange} className="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Teléfono</label>
+                        <input name="contacto_telefono" value={formData.contacto_telefono} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                     </div>
                 </div>
             </section>
@@ -120,22 +120,22 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
             <section className="space-y-4">
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b pb-2">Logística y Envío</h4>
                 <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600 ml-1">Dirección Comercial</label>
-                    <input name="direccion" value={formData.direccion} onChange={handleChange} className="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Dirección Comercial</label>
+                    <input name="direccion" value={formData.direccion} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                 </div>
                 <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600 ml-1">Email Facturación / Cobranza</label>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Email Facturación / Cobranza</label>
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                 </div>
             </section>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
-                <button type="button" onClick={onCancel} className="px-4 py-2 text-slate-500 hover:text-slate-700 font-bold transition-colors">Cancelar</button>
-                <button 
-                    type="submit" 
+                <button type="button" onClick={onCancel} className="px-4 py-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-bold transition-colors">Cancelar</button>
+                <button
+                    type="submit"
                     disabled={idError}
                     className={`px-8 py-2 rounded-lg font-bold shadow transition-all ${
-                        idError ? 'bg-slate-300 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                        idError ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
                     }`}
                 >
                     {clienteInicial ? 'Guardar Cambios' : 'Registrar Cliente'}
