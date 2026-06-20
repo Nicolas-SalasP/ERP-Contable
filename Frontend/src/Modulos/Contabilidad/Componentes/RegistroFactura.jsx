@@ -52,7 +52,10 @@ const RegistroFactura = () => {
         motivoCorreccion: '',
         cuentaDestino: '',
         cuentaIva: '353350',
-        cuentaProveedor: '352105'
+        cuentaProveedor: '352105',
+        esDocumentoExterior: false,
+        tipoCambio: '',
+        montoOrigenDivisa: '',
     });
 
     const {
@@ -100,6 +103,28 @@ const RegistroFactura = () => {
         setFormData(prev => ({ ...prev, montoBruto: val, montoVisual: formatCurrency(val) }));
     };
 
+    const handleTipoCambioChange = (val) => {
+        const montoOrigen = parseFloat(formData.montoOrigenDivisa) || 0;
+        const tc = parseFloat(val) || 0;
+        const montoCLP = montoOrigen > 0 && tc > 0 ? Math.round(montoOrigen * tc).toString() : '';
+        setFormData(prev => ({
+            ...prev,
+            tipoCambio: val,
+            ...(montoCLP ? { montoBruto: montoCLP, montoVisual: new Intl.NumberFormat('es-CL').format(parseInt(montoCLP)) } : {})
+        }));
+    };
+
+    const handleMontoOrigenChange = (val) => {
+        const tc = parseFloat(formData.tipoCambio) || 0;
+        const montoOrigen = parseFloat(val) || 0;
+        const montoCLP = montoOrigen > 0 && tc > 0 ? Math.round(montoOrigen * tc).toString() : '';
+        setFormData(prev => ({
+            ...prev,
+            montoOrigenDivisa: val,
+            ...(montoCLP ? { montoBruto: montoCLP, montoVisual: new Intl.NumberFormat('es-CL').format(parseInt(montoCLP)) } : {})
+        }));
+    };
+
     const handleIvaManualChange = (e) => {
         const rawIva = cleanNumber(e.target.value);
         const bruto = parseInt(formData.montoBruto || 0);
@@ -116,7 +141,8 @@ const RegistroFactura = () => {
             rut: p.rut || 'N/A',
             pais: p.pais_iso === 'CL' ? 'Chile' : 'Extranjero',
             moneda: p.moneda_defecto || 'CLP',
-            tieneIva: p.pais_iso === 'CL'
+            tieneIva: p.pais_iso === 'CL',
+            esDocumentoExterior: p.pais_iso !== 'CL',
         }));
         setBusqueda('');
         setMostrarSugerencias(false);
@@ -178,7 +204,11 @@ const RegistroFactura = () => {
             ...formData,
             motivoCorreccion: motivo,
             tipo_documento: formData.tipoDocumento,
-            numero_factura: formData.numeroFactura
+            numero_factura: formData.numeroFactura,
+            es_documento_exterior: formData.esDocumentoExterior,
+            tipo_cambio: formData.tipoCambio ? parseFloat(formData.tipoCambio) : null,
+            monto_bruto_origen: formData.montoOrigenDivisa ? parseFloat(formData.montoOrigenDivisa) : null,
+            moneda: formData.moneda,
         };
 
         api.post('/facturas', payload)
@@ -275,6 +305,8 @@ const RegistroFactura = () => {
                         onLimpiarProveedor={limpiarProveedor}
                         onChange={handleChange}
                         onMontoChange={handleMontoChange}
+                        onTipoCambioChange={handleTipoCambioChange}
+                        onMontoOrigenChange={handleMontoOrigenChange}
                     />
                 )}
 

@@ -294,7 +294,14 @@ const HistorialFacturas = () => {
                                                         <div className="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono mb-0.5">
                                                             {vistaActual === 2 && fac.comprobante_contable ? `Asiento: ${fac.comprobante_contable}` : `${isNotaCredito ? 'NC' : 'Fac'} N° ${fac.numero_factura}`}
                                                         </div>
-                                                        <h3 className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{fac.proveedor?.razon_social || 'Proveedor Desconocido'}</h3>
+                                                        <h3 className="font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                                                            {fac.proveedor?.razon_social || 'Proveedor Desconocido'}
+                                                            {fac.es_documento_exterior && (
+                                                                <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 rounded uppercase align-middle">
+                                                                    {fac.moneda || 'EXT'}
+                                                                </span>
+                                                            )}
+                                                        </h3>
                                                     </div>
                                                     <span className={`inline-flex px-2 py-1 text-[10px] font-bold rounded uppercase border ${isNotaCredito && fac.estado === 'REGISTRADA' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                                                             fac.estado === 'PAGADA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
@@ -411,6 +418,11 @@ const HistorialFacturas = () => {
                                                                         <span className="font-mono text-indigo-700 bg-indigo-50 px-2 py-1 rounded text-xs border border-indigo-200 font-bold">NC N° {fac.numero_factura}</span>
                                                                     ) : (
                                                                         <span className="font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs border border-slate-200 dark:border-slate-600 font-bold">Fac N° {fac.numero_factura}</span>
+                                                                    )}
+                                                                    {fac.es_documento_exterior && (
+                                                                        <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 rounded uppercase">
+                                                                            {fac.moneda || 'EXT'}
+                                                                        </span>
                                                                     )}
                                                                 </td>
                                                                 <td className={`px-6 py-4 whitespace-nowrap text-right font-bold text-base ${isNotaCredito ? 'text-indigo-600' : 'text-slate-800'}`}>

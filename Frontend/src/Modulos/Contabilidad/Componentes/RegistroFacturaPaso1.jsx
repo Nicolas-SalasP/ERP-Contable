@@ -13,6 +13,8 @@ const RegistroFacturaPaso1 = ({
     onLimpiarProveedor,
     onChange,
     onMontoChange,
+    onTipoCambioChange,
+    onMontoOrigenChange,
 }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-fade-in-up">
@@ -96,6 +98,57 @@ const RegistroFacturaPaso1 = ({
                                 <X size={20} strokeWidth={1.75} />
                             </button>
                         </div>
+                    </div>
+                )}
+
+                {formData.pais === 'Extranjero' && (
+                    <div className="mt-4 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-700 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                                Documento del Exterior — Conversion a CLP
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">
+                                    Monto en {formData.moneda}
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full border border-amber-300 dark:border-amber-600 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 bg-white dark:bg-slate-700"
+                                    placeholder="Ej: 23.80"
+                                    value={formData.montoOrigenDivisa}
+                                    onChange={e => onMontoOrigenChange(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">
+                                    Tipo de Cambio (CLP/{formData.moneda})
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full border border-amber-300 dark:border-amber-600 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 bg-white dark:bg-slate-700"
+                                    placeholder="Ej: 950.00"
+                                    value={formData.tipoCambio}
+                                    onChange={e => onTipoCambioChange(e.target.value)}
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1">Dolar observado SII de la fecha de emision</p>
+                            </div>
+                        </div>
+                        {formData.montoOrigenDivisa && formData.tipoCambio && (
+                            <div className="bg-amber-100 dark:bg-amber-900/40 rounded-lg p-3 text-center">
+                                <span className="text-xs text-amber-600 dark:text-amber-400 font-bold uppercase">Total en CLP: </span>
+                                <span className="font-mono font-bold text-amber-800 dark:text-amber-200 text-lg">
+                                    {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(
+                                        Math.round(parseFloat(formData.montoOrigenDivisa) * parseFloat(formData.tipoCambio))
+                                    )}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -192,15 +245,22 @@ const RegistroFacturaPaso1 = ({
                             name="monto_total"
                             value={formData.montoVisual}
                             onChange={onMontoChange}
-                            placeholder="0"
-                            className="block w-full !pl-10 rounded-lg border border-slate-300 dark:border-slate-600 py-4 pl-10 pr-12 text-slate-800 dark:text-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-2xl font-bold outline-none tracking-wide bg-white dark:bg-slate-700"
+                            readOnly={formData.esDocumentoExterior}
+                            placeholder={formData.esDocumentoExterior ? 'Se calcula desde los campos superiores' : '0'}
+                            className={`block w-full !pl-10 rounded-lg border py-4 pl-10 pr-12 text-2xl font-bold outline-none tracking-wide ${
+                                formData.esDocumentoExterior
+                                    ? 'border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:border-amber-600 dark:text-amber-200 cursor-not-allowed'
+                                    : 'border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700'
+                            }`}
                         />
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
                             <span className="text-slate-400 text-sm font-bold">CLP</span>
                         </div>
                     </div>
                     <p className="text-xs text-slate-400 mt-2 text-right">
-                        Ingresa el valor total con IVA incluido.
+                        {formData.esDocumentoExterior
+                            ? 'Calculado automaticamente desde monto origen × tipo de cambio.'
+                            : 'Ingresa el valor total con IVA incluido.'}
                     </p>
                 </div>
             </div>
