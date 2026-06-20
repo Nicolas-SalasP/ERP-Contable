@@ -73,7 +73,12 @@ class ImpuestosService
         $totalVentasNeto = $ventasResumen['neto'];
         $ivaDebito = $ventasResumen['iva'];
 
-        $compras = DB::table('facturas')->where('empresa_id', $empresaId)->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])->where('estado', '!=', 'ANULADA')->get();
+        $compras = DB::table('facturas')
+            ->where('empresa_id', $empresaId)
+            ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])
+            ->where('estado', '!=', 'ANULADA')
+            ->where('es_documento_exterior', false)
+            ->get();
         $totalComprasNeto = $compras->sum('monto_neto');
         $ivaCredito = $compras->sum('monto_iva');
 
