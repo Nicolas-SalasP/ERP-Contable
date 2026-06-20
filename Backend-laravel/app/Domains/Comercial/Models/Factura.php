@@ -39,6 +39,10 @@ class Factura extends Model
         'estado',
         'archivo_pdf',
         'comprobante_contable',
+        'moneda',
+        'tipo_cambio',
+        'monto_bruto_origen',
+        'es_documento_exterior',
     ];
 
     protected $casts = [
@@ -47,6 +51,9 @@ class Factura extends Model
         'monto_bruto' => 'decimal:2',
         'monto_neto' => 'decimal:2',
         'monto_iva' => 'decimal:2',
+        'tipo_cambio' => 'decimal:4',
+        'monto_bruto_origen' => 'decimal:2',
+        'es_documento_exterior' => 'boolean',
     ];
 
     protected $appends = ['nombre_proveedor'];
