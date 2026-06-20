@@ -92,7 +92,10 @@ class FacturaController
             'montoNeto' => 'monto_neto',
             'montoIva' => 'monto_iva',
             'montoBruto' => 'monto_bruto',
-            'autorizadorId' => 'autorizador_id'
+            'autorizadorId' => 'autorizador_id',
+            'esDocumentoExterior' => 'es_documento_exterior',
+            'tipoCambio' => 'tipo_cambio',
+            'montoBrutoOrigen' => 'monto_bruto_origen',
         ];
 
         $input = $request->all();
@@ -108,16 +111,20 @@ class FacturaController
         try {
             $request->validate([
                 'numero_factura' => 'required|string|max:255',
-                'tipo_documento' => 'required|string|in:FACTURA,NOTA_CREDITO,BOLETA,NOTA_DEBITO,COMPRA',
+                'tipo_documento' => 'required|string|in:FACTURA,NOTA_CREDITO,BOLETA,NOTA_DEBITO,COMPRA,FACTURA_EXTERIOR',
                 'monto_bruto' => 'required|numeric|gt:0',
                 'monto_neto' => 'required|numeric|gt:0',
                 'cuentaDestino' => 'sometimes|string',
-                'cuentaIva' => 'nullable|string',   
+                'cuentaIva' => 'nullable|string',
                 'cuentaProveedor' => 'nullable|string',
                 'centro_costo_id' => 'nullable|integer',
                 'fecha_emision' => 'nullable|date',
                 'fecha_vencimiento' => 'nullable|date',
                 'factura_referencia_id' => 'nullable|integer',
+                'es_documento_exterior' => 'nullable|boolean',
+                'tipo_cambio' => 'nullable|numeric|min:0',
+                'monto_bruto_origen' => 'nullable|numeric|min:0',
+                'moneda' => 'nullable|string|max:3',
             ], [
                 'monto_bruto.gt' => 'El monto bruto debe ser mayor a 0',
                 'monto_neto.gt' => 'El monto neto debe ser mayor a 0',
@@ -161,6 +168,10 @@ class FacturaController
                 'cuentaProveedor' => $input['cuentaProveedor'] ?? null,
                 'centro_costo_id' => $input['centro_costo_id'] ?? null,
                 'factura_referencia_id' => $input['factura_referencia_id'] ?? null,
+                'es_documento_exterior' => $input['es_documento_exterior'] ?? false,
+                'tipo_cambio' => $input['tipo_cambio'] ?? null,
+                'monto_bruto_origen' => $input['monto_bruto_origen'] ?? null,
+                'moneda' => $input['moneda'] ?? 'CLP',
             ];
 
             $factura = $this->service->registrarFacturaCompra($datos);

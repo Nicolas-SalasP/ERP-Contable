@@ -92,16 +92,30 @@ class FacturaService
 
     public function registrarFacturaCompra(array $datos): Factura
     {
-        if (!isset($datos['monto_neto']) || $datos['monto_neto'] <= 0) {
-            throw ComercialException::regla("El monto neto debe ser mayor a 0.");
-        }
+        $esDocumentoExterior = (bool) ($datos['es_documento_exterior'] ?? false);
 
-        $neto = round((float) $datos['monto_neto'], 2);
-        $iva = isset($datos['monto_iva']) ? round((float) $datos['monto_iva'], 2) : round($neto * 0.19, 2);
-        $bruto = isset($datos['monto_bruto']) ? round((float) $datos['monto_bruto'], 2) : round($neto + $iva, 2);
-
-        if (abs(($neto + $iva) - $bruto) > 0.01) {
-            throw ComercialException::regla("Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.");
+        if ($esDocumentoExterior) {
+            if (empty($datos['tipo_cambio']) || (float) $datos['tipo_cambio'] <= 0) {
+                throw ComercialException::regla("Para documentos del exterior, debe especificar el tipo de cambio (mayor a 0).");
+            }
+            if (empty($datos['moneda']) || $datos['moneda'] === 'CLP') {
+                throw ComercialException::regla("Para documentos del exterior, debe especificar una moneda extranjera (USD, EUR, etc.).");
+            }
+            $tipoCambio = round((float) $datos['tipo_cambio'], 4);
+            $montoOrigen = round((float) ($datos['monto_bruto_origen'] ?? $datos['monto_bruto']), 2);
+            $bruto = round($montoOrigen * $tipoCambio);
+            $neto = $bruto;
+            $iva = 0;
+        } else {
+            if (!isset($datos['monto_neto']) || $datos['monto_neto'] <= 0) {
+                throw ComercialException::regla("El monto neto debe ser mayor a 0.");
+            }
+            $neto = round((float) $datos['monto_neto'], 2);
+            $iva = isset($datos['monto_iva']) ? round((float) $datos['monto_iva'], 2) : round($neto * 0.19, 2);
+            $bruto = isset($datos['monto_bruto']) ? round((float) $datos['monto_bruto'], 2) : round($neto + $iva, 2);
+            if (abs(($neto + $iva) - $bruto) > 0.01) {
+                throw ComercialException::regla("Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.");
+            }
         }
 
         // Validar pertenencia antes de abrir la transacción (fail-fast).
@@ -123,7 +137,7 @@ class FacturaService
             }
         }
 
-        return DB::transaction(function () use ($datos, $neto, $iva, $bruto) {
+        return DB::transaction(function () use ($datos, $neto, $iva, $bruto, $esDocumentoExterior) {
             $existe = $this->verificarDuplicado($datos['empresa_id'], $datos['proveedor_id'], $datos['numero_factura']);
 
             if ($existe) {
@@ -147,6 +161,10 @@ class FacturaService
                 'monto_iva' => $iva,
                 'estado' => 'REGISTRADA',
                 'autorizador_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
+                'moneda' => $datos['moneda'] ?? 'CLP',
+                'tipo_cambio' => $datos['tipo_cambio'] ?? null,
+                'monto_bruto_origen' => $datos['monto_bruto_origen'] ?? null,
+                'es_documento_exterior' => $esDocumentoExterior,
             ]);
 
             $esNotaCredito = ($datos['tipo_documento'] ?? '') === 'NOTA_CREDITO';
@@ -175,7 +193,7 @@ class FacturaService
             $cabeceraAsiento = [
                 'empresa_id' => $datos['empresa_id'],
                 'fecha' => $fechaOperacion,
-                'glosa' => ($esNotaCredito ? "Centralización Automática Nota de Crédito Compra N° " : "Centralización Automática Factura Compra N° ") . $datos['numero_factura'],
+                'glosa' => ($esDocumentoExterior ? "Centralización Automática Factura Exterior N° " : ($esNotaCredito ? "Centralización Automática Nota de Crédito Compra N° " : "Centralización Automática Factura Compra N° ")) . $datos['numero_factura'],
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'compras',
                 'origen_id' => $factura->id,
