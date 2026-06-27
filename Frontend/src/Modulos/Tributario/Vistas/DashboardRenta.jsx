@@ -254,6 +254,12 @@ const DashboardRenta = () => {
                     Esta es una proyección de apoyo a partir de tus ventas, compras y corrección monetaria. La Operación
                     Renta real requiere PPM de 12 meses, gastos rechazados, FUT/RAI y créditos de los propietarios, entre
                     otros ajustes. <strong>No la uses para declarar sin validación de tu contador.</strong>
+                    {' '}<span className="block mt-2 text-xs text-amber-800">
+                        <strong>Facturas del exterior:</strong> Los gastos pagados a proveedores extranjeros se incluyen en
+                        este cálculo como deducibles (Art. 31 LIR), pero solo serán aceptados por el SII si cuentas con
+                        documentación fehaciente (contrato, invoice, transferencia Swift). Verifica con tu contador que
+                        cada factura del exterior tenga respaldo antes de declarar.
+                    </span>
                 </div>
             </div>
 
