@@ -80,7 +80,7 @@ describe('GestionProveedores — validación RUT por país', () => {
     it('monta sin errores y sin mostrar FORMATO INVÁLIDO en estado inicial', async () => {
         setupMocks();
         renderGestion();
-        expect(screen.queryByText(/formato inv/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/formato inv/i)).toBeNull();
     });
 
     it('no muestra error de formato al escribir un EIN (US) en el campo de identificador', async () => {
@@ -105,7 +105,7 @@ describe('GestionProveedores — validación RUT por país', () => {
         fireEvent.change(campoId, { target: { value: '12-345' } });
 
         // No debe aparecer mensaje de error de formato
-        expect(screen.queryByText(/formato inv/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/formato inv/i)).toBeNull();
     });
 
     it('sigue validando RUT chileno correctamente (no regresión)', async () => {
