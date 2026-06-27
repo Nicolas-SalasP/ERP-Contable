@@ -3,8 +3,9 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-
+use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\FacturaService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Exception;
@@ -96,6 +97,7 @@ class FacturaController
             'esDocumentoExterior' => 'es_documento_exterior',
             'tipoCambio' => 'tipo_cambio',
             'montoBrutoOrigen' => 'monto_bruto_origen',
+            'tipoGastoArt59' => 'tipo_gasto_art59',
         ];
 
         $input = $request->all();
@@ -125,6 +127,8 @@ class FacturaController
                 'tipo_cambio' => 'nullable|numeric|min:0',
                 'monto_bruto_origen' => 'nullable|numeric|min:0',
                 'moneda' => 'nullable|string|max:3',
+                'tipo_gasto_art59' => 'nullable|string|in:intereses,regalias,servicios_tecnicos,honorarios,otros',
+                'cuentaRetencion' => 'nullable|string|max:20',
             ], [
                 'monto_bruto.gt' => 'El monto bruto debe ser mayor a 0',
                 'monto_neto.gt' => 'El monto neto debe ser mayor a 0',
@@ -172,6 +176,8 @@ class FacturaController
                 'tipo_cambio' => $input['tipo_cambio'] ?? null,
                 'monto_bruto_origen' => $input['monto_bruto_origen'] ?? null,
                 'moneda' => $input['moneda'] ?? 'CLP',
+                'tipo_gasto_art59' => $input['tipo_gasto_art59'] ?? null,
+                'cuentaRetencion' => $input['cuentaRetencion'] ?? null,
             ];
 
             $factura = $this->service->registrarFacturaCompra($datos);
@@ -411,5 +417,55 @@ class FacturaController
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
+    }
+
+    /**
+     * Resumen de retenciones Art. 59 LIR para el Formulario 50.
+     * GET /facturas/f50?periodo=YYYY-MM
+     */
+    public function f50(Request $request)
+    {
+        $empresaId = $request->user()->empresa_id;
+        $periodo = $request->query('periodo', now()->format('Y-m'));
+
+        [$anio, $mes] = explode('-', $periodo);
+
+        $retenciones = Factura::where('empresa_id', $empresaId)
+            ->whereYear('fecha_emision', $anio)
+            ->whereMonth('fecha_emision', $mes)
+            ->whereNotNull('retencion_art59')
+            ->where('retencion_art59', '>', 0)
+            ->where('estado', '!=', 'ANULADA')
+            ->select(
+                'tipo_gasto_art59',
+                DB::raw('COUNT(*) as cantidad_facturas'),
+                DB::raw('SUM(monto_bruto) as base_imponible'),
+                DB::raw('SUM(retencion_art59) as total_retencion')
+            )
+            ->groupBy('tipo_gasto_art59')
+            ->get();
+
+        $tasas = [
+            'intereses'          => 4.0,
+            'regalias'           => 30.0,
+            'servicios_tecnicos' => 15.0,
+            'honorarios'         => 15.0,
+            'otros'              => 35.0,
+        ];
+
+        $detalle = $retenciones->map(fn ($r) => [
+            'tipo_gasto' => $r->tipo_gasto_art59,
+            'tasa_porcentaje' => $tasas[$r->tipo_gasto_art59] ?? null,
+            'cantidad_facturas' => $r->cantidad_facturas,
+            'base_imponible' => round((float) $r->base_imponible, 2),
+            'total_retencion' => round((float) $r->total_retencion, 2),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'periodo' => $periodo,
+            'total_retener' => round($detalle->sum('total_retencion'), 2),
+            'detalle' => $detalle->values(),
+        ]);
     }
 }

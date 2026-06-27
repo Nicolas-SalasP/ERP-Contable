@@ -43,6 +43,8 @@ class Factura extends Model
         'tipo_cambio',
         'monto_bruto_origen',
         'es_documento_exterior',
+        'tipo_gasto_art59',
+        'retencion_art59',
     ];
 
     protected $casts = [
@@ -54,6 +56,7 @@ class Factura extends Model
         'tipo_cambio' => 'decimal:4',
         'monto_bruto_origen' => 'decimal:2',
         'es_documento_exterior' => 'boolean',
+        'retencion_art59' => 'decimal:2',
     ];
 
     protected $appends = ['nombre_proveedor'];

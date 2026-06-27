@@ -118,6 +118,25 @@ class FacturaService
             }
         }
 
+        // Retención Art. 59 LIR: obligación de retener al pagar servicios al exterior.
+        // El retenido se entera al SII vía Formulario 50.
+        $tipoGastoArt59 = null;
+        $retencionArt59 = 0.0;
+        if ($esDocumentoExterior && !empty($datos['tipo_gasto_art59'])) {
+            $tasasArt59 = [
+                'intereses'          => 4.0,   // Art. 59 N°1
+                'regalias'           => 30.0,  // Art. 59 N°2
+                'servicios_tecnicos' => 15.0,  // Art. 59 N°2 (con convenio)
+                'honorarios'         => 15.0,  // Art. 59 N°2
+                'otros'              => 35.0,  // Art. 59 N°4
+            ];
+            $tipoGastoArt59 = $datos['tipo_gasto_art59'];
+            if (!array_key_exists($tipoGastoArt59, $tasasArt59)) {
+                throw ComercialException::regla("Tipo de gasto Art. 59 inválido. Use: intereses, regalias, servicios_tecnicos, honorarios u otros.");
+            }
+            $retencionArt59 = round($bruto * $tasasArt59[$tipoGastoArt59] / 100, 2);
+        }
+
         // Validar pertenencia antes de abrir la transacción (fail-fast).
         if (!empty($datos['proveedor_id'])) {
             $proveedorValido = Proveedor::where('empresa_id', $datos['empresa_id'])
@@ -137,7 +156,7 @@ class FacturaService
             }
         }
 
-        return DB::transaction(function () use ($datos, $neto, $iva, $bruto, $esDocumentoExterior) {
+        return DB::transaction(function () use ($datos, $neto, $iva, $bruto, $esDocumentoExterior, $tipoGastoArt59, $retencionArt59) {
             $existe = $this->verificarDuplicado($datos['empresa_id'], $datos['proveedor_id'], $datos['numero_factura']);
 
             if ($existe) {
@@ -165,6 +184,8 @@ class FacturaService
                 'tipo_cambio' => $datos['tipo_cambio'] ?? null,
                 'monto_bruto_origen' => $datos['monto_bruto_origen'] ?? null,
                 'es_documento_exterior' => $esDocumentoExterior,
+                'tipo_gasto_art59' => $tipoGastoArt59,
+                'retencion_art59' => $retencionArt59 > 0 ? $retencionArt59 : null,
             ]);
 
             $esNotaCredito = in_array($datos['tipo_documento'] ?? '', ['NOTA_CREDITO', 'NOTA_CREDITO_EXPORTACION']);
@@ -186,6 +207,16 @@ class FacturaService
             // cuentas igual que una factura normal y genera su asiento (invertido).
             if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
                 throw ComercialException::regla("Configuración Contable Incompleta: Verifique que las cuentas de IVA ({$codigoIva}), Proveedor ({$codigoProveedor}) y Destino ({$codigoDestino}) existan en el plan de cuentas de esta empresa.");
+            }
+
+            // Validar cuenta de retención Art. 59 si corresponde
+            $cuentaRetencionArt59 = null;
+            if ($retencionArt59 > 0) {
+                $codigoRetencion = $datos['cuentaRetencion'] ?? '252200';
+                $cuentaRetencionArt59 = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoRetencion)->first();
+                if (!$cuentaRetencionArt59) {
+                    throw ComercialException::regla("Cuenta de Retención Art. 59 ({$codigoRetencion}) no existe en el plan de cuentas. Créela como pasivo circulante antes de registrar esta factura.");
+                }
             }
 
             $fechaOperacion = $datos['fechaContable'] ?? $datos['fecha_emision'];
@@ -224,13 +255,24 @@ class FacturaService
                 ];
             }
 
-            // Cuenta por Pagar (Bruto)
+            // Cuenta por Pagar (neto de retención Art. 59 si aplica)
+            $montoNoCxP = $retencionArt59 > 0 ? $bruto - $retencionArt59 : $bruto;
             $detallesAsiento[] = [
                 'cuenta_contable' => $cuentaProveedor->codigo,
-                'debe' => $esNotaCredito ? $bruto : 0,
-                'haber' => $esNotaCredito ? 0 : $bruto,
+                'debe' => $esNotaCredito ? $montoNoCxP : 0,
+                'haber' => $esNotaCredito ? 0 : $montoNoCxP,
                 'glosa_detalle' => ($esNotaCredito ? "Reducción CxP NC N° " : "CxP Proveedor Factura N° ") . $datos['numero_factura'],
             ];
+
+            // Retención Art. 59 LIR por enterar vía F50
+            if ($cuentaRetencionArt59 && $retencionArt59 > 0) {
+                $detallesAsiento[] = [
+                    'cuenta_contable' => $cuentaRetencionArt59->codigo,
+                    'debe' => $esNotaCredito ? $retencionArt59 : 0,
+                    'haber' => $esNotaCredito ? 0 : $retencionArt59,
+                    'glosa_detalle' => "Retención Art. 59 LIR Factura N° " . $datos['numero_factura'],
+                ];
+            }
 
             $asiento = $this->asientoService->registrarAsiento($cabeceraAsiento, $detallesAsiento);
 

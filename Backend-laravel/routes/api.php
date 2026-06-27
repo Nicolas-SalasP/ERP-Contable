@@ -223,6 +223,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/facturas/vencidas', [FacturaController::class, 'vencidas'])->middleware('permiso:compras.ver');
     Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel'])->middleware('permiso:compras.ver');
     Route::get('/facturas/disponibles-proyectos', [FacturaController::class, 'disponiblesProyectos'])->middleware('permiso:compras.ver,activos.ver');
+    Route::get('/facturas/f50', [FacturaController::class, 'f50'])->middleware('permiso:compras.ver,contabilidad.ver');
 
     // Resource de facturas (index/store/show; update y destroy no existen)
     Route::get('/facturas', [FacturaController::class, 'index'])->middleware('permiso:compras.ver');
