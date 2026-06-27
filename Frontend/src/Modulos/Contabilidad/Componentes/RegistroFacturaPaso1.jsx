@@ -1,6 +1,14 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
+const TIPOS_GASTO_ART59 = [
+    { value: 'intereses',          label: 'Intereses (4%)' },
+    { value: 'regalias',           label: 'Regalías (30%)' },
+    { value: 'servicios_tecnicos', label: 'Servicios Técnicos (15%)' },
+    { value: 'honorarios',         label: 'Honorarios (15%)' },
+    { value: 'otros',              label: 'Otros (35%)' },
+];
+
 const RegistroFacturaPaso1 = ({
     formData,
     busqueda,
@@ -151,6 +159,42 @@ const RegistroFacturaPaso1 = ({
                                 </span>
                             </div>
                         )}
+
+                        <div className="border-t border-amber-200 dark:border-amber-700 pt-3 mt-1">
+                            <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">
+                                Retención Art. 59 LIR (opcional)
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Tipo de Gasto</label>
+                                    <select
+                                        name="tipoGastoArt59"
+                                        value={formData.tipoGastoArt59}
+                                        onChange={onChange}
+                                        className="w-full border border-amber-300 dark:border-amber-600 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                    >
+                                        <option value="">Sin retención</option>
+                                        {TIPOS_GASTO_ART59.map(t => (
+                                            <option key={t.value} value={t.value}>{t.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Monto Retención (CLP)</label>
+                                    <input
+                                        type="number"
+                                        step="1"
+                                        min="0"
+                                        name="retencionArt59"
+                                        value={formData.retencionArt59}
+                                        onChange={onChange}
+                                        disabled={!formData.tipoGastoArt59}
+                                        className="w-full border border-amber-300 dark:border-amber-600 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 bg-white dark:bg-slate-700 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                                        placeholder="Ej: 150000"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

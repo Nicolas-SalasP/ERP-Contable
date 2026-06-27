@@ -56,6 +56,8 @@ const RegistroFactura = () => {
         esDocumentoExterior: false,
         tipoCambio: '',
         montoOrigenDivisa: '',
+        tipoGastoArt59: '',
+        retencionArt59: '',
     });
 
     const {
@@ -143,6 +145,8 @@ const RegistroFactura = () => {
             moneda: p.moneda_defecto || 'CLP',
             tieneIva: p.pais_iso === 'CL',
             esDocumentoExterior: p.pais_iso !== 'CL',
+            tipoGastoArt59: '',
+            retencionArt59: '',
         }));
         setBusqueda('');
         setMostrarSugerencias(false);
@@ -209,6 +213,8 @@ const RegistroFactura = () => {
             tipo_cambio: formData.tipoCambio ? parseFloat(formData.tipoCambio) : null,
             monto_bruto_origen: formData.montoOrigenDivisa ? parseFloat(formData.montoOrigenDivisa) : null,
             moneda: formData.moneda,
+            tipo_gasto_art59: formData.esDocumentoExterior && formData.tipoGastoArt59 ? formData.tipoGastoArt59 : null,
+            retencion_art59: formData.esDocumentoExterior && formData.retencionArt59 ? parseFloat(formData.retencionArt59) : null,
         };
 
         api.post('/facturas', payload)
