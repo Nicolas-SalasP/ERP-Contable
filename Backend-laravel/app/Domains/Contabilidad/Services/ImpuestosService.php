@@ -65,7 +65,7 @@ class ImpuestosService
 
     public function simularF29(int $empresaId, int $mes, int $anio)
     {
-        $fechaInicio = "$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-01";
+        $fechaInicio = "$anio-" . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "-01";
         $fechaFin = date('Y-m-t', strtotime($fechaInicio));
 
         // Ventas reales del periodo: DTEs emitidos (no cotizaciones). Ver resumenVentasAfectas().
@@ -126,11 +126,11 @@ class ImpuestosService
             $totalAPagar = $retencionHonorarios + $montoPpm;
         }
 
-        $glosaCierre = "Centralización F29 - " . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio";
+        $glosaCierre = "Centralización F29 - " . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio";
         $yaCerrado = DB::table('asientos_contables')->where('empresa_id', $empresaId)->where('origen_modulo', 'impuestos')->where('glosa', $glosaCierre)->where('estado', 'MAYORIZADO')->exists();
 
         return [
-            'periodo' => str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio",
+            'periodo' => str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio",
             'ya_cerrado' => $yaCerrado,
             'ventas' => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
             'compras' => ['cantidad' => $compras->count(), 'neto' => $totalComprasNeto, 'iva_credito' => $ivaCredito],
@@ -187,7 +187,7 @@ class ImpuestosService
                 $detalles[] = ['cuenta_contable' => '353365', 'debe' => 0, 'haber' => $simulacion['resumen']['total_a_pagar'], 'glosa_detalle' => 'Impuesto a Pagar F29'];
             }
 
-            $fechaAsiento = date('Y-m-t', strtotime("$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-01"));
+            $fechaAsiento = date('Y-m-t', strtotime("$anio-" . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "-01"));
 
             $asientoService = app(AsientoContableService::class);
 
@@ -195,7 +195,7 @@ class ImpuestosService
                 'empresa_id' => $empresaId,
                 'usuario_id' => $usuarioId,
                 'fecha' => $fechaAsiento,
-                'glosa' => "Centralización F29 - " . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio",
+                'glosa' => "Centralización F29 - " . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio",
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'impuestos',
                 'estado' => 'MAYORIZADO'

@@ -10,6 +10,18 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Datos especificos de Guia de Despacho 52 (1:1 con SiiDteEmitido).
+ *
+ * @property int $id
+ * @property int $dte_emitido_id
+ * @property string|null $patente
+ * @property string|null $rut_transportista
+ * @property string|null $rut_chofer
+ * @property string|null $nombre_chofer
+ * @property string|null $direccion_destino
+ * @property string|null $comuna_destino
+ * @property string|null $ciudad_destino
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class SiiDteEmitidoTraslado extends Model
 {

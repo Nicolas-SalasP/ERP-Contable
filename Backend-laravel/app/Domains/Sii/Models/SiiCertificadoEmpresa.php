@@ -15,6 +15,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * SEGURIDAD: pfx_cifrado y password_cifrada NUNCA deben aparecer en JSON.
  * El $hidden de Eloquent los excluye automaticamente de toJson()/toArray().
+ *
+ * @property int $id
+ * @property int $empresa_id
+ * @property string $subject_rut
+ * @property string $estado
+ * @property \Illuminate\Support\Carbon $valido_hasta
+ * @property string $pfx_cifrado
+ * @property string $password_cifrada
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class SiiCertificadoEmpresa extends Model
 {

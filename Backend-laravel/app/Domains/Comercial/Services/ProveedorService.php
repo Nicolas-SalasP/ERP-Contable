@@ -61,7 +61,7 @@ class ProveedorService
         ]);
 
         $proveedor->update([
-            'codigo_interno' => 'PROV-' . str_pad($proveedor->id, 5, '0', STR_PAD_LEFT)
+            'codigo_interno' => 'PROV-' . str_pad((string) $proveedor->id, 5, '0', STR_PAD_LEFT)
         ]);
 
         return $proveedor;

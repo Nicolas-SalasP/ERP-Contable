@@ -16,6 +16,63 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @property int $id
+ * @property int $empresa_id
+ * @property int|null $factura_id
+ * @property int|null $cotizacion_id
+ * @property string|null $origen_externo
+ * @property int $tipo_dte
+ * @property int $folio
+ * @property \Illuminate\Support\Carbon $fecha_emision
+ * @property int|null $caf_id
+ * @property string $emisor_rut
+ * @property string $emisor_razon_social
+ * @property string $emisor_giro
+ * @property string|null $emisor_acteco
+ * @property string $emisor_direccion
+ * @property string $emisor_comuna
+ * @property string|null $emisor_ciudad
+ * @property string|null $emisor_cdg_sii_sucursal
+ * @property string $receptor_rut
+ * @property string $receptor_razon_social
+ * @property string|null $receptor_giro
+ * @property string|null $receptor_direccion
+ * @property string|null $receptor_comuna
+ * @property string|null $receptor_ciudad
+ * @property string|null $receptor_contacto
+ * @property string|null $receptor_correo
+ * @property string $moneda
+ * @property string|null $monto_neto
+ * @property string|null $monto_exento
+ * @property string|null $tasa_iva
+ * @property string|null $iva
+ * @property string|null $iva_no_retenido
+ * @property string|null $monto_impuesto_adicional
+ * @property string|null $descuento_global_monto
+ * @property string $monto_total
+ * @property string|null $forma_pago_codigo
+ * @property \Illuminate\Support\Carbon|null $fecha_vencimiento
+ * @property string|null $condicion_pago
+ * @property string $estado
+ * @property string|null $track_id
+ * @property string|null $codigo_respuesta_sii
+ * @property string|null $glosa_sii
+ * @property \Illuminate\Support\Carbon|null $fecha_envio_sii
+ * @property \Illuminate\Support\Carbon|null $fecha_aceptacion_sii
+ * @property \Illuminate\Support\Carbon|null $fecha_rechazo_sii
+ * @property string|null $xml_path
+ * @property string|null $xml_hash_sha256
+ * @property string|null $xml_completo_cifrado
+ * @property \Illuminate\Support\Carbon|null $fecha_firma
+ * @property string|null $pdf_path
+ * @property string|null $ted_xml
+ * @property bool $es_cedible
+ * @property int|null $indicador_servicio
+ * @property int|null $usuario_emisor_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class SiiDteEmitido extends Model
 {
     use HasEmpresaScope;

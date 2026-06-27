@@ -8,6 +8,9 @@ use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Traits\HasEmpresaScope;
 use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 
+/**
+ * @property int|null $sii_dte_emitido_id
+ */
 class Factura extends Model
 {
     use SoftDeletes;

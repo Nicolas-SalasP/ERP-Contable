@@ -16,6 +16,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * CAF (Codigo de Autorizacion de Folios) por empresa y tipo DTE.
  *
  * SEGURIDAD: rsa_sk_cifrada y xml_completo_cifrado NUNCA en JSON.
+ *
+ * @property int $id
+ * @property int $empresa_id
+ * @property int $tipo_dte
+ * @property int $folio_desde
+ * @property int $folio_hasta
+ * @property int $folio_actual
+ * @property int $folios_usados
+ * @property int $folios_huerfanos
+ * @property string $estado
+ * @property \Illuminate\Support\Carbon $fecha_autorizacion
+ * @property \Illuminate\Support\Carbon|null $fecha_vencimiento
+ * @property string $rut_empresa_caf
+ * @property string|null $sii_idk
+ * @property string|null $rsa_pubk
+ * @property string|null $rsa_sk_cifrada
+ * @property string|null $xml_completo_cifrado
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class SiiCaf extends Model
 {

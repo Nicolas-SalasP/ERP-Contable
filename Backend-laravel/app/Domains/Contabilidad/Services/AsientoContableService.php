@@ -183,7 +183,7 @@ class AsientoContableService
             'asiento_comprobante'
         );
 
-        $secuencia = str_pad($correlativo, 6, '0', STR_PAD_LEFT);
+        $secuencia = str_pad((string) $correlativo, 6, '0', STR_PAD_LEFT);
 
         $asiento->update([
             'numero_comprobante' => $anio . $tipoCode . $secuencia

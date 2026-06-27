@@ -85,7 +85,7 @@ class CotizacionService
 
             if (!isset($datos['numero_cotizacion'])) {
                 $cotizacion->update([
-                    'numero_cotizacion' => 'COT-' . str_pad($cotizacion->id, 6, '0', STR_PAD_LEFT)
+                    'numero_cotizacion' => 'COT-' . str_pad((string) $cotizacion->id, 6, '0', STR_PAD_LEFT)
                 ]);
             }
 

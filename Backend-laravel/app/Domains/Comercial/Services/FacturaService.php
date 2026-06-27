@@ -277,7 +277,7 @@ class FacturaService
             $asiento = $this->asientoService->registrarAsiento($cabeceraAsiento, $detallesAsiento);
 
             $factura->update([
-                'codigo_interno' => 'FAC-' . str_pad($factura->id, 5, '0', STR_PAD_LEFT),
+                'codigo_interno' => 'FAC-' . str_pad((string) $factura->id, 5, '0', STR_PAD_LEFT),
                 'comprobante_contable' => $asiento->numero_comprobante
             ]);
 

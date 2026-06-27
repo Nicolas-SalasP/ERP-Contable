@@ -76,7 +76,7 @@ class AnulacionService
 
                 $anio = date('y', strtotime($asientoReverso->fecha));
                 $tipoCode = '10';
-                $secuencia = str_pad($asientoReverso->id, 6, '0', STR_PAD_LEFT);
+                $secuencia = str_pad((string) $asientoReverso->id, 6, '0', STR_PAD_LEFT);
                 $asientoReverso->update(['numero_comprobante' => $anio . $tipoCode . $secuencia]);
 
                 foreach ($asientoOriginal->detalles as $det) {

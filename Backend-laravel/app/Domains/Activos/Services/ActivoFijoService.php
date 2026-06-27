@@ -94,7 +94,7 @@ class ActivoFijoService
                     $datos['empresa_id'],
                     'activo_codigo'
                 );
-                $datos['codigo'] = 'AF-' . str_pad($correlativo, 5, '0', STR_PAD_LEFT);
+                $datos['codigo'] = 'AF-' . str_pad((string) $correlativo, 5, '0', STR_PAD_LEFT);
             }
 
             $datos['estado'] = $datos['estado'] ?? 'ACTIVO';
