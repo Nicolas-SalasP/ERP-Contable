@@ -55,3 +55,54 @@ export const dj1887 = {
     confirmarPresentacion: (id, folioPresentacion) =>
         api.post(`/dj/1887/${id}/confirmar-presentacion`, { folio_presentacion: folioPresentacion }).then(r => r.data),
 };
+
+export const dj1926 = {
+    listar: () =>
+        api.get('/dj/1926').then(r => r.data),
+
+    generar: (anio) =>
+        api.post('/dj/1926/generar', { anio }).then(r => r.data),
+
+    validar: (id) =>
+        api.post(`/dj/1926/${id}/validar`).then(r => r.data),
+
+    descargar: (id) =>
+        api.get(`/dj/1926/${id}/descargar`, { responseType: 'blob' }).then(r => r.data),
+
+    confirmarPresentacion: (id, folio) =>
+        api.post(`/dj/1926/${id}/confirmar-presentacion`, { folio_presentacion: folio }).then(r => r.data),
+};
+
+export const dj1837 = {
+    listar: () =>
+        api.get('/dj/1837').then(r => r.data),
+
+    generar: (anio) =>
+        api.post('/dj/1837/generar', { anio }).then(r => r.data),
+
+    validar: (id) =>
+        api.post(`/dj/1837/${id}/validar`).then(r => r.data),
+
+    descargar: (id) =>
+        api.get(`/dj/1837/${id}/descargar`, { responseType: 'blob' }).then(r => r.data),
+
+    confirmarPresentacion: (id, folio) =>
+        api.post(`/dj/1837/${id}/confirmar-presentacion`, { folio_presentacion: folio }).then(r => r.data),
+};
+
+export const dj1835 = {
+    listar: () =>
+        api.get('/dj/1835').then(r => r.data),
+
+    generar: (anio) =>
+        api.post('/dj/1835/generar', { anio }).then(r => r.data),
+
+    validar: (id) =>
+        api.post(`/dj/1835/${id}/validar`).then(r => r.data),
+
+    descargar: (id) =>
+        api.get(`/dj/1835/${id}/descargar`, { responseType: 'blob' }).then(r => r.data),
+
+    confirmarPresentacion: (id, folio) =>
+        api.post(`/dj/1835/${id}/confirmar-presentacion`, { folio_presentacion: folio }).then(r => r.data),
+};

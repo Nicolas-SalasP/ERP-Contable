@@ -63,6 +63,9 @@ use App\Domains\Core\Controllers\IncidenteSeguridadController;
 use App\Domains\Contabilidad\Controllers\Dj1887Controller;
 use App\Domains\Contabilidad\Controllers\Dj1879Controller;
 use App\Domains\Contabilidad\Controllers\Dj1947Controller;
+use App\Domains\Contabilidad\Controllers\Dj1926Controller;
+use App\Domains\Contabilidad\Controllers\Dj1837Controller;
+use App\Domains\Contabilidad\Controllers\Dj1835Controller;
 use App\Domains\Core\Controllers\PropietariosController;
 use App\Domains\Comercial\Controllers\HonorariosController;
 use App\Domains\Soporte\Controllers\SoporteController;
@@ -581,6 +584,33 @@ Route::prefix('dj/1947')->middleware(['auth:sanctum', 'check.subscription'])->gr
     Route::post('/{djEnvio}/validar',                 [Dj1947Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
     Route::get('/{djEnvio}/descargar',                [Dj1947Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
     Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1947Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1926 — Gastos No Deducibles (art. 33 N°1 LIR)
+Route::prefix('dj/1926')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1926Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1926Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1926Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1926Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1926Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1837 — Honorarios sin Retención (art. 42 N°2 LIR)
+Route::prefix('dj/1837')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1837Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1837Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1837Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1837Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1837Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1835 — Retenciones Art. 59 LIR (servicios del exterior)
+Route::prefix('dj/1835')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1835Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1835Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1835Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1835Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1835Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 // Propietarios de la empresa (para DJ 1947 / Propyme)
