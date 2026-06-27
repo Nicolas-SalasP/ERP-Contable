@@ -43,7 +43,7 @@ class AsientoContable extends Model
         return $this->belongsTo(CentroCosto::class);
     }
 
-    public function detalles()
+    public function detalles(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(DetalleAsiento::class, 'asiento_id');
     }

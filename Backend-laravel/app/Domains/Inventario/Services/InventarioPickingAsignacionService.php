@@ -51,7 +51,7 @@ class InventarioPickingAsignacionService
             ->sortBy(function (StockUbicacionInventario $stock) {
                 $fechaVencimiento = $stock->lote?->fecha_vencimiento?->format('Y-m-d') ?? '9999-12-31';
                 $fechaFabricacion = $stock->lote?->fecha_fabricacion?->format('Y-m-d') ?? '9999-12-31';
-                $codigoUbicacion = $stock->ubicacion?->codigo ?? 'ZZZ';
+                $codigoUbicacion = $stock->ubicacion->codigo ?? 'ZZZ';
 
                 return $fechaVencimiento . '|' . $fechaFabricacion . '|' . $codigoUbicacion . '|' . str_pad((string) $stock->id, 12, '0', STR_PAD_LEFT);
             })

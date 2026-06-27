@@ -55,8 +55,8 @@ class Dj1887Service implements DeclaracionJuradaContract
             $mesesDetalle = [];
             foreach ($liqsEmpleado as $liq) {
                 $contratoMes = $liq->contrato;
-                $horasMes    = $contratoMes?->horas_semana ?? 99;
-                if (($contratoMes?->tipo_jornada ?? '') === 'EXCEPTUADO') {
+                $horasMes    = $contratoMes->horas_semana ?? 99;
+                if (($contratoMes->tipo_jornada ?? '') === 'EXCEPTUADO') {
                     $horasMes = 99;
                 }
 
@@ -71,8 +71,8 @@ class Dj1887Service implements DeclaracionJuradaContract
 
             // Horas semanales del registro D: último mes con liquidación (diciembre o el más reciente)
             $ultimoContrato   = $liqsEmpleado->last()->contrato;
-            $horasSemanales   = $ultimoContrato?->horas_semana ?? 99;
-            if (($ultimoContrato?->tipo_jornada ?? '') === 'EXCEPTUADO') {
+            $horasSemanales   = $ultimoContrato->horas_semana ?? 99;
+            if (($ultimoContrato->tipo_jornada ?? '') === 'EXCEPTUADO') {
                 $horasSemanales = 99;
             }
 

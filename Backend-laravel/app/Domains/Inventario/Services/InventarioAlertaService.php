@@ -285,7 +285,7 @@ class InventarioAlertaService
                     'descripcion' => sprintf(
                         'El lote %s del producto %s está vencido y aún registra stock.',
                         $lote->codigo_lote,
-                        $stockLote->producto?->nombre ?? ('#' . $stockLote->producto_id)
+                        $stockLote->producto->nombre ?? ('#' . $stockLote->producto_id)
                     ),
                     'producto_id' => (int) $stockLote->producto_id,
                     'producto_nombre' => $stockLote->producto?->nombre,
@@ -398,7 +398,7 @@ class InventarioAlertaService
                 'titulo' => 'Reserva crítica',
                 'descripcion' => sprintf(
                     'La reserva %s mantiene %s unidades pendientes%s.',
-                    $reserva?->codigo_reserva ?? ('#' . $detalle->reserva_id),
+                    $reserva->codigo_reserva ?? ('#' . $detalle->reserva_id),
                     $this->formatoCantidad($pendiente),
                     $stockBajo ? ' y el stock disponible está bajo el umbral operativo' : ''
                 ),
@@ -520,7 +520,7 @@ class InventarioAlertaService
                     'titulo' => 'Ajuste crítico reciente',
                     'descripcion' => sprintf(
                         'Se registró un ajuste crítico %s por %s unidades.',
-                        $ajuste->tipo?->nombre ?? 'operativo',
+                        $ajuste->tipo->nombre ?? 'operativo',
                         $this->formatoCantidad((float) $ajuste->cantidad)
                     ),
                     'producto_id' => (int) $ajuste->producto_id,
@@ -650,7 +650,7 @@ class InventarioAlertaService
     {
         $regla = $this->reposicionService->resolverReglaActiva($empresaId, $productoId, $bodegaId);
 
-        return max((int) ($regla?->dias_alerta_vencimiento ?? self::DEFAULT_DIAS_VENCIMIENTO), 0);
+        return max((int) ($regla->dias_alerta_vencimiento ?? self::DEFAULT_DIAS_VENCIMIENTO), 0);
     }
 
     private function crearAlerta(array $datos): array

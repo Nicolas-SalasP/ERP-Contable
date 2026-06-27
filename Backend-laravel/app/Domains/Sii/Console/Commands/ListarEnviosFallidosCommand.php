@@ -48,7 +48,7 @@ class ListarEnviosFallidosCommand extends Command
         $filas = $envios->map(fn (SiiEnvioDte $e) => [
             $e->id,
             $e->dte_emitido_id,
-            $e->dteEmitido?->folio ?? '-',
+            $e->dteEmitido->folio ?? '-',
             $e->ambiente_sii,
             $e->estado_envio,
             $e->track_id ?? '-',

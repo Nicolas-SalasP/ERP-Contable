@@ -81,11 +81,11 @@ class AppServiceProvider extends ServiceProvider
 
         // SII — Rate limiters por empresa (HARDENING-1 R6)
         RateLimiter::for('sii-empresa', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->empresa_id ?? $request->ip());
+            return Limit::perMinute(60)->by($request->user()->empresa_id ?? $request->ip());
         });
 
         RateLimiter::for('sii-uploads-pesados', function (Request $request) {
-            return Limit::perHour(10)->by($request->user()?->empresa_id ?? $request->ip());
+            return Limit::perHour(10)->by($request->user()->empresa_id ?? $request->ip());
         });
 
         Gate::define('gestionar-contabilidad-critica', function ($user) {

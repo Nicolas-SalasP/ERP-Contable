@@ -36,12 +36,12 @@ class StockProducto extends Model
         return $this->belongsTo(Empresa::class);
     }
 
-    public function producto()
+    public function producto(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
-    public function bodega()
+    public function bodega(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }

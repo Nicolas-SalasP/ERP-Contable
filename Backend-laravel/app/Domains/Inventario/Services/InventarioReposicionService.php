@@ -190,7 +190,7 @@ class InventarioReposicionService
             ->where('empresa_id', $empresaId)
             ->find($productoId);
 
-        return $this->redondearCantidad((float) ($producto?->stock_minimo ?? 0));
+        return $this->redondearCantidad((float) ($producto->stock_minimo ?? 0));
     }
 
     private function evaluarRegla(ReglaReposicion $regla): array

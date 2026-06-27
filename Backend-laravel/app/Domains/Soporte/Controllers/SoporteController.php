@@ -45,7 +45,7 @@ class SoporteController extends Controller
 
         $payload = [
             'empresa_id'     => $empresaId,
-            'empresa_nombre' => $empresa?->razon_social ?? 'Sin nombre',
+            'empresa_nombre' => $empresa->razon_social ?? 'Sin nombre',
             'origen_email'   => $usuario->email,
             'origen_nombre'  => $usuario->nombre,
             'subject'        => $validated['subject'],

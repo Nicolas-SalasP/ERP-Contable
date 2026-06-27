@@ -152,7 +152,7 @@ class InventarioDespachoService
             foreach ($detallesPacking as $detallePacking) {
                 /** @var InventarioPackingDetalle $detallePacking */
                 $asignacion = $detallePacking->pickingAsignacion;
-                $reservaDetalleId = $asignacion?->reserva_detalle_id
+                $reservaDetalleId = $asignacion->reserva_detalle_id
                     ?? $detallePacking->pickingDetalle?->reserva_detalle_id;
 
                 InventarioDespachoDetalle::create([

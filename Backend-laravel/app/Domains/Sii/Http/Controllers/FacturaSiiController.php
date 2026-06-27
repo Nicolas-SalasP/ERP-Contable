@@ -289,7 +289,7 @@ class FacturaSiiController
             'email'          => $f->cliente->email,
         ] : null;
 
-        $base['detalles_factura'] = $f->detalles->map(fn ($d) => [
+        $base['detalles_factura'] = $f->detalles->map(fn (\App\Domains\Comercial\Models\FacturaDetalle $d) => [
             'numero_linea'    => (int) $d->numero_linea,
             'nombre_item'     => $d->nombre_item,
             'cantidad'        => (float) $d->cantidad,
@@ -314,31 +314,31 @@ class FacturaSiiController
             'fecha_firma'     => $dte->fecha_firma?->toIso8601String(),
             'fecha_envio_sii' => $dte->fecha_envio_sii?->toIso8601String(),
             'track_id'        => $dte->track_id,
-            'detalles'        => $dte->detalles->map(fn ($d) => [
+            'detalles'        => $dte->detalles->map(fn (\App\Domains\Sii\Models\SiiDteEmitidoDetalle $d) => [
                 'numero_linea'    => (int) $d->numero_linea,
                 'nombre_item'     => $d->nombre_item,
                 'monto_item'      => (float) $d->monto_item,
             ])->all(),
-            'referencias'     => $dte->referencias->map(fn ($r) => [
+            'referencias'     => $dte->referencias->map(fn (\App\Domains\Sii\Models\SiiDteEmitidoReferencia $r) => [
                 'tipo_doc'  => $r->tipo_documento_referencia,
                 'folio_ref' => $r->folio_referencia,
                 'fecha_ref' => $r->fecha_referencia?->toDateString(),
                 'razon'     => $r->razon_referencia,
             ])->all(),
-            'eventos'         => $dte->eventos->map(fn ($e) => [
+            'eventos'         => $dte->eventos->map(fn (\App\Domains\Sii\Models\SiiDteEmitidoEvento $e) => [
                 'estado_anterior' => $e->estado_anterior,
                 'estado_nuevo'    => $e->estado_nuevo,
                 'glosa'           => $e->glosa,
                 'fecha'           => $e->created_at?->toIso8601String(),
             ])->all(),
-            'envios'          => $dte->envios->map(fn ($env) => [
+            'envios'          => $dte->envios->map(fn (\App\Domains\Sii\Models\SiiEnvioDte $env) => [
                 'id'              => (int) $env->id,
                 'estado_envio'    => $env->estado_envio,
                 'track_id'        => $env->track_id,
                 'http_status'     => $env->http_status_ultimo_envio,
                 'fecha_envio'     => $env->fecha_envio?->toIso8601String(),
                 'fecha_resolucion' => $env->fecha_resolucion?->toIso8601String(),
-                'eventos'         => $env->eventos->map(fn ($evEnv) => [
+                'eventos'         => $env->eventos->map(fn (\App\Domains\Sii\Models\SiiEnvioDteEvento $evEnv) => [
                     'estado_anterior' => $evEnv->estado_anterior,
                     'estado_nuevo'    => $evEnv->estado_nuevo,
                     'codigo_sii'      => $evEnv->codigo_sii_raw,

@@ -695,7 +695,7 @@ class InventarioDevolucionService
         $movimientoOriginal = $despachoDetalle->movimiento;
         $costoUnitario = $movimientoOriginal?->costo_unitario !== null
             ? (float) $movimientoOriginal->costo_unitario
-            : (float) ($despachoDetalle->producto?->costo_promedio ?? 0);
+            : (float) ($despachoDetalle->producto->costo_promedio ?? 0);
 
         return $this->movimientoService->registrarMovimiento([
             'tipo' => MovimientoInventario::TIPO_ENTRADA,
@@ -710,7 +710,7 @@ class InventarioDevolucionService
             'observacion' => trim(sprintf(
                 '%s post-despacho %s. %s',
                 strtolower(str_replace('_', ' ', $orden->tipo)),
-                $orden->despacho?->codigo ?? ('#' . $orden->despacho_orden_id),
+                $orden->despacho->codigo ?? ('#' . $orden->despacho_orden_id),
                 (string) ($observacionDetalle ?: $detalle->observacion ?: $orden->observacion ?: '')
             )),
             'fecha_movimiento' => now(),

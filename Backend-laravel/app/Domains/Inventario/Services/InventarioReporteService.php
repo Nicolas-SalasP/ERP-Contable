@@ -56,7 +56,7 @@ class InventarioReporteService
             ->get()
             ->map(function (StockProducto $stock) use ($comprometido) {
                 $stockActual = (float) $stock->stock_actual;
-                $stockMinimo = (float) ($stock->producto?->stock_minimo ?? 0);
+                $stockMinimo = (float) ($stock->producto->stock_minimo ?? 0);
                 $key = $this->claveProductoBodega((int) $stock->producto_id, (int) $stock->bodega_id);
                 $cantidadComprometida = (float) ($comprometido[$key] ?? 0);
 
@@ -64,7 +64,7 @@ class InventarioReporteService
                     'producto_id' => (int) $stock->producto_id,
                     'producto_sku' => $stock->producto?->sku,
                     'producto_nombre' => $stock->producto?->nombre,
-                    'producto_activo' => (bool) ($stock->producto?->activo ?? false),
+                    'producto_activo' => (bool) ($stock->producto->activo ?? false),
                     'bodega_id' => (int) $stock->bodega_id,
                     'bodega_codigo' => $stock->bodega?->codigo,
                     'bodega_nombre' => $stock->bodega?->nombre,
@@ -279,7 +279,7 @@ class InventarioReporteService
             ->get()
             ->map(function (StockLoteInventario $stock) use ($hoy, $hasta) {
                 $fechaVencimiento = $stock->lote?->fecha_vencimiento ? CarbonImmutable::parse($stock->lote->fecha_vencimiento->toDateString()) : null;
-                $estado = $this->estadoLote($fechaVencimiento, $hoy, $hasta, (bool) ($stock->lote?->activo ?? false));
+                $estado = $this->estadoLote($fechaVencimiento, $hoy, $hasta, (bool) ($stock->lote->activo ?? false));
 
                 return [
                     'producto_id' => (int) $stock->producto_id,
@@ -295,7 +295,7 @@ class InventarioReporteService
                     'dias_para_vencer' => $fechaVencimiento ? $hoy->diffInDays($fechaVencimiento, false) : null,
                     'stock_actual' => $this->redondear((float) $stock->stock_actual),
                     'estado_lote' => $estado,
-                    'activo' => (bool) ($stock->lote?->activo ?? false),
+                    'activo' => (bool) ($stock->lote->activo ?? false),
                 ];
             })
             ->when(!empty($filtros['estado_lote']), function (Collection $items) use ($filtros) {
@@ -368,7 +368,7 @@ class InventarioReporteService
                     'cantidad_consumida' => $this->redondear($cantidadConsumida),
                     'cantidad_liberada' => $this->redondear($cantidadLiberada),
                     'cantidad_pendiente' => $this->redondear($cantidadPendiente),
-                    'reservado_por' => $reserva->reservadoPor?->name ?? $reserva->reservadoPor?->email,
+                    'reservado_por' => $reserva->reservadoPor->name ?? $reserva->reservadoPor?->email,
                 ];
             })
             ->values();
@@ -536,7 +536,7 @@ class InventarioReporteService
                 'motivo' => $ajuste->motivo,
                 'referencia' => $ajuste->referencia,
                 'observacion' => $ajuste->observacion,
-                'registrado_por' => $ajuste->registradoPor?->name ?? $ajuste->registradoPor?->email,
+                'registrado_por' => $ajuste->registradoPor->name ?? $ajuste->registradoPor?->email,
             ])
             ->values();
 

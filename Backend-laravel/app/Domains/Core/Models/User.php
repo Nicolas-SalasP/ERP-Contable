@@ -72,7 +72,7 @@ class User extends Authenticatable
         return $this->belongsTo(Empresa::class, 'empresa_activa_id');
     }
 
-    public function rol()
+    public function rol(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Rol::class);
     }

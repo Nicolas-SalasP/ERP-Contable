@@ -200,7 +200,7 @@ class CorreccionMonetariaService
             'tiene_ipc'              => $tieneIpc,
             'puede_ejecutar'         => $puedeEjecutar,
             'puede_simular'          => $tieneIpc && $config?->activo,
-            'aplica_cm'              => $config?->aplica_cm ?? false,
+            'aplica_cm'              => $config->aplica_cm ?? false,
             'modalidad'              => $config?->modalidad,
             'mes_cierre'             => $config?->mes_cierre,
             'bloqueado_por_modalidad'=> $config && !$config->puedeEjecutarMes($mes),

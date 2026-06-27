@@ -212,7 +212,7 @@ class PreviredService
         // El adicional se informa aparte.
 
         // Código mutualidad del parámetro previsional de la liquidación (01=ACHS, 02=ISL, 03=Mutual)
-        $mutualCodigo = $liq->parametro?->mutual_codigo ?? self::MUTUALIDAD_CODIGO_DEFAULT;
+        $mutualCodigo = $liq->parametro->mutual_codigo ?? self::MUTUALIDAD_CODIGO_DEFAULT;
 
         // Datos empleador (RUT separado)
         [$rutEmp, $dvEmp] = $empresa ? $this->separarRut($empresa->rut) : ['', ''];
@@ -441,7 +441,7 @@ class PreviredService
         $ufValor = 0.0;
         if ($liq->indicador_mensual_id) {
             $indicador = $liq->indicador;
-            $ufValor   = (float) ($indicador?->uf_valor ?? 0);
+            $ufValor   = (float) ($indicador->uf_valor ?? 0);
         }
 
         if ($ufValor <= 0) {
@@ -471,12 +471,12 @@ class PreviredService
 
     private function montoConcepto(Collection $detalles, string $codigo): float
     {
-        return (float) ($detalles->firstWhere('codigo_concepto', $codigo)?->monto ?? 0);
+        return (float) ($detalles->firstWhere('codigo_concepto', $codigo)->monto ?? 0);
     }
 
     private function baseCalculo(Collection $detalles, string $codigo): float
     {
-        return (float) ($detalles->firstWhere('codigo_concepto', $codigo)?->base_calculo ?? 0);
+        return (float) ($detalles->firstWhere('codigo_concepto', $codigo)->base_calculo ?? 0);
     }
 
     private function pesos(float $monto): string

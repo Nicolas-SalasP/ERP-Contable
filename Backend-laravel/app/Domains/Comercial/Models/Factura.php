@@ -10,6 +10,8 @@ use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 
 /**
  * @property int|null $sii_dte_emitido_id
+ * @property int $tipo_dte
+ * @property int $cliente_id
  */
 class Factura extends Model
 {
@@ -69,7 +71,7 @@ class Factura extends Model
         return $this->belongsTo(Empresa::class);
     }
 
-    public function proveedor()
+    public function proveedor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
     }
@@ -80,7 +82,7 @@ class Factura extends Model
             $this->load('proveedor');
         }
 
-        return trim((string) ($this->proveedor?->razon_social ?? ''));
+        return trim((string) ($this->proveedor->razon_social ?? ''));
     }
 
     public function cuentaBancaria()

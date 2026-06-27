@@ -65,7 +65,7 @@ class Producto extends Model
         return $this->belongsTo(Bodega::class, 'bodega_defecto_id');
     }
 
-    public function stocks()
+    public function stocks(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(StockProducto::class, 'producto_id');
     }
