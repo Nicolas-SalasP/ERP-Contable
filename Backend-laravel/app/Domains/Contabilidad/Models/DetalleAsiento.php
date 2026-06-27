@@ -4,6 +4,20 @@ namespace App\Domains\Contabilidad\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $asiento_id
+ * @property string $cuenta_contable
+ * @property string|null $fecha
+ * @property string $tipo_operacion
+ * @property float $debe
+ * @property float $haber
+ * @property string|null $descripcion_extensa
+ * @property int|null $centro_costo_id
+ * @property string|null $empleado_nombre
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class DetalleAsiento extends Model
 {
     protected $table = 'detalles_asiento';

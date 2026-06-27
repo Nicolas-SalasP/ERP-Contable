@@ -107,6 +107,8 @@ class SiiEnvioDte extends Model
 
     /**
      * F5.3: audit log inmutable de transiciones del envio.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiEnvioDteEvento>
      */
     public function eventos(): HasMany
     {

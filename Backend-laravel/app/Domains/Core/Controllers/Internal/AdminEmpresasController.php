@@ -254,7 +254,7 @@ class AdminEmpresasController
             $planSlug = $validated['plan_slug'];
             $moduleKeys = array_values($validated['module_keys']);
 
-            $updated = DB::transaction(function () use ($id, $planSlug, $moduleKeys) {
+            $updated = DB::transaction(function () use ($id, $planSlug, $moduleKeys): int {
                 return DB::table('usuarios')
                     ->where('empresa_id', $id)
                     ->update([

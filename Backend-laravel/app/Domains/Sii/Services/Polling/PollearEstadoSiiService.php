@@ -342,6 +342,7 @@ class PollearEstadoSiiService
                 SiiEnvioDte::ESTADO_RECHAZADO,
                 SiiDteEmitido::ESTADO_RECHAZADO,
             ],
+            default => throw new \InvalidArgumentException("Acción SII no reconocida: {$accion}"),
         };
     }
 

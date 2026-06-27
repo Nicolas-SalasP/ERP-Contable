@@ -65,7 +65,7 @@ class CotizacionService
             $cotizacion = Cotizacion::create([
                 'empresa_id' => $datos['empresa_id'],
                 'cliente_id' => $datos['cliente_id'],
-                'nombre_cliente' => $cliente ? $cliente->razon_social : 'Cliente Desconocido',
+                'nombre_cliente' => $cliente->razon_social,
                 'numero_cotizacion' => $datos['numero_cotizacion'] ?? 'COT-' . time(),
                 'fecha_emision' => $fechaEmision,
                 'fecha_validez' => $fechaValidez,

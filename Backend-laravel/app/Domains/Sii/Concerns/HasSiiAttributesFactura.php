@@ -38,6 +38,7 @@ trait HasSiiAttributesFactura
         ]);
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Comercial\Models\FacturaDetalle> */
     public function detalles(): HasMany
     {
         return $this->hasMany(FacturaDetalle::class);

@@ -151,7 +151,7 @@ class ActivoFijoService
         $fechaCalculoFecha = $fechaCalculo->toDateString();
         $glosaMes = "Centralización Depreciación Activos Fijos - " . $periodo->format('m/Y');
 
-        return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculoFecha, $glosaMes) {
+        return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculoFecha, $glosaMes): array {
             $yaEjecutado = DB::table('asientos_contables')
                 ->where('empresa_id', $empresaId)
                 ->where('origen_modulo', 'activos')

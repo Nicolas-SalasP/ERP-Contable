@@ -4,6 +4,8 @@ namespace App\Domains\Rrhh\Services;
 
 use App\Domains\Core\Models\SolicitudArco;
 use App\Domains\Rrhh\Exceptions\RrhhException;
+use App\Domains\Rrhh\Models\CargaFamiliar;
+use App\Domains\Rrhh\Models\Contrato;
 use App\Domains\Rrhh\Models\Empleado;
 use App\Domains\Rrhh\Models\Liquidacion;
 use Illuminate\Support\Facades\DB;
@@ -58,7 +60,7 @@ class ArcoService
                 'banco_tipo_cuenta' => $empleado->banco_tipo_cuenta,
                 'numero_cuenta'     => $this->enmascararCuenta($empleado->banco_numero_cuenta),
             ],
-            'contratos' => $empleado->contratos->map(fn ($c) => [
+            'contratos' => $empleado->contratos->map(fn (Contrato $c) => [
                 'id'                 => $c->id,
                 'tipo'               => $c->tipo,
                 'cargo'              => $c->cargo,
@@ -68,7 +70,7 @@ class ArcoService
                 'estado'             => $c->estado,
                 'es_contrato_activo' => $c->es_contrato_activo,
             ])->all(),
-            'cargas_familiares' => $empleado->cargasFamiliares->map(fn ($cf) => [
+            'cargas_familiares' => $empleado->cargasFamiliares->map(fn (CargaFamiliar $cf) => [
                 'rut'    => $cf->rut,
                 'nombre' => $cf->nombre,
                 'tipo'   => $cf->tipo,
@@ -77,7 +79,7 @@ class ArcoService
                 ->orderBy('anio')
                 ->orderBy('mes')
                 ->get(['anio', 'mes', 'liquido_a_pagar'])
-                ->map(fn ($l) => [
+                ->map(fn (Liquidacion $l) => [
                     'periodo'         => sprintf('%04d-%02d', $l->anio, $l->mes),
                     'anio'            => $l->anio,
                     'mes'             => $l->mes,
@@ -273,6 +275,7 @@ class ArcoService
 
         // Anonimiza las cargas familiares del titular (datos de terceros vinculados).
         foreach ($empleado->cargasFamiliares()->withoutGlobalScopes()->get() as $carga) {
+            /** @var CargaFamiliar $carga */
             $carga->rut = null;
             $carga->nombre = 'ANONIMIZADO';
             $carga->save();

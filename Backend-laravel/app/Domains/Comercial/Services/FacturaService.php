@@ -449,7 +449,7 @@ class FacturaService
                 [
                     'id' => 0,
                     'usuario' => 'Sistema',
-                    'fecha' => $factura->created_at ? $factura->created_at->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s'),
+                    'fecha' => $factura->created_at->format('Y-m-d H:i:s'),
                     'operacion' => 'CREACIÓN',
                     'estado_ant' => '-',
                     'estado_nue' => $factura->estado,
@@ -570,7 +570,7 @@ class FacturaService
         foreach ($facturas as $f) {
             $provNombre = $f->proveedor->razon_social ?? 'Sin Proveedor';
             $provRut = $f->proveedor->rut ?? 'N/A';
-            $emision = $f->fecha_emision ? $f->fecha_emision->format('Y-m-d') : '';
+            $emision = $f->fecha_emision->format('Y-m-d');
             $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
             $csvData .= "{$f->id},"
                 . $this->escaparCampoCsv((string) $f->numero_factura) . ","

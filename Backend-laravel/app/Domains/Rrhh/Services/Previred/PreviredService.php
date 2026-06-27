@@ -368,7 +368,7 @@ class PreviredService
             return $diasEnMes;
         }
 
-        $inicio  = $contrato->fecha_inicio  ? Carbon::instance($contrato->fecha_inicio)  : null;
+        $inicio  = Carbon::instance($contrato->fecha_inicio);
         $termino = $contrato->fecha_termino ? Carbon::instance($contrato->fecha_termino) : null;
 
         $desde = $primerDiaMes->copy();
@@ -404,10 +404,10 @@ class PreviredService
             return '0';
         }
 
-        $inicio  = $contrato->fecha_inicio  ? Carbon::instance($contrato->fecha_inicio)  : null;
+        $inicio  = Carbon::instance($contrato->fecha_inicio);
         $termino = $contrato->fecha_termino ? Carbon::instance($contrato->fecha_termino) : null;
 
-        if ($inicio && $inicio->between($primerDiaMes, $ultimoDiaMes)) {
+        if ($inicio->between($primerDiaMes, $ultimoDiaMes)) {
             return '1';
         }
 

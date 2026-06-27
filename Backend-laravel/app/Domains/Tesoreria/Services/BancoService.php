@@ -181,7 +181,7 @@ class BancoService
             // TesoreriaException por falta del import, dejando la transacción abierta).
             return DB::transaction(function () use (
                 $empresaId, $usuarioId, $cuentaBancariaId, $cuentaContrapartida, $codigoCuentaBanco, $archivo
-            ) {
+            ): array {
                 $gestor = fopen($archivo->getRealPath(), "r");
                 $importados = 0;
                 $ignorados = 0;

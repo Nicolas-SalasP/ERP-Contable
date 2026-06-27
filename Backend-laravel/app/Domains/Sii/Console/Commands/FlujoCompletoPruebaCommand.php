@@ -137,6 +137,7 @@ class FlujoCompletoPruebaCommand extends Command
             'con-reparos' => 'Aceptado con reparos menores',
             'rechazado'   => 'Envio Rechazado',
             'procesando'  => 'En Proceso',
+            default       => throw new \InvalidArgumentException("Escenario no soportado: {$escenario}"),
         };
 
         Http::fake([

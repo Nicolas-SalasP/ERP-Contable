@@ -66,7 +66,7 @@ class ParametroPrevisionalController extends Controller
             }
         }
 
-        $parametro = DB::transaction(function () use ($datos, $actual) {
+        $parametro = DB::transaction(function () use ($datos, $actual): ParametroPrevisional {
             // Cerrar vigencia del parámetro anterior
             if ($actual) {
                 $actual->update([

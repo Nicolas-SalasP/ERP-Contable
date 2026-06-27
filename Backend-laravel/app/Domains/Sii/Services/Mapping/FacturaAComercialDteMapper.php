@@ -84,7 +84,7 @@ class FacturaAComercialDteMapper
 
     private function validarFactura(Factura $factura): void
     {
-        if ($factura->tipo_dte === null) {
+        if (!$factura->tipo_dte) {
             throw FacturaIncompletaParaSii::tipoDteFaltante((int) $factura->id);
         }
 
@@ -97,7 +97,7 @@ class FacturaAComercialDteMapper
             );
         }
 
-        if ($factura->cliente_id === null) {
+        if (!$factura->cliente_id) {
             throw FacturaIncompletaParaSii::clienteFaltante((int) $factura->id);
         }
 

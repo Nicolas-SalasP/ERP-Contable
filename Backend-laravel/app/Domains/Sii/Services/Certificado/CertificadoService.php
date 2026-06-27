@@ -197,7 +197,7 @@ class CertificadoService
             throw CertificadoInvalidoException::sinCertActivo($empresa->id);
         }
 
-        if ($cert->subject_rut !== null && $cert->subject_rut !== '') {
+        if ($cert->subject_rut !== '') {
             return $cert->subject_rut;
         }
 

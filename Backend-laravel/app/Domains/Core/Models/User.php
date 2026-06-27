@@ -6,6 +6,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @property-read \App\Domains\Core\Models\Rol|null $rol
+ * @property-read \App\Domains\Core\Models\Empresa|null $empresa
+ * @property-read \App\Domains\Core\Models\Empresa|null $empresaActiva
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;

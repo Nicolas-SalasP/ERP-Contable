@@ -226,12 +226,8 @@ class DteXmlBuilder
             $em->appendChild($dom->createElement('CdgSIISucur', $dte->emisor_cdg_sii_sucursal));
         }
 
-        if ($dte->emisor_direccion !== null) {
-            $em->appendChild($this->createSanitizedElement($dom, 'DirOrigen', $dte->emisor_direccion, 70));
-        }
-        if ($dte->emisor_comuna !== null) {
-            $em->appendChild($this->createSanitizedElement($dom, 'CmnaOrigen', $dte->emisor_comuna, 20));
-        }
+        $em->appendChild($this->createSanitizedElement($dom, 'DirOrigen', $dte->emisor_direccion, 70));
+        $em->appendChild($this->createSanitizedElement($dom, 'CmnaOrigen', $dte->emisor_comuna, 20));
         if ($dte->emisor_ciudad !== null) {
             $em->appendChild($this->createSanitizedElement($dom, 'CiudadOrigen', $dte->emisor_ciudad, 20));
         }

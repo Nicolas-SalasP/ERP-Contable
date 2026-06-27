@@ -72,6 +72,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $usuario_emisor_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Domains\Core\Models\Empresa $empresa
  */
 class SiiDteEmitido extends Model
 {
@@ -276,11 +277,13 @@ class SiiDteEmitido extends Model
         return $this->belongsTo(User::class, 'usuario_emisor_id');
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiDteEmitidoDetalle> */
     public function detalles(): HasMany
     {
         return $this->hasMany(SiiDteEmitidoDetalle::class, 'dte_emitido_id');
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiDteEmitidoReferencia> */
     public function referencias(): HasMany
     {
         return $this->hasMany(SiiDteEmitidoReferencia::class, 'dte_emitido_id');
@@ -298,6 +301,8 @@ class SiiDteEmitido extends Model
 
     /**
      * HARDENING-1 R4: audit log de transiciones de estado.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiDteEmitidoEvento>
      */
     public function eventos(): HasMany
     {
@@ -309,6 +314,8 @@ class SiiDteEmitido extends Model
      * F6.3: envios al WS DTEUpload. Un DTE puede tener varios envios si
      * hubo reintentos manuales (uno por intento). El mas reciente se
      * obtiene con ->envios->last() o ->envios()->latest()->first().
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiEnvioDte>
      */
     public function envios(): HasMany
     {

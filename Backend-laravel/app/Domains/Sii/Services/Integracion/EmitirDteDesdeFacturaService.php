@@ -47,10 +47,10 @@ class EmitirDteDesdeFacturaService
         // refleja la prioridad de errores reportables al operador.
         $facturaId = (int) $factura->id;
 
-        if ($factura->tipo_dte === null) {
+        if (!$factura->tipo_dte) {
             throw FacturaNoEmisibleException::tipoDteFaltante($facturaId);
         }
-        if ($factura->cliente_id === null) {
+        if (!$factura->cliente_id) {
             throw FacturaNoEmisibleException::clienteFaltante($facturaId);
         }
         if ($factura->estado === 'ANULADA') {

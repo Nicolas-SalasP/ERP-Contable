@@ -405,8 +405,7 @@ class CorreccionMonetariaService
                 CmConfiguracionCuenta::ROL_INVENTARIO              => max(0.0, $saldoBruto),
                 CmConfiguracionCuenta::ROL_DEPRECIACION_ACUMULADA  => max(0.0, -$saldoBruto),
                 CmConfiguracionCuenta::ROL_PATRIMONIO_CAPITAL      => max(0.0, -$saldoBruto),
-                CmConfiguracionCuenta::ROL_PASIVO_NO_MONETARIO     => max(0.0, -$saldoBruto),
-                default => 0.0,
+                default                                            => max(0.0, -$saldoBruto),
             };
 
             if ($saldoAjustable <= 0) {

@@ -763,15 +763,15 @@ class InventarioPickingService
 
     private function normalizarLote(Producto $producto, mixed $loteId, int $empresaId, string $campo): ?LoteInventario
     {
-        if (!$producto->maneja_lotes && empty($loteId)) {
+        if (!$producto->maneja_lotes && $loteId === null) {
             return null;
         }
 
-        if (!$producto->maneja_lotes && !empty($loteId)) {
+        if (!$producto->maneja_lotes && $loteId !== null) {
             throw ValidationException::withMessages([$campo => 'El producto no maneja lotes, por lo tanto no debe informar lote_id.']);
         }
 
-        if ($producto->maneja_lotes && empty($loteId)) {
+        if ($producto->maneja_lotes && $loteId === null) {
             throw ValidationException::withMessages([$campo => 'El producto maneja lotes, debe informar lote_id.']);
         }
 
