@@ -167,7 +167,7 @@ class FacturaService
                 'es_documento_exterior' => $esDocumentoExterior,
             ]);
 
-            $esNotaCredito = ($datos['tipo_documento'] ?? '') === 'NOTA_CREDITO';
+            $esNotaCredito = in_array($datos['tipo_documento'] ?? '', ['NOTA_CREDITO', 'NOTA_CREDITO_EXPORTACION']);
             if ($esNotaCredito) {
                 $codigoDestino = $datos['cuentaDestino'] ?? null;
                 $codigoIva = $datos['cuentaIva'] ?? '353350';

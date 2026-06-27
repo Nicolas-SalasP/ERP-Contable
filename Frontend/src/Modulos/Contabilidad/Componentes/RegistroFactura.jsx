@@ -83,8 +83,8 @@ const RegistroFactura = () => {
             let iva = 0;
 
             if (formData.tieneIva) {
-                neto = Math.round(bruto / 1.19);
-                iva = bruto - neto;
+                iva = Math.round(bruto * 19 / 119);
+                neto = bruto - iva;
             }
 
             setFormData(prev => ({
@@ -156,7 +156,7 @@ const RegistroFactura = () => {
     const handleNextStep = async () => {
         if (currentStep === 1) {
             if (!formData.proveedorId || !formData.numeroFactura || !formData.montoBruto || !formData.fechaContable) {
-                alert("Por favor complete todos los campos obligatorios.");
+                toast("Completa todos los campos obligatorios.", 'warning');
                 return;
             }
 
@@ -171,7 +171,7 @@ const RegistroFactura = () => {
                 }
             } catch (error) {
                 logger.error(error);
-                alert("Error validando factura. Verifique conexión.");
+                toast("Error al validar el documento. Verifica la conexión.", 'error');
             } finally {
                 setCheckingDuplicate(false);
             }
@@ -182,9 +182,9 @@ const RegistroFactura = () => {
     };
 
     const handlePreSave = () => {
-        if (!formData.cuentaDestino) return alert("Debe seleccionar una cuenta de Destino (Gasto/Activo)");
-        if (!formData.cuentaProveedor) return alert("Debe seleccionar una cuenta de Proveedor (Pasivo)");
-        if (formData.tieneIva && !formData.cuentaIva) return alert("Debe seleccionar una cuenta de IVA");
+        if (!formData.cuentaDestino) { toast("Selecciona una cuenta de Destino (Gasto/Activo).", 'warning'); return; }
+        if (!formData.cuentaProveedor) { toast("Selecciona una cuenta de Proveedor (Pasivo).", 'warning'); return; }
+        if (formData.tieneIva && !formData.cuentaIva) { toast("Selecciona una cuenta de IVA.", 'warning'); return; }
 
         const bruto = parseInt(formData.montoBruto || 0);
         const ivaTeorico = formData.tieneIva ? (bruto - Math.round(bruto / 1.19)) : 0;
@@ -222,14 +222,13 @@ const RegistroFactura = () => {
                     });
                 } else {
                     logger.error("Errores:", data.errors);
-                    const errorMsgs = data.errors ? Object.values(data.errors).flat().join('\n') : data.message;
-                    alert('❌ Error de Validación:\n' + errorMsgs);
+                    const errorMsgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Error de validación.');
+                    toast(errorMsgs, 'error');
                 }
             })
             .catch(error => {
-                const msj = error.response?.data?.message || error.message;
-                const errs = error.response?.data?.errors ? Object.values(error.response.data.errors).flat().join('\n') : '';
-                alert('Error crítico:\n' + msj + '\n' + errs);
+                const msj = error.response?.data?.message || error.message || 'Error al guardar la factura.';
+                toast(msj, 'error');
             })
             .finally(() => setSaving(false));
     };

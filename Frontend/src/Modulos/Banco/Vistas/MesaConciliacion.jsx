@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
@@ -28,6 +28,7 @@ const MesaConciliacion = () => {
     const [buscandoFacturas, setBuscandoFacturas] = useState(false);
     const [facturasSeleccionadas, setFacturasSeleccionadas] = useState([]);
 
+    const abortMovimientosRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const [modalActivo, setModalActivo] = useState(false);
     const [movSeleccionado, setMovSeleccionado] = useState(null);
@@ -44,6 +45,7 @@ const MesaConciliacion = () => {
 
     useEffect(() => {
         if (cuentaActiva) cargarMovimientos(cuentaActiva);
+        return () => { if (abortMovimientosRef.current) abortMovimientosRef.current.abort(); };
     }, [cuentaActiva]);
 
     const cargarDatosBase = async () => {
@@ -82,12 +84,16 @@ const MesaConciliacion = () => {
     };
 
     const cargarMovimientos = async (idCuenta) => {
+        if (abortMovimientosRef.current) abortMovimientosRef.current.abort();
+        abortMovimientosRef.current = new AbortController();
         setLoading(true);
         try {
-            const res = await api.get(`/banco/movimientos/pendientes/${idCuenta}`);
+            const res = await api.get(`/banco/movimientos/pendientes/${idCuenta}`, { signal: abortMovimientosRef.current.signal });
             if (res.success) setMovimientos(res.data);
         } catch (error) {
-            Swal.fire('Error', 'Error al cargar los movimientos.', 'error');
+            if (error?.name !== 'AbortError' && error?.code !== 'ERR_CANCELED') {
+                Swal.fire('Error', 'Error al cargar los movimientos.', 'error');
+            }
         } finally {
             setLoading(false);
         }

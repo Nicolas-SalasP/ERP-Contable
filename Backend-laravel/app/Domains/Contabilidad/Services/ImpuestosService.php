@@ -54,7 +54,7 @@ class ImpuestosService
 
         $neto = (float) $ventas->sum('monto_neto') - (float) $notasCredito->sum('monto_neto');
         $iva = (float) $ventas->sum('iva') - (float) $notasCredito->sum('iva');
-        $cantidad = $ventas->count() + $notasCredito->count();
+        $cantidad = $ventas->count();
 
         return [
             'neto' => $neto,
@@ -162,8 +162,11 @@ class ImpuestosService
                 throw new Exception("El F29 para este período ya ha sido centralizado.");
             }
 
-            if ($simulacion['ventas']['iva_debito'] == 0 && $simulacion['compras']['iva_credito'] == 0) {
-                throw new Exception("No hay movimientos de IVA para centralizar en este período.");
+            if ($simulacion['ventas']['iva_debito'] == 0
+                && $simulacion['compras']['iva_credito'] == 0
+                && $simulacion['ppm']['monto'] == 0
+                && $simulacion['retenciones'] == 0) {
+                throw new Exception("No hay movimientos de IVA, PPM ni retenciones para centralizar en este período.");
             }
 
             $detalles = [];

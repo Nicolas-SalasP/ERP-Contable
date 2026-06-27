@@ -213,6 +213,7 @@ class AsientoContableService
     private function procesarReversa(AsientoContable $asientoOriginal, int $userId, string $fechaReversa, string $motivo)
     {
         $asientoOriginal->load('detalles');
+        $this->validarMesAbierto($asientoOriginal->empresa_id, $fechaReversa);
 
         return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
             $tempNum = 'TMP-' . Str::uuid()->toString();

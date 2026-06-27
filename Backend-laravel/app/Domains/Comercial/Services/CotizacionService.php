@@ -173,7 +173,7 @@ class CotizacionService
 
                 $descuento = $subtotal * (($cotizacion->porcentaje_descuento ?? 0) / 100);
                 $neto = $subtotal - $descuento;
-                $iva = $cotizacion->es_afecta ? ($neto * 0.19) : 0;
+                $iva = $cotizacion->es_afecta ? round($neto * (($cotizacion->porcentaje_iva ?? 19) / 100)) : 0;
 
                 $cotizacion->subtotal = $subtotal;
                 $cotizacion->monto_descuento = $descuento;
