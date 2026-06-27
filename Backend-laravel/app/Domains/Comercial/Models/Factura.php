@@ -73,7 +73,8 @@ class Factura extends Model
         return $this->belongsTo(Empresa::class);
     }
 
-    public function proveedor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<Proveedor, self> */
+    public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
     }
@@ -87,7 +88,8 @@ class Factura extends Model
         return trim((string) ($this->proveedor->razon_social ?? ''));
     }
 
-    public function cuentaBancaria()
+    /** @return BelongsTo<CuentaBancariaProveedor, self> */
+    public function cuentaBancaria(): BelongsTo
     {
         return $this->belongsTo(CuentaBancariaProveedor::class, 'cuenta_bancaria_id');
     }

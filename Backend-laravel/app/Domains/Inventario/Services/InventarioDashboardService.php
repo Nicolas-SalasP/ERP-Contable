@@ -25,8 +25,6 @@ class InventarioDashboardService
 
     public function __construct(
         private readonly InventarioPermisoService $permisos,
-        private readonly InventarioReposicionService $reposicionService,
-        private readonly InventarioAlertaService $alertaService
     ) {
     }
 
@@ -317,6 +315,7 @@ class InventarioDashboardService
             ->groupBy('inventario_stock.bodega_id', 'inventario_bodegas.codigo', 'inventario_bodegas.nombre')
             ->orderByDesc('valor_total')
             ->limit(10)
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'bodega_id' => (int) $item->bodega_id,

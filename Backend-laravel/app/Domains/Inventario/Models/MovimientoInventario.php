@@ -10,7 +10,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * @property int $id
+ * @property int $empresa_id
+ * @property int $producto_id
+ * @property string $tipo
+ * @property int|null $bodega_origen_id
+ * @property int|null $bodega_destino_id
+ * @property int|null $ubicacion_origen_id
+ * @property int|null $ubicacion_destino_id
+ * @property string $cantidad
+ * @property string|null $stock_origen_antes
+ * @property string|null $stock_origen_despues
+ * @property string|null $stock_destino_antes
+ * @property string|null $stock_destino_despues
+ * @property string|null $estado_stock_origen
+ * @property string|null $estado_stock_destino
+ * @property string|null $costo_unitario
+ * @property string|null $costo_total
+ * @property string|null $referencia
+ * @property string|null $motivo
+ * @property string|null $observacion
+ * @property int|null $created_by
  * @property \Carbon\Carbon|null $fecha_movimiento
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class MovimientoInventario extends Model
 {
@@ -113,13 +136,16 @@ class MovimientoInventario extends Model
         return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_destino_id');
     }
 
+    /** @return HasMany<ReservaConsumoInventario, MovimientoInventario> */
     public function consumosReserva(): HasMany
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'movimiento_inventario_id');
     }
+
+    /** @return HasMany<TomaFisicaDetalleInventario, MovimientoInventario> */
     public function tomaFisicaDetalles(): HasMany
     {
-    return $this->hasMany(TomaFisicaDetalleInventario::class, 'movimiento_ajuste_id');
+        return $this->hasMany(TomaFisicaDetalleInventario::class, 'movimiento_ajuste_id');
     }
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder

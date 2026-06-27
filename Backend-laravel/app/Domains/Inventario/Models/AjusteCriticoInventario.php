@@ -11,6 +11,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
+ * @property int $id
+ * @property int $empresa_id
+ * @property int $movimiento_inventario_id
+ * @property int $tipo_ajuste_critico_id
+ * @property int $producto_id
+ * @property int $bodega_id
+ * @property int|null $lote_id
+ * @property string $cantidad
+ * @property string $costo_unitario
+ * @property string $costo_total
+ * @property string|null $motivo
+ * @property string|null $observacion
+ * @property string|null $referencia
+ * @property string|null $origen_modulo
+ * @property int|null $origen_id
+ * @property int $registrado_por
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  * @property-read int|null $total_ajustes
  */
 class AjusteCriticoInventario extends Model
@@ -51,6 +69,7 @@ class AjusteCriticoInventario extends Model
         'costo_total' => 'decimal:4',
     ];
 
+    /** @return BelongsTo<Empresa, AjusteCriticoInventario> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');

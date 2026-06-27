@@ -12,10 +12,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * @property int $id
+ * @property int $empresa_id
+ * @property string $codigo_toma
+ * @property string $estado
+ * @property string $tipo
+ * @property int|null $bodega_id
+ * @property string|null $referencia
+ * @property string|null $motivo
+ * @property string|null $observacion
+ * @property string|null $origen_modulo
+ * @property int|null $origen_id
+ * @property int $creado_por
+ * @property int|null $cerrado_por
+ * @property int|null $ajustado_por
+ * @property int|null $cancelado_por
  * @property \Carbon\Carbon|null $fecha_inicio
  * @property \Carbon\Carbon|null $fecha_cierre
  * @property \Carbon\Carbon|null $fecha_ajuste
  * @property \Carbon\Carbon|null $fecha_cancelacion
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  * @property-read int $detalles_count
  * @property-read int $detalles_contados_count
  * @property-read int $detalles_con_diferencia_count

@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
@@ -43,7 +44,8 @@ class AsientoContable extends Model
         return $this->belongsTo(CentroCosto::class);
     }
 
-    public function detalles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<DetalleAsiento, self> */
+    public function detalles(): HasMany
     {
         return $this->hasMany(DetalleAsiento::class, 'asiento_id');
     }

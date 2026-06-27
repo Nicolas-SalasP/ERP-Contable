@@ -186,6 +186,7 @@ class FacturaSiiController
         return response()->json(['data' => $this->formatoCompleto($factura)]);
     }
 
+    /** @return array<string, mixed> */
     private function formatoLiviano(Factura $f): array
     {
         $dte = $f->dteEmitido;
@@ -215,6 +216,7 @@ class FacturaSiiController
         ];
     }
 
+    /** @return array<string, mixed> */
     private function formatoEstado(Factura $f): array
     {
         $dte = $f->dteEmitido;
@@ -257,7 +259,7 @@ class FacturaSiiController
             'tipo_dte'                  => $dte->tipo_dte !== null ? (int) $dte->tipo_dte : null,
             'folio'                     => $dte->folio,
             'track_id'                  => $dte->track_id,
-            'fecha_emision'             => $dte->fecha_emision?->toDateString(),
+            'fecha_emision'             => $dte->fecha_emision->toDateString(),
             'fecha_envio_sii'           => $dte->fecha_envio_sii?->toIso8601String(),
             'ambiente'                  => $f->empresa?->ambiente_sii,
             'glosa_sii'                 => $dte->glosa_sii,
@@ -272,6 +274,7 @@ class FacturaSiiController
         ];
     }
 
+    /** @return array<string, mixed> */
     private function formatoCompleto(Factura $f): array
     {
         $base = $this->formatoLiviano($f);

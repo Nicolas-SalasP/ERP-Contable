@@ -52,16 +52,19 @@ class InventarioAlertaEstado extends Model
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    /** @return BelongsTo<Producto, self> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return BelongsTo<Bodega, self> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
+    /** @return BelongsTo<LoteInventario, self> */
     public function lote(): BelongsTo
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');

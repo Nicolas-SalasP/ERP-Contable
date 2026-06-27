@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Domains\Rrhh\Models\LiquidacionDetalle;
 
 class Liquidacion extends Model
 {
@@ -74,11 +75,13 @@ class Liquidacion extends Model
         return $this->belongsTo(Empresa::class);
     }
 
+    /** @return BelongsTo<Empleado, self> */
     public function empleado(): BelongsTo
     {
         return $this->belongsTo(Empleado::class);
     }
 
+    /** @return BelongsTo<Contrato, self> */
     public function contrato(): BelongsTo
     {
         return $this->belongsTo(Contrato::class);
@@ -94,6 +97,7 @@ class Liquidacion extends Model
         return $this->belongsTo(IndicadorMensual::class, 'indicador_mensual_id');
     }
 
+    /** @return HasMany<LiquidacionDetalle, self> */
     public function detalles(): HasMany
     {
         return $this->hasMany(LiquidacionDetalle::class)->orderBy('orden');

@@ -72,7 +72,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $usuario_emisor_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Domains\Core\Models\Empresa $empresa
  */
 class SiiDteEmitido extends Model
 {
@@ -257,21 +256,25 @@ class SiiDteEmitido extends Model
         };
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Domains\Core\Models\Empresa, self> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Domains\Comercial\Models\Factura, self> */
     public function factura(): BelongsTo
     {
         return $this->belongsTo(Factura::class);
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Domains\Comercial\Models\Cotizacion, self> */
     public function cotizacion(): BelongsTo
     {
         return $this->belongsTo(Cotizacion::class);
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Domains\Core\Models\User, self> */
     public function usuarioEmisor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_emisor_id');
@@ -289,11 +292,13 @@ class SiiDteEmitido extends Model
         return $this->hasMany(SiiDteEmitidoReferencia::class, 'dte_emitido_id');
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\HasOne<\App\Domains\Sii\Models\SiiDteEmitidoTraslado, self> */
     public function traslado(): HasOne
     {
         return $this->hasOne(SiiDteEmitidoTraslado::class, 'dte_emitido_id');
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiDteEmitidoImpuestoAdicional, self> */
     public function impuestosAdicionales(): HasMany
     {
         return $this->hasMany(SiiDteEmitidoImpuestoAdicional::class, 'dte_emitido_id');

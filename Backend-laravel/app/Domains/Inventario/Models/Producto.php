@@ -6,6 +6,7 @@ use App\Domains\Core\Traits\HasEmpresaScope;
 
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Producto extends Model
 {
@@ -80,7 +81,7 @@ class Producto extends Model
         return $this->hasMany(StockLoteInventario::class, 'producto_id');
     }
 
-    public function movimientosLotes()
+    public function movimientosLotes(): HasMany
     {
         return $this->hasMany(MovimientoLoteInventario::class, 'producto_id');
     }

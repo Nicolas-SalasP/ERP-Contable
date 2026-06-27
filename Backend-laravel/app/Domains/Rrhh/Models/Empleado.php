@@ -168,6 +168,7 @@ class Empleado extends Model implements CipherSweetEncrypted
             ->limit(1);
     }
 
+    /** @return HasMany<CargaFamiliar, self> */
     public function cargasFamiliares(): HasMany
     {
         return $this->hasMany(CargaFamiliar::class)->where('activa', true);

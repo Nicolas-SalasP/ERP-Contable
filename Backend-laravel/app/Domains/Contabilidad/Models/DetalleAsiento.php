@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
@@ -41,12 +42,14 @@ class DetalleAsiento extends Model
         'haber' => 'decimal:2',
     ];
 
-    public function asiento()
+    /** @return BelongsTo<AsientoContable, self> */
+    public function asiento(): BelongsTo
     {
         return $this->belongsTo(AsientoContable::class, 'asiento_id');
     }
 
-    public function cuenta()
+    /** @return BelongsTo<PlanCuenta, self> */
+    public function cuenta(): BelongsTo
     {
         return $this->belongsTo(PlanCuenta::class, 'cuenta_contable', 'codigo');
     }
