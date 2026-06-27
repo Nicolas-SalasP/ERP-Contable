@@ -2,6 +2,12 @@
 
 namespace App\Domains\Sii\Concerns;
 
+/**
+ * @property string|null $comuna
+ * @property string|null $ciudad
+ * @property string|null $giro
+ * @property int|null $codigo_actividad
+ */
 trait HasSiiAttributesCliente
 {
     public function initializeHasSiiAttributesCliente(): void

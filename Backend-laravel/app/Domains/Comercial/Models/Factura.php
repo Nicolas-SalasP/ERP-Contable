@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Traits\HasEmpresaScope;
@@ -11,7 +12,7 @@ use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 /**
  * @property int|null $sii_dte_emitido_id
  * @property int $tipo_dte
- * @property int $cliente_id
+ * @property int|null $cliente_id
  */
 class Factura extends Model
 {
@@ -66,7 +67,8 @@ class Factura extends Model
 
     protected $appends = ['nombre_proveedor'];
 
-    public function empresa()
+    /** @return BelongsTo<Empresa, Factura> */
+    public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }

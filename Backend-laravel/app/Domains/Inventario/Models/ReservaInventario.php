@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property \Carbon\Carbon|null $fecha_reserva
+ * @property \Carbon\Carbon|null $fecha_expiracion
+ */
 class ReservaInventario extends Model
 {
     use HasEmpresaScope;
@@ -45,16 +49,19 @@ class ReservaInventario extends Model
         'fecha_expiracion' => 'datetime',
     ];
 
+    /** @return BelongsTo<Empresa, ReservaInventario> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    /** @return BelongsTo<User, ReservaInventario> */
     public function reservadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reservado_por');
     }
 
+    /** @return HasMany<ReservaDetalleInventario, ReservaInventario> */
     public function detalles(): HasMany
     {
         return $this->hasMany(ReservaDetalleInventario::class, 'reserva_id');

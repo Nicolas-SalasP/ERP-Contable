@@ -6,6 +6,7 @@ use App\Domains\Core\Traits\HasEmpresaScope;
 
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockProducto extends Model
 {
@@ -31,17 +32,20 @@ class StockProducto extends Model
         'valor_total' => 'decimal:4',
     ];
 
-    public function empresa()
+    /** @return BelongsTo<Empresa, StockProducto> */
+    public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    public function producto(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<Producto, StockProducto> */
+    public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
-    public function bodega(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<Bodega, StockProducto> */
+    public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }

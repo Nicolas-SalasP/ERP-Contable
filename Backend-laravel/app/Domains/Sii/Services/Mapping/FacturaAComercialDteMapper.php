@@ -291,7 +291,7 @@ class FacturaAComercialDteMapper
                 'folio_referencia'           => (string) $ref['folio_ref'],
                 'fecha_referencia'           => (string) $ref['fecha_ref'],
                 'codigo_referencia'          => $ref['cod_ref'] ?? null,
-                'razon_referencia'           => isset($ref['razon_ref']) && $ref['razon_ref'] !== null
+                'razon_referencia'           => isset($ref['razon_ref'])
                     ? Iso88591Helper::sanitize((string) $ref['razon_ref'], 90)
                     : null,
                 'rut_otro_contribuyente'     => $ref['rut_otro'] ?? null,

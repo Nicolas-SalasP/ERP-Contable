@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read int|null $total_ajustes
+ */
 class AjusteCriticoInventario extends Model
 {
     use HasEmpresaScope;
@@ -53,31 +56,37 @@ class AjusteCriticoInventario extends Model
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    /** @return BelongsTo<MovimientoInventario, AjusteCriticoInventario> */
     public function movimiento(): BelongsTo
     {
         return $this->belongsTo(MovimientoInventario::class, 'movimiento_inventario_id');
     }
 
+    /** @return BelongsTo<TipoAjusteCritico, AjusteCriticoInventario> */
     public function tipo(): BelongsTo
     {
         return $this->belongsTo(TipoAjusteCritico::class, 'tipo_ajuste_critico_id');
     }
 
+    /** @return BelongsTo<Producto, AjusteCriticoInventario> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return BelongsTo<Bodega, AjusteCriticoInventario> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
+    /** @return BelongsTo<LoteInventario, AjusteCriticoInventario> */
     public function lote(): BelongsTo
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');
     }
 
+    /** @return BelongsTo<User, AjusteCriticoInventario> */
     public function registradoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registrado_por');

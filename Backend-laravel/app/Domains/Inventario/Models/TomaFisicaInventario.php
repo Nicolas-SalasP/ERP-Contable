@@ -11,6 +11,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property \Carbon\Carbon|null $fecha_inicio
+ * @property \Carbon\Carbon|null $fecha_cierre
+ * @property \Carbon\Carbon|null $fecha_ajuste
+ * @property \Carbon\Carbon|null $fecha_cancelacion
+ * @property-read int $detalles_count
+ * @property-read int $detalles_contados_count
+ * @property-read int $detalles_con_diferencia_count
+ * @property-read int $detalles_ajustados_count
+ */
 class TomaFisicaInventario extends Model
 {
     use HasEmpresaScope;
@@ -62,36 +72,43 @@ class TomaFisicaInventario extends Model
         'fecha_cancelacion' => 'datetime',
     ];
 
+    /** @return BelongsTo<Empresa, TomaFisicaInventario> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    /** @return BelongsTo<Bodega, TomaFisicaInventario> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
+    /** @return BelongsTo<User, TomaFisicaInventario> */
     public function creadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creado_por');
     }
 
+    /** @return BelongsTo<User, TomaFisicaInventario> */
     public function cerradoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cerrado_por');
     }
 
+    /** @return BelongsTo<User, TomaFisicaInventario> */
     public function ajustadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ajustado_por');
     }
 
+    /** @return BelongsTo<User, TomaFisicaInventario> */
     public function canceladoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cancelado_por');
     }
 
+    /** @return HasMany<TomaFisicaDetalleInventario, TomaFisicaInventario> */
     public function detalles(): HasMany
     {
         return $this->hasMany(TomaFisicaDetalleInventario::class, 'toma_fisica_id');

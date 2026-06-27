@@ -77,7 +77,8 @@ class InventarioReporteService
                     'estado_stock' => $this->estadoStock($stockActual, $stockMinimo),
                 ];
             })
-            ->when(!empty($filtros['estado_stock']), function (Collection $items) use ($filtros) {
+            ->when(!empty($filtros['estado_stock']), function ($items) use ($filtros) {
+                /** @var \Illuminate\Support\Collection<int, array<string, mixed>> $items */
                 return $items->filter(fn (array $item) => $item['estado_stock'] === $filtros['estado_stock'])->values();
             })
             ->values();
@@ -155,6 +156,7 @@ class InventarioReporteService
             ->selectRaw('SUM(cantidad) as cantidad_total')
             ->selectRaw('SUM(costo_total) as costo_total')
             ->groupBy('tipo')
+            ->toBase()
             ->get()
             ->mapWithKeys(fn ($item) => [
                 $item->tipo => [
@@ -202,6 +204,7 @@ class InventarioReporteService
             ->groupBy('inventario_stock.producto_id', 'inventario_productos.sku', 'inventario_productos.nombre')
             ->orderByDesc('valor_total')
             ->limit($limit)
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'producto_id' => (int) $item->producto_id,
@@ -224,6 +227,7 @@ class InventarioReporteService
             ->selectRaw('SUM(inventario_stock.valor_total) as valor_total')
             ->groupBy('inventario_stock.bodega_id', 'inventario_bodegas.codigo', 'inventario_bodegas.nombre')
             ->orderByDesc('valor_total')
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'bodega_id' => (int) $item->bodega_id,
@@ -298,7 +302,8 @@ class InventarioReporteService
                     'activo' => (bool) ($stock->lote->activo ?? false),
                 ];
             })
-            ->when(!empty($filtros['estado_lote']), function (Collection $items) use ($filtros) {
+            ->when(!empty($filtros['estado_lote']), function ($items) use ($filtros) {
+                /** @var \Illuminate\Support\Collection<int, array<string, mixed>> $items */
                 return $items->filter(fn (array $item) => $item['estado_lote'] === $filtros['estado_lote'])->values();
             })
             ->values();
@@ -368,7 +373,7 @@ class InventarioReporteService
                     'cantidad_consumida' => $this->redondear($cantidadConsumida),
                     'cantidad_liberada' => $this->redondear($cantidadLiberada),
                     'cantidad_pendiente' => $this->redondear($cantidadPendiente),
-                    'reservado_por' => $reserva->reservadoPor->name ?? $reserva->reservadoPor?->email,
+                    'reservado_por' => $reserva->reservadoPor->nombre ?? $reserva->reservadoPor?->email,
                 ];
             })
             ->values();
@@ -387,6 +392,7 @@ class InventarioReporteService
             ->groupBy('inventario_reserva_detalles.producto_id', 'inventario_productos.sku', 'inventario_productos.nombre')
             ->orderByDesc('cantidad_comprometida')
             ->limit(10)
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'producto_id' => (int) $item->producto_id,
@@ -536,7 +542,7 @@ class InventarioReporteService
                 'motivo' => $ajuste->motivo,
                 'referencia' => $ajuste->referencia,
                 'observacion' => $ajuste->observacion,
-                'registrado_por' => $ajuste->registradoPor->name ?? $ajuste->registradoPor?->email,
+                'registrado_por' => $ajuste->registradoPor->nombre ?? $ajuste->registradoPor?->email,
             ])
             ->values();
 
@@ -654,6 +660,7 @@ class InventarioReporteService
             ])
             ->selectRaw('SUM(cantidad_reservada - cantidad_consumida - cantidad_liberada) as cantidad_comprometida')
             ->groupBy('inventario_reserva_detalles.producto_id', 'inventario_reserva_detalles.bodega_id')
+            ->toBase()
             ->get()
             ->mapWithKeys(fn ($item) => [
                 $this->claveProductoBodega((int) $item->producto_id, (int) $item->bodega_id) => max((float) $item->cantidad_comprometida, 0),

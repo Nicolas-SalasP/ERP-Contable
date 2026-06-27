@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property \Carbon\Carbon|null $fecha_movimiento
+ */
 class MovimientoInventario extends Model
 {
     use HasEmpresaScope;
@@ -74,31 +77,37 @@ class MovimientoInventario extends Model
         'fecha_movimiento' => 'datetime',
     ];
 
+    /** @return BelongsTo<Producto, MovimientoInventario> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return BelongsTo<Bodega, MovimientoInventario> */
     public function bodegaOrigen(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_origen_id');
     }
 
+    /** @return BelongsTo<Bodega, MovimientoInventario> */
     public function bodegaDestino(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_destino_id');
     }
 
+    /** @return HasMany<MovimientoLoteInventario, MovimientoInventario> */
     public function lotes(): HasMany
     {
         return $this->hasMany(MovimientoLoteInventario::class, 'movimiento_inventario_id');
     }
 
+    /** @return BelongsTo<InventarioUbicacion, MovimientoInventario> */
     public function ubicacionOrigen(): BelongsTo
     {
         return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_origen_id');
     }
 
+    /** @return BelongsTo<InventarioUbicacion, MovimientoInventario> */
     public function ubicacionDestino(): BelongsTo
     {
         return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_destino_id');
