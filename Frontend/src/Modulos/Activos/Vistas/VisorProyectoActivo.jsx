@@ -60,7 +60,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
                 onNotificar('success', 'Cuenta contable actualizada correctamente.');
             }
         } catch (error) {
-            alert("Error al actualizar la cuenta: " + (error.response?.data?.message || error.message));
+            onNotificar('error', 'Error al actualizar la cuenta: ' + (error.response?.data?.message || error.message));
         }
     };
 
@@ -110,7 +110,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
             }
         } catch (error) {
             const msg = error.response?.data?.message || "Error al imputar factura.";
-            alert("⚠️ " + msg);
+            onNotificar('error', msg);
         }
     };
 
@@ -160,7 +160,7 @@ const VisorProyectoActivo = ({ proyectoId, onVolver, onNotificar }) => {
             }
         } catch (error) {
             const msg = error.response?.data?.message || 'Error al activar el proyecto.';
-            alert("❌ " + msg);
+            onNotificar('error', msg);
         }
     };
 

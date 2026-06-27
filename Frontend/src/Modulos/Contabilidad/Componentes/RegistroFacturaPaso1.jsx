@@ -117,6 +117,7 @@ const RegistroFacturaPaso1 = ({
                                     type="number"
                                     step="0.01"
                                     min="0"
+                                    max="9999999999"
                                     className="w-full border border-amber-300 dark:border-amber-600 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 bg-white dark:bg-slate-700"
                                     placeholder="Ej: 23.80"
                                     value={formData.montoOrigenDivisa}
@@ -131,6 +132,7 @@ const RegistroFacturaPaso1 = ({
                                     type="number"
                                     step="0.01"
                                     min="0"
+                                    max="99999"
                                     className="w-full border border-amber-300 dark:border-amber-600 rounded-lg p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 bg-white dark:bg-slate-700"
                                     placeholder="Ej: 950.00"
                                     value={formData.tipoCambio}
@@ -200,6 +202,7 @@ const RegistroFacturaPaso1 = ({
                             value={formData.numeroFactura}
                             onChange={onChange}
                             placeholder="Ej: 123456"
+                            maxLength={50}
                             className="w-full border border-slate-300 dark:border-slate-600 rounded-lg py-3 px-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700"
                         />
                     </div>
@@ -247,6 +250,7 @@ const RegistroFacturaPaso1 = ({
                             onChange={onMontoChange}
                             readOnly={formData.esDocumentoExterior}
                             placeholder={formData.esDocumentoExterior ? 'Se calcula desde los campos superiores' : '0'}
+                            maxLength={15}
                             className={`block w-full !pl-10 rounded-lg border py-4 pl-10 pr-12 text-2xl font-bold outline-none tracking-wide ${
                                 formData.esDocumentoExterior
                                     ? 'border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:border-amber-600 dark:text-amber-200 cursor-not-allowed'

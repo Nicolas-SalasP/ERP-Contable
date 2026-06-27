@@ -97,7 +97,7 @@ const GestionActivos = () => {
                 cargarDatos();
             }
         } catch (error) {
-            alert("Error al dar de baja: " + (error.response?.data?.message || error.message));
+            mostrarNotificacion('error', 'Error al dar de baja: ' + (error.response?.data?.message || error.message));
         }
     };
     const abrirModalEditar = (activo) => {
@@ -203,7 +203,7 @@ const GestionActivos = () => {
                                             <td className="px-6 py-4 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(activo.valor_adquisicion)}</td>
                                             <td className="px-6 py-4 text-center">
                                                 <button 
-                                                    onClick={() => alert("Próxima mejora: Transformación automática a Proyecto Activo.")}
+                                                    onClick={() => mostrarNotificacion('info', 'Próxima mejora: Transformación automática a Proyecto Activo.')}
                                                     className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded transition-colors text-xs"
                                                 >
                                                     Crear Proyecto
