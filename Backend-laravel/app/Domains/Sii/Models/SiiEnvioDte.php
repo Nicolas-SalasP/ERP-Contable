@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $fecha_resolucion
  * @property string|null $estado_sii_ultimo
  * @property string|null $glosa_sii
+ * @property int|null $http_status_ultimo_envio
  * @property string|null $http_status_ultimo_polling
  * @property string|null $respuesta_body_completo_cifrado
  * @property \Illuminate\Support\Carbon|null $created_at

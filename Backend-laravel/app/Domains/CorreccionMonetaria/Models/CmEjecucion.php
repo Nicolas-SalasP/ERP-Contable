@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Core\Models\User;
 
+/**
+ * @property-read \App\Domains\Contabilidad\Models\AsientoContable|null $asiento
+ * @property-read \App\Domains\Core\Models\User|null $usuario
+ */
 class CmEjecucion extends Model
 {
     protected $table = 'cm_ejecuciones';

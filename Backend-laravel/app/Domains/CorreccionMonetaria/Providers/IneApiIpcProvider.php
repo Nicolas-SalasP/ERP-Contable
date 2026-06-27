@@ -2,23 +2,8 @@
 
 namespace App\Domains\CorreccionMonetaria\Providers;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-
 class IneApiIpcProvider implements IpcProviderInterface
 {
-    private string $baseUrl;
-    private string $apiKey;
-    private int $timeoutSeconds;
-
-    public function __construct()
-    {
-        $this->baseUrl = config('correccion_monetaria.ine_api.base_url', 'https://servicios.ine.cl/IPCV2/api/v1');
-        $this->apiKey = config('correccion_monetaria.ine_api.api_key', '');
-        $this->timeoutSeconds = config('correccion_monetaria.ine_api.timeout', 10);
-    }
-
     public function getVariacionMensual(int $anio, int $mes): ?float
     {
         $this->lanzarNoImplementado();
@@ -48,11 +33,6 @@ class IneApiIpcProvider implements IpcProviderInterface
     public function getNombre(): string
     {
         return 'API INE (no implementado aún)';
-    }
-
-    private function consultarApiIne(int $anio, int $mes): ?array
-    {
-        return null;
     }
 
     private function lanzarNoImplementado(): void

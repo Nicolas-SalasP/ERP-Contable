@@ -19,30 +19,6 @@ parameters:
 			path: app/Domains/Activos/Services/ActivoFijoService.php
 
 		-
-			message: '#^Access to an undefined property App\\Domains\\Comercial\\Models\\Factura\:\:\$base_imponible\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Comercial/Controllers/FacturaController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Comercial\\Models\\Factura\:\:\$cantidad_facturas\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Comercial/Controllers/FacturaController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Comercial\\Models\\Factura\:\:\$total_retencion\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Comercial/Controllers/FacturaController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\Comercial\\Models\\Factura\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Domains/Comercial/Controllers/FacturaController.php
-
-		-
 			message: '#^Property App\\Domains\\Comercial\\Models\\Cliente\:\:\$fillable \(list\<string\>\) on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.property
 			count: 1
@@ -115,12 +91,6 @@ parameters:
 			path: app/Domains/Comercial/Services/AnticipoProveedorService.php
 
 		-
-			message: '#^Access to an undefined property App\\Domains\\Comercial\\Models\\Cotizacion\:\:\$cliente\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Comercial/Services/CotizacionService.php
-
-		-
 			message: '#^Relation ''cliente'' is not found in App\\Domains\\Comercial\\Models\\Cotizacion model\.$#'
 			identifier: larastan.relationExistence
 			count: 2
@@ -187,64 +157,10 @@ parameters:
 			path: app/Domains/Contabilidad/Services/Dj/Dj1887Service.php
 
 		-
-			message: '#^Method App\\Domains\\Contabilidad\\Services\\PeriodoContableService\:\:descomponer\(\) should return array\{anio\: int, mes\: int\} but returns array\{int, int\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Contabilidad/Services/PeriodoContableService.php
-
-		-
-			message: '#^Offset 0 does not exist on array\{anio\: int, mes\: int\}\.$#'
-			identifier: offsetAccess.notFound
-			count: 2
-			path: app/Domains/Contabilidad/Services/PeriodoContableService.php
-
-		-
-			message: '#^Offset 1 does not exist on array\{anio\: int, mes\: int\}\.$#'
-			identifier: offsetAccess.notFound
-			count: 2
-			path: app/Domains/Contabilidad/Services/PeriodoContableService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>jerarquia" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Domains/Contabilidad/Services/PeriodoContableService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Core\\Models\\User\:\:\$estadoSuscripcion\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Core/Controllers/AuthController.php
-
-		-
-			message: '#^Cannot call method diffInHours\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Domains/Core/Controllers/AuthController.php
-
-		-
-			message: '#^If condition is always true\.$#'
-			identifier: if.alwaysTrue
-			count: 2
-			path: app/Domains/Core/Controllers/AuthController.php
-
-		-
 			message: '#^Relation ''estadoSuscripcion'' is not found in App\\Domains\\Core\\Models\\User model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Domains/Core/Controllers/AuthController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Core\\Models\\Empresa\:\:\$centrosCosto\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Core/Controllers/EmpresaController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Core\\Models\\Empresa\:\:\$cuentasBancarias\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Core/Controllers/EmpresaController.php
 
 		-
 			message: '#^Relation ''centrosCosto'' is not found in App\\Domains\\Core\\Models\\Empresa model\.$#'
@@ -275,72 +191,6 @@ parameters:
 			identifier: nullCoalesce.property
 			count: 1
 			path: app/Domains/Core/Models/Empresa.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Comercial\\Models\\Factura\:\:\$monto\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Core/Services/DashboardResumenService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Comercial\\Models\\Factura\:\:\$nombre\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Core/Services/DashboardResumenService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\Comercial\\Models\\Factura\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Domains/Core/Services/DashboardResumenService.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Domains/Core/Services/DashboardResumenService.php
-
-		-
-			message: '#^Method App\\Domains\\CorreccionMonetaria\\Providers\\IneApiIpcProvider\:\:consultarApiIne\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: app/Domains/CorreccionMonetaria/Providers/IneApiIpcProvider.php
-
-		-
-			message: '#^Method App\\Domains\\CorreccionMonetaria\\Providers\\IneApiIpcProvider\:\:consultarApiIne\(\) never returns array so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: app/Domains/CorreccionMonetaria/Providers/IneApiIpcProvider.php
-
-		-
-			message: '#^Property App\\Domains\\CorreccionMonetaria\\Providers\\IneApiIpcProvider\:\:\$apiKey is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Domains/CorreccionMonetaria/Providers/IneApiIpcProvider.php
-
-		-
-			message: '#^Property App\\Domains\\CorreccionMonetaria\\Providers\\IneApiIpcProvider\:\:\$baseUrl is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Domains/CorreccionMonetaria/Providers/IneApiIpcProvider.php
-
-		-
-			message: '#^Property App\\Domains\\CorreccionMonetaria\\Providers\\IneApiIpcProvider\:\:\$timeoutSeconds is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Domains/CorreccionMonetaria/Providers/IneApiIpcProvider.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\CorreccionMonetaria\\Models\\CmEjecucion\:\:\$asiento\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/CorreccionMonetaria/Services/CorreccionMonetariaService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\CorreccionMonetaria\\Models\\CmEjecucion\:\:\$usuario\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/CorreccionMonetaria/Services/CorreccionMonetariaService.php
 
 		-
 			message: '#^Relation ''asiento'' is not found in App\\Domains\\CorreccionMonetaria\\Models\\CmEjecucion model\.$#'
@@ -595,27 +445,9 @@ parameters:
 			path: app/Domains/Inventario/Services/InventarioAlertaService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$codigo_reserva\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Inventario/Services/InventarioAlertaService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_expiracion\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Inventario/Services/InventarioAlertaService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Domains/Inventario/Services/InventarioAlertaService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$referencia\.$#'
-			identifier: property.notFound
-			count: 1
 			path: app/Domains/Inventario/Services/InventarioAlertaService.php
 
 		-
@@ -631,22 +463,22 @@ parameters:
 			path: app/Domains/Inventario/Services/InventarioAlertaService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$empresa_id\.$#'
-			identifier: property.notFound
+			message: '#^Using nullsafe property access "\?\-\>codigo_reserva" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
-			path: app/Domains/Inventario/Services/InventarioDespachoService.php
+			path: app/Domains/Inventario/Services/InventarioAlertaService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$estado\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Domains/Inventario/Services/InventarioDespachoService.php
+			message: '#^Using nullsafe property access "\?\-\>dias_alerta_vencimiento" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Inventario/Services/InventarioAlertaService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Inventario/Services/InventarioDespachoService.php
+			message: '#^Using nullsafe property access "\?\-\>nombre" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Inventario/Services/InventarioAlertaService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reserva_detalle_id\.$#'
@@ -655,37 +487,19 @@ parameters:
 			path: app/Domains/Inventario/Services/InventarioDespachoService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reserva_id\.$#'
-			identifier: property.notFound
+			message: '#^Using nullsafe property access "\?\-\>reserva_detalle_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Domains/Inventario/Services/InventarioDespachoService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cantidad_despachada\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$codigo\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$costo_unitario\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$despacho_orden_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$empresa_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$costo_promedio\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
@@ -697,52 +511,46 @@ parameters:
 			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
 
 		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: \(array\{despacho_detalle_id\: int, cantidad_devolver\: float, ubicacion_destino_id\: mixed\}\|null\), Closure\(App\\Domains\\Inventario\\Models\\InventarioDespachoDetalle\)\: \(array\{despacho_detalle_id\: int, cantidad_devolver\: float, ubicacion_destino_id\: mixed\}\|null\) given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
+
+		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{despacho_detalle_id\: int, producto_id\: int, producto\: Illuminate\\Database\\Eloquent\\Model\|null, bodega_id\: int, ubicacion_origen_id\: int\<min, \-1\>\|int\<1, max\>\|null, ubicacion_origen\: Illuminate\\Database\\Eloquent\\Model\|null, lote_id\: int\<min, \-1\>\|int\<1, max\>\|null, lote\: Illuminate\\Database\\Eloquent\\Model\|null, cantidad_despachada_original\: float, cantidad_ya_reversada\: float, cantidad_pendiente_reservada\: float, cantidad_reversable\: float, reversable\: bool\}, Closure\(App\\Domains\\Inventario\\Models\\InventarioDespachoDetalle\)\: array\{despacho_detalle_id\: int, producto_id\: int, producto\: Illuminate\\Database\\Eloquent\\Model\|null, bodega_id\: int, ubicacion_origen_id\: int\<min, \-1\>\|int\<1, max\>\|null, ubicacion_origen\: Illuminate\\Database\\Eloquent\\Model\|null, lote_id\: int\<min, \-1\>\|int\<1, max\>\|null, lote\: Illuminate\\Database\\Eloquent\\Model\|null, cantidad_despachada_original\: float, cantidad_ya_reversada\: float, cantidad_pendiente_reservada\: float, cantidad_reversable\: float, reversable\: bool\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
 
 		-
-			message: '#^Parameter \#4 \$despachoDetalle of method App\\Domains\\Inventario\\Services\\InventarioDevolucionService\:\:registrarMovimientoEntrada\(\) expects App\\Domains\\Inventario\\Models\\InventarioDespachoDetalle, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
+			message: '#^Using nullsafe property access "\?\-\>cantidad_aceptada" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$activo\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Inventario/Services/InventarioPickingAsignacionService.php
+			message: '#^Using nullsafe property access "\?\-\>cantidad_rechazada" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_fabricacion\.$#'
-			identifier: property.notFound
+			message: '#^Using nullsafe property access "\?\-\>cantidad_solicitada" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
-			path: app/Domains/Inventario/Services/InventarioPickingAsignacionService.php
+			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_vencimiento\.$#'
-			identifier: property.notFound
+			message: '#^Using nullsafe property access "\?\-\>codigo" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
-			path: app/Domains/Inventario/Services/InventarioPickingAsignacionService.php
+			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:estaBloqueadoOperativamente\(\)\.$#'
-			identifier: method.notFound
+			message: '#^Using nullsafe property access "\?\-\>costo_promedio" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
-			path: app/Domains/Inventario/Services/InventarioPickingAsignacionService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:estaVencido\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domains/Inventario/Services/InventarioPickingAsignacionService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:stockDisponible\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domains/Inventario/Services/InventarioPickingAsignacionService.php
+			path: app/Domains/Inventario/Services/InventarioDevolucionService.php
 
 		-
 			message: '#^Method App\\Domains\\Inventario\\Services\\InventarioPickingService\:\:normalizarDetallesConfirmacion\(\) is unused\.$#'
@@ -847,42 +655,6 @@ parameters:
 			path: app/Domains/Rrhh/Services/ArcoService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_inicio\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Rrhh/Services/Calculo/LiquidacionService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$haberes\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Rrhh/Services/Calculo/LiquidacionService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$horas_semana\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Rrhh/Services/Calculo/LiquidacionService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Rrhh/Services/Calculo/LiquidacionService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sueldo_base\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Rrhh/Services/Calculo/LiquidacionService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:esIndefindo\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Domains/Rrhh/Services/Calculo/LiquidacionService.php
-
-		-
 			message: '#^Instanceof between Carbon\\Carbon and Carbon\\Carbon will always evaluate to true\.$#'
 			identifier: instanceof.alwaysTrue
 			count: 1
@@ -943,30 +715,6 @@ parameters:
 			path: app/Domains/Sii/Console/Commands/EnviarDtePruebaCommand.php
 
 		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Console/Commands/FlujoCompletoPruebaCommand.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento\:\:\$estado_nuevo\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Console/Commands/FlujoCompletoPruebaCommand.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiEnvioDteEvento\:\:\$codigo_sii_raw\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Console/Commands/FlujoCompletoPruebaCommand.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiEnvioDteEvento\:\:\$estado_nuevo\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Console/Commands/FlujoCompletoPruebaCommand.php
-
-		-
 			message: '#^Dead catch \- App\\Domains\\Sii\\Exceptions\\CafInvalidoException is never thrown in the try block\.$#'
 			identifier: catch.neverThrown
 			count: 1
@@ -991,256 +739,10 @@ parameters:
 			path: app/Domains/Sii/Console/Commands/ObtenerTokenPruebaCommand.php
 
 		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento\:\:\$estado_anterior\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento\:\:\$estado_nuevo\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento\:\:\$glosa\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiEnvioDte\:\:\$http_status_ultimo_envio\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiEnvioDteEvento\:\:\$codigo_sii_raw\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiEnvioDteEvento\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiEnvioDteEvento\:\:\$estado_anterior\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiEnvioDteEvento\:\:\$estado_nuevo\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$detalles\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$envios\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$estado\.$#'
-			identifier: property.notFound
-			count: 9
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$eventos\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_emision\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_envio_sii\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_firma\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$folio\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$glosa_sii\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$monto_total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$referencias\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tipo_dte\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$track_id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$xml_hash_sha256\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$xml_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\Sii\\Models\\SiiEnvioDteEvento\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: app/Domains/Sii/Http/Controllers/FacturaSiiController.php
-
-		-
 			message: '#^Strict comparison using \=\=\= between Illuminate\\Support\\Carbon and null will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 2
 			path: app/Domains/Sii/Models/SiiCertificadoEmpresa.php
-
-		-
-			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoDetalle\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
-			identifier: generics.lessTypes
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
-			identifier: generics.lessTypes
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoReferencia\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
-			identifier: generics.lessTypes
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiEnvioDte\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
-			identifier: generics.lessTypes
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:cotizacion\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Comercial\\Models\\Cotizacion, App\\Domains\\Sii\\Models\\SiiDteEmitido\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Comercial\\Models\\Cotizacion, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:detalles\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoDetalle\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoDetalle, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:empresa\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Core\\Models\\Empresa, App\\Domains\\Sii\\Models\\SiiDteEmitido\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Core\\Models\\Empresa, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:envios\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiEnvioDte\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiEnvioDte, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:eventos\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoEvento, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:factura\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Comercial\\Models\\Factura, App\\Domains\\Sii\\Models\\SiiDteEmitido\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Comercial\\Models\\Factura, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:impuestosAdicionales\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoImpuestoAdicional, App\\Domains\\Sii\\Models\\SiiDteEmitido\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoImpuestoAdicional, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:referencias\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoReferencia\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiDteEmitidoReferencia, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:traslado\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasOne\<App\\Domains\\Sii\\Models\\SiiDteEmitidoTraslado, App\\Domains\\Sii\\Models\\SiiDteEmitido\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasOne\<App\\Domains\\Sii\\Models\\SiiDteEmitidoTraslado, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
-
-		-
-			message: '#^Method App\\Domains\\Sii\\Models\\SiiDteEmitido\:\:usuarioEmisor\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Core\\Models\\User, App\\Domains\\Sii\\Models\\SiiDteEmitido\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Core\\Models\\User, \$this\(App\\Domains\\Sii\\Models\\SiiDteEmitido\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Sii/Models/SiiDteEmitido.php
 
 		-
 			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Sii\\Models\\SiiEnvioDteEvento\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
@@ -1297,24 +799,6 @@ parameters:
 			path: app/Domains/Sii/Services/Envio/EnvioSiiService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$envios\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Services/Integracion/ReintentarEmisionFacturaService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$estado\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Services/Integracion/ReintentarEmisionFacturaService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Domains/Sii/Services/Integracion/ReintentarEmisionFacturaService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$empresa\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1325,42 +809,6 @@ parameters:
 			identifier: assign.propertyType
 			count: 2
 			path: app/Domains/Sii/Services/Polling/PollearEstadoSiiService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Sii\\Models\\SiiDteEmitidoTraslado\:\:\$indicador_traslado\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Sii/Services/Xml/DteXmlBuilder.php
-
-		-
-			message: '#^Parameter \#3 \$rawValue of method App\\Domains\\Sii\\Services\\Xml\\DteXmlBuilder\:\:createSanitizedElement\(\) expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domains/Sii/Services/Xml/DteXmlBuilder.php
-
-		-
-			message: '#^Parameter \#3 \$rawValue of method App\\Domains\\Sii\\Services\\Xml\\DteXmlBuilder\:\:createSanitizedElement\(\) expects string, int\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domains/Sii/Services/Xml/DteXmlBuilder.php
-
-		-
-			message: '#^Result of \|\| is always false\.$#'
-			identifier: booleanOr.alwaysFalse
-			count: 2
-			path: app/Domains/Sii/Services/Xml/DteXmlBuilder.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between float and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: app/Domains/Sii/Services/Xml/DteXmlBuilder.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 4
-			path: app/Domains/Sii/Services/Xml/DteXmlBuilder.php
 
 		-
 			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'

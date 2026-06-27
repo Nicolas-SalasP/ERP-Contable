@@ -339,10 +339,12 @@ class DashboardResumenService
 
         // Para facturas de VENTA, el nombre del cliente está en proveedor.razon_social
         // (el campo proveedor_id apunta al cliente cuando tipo=VENTA)
-        $filas = Factura::where('facturas.empresa_id', $empresaId)
+        $filas = DB::table('facturas')
+            ->where('facturas.empresa_id', $empresaId)
             ->where('facturas.tipo', 'VENTA')
             ->where('facturas.estado', '!=', 'ANULADA')
             ->where('facturas.fecha_emision', '>=', $desde)
+            ->whereNull('facturas.deleted_at')
             ->join('proveedores', 'proveedores.id', '=', 'facturas.proveedor_id')
             ->groupBy('facturas.proveedor_id', 'proveedores.razon_social')
             ->selectRaw('proveedores.razon_social as nombre, SUM(facturas.monto_bruto) as monto')
@@ -350,10 +352,13 @@ class DashboardResumenService
             ->limit(5)
             ->get();
 
-        return $filas->map(fn ($f) => [
-            'nombre' => $f->nombre,
-            'monto'  => round((float) $f->monto, 2),
-        ])->all();
+        return $filas->map(function (object $f) {
+            /** @var object{nombre: string, monto: string|null} $f */
+            return [
+                'nombre' => $f->nombre,
+                'monto'  => round((float) $f->monto, 2),
+            ];
+        })->all();
     }
 
     // -------------------------------------------------------------------------
@@ -372,7 +377,7 @@ class DashboardResumenService
         return $filas->map(fn ($f) => [
             'id'               => $f->id,
             'numero_factura'   => $f->numero_factura,
-            'fecha_emision'    => $f->fecha_emision?->toDateString(),
+            'fecha_emision'    => $f->fecha_emision->toDateString(),
             'fecha_vencimiento'=> $f->fecha_vencimiento?->toDateString(),
             'monto_bruto'      => (float) $f->monto_bruto,
             'estado'           => $f->estado,

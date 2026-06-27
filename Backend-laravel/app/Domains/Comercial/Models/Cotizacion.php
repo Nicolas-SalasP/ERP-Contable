@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Traits\HasEmpresaScope;
 
+/**
+ * @property-read \App\Domains\Comercial\Models\Cliente|null $cliente
+ * @property-read \App\Domains\Comercial\Models\EstadoCotizacion|null $estado
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Comercial\Models\CotizacionDetalle> $detalles
+ */
 class Cotizacion extends Model
 {
     use HasEmpresaScope;

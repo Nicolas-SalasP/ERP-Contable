@@ -42,6 +42,7 @@ class LiquidacionService
             }
 
             $contratos = $empleado->contratoActivo;
+            /** @var \App\Domains\Rrhh\Models\Contrato|null $contrato */
             $contrato = $contratos->first();
             if (!$contrato) {
                 throw RrhhException::regla("El empleado {$empleado->nombre_completo} no tiene un contrato activo.");
@@ -129,6 +130,7 @@ class LiquidacionService
             $orden_ni = self::ORDEN_HABERES_NO_IMPONIBLES;
 
             // Fix 1: filtrar solo tipos haber; descuentos del contrato se procesan en sección 10
+            /** @var \App\Domains\Rrhh\Models\HaberDescuentoContrato $haber */
             foreach ($contrato->haberes->whereIn('tipo', ['HABER_IMPONIBLE', 'HABER_NO_IMPONIBLE']) as $haber) {
                 if (!$haber->activo) {
                     continue;
@@ -223,9 +225,7 @@ class LiquidacionService
             if ($contrato->esIndefindo()) {
                 $fechaInicioContrato = $contrato->fecha_inicio;
                 $fechaPeriodoCarbon = \Carbon\Carbon::create($anio, $mes, 1);
-                $aniosAntiguedad = $fechaInicioContrato
-                    ? (int) $fechaInicioContrato->diffInYears($fechaPeriodoCarbon)
-                    : 0;
+                $aniosAntiguedad = (int) $fechaInicioContrato->diffInYears($fechaPeriodoCarbon);
                 if ($aniosAntiguedad < 11) {
                     $afcTrabajadorPct = (float) $parametro->afc_indefinido_trabajador_pct;
                 }
@@ -263,6 +263,7 @@ class LiquidacionService
             $ordenDV = self::ORDEN_DESCUENTOS_VOLUNTARIOS;
             $totalDescuentosVoluntarios = 0;
 
+            /** @var \App\Domains\Rrhh\Models\HaberDescuentoContrato $desc */
             foreach ($contrato->haberes->where('tipo', 'DESCUENTO_VOLUNTARIO') as $desc) {
                 $montoDesc = $desc->modalidad_valor === 'PORCENTAJE_SUELDO_BASE'
                     ? round($sueldoBase * ((float) $desc->porcentaje / 100))

@@ -13,6 +13,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * de la misma DB::transaction que actualiza el envio (event-sourcing).
  *
  * Sin updated_at: los registros NO se sobreescriben jamas.
+ *
+ * @property int $id
+ * @property int $envio_dte_id
+ * @property string|null $estado_anterior
+ * @property string $estado_nuevo
+ * @property string|null $glosa
+ * @property array|null $payload
+ * @property string|null $codigo_sii_raw
+ * @property int|null $http_status
+ * @property \Illuminate\Support\Carbon|null $created_at
  */
 class SiiEnvioDteEvento extends Model
 {

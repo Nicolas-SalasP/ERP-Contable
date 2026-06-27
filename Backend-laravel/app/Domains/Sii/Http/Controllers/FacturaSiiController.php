@@ -194,7 +194,7 @@ class FacturaSiiController
             'factura_id'    => $f->id,
             'numero_factura' => $f->numero_factura,
             'tipo_documento' => $f->tipo_documento,
-            'fecha_emision' => $f->fecha_emision?->toDateString(),
+            'fecha_emision' => $f->fecha_emision->toDateString(),
             'monto_bruto'   => (float) $f->monto_bruto,
             'cliente' => $f->cliente ? [
                 'id'           => $f->cliente->id,
@@ -233,7 +233,7 @@ class FacturaSiiController
                 'tipo_dte'                  => null,
                 'folio'                     => null,
                 'track_id'                  => null,
-                'fecha_emision'             => $f->fecha_emision?->toDateString(),
+                'fecha_emision'             => $f->fecha_emision->toDateString(),
                 'fecha_envio_sii'           => null,
                 'ambiente'                  => null,
                 'glosa_sii'                 => null,
@@ -256,7 +256,7 @@ class FacturaSiiController
             'estado_glosa_humana'       => $this->glosaHumana($dte->estado),
             'es_terminal'               => $this->esTerminal($dte->estado),
             'es_pollable'               => $this->esPollable($dte->estado),
-            'tipo_dte'                  => $dte->tipo_dte !== null ? (int) $dte->tipo_dte : null,
+            'tipo_dte'                  => (int) $dte->tipo_dte,
             'folio'                     => $dte->folio,
             'track_id'                  => $dte->track_id,
             'fecha_emision'             => $dte->fecha_emision->toDateString(),
@@ -341,7 +341,7 @@ class FacturaSiiController
                 'http_status'     => $env->http_status_ultimo_envio,
                 'fecha_envio'     => $env->fecha_envio?->toIso8601String(),
                 'fecha_resolucion' => $env->fecha_resolucion?->toIso8601String(),
-                'eventos'         => $env->eventos->map(fn (\App\Domains\Sii\Models\SiiEnvioDteEvento $evEnv) => [
+                'eventos'         => $env->eventos->map(fn (\App\Domains\Sii\Models\SiiEnvioDteEvento $evEnv): array => [
                     'estado_anterior' => $evEnv->estado_anterior,
                     'estado_nuevo'    => $evEnv->estado_nuevo,
                     'codigo_sii'      => $evEnv->codigo_sii_raw,

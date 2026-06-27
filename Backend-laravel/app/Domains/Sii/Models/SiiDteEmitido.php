@@ -72,6 +72,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $usuario_emisor_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Domains\Core\Models\Empresa|null $empresa
+ * @property-read \App\Domains\Comercial\Models\Factura|null $factura
+ * @property-read \App\Domains\Comercial\Models\Cotizacion|null $cotizacion
+ * @property-read \App\Domains\Core\Models\User|null $usuarioEmisor
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Sii\Models\SiiDteEmitidoDetalle> $detalles
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Sii\Models\SiiDteEmitidoReferencia> $referencias
+ * @property-read \App\Domains\Sii\Models\SiiDteEmitidoTraslado|null $traslado
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Sii\Models\SiiDteEmitidoImpuestoAdicional> $impuestosAdicionales
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Sii\Models\SiiDteEmitidoEvento> $eventos
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Sii\Models\SiiEnvioDte> $envios
  */
 class SiiDteEmitido extends Model
 {
@@ -256,59 +266,47 @@ class SiiDteEmitido extends Model
         };
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Domains\Core\Models\Empresa, self> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Domains\Comercial\Models\Factura, self> */
     public function factura(): BelongsTo
     {
         return $this->belongsTo(Factura::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Domains\Comercial\Models\Cotizacion, self> */
     public function cotizacion(): BelongsTo
     {
         return $this->belongsTo(Cotizacion::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Domains\Core\Models\User, self> */
     public function usuarioEmisor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_emisor_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiDteEmitidoDetalle> */
     public function detalles(): HasMany
     {
         return $this->hasMany(SiiDteEmitidoDetalle::class, 'dte_emitido_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiDteEmitidoReferencia> */
     public function referencias(): HasMany
     {
         return $this->hasMany(SiiDteEmitidoReferencia::class, 'dte_emitido_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasOne<\App\Domains\Sii\Models\SiiDteEmitidoTraslado, self> */
     public function traslado(): HasOne
     {
         return $this->hasOne(SiiDteEmitidoTraslado::class, 'dte_emitido_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiDteEmitidoImpuestoAdicional, self> */
     public function impuestosAdicionales(): HasMany
     {
         return $this->hasMany(SiiDteEmitidoImpuestoAdicional::class, 'dte_emitido_id');
     }
 
-    /**
-     * HARDENING-1 R4: audit log de transiciones de estado.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiDteEmitidoEvento>
-     */
+    /** HARDENING-1 R4: audit log de transiciones de estado. */
     public function eventos(): HasMany
     {
         return $this->hasMany(SiiDteEmitidoEvento::class, 'dte_emitido_id')
@@ -319,8 +317,6 @@ class SiiDteEmitido extends Model
      * F6.3: envios al WS DTEUpload. Un DTE puede tener varios envios si
      * hubo reintentos manuales (uno por intento). El mas reciente se
      * obtiene con ->envios->last() o ->envios()->latest()->first().
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Domains\Sii\Models\SiiEnvioDte>
      */
     public function envios(): HasMany
     {

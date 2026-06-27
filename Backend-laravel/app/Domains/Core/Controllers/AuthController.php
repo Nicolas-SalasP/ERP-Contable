@@ -64,7 +64,7 @@ class AuthController
             // Credenciales locales validas pero cache de suscripcion viejo (>1h):
             // re-sincroniza el estado del plan contra la web antes de los guards.
             if ($credencialesLocalesValidas
-                && (!$user->tenri_synced_at || $user->tenri_synced_at->diffInHours(now()) >= 1)) {
+                && (!$user->tenri_synced_at || Carbon::parse($user->tenri_synced_at)->diffInHours(now()) >= 1)) {
                 $webResult = $this->webClient->validateLogin($request->email, $request->password);
                 if ($webResult && ($webResult['valid'] ?? false)) {
                     $user = $this->provisioner->provision($webResult);
@@ -240,11 +240,7 @@ class AuthController
 
     public function logout(Request $request)
     {
-        $token = $request->user()->currentAccessToken();
-
-        if ($token) {
-            $token->delete();
-        }
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'success' => true,
@@ -258,9 +254,7 @@ class AuthController
             $user = $request->user();
             $tokenActual = $request->user()->currentAccessToken();
             $nuevoToken = $user->createToken('react-spa-token')->plainTextToken;
-            if ($tokenActual) {
-                $tokenActual->delete();
-            }
+            $tokenActual->delete();
 
             return response()->json([
                 'success' => true,

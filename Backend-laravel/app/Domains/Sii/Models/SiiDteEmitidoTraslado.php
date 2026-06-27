@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *
  * @property int $id
  * @property int $dte_emitido_id
+ * @property int $indicador_traslado
  * @property string|null $patente
  * @property string|null $rut_transportista
  * @property string|null $rut_chofer

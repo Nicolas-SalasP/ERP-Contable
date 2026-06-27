@@ -370,6 +370,7 @@ class InventarioAlertaService
                 continue;
             }
 
+            /** @var \App\Domains\Inventario\Models\ReservaInventario|null $reserva */
             $reserva = $detalle->reserva;
             $expiraPronto = false;
             $diasExpiracion = null;
@@ -398,7 +399,7 @@ class InventarioAlertaService
                 'titulo' => 'Reserva crítica',
                 'descripcion' => sprintf(
                     'La reserva %s mantiene %s unidades pendientes%s.',
-                    $reserva->codigo_reserva ?? ('#' . $detalle->reserva_id),
+                    $reserva?->codigo_reserva ?? ('#' . $detalle->reserva_id),
                     $this->formatoCantidad($pendiente),
                     $stockBajo ? ' y el stock disponible está bajo el umbral operativo' : ''
                 ),
@@ -520,7 +521,7 @@ class InventarioAlertaService
                     'titulo' => 'Ajuste crítico reciente',
                     'descripcion' => sprintf(
                         'Se registró un ajuste crítico %s por %s unidades.',
-                        $ajuste->tipo->nombre ?? 'operativo',
+                        $ajuste->tipo?->nombre ?? 'operativo',
                         $this->formatoCantidad((float) $ajuste->cantidad)
                     ),
                     'producto_id' => (int) $ajuste->producto_id,
@@ -585,7 +586,7 @@ class InventarioAlertaService
         };
     }
 
-    private function normalizarAlertaPersistida(int $empresaId, array $alerta, $calculadoEn): array
+    private function normalizarAlertaPersistida(int $empresaId, array $alerta, \Illuminate\Support\Carbon $calculadoEn): array
     {
         $referencia = $alerta['referencia'] ?? null;
 
@@ -650,7 +651,7 @@ class InventarioAlertaService
     {
         $regla = $this->reposicionService->resolverReglaActiva($empresaId, $productoId, $bodegaId);
 
-        return max((int) ($regla->dias_alerta_vencimiento ?? self::DEFAULT_DIAS_VENCIMIENTO), 0);
+        return max((int) ($regla?->dias_alerta_vencimiento ?? self::DEFAULT_DIAS_VENCIMIENTO), 0);
     }
 
     private function crearAlerta(array $datos): array

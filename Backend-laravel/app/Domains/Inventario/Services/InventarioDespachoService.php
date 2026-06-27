@@ -11,6 +11,7 @@ use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioDespachoOrden;
 use App\Domains\Inventario\Models\InventarioPackingDetalle;
 use App\Domains\Inventario\Models\InventarioPackingOrden;
+use App\Domains\Inventario\Models\InventarioPickingAsignacion;
 use App\Domains\Inventario\Models\InventarioPickingOrden;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\ReservaConsumoInventario;
@@ -105,6 +106,7 @@ class InventarioDespachoService
                 throw ValidationException::withMessages(['packing_orden_id' => 'Despacho solo puede generarse desde packing empacado.']);
             }
 
+            /** @var InventarioPickingOrden|null $picking */
             $picking = $packing->pickingOrden;
 
             if (!$picking || (int) $picking->empresa_id !== $empresaId) {
@@ -151,8 +153,9 @@ class InventarioDespachoService
 
             foreach ($detallesPacking as $detallePacking) {
                 /** @var InventarioPackingDetalle $detallePacking */
+                /** @var InventarioPickingAsignacion|null $asignacion */
                 $asignacion = $detallePacking->pickingAsignacion;
-                $reservaDetalleId = $asignacion->reserva_detalle_id
+                $reservaDetalleId = $asignacion?->reserva_detalle_id
                     ?? $detallePacking->pickingDetalle?->reserva_detalle_id;
 
                 InventarioDespachoDetalle::create([
@@ -229,11 +232,15 @@ class InventarioDespachoService
                 throw InventarioException::regla('La orden de despacho no puede confirmarse en su estado actual.');
             }
 
-            if ($orden->packingOrden?->estado !== InventarioPackingOrden::ESTADO_EMPACADO) {
+            /** @var InventarioPackingOrden|null $ordenPackingOrden */
+            $ordenPackingOrden = $orden->packingOrden;
+            if ($ordenPackingOrden?->estado !== InventarioPackingOrden::ESTADO_EMPACADO) {
                 throw ValidationException::withMessages(['packing_orden_id' => 'El packing asociado ya no está empacado.']);
             }
 
-            if ($orden->pickingOrden?->estado === InventarioPickingOrden::ESTADO_CANCELADO) {
+            /** @var InventarioPickingOrden|null $ordenPickingOrden */
+            $ordenPickingOrden = $orden->pickingOrden;
+            if ($ordenPickingOrden?->estado === InventarioPickingOrden::ESTADO_CANCELADO) {
                 throw ValidationException::withMessages(['picking_orden_id' => 'El picking asociado está cancelado.']);
             }
 

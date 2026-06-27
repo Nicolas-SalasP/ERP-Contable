@@ -10,6 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property-read \App\Domains\Core\Models\Rol|null $rol
  * @property-read \App\Domains\Core\Models\Empresa|null $empresa
  * @property-read \App\Domains\Core\Models\Empresa|null $empresaActiva
+ * @property-read \App\Domains\Core\Models\EstadoSuscripcion|null $estadoSuscripcion
  */
 class User extends Authenticatable
 {

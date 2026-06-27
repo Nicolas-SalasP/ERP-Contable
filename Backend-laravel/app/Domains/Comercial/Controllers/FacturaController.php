@@ -430,12 +430,14 @@ class FacturaController
 
         [$anio, $mes] = explode('-', $periodo);
 
-        $retenciones = Factura::where('empresa_id', $empresaId)
+        $retenciones = DB::table('facturas')
+            ->where('empresa_id', $empresaId)
             ->whereYear('fecha_emision', $anio)
             ->whereMonth('fecha_emision', $mes)
             ->whereNotNull('retencion_art59')
             ->where('retencion_art59', '>', 0)
             ->where('estado', '!=', 'ANULADA')
+            ->whereNull('deleted_at')
             ->select(
                 'tipo_gasto_art59',
                 DB::raw('COUNT(*) as cantidad_facturas'),
@@ -453,13 +455,16 @@ class FacturaController
             'otros'              => 35.0,
         ];
 
-        $detalle = $retenciones->map(fn ($r) => [
-            'tipo_gasto' => $r->tipo_gasto_art59,
-            'tasa_porcentaje' => $tasas[$r->tipo_gasto_art59] ?? null,
-            'cantidad_facturas' => $r->cantidad_facturas,
-            'base_imponible' => round((float) $r->base_imponible, 2),
-            'total_retencion' => round((float) $r->total_retencion, 2),
-        ]);
+        $detalle = $retenciones->map(function (object $r) use ($tasas) {
+            /** @var object{tipo_gasto_art59: string|null, cantidad_facturas: int, base_imponible: string|null, total_retencion: string|null} $r */
+            return [
+                'tipo_gasto' => $r->tipo_gasto_art59,
+                'tasa_porcentaje' => $tasas[$r->tipo_gasto_art59 ?? ''] ?? null,
+                'cantidad_facturas' => $r->cantidad_facturas,
+                'base_imponible' => round((float) $r->base_imponible, 2),
+                'total_retencion' => round((float) $r->total_retencion, 2),
+            ];
+        });
 
         return response()->json([
             'success' => true,

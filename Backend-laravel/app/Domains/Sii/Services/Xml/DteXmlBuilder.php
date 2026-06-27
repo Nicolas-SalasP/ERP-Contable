@@ -70,6 +70,7 @@ class DteXmlBuilder
 
             $documento->appendChild($this->buildEncabezado($dom, $dte));
 
+            /** @var SiiDteEmitidoDetalle $detalle */
             foreach ($dte->detalles as $i => $detalle) {
                 $documento->appendChild($this->buildDetalle($dom, $detalle, $i + 1));
             }
@@ -78,6 +79,7 @@ class DteXmlBuilder
                 $documento->appendChild($this->buildDscRcgGlobal($dom, $dte));
             }
 
+            /** @var SiiDteEmitidoReferencia $referencia */
             foreach ($dte->referencias as $referencia) {
                 $documento->appendChild($this->buildReferencia($dom, $referencia));
             }
@@ -149,10 +151,10 @@ class DteXmlBuilder
             );
         }
 
-        if ($dte->emisor_rut === null || $dte->emisor_razon_social === null) {
+        if (empty($dte->emisor_rut) || empty($dte->emisor_razon_social)) {
             throw DteIncompletoException::campoFaltante('emisor_rut o emisor_razon_social');
         }
-        if ($dte->receptor_rut === null || $dte->receptor_razon_social === null) {
+        if (empty($dte->receptor_rut) || empty($dte->receptor_razon_social)) {
             throw DteIncompletoException::campoFaltante('receptor_rut o receptor_razon_social');
         }
     }
@@ -164,8 +166,10 @@ class DteXmlBuilder
         $enc->appendChild($this->buildEmisor($dom, $dte));
 
         if ($dte->tipo_dte === SiiDteEmitido::TIPO_GUIA_DESPACHO && $dte->traslado) {
+            /** @var SiiDteEmitidoTraslado $traslado */
+            $traslado = $dte->traslado;
             $enc->appendChild($this->buildReceptor($dom, $dte));
-            $enc->appendChild($this->buildTransporte($dom, $dte->traslado));
+            $enc->appendChild($this->buildTransporte($dom, $traslado));
         } else {
             $enc->appendChild($this->buildReceptor($dom, $dte));
         }
@@ -186,7 +190,9 @@ class DteXmlBuilder
 
         // Guia: IndTraslado (luego de FchEmis)
         if ($dte->tipo_dte === SiiDteEmitido::TIPO_GUIA_DESPACHO && $dte->traslado) {
-            $idDoc->appendChild($dom->createElement('IndTraslado', (string) $dte->traslado->indicador_traslado));
+            /** @var SiiDteEmitidoTraslado $traslado */
+            $traslado = $dte->traslado;
+            $idDoc->appendChild($dom->createElement('IndTraslado', (string) $traslado->indicador_traslado));
         }
 
         // Boleta: IndServicio
@@ -353,9 +359,7 @@ class DteXmlBuilder
             $d->appendChild($this->createSanitizedElement($dom, 'UnmdItem', $det->unidad_medida, 4));
         }
 
-        if ($det->precio_unitario !== null) {
-            $d->appendChild($dom->createElement('PrcItem', number_format((float) $det->precio_unitario, 6, '.', '')));
-        }
+        $d->appendChild($dom->createElement('PrcItem', number_format((float) $det->precio_unitario, 6, '.', '')));
 
         if (((float) $det->descuento_pct) > 0.0) {
             $d->appendChild($dom->createElement('DescuentoPct', number_format((float) $det->descuento_pct, 2, '.', '')));
@@ -379,8 +383,8 @@ class DteXmlBuilder
     {
         $r = $dom->createElement('Referencia');
         $r->appendChild($dom->createElement('NroLinRef', (string) $ref->numero_linea));
-        $r->appendChild($this->createSanitizedElement($dom, 'TpoDocRef', $ref->tipo_documento_referencia, 3));
-        $r->appendChild($this->createSanitizedElement($dom, 'FolioRef', $ref->folio_referencia, 18));
+        $r->appendChild($this->createSanitizedElement($dom, 'TpoDocRef', (string) $ref->tipo_documento_referencia, 3));
+        $r->appendChild($this->createSanitizedElement($dom, 'FolioRef', (string) $ref->folio_referencia, 18));
 
         if ($ref->rut_otro_contribuyente !== null && $ref->rut_otro_contribuyente !== '') {
             $r->appendChild($dom->createElement('RUTOtr', $ref->rut_otro_contribuyente));

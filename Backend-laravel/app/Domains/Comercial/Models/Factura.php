@@ -13,6 +13,8 @@ use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
  * @property int|null $sii_dte_emitido_id
  * @property int $tipo_dte
  * @property int|null $cliente_id
+ * @property \Illuminate\Support\Carbon $fecha_emision
+ * @property-read \App\Domains\Sii\Models\SiiDteEmitido|null $dteEmitido
  */
 class Factura extends Model
 {
@@ -67,7 +69,7 @@ class Factura extends Model
 
     protected $appends = ['nombre_proveedor'];
 
-    /** @return BelongsTo<Empresa, Factura> */
+    /** @return BelongsTo<Empresa, self> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);

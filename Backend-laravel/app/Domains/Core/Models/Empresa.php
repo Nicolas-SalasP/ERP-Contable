@@ -3,6 +3,10 @@ namespace App\Domains\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Contabilidad\Models\CentroCosto> $centrosCosto
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Tesoreria\Models\CuentaBancariaEmpresa> $cuentasBancarias
+ */
 class Empresa extends Model
 {
     use \App\Domains\Sii\Concerns\HasSiiAttributesEmpresa;
