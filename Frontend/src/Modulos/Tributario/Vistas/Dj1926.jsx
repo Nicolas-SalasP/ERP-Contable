@@ -1,0 +1,349 @@
+import React, { useState, useCallback } from 'react';
+import { usePermisos } from '../../../Contextos/Permisos';
+import AyudaModulo from '../../../Componentes/AyudaModulo.jsx';
+import { dj1926 } from '../Servicios/tributarioApi';
+
+const anioActual = new Date().getFullYear();
+const ANIOS = Array.from({ length: anioActual - 2019 }, (_, i) => anioActual - i);
+
+const inputCls =
+    'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
+
+const BADGE_ESTADO = {
+    GENERADO:    'bg-slate-100 text-slate-700',
+    VALIDADO:    'bg-emerald-100 text-emerald-700',
+    CON_ERRORES: 'bg-red-100 text-red-700',
+    DESCARGADO:  'bg-blue-100 text-blue-700',
+    PRESENTADO:  'bg-emerald-200 text-emerald-900',
+};
+
+const BadgeEstado = ({ estado }) => (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${BADGE_ESTADO[estado] ?? 'bg-slate-100 text-slate-700'}`}>
+        {estado?.replace(/_/g, ' ')}
+    </span>
+);
+
+const formatFecha = (fecha) => {
+    if (!fecha) return '—';
+    return new Date(fecha).toLocaleDateString('es-CL');
+};
+
+const Dj1926 = () => {
+    const { tienePermiso } = usePermisos();
+    const puedeVer      = tienePermiso('tributario.ver');
+    const puedeProcesar = tienePermiso('tributario.ver');
+
+    const [anio, setAnio]                     = useState(anioActual - 1);
+    const [envios, setEnvios]                 = useState([]);
+    const [cargando, setCargando]             = useState(false);
+    const [folioConfirmacion, setFolioConf]   = useState('');
+    const [validando, setValidando]           = useState(false);
+    const [confirmando, setConfirmando]       = useState(false);
+    const [descargandoId, setDescargandoId]   = useState(null);
+    const [mensaje, setMensaje]               = useState(null);
+    const [historialCargado, setHistCargado]  = useState(false);
+    const [envioSeleccionado, setSeleccionado] = useState(null);
+
+    const mostrarMensaje = (tipo, texto) => {
+        setMensaje({ tipo, texto });
+        setTimeout(() => setMensaje(null), 5000);
+    };
+
+    const cargarHistorial = useCallback(async () => {
+        if (!puedeVer) return;
+        try {
+            const resp = await dj1926.listar();
+            const items = Array.isArray(resp) ? resp : (resp?.data ?? []);
+            setEnvios(items);
+            setHistCargado(true);
+            if (!envioSeleccionado && items.length > 0) {
+                setSeleccionado(items[0]);
+            }
+        } catch (_) {}
+    }, [puedeVer, envioSeleccionado]);
+
+    React.useEffect(() => {
+        cargarHistorial();
+    }, []);
+
+    const envioActivo = envioSeleccionado ?? (envios.length > 0 ? envios[0] : null);
+
+    const handleGenerar = async () => {
+        if (!puedeProcesar) return;
+        setCargando(true);
+        try {
+            const resp = await dj1926.generar(anio);
+            const nuevo = resp?.data ?? resp;
+            setEnvios((prev) => {
+                const sinDup = prev.filter((e) => e.id !== nuevo.id);
+                return [nuevo, ...sinDup].sort((a, b) => b.anio - a.anio);
+            });
+            setSeleccionado(nuevo);
+            mostrarMensaje('exito', `DJ 1926 año ${anio} generada con ${nuevo.cantidad_registros ?? 0} cuenta(s) rechazada(s).`);
+        } catch (err) {
+            const msg = err?.response?.data?.mensaje ?? err?.response?.data?.message ?? 'Error al generar la DJ 1926.';
+            mostrarMensaje('error', msg);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const handleValidar = async () => {
+        if (!envioActivo || !puedeProcesar) return;
+        setValidando(true);
+        try {
+            const resp = await dj1926.validar(envioActivo.id);
+            const data = resp?.data ?? resp;
+            const actualizado = data?.envio ?? data;
+            setEnvios((prev) => prev.map((e) => (e.id === envioActivo.id ? actualizado : e)));
+            setSeleccionado(actualizado);
+            mostrarMensaje('exito', 'DJ 1926 validada correctamente. Sin errores.');
+        } catch (err) {
+            const data = err?.response?.data;
+            mostrarMensaje('error', data?.mensaje ?? data?.message ?? 'Error al validar la DJ 1926.');
+        } finally {
+            setValidando(false);
+        }
+    };
+
+    const handleDescargar = async (envioId, anioEnvio) => {
+        setDescargandoId(envioId);
+        try {
+            const blob = await dj1926.descargar(envioId);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `DJ1926_${anioEnvio}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            await cargarHistorial();
+        } catch (_) {}
+        finally {
+            setDescargandoId(null);
+        }
+    };
+
+    const handleConfirmarPresentacion = async () => {
+        if (!envioActivo || !puedeProcesar) return;
+        setConfirmando(true);
+        try {
+            const resp = await dj1926.confirmarPresentacion(envioActivo.id, folioConfirmacion || null);
+            const actualizado = resp?.data ?? resp;
+            setEnvios((prev) => prev.map((e) => (e.id === envioActivo.id ? actualizado : e)));
+            setSeleccionado(actualizado);
+            setFolioConf('');
+            mostrarMensaje('exito', 'Presentación ante el SII confirmada correctamente.');
+        } catch (err) {
+            const msg = err?.response?.data?.mensaje ?? err?.response?.data?.message ?? 'Error al confirmar la presentación.';
+            mostrarMensaje('error', msg);
+        } finally {
+            setConfirmando(false);
+        }
+    };
+
+    return (
+        <div className="max-w-5xl mx-auto p-6 md:p-8">
+            <header className="mb-6">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                    <i className="fas fa-ban text-red-500" />
+                    DJ 1926 — Gastos No Deducibles
+                    <AyudaModulo moduloId="dj1926" />
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    Declaración Jurada anual de gastos rechazados y no deducibles (art. 33 N°1 LIR)
+                </p>
+            </header>
+
+            {mensaje && (
+                <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2 ${
+                    mensaje.tipo === 'exito'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : 'bg-red-50 text-red-800 border border-red-200'
+                }`}>
+                    <i className={mensaje.tipo === 'exito' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'} />
+                    {mensaje.texto}
+                </div>
+            )}
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
+                <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Generar DJ 1926</h2>
+                <div className="flex flex-wrap items-end gap-3">
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año tributario</label>
+                        <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={inputCls}>
+                            {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
+                        </select>
+                    </div>
+                    {puedeProcesar && (
+                        <button
+                            onClick={handleGenerar}
+                            disabled={cargando}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm disabled:opacity-50"
+                        >
+                            {cargando
+                                ? <><i className="fas fa-spinner fa-spin" /> Generando...</>
+                                : <><i className="fas fa-cogs" /> Generar DJ 1926</>
+                            }
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 text-sm text-amber-800 flex gap-2">
+                <i className="fas fa-info-circle mt-0.5 shrink-0" />
+                <span>
+                    Declara gastos rechazados (art. 33 N°1 LIR) afectos al impuesto del art. 21 LIR.
+                    Para que una cuenta aparezca en esta DJ, debe estar marcada como <strong>Gasto Rechazado</strong> en el Plan de Cuentas.
+                    El archivo debe subirse al portal de Declaraciones Juradas del SII.
+                </span>
+            </div>
+
+            {envioActivo ? (
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-bold text-slate-900 dark:text-slate-100">DJ 1926 — Año {envioActivo.anio}</h2>
+                        <BadgeEstado estado={envioActivo.estado} />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 text-sm">
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Cuentas declaradas</div>
+                            <div className="font-bold text-slate-900 dark:text-slate-100">{envioActivo.cantidad_registros ?? '—'}</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Folio SII</div>
+                            <div className="font-bold text-slate-900 font-mono text-xs">{envioActivo.folio_presentacion ?? '—'}</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Presentado el</div>
+                            <div className="font-bold text-slate-900">{formatFecha(envioActivo.presentado_at)}</div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {puedeProcesar && envioActivo.estado !== 'PRESENTADO' && (
+                            <button
+                                onClick={handleValidar}
+                                disabled={validando}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold text-sm disabled:opacity-50"
+                            >
+                                {validando
+                                    ? <><i className="fas fa-spinner fa-spin" /> Validando...</>
+                                    : <><i className="fas fa-check-double" /> Validar</>
+                                }
+                            </button>
+                        )}
+                        <button
+                            onClick={() => handleDescargar(envioActivo.id, envioActivo.anio)}
+                            disabled={descargandoId === envioActivo.id}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-sm disabled:opacity-50"
+                        >
+                            {descargandoId === envioActivo.id
+                                ? <><i className="fas fa-spinner fa-spin" /> Descargando...</>
+                                : <><i className="fas fa-download" /> Descargar .txt</>
+                            }
+                        </button>
+                    </div>
+
+                    {puedeProcesar && envioActivo.estado !== 'PRESENTADO' && (
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Confirmar presentación ante el SII</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                Ingresa el folio de presentación asignado por el SII (opcional).
+                            </p>
+                            <div className="flex flex-wrap items-end gap-3">
+                                <div className="flex-1 min-w-[200px]">
+                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Folio de presentación SII (opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={folioConfirmacion}
+                                        onChange={(e) => setFolioConf(e.target.value)}
+                                        maxLength={100}
+                                        placeholder="Ej: 2026-DJ1926-000001"
+                                        className={inputCls}
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleConfirmarPresentacion}
+                                    disabled={confirmando}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm disabled:opacity-50"
+                                >
+                                    {confirmando
+                                        ? <><i className="fas fa-spinner fa-spin" /> Confirmando...</>
+                                        : <><i className="fas fa-stamp" /> Confirmar presentada</>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl py-10 text-center text-slate-400 mb-6">
+                    <i className="fas fa-ban text-3xl mb-3 block" />
+                    No hay declaraciones DJ 1926 generadas.
+                    {puedeProcesar && <span className="block text-sm mt-1">Usa el formulario de arriba para generar una.</span>}
+                </div>
+            )}
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <h2 className="font-bold text-slate-900 dark:text-slate-100">Historial de declaraciones</h2>
+                    <button onClick={cargarHistorial} className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1">
+                        <i className="fas fa-sync-alt" /> Actualizar
+                    </button>
+                </div>
+
+                {envios.length === 0 ? (
+                    <div className="py-10 text-center text-slate-400 text-sm">
+                        {historialCargado ? 'Sin declaraciones DJ 1926 aún.' : 'Cargando...'}
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                                <tr>
+                                    <th className="px-4 py-3 text-left font-semibold">Año</th>
+                                    <th className="px-4 py-3 text-left font-semibold">Estado</th>
+                                    <th className="px-4 py-3 text-right font-semibold">Cuentas</th>
+                                    <th className="px-4 py-3 text-left font-semibold">Folio</th>
+                                    <th className="px-4 py-3 text-left font-semibold">Presentado el</th>
+                                    <th className="px-4 py-3 text-center font-semibold">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                {envios.map((envio) => (
+                                    <tr
+                                        key={envio.id}
+                                        className={`hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer ${envioActivo?.id === envio.id ? 'bg-emerald-50' : ''}`}
+                                        onClick={() => setSeleccionado(envio)}
+                                    >
+                                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{envio.anio}</td>
+                                        <td className="px-4 py-3"><BadgeEstado estado={envio.estado} /></td>
+                                        <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{envio.cantidad_registros ?? '—'}</td>
+                                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300 font-mono text-xs">{envio.folio_presentacion ?? '—'}</td>
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{formatFecha(envio.presentado_at)}</td>
+                                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                            <button
+                                                onClick={() => handleDescargar(envio.id, envio.anio)}
+                                                disabled={descargandoId === envio.id}
+                                                title="Descargar .txt"
+                                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
+                                            >
+                                                {descargandoId === envio.id
+                                                    ? <i className="fas fa-spinner fa-spin text-xs" />
+                                                    : <i className="fas fa-download text-xs" />
+                                                }
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default Dj1926;

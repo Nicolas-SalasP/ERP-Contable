@@ -18,7 +18,7 @@ const AdministradorCuentas = () => {
     const [cuentaEditando, setCuentaEditando] = useState(null);
     const [saving, setSaving] = useState(false);
 
-    const formBase = { codigo: '', nombre: '', tipo: 'ACTIVO', nivel: 1, imputable: 1, activo: 1 };
+    const formBase = { codigo: '', nombre: '', tipo: 'ACTIVO', nivel: 1, imputable: 1, activo: 1, es_gasto_rechazado: 0 };
     const [formEdit, setFormEdit] = useState(formBase);
 
     const cargarCuentas = async () => {
@@ -58,7 +58,8 @@ const AdministradorCuentas = () => {
             tipo: cuenta.tipo,
             nivel: cuenta.nivel || 1,
             imputable: cuenta.imputable ? 1 : 0,
-            activo: cuenta.activo !== undefined ? (cuenta.activo ? 1 : 0) : 1
+            activo: cuenta.activo !== undefined ? (cuenta.activo ? 1 : 0) : 1,
+            es_gasto_rechazado: cuenta.es_gasto_rechazado ? 1 : 0,
         });
         setModalOpen(true);
     };
@@ -395,6 +396,19 @@ const AdministradorCuentas = () => {
                                     <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
                                 </label>
                             </div>
+
+                            {formEdit.tipo === 'GASTO' && (
+                                <div className="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-center justify-between">
+                                    <div>
+                                        <p className="font-bold text-red-900 text-sm">Gasto Rechazado (Art. 33 N°1 LIR)</p>
+                                        <p className="text-xs text-red-700 mt-0.5">Marca esta cuenta para incluirla en la DJ 1926.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" className="sr-only peer" checked={formEdit.es_gasto_rechazado === 1} onChange={() => setFormEdit({ ...formEdit, es_gasto_rechazado: formEdit.es_gasto_rechazado === 1 ? 0 : 1 })} />
+                                        <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                    </label>
+                                </div>
+                            )}
                         </div>
 
                         <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-end gap-3">
