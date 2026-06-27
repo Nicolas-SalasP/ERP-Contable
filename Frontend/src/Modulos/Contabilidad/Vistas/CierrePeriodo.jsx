@@ -30,7 +30,7 @@ export default function CierrePeriodo() {
         setCargando(true);
         try {
             const res = await api.get('/contabilidad/periodos', { params: { anio: anioSeleccionado } });
-            setCerrados(res.data.data ?? []);
+            setCerrados(res.data ?? []);
         } catch {
             // silencioso — la tabla queda vacía
         } finally {
