@@ -49,7 +49,6 @@ class WebAuthClient
 
         try {
             $response = Http::withHeaders([
-                'X-ERP-API-KEY' => $apiKey,
                 'Accept' => 'application/json',
             ])
                 ->withRequestMiddleware(fn ($req) => HmacFirma::firmarPsr($req, $apiKey))
