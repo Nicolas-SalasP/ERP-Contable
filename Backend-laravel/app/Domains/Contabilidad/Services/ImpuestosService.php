@@ -4,9 +4,9 @@ namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Sii\Models\SiiDteEmitido;
+use App\Domains\Contabilidad\Exceptions\ContabilidadException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class ImpuestosService
 {
@@ -146,27 +146,27 @@ class ImpuestosService
             ->whereIn('codigo', ['152540', '353360'])->pluck('codigo')->toArray();
 
         if (count($cuentasBase) < 2) {
-            throw new Exception("Falta configuración: Se requieren cuentas de IVA Crédito (152540) y Débito (353360) en el plan de la empresa.");
+            throw ContabilidadException::regla("Falta configuración: Se requieren cuentas de IVA Crédito (152540) y Débito (353360) en el plan de la empresa.");
         }
 
         // Lock atómico: evita race check-then-act entre requests concurrentes.
         $lockKey = "centralizacion-f29-{$empresaId}-{$anio}-{$mes}";
         if (!Cache::add($lockKey, true, 30)) {
-            throw new Exception("La centralización del F29 para {$mes}/{$anio} ya está en curso. Espere unos segundos y vuelva a intentarlo.");
+            throw ContabilidadException::conflicto("La centralización del F29 para {$mes}/{$anio} ya está en curso. Espere unos segundos y vuelva a intentarlo.");
         }
 
         try {
             $simulacion = $this->simularF29($empresaId, $mes, $anio);
 
             if ($simulacion['ya_cerrado']) {
-                throw new Exception("El F29 para este período ya ha sido centralizado.");
+                throw ContabilidadException::conflicto("El F29 para este período ya ha sido centralizado.");
             }
 
             if ($simulacion['ventas']['iva_debito'] == 0
                 && $simulacion['compras']['iva_credito'] == 0
                 && $simulacion['ppm']['monto'] == 0
                 && $simulacion['retenciones'] == 0) {
-                throw new Exception("No hay movimientos de IVA, PPM ni retenciones para centralizar en este período.");
+                throw ContabilidadException::regla("No hay movimientos de IVA, PPM ni retenciones para centralizar en este período.");
             }
 
             $detalles = [];
@@ -423,7 +423,7 @@ class ImpuestosService
 
         if (!$eliminado) {
             // Para el usuario autenticado, un mapeo de otra empresa simplemente no existe.
-            throw new Exception("El mapeo no existe o no pertenece a la empresa.", 404);
+            throw ContabilidadException::noEncontrado("El mapeo no existe o no pertenece a la empresa.");
         }
 
         return true;
