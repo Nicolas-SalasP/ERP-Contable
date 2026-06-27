@@ -29,6 +29,7 @@ import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
 import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
 import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
 const CierreF29 = lazy(() => import('./Modulos/Contabilidad/Vistas/CierreF29'));
+const CierrePeriodo = lazy(() => import('./Modulos/Contabilidad/Vistas/CierrePeriodo'));
 const AsientoManual = lazy(() => import('./Modulos/Contabilidad/Vistas/AsientoManual'));
 import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
 import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
@@ -379,6 +380,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
                 <LayoutPrincipal><CierreF29 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/cierre-periodo" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><CierrePeriodo /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />

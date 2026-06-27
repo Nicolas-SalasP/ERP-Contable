@@ -65,6 +65,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas' },
                 { path: '/contabilidad/anulacion', label: 'Anulaciones' },
                 { path: '/contabilidad/asiento-manual', label: 'Asiento Manual' },
+                { path: '/contabilidad/cierre-periodo', label: 'Cierre de Períodos', permisosRequeridos: ['contabilidad.ver'] },
             ]
         },
         {
