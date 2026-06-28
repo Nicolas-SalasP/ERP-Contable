@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Services\Dj;
 
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Contracts\DeclaracionJuradaContract;
 use App\Domains\Contabilidad\DataTransfer\DjData;
 use App\Domains\Contabilidad\DataTransfer\DjLineaData;
@@ -20,7 +21,7 @@ class Dj1835Service implements DeclaracionJuradaContract
     {
         $empresa = Empresa::findOrFail($empresaId);
 
-        // Facturas del exterior con retención Art. 59 LIR aplicada (maquilas y servicios)
+        // Facturas del exterior con retenci\xc3\xb3n Art. 59 LIR aplicada (maquilas y servicios)
         $facturas = Factura::where('empresa_id', $empresaId)
             ->where('es_documento_exterior', true)
             ->whereNotNull('retencion_art59')
@@ -32,21 +33,25 @@ class Dj1835Service implements DeclaracionJuradaContract
 
         if ($facturas->isEmpty()) {
             throw DjException::regla(
-                "No hay facturas del exterior con retención Art. 59 LIR registradas para el año {$anio}."
+                "No hay facturas del exterior con retenci\xc3\xb3n Art. 59 LIR registradas para el a\xc3\xb1o {$anio}."
             );
         }
 
-        // Agrupa por proveedor + tipo de gasto para una línea por combinación
+        // Agrupa por proveedor + tipo de gasto para una l\xc3\xadnea por combinaci\xc3\xb3n
         $grupos = $facturas->groupBy(fn ($f) => $f->proveedor_id . '|' . ($f->tipo_gasto_art59 ?? 'otros'));
 
         $lineas = [];
         foreach ($grupos as $clave => $grupo) {
-            $primera   = $grupo->first();
+            $primera = $grupo->first();
+            // Estrechar el tipo para que PHPStan infiera Factura (no Model gen\xc3\xa9rico).
+            if (!$primera instanceof Factura) {
+                continue;
+            }
             $proveedor = $primera->proveedor;
 
             $lineas[] = new DjLineaData([
-                'rut_proveedor'     => $proveedor?->rut ?? 'SIN-RUT',
-                'razon_social'      => $proveedor?->razon_social ?? '—',
+                'rut_proveedor'     => $proveedor !== null ? $proveedor->rut : 'SIN-RUT',
+                'razon_social'      => $proveedor !== null ? $proveedor->razon_social : '\xe2\x80\x94',
                 'tipo_gasto'        => $primera->tipo_gasto_art59 ?? 'otros',
                 'monto_bruto_total' => (int) round((float) $grupo->sum('monto_bruto')),
                 'retencion_total'   => (int) round((float) $grupo->sum('retencion_art59')),
@@ -71,11 +76,11 @@ class Dj1835Service implements DeclaracionJuradaContract
         $errores = [];
 
         if (empty($data->cabecera['rut_empresa'])) {
-            $errores[] = 'RUT de empresa vacío.';
+            $errores[] = 'RUT de empresa vac\xc3\xado.';
         }
 
         if (empty($data->lineas)) {
-            $errores[] = 'No hay retenciones Art. 59 LIR declaradas para el año.';
+            $errores[] = 'No hay retenciones Art. 59 LIR declaradas para el a\xc3\xb1o.';
         }
 
         $retencionTotal = 0;
@@ -87,13 +92,13 @@ class Dj1835Service implements DeclaracionJuradaContract
                 $errores[] = "Proveedor #{$n} ({$c['rut_proveedor']}): monto bruto es cero o negativo.";
             }
             if (($c['retencion_total'] ?? 0) < 0) {
-                $errores[] = "Proveedor #{$n} ({$c['rut_proveedor']}): retención negativa.";
+                $errores[] = "Proveedor #{$n} ({$c['rut_proveedor']}): retenci\xc3\xb3n negativa.";
             }
             $retencionTotal += (int) ($c['retencion_total'] ?? 0);
         }
 
         if (! empty($data->lineas) && $retencionTotal <= 0) {
-            $errores[] = 'La retención Art. 59 total es cero o negativa. Verificar los montos registrados.';
+            $errores[] = 'La retenci\xc3\xb3n Art. 59 total es cero o negativa. Verificar los montos registrados.';
         }
 
         return $errores;

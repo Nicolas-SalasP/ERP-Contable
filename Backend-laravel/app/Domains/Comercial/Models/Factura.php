@@ -16,6 +16,7 @@ use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
  * @property \Illuminate\Support\Carbon $fecha_emision
  * @property-read \App\Domains\Sii\Models\SiiDteEmitido|null $dteEmitido
  * @property-read \App\Domains\Comercial\Models\Cliente|null $cliente
+ * @property-read \App\Domains\Comercial\Models\Proveedor|null $proveedor
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Comercial\Models\FacturaDetalle> $detalles
  */
 class Factura extends Model
