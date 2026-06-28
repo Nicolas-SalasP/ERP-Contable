@@ -1,14 +1,10 @@
-name: Deploy Tenri ERP
+name: CI/CD ERP Contable
 
 on:
   push:
     branches: ['**']
   pull_request:
-    branches: [main, dev]
-
-# Node.js 24 es default desde el 2 de junio de 2026
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    branches: [main]
 
 jobs:
   # ══════════════════════════════════════════════
@@ -27,21 +23,13 @@ jobs:
         with:
           php-version: '8.2'
           extensions: pdo, pdo_sqlite, pdo_mysql, mbstring, json, bcmath, intl, gd, zip
-          coverage: none
           tools: composer:v2
 
-      - name: 📦 Cachear Composer
-        uses: actions/cache@v4
-        with:
-          path: Backend-laravel/vendor
-          key: ${{ runner.os }}-composer-${{ hashFiles('Backend-laravel/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
-
-      - name: 📦 Instalar dependencias
+      - name: 📦 Instalar dependencias backend
         working-directory: Backend-laravel
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: composer install --no-interaction --prefer-dist
 
-      - name: 🔧 Preparar .env de testing
+      - name: 🔧 Preparar .env de test
         working-directory: Backend-laravel
         run: |
           cp .env.example .env
@@ -87,25 +75,29 @@ jobs:
         with:
           php-version: '8.2'
           extensions: pdo, pdo_mysql, mbstring, json, bcmath, intl, gd, zip
-          coverage: none
           tools: composer:v2
 
-      - name: 📦 Cachear Composer
-        uses: actions/cache@v4
-        with:
-          path: Backend-laravel/vendor
-          key: ${{ runner.os }}-composer-${{ hashFiles('Backend-laravel/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
-
-      - name: 📦 Instalar dependencias
+      - name: 📦 Instalar dependencias backend
         working-directory: Backend-laravel
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: composer install --no-interaction --prefer-dist
 
-      - name: 🔧 Preparar .env de testing
+      - name: 🔧 Preparar .env MySQL
         working-directory: Backend-laravel
         run: |
           cp .env.example .env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/DB_PORT=.*/DB_PORT=3306/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=erp_testing/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=root/' .env
           php artisan key:generate
+
+      - name: ⚙️ Instalar OpenSSL dev
+        run: sudo apt-get update -qq && sudo apt-get install -y openssl libssl-dev
+
+      - name: 🔧 Configurar OPENSSL_CONF
+        run: echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
       - name: ⏳ Esperar MySQL
         run: |
@@ -114,26 +106,11 @@ jobs:
               echo "MySQL listo"
               break
             fi
-            echo "Esperando MySQL... intento $i/30"
             sleep 2
           done
 
-      - name: 🔧 Configurar charset BD de testing
-        run: |
-          mysql -h 127.0.0.1 -uroot -proot -e "
-            ALTER DATABASE erp_testing
-            CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-          "
-
       - name: 🧪 Correr tests (MySQL)
         working-directory: Backend-laravel
-        env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: erp_testing
-          DB_USERNAME: root
-          DB_PASSWORD: root
         run: php artisan test --stop-on-failure
 
   # ══════════════════════════════════════════════
@@ -175,7 +152,7 @@ jobs:
   # JOB 2 — LINT + BUILD FRONTEND
   # ══════════════════════════════════════════════
   test-frontend:
-    name: 🧪 Tests Frontend (lint + build)
+    name: 🧪 Tests Frontend
     runs-on: ubuntu-latest
 
     steps:
@@ -194,14 +171,18 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: './pnpm-lock.yaml'
 
-      - name: 📦 Instalar dependencias
+      - name: 📦 Instalar dependencias frontend
         run: pnpm install --frozen-lockfile
 
-      - name: 🔍 Lint
+      - name: 🧪 Lint
         working-directory: Frontend
         run: pnpm run lint
 
-      - name: 🏗️ Build
+      - name: 🧪 Tests
+        working-directory: Frontend
+        run: pnpm run test --run
+
+      - name: 🏗️ Build (verifica que compila)
         working-directory: Frontend
         env:
           VITE_API_URL: https://erp.tenri.cl/api
@@ -427,15 +408,15 @@ jobs:
           VITE_API_URL: https://erp.tenri.cl/api
         run: pnpm run build
 
-      - name: 🚀 Subir frontend a public_html
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: 🚀 Subir frontend via SCP
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./Frontend/dist/
-          server-dir: /public_html/
-          dangerous-clean-slate: false
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "Frontend/dist/*"
+          target: /home/atlasdig/domains/erp.tenri.cl/public_html/
+          strip_components: 2
 
       # ── Backend ──
       - name: ⚙️ Setup PHP 8.2
@@ -462,17 +443,14 @@ jobs:
             -x "storage/framework/sessions/*" \
             -x "storage/framework/views/*"
 
-      - name: 🚀 Subir backend comprimido
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: 🚀 Subir backend via SCP
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
-          server-dir: /
-          exclude: |
-            **/*
-            !backend.zip
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "backend.zip"
+          target: /home/atlasdig/domains/erp.tenri.cl/
 
       # ── Servidor ──
       - name: 🛠️ Descomprimir y configurar Laravel
@@ -485,15 +463,10 @@ jobs:
           script: |
             set -e
 
-            # El FTP (tipo Dominio) sube a ~/domains/erp.tenri.cl/
-            FTP_ROOT=~/domains/erp.tenri.cl
             LARAVEL_ROOT=~/erp_backend
             ERP_PUBLIC=~/domains/erp.tenri.cl/public_html
 
-            # Mover zip al directorio real de Laravel
-            if [ -f "$FTP_ROOT/backend.zip" ]; then
-              mv "$FTP_ROOT/backend.zip" "$LARAVEL_ROOT/backend.zip"
-            fi
+            mv ~/domains/erp.tenri.cl/backend.zip $LARAVEL_ROOT/backend.zip
 
             cd $LARAVEL_ROOT
             unzip -o backend.zip
@@ -505,13 +478,11 @@ jobs:
             mkdir -p storage/framework/cache
             mkdir -p storage/logs
 
-            # Copiar public/ al subdominio (sin symlinks — LiteSpeed no los sigue)
             cp public/index.php  $ERP_PUBLIC/index.php
             cp public/favicon.ico $ERP_PUBLIC/favicon.ico 2>/dev/null || true
             cp public/robots.txt  $ERP_PUBLIC/robots.txt  2>/dev/null || true
 
             # Limpiar cache de config antes de arrancar artisan
-            # (evita que BackupServiceProvider lea cache anterior sin la key 'backup')
             rm -f bootstrap/cache/config.php
             rm -f bootstrap/cache/routes-v7.php
 
@@ -522,5 +493,3 @@ jobs:
             php artisan view:cache
             php artisan event:cache
             php artisan storage:link --force 2>/dev/null || true
-
-            echo "✅ Deploy ERP completado"
