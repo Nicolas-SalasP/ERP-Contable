@@ -227,6 +227,7 @@ class InventarioReporteService
             ->selectRaw('SUM(inventario_stock.valor_total) as valor_total')
             ->groupBy('inventario_stock.bodega_id', 'inventario_bodegas.codigo', 'inventario_bodegas.nombre')
             ->orderByDesc('valor_total')
+            ->limit($limit)
             ->toBase()
             ->get()
             ->map(fn ($item) => [

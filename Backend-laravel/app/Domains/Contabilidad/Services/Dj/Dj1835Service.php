@@ -45,11 +45,11 @@ class Dj1835Service implements DeclaracionJuradaContract
             $proveedor = $primera->proveedor;
 
             $lineas[] = new DjLineaData([
-                'rut_proveedor'     => $proveedor->rut ?? 'SIN-RUT',
-                'razon_social'      => $proveedor->razon_social ?? '—',
+                'rut_proveedor'     => $proveedor?->rut ?? 'SIN-RUT',
+                'razon_social'      => $proveedor?->razon_social ?? '—',
                 'tipo_gasto'        => $primera->tipo_gasto_art59 ?? 'otros',
-                'monto_bruto_total' => (int) $grupo->sum('monto_bruto'),
-                'retencion_total'   => (int) $grupo->sum('retencion_art59'),
+                'monto_bruto_total' => (int) round((float) $grupo->sum('monto_bruto')),
+                'retencion_total'   => (int) round((float) $grupo->sum('retencion_art59')),
                 'num_documentos'    => $grupo->count(),
             ]);
         }

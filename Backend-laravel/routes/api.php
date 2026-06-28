@@ -616,9 +616,9 @@ Route::prefix('dj/1835')->middleware(['auth:sanctum', 'check.subscription'])->gr
 // Propietarios de la empresa (para DJ 1947 / Propyme)
 Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription', 'permiso:contabilidad.ver'])->group(function () {
     Route::get('/',                    [PropietariosController::class, 'index']);
-    Route::post('/',                   [PropietariosController::class, 'store'])->middleware('subscription.writable');
-    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware('subscription.writable');
-    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware('subscription.writable');
+    Route::post('/',                   [PropietariosController::class, 'store'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
 });
 
 // Honorarios recibidos
