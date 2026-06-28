@@ -63,11 +63,11 @@ use App\Domains\Core\Controllers\IncidenteSeguridadController;
 use App\Domains\Contabilidad\Controllers\Dj1887Controller;
 use App\Domains\Contabilidad\Controllers\Dj1879Controller;
 use App\Domains\Contabilidad\Controllers\Dj1947Controller;
-use App\Domains\Contabilidad\Controllers\Dj1926Controller;
-use App\Domains\Contabilidad\Controllers\Dj1837Controller;
-use App\Domains\Contabilidad\Controllers\Dj1835Controller;
 use App\Domains\Core\Controllers\PropietariosController;
 use App\Domains\Comercial\Controllers\HonorariosController;
+use App\Domains\Comercial\Controllers\OrdenCompraController;
+use App\Domains\Contabilidad\Controllers\ArAgingController;
+use App\Domains\Contabilidad\Controllers\ApAgingController;
 use App\Domains\Soporte\Controllers\SoporteController;
 use App\Domains\Core\Controllers\EmpresaCambioController;
 use App\Domains\Core\Controllers\DashboardResumenController;
@@ -226,7 +226,6 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/facturas/vencidas', [FacturaController::class, 'vencidas'])->middleware('permiso:compras.ver');
     Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel'])->middleware('permiso:compras.ver');
     Route::get('/facturas/disponibles-proyectos', [FacturaController::class, 'disponiblesProyectos'])->middleware('permiso:compras.ver,activos.ver');
-    Route::get('/facturas/f50', [FacturaController::class, 'f50'])->middleware('permiso:compras.ver,contabilidad.ver');
 
     // Resource de facturas (index/store/show; update y destroy no existen)
     Route::get('/facturas', [FacturaController::class, 'index'])->middleware('permiso:compras.ver');
@@ -252,6 +251,18 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/cotizaciones', [CotizacionController::class, 'index'])->middleware('permiso:ventas.ver');
     Route::post('/cotizaciones', [CotizacionController::class, 'store'])->middleware('permiso:ventas.crear');
     Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->middleware('permiso:ventas.crear');
+
+    // ---------------------------------------------------------------------
+    // Comercial - Órdenes de Compra
+    // ---------------------------------------------------------------------
+    Route::prefix('comercial/ordenes-compra')->group(function () {
+        Route::get('/', [OrdenCompraController::class, 'index'])->middleware('permiso:compras.ver');
+        Route::post('/', [OrdenCompraController::class, 'store'])->middleware('permiso:compras.crear');
+        Route::get('/{ordenCompra}', [OrdenCompraController::class, 'show'])->middleware('permiso:compras.ver');
+        Route::put('/{ordenCompra}', [OrdenCompraController::class, 'update'])->middleware('permiso:compras.crear');
+        Route::delete('/{ordenCompra}', [OrdenCompraController::class, 'destroy'])->middleware('permiso:compras.crear');
+        Route::post('/{ordenCompra}/recibir', [OrdenCompraController::class, 'recibirMercaderia'])->middleware('permiso:compras.crear');
+    });
 
     // ---------------------------------------------------------------------
     // Tesoreria - Cuentas de Proveedores
@@ -334,6 +345,10 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::post('/ejecutar', [CorreccionMonetariaController::class, 'ejecutar'])->middleware('permiso:contabilidad.crear');
         Route::get('/historial', [CorreccionMonetariaController::class, 'historial'])->middleware('permiso:contabilidad.ver');
     });
+
+    // Contabilidad - Reportes de aging (CxC y CxP)
+    Route::get('/contabilidad/ar-aging', [ArAgingController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/ap-aging', [ApAgingController::class, 'index'])->middleware('permiso:contabilidad.ver');
 
     // Contabilidad - Anulaciones
     Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar'])->middleware('permiso:compras.ver,ventas.ver,contabilidad.ver');
@@ -586,39 +601,12 @@ Route::prefix('dj/1947')->middleware(['auth:sanctum', 'check.subscription'])->gr
     Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1947Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
-// DJ 1926 — Gastos No Deducibles (art. 33 N°1 LIR)
-Route::prefix('dj/1926')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                   [Dj1926Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                           [Dj1926Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                 [Dj1926Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                [Dj1926Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1926Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-});
-
-// DJ 1837 — Honorarios sin Retención (art. 42 N°2 LIR)
-Route::prefix('dj/1837')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                   [Dj1837Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                           [Dj1837Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                 [Dj1837Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                [Dj1837Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1837Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-});
-
-// DJ 1835 — Retenciones Art. 59 LIR (servicios del exterior)
-Route::prefix('dj/1835')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                   [Dj1835Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                           [Dj1835Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                 [Dj1835Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                [Dj1835Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1835Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-});
-
 // Propietarios de la empresa (para DJ 1947 / Propyme)
 Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription', 'permiso:contabilidad.ver'])->group(function () {
     Route::get('/',                    [PropietariosController::class, 'index']);
-    Route::post('/',                   [PropietariosController::class, 'store'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
-    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
-    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::post('/',                   [PropietariosController::class, 'store'])->middleware('subscription.writable');
+    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware('subscription.writable');
+    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware('subscription.writable');
 });
 
 // Honorarios recibidos
