@@ -25,6 +25,9 @@ dist-ssr
 /test-results/
 /playwright/.cache/
 
+# Coverage reports (generados localmente)
+/coverage/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
