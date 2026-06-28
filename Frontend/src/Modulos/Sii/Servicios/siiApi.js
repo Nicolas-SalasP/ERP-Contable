@@ -150,6 +150,18 @@ const siiApi = {
          */
         revocar: (id, motivo) => api.delete(`/sii/caf/${id}`, { motivo }),
     },
+
+    dte: {
+        /**
+         * Reintento manual directo sobre un DTE (encola job async, responde 202).
+         * Permite reintentar estados RECHAZADO y ANULADO_FALLO_INTERNO.
+         * @param {number} dteId
+         * @param {{ razon?: string }} payload  razon opcional, max 200 chars.
+         */
+        reintentar: (dteId, payload = {}) =>
+            // silent: el modal maneja inline 422 + errores; sin toast global.
+            api.post(`/sii/dte/${dteId}/reintentar`, payload, { silent: true }),
+    },
 };
 
 export default siiApi;

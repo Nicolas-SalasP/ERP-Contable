@@ -54,6 +54,8 @@ export function EstadoSiiPanel({ facturaId }) {
         if (estadoData.tiene_dte === false) return true;
         if (estadoData.estado === 'BORRADOR') return true;
         if (estadoData.estado === 'FIRMADO') return true;
+        if (estadoData.estado === 'RECHAZADO') return true;
+        if (estadoData.estado === 'ANULADO_FALLO_INTERNO') return true;
         if (estadoData.estado === 'ENVIADO_SII' && estadoData.ultimo_envio_estado_error === true) return true;
         return false;
     };
@@ -246,6 +248,7 @@ export function EstadoSiiPanel({ facturaId }) {
             <ModalReintentarSii
                 abierto={modalReintentarAbierto}
                 facturaId={facturaId}
+                dteId={data?.dte_id ?? null}
                 resumenEstado={{
                     estado: data.estado,
                     ultimo_envio_estado: data.ultimo_envio_estado,
