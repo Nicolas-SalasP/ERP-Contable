@@ -3,7 +3,6 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import BannerPrivacidad from './BannerPrivacidad';
 
-// Mock the privacidad API module
 vi.mock('../../Modulos/Privacidad/privacidadApi', () => ({
     default: {
         miConsentimiento: vi.fn(),
@@ -39,7 +38,6 @@ describe('BannerPrivacidad', () => {
 
         render(<BannerPrivacidad />);
 
-        // Wait a tick for effects
         await waitFor(() => {}, { timeout: 100 });
 
         expect(screen.queryByTestId('banner-privacidad')).toBeNull();
@@ -85,7 +83,6 @@ describe('BannerPrivacidad', () => {
 
         render(<BannerPrivacidad />);
 
-        // Wait for async to settle
         await waitFor(() => {}, { timeout: 200 });
 
         expect(screen.queryByTestId('banner-privacidad')).toBeNull();
@@ -105,5 +102,26 @@ describe('BannerPrivacidad', () => {
 
         expect(screen.queryByTestId('banner-privacidad')).toBeNull();
         expect(privacidadApi.aceptar).not.toHaveBeenCalled();
+    });
+
+    it('expandir política muestra el contenido completo', async () => {
+        privacidadApi.miConsentimiento.mockResolvedValue({ data: { aceptada: false, version: null } });
+        privacidadApi.obtenerPolitica.mockResolvedValue({
+            data: { titulo: 'Política de Privacidad', contenido: 'Texto completo de la política.' },
+        });
+
+        render(<BannerPrivacidad />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('banner-privacidad')).toBeDefined();
+        });
+
+        expect(screen.queryByText('Texto completo de la política.')).toBeNull();
+
+        fireEvent.click(screen.getByText('Leer política completa'));
+        expect(screen.getByText('Texto completo de la política.')).toBeTruthy();
+
+        fireEvent.click(screen.getByText('Ocultar'));
+        expect(screen.queryByText('Texto completo de la política.')).toBeNull();
     });
 });
