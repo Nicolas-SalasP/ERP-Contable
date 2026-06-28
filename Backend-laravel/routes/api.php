@@ -65,9 +65,6 @@ use App\Domains\Contabilidad\Controllers\Dj1879Controller;
 use App\Domains\Contabilidad\Controllers\Dj1947Controller;
 use App\Domains\Core\Controllers\PropietariosController;
 use App\Domains\Comercial\Controllers\HonorariosController;
-use App\Domains\Comercial\Controllers\OrdenCompraController;
-use App\Domains\Contabilidad\Controllers\ArAgingController;
-use App\Domains\Contabilidad\Controllers\ApAgingController;
 use App\Domains\Soporte\Controllers\SoporteController;
 use App\Domains\Core\Controllers\EmpresaCambioController;
 use App\Domains\Core\Controllers\DashboardResumenController;
@@ -253,18 +250,6 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->middleware('permiso:ventas.crear');
 
     // ---------------------------------------------------------------------
-    // Comercial - Órdenes de Compra
-    // ---------------------------------------------------------------------
-    Route::prefix('comercial/ordenes-compra')->group(function () {
-        Route::get('/', [OrdenCompraController::class, 'index'])->middleware('permiso:compras.ver');
-        Route::post('/', [OrdenCompraController::class, 'store'])->middleware('permiso:compras.crear');
-        Route::get('/{ordenCompra}', [OrdenCompraController::class, 'show'])->middleware('permiso:compras.ver');
-        Route::put('/{ordenCompra}', [OrdenCompraController::class, 'update'])->middleware('permiso:compras.crear');
-        Route::delete('/{ordenCompra}', [OrdenCompraController::class, 'destroy'])->middleware('permiso:compras.crear');
-        Route::post('/{ordenCompra}/recibir', [OrdenCompraController::class, 'recibirMercaderia'])->middleware('permiso:compras.crear');
-    });
-
-    // ---------------------------------------------------------------------
     // Tesoreria - Cuentas de Proveedores
     // ---------------------------------------------------------------------
     Route::get('/cuentas-bancarias/proveedor/{proveedorId}', [CuentaProveedorController::class, 'index'])->middleware('permiso:tesoreria.ver,proveedores.ver');
@@ -346,10 +331,6 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/historial', [CorreccionMonetariaController::class, 'historial'])->middleware('permiso:contabilidad.ver');
     });
 
-    // Contabilidad - Reportes de aging (CxC y CxP)
-    Route::get('/contabilidad/ar-aging', [ArAgingController::class, 'index'])->middleware('permiso:contabilidad.ver');
-    Route::get('/contabilidad/ap-aging', [ApAgingController::class, 'index'])->middleware('permiso:contabilidad.ver');
-
     // Contabilidad - Anulaciones
     Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar'])->middleware('permiso:compras.ver,ventas.ver,contabilidad.ver');
     Route::post('/anulacion/anular', [AnulacionController::class, 'anular'])->middleware('permiso:compras.crear,ventas.crear,contabilidad.crear');
@@ -364,6 +345,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes'])->middleware('permiso:activos.crear');
     Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja'])->middleware('permiso:activos.crear');
     Route::put('/activos/{id}', [ActivoFijoController::class, 'update'])->middleware('permiso:activos.crear');
+    Route::get('/activos/{id}/amortizacion', [ActivoFijoController::class, 'amortizacion'])->middleware('permiso:activos.ver');
 
     // Activos Fijos - Proyectos
     Route::get('/activos/proyectos/facturas-disponibles', [ActivoFijoController::class, 'facturasDisponibles'])->middleware('permiso:activos.ver');

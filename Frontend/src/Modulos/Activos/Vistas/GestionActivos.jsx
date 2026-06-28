@@ -6,6 +6,7 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import BotonAccion from '../../../Componentes/BotonAccion';
 import GestionProyectosActivos from './GestionProyectosActivos';
+import TablaAmortizacion from '../Componentes/TablaAmortizacion';
 import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -37,6 +38,7 @@ const GestionActivos = () => {
     const [activoEditando, setActivoEditando] = useState(null);
     const [formEditar, setFormEditar] = useState({ nombre: '', descripcion: '' });
     const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+    const [activoAmortizacion, setActivoAmortizacion] = useState(null);
 
     const mostrarNotificacion = (tipo, mensaje) => {
         setNotificacion({ tipo, mensaje });
@@ -97,7 +99,7 @@ const GestionActivos = () => {
                 cargarDatos();
             }
         } catch (error) {
-            mostrarNotificacion('error', 'Error al dar de baja: ' + (error.response?.data?.message || error.message));
+            alert("Error al dar de baja: " + (error.response?.data?.message || error.message));
         }
     };
     const abrirModalEditar = (activo) => {
@@ -203,7 +205,7 @@ const GestionActivos = () => {
                                             <td className="px-6 py-4 font-black text-slate-800 dark:text-slate-200 text-right">{formatCurrency(activo.valor_adquisicion)}</td>
                                             <td className="px-6 py-4 text-center">
                                                 <button 
-                                                    onClick={() => mostrarNotificacion('info', 'Próxima mejora: Transformación automática a Proyecto Activo.')}
+                                                    onClick={() => alert("Próxima mejora: Transformación automática a Proyecto Activo.")}
                                                     className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded transition-colors text-xs"
                                                 >
                                                     Crear Proyecto
@@ -283,6 +285,14 @@ const GestionActivos = () => {
                                                     <td className="px-6 py-4 text-center">
                                                         {!dadoDeBaja ? (
                                                             <div className="flex items-center justify-center gap-2">
+                                                                <button
+                                                                    onClick={() => setActivoAmortizacion(activo)}
+                                                                    className="text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-indigo-200"
+                                                                    title="Ver tabla de amortización"
+                                                                    aria-label="Ver amortización"
+                                                                >
+                                                                    <i className="fas fa-chart-line"></i>
+                                                                </button>
                                                                 <button
                                                                     onClick={() => abrirModalEditar(activo)}
                                                                     className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-blue-200"
@@ -436,6 +446,14 @@ const GestionActivos = () => {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {activoAmortizacion && (
+                <TablaAmortizacion
+                    activoId={activoAmortizacion.id}
+                    activoNombre={`${activoAmortizacion.codigo} - ${activoAmortizacion.nombre}`}
+                    onCerrar={() => setActivoAmortizacion(null)}
+                />
             )}
         </div>
     );
