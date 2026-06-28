@@ -442,11 +442,11 @@ class InventarioStockUbicacionService
             return null;
         }
 
-        if (!$producto->maneja_lotes && $loteId !== null) {
+        if (!$producto->maneja_lotes) {
             throw ValidationException::withMessages([$campo => 'El producto no maneja lotes, por lo tanto no debe informar lote_id.']);
         }
 
-        if ($producto->maneja_lotes && $loteId === null) {
+        if ($loteId === null) {
             throw ValidationException::withMessages([$campo => 'El producto maneja lotes, debe informar lote_id.']);
         }
 

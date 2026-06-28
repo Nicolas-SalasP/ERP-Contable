@@ -100,49 +100,49 @@ class MovimientoInventario extends Model
         'fecha_movimiento' => 'datetime',
     ];
 
-    /** @return BelongsTo<Producto, MovimientoInventario> */
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
-    /** @return BelongsTo<Bodega, MovimientoInventario> */
+    /** @return BelongsTo<Bodega, $this> */
     public function bodegaOrigen(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_origen_id');
     }
 
-    /** @return BelongsTo<Bodega, MovimientoInventario> */
+    /** @return BelongsTo<Bodega, $this> */
     public function bodegaDestino(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_destino_id');
     }
 
-    /** @return HasMany<MovimientoLoteInventario, MovimientoInventario> */
+    /** @return HasMany<MovimientoLoteInventario, $this> */
     public function lotes(): HasMany
     {
         return $this->hasMany(MovimientoLoteInventario::class, 'movimiento_inventario_id');
     }
 
-    /** @return BelongsTo<InventarioUbicacion, MovimientoInventario> */
+    /** @return BelongsTo<InventarioUbicacion, $this> */
     public function ubicacionOrigen(): BelongsTo
     {
         return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_origen_id');
     }
 
-    /** @return BelongsTo<InventarioUbicacion, MovimientoInventario> */
+    /** @return BelongsTo<InventarioUbicacion, $this> */
     public function ubicacionDestino(): BelongsTo
     {
         return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_destino_id');
     }
 
-    /** @return HasMany<ReservaConsumoInventario, MovimientoInventario> */
+    /** @return HasMany<ReservaConsumoInventario, $this> */
     public function consumosReserva(): HasMany
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'movimiento_inventario_id');
     }
 
-    /** @return HasMany<TomaFisicaDetalleInventario, MovimientoInventario> */
+    /** @return HasMany<TomaFisicaDetalleInventario, $this> */
     public function tomaFisicaDetalles(): HasMany
     {
         return $this->hasMany(TomaFisicaDetalleInventario::class, 'movimiento_ajuste_id');

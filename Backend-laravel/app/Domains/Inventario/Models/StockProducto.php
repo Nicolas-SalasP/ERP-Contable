@@ -7,6 +7,7 @@ use App\Domains\Core\Traits\HasEmpresaScope;
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockProducto extends Model
 {
@@ -32,25 +33,26 @@ class StockProducto extends Model
         'valor_total' => 'decimal:4',
     ];
 
-    /** @return BelongsTo<Empresa, StockProducto> */
+    /** @return BelongsTo<Empresa, $this> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    /** @return BelongsTo<Producto, StockProducto> */
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
-    /** @return BelongsTo<Bodega, StockProducto> */
+    /** @return BelongsTo<Bodega, $this> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
-    public function stockLotes()
+    /** @return HasMany<StockLoteInventario, $this> */
+    public function stockLotes(): HasMany
     {
         return $this->hasMany(StockLoteInventario::class, 'producto_id', 'producto_id')
             ->where('bodega_id', $this->bodega_id);

@@ -2,7 +2,6 @@
 
 namespace App\Domains\Sii\Console\Commands;
 
-use App\Domains\Sii\Exceptions\CafInvalidoException;
 use App\Domains\Sii\Exceptions\CertificadoInvalidoException;
 use App\Domains\Sii\Exceptions\DteIncompletoException;
 use App\Domains\Sii\Exceptions\DteXmlInvalidException;
@@ -85,10 +84,6 @@ class GenerarXmlPruebaCommand extends Command
             return self::FAILURE;
         } catch (DteXmlInvalidException $e) {
             $this->error('XML invalido contra XSD: ' . $e->getMessage());
-            return self::FAILURE;
-        } catch (CafInvalidoException $e) {
-            $this->error('CAF invalido: ' . $e->getMessage());
-            $this->line('Motivo: ' . $e->motivo);
             return self::FAILURE;
         } catch (CertificadoInvalidoException $e) {
             $this->error('Certificado invalido: ' . $e->getMessage());

@@ -61,7 +61,7 @@ class XmlDsigSigner
         //
         // overwrite=false + id_name=ID -> NO genera GUID, usa el atributo existente.
         $dsig->addReference(
-            $nodoFirmar,
+            $nodoFirmar, // @phpstan-ignore argument.type
             XMLSecurityDSig::SHA1,
             [self::TRANSFORM_ENVELOPED],
             ['id_name' => 'ID', 'overwrite' => false, 'force_uri' => false]
@@ -251,7 +251,8 @@ class XmlDsigSigner
     {
         $nodos = $dom->getElementsByTagName($tagName);
         foreach ($nodos as $nodo) {
-            if ($nodo instanceof DOMElement && $nodo->getAttribute('ID') === $idValue) {
+            // getElementsByTagName always returns DOMElement nodes; no instanceof check needed.
+            if ($nodo->getAttribute('ID') === $idValue) {
                 return $nodo;
             }
         }

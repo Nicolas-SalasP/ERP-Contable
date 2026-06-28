@@ -346,9 +346,9 @@ class ActivoFijoService
         });
     }
 
-    public function imputarFacturaAProyecto(int $empresaId, int $proyectoId, array $datos)
+    public function imputarFacturaAProyecto(int $empresaId, int $proyectoId, array $datos): void
     {
-        return DB::transaction(function () use ($empresaId, $proyectoId, $datos) {
+        DB::transaction(function () use ($empresaId, $proyectoId, $datos): void {
             $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($proyectoId);
 
             if ($proyecto->estado !== 'EN_CONSTRUCCION') {
@@ -375,7 +375,7 @@ class ActivoFijoService
 
     public function activarProyecto(int $empresaId, int $usuarioId, int $proyectoId): array
     {
-        return DB::transaction(function () use ($empresaId, $usuarioId, $proyectoId) {
+        return DB::transaction(function () use ($empresaId, $proyectoId): array {
             $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($proyectoId);
             if (!$proyecto->tipo_activo_id || !$proyecto->cuenta_depreciacion_id || !$proyecto->cuenta_gasto_id) {
                 throw new Exception("Configuración Incompleta: El proyecto requiere asignar las 3 cuentas contables (Activo, Depreciación y Gasto) antes de ser capitalizado.");

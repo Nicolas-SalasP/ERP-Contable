@@ -11,10 +11,12 @@ use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 
 /**
  * @property int|null $sii_dte_emitido_id
- * @property int $tipo_dte
+ * @property int|null $tipo_dte
  * @property int|null $cliente_id
  * @property \Illuminate\Support\Carbon $fecha_emision
  * @property-read \App\Domains\Sii\Models\SiiDteEmitido|null $dteEmitido
+ * @property-read \App\Domains\Comercial\Models\Cliente|null $cliente
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Comercial\Models\FacturaDetalle> $detalles
  */
 class Factura extends Model
 {
@@ -69,13 +71,11 @@ class Factura extends Model
 
     protected $appends = ['nombre_proveedor'];
 
-    /** @return BelongsTo<Empresa, self> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    /** @return BelongsTo<Proveedor, self> */
     public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
@@ -90,7 +90,6 @@ class Factura extends Model
         return trim((string) ($this->proveedor->razon_social ?? ''));
     }
 
-    /** @return BelongsTo<CuentaBancariaProveedor, self> */
     public function cuentaBancaria(): BelongsTo
     {
         return $this->belongsTo(CuentaBancariaProveedor::class, 'cuenta_bancaria_id');

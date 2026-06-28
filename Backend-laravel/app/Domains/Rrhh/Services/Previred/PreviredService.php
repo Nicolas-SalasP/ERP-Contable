@@ -143,7 +143,9 @@ class PreviredService
         int         $diasEnMes,
         ?Empresa    $empresa
     ): array {
+        /** @var \App\Domains\Rrhh\Models\Empleado $empleado */
         $empleado = $liq->empleado;
+        /** @var \App\Domains\Rrhh\Models\Contrato|null $contrato */
         $contrato = $liq->contrato;
 
         // ── Identificación trabajador ─────────────────────────────────────────
@@ -375,7 +377,7 @@ class PreviredService
         $hasta = $ultimoDiaMes->copy();
 
         // Contrato inicia dentro del mes
-        if ($inicio && $inicio->between($primerDiaMes, $ultimoDiaMes)) {
+        if ($inicio->between($primerDiaMes, $ultimoDiaMes)) {
             $desde = $inicio->copy();
         }
 

@@ -89,43 +89,43 @@ class TomaFisicaInventario extends Model
         'fecha_cancelacion' => 'datetime',
     ];
 
-    /** @return BelongsTo<Empresa, TomaFisicaInventario> */
+    /** @return BelongsTo<Empresa, $this> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
-    /** @return BelongsTo<Bodega, TomaFisicaInventario> */
+    /** @return BelongsTo<Bodega, $this> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
-    /** @return BelongsTo<User, TomaFisicaInventario> */
+    /** @return BelongsTo<User, $this> */
     public function creadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creado_por');
     }
 
-    /** @return BelongsTo<User, TomaFisicaInventario> */
+    /** @return BelongsTo<User, $this> */
     public function cerradoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cerrado_por');
     }
 
-    /** @return BelongsTo<User, TomaFisicaInventario> */
+    /** @return BelongsTo<User, $this> */
     public function ajustadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ajustado_por');
     }
 
-    /** @return BelongsTo<User, TomaFisicaInventario> */
+    /** @return BelongsTo<User, $this> */
     public function canceladoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cancelado_por');
     }
 
-    /** @return HasMany<TomaFisicaDetalleInventario, TomaFisicaInventario> */
+    /** @return HasMany<TomaFisicaDetalleInventario, $this> */
     public function detalles(): HasMany
     {
         return $this->hasMany(TomaFisicaDetalleInventario::class, 'toma_fisica_id');

@@ -83,7 +83,7 @@ class User extends Authenticatable
         return $this->belongsTo(Rol::class);
     }
 
-    public function estadoSuscripcion()
+    public function estadoSuscripcion(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(EstadoSuscripcion::class);
     }

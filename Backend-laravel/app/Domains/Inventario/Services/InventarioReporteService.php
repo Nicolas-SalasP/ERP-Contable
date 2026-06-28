@@ -525,7 +525,7 @@ class InventarioReporteService
             ->get()
             ->map(fn (AjusteCriticoInventario $ajuste) => [
                 'id' => (int) $ajuste->id,
-                'fecha' => $ajuste->created_at?->toDateTimeString(),
+                'fecha' => $ajuste->created_at->toDateTimeString(),
                 'producto_id' => (int) $ajuste->producto_id,
                 'producto_sku' => $ajuste->producto?->sku,
                 'producto_nombre' => $ajuste->producto?->nombre,

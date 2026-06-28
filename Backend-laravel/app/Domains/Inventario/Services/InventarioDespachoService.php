@@ -155,8 +155,10 @@ class InventarioDespachoService
                 /** @var InventarioPackingDetalle $detallePacking */
                 /** @var InventarioPickingAsignacion|null $asignacion */
                 $asignacion = $detallePacking->pickingAsignacion;
-                $reservaDetalleId = $asignacion?->reserva_detalle_id
-                    ?? $detallePacking->pickingDetalle?->reserva_detalle_id;
+                /** @var \App\Domains\Inventario\Models\InventarioPickingDetalle|null $pickingDetalleRel */
+                $pickingDetalleRel = $detallePacking->pickingDetalle;
+                $reservaDetalleId = $asignacion->reserva_detalle_id
+                    ?? $pickingDetalleRel?->reserva_detalle_id;
 
                 InventarioDespachoDetalle::create([
                     'empresa_id' => $empresaId,

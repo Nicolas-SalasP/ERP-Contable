@@ -348,7 +348,7 @@ class BancoService
 
     public function vincularMovimientoAAnticipo(int $empresaId, int $movimientoId, int $anticipoId)
     {
-        return DB::transaction(function () use ($empresaId, $movimientoId, $anticipoId) {
+        DB::transaction(function () use ($empresaId, $movimientoId, $anticipoId) {
             // Lock pesimista + guard de estado para evitar doble conciliación en carrera.
             $movimiento = $this->obtenerMovimientoParaConciliar($empresaId, $movimientoId);
 

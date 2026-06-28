@@ -14,7 +14,6 @@ use App\Domains\Sii\Services\Xml\DteSigner;
 use App\Domains\Sii\Services\Xml\DteXmlBuilder;
 use App\Domains\Sii\Services\Xml\SetDte\SetDteBuilder;
 use App\Domains\Sii\Services\Xml\SetDte\SetDteSigner;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -76,7 +75,7 @@ class EmitirDteService
         $folioUso = $this->cafService->reservarSiguienteFolio($dte->empresa_id, $dte->tipo_dte);
         $caf      = SiiCaf::findOrFail($folioUso->caf_id);
 
-        $disk    = config('sii.storage.disk', env('SII_XML_DISK', 'sii_xml'));
+        $disk    = config('sii.storage.disk', 'sii_xml');
         $xmlPath = null;
 
         // A partir de aqui el folio ya esta reservado (tx committed). Cualquier
@@ -205,9 +204,7 @@ class EmitirDteService
      */
     private function construirPathDeDisco(SiiDteEmitido $dte): string
     {
-        $fecha = $dte->fecha_emision instanceof Carbon
-            ? $dte->fecha_emision
-            : Carbon::parse($dte->fecha_emision);
+        $fecha = $dte->fecha_emision;
 
         return sprintf(
             'sii/%d/%s/%s/%d_%d_envio.xml',

@@ -25,7 +25,7 @@ class HealthController
     {
         $checks = [
             'app' => ['ok' => true],
-            'database' => $this->verificar(fn () => DB::connection()->getPdo() !== null && DB::select('select 1') !== []),
+            'database' => $this->verificar(fn () => DB::select('select 1') !== []),
             'cache' => $this->verificar(function () {
                 $clave = 'health_' . bin2hex(random_bytes(4));
                 Cache::put($clave, 'ok', 5);

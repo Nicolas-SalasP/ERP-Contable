@@ -44,7 +44,6 @@ class AsientoContable extends Model
         return $this->belongsTo(CentroCosto::class);
     }
 
-    /** @return HasMany<DetalleAsiento, self> */
     public function detalles(): HasMany
     {
         return $this->hasMany(DetalleAsiento::class, 'asiento_id');

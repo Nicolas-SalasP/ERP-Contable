@@ -247,6 +247,8 @@ class FacturaSiiController
         // F6.4: envios viene cargado desc por created_at (ver controller::estado).
         $ultimoEnvio  = $dte->relationLoaded('envios') ? $dte->envios->first() : null;
         $ultimoEnvioEstado = $ultimoEnvio?->estado_envio;
+        /** @var \App\Domains\Core\Models\Empresa|null $empresa */
+        $empresa = $f->empresa;
 
         return [
             'factura_id'                => $f->id,
@@ -261,7 +263,7 @@ class FacturaSiiController
             'track_id'                  => $dte->track_id,
             'fecha_emision'             => $dte->fecha_emision->toDateString(),
             'fecha_envio_sii'           => $dte->fecha_envio_sii?->toIso8601String(),
-            'ambiente'                  => $f->empresa?->ambiente_sii,
+            'ambiente'                  => $empresa?->ambiente_sii,
             'glosa_sii'                 => $dte->glosa_sii,
             'ultimo_evento'             => $ultimoEvento ? [
                 'estado_anterior' => $ultimoEvento->estado_anterior,
@@ -334,20 +336,25 @@ class FacturaSiiController
                 'glosa'           => $e->glosa,
                 'fecha'           => $e->created_at?->toIso8601String(),
             ])->all(),
-            'envios'          => $dte->envios->map(fn (\App\Domains\Sii\Models\SiiEnvioDte $env) => [
-                'id'              => (int) $env->id,
-                'estado_envio'    => $env->estado_envio,
-                'track_id'        => $env->track_id,
-                'http_status'     => $env->http_status_ultimo_envio,
-                'fecha_envio'     => $env->fecha_envio?->toIso8601String(),
-                'fecha_resolucion' => $env->fecha_resolucion?->toIso8601String(),
-                'eventos'         => $env->eventos->map(fn (\App\Domains\Sii\Models\SiiEnvioDteEvento $evEnv): array => [
-                    'estado_anterior' => $evEnv->estado_anterior,
-                    'estado_nuevo'    => $evEnv->estado_nuevo,
-                    'codigo_sii'      => $evEnv->codigo_sii_raw,
-                    'fecha'           => $evEnv->created_at?->toIso8601String(),
-                ])->all(),
-            ])->all(),
+            'envios'          => $dte->envios->map(function ($env): array {
+                /** @var \App\Domains\Sii\Models\SiiEnvioDte $env */
+                /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Sii\Models\SiiEnvioDteEvento> $eventos */
+                $eventos = $env->eventos;
+                return [
+                    'id'              => (int) $env->id,
+                    'estado_envio'    => $env->estado_envio,
+                    'track_id'        => $env->track_id,
+                    'http_status'     => $env->http_status_ultimo_envio,
+                    'fecha_envio'     => $env->fecha_envio?->toIso8601String(),
+                    'fecha_resolucion' => $env->fecha_resolucion?->toIso8601String(),
+                    'eventos'         => $eventos->map(fn (\App\Domains\Sii\Models\SiiEnvioDteEvento $evEnv): array => [
+                        'estado_anterior' => $evEnv->estado_anterior,
+                        'estado_nuevo'    => $evEnv->estado_nuevo,
+                        'codigo_sii'      => $evEnv->codigo_sii_raw,
+                        'fecha'           => $evEnv->created_at?->toIso8601String(),
+                    ])->all(),
+                ];
+            })->all(),
         ];
 
         return $base;

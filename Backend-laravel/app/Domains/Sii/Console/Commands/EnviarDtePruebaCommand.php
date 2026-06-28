@@ -2,11 +2,7 @@
 
 namespace App\Domains\Sii\Console\Commands;
 
-use App\Domains\Sii\Exceptions\CertificadoInvalidoException;
 use App\Domains\Sii\Exceptions\EnvioSiiException;
-use App\Domains\Sii\Exceptions\IntegridadXmlException;
-use App\Domains\Sii\Exceptions\SiiAutenticacionException;
-use App\Domains\Sii\Exceptions\SiiConfiguracionIncompletaException;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Envio\EnvioSiiService;
 use Illuminate\Console\Command;
@@ -43,18 +39,6 @@ class EnviarDtePruebaCommand extends Command
         } catch (EnvioSiiException $e) {
             $this->error('Envio SII: ' . $e->getMessage());
             $this->line('Motivo: ' . $e->motivo);
-            return self::FAILURE;
-        } catch (CertificadoInvalidoException $e) {
-            $this->error('Certificado: ' . $e->getMessage());
-            return self::FAILURE;
-        } catch (SiiConfiguracionIncompletaException $e) {
-            $this->error('Config SII incompleta: ' . $e->getMessage());
-            return self::FAILURE;
-        } catch (SiiAutenticacionException $e) {
-            $this->error('Autenticacion SII: ' . $e->getMessage());
-            return self::FAILURE;
-        } catch (IntegridadXmlException $e) {
-            $this->error('Integridad XML: ' . $e->getMessage());
             return self::FAILURE;
         } catch (Throwable $e) {
             $this->error('Error inesperado: ' . $e::class . ' — ' . $e->getMessage());

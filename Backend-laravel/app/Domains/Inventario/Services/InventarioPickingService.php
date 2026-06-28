@@ -641,49 +641,6 @@ class InventarioPickingService
         return $operaciones;
     }
 
-    private function normalizarDetallesConfirmacion($detalles, mixed $payload): array
-    {
-        $operaciones = [];
-
-        if ($payload === null) {
-            foreach ($detalles as $detalle) {
-                $operaciones[] = [
-                    'detalle' => $detalle,
-                    'cantidad_pickeada' => $this->redondearCantidad((float) $detalle->cantidad_asignada),
-                ];
-            }
-
-            return $operaciones;
-        }
-
-        if (!is_array($payload) || empty($payload)) {
-            throw ValidationException::withMessages(['detalles' => 'Debe informar detalles válidos para confirmar picking.']);
-        }
-
-        foreach ($payload as $indice => $item) {
-            $detalleId = (int) ($item['id'] ?? $item['detalle_id'] ?? 0);
-            $detalle = $detalles->get($detalleId);
-
-            if (!$detalle) {
-                throw ValidationException::withMessages(["detalles.{$indice}.id" => 'El detalle informado no pertenece a la orden de picking.']);
-            }
-
-            $cantidad = $item['cantidad_pickeada'] ?? null;
-
-            if (!is_numeric($cantidad) || (float) $cantidad < 0) {
-                throw ValidationException::withMessages(["detalles.{$indice}.cantidad_pickeada" => 'La cantidad pickeada debe ser numérica y no negativa.']);
-            }
-
-            $operaciones[] = [
-                'detalle' => $detalle,
-                'cantidad_pickeada' => $this->redondearCantidad((float) $cantidad),
-                'observacion' => $item['observacion'] ?? null,
-            ];
-        }
-
-        return $operaciones;
-    }
-
     private function cargarOrden(InventarioPickingOrden $orden): InventarioPickingOrden
     {
         return $orden->load([
@@ -767,11 +724,11 @@ class InventarioPickingService
             return null;
         }
 
-        if (!$producto->maneja_lotes && $loteId !== null) {
+        if (!$producto->maneja_lotes) {
             throw ValidationException::withMessages([$campo => 'El producto no maneja lotes, por lo tanto no debe informar lote_id.']);
         }
 
-        if ($producto->maneja_lotes && $loteId === null) {
+        if ($loteId === null) {
             throw ValidationException::withMessages([$campo => 'El producto maneja lotes, debe informar lote_id.']);
         }
 

@@ -99,10 +99,6 @@ class SiiCertificadoEmpresa extends Model
 
     public function isVigente(): bool
     {
-        if ($this->valido_hasta === null) {
-            return false;
-        }
-
         return $this->valido_hasta->isFuture();
     }
 
@@ -113,10 +109,6 @@ class SiiCertificadoEmpresa extends Model
      */
     public function diasParaVencer(): int
     {
-        if ($this->valido_hasta === null) {
-            return 0;
-        }
-
         $diffSegundos = $this->valido_hasta->getTimestamp() - now()->getTimestamp();
 
         return (int) floor($diffSegundos / 86400);

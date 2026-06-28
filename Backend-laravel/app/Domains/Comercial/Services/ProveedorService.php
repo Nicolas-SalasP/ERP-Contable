@@ -180,13 +180,11 @@ class ProveedorService
 
             $nuevoEstadoFactura = ($totalAFavor == $totalDeuda) ? 'PAGADA' : 'ABONADA';
 
-            if (!empty($facturasIds)) {
-                DB::table('facturas')
-                    ->where('empresa_id', $empresaId)
-                    ->where('proveedor_id', $proveedorId)
-                    ->whereIn('id', $facturasIds)
-                    ->update(['estado' => $nuevoEstadoFactura]);
-            }
+            DB::table('facturas')
+                ->where('empresa_id', $empresaId)
+                ->where('proveedor_id', $proveedorId)
+                ->whereIn('id', $facturasIds)
+                ->update(['estado' => $nuevoEstadoFactura]);
 
             if (!empty($ncIds)) {
                 DB::table('facturas')

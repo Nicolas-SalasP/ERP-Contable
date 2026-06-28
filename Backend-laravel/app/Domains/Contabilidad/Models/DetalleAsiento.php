@@ -42,13 +42,11 @@ class DetalleAsiento extends Model
         'haber' => 'decimal:2',
     ];
 
-    /** @return BelongsTo<AsientoContable, self> */
     public function asiento(): BelongsTo
     {
         return $this->belongsTo(AsientoContable::class, 'asiento_id');
     }
 
-    /** @return BelongsTo<PlanCuenta, self> */
     public function cuenta(): BelongsTo
     {
         return $this->belongsTo(PlanCuenta::class, 'cuenta_contable', 'codigo');

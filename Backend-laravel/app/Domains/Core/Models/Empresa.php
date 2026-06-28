@@ -36,12 +36,12 @@ class Empresa extends Model
         return $this->hasMany(User::class);
     }
 
-    public function centrosCosto()
+    public function centrosCosto(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Domains\Contabilidad\Models\CentroCosto::class, 'empresa_id');
     }
 
-    public function cuentasBancarias()
+    public function cuentasBancarias(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Domains\Tesoreria\Models\CuentaBancariaEmpresa::class, 'empresa_id');
     }

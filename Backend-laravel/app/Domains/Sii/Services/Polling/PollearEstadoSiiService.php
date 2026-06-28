@@ -75,7 +75,9 @@ class PollearEstadoSiiService
             return $this->marcarTimeout($envio);
         }
 
-        $empresa = $envio->dteEmitido->empresa;
+        /** @var \App\Domains\Sii\Models\SiiDteEmitido $dteEmitido */
+        $dteEmitido = $envio->dteEmitido;
+        $empresa    = $dteEmitido->empresa;
 
         try {
             $sesion = $this->tokenService->obtenerSesionActiva($empresa);
@@ -135,7 +137,7 @@ class PollearEstadoSiiService
 
             $envioLock->fecha_ultimo_polling       = now();
             $envioLock->intentos_polling           = $envioLock->intentos_polling + 1;
-            $envioLock->http_status_ultimo_polling = $resultado['http_status'];
+            $envioLock->http_status_ultimo_polling = (string) $resultado['http_status'];
             $envioLock->estado_sii_ultimo          = $codigoSii !== '' ? $codigoSii : null;
             $envioLock->glosa_sii                  = $resultado['glosa'];
             $envioLock->token_sesion_id            = $sesion->id;
@@ -310,7 +312,7 @@ class PollearEstadoSiiService
         $envio->refresh();
         $envio->fecha_ultimo_polling       = now();
         $envio->intentos_polling           = $envio->intentos_polling + 1;
-        $envio->http_status_ultimo_polling = $httpStatus;
+        $envio->http_status_ultimo_polling = (string) $httpStatus;
         $envio->save();
 
         SiiEnvioDteEvento::registrarErrorTransporte($envio, $httpStatus, $detalle);

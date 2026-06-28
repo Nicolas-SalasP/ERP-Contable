@@ -223,7 +223,7 @@ class InventarioValorizacionService
             'stock_antes' => $this->formatear($stockAntes),
             'stock_despues' => $this->formatear($stockDespues),
             'costo_promedio_antes' => $this->formatear($costoPromedioAntes),
-            'costo_promedio_despues' => $this->formatear($stock->costo_promedio),
+            'costo_promedio_despues' => $this->formatear((float) $stock->costo_promedio),
             'valor_antes' => $this->formatear($valorAntes),
             'valor_despues' => $this->formatear($valorDespues),
             'costo_unitario' => $this->formatear($costoSalida),

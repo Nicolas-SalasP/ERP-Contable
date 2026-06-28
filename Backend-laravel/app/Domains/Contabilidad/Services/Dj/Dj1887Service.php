@@ -35,6 +35,7 @@ class Dj1887Service implements DeclaracionJuradaContract
 
         foreach ($porEmpleado as $empleadoId => $liqsEmpleado) {
             $primerLiq = $liqsEmpleado->first();
+            /** @var \App\Domains\Rrhh\Models\Empleado $empleado */
             $empleado  = $primerLiq->empleado;
 
             // Totales anuales (MVP: sin actualización por IPC)
@@ -43,7 +44,9 @@ class Dj1887Service implements DeclaracionJuradaContract
             $rentaNoGravada = (int) $liqsEmpleado->sum('total_haberes_no_imponibles');
 
             foreach ($liqsEmpleado as $liq) {
-                $iuscDetalle = $liq->detalles
+                /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Rrhh\Models\LiquidacionDetalle> $detallesliq */
+                $detallesliq = $liq->detalles;
+                $iuscDetalle = $detallesliq
                     ->filter(fn ($d) => $d->tipo === 'DESCUENTO_LEGAL'
                         && str_contains(strtoupper($d->codigo_concepto), 'IMPUESTO'))
                     ->sum('monto');
@@ -56,9 +59,6 @@ class Dj1887Service implements DeclaracionJuradaContract
             foreach ($liqsEmpleado as $liq) {
                 $contratoMes = $liq->contrato;
                 $horasMes    = $contratoMes->horas_semana ?? 99;
-                if (($contratoMes->tipo_jornada ?? '') === 'EXCEPTUADO') {
-                    $horasMes = 99;
-                }
 
                 $mesesDetalle[] = [
                     'mes'             => $liq->mes,
@@ -72,9 +72,6 @@ class Dj1887Service implements DeclaracionJuradaContract
             // Horas semanales del registro D: último mes con liquidación (diciembre o el más reciente)
             $ultimoContrato   = $liqsEmpleado->last()->contrato;
             $horasSemanales   = $ultimoContrato->horas_semana ?? 99;
-            if (($ultimoContrato->tipo_jornada ?? '') === 'EXCEPTUADO') {
-                $horasSemanales = 99;
-            }
 
             $lineas[] = new DjLineaData([
                 'rut_trabajador'        => $empleado->rut,
@@ -201,6 +198,7 @@ class Dj1887Service implements DeclaracionJuradaContract
      */
     private function resolverCodigoPeriodo(Liquidacion $liq): string
     {
+        /** @var \App\Domains\Rrhh\Models\Contrato|null $contrato */
         $contrato = $liq->contrato;
 
         if (! $contrato) {
@@ -217,9 +215,8 @@ class Dj1887Service implements DeclaracionJuradaContract
         }
 
         return match ($contrato->tipo_jornada ?? 'COMPLETA') {
-            'PARCIAL'    => 'P',
-            'EXCEPTUADO' => 'G',
-            default      => 'C',
+            'PARCIAL' => 'P',
+            default   => 'C',
         };
     }
 }

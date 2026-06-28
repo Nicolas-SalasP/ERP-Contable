@@ -99,14 +99,10 @@ class AppServiceProvider extends ServiceProvider
                 return true;
             }
 
-            $permisos = is_string($rol->permisos)
-                ? json_decode($rol->permisos, true)
-                : ($rol->permisos ?? []);
+            $permisos = $rol->permisos ?? [];
 
-            return is_array($permisos) && (
-                in_array('contabilidad.crear', $permisos) ||
-                in_array('activos.crear', $permisos)
-            );
+            return in_array('contabilidad.crear', $permisos) ||
+                in_array('activos.crear', $permisos);
         });
     }
 }

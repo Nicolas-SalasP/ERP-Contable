@@ -230,6 +230,7 @@ class AsientoContableService
             ]);
 
             foreach ($asientoOriginal->detalles as $detalle) {
+                /** @var \App\Domains\Contabilidad\Models\DetalleAsiento $detalle */
                 $nuevoAsiento->detalles()->create([
                     'cuenta_contable' => $detalle->cuenta_contable,
                     'fecha' => $fechaReversa,

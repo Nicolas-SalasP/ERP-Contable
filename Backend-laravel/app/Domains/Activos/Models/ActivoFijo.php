@@ -3,6 +3,7 @@
 namespace App\Domains\Activos\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
@@ -36,12 +37,12 @@ class ActivoFijo extends Model
         'ultimo_periodo_cm_anio',
     ];
 
-    public function centroCosto()
+    public function centroCosto(): BelongsTo
     {
         return $this->belongsTo(CentroCosto::class, 'centro_costo_id');
     }
 
-    public function cuenta()
+    public function cuenta(): BelongsTo
     {
         return $this->belongsTo(PlanCuenta::class, 'cuenta_activo_codigo', 'codigo');
     }

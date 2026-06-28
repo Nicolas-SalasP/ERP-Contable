@@ -89,7 +89,9 @@ class GenerarLreService
 
     private function construirLinea(Liquidacion $liq): LreLineaData
     {
+        /** @var \App\Domains\Rrhh\Models\Empleado $empleado */
         $empleado = $liq->empleado;
+        /** @var \App\Domains\Rrhh\Models\Contrato $contrato */
         $contrato = $liq->contrato;
 
         // Fechas contrato
@@ -139,12 +141,12 @@ class GenerarLreService
         // Detalles indexados por codigo_concepto
         $detalles = $liq->detalles->keyBy('codigo_concepto');
 
-        $sueldo       = (int) ($detalles->get('SUELDO_BASE')?->monto ?? 0);
-        $sobresueldo  = (int) ($detalles->get('HORAS_EXTRA')?->monto ?? 0);
-        $gratificacion= (int) ($detalles->get('GRATIFICACION')?->monto ?? 0);
-        $colacion     = (int) ($detalles->get('COLACION')?->monto ?? 0);
-        $movilizacion = (int) ($detalles->get('MOVILIZACION')?->monto ?? 0);
-        $asignFamiliar= (int) ($detalles->get('ASIGNACION_FAMILIAR')?->monto ?? 0);
+        $sueldo       = (int) ($detalles->get('SUELDO_BASE')->monto ?? 0);
+        $sobresueldo  = (int) ($detalles->get('HORAS_EXTRA')->monto ?? 0);
+        $gratificacion= (int) ($detalles->get('GRATIFICACION')->monto ?? 0);
+        $colacion     = (int) ($detalles->get('COLACION')->monto ?? 0);
+        $movilizacion = (int) ($detalles->get('MOVILIZACION')->monto ?? 0);
+        $asignFamiliar= (int) ($detalles->get('ASIGNACION_FAMILIAR')->monto ?? 0);
 
         $otrosHaberesImponibles = (int) $liq->detalles
             ->where('tipo', 'HABER_IMPONIBLE')
@@ -156,14 +158,14 @@ class GenerarLreService
             ->whereNotIn('codigo_concepto', ['COLACION', 'MOVILIZACION', 'ASIGNACION_FAMILIAR'])
             ->sum('monto');
 
-        $afpCotizacion = (int) ($detalles->get('AFP_COTIZACION')?->monto ?? 0);
-        $afpComision   = (int) ($detalles->get('AFP_COMISION')?->monto ?? 0);
+        $afpCotizacion = (int) ($detalles->get('AFP_COTIZACION')->monto ?? 0);
+        $afpComision   = (int) ($detalles->get('AFP_COMISION')->monto ?? 0);
         $cotizacionAfp = $afpCotizacion + $afpComision;
 
         $cotizacionSalud           = (int) $liq->salud_legal;
         $cotizacionSaludVoluntaria = (int) $liq->salud_adicional;
-        $cotizacionAfc             = (int) ($detalles->get('AFC_TRABAJADOR')?->monto ?? 0);
-        $impuestoRetenido          = (int) ($detalles->get('IMPUESTO_UNICO')?->monto ?? 0);
+        $cotizacionAfc             = (int) ($detalles->get('AFC_TRABAJADOR')->monto ?? 0);
+        $impuestoRetenido          = (int) ($detalles->get('IMPUESTO_UNICO')->monto ?? 0);
 
         $otrosDescuentos = (int) $liq->detalles
             ->where('tipo', 'DESCUENTO_VOLUNTARIO')

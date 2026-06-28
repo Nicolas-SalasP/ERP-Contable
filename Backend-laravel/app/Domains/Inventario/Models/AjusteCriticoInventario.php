@@ -69,43 +69,43 @@ class AjusteCriticoInventario extends Model
         'costo_total' => 'decimal:4',
     ];
 
-    /** @return BelongsTo<Empresa, AjusteCriticoInventario> */
+    /** @return BelongsTo<Empresa, $this> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
-    /** @return BelongsTo<MovimientoInventario, AjusteCriticoInventario> */
+    /** @return BelongsTo<MovimientoInventario, $this> */
     public function movimiento(): BelongsTo
     {
         return $this->belongsTo(MovimientoInventario::class, 'movimiento_inventario_id');
     }
 
-    /** @return BelongsTo<TipoAjusteCritico, AjusteCriticoInventario> */
+    /** @return BelongsTo<TipoAjusteCritico, $this> */
     public function tipo(): BelongsTo
     {
         return $this->belongsTo(TipoAjusteCritico::class, 'tipo_ajuste_critico_id');
     }
 
-    /** @return BelongsTo<Producto, AjusteCriticoInventario> */
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
-    /** @return BelongsTo<Bodega, AjusteCriticoInventario> */
+    /** @return BelongsTo<Bodega, $this> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
-    /** @return BelongsTo<LoteInventario, AjusteCriticoInventario> */
+    /** @return BelongsTo<LoteInventario, $this> */
     public function lote(): BelongsTo
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');
     }
 
-    /** @return BelongsTo<User, AjusteCriticoInventario> */
+    /** @return BelongsTo<User, $this> */
     public function registradoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registrado_por');

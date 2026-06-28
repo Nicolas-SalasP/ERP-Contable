@@ -305,6 +305,7 @@ class FacturaService
         return [
             'cabecera' => $asiento,
             'detalles' => $asiento->detalles->map(function ($d) {
+                /** @var \App\Domains\Contabilidad\Models\DetalleAsiento $d */
                 return [
                     'id' => $d->id,
                     'cuenta_contable' => $d->cuenta_contable,
@@ -352,6 +353,7 @@ class FacturaService
                 $lineaOriginal = $asiento->detalles->firstWhere('id', $detalleId);
 
                 if ($lineaOriginal) {
+                    /** @var \App\Domains\Contabilidad\Models\DetalleAsiento $lineaOriginal */
                     $glosaLineaOriginal = $lineaOriginal->descripcion_extensa ?: $glosaCabeceraOriginal;
 
                     $asiento->detalles()->create([
@@ -412,10 +414,12 @@ class FacturaService
             ->with('proveedor')
             ->get()
             ->map(function ($f) {
+                /** @var \App\Domains\Comercial\Models\Proveedor $prov */
+                $prov = $f->proveedor;
                 return [
                     'id' => $f->id,
                     'numero' => $f->numero_factura,
-                    'proveedor' => $f->proveedor->razon_social ?? $f->proveedor->rut,
+                    'proveedor' => $prov->razon_social ?? $prov->rut,
                     'monto' => (float) $f->monto_neto
                 ];
             })

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * @property int $tipo_dte
+ * @property int|null $tipo_dte
  * @property int|null $cliente_id
  * @property int|null $forma_pago_codigo
  * @property string|null $condicion_pago
@@ -24,7 +24,7 @@ trait HasSiiAttributesFactura
 {
     public function initializeHasSiiAttributesFactura(): void
     {
-        $this->fillable = array_merge($this->fillable ?? [], [
+        $this->fillable = array_merge($this->fillable, [
             'cliente_id',
             'tipo_dte',
             'forma_pago_codigo',
@@ -38,7 +38,7 @@ trait HasSiiAttributesFactura
             'sii_dte_emitido_id',
         ]);
 
-        $this->casts = array_merge($this->casts ?? [], [
+        $this->casts = array_merge($this->casts, [
             'cliente_id'                  => 'integer',
             'tipo_dte'                    => 'integer',
             'forma_pago_codigo'           => 'integer',
@@ -50,7 +50,6 @@ trait HasSiiAttributesFactura
         ]);
     }
 
-    /** @return HasMany<FacturaDetalle, \Illuminate\Database\Eloquent\Model> */
     public function detalles(): HasMany
     {
         return $this->hasMany(FacturaDetalle::class);
@@ -61,8 +60,6 @@ trait HasSiiAttributesFactura
      * El modelo Factura del Comercial no declara esta relacion (auditoria F6.0
      * R2); la agregamos aqui para que mapper y UI puedan acceder a
      * $factura->cliente sin tocar app/Domains/Comercial/.
-     *
-     * @return BelongsTo<Cliente, \Illuminate\Database\Eloquent\Model>
      */
     public function cliente(): BelongsTo
     {

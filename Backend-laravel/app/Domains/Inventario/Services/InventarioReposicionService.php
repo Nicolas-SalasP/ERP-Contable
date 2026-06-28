@@ -147,6 +147,7 @@ class InventarioReposicionService
 
     public function evaluacionesParaEmpresa(int $empresaId, array $filtros = []): array
     {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, ReglaReposicion> $reglas */
         $reglas = $this->reglasActivasQuery($empresaId, $filtros)->get();
 
         return $reglas
@@ -204,14 +205,19 @@ class InventarioReposicionService
         $stockObjetivo = $this->resolverStockObjetivo($regla);
         $cantidadSugerida = max($stockObjetivo - $stockActual, 0);
 
+        /** @var \App\Domains\Inventario\Models\Producto|null $productoRegla */
+        $productoRegla = $regla->producto;
+        /** @var \App\Domains\Inventario\Models\Bodega|null $bodegaRegla */
+        $bodegaRegla = $regla->bodega;
+
         return [
             'regla_id' => (int) $regla->id,
             'empresa_id' => (int) $regla->empresa_id,
             'producto_id' => (int) $regla->producto_id,
-            'producto_nombre' => $regla->producto?->nombre,
-            'producto_sku' => $regla->producto?->sku,
+            'producto_nombre' => $productoRegla?->nombre,
+            'producto_sku' => $productoRegla?->sku,
             'bodega_id' => $regla->bodega_id !== null ? (int) $regla->bodega_id : null,
-            'bodega_nombre' => $regla->bodega?->nombre,
+            'bodega_nombre' => $bodegaRegla?->nombre,
             'stock_actual' => $this->redondearCantidad($stockActual),
             'stock_minimo' => $this->redondearCantidad((float) $regla->stock_minimo),
             'stock_objetivo' => $this->redondearCantidad($stockObjetivo),

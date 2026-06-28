@@ -5,6 +5,7 @@ namespace App\Domains\Comercial\Models;
 use App\Domains\Core\Traits\HasEmpresaScope;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Domains\Core\Models\Empresa;
 
 class AnticipoProveedor extends Model
@@ -47,12 +48,12 @@ class AnticipoProveedor extends Model
         return $this->created_at ? $this->created_at->format('Y-m-d') : null;
     }
 
-    public function empresa()
+    public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    public function proveedor()
+    public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
     }
