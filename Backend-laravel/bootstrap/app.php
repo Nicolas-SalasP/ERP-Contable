@@ -1,16 +1,15 @@
 <?php
 
+use App\Http\Middleware\AgregarRequestId;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureSubscriptionWritable;
 use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrackUltimoAcceso;
 use App\Http\Middleware\VerifyWebApiKey;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Support\Facades\Log;
 use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -24,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(AgregarRequestId::class);
         $middleware->alias([
             'web.api.key' => VerifyWebApiKey::class,
             'check.subscription' => CheckSubscription::class,
@@ -33,15 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Reporta a Sentry las excepciones no controladas (no-op si SENTRY_LARAVEL_DSN
+        // está vacío, p. ej. en desarrollo/tests).
         Integration::handles($exceptions);
-
-        $exceptions->renderable(function (QueryException $e, $request) {
-            if ($request->expectsJson()) {
-                Log::error('DB error en API: ' . $e->getMessage());
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error en la base de datos. Si el problema persiste, contacta soporte.',
-                ], 500);
-            }
-        });
     })->create();

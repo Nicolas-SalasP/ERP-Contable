@@ -6,7 +6,9 @@ use App\Domains\Core\Services\UsuarioService;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Support\ModuloPermisos;
+use App\Http\Middleware\EnsureUserHasPermission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Exception;
@@ -99,6 +101,14 @@ class UsuarioController
             }
 
             $this->service->actualizarRol($request->user()->empresa_id, $id, $datos['rol_id']);
+
+            // Invalidar cache de permisos del usuario afectado para que el nuevo rol
+            // surta efecto inmediatamente en el siguiente request.
+            Cache::forget(EnsureUserHasPermission::cacheKeyPermisos(
+                (int) $usuarioDestino->id,
+                (int) ($usuarioDestino->empresa_activa_id ?? 0)
+            ));
+
             return response()->json(['success' => true, 'message' => 'Rol actualizado.']);
         } catch (ValidationException $e) {
             return response()->json([
