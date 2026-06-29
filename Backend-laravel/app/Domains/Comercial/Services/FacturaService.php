@@ -515,6 +515,44 @@ class FacturaService
             ->get();
     }
 
+    /**
+     * Retorna facturas impagadas cuyo monto bruto esta dentro de la tolerancia indicada.
+     * Usado por el motor de sugerencias de conciliacion bancaria.
+     */
+    public function obtenerSugerenciasBancarias(
+        int $empresaId,
+        string $tipo,
+        float $monto,
+        float $toleranciaPct
+    ): \Illuminate\Support\Collection {
+        // Mapea el tipo de operacion al tipo de factura almacenado en BD
+        $tipoFactura = $tipo === 'cobrar' ? 'VENTA' : 'COMPRA';
+
+        $montoMin = $monto * (1 - $toleranciaPct);
+        $montoMax = $monto * (1 + $toleranciaPct);
+
+        // JOIN directo para obtener razon_social sin pasar por relaciones Eloquent.
+        // Se restringe empresa_id en el join para evitar exposicion de datos cross-tenant.
+        return DB::table('facturas')
+            ->leftJoin('proveedores', function ($join) use ($empresaId) {
+                $join->on('facturas.proveedor_id', '=', 'proveedores.id')
+                     ->where('proveedores.empresa_id', '=', $empresaId);
+            })
+            ->select(
+                'facturas.id',
+                'facturas.numero_factura',
+                'facturas.monto_bruto',
+                'facturas.fecha_emision',
+                'proveedores.razon_social'
+            )
+            ->where('facturas.empresa_id', $empresaId)
+            ->where('facturas.tipo', $tipoFactura)
+            ->whereNotIn('facturas.estado', ['PAGADA', 'ANULADA'])
+            ->whereNull('facturas.deleted_at')
+            ->whereBetween('facturas.monto_bruto', [$montoMin, $montoMax])
+            ->get();
+    }
+
     public function anularFactura(int $empresaId, int $userId, int $facturaId, string $motivo)
     {
         return DB::transaction(function () use ($empresaId, $userId, $facturaId, $motivo) {
