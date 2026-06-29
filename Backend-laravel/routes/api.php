@@ -68,6 +68,8 @@ use App\Domains\Comercial\Controllers\HonorariosController;
 use App\Domains\Soporte\Controllers\SoporteController;
 use App\Domains\Core\Controllers\EmpresaCambioController;
 use App\Domains\Core\Controllers\DashboardResumenController;
+use App\Domains\Contabilidad\Controllers\ArAgingController;
+use App\Domains\Contabilidad\Controllers\ApAgingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -335,6 +337,10 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar'])->middleware('permiso:compras.ver,ventas.ver,contabilidad.ver');
     Route::post('/anulacion/anular', [AnulacionController::class, 'anular'])->middleware('permiso:compras.crear,ventas.crear,contabilidad.crear');
 
+    // Contabilidad - Aging (Cuentas por Cobrar y por Pagar por Antigüedad)
+    Route::get('/contabilidad/ar-aging', [ArAgingController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/ap-aging', [ApAgingController::class, 'index'])->middleware('permiso:contabilidad.ver');
+
     // ---------------------------------------------------------------------
     // Activos Fijos
     // ---------------------------------------------------------------------
@@ -345,7 +351,6 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes'])->middleware('permiso:activos.crear');
     Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja'])->middleware('permiso:activos.crear');
     Route::put('/activos/{id}', [ActivoFijoController::class, 'update'])->middleware('permiso:activos.crear');
-    Route::get('/activos/{id}/amortizacion', [ActivoFijoController::class, 'amortizacion'])->middleware('permiso:activos.ver');
 
     // Activos Fijos - Proyectos
     Route::get('/activos/proyectos/facturas-disponibles', [ActivoFijoController::class, 'facturasDisponibles'])->middleware('permiso:activos.ver');

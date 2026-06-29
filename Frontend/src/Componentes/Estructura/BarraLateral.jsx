@@ -41,7 +41,6 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/facturas/nueva', label: 'Ingresar Factura' },
                 { path: '/facturas/historial', label: 'Historial de Compras' },
                 { path: '/comercial/honorarios-recibidos', label: 'Honorarios Recibidos', permisosRequeridos: ['compras.ver'] },
-                { path: '/comercial/ordenes-compra', label: 'Órdenes de Compra', permisosRequeridos: ['compras.ver'] },
             ]
         },
         {
@@ -66,6 +65,8 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas' },
                 { path: '/contabilidad/anulacion', label: 'Anulaciones' },
                 { path: '/contabilidad/asiento-manual', label: 'Asiento Manual' },
+                { path: '/contabilidad/ar-aging', label: 'CxC por Antigüedad' },
+                { path: '/contabilidad/ap-aging', label: 'CxP por Antigüedad' },
             ]
         },
         {

@@ -69,7 +69,6 @@ const LreRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LreRrhh'));
 const EmrclRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/EmrclRrhh'));
 const Dj1887 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1887'));
 const HonorariosRecibidos = lazy(() => import('./Modulos/Comercial/Vistas/HonorariosRecibidos'));
-const GestionOrdenes = lazy(() => import('./Modulos/Comercial/Vistas/GestionOrdenes'));
 const Dj1879 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1879'));
 const Dj1947 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1947'));
 const PropietariosEmpresa = lazy(() => import('./Modulos/Core/Vistas/PropietariosEmpresa'));
@@ -77,6 +76,8 @@ import Glosario from './Modulos/Glosario/Glosario';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 const SoporteTickets = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTickets'));
 const SoporteTicketDetalle = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTicketDetalle'));
+const ArAging = lazy(() => import('./Modulos/Contabilidad/Vistas/ArAging'));
+const ApAging = lazy(() => import('./Modulos/Contabilidad/Vistas/ApAging'));
 
 // Si ya está autenticado, redirige al inicio (evita volver a /login sin logout).
 const RutaPublica = ({ children }) => {
@@ -320,14 +321,6 @@ function App() {
             </RutaPrivada>
           } />
 
-          <Route path="/comercial/ordenes-compra" element={
-            <RutaPrivada>
-              <RutaProtegida permiso="compras.ver">
-                <LayoutPrincipal><GestionOrdenes /></LayoutPrincipal>
-              </RutaProtegida>
-            </RutaPrivada>
-          } />
-
           <Route path="/tributario/dj-1879" element={
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
@@ -396,6 +389,22 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.crear">
                 <LayoutPrincipal><AsientoManual /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/ar-aging" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><ArAging /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/ap-aging" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><ApAging /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
