@@ -223,6 +223,7 @@ const LibroMayor = () => {
     };
 
     return (
+        <>
         <div className="max-w-7xl mx-auto p-6 font-sans text-slate-800 dark:text-slate-200 relative">
 
             {contextMenu.visible && (
@@ -475,6 +476,7 @@ const LibroMayor = () => {
             asientoId={detalleId}
             onClose={() => setDetalleId(null)}
         />
+        </>
     );
 };
 
