@@ -5,6 +5,7 @@ namespace App\Domains\Tesoreria\Services;
 use App\Domains\Tesoreria\Exceptions\TesoreriaException;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Tesoreria\Services\BancoService;
 use Carbon\Carbon;
@@ -164,18 +165,30 @@ class ConciliacionService
             if ($facturas->count() > 0) {
                 $saldoRestante = $montoMovimiento;
                 $facturas = $facturas->sortBy('fecha_emision');
-                
+
+                /** @var array<int, int> $idsPagadas */
+                $idsPagadas = [];
+                $idAbonada  = null;
+
                 foreach ($facturas as $fac) {
                     $montoFactura = (float) $fac->monto_bruto;
                     if ($saldoRestante >= $montoFactura) {
-                        $this->facturaService->cambiarEstado($empresaId, $fac->id, 'PAGADA');
+                        $idsPagadas[] = (int) $fac->id;
                         $saldoRestante -= $montoFactura;
                     } elseif ($saldoRestante > 0) {
-                        $this->facturaService->cambiarEstado($empresaId, $fac->id, 'ABONADA');
+                        $idAbonada    = (int) $fac->id;
                         $saldoRestante = 0;
                     } else {
-                        break; 
+                        break;
                     }
+                }
+
+                // Batch UPDATE: máximo 2 queries en lugar de N, sin alterar la lógica de saldo.
+                if (!empty($idsPagadas)) {
+                    Factura::whereIn('id', $idsPagadas)->where('empresa_id', $empresaId)->update(['estado' => 'PAGADA']);
+                }
+                if ($idAbonada !== null) {
+                    Factura::where('id', $idAbonada)->where('empresa_id', $empresaId)->update(['estado' => 'ABONADA']);
                 }
             }
 

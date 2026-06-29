@@ -41,6 +41,11 @@ jobs:
       - name: 🔧 Configurar OPENSSL_CONF
         run: echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
+      - name: Auditar dependencias PHP
+        working-directory: Backend-laravel
+        run: composer audit --format=plain
+        continue-on-error: true
+
       - name: 🧪 Correr tests (SQLite)
         working-directory: Backend-laravel
         run: php artisan test --stop-on-failure
@@ -108,6 +113,11 @@ jobs:
             fi
             sleep 2
           done
+
+      - name: Auditar dependencias PHP
+        working-directory: Backend-laravel
+        run: composer audit --format=plain
+        continue-on-error: true
 
       - name: 🧪 Correr tests (MySQL)
         working-directory: Backend-laravel
@@ -180,7 +190,12 @@ jobs:
 
       - name: 🧪 Tests
         working-directory: Frontend
-        run: pnpm run test --run
+        run: pnpm run test --coverage --run
+
+      - name: Auditar dependencias Node
+        working-directory: Frontend
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
 
       - name: 🏗️ Build (verifica que compila)
         working-directory: Frontend
