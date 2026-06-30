@@ -81,7 +81,27 @@ class ImpuestosService
             ->where('es_documento_exterior', false)
             ->get();
         $totalComprasNeto = $compras->sum('monto_neto');
-        $ivaCredito = $compras->sum('monto_iva');
+        $ivaCreditoFacturas = (float) $compras->sum('monto_iva');
+
+        // Remanente IVA acumulado del mes anterior: si el F29 del mes previo fue
+        // mayorizado, el DEBE sobre cuenta 152542 representa el remanente generado
+        // ese mes. Se suma al crédito fiscal del periodo actual (art. 26 Ley IVA).
+        $mesPrev  = $mes === 1 ? 12 : $mes - 1;
+        $anioPrev = $mes === 1 ? $anio - 1 : $anio;
+        $glosaPrev = "Centralización F29 - " . str_pad((string) $mesPrev, 2, '0', STR_PAD_LEFT) . "/$anioPrev";
+
+        $remanenteMesAnterior = (float) DB::table('asientos_contables')
+            ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
+            ->where('asientos_contables.empresa_id', $empresaId)
+            ->where('asientos_contables.origen_modulo', 'impuestos')
+            ->where('asientos_contables.glosa', $glosaPrev)
+            ->where('asientos_contables.estado', 'MAYORIZADO')
+            ->where('detalles_asiento.cuenta_contable', '152542')
+            ->sum('detalles_asiento.debe');
+
+        // Las líneas HABER en 152542 (consumo de remanente anterior) tienen debe=0,
+        // por lo que sum('debe') devuelve exclusivamente el remanente nuevo generado.
+        $ivaCredito = $ivaCreditoFacturas + $remanenteMesAnterior;
 
         $retencionHonorarios = (int) \Illuminate\Support\Facades\DB::table('honorarios_recibidos')
             ->where('empresa_id', $empresaId)
@@ -131,13 +151,19 @@ class ImpuestosService
         $yaCerrado = DB::table('asientos_contables')->where('empresa_id', $empresaId)->where('origen_modulo', 'impuestos')->where('glosa', $glosaCierre)->where('estado', 'MAYORIZADO')->exists();
 
         return [
-            'periodo' => str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio",
-            'ya_cerrado' => $yaCerrado,
-            'ventas' => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
-            'compras' => ['cantidad' => $compras->count(), 'neto' => $totalComprasNeto, 'iva_credito' => $ivaCredito],
+            'periodo'     => str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio",
+            'ya_cerrado'  => $yaCerrado,
+            'ventas'      => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
+            'compras'     => [
+                'cantidad'               => $compras->count(),
+                'neto'                   => $totalComprasNeto,
+                'iva_credito'            => $ivaCredito,
+                'iva_credito_facturas'   => $ivaCreditoFacturas,
+                'remanente_mes_anterior' => $remanenteMesAnterior,
+            ],
             'retenciones' => $retencionHonorarios,
-            'ppm' => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
-            'resumen' => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar]
+            'ppm'         => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
+            'resumen'     => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar],
         ];
     }
 
@@ -181,8 +207,14 @@ class ImpuestosService
             if ($simulacion['resumen']['remanente'] > 0) {
                 $detalles[] = ['cuenta_contable' => '152542', 'debe' => $simulacion['resumen']['remanente'], 'haber' => 0, 'glosa_detalle' => 'Remanente IVA F29'];
             }
-            if ($simulacion['compras']['iva_credito'] > 0) {
-                $detalles[] = ['cuenta_contable' => '152540', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito'], 'glosa_detalle' => 'Reversa IVA Crédito'];
+            // Reversa IVA Crédito: solo el proveniente de facturas de compra del periodo.
+            if ($simulacion['compras']['iva_credito_facturas'] > 0) {
+                $detalles[] = ['cuenta_contable' => '152540', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito_facturas'], 'glosa_detalle' => 'Reversa IVA Crédito'];
+            }
+            // Aplicar remanente del mes anterior: HABER en 152542 cancela el activo
+            // generado en el asiento F29 del mes previo (mantiene partida doble).
+            if ($simulacion['compras']['remanente_mes_anterior'] > 0) {
+                $detalles[] = ['cuenta_contable' => '152542', 'debe' => 0, 'haber' => $simulacion['compras']['remanente_mes_anterior'], 'glosa_detalle' => 'Aplicación remanente IVA mes anterior'];
             }
             if ($simulacion['resumen']['total_a_pagar'] > 0) {
                 $detalles[] = ['cuenta_contable' => '353365', 'debe' => 0, 'haber' => $simulacion['resumen']['total_a_pagar'], 'glosa_detalle' => 'Impuesto a Pagar F29'];
