@@ -31,6 +31,6 @@ class ArAgingController extends Controller
     {
         $reporte = $this->service->obtenerReporte();
 
-        return response()->json($reporte);
+        return response()->json(['success' => true, 'data' => $reporte]);
     }
 }

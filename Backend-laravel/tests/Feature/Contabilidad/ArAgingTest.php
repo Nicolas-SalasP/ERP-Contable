@@ -81,8 +81,11 @@ class ArAgingTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'resumen' => ['corriente', 'd30', 'd60', 'd90', 'd90plus', 'total'],
-                'detalle',
+                'success',
+                'data' => [
+                    'resumen' => ['corriente', 'd30', 'd60', 'd90', 'd90plus', 'total'],
+                    'detalle',
+                ],
             ]);
     }
 
@@ -96,7 +99,7 @@ class ArAgingTest extends TestCase
 
         $response->assertStatus(200);
 
-        $resumen = $response->json('resumen');
+        $resumen = $response->json('data.resumen');
         $this->assertArrayHasKey('corriente', $resumen);
         $this->assertArrayHasKey('d30', $resumen);
         $this->assertArrayHasKey('d60', $resumen);
@@ -115,8 +118,8 @@ class ArAgingTest extends TestCase
             ->getJson('/api/contabilidad/ar-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.total'), 0.01);
-        $this->assertEmpty($response->json('detalle'));
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.total'), 0.01);
+        $this->assertEmpty($response->json('data.detalle'));
     }
 
     public function test_solo_incluye_tipo_venta(): void
@@ -141,8 +144,8 @@ class ArAgingTest extends TestCase
             ->getJson('/api/contabilidad/ar-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.total'), 0.01);
-        $this->assertEmpty($response->json('detalle'));
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.total'), 0.01);
+        $this->assertEmpty($response->json('data.detalle'));
     }
 
     public function test_sin_autenticacion_retorna_401(): void
@@ -164,8 +167,8 @@ class ArAgingTest extends TestCase
             ->getJson('/api/contabilidad/ar-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(100000.0, $response->json('resumen.corriente'), 0.01);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.d30'), 0.01);
+        $this->assertEqualsWithDelta(100000.0, $response->json('data.resumen.corriente'), 0.01);
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.d30'), 0.01);
     }
 
     public function test_factura_vencida_20_dias_va_a_bucket_d30(): void
@@ -178,8 +181,8 @@ class ArAgingTest extends TestCase
             ->getJson('/api/contabilidad/ar-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(150000.0, $response->json('resumen.d30'), 0.01);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.corriente'), 0.01);
+        $this->assertEqualsWithDelta(150000.0, $response->json('data.resumen.d30'), 0.01);
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.corriente'), 0.01);
     }
 
     public function test_factura_vencida_mas_de_90_dias_va_a_bucket_d90plus(): void
@@ -192,7 +195,7 @@ class ArAgingTest extends TestCase
             ->getJson('/api/contabilidad/ar-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(800000.0, $response->json('resumen.d90plus'), 0.01);
+        $this->assertEqualsWithDelta(800000.0, $response->json('data.resumen.d90plus'), 0.01);
     }
 
     // ------------------------------------------------------------------
@@ -212,7 +215,7 @@ class ArAgingTest extends TestCase
             ->getJson('/api/contabilidad/ar-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.total'), 0.01);
-        $this->assertEmpty($response->json('detalle'));
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.total'), 0.01);
+        $this->assertEmpty($response->json('data.detalle'));
     }
 }

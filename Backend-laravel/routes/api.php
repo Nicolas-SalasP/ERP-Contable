@@ -328,6 +328,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
     // Contabilidad - Formularios 29 y 22 (Renta)
     Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/cierre-f29/descargar/{mes}/{anio}', [ImpuestosController::class, 'descargarF29'])->middleware('permiso:tributario.ver');
     Route::post('/impuestos/cierre-f29/ejecutar', [ImpuestosController::class, 'ejecutarF29'])->middleware('permiso:tributario.crear');
     Route::get('/renta/pre-calculo/{anio}', [ImpuestosController::class, 'preCalculoRenta'])->middleware('permiso:tributario.ver');
     Route::get('/renta/mapeo', [ImpuestosController::class, 'obtenerMapeo'])->middleware('permiso:tributario.ver');

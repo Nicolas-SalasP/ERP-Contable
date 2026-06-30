@@ -3,6 +3,7 @@ import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import { Download } from 'lucide-react';
 
 const SECCIONES_F29 = [
     {
@@ -101,6 +102,47 @@ const CierreF29 = () => {
         }
     };
 
+    const [descargando, setDescargando] = useState(false);
+
+    const descargar = async (formato) => {
+        setDescargando(true);
+        try {
+            const token =
+                window.localStorage.getItem('erp_token') ||
+                window.sessionStorage.getItem('erp_token') ||
+                window.localStorage.getItem('token') ||
+                window.sessionStorage.getItem('token') || '';
+            const tokenLimpio = token.startsWith('"') ? token.slice(1, -1) : token;
+
+            const url = `${import.meta.env.VITE_API_URL}/impuestos/cierre-f29/descargar/${mes}/${anio}?formato=${formato}`;
+            const resp = await fetch(url, {
+                headers: { Authorization: `Bearer ${tokenLimpio}` },
+            });
+
+            if (!resp.ok) {
+                throw new Error(`Error al descargar: ${resp.status}`);
+            }
+
+            const blob = await resp.blob();
+            const urlObj = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = urlObj;
+            a.download = `F29_${String(mes).padStart(2, '0')}_${anio}.${formato === 'pdf' ? 'pdf' : 'xls'}`;
+            a.click();
+            URL.revokeObjectURL(urlObj);
+        } catch {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de descarga',
+                text: 'No se pudo descargar el archivo. Intente nuevamente.',
+                buttonsStyling: false,
+                customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' },
+            });
+        } finally {
+            setDescargando(false);
+        }
+    };
+
     const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
     return (
@@ -147,7 +189,26 @@ const CierreF29 = () => {
                 />
             ) : (
                 <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex justify-end gap-3 mb-2">
+                    <button
+                        onClick={() => descargar('excel')}
+                        disabled={descargando}
+                        className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-xl text-sm transition-all shadow-sm"
+                    >
+                        <Download size={15} />
+                        {descargando ? 'Descargando…' : 'Exportar Excel'}
+                    </button>
+                    <button
+                        onClick={() => descargar('pdf')}
+                        disabled={descargando}
+                        className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-xl text-sm transition-all shadow-sm"
+                    >
+                        <Download size={15} />
+                        {descargando ? 'Descargando…' : 'Exportar PDF'}
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 text-rose-500 transform group-hover:scale-110 transition-transform">
                                 <i className="fas fa-arrow-up text-6xl"></i>

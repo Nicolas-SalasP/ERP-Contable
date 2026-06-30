@@ -83,8 +83,11 @@ class ApAgingTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'resumen' => ['corriente', 'd30', 'd60', 'd90', 'd90plus', 'total'],
-                'detalle',
+                'success',
+                'data' => [
+                    'resumen' => ['corriente', 'd30', 'd60', 'd90', 'd90plus', 'total'],
+                    'detalle',
+                ],
             ]);
     }
 
@@ -97,8 +100,8 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(100000.0, $response->json('resumen.corriente'), 0.01);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.d30'), 0.01);
+        $this->assertEqualsWithDelta(100000.0, $response->json('data.resumen.corriente'), 0.01);
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.d30'), 0.01);
     }
 
     public function test_factura_no_vencida_va_a_bucket_corriente(): void
@@ -111,8 +114,8 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(200000.0, $response->json('resumen.corriente'), 0.01);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.d30'), 0.01);
+        $this->assertEqualsWithDelta(200000.0, $response->json('data.resumen.corriente'), 0.01);
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.d30'), 0.01);
     }
 
     public function test_factura_vencida_20_dias_va_a_bucket_d30(): void
@@ -125,8 +128,8 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(150000.0, $response->json('resumen.d30'), 0.01);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.corriente'), 0.01);
+        $this->assertEqualsWithDelta(150000.0, $response->json('data.resumen.d30'), 0.01);
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.corriente'), 0.01);
     }
 
     public function test_factura_vencida_45_dias_va_a_bucket_d60(): void
@@ -139,7 +142,7 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(300000.0, $response->json('resumen.d60'), 0.01);
+        $this->assertEqualsWithDelta(300000.0, $response->json('data.resumen.d60'), 0.01);
     }
 
     public function test_factura_vencida_75_dias_va_a_bucket_d90(): void
@@ -152,7 +155,7 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(500000.0, $response->json('resumen.d90'), 0.01);
+        $this->assertEqualsWithDelta(500000.0, $response->json('data.resumen.d90'), 0.01);
     }
 
     public function test_factura_vencida_mas_de_90_dias_va_a_bucket_d90plus(): void
@@ -165,7 +168,7 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(800000.0, $response->json('resumen.d90plus'), 0.01);
+        $this->assertEqualsWithDelta(800000.0, $response->json('data.resumen.d90plus'), 0.01);
     }
 
     public function test_excluye_facturas_pagadas(): void
@@ -177,8 +180,8 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.total'), 0.01);
-        $this->assertEmpty($response->json('detalle'));
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.total'), 0.01);
+        $this->assertEmpty($response->json('data.detalle'));
     }
 
     public function test_excluye_facturas_anuladas(): void
@@ -190,8 +193,8 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.total'), 0.01);
-        $this->assertEmpty($response->json('detalle'));
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.total'), 0.01);
+        $this->assertEmpty($response->json('data.detalle'));
     }
 
     public function test_excluye_facturas_de_tipo_venta(): void
@@ -225,8 +228,8 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.total'), 0.01);
-        $this->assertEmpty($response->json('detalle'));
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.total'), 0.01);
+        $this->assertEmpty($response->json('data.detalle'));
     }
 
     // ------------------------------------------------------------------
@@ -246,8 +249,8 @@ class ApAgingTest extends TestCase
             ->getJson('/api/contabilidad/ap-aging');
 
         $response->assertStatus(200);
-        $this->assertEqualsWithDelta(0.0, $response->json('resumen.total'), 0.01);
-        $this->assertEmpty($response->json('detalle'));
+        $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.total'), 0.01);
+        $this->assertEmpty($response->json('data.detalle'));
     }
 
     // ------------------------------------------------------------------

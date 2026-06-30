@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Download } from 'lucide-react';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { useToast } from '../../../Contextos/ToastContext';
+import AyudaModulo from '../../../Componentes/AyudaModulo';
 
 const formatMoney = (valor) => {
     const n = parseFloat(valor);
@@ -31,7 +33,7 @@ const ApAging = () => {
             setError(false);
             try {
                 const res = await api.get('/contabilidad/ap-aging');
-                if (res.success) {
+                if (res.success && res.data) {
                     setDatos(res.data);
                 } else {
                     setError(true);
@@ -51,17 +53,59 @@ const ApAging = () => {
     const resumen = datos?.resumen;
     const detalle = datos?.detalle ?? [];
 
+    const exportarExcel = () => {
+        if (!detalle || detalle.length === 0) return;
+        const bom = '﻿';
+        const sep = ';';
+        const headers = ['RUT', 'Razón Social', 'Corriente', '1-30 días', '31-60 días', '61-90 días', '+90 días', 'Total'];
+        const rows = detalle.map(r => [
+            r.rut ?? '',
+            r.razon_social ?? '',
+            r.corriente ?? 0,
+            r.d30 ?? 0,
+            r.d60 ?? 0,
+            r.d90 ?? 0,
+            r.d90plus ?? 0,
+            r.total ?? 0,
+        ]);
+        const csv = bom + [headers, ...rows].map(row => row.join(sep)).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CarteraCxP_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="max-w-full mx-auto p-6 font-sans text-slate-800 dark:text-slate-200">
 
             {/* Encabezado */}
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                    CxP por Antigüedad
-                </h1>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Saldos pendientes con proveedores agrupados por tramo de antigüedad al día de hoy.
-                </p>
+            <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                        Cartera de Proveedores por Pagar
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        Antigüedad de saldos pendientes (Accounts Payable Aging)
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <AyudaModulo
+                        modulo="ap-aging"
+                        titulo="Cartera de Proveedores por Pagar"
+                        descripcion="Muestra el saldo pendiente de pago a cada proveedor clasificado por antigüedad. Útil para planificar pagos y evitar atrasos que afecten las relaciones comerciales."
+                    />
+                    <button
+                        onClick={exportarExcel}
+                        disabled={detalle.length === 0}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
+                    >
+                        <Download className="w-4 h-4" />
+                        Exportar CSV
+                    </button>
+                </div>
             </div>
 
             {/* Tarjetas resumen */}
