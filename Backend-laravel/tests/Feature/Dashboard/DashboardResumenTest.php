@@ -100,6 +100,10 @@ class DashboardResumenTest extends TestCase
                     'aging_ap',
                     'flujo_caja_30d',
                     'ordenes_compra_pendientes',
+                    'distribucion_facturas',
+                    'pipeline_cotizaciones',
+                    'clientes_nuevos_6m',
+                    'proximas_vencer_7d',
                 ],
             ]);
     }
@@ -280,5 +284,45 @@ class DashboardResumenTest extends TestCase
         $this->assertEquals(100000.0, $tramo0_30['monto']);
         $this->assertEquals(200000.0, $tramo31_60['monto']);
         $this->assertEquals(300000.0, $tramo91plus['monto']);
+    }
+
+    public function test_pipeline_cotizaciones_retorna_etapas_y_tasa(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+
+        $response = $this->actingAs($usuario)->getJson('/api/dashboard/resumen');
+
+        $response->assertOk();
+        $pipeline = $response->json('data.pipeline_cotizaciones');
+        $this->assertIsArray($pipeline);
+        $this->assertArrayHasKey('etapas', $pipeline);
+        $this->assertArrayHasKey('tasa_conversion', $pipeline);
+        $this->assertIsArray($pipeline['etapas']);
+    }
+
+    public function test_distribucion_facturas_tiene_cuatro_categorias(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+
+        $response = $this->actingAs($usuario)->getJson('/api/dashboard/resumen');
+
+        $response->assertOk();
+        $dist = $response->json('data.distribucion_facturas');
+        $this->assertArrayHasKey('pagadas', $dist);
+        $this->assertArrayHasKey('pendientes', $dist);
+        $this->assertArrayHasKey('vencidas', $dist);
+        $this->assertArrayHasKey('anuladas', $dist);
+    }
+
+    public function test_clientes_nuevos_6m_tiene_seis_meses(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+
+        $response = $this->actingAs($usuario)->getJson('/api/dashboard/resumen');
+
+        $response->assertOk();
+        $clientes = $response->json('data.clientes_nuevos_6m');
+        $this->assertIsArray($clientes);
+        $this->assertCount(6, $clientes);
     }
 }

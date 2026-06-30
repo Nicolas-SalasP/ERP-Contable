@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
 const mockSave = vi.fn();
@@ -13,6 +13,7 @@ vi.mock('jspdf', () => ({
         this.setTextColor = mockSetTextColor;
         this.text = mockText;
         this.save = mockSave;
+        this.lastAutoTable = { finalY: 100 };
     }),
 }));
 
@@ -23,6 +24,7 @@ vi.mock('jspdf-autotable', () => ({
 vi.mock('@e965/xlsx', () => ({
     utils: {
         json_to_sheet: vi.fn(() => ({ '!cols': [] })),
+        aoa_to_sheet: vi.fn(() => ({ '!cols': [] })),
         book_new: vi.fn(() => ({})),
         book_append_sheet: vi.fn(),
     },
@@ -68,65 +70,72 @@ const resumenMock = {
 };
 
 describe('ExportacionDashboard', () => {
-    it('renderiza los 4 botones de exportación', () => {
+    it('renderiza los botones principales de exportación', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        expect(screen.getByText(/Ventas 12m → Excel/i)).toBeTruthy();
-        expect(screen.getByText(/Top clientes → Excel/i)).toBeTruthy();
-        expect(screen.getByText(/Facturas urgentes → Excel/i)).toBeTruthy();
-        expect(screen.getByText(/Resumen ejecutivo → PDF/i)).toBeTruthy();
+        expect(screen.getByText(/Reporte Completo Excel/i)).toBeTruthy();
+        expect(screen.getByText(/Resumen Ejecutivo PDF/i)).toBeTruthy();
+        expect(screen.getByText(/Ventas 12m/i)).toBeTruthy();
+        expect(screen.getByText(/Top clientes/i)).toBeTruthy();
+        expect(screen.getByText(/Facturas urgentes/i)).toBeTruthy();
     });
 
     it('renderiza sin props sin lanzar error', () => {
         render(<ExportacionDashboard />);
-        expect(screen.getByText(/Ventas 12m → Excel/i)).toBeTruthy();
+        expect(screen.getByText(/Reporte Completo Excel/i)).toBeTruthy();
     });
 
-    it('botón "Ventas 12m → Excel" llama XLSX.writeFile', () => {
+    it('botón "Reporte Completo Excel" llama XLSX.writeFile', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        fireEvent.click(screen.getByText(/Ventas 12m → Excel/i));
+        fireEvent.click(screen.getByText(/Reporte Completo Excel/i));
         expect(XLSX.writeFile).toHaveBeenCalled();
     });
 
-    it('botón "Top clientes → Excel" llama XLSX.writeFile', () => {
+    it('botón "Ventas 12m" llama XLSX.writeFile', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        fireEvent.click(screen.getByText(/Top clientes → Excel/i));
+        fireEvent.click(screen.getByText(/^Ventas 12m$/i));
         expect(XLSX.writeFile).toHaveBeenCalled();
     });
 
-    it('botón "Facturas urgentes → Excel" llama XLSX.writeFile', () => {
+    it('botón "Top clientes" llama XLSX.writeFile', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        fireEvent.click(screen.getByText(/Facturas urgentes → Excel/i));
+        fireEvent.click(screen.getByText(/^Top clientes$/i));
         expect(XLSX.writeFile).toHaveBeenCalled();
     });
 
-    it('botón "Resumen ejecutivo → PDF" crea instancia jsPDF y guarda', () => {
+    it('botón "Facturas urgentes" llama XLSX.writeFile', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        fireEvent.click(screen.getByText(/Resumen ejecutivo → PDF/i));
+        fireEvent.click(screen.getByText(/^Facturas urgentes$/i));
+        expect(XLSX.writeFile).toHaveBeenCalled();
+    });
+
+    it('botón "Resumen Ejecutivo PDF" crea instancia jsPDF y guarda', () => {
+        render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
+        fireEvent.click(screen.getByText(/Resumen Ejecutivo PDF/i));
         expect(jsPDF).toHaveBeenCalled();
         expect(mockSave).toHaveBeenCalled();
     });
 
-    it('"Ventas 12m → Excel" convierte datos a hoja con json_to_sheet', () => {
+    it('"Ventas 12m" convierte datos a hoja con json_to_sheet', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        fireEvent.click(screen.getByText(/Ventas 12m → Excel/i));
+        fireEvent.click(screen.getByText(/^Ventas 12m$/i));
         expect(XLSX.utils.json_to_sheet).toHaveBeenCalledWith([
             { Mes: 'Ene', 'Monto (CLP)': 1000000 },
             { Mes: 'Feb', 'Monto (CLP)': 1200000 },
         ]);
     });
 
-    it('"Top clientes → Excel" incluye nombres de clientes', () => {
+    it('"Top clientes" incluye nombres de clientes', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        fireEvent.click(screen.getByText(/Top clientes → Excel/i));
+        fireEvent.click(screen.getByText(/^Top clientes$/i));
         expect(XLSX.utils.json_to_sheet).toHaveBeenCalledWith([
             { Cliente: 'Cliente A', 'Monto Facturado (CLP)': 3000000 },
             { Cliente: 'Cliente B', 'Monto Facturado (CLP)': 2000000 },
         ]);
     });
 
-    it('"Facturas urgentes → Excel" incluye número de factura y estado', () => {
+    it('"Facturas urgentes" incluye número de factura y estado', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        fireEvent.click(screen.getByText(/Facturas urgentes → Excel/i));
+        fireEvent.click(screen.getByText(/^Facturas urgentes$/i));
         expect(XLSX.utils.json_to_sheet).toHaveBeenCalledWith([
             expect.objectContaining({ 'N° Factura': '1001', Estado: 'PENDIENTE' }),
         ]);
@@ -134,21 +143,21 @@ describe('ExportacionDashboard', () => {
 
     it('PDF llama autoTable para construir el resumen de KPIs', () => {
         render(<ExportacionDashboard resumen={resumenMock} periodo="mes" />);
-        fireEvent.click(screen.getByText(/Resumen ejecutivo → PDF/i));
+        fireEvent.click(screen.getByText(/Resumen Ejecutivo PDF/i));
         expect(autoTable).toHaveBeenCalled();
     });
 
     it('variacion_pct negativa muestra signo negativo en PDF', () => {
         const resumenNeg = { ...resumenMock, kpis: { ...resumenMock.kpis, variacion_pct: -5.3 } };
         render(<ExportacionDashboard resumen={resumenNeg} periodo="trimestre" />);
-        fireEvent.click(screen.getByText(/Resumen ejecutivo → PDF/i));
+        fireEvent.click(screen.getByText(/Resumen Ejecutivo PDF/i));
 
         expect(autoTable).toHaveBeenCalledWith(
             expect.anything(),
             expect.objectContaining({
                 body: expect.arrayContaining([
                     expect.arrayContaining([
-                        'Variación vs período anterior',
+                        'Variación vs mes anterior',
                         expect.stringContaining('-5.3%'),
                     ]),
                 ]),
