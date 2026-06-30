@@ -150,6 +150,14 @@ class ImpuestosService
         $glosaCierre = "Centralización F29 - " . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio";
         $yaCerrado = DB::table('asientos_contables')->where('empresa_id', $empresaId)->where('origen_modulo', 'impuestos')->where('glosa', $glosaCierre)->where('estado', 'MAYORIZADO')->exists();
 
+        $lineasF29 = $this->lineasFormularioF29([
+            'ventas'      => ['neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito, 'cantidad' => $ventasResumen['cantidad']],
+            'compras'     => ['neto' => $totalComprasNeto, 'iva_credito_facturas' => $ivaCreditoFacturas, 'remanente_mes_anterior' => $remanenteMesAnterior],
+            'retenciones' => $retencionHonorarios,
+            'ppm'         => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
+            'resumen'     => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar],
+        ]);
+
         return [
             'periodo'     => str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio",
             'ya_cerrado'  => $yaCerrado,
@@ -164,6 +172,56 @@ class ImpuestosService
             'retenciones' => $retencionHonorarios,
             'ppm'         => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
             'resumen'     => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar],
+            'lineas_f29'  => $lineasF29,
+        ];
+    }
+
+    /**
+     * Mapea los datos ya calculados de simularF29 a las líneas del Formulario 29 del SII.
+     *
+     * Invariantes garantizados:
+     *   - L27 = L24 + L26 (crédito facturas + remanente anterior)
+     *   - L28 y L36 son mutuamente excluyentes: solo uno puede ser > 0
+     *   - L89 = L91 = resumen.total_a_pagar
+     *
+     * @param array<string, mixed> $sim
+     * @return array<string, array{desc: string, valor: int|float}>
+     */
+    private function lineasFormularioF29(array $sim): array
+    {
+        $ivaDebito    = (float) $sim['ventas']['iva_debito'];
+        $ivaCredFac   = (float) $sim['compras']['iva_credito_facturas'];
+        $remanente    = (float) $sim['compras']['remanente_mes_anterior'];
+        $totalDebito  = $ivaDebito;
+        $totalCredito = $ivaCredFac + $remanente;
+        $diferencia   = $totalDebito - $totalCredito;
+
+        return [
+            // SECCIÓN A — VENTAS Y DÉBITOS
+            'L1'  => ['desc' => 'Ventas y/o Serv. del Giro Netos (afectos)',    'valor' => (int) round((float) $sim['ventas']['neto'])],
+            'L2'  => ['desc' => 'Ventas y/o Serv. Exentos / No Afectos',        'valor' => 0],
+            'L7'  => ['desc' => 'Débito Fiscal',                                 'valor' => (int) round($ivaDebito)],
+            'L11' => ['desc' => 'Total Débito Fiscal',                           'valor' => (int) round($totalDebito)],
+
+            // SECCIÓN B — COMPRAS Y CRÉDITOS
+            'L20' => ['desc' => 'Compras Internas Afectas del Giro (neto)',      'valor' => (int) round((float) $sim['compras']['neto'])],
+            'L24' => ['desc' => 'Total Crédito Fiscal del Período',              'valor' => (int) round($ivaCredFac)],
+            'L26' => ['desc' => 'Remanente Crédito Fiscal Período Anterior',     'valor' => (int) round($remanente)],
+            'L27' => ['desc' => 'Total Crédito Fiscal Disponible',               'valor' => (int) round($totalCredito)],
+            'L28' => ['desc' => 'IVA Determinado (L11 - L27)',                   'valor' => $diferencia > 0 ? (int) round($diferencia) : 0],
+            'L36' => ['desc' => 'Remanente para el Período Siguiente',           'valor' => $diferencia < 0 ? (int) round(abs($diferencia)) : 0],
+
+            // SECCIÓN C — PPM
+            'L63' => ['desc' => 'Base Imponible PPM',                            'valor' => (int) round((float) $sim['ventas']['neto'])],
+            'L64' => ['desc' => 'Tasa PPM (%)',                                  'valor' => (float) $sim['ppm']['tasa']],
+            'L65' => ['desc' => 'Monto PPM',                                     'valor' => (int) round((float) $sim['ppm']['monto'])],
+
+            // SECCIÓN D — RETENCIONES
+            'L49' => ['desc' => 'Retención Honorarios (Art. 74 N°2)',            'valor' => (int) $sim['retenciones']],
+
+            // SECCIÓN E — DETERMINACIÓN IMPUESTO
+            'L89' => ['desc' => 'Total Impuesto Determinado',                    'valor' => (int) round((float) $sim['resumen']['total_a_pagar'])],
+            'L91' => ['desc' => 'Total a Pagar (o Remanente)',                   'valor' => (int) round((float) $sim['resumen']['total_a_pagar'])],
         ];
     }
 

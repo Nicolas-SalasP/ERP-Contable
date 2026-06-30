@@ -4,6 +4,34 @@ import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 
+const SECCIONES_F29 = [
+    {
+        id: 'A',
+        titulo: 'A — Ventas y Débitos',
+        lineas: ['L1', 'L2', 'L7', 'L11'],
+    },
+    {
+        id: 'B',
+        titulo: 'B — Compras y Créditos',
+        lineas: ['L20', 'L24', 'L26', 'L27', 'L28', 'L36'],
+    },
+    {
+        id: 'C',
+        titulo: 'C — PPM',
+        lineas: ['L63', 'L64', 'L65'],
+    },
+    {
+        id: 'D',
+        titulo: 'D — Retenciones',
+        lineas: ['L49'],
+    },
+    {
+        id: 'E',
+        titulo: 'E — Determinación del Impuesto',
+        lineas: ['L89', 'L91'],
+    },
+];
+
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
 const CierreF29 = () => {
@@ -15,6 +43,7 @@ const CierreF29 = () => {
     const [anio, setAnio] = useState(anioActual.toString());
     const [datosCierre, setDatosCierre] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [mostrarLineas, setMostrarLineas] = useState(false);
 
     useEffect(() => {
         simularCierre();
@@ -218,6 +247,72 @@ const CierreF29 = () => {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {datosCierre.lineas_f29 && (
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                            <button
+                                onClick={() => setMostrarLineas(v => !v)}
+                                className="w-full flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                    <i className="fas fa-list-ol text-indigo-500"></i>
+                                    Líneas del Formulario F29
+                                </h3>
+                                <i className={`fas fa-chevron-${mostrarLineas ? 'up' : 'down'} text-slate-400`}></i>
+                            </button>
+
+                            {mostrarLineas && (
+                                <div className="p-6 overflow-x-auto custom-scrollbar">
+                                    {SECCIONES_F29.map(seccion => (
+                                        <div key={seccion.id} className="mb-6 last:mb-0">
+                                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 pb-1 border-b border-slate-100 dark:border-slate-700">
+                                                {seccion.titulo}
+                                            </h4>
+                                            <table className="min-w-full text-sm">
+                                                <thead>
+                                                    <tr className="text-xs text-slate-400">
+                                                        <th className="pb-2 font-medium text-left w-16">Línea</th>
+                                                        <th className="pb-2 font-medium text-left">Descripción</th>
+                                                        <th className="pb-2 font-medium text-right w-40">Monto</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
+                                                    {seccion.lineas.map(clave => {
+                                                        const linea = datosCierre.lineas_f29[clave];
+                                                        if (!linea) return null;
+                                                        const esTotal = clave === 'L89' || clave === 'L91';
+                                                        const esRemanente = clave === 'L36' && linea.valor > 0;
+                                                        const esTasa = clave === 'L64';
+                                                        return (
+                                                            <tr
+                                                                key={clave}
+                                                                className={
+                                                                    esTotal && linea.valor > 0
+                                                                        ? 'bg-amber-50 dark:bg-amber-900/20'
+                                                                        : esRemanente
+                                                                        ? 'bg-emerald-50 dark:bg-emerald-900/20'
+                                                                        : ''
+                                                                }
+                                                            >
+                                                                <td className="py-2 pr-4 font-mono font-bold text-slate-500 text-xs">{clave}</td>
+                                                                <td className="py-2 text-slate-700 dark:text-slate-300">{linea.desc}</td>
+                                                                <td className={`py-2 text-right font-bold ${esTotal && linea.valor > 0 ? 'text-amber-700 dark:text-amber-400' : esRemanente ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                                                                    {esTasa
+                                                                        ? `${linea.valor}%`
+                                                                        : formatCurrency(linea.valor)
+                                                                    }
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
