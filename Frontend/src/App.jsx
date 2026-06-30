@@ -67,6 +67,7 @@ const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/Centralizaci
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 const LreRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LreRrhh'));
 const EmrclRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/EmrclRrhh'));
+const LibroRemuneraciones = lazy(() => import('./Modulos/Rrhh/Vistas/LibroRemuneraciones'));
 const Dj1887 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1887'));
 const HonorariosRecibidos = lazy(() => import('./Modulos/Comercial/Vistas/HonorariosRecibidos'));
 const Dj1879 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1879'));
@@ -785,6 +786,16 @@ function App() {
               <RutaPorModulo modulo="rrhh">
                 <RutaProtegida permiso="rrhh.remuneraciones.ver">
                   <LayoutPrincipal><EmrclRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/libro-remuneraciones" element={
+            <RutaPrivada>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><LibroRemuneraciones /></LayoutPrincipal>
                 </RutaProtegida>
               </RutaPorModulo>
             </RutaPrivada>

@@ -286,6 +286,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/rrhh/previred', label: 'Archivo Previred', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
                 { path: '/rrhh/lre', label: 'LRE — Libro de Remuneraciones', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
                 { path: '/rrhh/emrcl', label: 'EMRCL — Encuesta INE', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
+                { path: '/rrhh/libro-remuneraciones', label: 'Libro de Remuneraciones', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
             ]
         },
         {

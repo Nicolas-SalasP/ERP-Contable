@@ -87,6 +87,20 @@ const rrhhApi = {
                 `LRE_${anio}_${String(mes).padStart(2, '0')}.txt`,
             ),
     },
+
+    // ── R9: Libro de Remuneraciones Digital (DFL-1 Art. 62 C.T.) ─────────────
+    libroRemuneraciones: {
+        simular: (anio, mes) =>
+            api.get(`/rrhh/libro-remuneraciones/${anio}/${mes}`),
+        descargar: (anio, mes, formato = 'excel') => {
+            const ext  = formato === 'pdf' ? 'pdf' : 'xls';
+            const name = `libro_remuneraciones_${anio}_${String(mes).padStart(2, '0')}.${ext}`;
+            return api.download(
+                `/rrhh/libro-remuneraciones/${anio}/${mes}/descargar?formato=${formato}`,
+                name,
+            );
+        },
+    },
 };
 
 export default rrhhApi;

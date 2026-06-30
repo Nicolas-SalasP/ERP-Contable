@@ -33,6 +33,7 @@ use App\Domains\Rrhh\Controllers\CentralizacionController;
 use App\Domains\Rrhh\Controllers\PreviredController;
 use App\Domains\Rrhh\Controllers\LreController;
 use App\Domains\Rrhh\Controllers\EmrclController;
+use App\Domains\Rrhh\Controllers\LibroRemuneracionesController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
@@ -573,6 +574,10 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
         // R8 — EMRCL: Encuesta Mensual INE de Remuneraciones y Costos Laborales
         Route::get('/emrcl/{anio}/{mes}', [EmrclController::class, 'generar'])->middleware('permiso:rrhh.remuneraciones.ver');
+
+        // R9 — Libro de Remuneraciones Digital (DFL-1 Art. 62 C.T.)
+        Route::get('/libro-remuneraciones/{anio}/{mes}', [LibroRemuneracionesController::class, 'simular'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/libro-remuneraciones/{anio}/{mes}/descargar', [LibroRemuneracionesController::class, 'descargar'])->middleware('permiso:rrhh.remuneraciones.ver');
     });
 });
 
