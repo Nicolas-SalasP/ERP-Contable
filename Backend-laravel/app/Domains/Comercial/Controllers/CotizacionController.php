@@ -42,6 +42,11 @@ class CotizacionController
                 'detalles' => 'required|array|min:1',
                 'detalles.*.cantidad' => 'required|numeric|min:0.01',
                 'detalles.*.precio_unitario' => 'required|numeric|min:0',
+                'metodo_pago' => 'nullable|string|max:100',
+                'condiciones_pago' => 'nullable|string|max:150',
+                'plazo_entrega' => 'nullable|string|max:150',
+                'comentarios' => 'nullable|string|max:2000',
+                'garantia' => 'nullable|string|max:255',
             ]);
 
             $datos = [
@@ -189,6 +194,11 @@ class CotizacionController
                 'detalles.*.producto_nombre' => 'required_with:detalles|string|max:255',
                 'detalles.*.cantidad' => 'required_with:detalles|numeric|min:1',
                 'detalles.*.precio_unitario' => 'required_with:detalles|numeric|min:0',
+                'metodo_pago' => 'nullable|string|max:100',
+                'condiciones_pago' => 'nullable|string|max:150',
+                'plazo_entrega' => 'nullable|string|max:150',
+                'comentarios' => 'nullable|string|max:2000',
+                'garantia' => 'nullable|string|max:255',
             ]);
 
             $cotizacion = $this->service->actualizarCotizacion(

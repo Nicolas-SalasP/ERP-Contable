@@ -76,6 +76,7 @@ class FacturaSiiController
 
         $facturas = Factura::query()
             ->where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
             ->with(['cliente', 'dteEmitido'])
             ->orderBy('fecha_emision', 'desc')
             ->orderBy('id', 'desc')

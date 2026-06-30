@@ -227,6 +227,7 @@ const CrearCotizacion = () => {
                                 value={condicionesPago}
                                 onChange={(e) => setCondicionesPago(e.target.value)}
                                 placeholder="Ej: 50% adelanto, 50% a la entrega"
+                                maxLength={150}
                                 className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm"
                             />
                         </div>
@@ -237,6 +238,7 @@ const CrearCotizacion = () => {
                                 value={plazoEntrega}
                                 onChange={(e) => setPlazoEntrega(e.target.value)}
                                 placeholder="Ej: 5 días hábiles desde aprobación"
+                                maxLength={150}
                                 className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm"
                             />
                         </div>
@@ -247,6 +249,7 @@ const CrearCotizacion = () => {
                                 value={garantia}
                                 onChange={(e) => setGarantia(e.target.value)}
                                 placeholder="Ej: 3 meses de soporte por bugs sin costo"
+                                maxLength={255}
                                 className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm"
                             />
                         </div>
@@ -256,6 +259,7 @@ const CrearCotizacion = () => {
                                 value={comentarios}
                                 onChange={(e) => setComentarios(e.target.value)}
                                 rows={3}
+                                maxLength={2000}
                                 placeholder="Aclaraciones, exclusiones, notas para el cliente..."
                                 className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm resize-none"
                             />

@@ -246,4 +246,47 @@ class FacturaSiiControllerTest extends TestCase
         $this->assertSame(2, $r->json('paginacion.por_pagina'));
         $this->assertCount(2, $r->json('data'));
     }
+
+    public function test_index_excluye_facturas_de_compra(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        Sanctum::actingAs($usuario);
+
+        // Factura VENTA — debe aparecer
+        Factura::create([
+            'empresa_id'     => $empresa->id,
+            'codigo_unico'   => Factura::generarCodigoUnico(),
+            'numero_factura' => 'FV-TEST',
+            'tipo'           => 'VENTA',
+            'tipo_documento' => 'FACTURA',
+            'tipo_dte'       => 33,
+            'fecha_emision'  => now()->toDateString(),
+            'monto_neto'     => 1000,
+            'monto_iva'      => 190,
+            'monto_bruto'    => 1190,
+            'estado'         => 'REGISTRADA',
+        ]);
+
+        // Factura COMPRA — NO debe aparecer
+        Factura::create([
+            'empresa_id'     => $empresa->id,
+            'codigo_unico'   => Factura::generarCodigoUnico(),
+            'numero_factura' => 'FC-TEST',
+            'tipo'           => 'COMPRA',
+            'tipo_documento' => 'FACTURA',
+            'fecha_emision'  => now()->toDateString(),
+            'monto_neto'     => 500,
+            'monto_iva'      => 95,
+            'monto_bruto'    => 595,
+            'estado'         => 'REGISTRADA',
+        ]);
+
+        $r = $this->getJson('/api/sii/facturas');
+        $r->assertStatus(200);
+        $this->assertSame(1, $r->json('paginacion.total'));
+
+        $ids = collect($r->json('data'))->pluck('numero_factura')->all();
+        $this->assertContains('FV-TEST', $ids);
+        $this->assertNotContains('FC-TEST', $ids);
+    }
 }
