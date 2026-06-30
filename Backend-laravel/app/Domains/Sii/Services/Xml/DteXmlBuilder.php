@@ -118,7 +118,10 @@ class DteXmlBuilder
                 $xml      = str_replace($busqueda, $tedReal, $xml);
             }
 
-            $this->validator->validar($xml);
+            // Boletas (39/41) usan EnvioBOLETA_v11.xsd, no DTE_v10.xsd — omitir validación XSD.
+            if (! in_array($dte->tipo_dte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true)) {
+                $this->validator->validar($xml);
+            }
 
             return $xml;
         } catch (DteIncompletoException | DteXmlInvalidException | \LogicException $e) {
