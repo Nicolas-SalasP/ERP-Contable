@@ -106,3 +106,17 @@ export const dj1835 = {
     confirmarPresentacion: (id, folio) =>
         api.post(`/dj/1835/${id}/confirmar-presentacion`, { folio_presentacion: folio }).then(r => r.data),
 };
+
+export const lcv = {
+    ventas:  (mes, anio) =>
+        api.get(`/impuestos/lcv/ventas/${mes}/${anio}`).then(r => r.data),
+
+    compras: (mes, anio) =>
+        api.get(`/impuestos/lcv/compras/${mes}/${anio}`).then(r => r.data),
+
+    descargarVentas: (mes, anio, formato) =>
+        api.get(`/impuestos/lcv/ventas/${mes}/${anio}/descargar?formato=${formato}`, { responseType: 'blob' }),
+
+    descargarCompras: (mes, anio, formato) =>
+        api.get(`/impuestos/lcv/compras/${mes}/${anio}/descargar?formato=${formato}`, { responseType: 'blob' }),
+};

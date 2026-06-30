@@ -232,6 +232,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/tributario/dj-1835', label: 'DJ 1835 — Retenciones Art. 59' },
                 { path: '/tributario/dj-1837', label: 'DJ 1837 — Gastos Rechazados' },
                 { path: '/tributario/dj-1926', label: 'DJ 1926 — Créditos al Exterior' },
+                { path: '/tributario/libro-cv', label: 'Libro de Compras y Ventas' },
             ]
         },
         {

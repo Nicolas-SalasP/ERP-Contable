@@ -75,6 +75,7 @@ const Dj1947 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1947'));
 const Dj1835 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1835'));
 const Dj1837 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1837'));
 const Dj1926 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1926'));
+const LibroComprasVentas = lazy(() => import('./Modulos/Tributario/Vistas/LibroComprasVentas'));
 const PropietariosEmpresa = lazy(() => import('./Modulos/Core/Vistas/PropietariosEmpresa'));
 import Glosario from './Modulos/Glosario/Glosario';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
@@ -361,6 +362,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
                 <LayoutPrincipal><Dj1926 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/libro-cv" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><LibroComprasVentas /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />

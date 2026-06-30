@@ -75,6 +75,7 @@ use App\Domains\Core\Controllers\EmpresaCambioController;
 use App\Domains\Core\Controllers\DashboardResumenController;
 use App\Domains\Contabilidad\Controllers\ArAgingController;
 use App\Domains\Contabilidad\Controllers\ApAgingController;
+use App\Domains\Contabilidad\Controllers\LibroComprasVentasController;
 
 /*
 |--------------------------------------------------------------------------
@@ -332,6 +333,12 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/renta/mapeo', [ImpuestosController::class, 'obtenerMapeo'])->middleware('permiso:tributario.ver');
     Route::post('/renta/mapeo', [ImpuestosController::class, 'guardarMapeo'])->middleware('permiso:tributario.crear');
     Route::delete('/renta/mapeo/{id}', [ImpuestosController::class, 'eliminarMapeo'])->middleware('permiso:tributario.crear');
+
+    // LCV — Libro de Compras y Ventas (Res. Ex. SII N°45/2003)
+    Route::get('/impuestos/lcv/ventas/{mes}/{anio}',            [LibroComprasVentasController::class, 'ventas'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/compras/{mes}/{anio}',           [LibroComprasVentasController::class, 'compras'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/ventas/{mes}/{anio}/descargar',  [LibroComprasVentasController::class, 'descargarVentas'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/compras/{mes}/{anio}/descargar', [LibroComprasVentasController::class, 'descargarCompras'])->middleware('permiso:tributario.ver');
 
     // Correccion Monetaria (parte de contabilidad)
     Route::prefix('correccion-monetaria')->group(function () {
