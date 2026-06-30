@@ -6,6 +6,7 @@ loadEnv({ path: path.resolve(process.cwd(), '.env.e2e') });
 
 export default defineConfig({
     testDir: './e2e',
+    globalSetup: './e2e/global-setup.js',
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
@@ -19,6 +20,8 @@ export default defineConfig({
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
+        actionTimeout: 10_000,
+        navigationTimeout: 20_000,
     },
 
     projects: [
@@ -27,10 +30,20 @@ export default defineConfig({
             use: { ...devices['Desktop Chrome'] },
         },
     ],
-    webServer: {
-        command: 'pnpm dev',
-        url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
-    },
+    webServer: [
+        {
+            command: 'pnpm dev',
+            url: 'http://localhost:3000',
+            reuseExistingServer: !process.env.CI,
+            timeout: 120_000,
+        },
+        {
+            command: 'php artisan serve --port=8001',
+            url: 'http://localhost:8001/api/health',
+            reuseExistingServer: !process.env.CI,
+            timeout: 30_000,
+            ignoreHTTPSErrors: true,
+            cwd: path.resolve(process.cwd(), '../Backend-laravel'),
+        },
+    ],
 });
