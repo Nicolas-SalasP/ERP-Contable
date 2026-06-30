@@ -43,9 +43,9 @@ class ClienteService
         $cliente->update(['estado' => 'INACTIVO']);
         return $cliente;
     }
-    public function actualizarCliente($id, array $datos)
+    public function actualizarCliente(int $empresaId, $id, array $datos)
     {
-        $cliente = Cliente::findOrFail($id); //
+        $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($id);
 
         if (isset($datos['rut']) && $datos['rut'] !== $cliente->rut) {
             $existe = Cliente::where('empresa_id', $cliente->empresa_id)

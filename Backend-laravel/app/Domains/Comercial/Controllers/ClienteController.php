@@ -155,7 +155,7 @@ class ClienteController
             if ($request->has('telefono'))
                 $datos['telefono'] = $request->telefono;
 
-            $cliente = $this->service->actualizarCliente($id, $datos);
+            $cliente = $this->service->actualizarCliente($request->user()->empresa_id, $id, $datos);
 
             return response()->json(['success' => true, 'data' => $cliente]);
 

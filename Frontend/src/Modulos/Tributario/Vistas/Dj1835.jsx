@@ -31,7 +31,7 @@ const formatFecha = (fecha) => {
 const Dj1835 = () => {
     const { tienePermiso } = usePermisos();
     const puedeVer      = tienePermiso('tributario.ver');
-    const puedeProcesar = tienePermiso('tributario.ver');
+    const puedeProcesar = tienePermiso('contabilidad.dj.procesar');
 
     const [anio, setAnio]                     = useState(anioActual - 1);
     const [envios, setEnvios]                 = useState([]);
