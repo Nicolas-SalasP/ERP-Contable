@@ -6,10 +6,11 @@ import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
 import ModalAsiento from '../Componentes/ModalAsiento';
+import ModalNotaCredito from '../Componentes/ModalNotaCredito';
 import HistorialFiltros from '../Componentes/HistorialFiltros';
 import WorkbenchReclasificacion from '../Componentes/WorkbenchReclasificacion';
 import { useFacturasHistorial } from '../Hooks/useFacturasHistorial';
-import { Calendar, BookOpen, ArrowLeftRight, Clock, MoreVertical, FileText, ChevronLeft, ChevronRight, CircleDollarSign } from 'lucide-react';
+import { Calendar, BookOpen, ArrowLeftRight, Clock, MoreVertical, FileText, ChevronLeft, ChevronRight, CircleDollarSign, FileMinus } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 const formatDate = (dateString) => {
@@ -40,6 +41,9 @@ const HistorialFacturas = () => {
 
     const [cuentasPlan, setCuentasPlan] = useState([]);
 
+    const [ncModalOpen, setNcModalOpen] = useState(false);
+    const [ncFactura, setNcFactura] = useState(null);
+
     // Click outside del menu de acciones - se ejecuta junto al click outside del autocomplete
     const handleMenuClickOutside = useCallback((event) => {
         if (!event.target.closest('.menu-acciones-container')) setMenuAbiertoId(null);
@@ -61,6 +65,12 @@ const HistorialFacturas = () => {
         ejecutarBusqueda,
         seleccionarProveedor,
     } = useFacturasHistorial({ vistaActual, onMenuClickOutside: handleMenuClickOutside });
+
+    const abrirModalNc = (factura) => {
+        setMenuAbiertoId(null);
+        setNcFactura(factura);
+        setNcModalOpen(true);
+    };
 
     const abrirModalPago = (factura) => {
         setMenuAbiertoId(null);
@@ -214,6 +224,7 @@ const HistorialFacturas = () => {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans text-slate-800 dark:text-slate-200 pb-10">
             <ModalAsiento isOpen={modalOpen} onClose={() => setModalOpen(false)} data={asientoData} loading={loadingAsiento} />
+            <ModalNotaCredito isOpen={ncModalOpen} onClose={() => setNcModalOpen(false)} factura={ncFactura} onNcEmitida={() => window.location.reload()} />
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
@@ -486,6 +497,17 @@ const HistorialFacturas = () => {
                                                                                 >
                                                                                     <CircleDollarSign size={16} strokeWidth={1.75} />
                                                                                     Pagar Documento
+                                                                                </button>
+                                                                            </li>
+                                                                        )}
+                                                                        {fac.tipo === 'VENTA' && !isNotaCredito && fac.estado !== 'ANULADA' && (
+                                                                            <li>
+                                                                                <button
+                                                                                    onClick={() => abrirModalNc(fac)}
+                                                                                    className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center gap-3 font-bold text-indigo-600 border-b border-slate-100 dark:border-slate-700"
+                                                                                >
+                                                                                    <FileMinus size={16} strokeWidth={1.75} />
+                                                                                    Nota de Crédito
                                                                                 </button>
                                                                             </li>
                                                                         )}

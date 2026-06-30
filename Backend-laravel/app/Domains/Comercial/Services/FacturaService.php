@@ -9,6 +9,8 @@ use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Sii\Models\SiiDteEmitido;
+use App\Domains\Sii\Services\Integracion\EmitirDteDesdeFacturaService;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use Illuminate\Support\Facades\DB;
 use \Carbon\Carbon;
@@ -186,6 +188,8 @@ class FacturaService
                 'es_documento_exterior' => $esDocumentoExterior,
                 'tipo_gasto_art59' => $tipoGastoArt59,
                 'retencion_art59' => $retencionArt59 > 0 ? $retencionArt59 : null,
+                'factura_referencia_id' => $datos['factura_referencia_id'] ?? null,
+                'razon_nota_credito' => $datos['razon_nota_credito'] ?? null,
             ]);
 
             $esNotaCredito = in_array($datos['tipo_documento'] ?? '', ['NOTA_CREDITO', 'NOTA_CREDITO_EXPORTACION']);
@@ -282,6 +286,169 @@ class FacturaService
             ]);
 
             return $factura;
+        });
+    }
+
+    /**
+     * Emite una Nota de Crédito sobre una factura de VENTA, revirtiendo
+     * el asiento de ingreso original (IVA Débito + CxC + Ingresos).
+     *
+     * Si la factura original tiene DTE firmado y se solicita emisión SII,
+     * despacha el DTE tipo 61 con referencia al folio original.
+     *
+     * @param array{
+     *   numero_nc: string,
+     *   monto_neto: float,
+     *   monto_iva: float,
+     *   monto_bruto: float,
+     *   fecha_emision?: string,
+     *   razon: string,
+     *   emitir_dte?: bool,
+     * } $datos
+     *
+     * @throws ComercialException
+     */
+    public function emitirNotaCreditoVenta(int $empresaId, int $facturaVentaId, array $datos): Factura
+    {
+        return DB::transaction(function () use ($empresaId, $facturaVentaId, $datos) {
+            /** @var Factura|null $origen */
+            $origen = Factura::where('empresa_id', $empresaId)
+                ->with(['dteEmitido'])
+                ->find($facturaVentaId);
+
+            if (!$origen) {
+                throw ComercialException::noEncontrado("La factura de origen no existe o no pertenece a esta empresa.");
+            }
+
+            if ($origen->estado === 'ANULADA') {
+                throw ComercialException::regla("No se puede emitir una NC sobre una factura ya anulada.");
+            }
+
+            if ((float) $datos['monto_bruto'] > (float) $origen->monto_bruto) {
+                throw ComercialException::regla(
+                    "El monto de la NC ($datos[monto_bruto]) no puede superar el monto original ({$origen->monto_bruto})."
+                );
+            }
+
+            $ncExistente = Factura::where('empresa_id', $empresaId)
+                ->where('factura_referencia_id', $origen->id)
+                ->where('tipo_documento', 'NOTA_CREDITO')
+                ->where('estado', '!=', 'ANULADA')
+                ->exists();
+
+            if ($ncExistente) {
+                throw ComercialException::regla("Esta factura ya tiene una Nota de Crédito activa. Anule la NC anterior antes de emitir una nueva.");
+            }
+
+            $neto  = round((float) $datos['monto_neto'], 2);
+            $iva   = round((float) $datos['monto_iva'], 2);
+            $bruto = round((float) $datos['monto_bruto'], 2);
+            $fecha = $datos['fecha_emision'] ?? now()->toDateString();
+
+            $nc = Factura::create([
+                'empresa_id'          => $empresaId,
+                'tipo'                => 'VENTA',
+                'tipo_documento'      => 'NOTA_CREDITO',
+                'tipo_dte'            => 61,
+                'codigo_unico'        => Factura::generarCodigoUnico(),
+                'cliente_id'          => $origen->cliente_id,
+                'proveedor_id'        => $origen->proveedor_id,
+                'numero_factura'      => $datos['numero_nc'],
+                'fecha_emision'       => $fecha,
+                'monto_neto'          => $neto,
+                'monto_iva'           => $iva,
+                'monto_bruto'         => $bruto,
+                'estado'              => 'REGISTRADA',
+                'factura_referencia_id' => $origen->id,
+                'razon_nota_credito'  => $datos['razon'],
+                'moneda'              => $origen->moneda ?? 'CLP',
+            ]);
+
+            $nc->update([
+                'codigo_interno' => 'NC-' . str_pad((string) $nc->id, 5, '0', STR_PAD_LEFT),
+            ]);
+
+            // Cuentas contables usadas en el asiento original de la venta.
+            $cuentaCxC      = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
+            $cuentaVentas   = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
+            $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
+
+            if (!$cuentaCxC || !$cuentaVentas) {
+                throw ComercialException::regla(
+                    "Configuración Contable Incompleta: se requieren cuentas 152005 (CxC) y 501105 (Ingresos) para emitir la NC."
+                );
+            }
+
+            $detalles = [
+                [
+                    'cuenta_contable' => $cuentaVentas->codigo,
+                    'debe'           => $neto,
+                    'haber'          => 0,
+                    'glosa_detalle'  => "Reversa Ingreso NC {$datos['numero_nc']}",
+                ],
+                [
+                    'cuenta_contable' => $cuentaCxC->codigo,
+                    'debe'           => 0,
+                    'haber'          => $bruto,
+                    'glosa_detalle'  => "Reducción CxC Cliente NC {$datos['numero_nc']}",
+                ],
+            ];
+
+            if ($iva > 0 && $cuentaIvaDebito) {
+                $detalles[] = [
+                    'cuenta_contable' => $cuentaIvaDebito->codigo,
+                    'debe'           => $iva,
+                    'haber'          => 0,
+                    'glosa_detalle'  => "Reversa IVA Débito NC {$datos['numero_nc']}",
+                ];
+            }
+
+            $asiento = $this->asientoService->registrarAsiento([
+                'empresa_id'    => $empresaId,
+                'fecha'         => $fecha,
+                'glosa'         => "Nota de Crédito Venta N° {$datos['numero_nc']} — {$datos['razon']}",
+                'tipo_asiento'  => 'traspaso',
+                'origen_modulo' => 'ventas',
+                'origen_id'     => $nc->id,
+            ], $detalles);
+
+            $nc->update(['comprobante_contable' => $asiento->numero_comprobante]);
+
+            // Si el monto de la NC iguala al total de la factura, la anulamos.
+            if (abs($bruto - (float) $origen->monto_bruto) < 0.01) {
+                $origen->estado = 'ANULADA';
+                $origen->save();
+
+                // Actualizar estado del DTE original en el registro SII.
+                if ($origen->sii_dte_emitido_id) {
+                    SiiDteEmitido::where('id', $origen->sii_dte_emitido_id)
+                        ->update(['estado' => SiiDteEmitido::ESTADO_ANULADO_CON_NC]);
+                }
+            }
+
+            // Despachar emisión DTE tipo 61 si se solicita y la factura tiene DTE original.
+            if (!empty($datos['emitir_dte']) && $origen->sii_dte_emitido_id) {
+                /** @var SiiDteEmitido|null $dteOrigen */
+                $dteOrigen = $origen->dteEmitido;
+                if ($dteOrigen && $dteOrigen->folio > 0) {
+                    $referencias = [[
+                        'tipo_doc' => (int) ($origen->tipo_dte ?? 33),
+                        'folio_ref' => (string) $dteOrigen->folio,
+                        'fecha_ref' => $origen->fecha_emision->format('Y-m-d'),
+                        'cod_ref'   => 1, // 1 = Anula documento de referencia (SII)
+                        'razon_ref' => $datos['razon'],
+                    ]];
+
+                    app(EmitirDteDesdeFacturaService::class)->dispatch(
+                        $nc->fresh(),
+                        $referencias,
+                        'manual',
+                        auth()->id()
+                    );
+                }
+            }
+
+            return $nc->load(['facturaOrigen']);
         });
     }
 

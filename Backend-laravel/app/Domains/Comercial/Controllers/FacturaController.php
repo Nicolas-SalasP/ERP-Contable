@@ -473,4 +473,48 @@ class FacturaController
             'detalle' => $detalle->values(),
         ]);
     }
+
+    /**
+     * Emite una Nota de Crédito sobre una factura de VENTA.
+     * POST /facturas/{id}/nota-credito
+     */
+    public function notaCredito(Request $request, int $id)
+    {
+        try {
+            $datos = $request->validate([
+                'numero_nc'     => 'required|string|max:255',
+                'monto_neto'    => 'required|numeric|min:0',
+                'monto_iva'     => 'required|numeric|min:0',
+                'monto_bruto'   => 'required|numeric|gt:0',
+                'razon'         => 'required|string|min:5|max:255',
+                'fecha_emision' => 'nullable|date',
+                'emitir_dte'    => 'nullable|boolean',
+            ]);
+
+            $nc = $this->service->emitirNotaCreditoVenta(
+                $request->user()->empresa_id,
+                $id,
+                $datos
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nota de Crédito emitida y contabilidad reversada.',
+                'data'    => $nc,
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors'  => $e->errors(),
+            ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
 }

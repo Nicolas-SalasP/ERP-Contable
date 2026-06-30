@@ -4,6 +4,7 @@ namespace App\Domains\Comercial\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Traits\HasEmpresaScope;
@@ -56,6 +57,8 @@ class Factura extends Model
         'es_documento_exterior',
         'tipo_gasto_art59',
         'retencion_art59',
+        'factura_referencia_id',
+        'razon_nota_credito',
     ];
 
     protected $casts = [
@@ -94,6 +97,16 @@ class Factura extends Model
     public function cuentaBancaria(): BelongsTo
     {
         return $this->belongsTo(CuentaBancariaProveedor::class, 'cuenta_bancaria_id');
+    }
+
+    public function facturaOrigen(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'factura_referencia_id');
+    }
+
+    public function notasCredito(): HasMany
+    {
+        return $this->hasMany(self::class, 'factura_referencia_id');
     }
 
     public static function generarCodigoUnico(): int
