@@ -61,6 +61,11 @@ class CotizacionController
                 'estado_id' => $request->estadoId ?? $request->estado_id ?? 1,
                 'notas_condiciones' => $request->notasCondiciones ?? $request->notas_condiciones,
                 'es_afecta' => $request->has('esAfecta') ? $request->esAfecta : ($request->es_afecta ?? 1),
+                'metodo_pago' => $request->metodoPago ?? $request->metodo_pago,
+                'condiciones_pago' => $request->condicionesPago ?? $request->condiciones_pago,
+                'plazo_entrega' => $request->plazoEntrega ?? $request->plazo_entrega,
+                'comentarios' => $request->comentarios,
+                'garantia' => $request->garantia,
             ];
 
             $detallesRaw = $request->input('detalles', []);

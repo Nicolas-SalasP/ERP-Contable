@@ -20,6 +20,11 @@ const CrearCotizacion = () => {
     const [validez, setValidez] = useState(15);
     const [esAfecta, setEsAfecta] = useState(true);
     const [ivaPorcentaje, setIvaPorcentaje] = useState(19);
+    const [metodoPago, setMetodoPago] = useState('');
+    const [condicionesPago, setCondicionesPago] = useState('');
+    const [plazoEntrega, setPlazoEntrega] = useState('');
+    const [garantia, setGarantia] = useState('');
+    const [comentarios, setComentarios] = useState('');
 
     const [modal, setModal] = useState({ show: false, title: '', message: '', type: 'info', idGenerado: null });
     const [enviando, setEnviando] = useState(false);
@@ -89,6 +94,14 @@ const CrearCotizacion = () => {
 
                 porcentaje_iva: ivaPorcentaje,
                 porcentajeIva: ivaPorcentaje,
+                metodo_pago: metodoPago || null,
+                metodoPago: metodoPago || null,
+                condiciones_pago: condicionesPago || null,
+                condicionesPago: condicionesPago || null,
+                plazo_entrega: plazoEntrega || null,
+                plazoEntrega: plazoEntrega || null,
+                garantia: garantia || null,
+                comentarios: comentarios || null,
                 detalles: detallesMapeados
             });
 
@@ -185,6 +198,69 @@ const CrearCotizacion = () => {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* Condiciones comerciales */}
+                <div className="mb-8 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-700">
+                    <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-4">Condiciones Comerciales</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Método de Pago</label>
+                            <select
+                                value={metodoPago}
+                                onChange={(e) => setMetodoPago(e.target.value)}
+                                className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm"
+                            >
+                                <option value="">— Sin especificar —</option>
+                                <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Tarjeta de Crédito/Débito">Tarjeta de Crédito/Débito</option>
+                                <option value="Crédito 30 días">Crédito 30 días</option>
+                                <option value="Crédito 60 días">Crédito 60 días</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Condiciones de Pago</label>
+                            <input
+                                type="text"
+                                value={condicionesPago}
+                                onChange={(e) => setCondicionesPago(e.target.value)}
+                                placeholder="Ej: 50% adelanto, 50% a la entrega"
+                                className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Plazo de Entrega</label>
+                            <input
+                                type="text"
+                                value={plazoEntrega}
+                                onChange={(e) => setPlazoEntrega(e.target.value)}
+                                placeholder="Ej: 5 días hábiles desde aprobación"
+                                className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Garantía / Soporte Post-entrega</label>
+                            <input
+                                type="text"
+                                value={garantia}
+                                onChange={(e) => setGarantia(e.target.value)}
+                                placeholder="Ej: 3 meses de soporte por bugs sin costo"
+                                className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Comentarios Adicionales</label>
+                            <textarea
+                                value={comentarios}
+                                onChange={(e) => setComentarios(e.target.value)}
+                                rows={3}
+                                placeholder="Aclaraciones, exclusiones, notas para el cliente..."
+                                className="w-full border border-slate-200 dark:border-slate-600 p-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-slate-700 text-sm resize-none"
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="mb-8">

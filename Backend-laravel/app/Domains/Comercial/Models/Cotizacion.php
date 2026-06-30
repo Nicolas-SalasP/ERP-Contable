@@ -40,7 +40,12 @@ class Cotizacion extends Model
         'estado_id',
         'empresa_id',
         'es_afecta',
-        'notas_condiciones'
+        'notas_condiciones',
+        'metodo_pago',
+        'condiciones_pago',
+        'plazo_entrega',
+        'comentarios',
+        'garantia',
     ];
 
     protected $casts = [

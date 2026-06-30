@@ -81,6 +81,11 @@ class CotizacionService
                 'estado_id' => $datos['estado_id'] ?? 1,
                 'es_afecta' => $esAfecta,
                 'notas_condiciones' => $datos['notas_condiciones'] ?? null,
+                'metodo_pago' => $datos['metodo_pago'] ?? null,
+                'condiciones_pago' => $datos['condiciones_pago'] ?? null,
+                'plazo_entrega' => $datos['plazo_entrega'] ?? null,
+                'comentarios' => $datos['comentarios'] ?? null,
+                'garantia' => $datos['garantia'] ?? null,
             ]);
 
             if (!isset($datos['numero_cotizacion'])) {
@@ -148,11 +153,11 @@ class CotizacionService
                 throw ComercialException::regla("No se puede editar una cotización que ya ha sido aprobada o facturada.");
             }
 
-            if (isset($datos['fecha_validez'])) {
-                $cotizacion->fecha_validez = $datos['fecha_validez'];
-            }
-            if (isset($datos['porcentaje_descuento'])) {
-                $cotizacion->porcentaje_descuento = $datos['porcentaje_descuento'];
+            $camposOpcionales = ['fecha_validez', 'porcentaje_descuento', 'notas_condiciones', 'metodo_pago', 'condiciones_pago', 'plazo_entrega', 'comentarios', 'garantia'];
+            foreach ($camposOpcionales as $campo) {
+                if (array_key_exists($campo, $datos)) {
+                    $cotizacion->$campo = $datos[$campo];
+                }
             }
 
             if (isset($datos['detalles'])) {
