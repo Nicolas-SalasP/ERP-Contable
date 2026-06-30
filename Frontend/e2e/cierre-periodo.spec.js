@@ -16,6 +16,7 @@ const URL = '/contabilidad/cierre-periodo';
 async function login(page) {
     await page.goto('/');
     await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10_000 });
+    await page.waitForLoadState('networkidle');
 }
 
 test.describe('Cierre de Períodos — smoke @smoke', () => {

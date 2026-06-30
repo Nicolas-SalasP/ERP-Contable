@@ -52,6 +52,16 @@ export default async function globalSetup() {
         throw new Error(`[e2e global-setup] Login falló: ${JSON.stringify(loginData)}`);
     }
 
+    const meRes = await fetch(`${backendUrl}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(10_000),
+    });
+    const userData = await meRes.json();
+
+    if (!userData || !userData.id) {
+        throw new Error(`[e2e global-setup] /auth/me falló: ${JSON.stringify(userData)}`);
+    }
+
     const authDir  = path.join(__dirname, '.auth');
     const authFile = path.join(authDir, 'user.json');
 
@@ -65,11 +75,12 @@ export default async function globalSetup() {
                 localStorage: [
                     { name: 'erp_token', value: token },
                     { name: 'erp_token_issued_at', value: String(Date.now()) },
+                    { name: 'erp_user', value: JSON.stringify(userData) },
                 ],
             },
         ],
     };
 
     fs.writeFileSync(authFile, JSON.stringify(storageState, null, 2), 'utf-8');
-    console.log(`[e2e global-setup] storageState guardado en ${authFile}`);
+    console.log(`[e2e global-setup] storageState guardado en ${authFile} (usuario: ${userData.email})`);
 }

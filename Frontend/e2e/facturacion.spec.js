@@ -6,6 +6,7 @@ const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password123';
 async function login(page) {
     await page.goto('/');
     await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10_000 });
+    await page.waitForLoadState('networkidle');
 }
 
 test.describe('Flujo de Compras y Facturación', () => {
