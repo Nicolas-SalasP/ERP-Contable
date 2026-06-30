@@ -362,6 +362,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/activos', [ActivoFijoController::class, 'store'])->middleware('permiso:activos.crear');
     Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros'])->middleware('permiso:activos.ver');
     Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes'])->middleware('permiso:activos.crear');
+    Route::get('/activos/{id}/amortizacion', [ActivoFijoController::class, 'amortizacion'])->middleware('permiso:activos.ver');
     Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja'])->middleware('permiso:activos.crear');
     Route::put('/activos/{id}', [ActivoFijoController::class, 'update'])->middleware('permiso:activos.crear');
 
