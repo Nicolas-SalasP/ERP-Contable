@@ -14,15 +14,8 @@ const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password123';
 const URL = '/contabilidad/cierre-periodo';
 
 async function login(page) {
-    await page.goto('/login');
-    await page.locator('input[type="email"], input[name="email"]').first().waitFor({ state: 'visible', timeout: 8_000 });
-    await page.locator('input[type="email"], input[name="email"]').first().fill(USER_EMAIL);
-    await page.locator('input[type="password"]').first().fill(USER_PASSWORD);
-    await Promise.all([
-        page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 15_000 }).catch(() => {}),
-        page.locator('button[type="submit"]').first().click(),
-    ]);
-    await expect(page).not.toHaveURL(/.*\/login/, { timeout: 15_000 });
+    await page.goto('/');
+    await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10_000 });
 }
 
 test.describe('Cierre de Períodos — smoke @smoke', () => {

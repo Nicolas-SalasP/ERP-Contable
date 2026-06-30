@@ -16,6 +16,7 @@ const USER_EMAIL = process.env.E2E_USER_EMAIL || 'admin@test.cl';
 const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password';
 
 test.describe('Autenticacion', () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
     test('rechaza login con credenciales invalidas', async ({ page }) => {
         await page.goto('/login');
 

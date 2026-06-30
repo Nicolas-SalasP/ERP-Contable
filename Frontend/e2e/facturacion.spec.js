@@ -4,18 +4,8 @@ const USER_EMAIL = process.env.E2E_USER_EMAIL || 'superadmin@tenri.cl';
 const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password123';
 
 async function login(page) {
-    await page.goto('/login');
-    const emailInput = page.locator('input[type="email"], input[name="email"]').first();
-    await emailInput.waitFor({ state: 'visible', timeout: 5000 });
-    await emailInput.fill(USER_EMAIL);
-    
-    await page.locator('input[type="password"]').first().fill(USER_PASSWORD);
-    await Promise.all([
-        page.waitForNavigation({ url: '**/', timeout: 15_000 }).catch(() => {}),
-        page.locator('button[type="submit"]').first().click()
-    ]);
-
-    await expect(page).not.toHaveURL(/.*\/login/, { timeout: 15_000 });
+    await page.goto('/');
+    await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10_000 });
 }
 
 test.describe('Flujo de Compras y Facturación', () => {

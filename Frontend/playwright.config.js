@@ -22,6 +22,7 @@ export default defineConfig({
         video: 'retain-on-failure',
         actionTimeout: 10_000,
         navigationTimeout: 20_000,
+        storageState: 'e2e/.auth/user.json',
     },
 
     projects: [
@@ -36,14 +37,6 @@ export default defineConfig({
             url: 'http://localhost:3000',
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,
-        },
-        {
-            command: 'php artisan serve --port=8001',
-            url: 'http://localhost:8001/api/health',
-            reuseExistingServer: !process.env.CI,
-            timeout: 30_000,
-            ignoreHTTPSErrors: true,
-            cwd: path.resolve(process.cwd(), '../Backend-laravel'),
         },
     ],
 });
