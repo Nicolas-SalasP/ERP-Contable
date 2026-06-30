@@ -64,10 +64,10 @@ describe('ApAging (vista)', () => {
         vi.clearAllMocks();
     });
 
-    it('renderiza el título CxP por Antigüedad', () => {
+    it('renderiza el título Cartera de Proveedores por Pagar', () => {
         api.get.mockReturnValueOnce(new Promise(() => {}));
         render(<ApAging />);
-        expect(screen.getByText(/CxP por Antigüedad/i)).toBeDefined();
+        expect(screen.getByText(/Cartera de Proveedores por Pagar/i)).toBeDefined();
     });
 
     it('muestra el skeleton mientras la api no responde', async () => {
