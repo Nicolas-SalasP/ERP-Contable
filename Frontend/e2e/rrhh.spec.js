@@ -3,10 +3,8 @@ import { test, expect } from '@playwright/test';
 const USER_EMAIL = process.env.E2E_USER_EMAIL || 'superadmin@tenri.cl';
 const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password123';
 
-async function login(page) {
-    await page.goto('/');
-    await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10_000 });
-    await page.waitForLoadState('networkidle');
+async function login(_page) {
+    // Auth provista por storageState — cada test navega directo a su URL objetivo
 }
 
 test.describe('Módulo RRHH y Remuneraciones', () => {
@@ -57,6 +55,9 @@ test.describe('Módulo RRHH y Remuneraciones', () => {
     test('el modal de ayuda se abre desde la ficha de personal', async ({ page }) => {
         await page.goto('/rrhh/empleados');
         await expect(page.getByText(/Ficha de Personal/i).first()).toBeVisible({ timeout: 10_000 });
+        // Cerrar cualquier dialog/alert que pueda bloquear el click
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
         await page.getByTestId('ayuda-modulo-boton').first().click();
         await expect(page.getByTestId('ayuda-modulo-modal')).toBeVisible({ timeout: 5_000 });
         await expect(page.getByText(/Como se usa/i).first()).toBeVisible();

@@ -3,10 +3,8 @@ import { test, expect } from '@playwright/test';
 const USER_EMAIL = process.env.E2E_USER_EMAIL || 'superadmin@tenri.cl';
 const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password123';
 
-async function login(page) {
-    await page.goto('/');
-    await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10_000 });
-    await page.waitForLoadState('networkidle');
+async function login(_page) {
+    // Auth provista por storageState — cada test navega directo a su URL objetivo
 }
 
 test.describe('Flujo de Compras y Facturación', () => {
@@ -37,7 +35,7 @@ test.describe('Flujo de Compras y Facturación', () => {
     test('el historial muestra nombres de proveedor (no celdas vacias)', async ({ page }) => {
         await page.goto('/facturas/historial');
         await expect(page.getByText(/Historial/i).first()).toBeVisible();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
         const tienealgo = page.locator('table tbody tr, [class*="card"]').first();
 
         if (await tienealgo.isVisible({ timeout: 5_000 }).catch(() => false)) {
@@ -54,7 +52,7 @@ test.describe('Flujo de Compras y Facturación', () => {
 
     test('el dashboard muestra proveedores en Atencion Requerida (no celdas vacias)', async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
         const seccionAtencion = page.getByText(/Atenci.n Requerida/i).first();
 
         if (await seccionAtencion.isVisible({ timeout: 5_000 }).catch(() => false)) {

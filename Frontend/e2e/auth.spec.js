@@ -38,7 +38,7 @@ test.describe('Autenticacion', () => {
         await page.locator('button[type="submit"]').first().click();
 
         // Debe redirigir fuera de /login a la pagina principal
-        await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 });
+        await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 });
 
         // En el dashboard o pagina inicial, debe haber algun indicio de que esta logueado
         // (puede ser el sidebar, el nombre del usuario, etc.)

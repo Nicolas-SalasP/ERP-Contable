@@ -67,6 +67,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/contabilidad/asiento-manual', label: 'Asiento Manual' },
                 { path: '/contabilidad/ar-aging', label: 'CxC por Antigüedad' },
                 { path: '/contabilidad/ap-aging', label: 'CxP por Antigüedad' },
+                { path: '/contabilidad/cierre-periodo', label: 'Cierre de Períodos' },
             ]
         },
         {

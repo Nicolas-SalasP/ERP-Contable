@@ -13,10 +13,8 @@ const USER_EMAIL = process.env.E2E_USER_EMAIL || 'superadmin@tenri.cl';
 const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password123';
 const URL = '/contabilidad/cierre-periodo';
 
-async function login(page) {
-    await page.goto('/');
-    await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10_000 });
-    await page.waitForLoadState('networkidle');
+async function login(_page) {
+    // Auth provista por storageState — cada test navega directo a su URL objetivo
 }
 
 test.describe('Cierre de Períodos — smoke @smoke', () => {
@@ -51,14 +49,16 @@ test.describe('Cierre de Períodos — smoke @smoke', () => {
         await expect(page.getByText(/Cierre de Períodos Contables/i).first())
             .toBeVisible({ timeout: 10_000 });
 
-        // Al menos un badge de estado (Abierto o Cerrado) debe existir
-        const badges = page.getByText(/^(Abierto|Cerrado)$/);
-        await expect(badges.first()).toBeVisible({ timeout: 8_000 });
+        // Los botones de acción solo aparecen después de que la API carga los estados de cada mes
+        await expect(page.getByRole('button', { name: /Cerrar período|Reabrir período/i }).first())
+            .toBeVisible();
     });
 
     test('el sidebar contiene el enlace al módulo', async ({ page }) => {
         await page.goto('/');
-        await expect(page.getByText(/Cierre de Períodos/i).first()).toBeVisible({ timeout: 10_000 });
+        // Expandir el menú Contabilidad General para ver subitems
+        await page.getByText('Contabilidad General').first().click();
+        await expect(page.getByText(/Cierre de Períodos/i).first()).toBeVisible({ timeout: 5_000 });
     });
 });
 
@@ -99,13 +99,17 @@ test.describe('Cierre de Períodos — modal', () => {
     });
 
     test('el modal de cierre se abre al hacer click en Cerrar período', async ({ page }) => {
+        const respPeriodos = page.waitForResponse(
+            r => r.url().includes('/contabilidad/periodos') && r.status() === 200
+        );
         await page.goto(URL);
         await expect(page.getByText(/Cierre de Períodos Contables/i).first())
             .toBeVisible({ timeout: 10_000 });
+        await respPeriodos;
 
         // Primer botón "Cerrar período" visible (mes abierto)
         const btnCerrar = page.getByRole('button', { name: /Cerrar período/i }).first();
-        await expect(btnCerrar).toBeVisible({ timeout: 8_000 });
+        await expect(btnCerrar).toBeVisible({ timeout: 5_000 });
         await btnCerrar.click();
 
         // El modal muestra la advertencia
@@ -144,7 +148,7 @@ test.describe('Cierre de Períodos — modal', () => {
         }
 
         await btnReabrir.click();
-        await expect(page.getByText(/Reabrir período/i, { selector: 'h3' })).toBeVisible({ timeout: 5_000 });
+        await expect(page.locator('h3').filter({ hasText: /Reabrir período/i })).toBeVisible({ timeout: 5_000 });
 
         // Click en confirmar SIN motivo
         const botonesReabrir = page.getByRole('button', { name: /Reabrir período/i });
@@ -161,18 +165,26 @@ test.describe('Cierre de Períodos — flujo completo', () => {
     });
 
     test('puede cerrar y reabrir un período desde la UI', async ({ page }) => {
+        const respPeriodos = page.waitForResponse(
+            r => r.url().includes('/contabilidad/periodos') && r.status() === 200
+        );
         await page.goto(URL);
         await expect(page.getByText(/Cierre de Períodos Contables/i).first())
             .toBeVisible({ timeout: 10_000 });
+        await respPeriodos;
 
         // Ir al año anterior para no afectar el mes actual
+        const respPeriodosAnterior = page.waitForResponse(
+            r => r.url().includes('/contabilidad/periodos') && r.status() === 200
+        );
         await page.locator('.fa-chevron-left').first().click();
         const anioAnterior = new Date().getFullYear() - 1;
         await expect(page.getByText(String(anioAnterior)).first()).toBeVisible({ timeout: 5_000 });
+        await respPeriodosAnterior;
 
         // Abrir modal de cierre en el primer mes visible con botón Cerrar
         const btnCerrar = page.getByRole('button', { name: /Cerrar período/i }).first();
-        await expect(btnCerrar).toBeVisible({ timeout: 8_000 });
+        await expect(btnCerrar).toBeVisible({ timeout: 5_000 });
         await btnCerrar.click();
 
         await expect(page.getByText(/Advertencia/i).first()).toBeVisible({ timeout: 5_000 });
@@ -194,7 +206,7 @@ test.describe('Cierre de Períodos — flujo completo', () => {
         await expect(btnReabrir).toBeVisible({ timeout: 8_000 });
         await btnReabrir.click();
 
-        await expect(page.getByText(/Reabrir período/i, { selector: 'h3' })).toBeVisible({ timeout: 5_000 });
+        await expect(page.locator('h3').filter({ hasText: /Reabrir período/i })).toBeVisible({ timeout: 5_000 });
 
         // Ingresar motivo obligatorio
         const textareaReapertura = page.locator('textarea').first();
