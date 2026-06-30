@@ -16,6 +16,7 @@ use App\Domains\Comercial\Controllers\ProveedorController;
 use App\Domains\Comercial\Controllers\FacturaController;
 use App\Domains\Comercial\Controllers\CotizacionController;
 use App\Domains\Comercial\Controllers\AnticipoProveedorController;
+use App\Domains\Comercial\Controllers\OrdenCompraController;
 use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
 use App\Domains\Contabilidad\Controllers\ReporteController;
@@ -253,6 +254,14 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/cotizaciones', [CotizacionController::class, 'index'])->middleware('permiso:ventas.ver');
     Route::post('/cotizaciones', [CotizacionController::class, 'store'])->middleware('permiso:ventas.crear');
     Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->middleware('permiso:ventas.crear');
+
+    // Comercial - Órdenes de Compra
+    Route::get('/comercial/ordenes-compra', [OrdenCompraController::class, 'index'])->middleware('permiso:compras.ver');
+    Route::post('/comercial/ordenes-compra', [OrdenCompraController::class, 'store'])->middleware('permiso:compras.crear');
+    Route::get('/comercial/ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'show'])->middleware('permiso:compras.ver');
+    Route::put('/comercial/ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'update'])->middleware('permiso:compras.crear');
+    Route::delete('/comercial/ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'destroy'])->middleware('permiso:compras.crear');
+    Route::post('/comercial/ordenes-compra/{ordenCompra}/recibir', [OrdenCompraController::class, 'recibirMercaderia'])->middleware('permiso:compras.crear');
 
     // ---------------------------------------------------------------------
     // Tesoreria - Cuentas de Proveedores

@@ -4,7 +4,7 @@ import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-libra
 
 vi.mock('../../../Contextos/Permisos', () => ({
     usePermisos: () => ({
-        tienePermiso: (p) => ['tributario.ver', 'tributario.procesar'].includes(p),
+        tienePermiso: (p) => ['tributario.ver', 'contabilidad.dj.procesar'].includes(p),
     }),
 }));
 
