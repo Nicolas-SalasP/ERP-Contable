@@ -11,6 +11,10 @@ import GraficoStock from './componentes/GraficoStock';
 import AlertasPendientes from './componentes/AlertasPendientes';
 import RhrrhResumen from './componentes/RhrrhResumen';
 import ExportacionDashboard from './componentes/ExportacionDashboard';
+import GraficoFlujoCaja from './componentes/GraficoFlujoCaja';
+import GraficoAgingAR from './componentes/GraficoAgingAR';
+import GraficoAgingAP from './componentes/GraficoAgingAP';
+import GraficoOrdenesPendientes from './componentes/GraficoOrdenesPendientes';
 
 /* ------------------------------------------------------------------ */
 /* Utilidades de formato                                                */
@@ -271,7 +275,7 @@ const Dashboard = () => {
             {/* ---- Alertas pendientes (DJ, F29, RRHH) ---- */}
             <AlertasPendientes alertas={resumen?.alertas_pendientes} />
 
-            {/* ---- Ventas vs Compras + secciones opcionales por permiso ---- */}
+            {/* ---- Ventas vs Compras ---- */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
                 {/* Gráfico ventas vs compras — siempre visible */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 xl:col-span-1">
@@ -284,25 +288,41 @@ const Dashboard = () => {
                         compras={resumen?.compras_12m ?? []}
                     />
                 </div>
-
-                {/* Inventario — solo si tiene permiso y el backend devolvió datos */}
-                {tieneInventario && resumen?.inventario && (
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 xl:col-span-1">
-                        <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
-                            <i className="fas fa-boxes text-teal-500" />
-                            Estado de inventario
-                        </h3>
-                        <GraficoStock datos={resumen.inventario} />
-                    </div>
-                )}
-
-                {/* RRHH — solo si tiene permiso y el backend devolvió datos */}
-                {tieneRrhh && resumen?.rrhh && (
-                    <div className="xl:col-span-1">
-                        <RhrrhResumen datos={resumen.rrhh} />
-                    </div>
-                )}
             </div>
+
+            {/* ---- Flujo de caja 30 días ---- */}
+            <div className="mb-8">
+                <GraficoFlujoCaja datos={resumen?.flujo_caja_30d} />
+            </div>
+
+            {/* ---- Aging AR + AP ---- */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                <GraficoAgingAR datos={resumen?.aging_ar ?? []} />
+                <GraficoAgingAP datos={resumen?.aging_ap ?? []} />
+            </div>
+
+            {/* ---- Stock + Órdenes de compra pendientes ---- */}
+            {(tieneInventario && resumen?.inventario) || resumen?.ordenes_compra_pendientes ? (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                    {tieneInventario && resumen?.inventario && (
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                            <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+                                <i className="fas fa-boxes text-teal-500" />
+                                Estado de inventario
+                            </h3>
+                            <GraficoStock datos={resumen.inventario} />
+                        </div>
+                    )}
+                    <GraficoOrdenesPendientes datos={resumen?.ordenes_compra_pendientes} />
+                </div>
+            ) : null}
+
+            {/* ---- RRHH — solo si tiene permiso ---- */}
+            {tieneRrhh && resumen?.rrhh && (
+                <div className="mb-8">
+                    <RhrrhResumen datos={resumen.rrhh} />
+                </div>
+            )}
 
             {/* ---- Facturas urgentes ---- */}
             <div>

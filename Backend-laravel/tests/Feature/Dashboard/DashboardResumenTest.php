@@ -96,6 +96,10 @@ class DashboardResumenTest extends TestCase
                     'serie_ventas_12m',
                     'top_clientes',
                     'facturas_urgentes',
+                    'aging_ar',
+                    'aging_ap',
+                    'flujo_caja_30d',
+                    'ordenes_compra_pendientes',
                 ],
             ]);
     }
@@ -248,5 +252,33 @@ class DashboardResumenTest extends TestCase
         } finally {
             Carbon::setTestNow(); // Restaurar la fecha real
         }
+    }
+
+    public function test_aging_ar_agrupa_facturas_por_antiguedad(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $proveedor = $this->crearProveedor($empresa->id);
+
+        // Factura reciente (< 30 días)
+        $this->crearFacturaVenta($empresa->id, $proveedor->id, 100000, Carbon::now()->subDays(10)->toDateString());
+        // Factura media (31-60 días)
+        $this->crearFacturaVenta($empresa->id, $proveedor->id, 200000, Carbon::now()->subDays(45)->toDateString());
+        // Factura antigua (>90 días)
+        $this->crearFacturaVenta($empresa->id, $proveedor->id, 300000, Carbon::now()->subDays(100)->toDateString());
+
+        $response = $this->actingAs($usuario)->getJson('/api/dashboard/resumen');
+
+        $response->assertOk();
+        $aging = $response->json('data.aging_ar');
+        $this->assertIsArray($aging);
+        $this->assertCount(4, $aging);
+
+        $tramo0_30  = collect($aging)->firstWhere('tramo', '0-30');
+        $tramo31_60 = collect($aging)->firstWhere('tramo', '31-60');
+        $tramo91plus = collect($aging)->firstWhere('tramo', '91+');
+
+        $this->assertEquals(100000.0, $tramo0_30['monto']);
+        $this->assertEquals(200000.0, $tramo31_60['monto']);
+        $this->assertEquals(300000.0, $tramo91plus['monto']);
     }
 }
