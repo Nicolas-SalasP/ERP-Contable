@@ -1,5 +1,4 @@
 import { execSync } from 'child_process';
-import { chromium } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,11 +6,12 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendDir = path.resolve(__dirname, '../../Backend-laravel');
 const backendUrl = process.env.E2E_API_URL || 'http://localhost:8001';
+const baseUrl   = process.env.E2E_BASE_URL  || 'http://localhost:3000';
 
 async function backendReachable() {
     try {
         const res = await fetch(`${backendUrl}/api/health`, { signal: AbortSignal.timeout(3000) });
-        return res.ok || res.status === 404;
+        return res.ok || res.status === 404 || res.status === 429;
     } catch {
         return false;
     }
@@ -36,30 +36,40 @@ export default async function globalSetup() {
         console.warn('[e2e global-setup] Advertencia al preparar usuario e2e:', err.message);
     }
 
-    const authDir = path.join(__dirname, '.auth');
-    if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
+    const email    = process.env.E2E_USER_EMAIL    || 'e2e_runner@tenri.cl';
+    const password = process.env.E2E_USER_PASSWORD || 'E2ePassword_2026';
 
-    const browser = await chromium.launch();
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    const loginRes = await page.request.post(
-        `${backendUrl}/api/auth/login`,
-        { data: { email: process.env.E2E_USER_EMAIL, password: process.env.E2E_USER_PASSWORD } }
-    );
+    const loginRes = await fetch(`${backendUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        signal: AbortSignal.timeout(10_000),
+    });
     const loginData = await loginRes.json();
     const token = loginData.token;
 
-    if (!token) throw new Error(`globalSetup: login falló — ${JSON.stringify(loginData)}`);
+    if (!token) {
+        throw new Error(`[e2e global-setup] Login falló: ${JSON.stringify(loginData)}`);
+    }
 
-    await page.goto(process.env.E2E_BASE_URL || 'http://localhost:3000');
-    await page.waitForLoadState('networkidle');
+    const authDir  = path.join(__dirname, '.auth');
+    const authFile = path.join(authDir, 'user.json');
 
-    await page.evaluate((t) => {
-        localStorage.setItem('erp_token', t);
-        localStorage.setItem('erp_token_issued_at', Date.now().toString());
-    }, token);
+    if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
-    await context.storageState({ path: path.join(authDir, 'user.json') });
-    await browser.close();
+    const storageState = {
+        cookies: [],
+        origins: [
+            {
+                origin: baseUrl,
+                localStorage: [
+                    { name: 'erp_token', value: token },
+                    { name: 'erp_token_issued_at', value: String(Date.now()) },
+                ],
+            },
+        ],
+    };
+
+    fs.writeFileSync(authFile, JSON.stringify(storageState, null, 2), 'utf-8');
+    console.log(`[e2e global-setup] storageState guardado en ${authFile}`);
 }
