@@ -452,6 +452,116 @@ class FacturaService
         });
     }
 
+    /**
+     * Emite una Nota de Débito sobre una factura de VENTA, registrando
+     * un cargo adicional al cliente (aumento de CxC, Ventas e IVA Débito).
+     *
+     * @param array{
+     *   numero_nd: string,
+     *   monto_neto: float,
+     *   monto_iva: float,
+     *   monto_bruto: float,
+     *   fecha_emision?: string,
+     *   razon: string,
+     *   emitir_dte?: bool,
+     * } $datos
+     *
+     * @throws ComercialException
+     */
+    public function emitirNotaDebitoVenta(int $empresaId, int $facturaVentaId, array $datos): Factura
+    {
+        return DB::transaction(function () use ($empresaId, $facturaVentaId, $datos) {
+            /** @var Factura|null $origen */
+            $origen = Factura::where('empresa_id', $empresaId)->find($facturaVentaId);
+
+            if (!$origen) {
+                throw ComercialException::noEncontrado("La factura de origen no existe o no pertenece a esta empresa.");
+            }
+
+            if ($origen->estado === 'ANULADA') {
+                throw ComercialException::regla("No se puede emitir una ND sobre una factura anulada.");
+            }
+
+            $neto  = round((float) $datos['monto_neto'], 2);
+            $iva   = round((float) $datos['monto_iva'], 2);
+            $bruto = round((float) $datos['monto_bruto'], 2);
+            $fecha = $datos['fecha_emision'] ?? now()->toDateString();
+
+            $nd = Factura::create([
+                'empresa_id'            => $empresaId,
+                'tipo'                  => 'VENTA',
+                'tipo_documento'        => 'NOTA_DEBITO',
+                'tipo_dte'              => 56,
+                'codigo_unico'          => Factura::generarCodigoUnico(),
+                'cliente_id'            => $origen->cliente_id,
+                'proveedor_id'          => $origen->proveedor_id,
+                'numero_factura'        => $datos['numero_nd'],
+                'fecha_emision'         => $fecha,
+                'monto_neto'            => $neto,
+                'monto_iva'             => $iva,
+                'monto_bruto'           => $bruto,
+                'estado'                => 'REGISTRADA',
+                'factura_referencia_id' => $origen->id,
+                'razon_nota_debito'     => $datos['razon'],
+                'moneda'                => $origen->moneda ?? 'CLP',
+            ]);
+
+            $nd->update([
+                'codigo_interno' => 'ND-' . str_pad((string) $nd->id, 5, '0', STR_PAD_LEFT),
+            ]);
+
+            // Cuentas contables para el asiento de la ND:
+            // DEBE CxC (aumenta la deuda del cliente)
+            // HABER Ventas + HABER IVA Débito (ingreso adicional)
+            $cuentaCxC       = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
+            $cuentaVentas    = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
+            $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
+
+            if (!$cuentaCxC || !$cuentaVentas) {
+                throw ComercialException::regla(
+                    "Configuración Contable Incompleta: se requieren cuentas 152005 (CxC) y 501105 (Ventas) para emitir la ND."
+                );
+            }
+
+            $detalles = [
+                [
+                    'cuenta_contable' => $cuentaVentas->codigo,
+                    'debe'            => 0,
+                    'haber'           => $neto,
+                    'glosa_detalle'   => "Ingreso adicional ND {$datos['numero_nd']} — {$datos['razon']}",
+                ],
+                [
+                    'cuenta_contable' => $cuentaCxC->codigo,
+                    'debe'            => $bruto,
+                    'haber'           => 0,
+                    'glosa_detalle'   => "Aumento CxC ND {$datos['numero_nd']} — cliente {$origen->cliente_id}",
+                ],
+            ];
+
+            if ($iva > 0 && $cuentaIvaDebito) {
+                $detalles[] = [
+                    'cuenta_contable' => $cuentaIvaDebito->codigo,
+                    'debe'            => 0,
+                    'haber'           => $iva,
+                    'glosa_detalle'   => "IVA Débito ND {$datos['numero_nd']}",
+                ];
+            }
+
+            $asiento = $this->asientoService->registrarAsiento([
+                'empresa_id'    => $empresaId,
+                'fecha'         => $fecha,
+                'glosa'         => "Nota de Débito Venta N° {$datos['numero_nd']} — {$datos['razon']}",
+                'tipo_asiento'  => 'traspaso',
+                'origen_modulo' => 'ventas',
+                'origen_id'     => $nd->id,
+            ], $detalles);
+
+            $nd->update(['comprobante_contable' => $asiento->numero_comprobante]);
+
+            return $nd->load(['facturaOrigen']);
+        });
+    }
+
     public function obtenerAsientoDeFactura(int $empresaId, int $facturaId): array
     {
         $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);

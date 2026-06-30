@@ -517,4 +517,48 @@ class FacturaController
             ], 400);
         }
     }
+
+    /**
+     * Emite una Nota de Débito sobre una factura de VENTA.
+     * POST /facturas/{id}/nota-debito
+     */
+    public function notaDebito(Request $request, int $id)
+    {
+        try {
+            $datos = $request->validate([
+                'numero_nd'     => 'required|string|max:255',
+                'monto_neto'    => 'required|numeric|min:0',
+                'monto_iva'     => 'required|numeric|min:0',
+                'monto_bruto'   => 'required|numeric|gt:0',
+                'razon'         => 'required|string|min:5|max:255',
+                'fecha_emision' => 'nullable|date',
+                'emitir_dte'    => 'nullable|boolean',
+            ]);
+
+            $nd = $this->service->emitirNotaDebitoVenta(
+                $request->user()->empresa_id,
+                $id,
+                $datos
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nota de Débito registrada correctamente.',
+                'data'    => $nd,
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors'  => $e->errors(),
+            ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
 }

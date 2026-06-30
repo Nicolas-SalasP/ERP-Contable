@@ -7,10 +7,11 @@ import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
 import ModalAsiento from '../Componentes/ModalAsiento';
 import ModalNotaCredito from '../Componentes/ModalNotaCredito';
+import ModalNotaDebito from '../Componentes/ModalNotaDebito';
 import HistorialFiltros from '../Componentes/HistorialFiltros';
 import WorkbenchReclasificacion from '../Componentes/WorkbenchReclasificacion';
 import { useFacturasHistorial } from '../Hooks/useFacturasHistorial';
-import { Calendar, BookOpen, ArrowLeftRight, Clock, MoreVertical, FileText, ChevronLeft, ChevronRight, CircleDollarSign, FileMinus } from 'lucide-react';
+import { Calendar, BookOpen, ArrowLeftRight, Clock, MoreVertical, FileText, ChevronLeft, ChevronRight, CircleDollarSign, FileMinus, FilePlus } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 const formatDate = (dateString) => {
@@ -44,6 +45,9 @@ const HistorialFacturas = () => {
     const [ncModalOpen, setNcModalOpen] = useState(false);
     const [ncFactura, setNcFactura] = useState(null);
 
+    const [ndModalOpen, setNdModalOpen] = useState(false);
+    const [ndFactura, setNdFactura] = useState(null);
+
     // Click outside del menu de acciones - se ejecuta junto al click outside del autocomplete
     const handleMenuClickOutside = useCallback((event) => {
         if (!event.target.closest('.menu-acciones-container')) setMenuAbiertoId(null);
@@ -65,6 +69,12 @@ const HistorialFacturas = () => {
         ejecutarBusqueda,
         seleccionarProveedor,
     } = useFacturasHistorial({ vistaActual, onMenuClickOutside: handleMenuClickOutside });
+
+    const abrirModalNd = (factura) => {
+        setMenuAbiertoId(null);
+        setNdFactura(factura);
+        setNdModalOpen(true);
+    };
 
     const abrirModalNc = (factura) => {
         setMenuAbiertoId(null);
@@ -225,6 +235,7 @@ const HistorialFacturas = () => {
         <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans text-slate-800 dark:text-slate-200 pb-10">
             <ModalAsiento isOpen={modalOpen} onClose={() => setModalOpen(false)} data={asientoData} loading={loadingAsiento} />
             <ModalNotaCredito isOpen={ncModalOpen} onClose={() => setNcModalOpen(false)} factura={ncFactura} onNcEmitida={() => window.location.reload()} />
+            <ModalNotaDebito isOpen={ndModalOpen} onClose={() => setNdModalOpen(false)} factura={ndFactura} onNdEmitida={() => window.location.reload()} />
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
@@ -508,6 +519,17 @@ const HistorialFacturas = () => {
                                                                                 >
                                                                                     <FileMinus size={16} strokeWidth={1.75} />
                                                                                     Nota de Crédito
+                                                                                </button>
+                                                                            </li>
+                                                                        )}
+                                                                        {fac.tipo === 'VENTA' && !isNotaCredito && fac.tipo_documento !== 'NOTA_DEBITO' && fac.estado !== 'ANULADA' && (
+                                                                            <li>
+                                                                                <button
+                                                                                    onClick={() => abrirModalNd(fac)}
+                                                                                    className="w-full text-left px-4 py-2.5 hover:bg-amber-50 hover:text-amber-700 transition-colors flex items-center gap-3 font-bold text-amber-600 border-b border-slate-100 dark:border-slate-700"
+                                                                                >
+                                                                                    <FilePlus size={16} strokeWidth={1.75} />
+                                                                                    Nota de Débito
                                                                                 </button>
                                                                             </li>
                                                                         )}

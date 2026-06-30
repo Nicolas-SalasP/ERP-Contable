@@ -59,6 +59,7 @@ class Factura extends Model
         'retencion_art59',
         'factura_referencia_id',
         'razon_nota_credito',
+        'razon_nota_debito',
     ];
 
     protected $casts = [

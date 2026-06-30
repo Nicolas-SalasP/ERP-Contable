@@ -27,7 +27,7 @@ const useSiiConfiguracion = () => {
         } catch (_) {
             // El error ya fue notificado al usuario por api.js (Swal).
         } finally {
-            if (montadoRef.current) setCargando(false);
+            setCargando(false);
         }
     }, []);
 

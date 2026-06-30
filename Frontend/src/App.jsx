@@ -71,6 +71,9 @@ const Dj1887 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1887'));
 const HonorariosRecibidos = lazy(() => import('./Modulos/Comercial/Vistas/HonorariosRecibidos'));
 const Dj1879 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1879'));
 const Dj1947 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1947'));
+const Dj1835 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1835'));
+const Dj1837 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1837'));
+const Dj1926 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1926'));
 const PropietariosEmpresa = lazy(() => import('./Modulos/Core/Vistas/PropietariosEmpresa'));
 import Glosario from './Modulos/Glosario/Glosario';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
@@ -333,6 +336,30 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
                 <LayoutPrincipal><Dj1947 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1835" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1835 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1837" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1837 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1926" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1926 /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
