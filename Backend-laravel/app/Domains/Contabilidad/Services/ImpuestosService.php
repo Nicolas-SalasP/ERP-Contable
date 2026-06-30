@@ -75,6 +75,7 @@ class ImpuestosService
 
         $compras = DB::table('facturas')
             ->where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
             ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])
             ->where('estado', '!=', 'ANULADA')
             ->where('es_documento_exterior', false)
@@ -225,6 +226,7 @@ class ImpuestosService
 
         $queryCompras = DB::table('facturas')
             ->where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
             ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])
             ->where('estado', '!=', 'ANULADA');
 
