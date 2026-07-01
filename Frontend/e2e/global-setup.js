@@ -5,8 +5,9 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendDir = path.resolve(__dirname, '../../Backend-laravel');
-const backendUrl = process.env.E2E_API_URL || 'http://localhost:8001';
-const baseUrl   = process.env.E2E_BASE_URL  || 'http://localhost:3000';
+const baseUrl    = process.env.E2E_BASE_URL  || 'http://localhost:3000';
+const isRemote   = !baseUrl.includes('localhost');
+const backendUrl = process.env.E2E_API_URL || (isRemote ? baseUrl : 'http://localhost:8001');
 
 async function backendReachable() {
     try {
@@ -27,13 +28,15 @@ export default async function globalSetup() {
         );
     }
 
-    try {
-        execSync('php artisan tenri:e2e-setup', {
-            cwd: backendDir,
-            stdio: 'inherit',
-        });
-    } catch (err) {
-        console.warn('[e2e global-setup] Advertencia al preparar usuario e2e:', err.message);
+    if (!isRemote) {
+        try {
+            execSync('php artisan tenri:e2e-setup', {
+                cwd: backendDir,
+                stdio: 'inherit',
+            });
+        } catch (err) {
+            console.warn('[e2e global-setup] Advertencia al preparar usuario e2e:', err.message);
+        }
     }
 
     const email    = process.env.E2E_USER_EMAIL    || 'e2e_runner@tenri.cl';
