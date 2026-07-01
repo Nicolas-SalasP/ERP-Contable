@@ -6,6 +6,7 @@ use App\Domains\Comercial\Exceptions\ComercialException;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\FacturaService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Exception;
@@ -515,6 +516,37 @@ class FacturaController
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 400);
+        }
+    }
+
+    /** Adjunta un PDF a una factura. POST /facturas/{id}/pdf */
+    public function subirPdf(Request $request, int $id): \Illuminate\Http\JsonResponse
+    {
+        $rutaPdf = null;
+        try {
+            $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
+
+            $empresaId = $request->user()->empresa_id;
+            $factura   = Factura::where('empresa_id', $empresaId)->findOrFail($id);
+
+            if ($request->hasFile('pdf')) {
+                if ($factura->archivo_pdf) {
+                    Storage::disk('public')->delete(str_replace('storage/', '', $factura->archivo_pdf));
+                }
+                $path    = $request->file('pdf')->store('facturas/pdfs', 'public');
+                $rutaPdf = 'storage/' . $path;
+            }
+
+            $factura->archivo_pdf = $rutaPdf;
+            $factura->save();
+
+            return response()->json(['success' => true, 'archivo_pdf' => $rutaPdf]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 
