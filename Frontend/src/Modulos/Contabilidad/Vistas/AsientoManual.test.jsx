@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
 
 vi.mock('../../../Configuracion/api', () => ({
     api: { get: vi.fn(), post: vi.fn() },

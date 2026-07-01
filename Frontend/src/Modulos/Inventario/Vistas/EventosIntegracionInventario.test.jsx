@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 
 vi.mock('../Componentes/InventarioUI', () => ({
     AlertBox: ({ children, tone }) => <div data-testid={`alert-${tone || 'default'}`}>{children}</div>,

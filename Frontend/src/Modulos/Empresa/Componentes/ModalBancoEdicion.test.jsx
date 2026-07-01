@@ -43,7 +43,6 @@ describe('ModalBancoEdicion', () => {
         const onClose = vi.fn();
         render(<ModalBancoEdicion isOpen={true} banco={bancoDatos} listaBancos={listaBancos} onChange={vi.fn()} onClose={onClose} onSubmit={vi.fn()} />);
         const botones = screen.getAllByRole('button');
-        const cerrar = botones.find(b => b.title === undefined && !b.type?.includes('submit'));
         fireEvent.click(botones[0]);
         expect(onClose).toHaveBeenCalled();
     });

@@ -29,7 +29,7 @@ vi.mock('../Componentes/InventarioUI', () => ({
     SecondaryButton: ({ onClick, children, disabled }) => (
         <button onClick={onClick} disabled={disabled}>{children}</button>
     ),
-    StatCard: ({ title, value, icon, tone }) => (
+    StatCard: ({ title, value, _icon, tone }) => (
         <div data-testid="stat-card" data-tone={tone}>
             <span>{title}</span>
             <span>{value}</span>
@@ -231,7 +231,7 @@ describe('UbicacionesInventario (vista)', () => {
     });
 
     it('filtra ubicaciones por texto de búsqueda', async () => {
-        const { useInventarioData } = await import('../Hooks/useInventarioData');
+        await import('../Hooks/useInventarioData');
         render(<UbicacionesInventario />);
         await waitFor(() => expect(screen.getByText('Filtros')).toBeTruthy());
 

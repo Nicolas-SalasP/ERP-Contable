@@ -26,7 +26,6 @@ import Swal from 'sweetalert2';
 afterEach(cleanup);
 
 // Helpers: la label no tiene htmlFor, usamos placeholder/role
-const getEmailInput = () => screen.getByPlaceholderText('');
 
 describe('RecuperarPassword', () => {
     it('renderiza el título "Recuperar Cuenta"', () => {

@@ -17,7 +17,7 @@ vi.mock('../../../Configuracion/logger', () => ({
 }));
 
 vi.mock('../../../Componentes/EstadoCarga', () => ({
-    default: ({ mensajeCargando, mensajeVacio, iconoVacio, cargando, vacio }) => {
+    default: ({ mensajeCargando, mensajeVacio, _iconoVacio, cargando, vacio }) => {
         if (cargando) return <div>{mensajeCargando}</div>;
         if (vacio) return <div>{mensajeVacio}</div>;
         return null;

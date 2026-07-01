@@ -33,7 +33,7 @@ vi.mock('../Componentes/InventarioUI', () => ({
     SecondaryButton: ({ onClick, children, disabled, type }) => (
         <button type={type || 'button'} onClick={onClick} disabled={disabled}>{children}</button>
     ),
-    StatCard: ({ title, value, icon, tone }) => (
+    StatCard: ({ title, value, _icon, tone }) => (
         <div data-testid="stat-card" data-tone={tone}>
             <span>{title}</span>
             <span>{value}</span>
