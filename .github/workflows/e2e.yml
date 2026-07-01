@@ -78,7 +78,8 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-          # Eliminar cualquier linea (comentada o no) que defina las variables DB
+          # Eliminar cualquier linea (comentada o no) que defina las variables DB y APP_ENV
+          sed -i '/^#\? *APP_ENV=/d' .env
           sed -i '/^#\? *DB_CONNECTION=/d' .env
           sed -i '/^#\? *DB_HOST=/d' .env
           sed -i '/^#\? *DB_PORT=/d' .env
@@ -88,6 +89,7 @@ jobs:
 
           # Appendear configuracion correcta para el MySQL del runner
           cat >> .env <<'ENVEOF'
+          APP_ENV=testing
           DB_CONNECTION=mysql
           DB_HOST=127.0.0.1
           DB_PORT=3306
