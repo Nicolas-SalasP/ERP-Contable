@@ -59,6 +59,18 @@ const ModalBancoEdicion = ({ isOpen, banco, listaBancos, onChange, onClose, onSu
                             onChange={e => onChange({ ...banco, numero_cuenta: e.target.value })}
                         />
                     </div>
+                    <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                            Cuenta Contable
+                        </label>
+                        <input
+                            placeholder="ej: 1-1-01-001"
+                            className="w-full border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+                            value={banco.cuenta_contable ?? ''}
+                            onChange={e => onChange({ ...banco, cuenta_contable: e.target.value || null })}
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">Código del plan de cuentas (requerido para conciliación)</p>
+                    </div>
 
                     <div className="pt-3 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700">
                         <button

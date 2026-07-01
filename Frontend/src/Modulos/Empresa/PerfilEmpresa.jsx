@@ -180,7 +180,8 @@ const PerfilEmpresa = () => {
             id: banco.id,
             banco: banco.banco,
             tipo_cuenta: banco.tipo_cuenta,
-            numero_cuenta: banco.numero_cuenta
+            numero_cuenta: banco.numero_cuenta,
+            cuenta_contable: banco.cuenta_contable ?? null,
         });
         setModalBancoOpen(true);
     };
