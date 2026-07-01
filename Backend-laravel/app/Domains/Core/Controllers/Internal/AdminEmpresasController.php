@@ -97,7 +97,8 @@ class AdminEmpresasController
                 'u.estado_suscripcion_id',
                 'es.nombre as estado_suscripcion_nombre',
                 'u.ultimo_acceso',
-                'u.bloqueado_hasta'
+                'u.bloqueado_hasta',
+                'u.module_keys'
             )
             ->orderBy('u.id')
             ->get()
@@ -117,8 +118,11 @@ class AdminEmpresasController
                     'ultimo_acceso' => $u->ultimo_acceso,
                     'online' => $online,
                     'bloqueado' => $bloqueado,
+                    'module_keys' => json_decode($u->module_keys ?? '[]', true) ?? [],
                 ];
             })->values();
+
+        $moduleKeysEmpresa = array_values(array_unique(array_merge(...($usuarios->pluck('module_keys')->filter()->toArray() ?: [[]]))));
 
         return response()->json([
             'empresa' => [
@@ -135,6 +139,7 @@ class AdminEmpresasController
                 'activa' => (bool) $empresa->activa,
                 'created_at' => $empresa->created_at,
                 'usuarios' => $usuarios,
+                'module_keys' => $moduleKeysEmpresa,
             ],
         ]);
     }
