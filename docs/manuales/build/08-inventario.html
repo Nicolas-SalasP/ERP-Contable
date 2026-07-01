@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;background:#0b1120;color:#fff;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;} .em{color:var(--emerald-d);font-weight:700;}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+  .cta{margin-top:18px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;color:#04241a;box-shadow:0 16px 30px rgba(16,185,129,.30);}
+  .cta .l b{font-family:'Poppins';font-size:13pt;color:#04241a;display:block;} .cta .l span{font-size:9.5pt;color:#063f2e;}
+  .cta .go{font-family:'Poppins';font-weight:800;color:#fff;font-size:12pt;display:flex;align-items:center;gap:9px;}
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+<body>
+
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 08</div>
+  <h1><b>Inventario</b> y Bodegas</h1>
+  <p class="lead">El módulo más amplio del sistema: catálogo de productos, bodegas y ubicaciones, movimientos y Kardex, valorización, lotes, alertas y todo el flujo de preparación y despacho de mercadería.</p>
+  <div class="hero"><img src="../assets/m8-01-dashboard.png" alt="Dashboard de Inventario"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Inventario</div>
+    <div><b>Capturas</b>Sistema real en vivo</div>
+  </div>
+</div>
+
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Inventario</h2>
+  <p class="sub">Dieciocho pantallas organizadas en cuatro grandes bloques de trabajo.</p>
+  <p>Inventario es el módulo con más pantallas de Tenri ERP Cloud. Para no perderse, conviene agruparlas por su función:</p>
+  <table>
+    <thead><tr><th>Bloque</th><th>Pantallas</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-sitemap"></i>Catálogo y estructura</td><td>Productos, Bodegas, Ubicaciones.</td></tr>
+      <tr><td><i class="fas fa-arrows-turn-to-dots"></i>Existencias y trazabilidad</td><td>Movimientos, Kardex, Valorización, Lotes.</td></tr>
+      <tr><td><i class="fas fa-truck-ramp-box"></i>Operación de salida</td><td>Reservas, Picking, Packing, Despachos, Devoluciones/Reversas.</td></tr>
+      <tr><td><i class="fas fa-gauge-high"></i>Control y análisis</td><td>Dashboard, Alertas y Reposición, Tomas Físicas, Reportes, Auditoría, Eventos de Integración.</td></tr>
+    </tbody>
+  </table>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-circle-info"></i></div>
+    <div class="tx"><b>Importante:</b> la operación de bodega (reservas, picking, packing, despacho) mueve <b>stock físico interno</b>, pero <b>no emite guías, facturas ni documentos tributarios (DTE/SII)</b>. Eso vive en los módulos de Ventas y Facturación Electrónica.</div>
+  </div>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">2</span> Dashboard de Inventario</h2>
+  <p class="sub">La foto gerencial del módulo en un vistazo.</p>
+  <p>Al entrar a Inventario, el Dashboard reúne los indicadores clave (KPIs) del área. Los principales:</p>
+  <table>
+    <thead><tr><th>Indicador</th><th>Qué mide</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-box"></i>Productos activos</td><td>Tamaño del catálogo operativo.</td></tr>
+      <tr><td><i class="fas fa-warehouse"></i>Bodegas</td><td>Ubicaciones de almacenamiento activas.</td></tr>
+      <tr><td><i class="fas fa-layer-group"></i>Stock total / Valor inventario</td><td>Unidades consolidadas y su valorización total en pesos.</td></tr>
+      <tr><td><i class="fas fa-triangle-exclamation"></i>Bajo mínimo / Sin stock</td><td>Productos que necesitan reposición.</td></tr>
+      <tr><td><i class="fas fa-hourglass-end"></i>Lotes vencidos / Alertas críticas</td><td>Riesgos que requieren atención inmediata.</td></tr>
+    </tbody>
+  </table>
+  <p>Más abajo, el Dashboard muestra la <b>distribución de stock por bodega</b> y los <b>lotes con stock</b>, para ubicar rápidamente dónde está el valor.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-01-dashboard.png" alt="Dashboard de inventario"></div>
+    <figcaption>Los KPIs se calculan en vivo sobre el stock real de todas las bodegas.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">3</span> Productos</h2>
+  <p class="sub">El catálogo sobre el que se apoya todo el módulo.</p>
+  <p>Es la base de artículos que luego usan los movimientos, el Kardex, los lotes, las reservas y las tomas físicas. Con <b>+ Nuevo producto</b> crea un artículo. Cada producto tiene:</p>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-barcode"></i>SKU</td><td>Código único interno del producto; también admite código de barras.</td></tr>
+      <tr><td><i class="fas fa-ruler"></i>Unidad</td><td>Unidad de medida (Unidad, Kg, Litro, Caja…).</td></tr>
+      <tr><td><i class="fas fa-scale-balanced"></i>Método de valorización</td><td><b>PMP</b> (precio medio ponderado) o <b>FIFO</b> (primero en entrar, primero en salir).</td></tr>
+      <tr><td><i class="fas fa-arrow-down-short-wide"></i>Stock mínimo</td><td>Umbral que dispara las alertas de reposición.</td></tr>
+      <tr><td><i class="fas fa-boxes-stacked"></i>Maneja lotes</td><td>Si el producto controla lote y fecha de vencimiento (insumos, perecibles).</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m8-02-productos.png" alt="Productos de inventario"></div>
+    <figcaption>El listado muestra SKU, unidad, PMP, stock mínimo, manejo de lotes y estado.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">4</span> Bodegas y Ubicaciones</h2>
+  <p class="sub">Dónde se guarda físicamente la mercadería.</p>
+  <p>Una <b>Bodega</b> es un recinto de almacenamiento (por ejemplo, Bodega Central y Bodega Sur). Con <b>+ Nueva bodega</b> agrega una; cada una tiene código, nombre, dirección y estado.</p>
+  <figure>
+    <div class="shot mid"><img src="../assets/m8-03-bodegas.png" alt="Bodegas"></div>
+    <figcaption>Listado de bodegas activas.</figcaption>
+  </figure>
+  <p>Dentro de cada bodega, las <b>Ubicaciones</b> definen la estructura fina (pasillo, estante, nivel, posición) y su tipo (Zona, Pasillo, Estante, Nivel, Posición, Ubicación). La pantalla de <b>Ubicaciones y disponibilidad avanzada</b> muestra, además, en qué estado está el stock de cada ubicación:</p>
+  <table>
+    <thead><tr><th>Estado</th><th>Significado</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-box" style="color:#3b82f6"></i>Físico</td><td>Todas las unidades presentes en la ubicación.</td></tr>
+      <tr><td><i class="fas fa-circle-check" style="color:#10b981"></i>Disponible</td><td>Stock libre para comprometer o despachar.</td></tr>
+      <tr><td><i class="fas fa-lock" style="color:#f59e0b"></i>Reservado</td><td>Comprometido por una reserva; no se puede volver a comprometer.</td></tr>
+      <tr><td><i class="fas fa-flask" style="color:#ef4444"></i>Cuarentena / Bloqueado</td><td>Stock retenido (control de calidad, incidencia) y no disponible.</td></tr>
+      <tr><td><i class="fas fa-truck-fast"></i>Tránsito</td><td>En traslado entre ubicaciones o bodegas.</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m8-04-ubicaciones.png" alt="Ubicaciones y disponibilidad"></div>
+    <figcaption>Disponibilidad por ubicación y estructura jerárquica de la bodega.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Movimientos</h2>
+  <p class="sub">Cada entrada, salida o ajuste que altera el stock.</p>
+  <p>Los <b>Movimientos</b> son el registro operacional que alimenta el Kardex y la valorización. Con <b>+ Nuevo movimiento</b> registra uno. Hay cinco tipos:</p>
+  <table>
+    <thead><tr><th>Tipo</th><th>Cuándo se usa</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-arrow-down"></i>Entrada</td><td>Ingreso de mercadería (compra, devolución de cliente).</td></tr>
+      <tr><td><i class="fas fa-arrow-up"></i>Salida</td><td>Egreso (venta, consumo interno, merma).</td></tr>
+      <tr><td><i class="fas fa-right-left"></i>Traspaso</td><td>Movimiento entre bodegas o ubicaciones.</td></tr>
+      <tr><td><i class="fas fa-plus"></i>Ajuste positivo</td><td>Corrección que suma stock (sobrante en conteo).</td></tr>
+      <tr><td><i class="fas fa-minus"></i>Ajuste negativo</td><td>Corrección que resta stock (faltante, deterioro).</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m8-05-movimientos.png" alt="Movimientos de inventario"></div>
+    <figcaption>Historial con producto, origen/destino, cantidad, costo y referencia del documento.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">6</span> Kardex</h2>
+  <p class="sub">La trazabilidad completa, producto por producto.</p>
+  <p>El <b>Kardex</b> reconstruye la historia de cada artículo: todas sus entradas, salidas, ajustes y el saldo resultante. Use los <b>filtros de consulta</b> (producto, bodega, lote, tipo, rango de fechas) y presione <b>Consultar Kardex</b>. Es la herramienta de referencia antes de una auditoría o una toma física.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-06-kardex.png" alt="Kardex de inventario"></div>
+    <figcaption>Cada línea del Kardex trae fecha, tipo, producto, bodega, cantidad, referencia y motivo.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">7</span> Valorización</h2>
+  <p class="sub">Cuánto vale su inventario, en pesos.</p>
+  <p>La <b>Valorización</b> muestra el stock valorizado según el PMP/costo promedio de cada producto. Los KPIs superiores resumen las líneas valorizadas, la cantidad física acumulada, el valor total y el costo promedio global. Puede <b>filtrar</b> por producto o bodega. Es la fuente para los reportes contables y la auditoría.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-07-valorizacion.png" alt="Valorización de inventario"></div>
+    <figcaption>Stock valorizado por producto y bodega, con el valor total del inventario.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">8</span> Lotes y Vencimientos</h2>
+  <p class="sub">Control granular para productos perecibles o trazables.</p>
+  <p>Para los productos que <i>manejan lotes</i>, esta pantalla lleva el detalle de cada <b>lote</b> con su código, fecha de fabricación, fecha de vencimiento y estado (Vigente, Por vencer, Vencido). Es clave para insumos, alimentos o productos con caducidad, y permite aplicar correctamente el criterio <b>FIFO</b> al despachar.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-08-lotes.png" alt="Lotes y vencimientos"></div>
+    <figcaption>Cada lote con su fabricación, vencimiento y estado de vigencia.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">9</span> Alertas y Reposición</h2>
+  <p class="sub">Control proactivo para no quedar sin stock.</p>
+  <p>Esta pantalla reúne, en un solo lugar, las señales que exigen acción: <b>stock bajo mínimo</b>, <b>reposición sugerida</b>, <b>lotes por vencer</b>, <b>reservas críticas</b> y <b>tomas físicas pendientes</b>. Las alertas se calculan de forma dinámica a partir de las <b>reglas</b> que usted configure con <b>+ Nueva regla</b>; el módulo <b>no ejecuta compras ni movimientos automáticos</b>, solo avisa.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-09-alertas.png" alt="Alertas y reposición"></div>
+    <figcaption>Tablero de alertas con filtros por tipo, severidad, producto y bodega.</figcaption>
+  </figure>
+</section>
+
+<div class="band">
+  <h3><i class="fas fa-truck-ramp-box"></i> El flujo de preparación y salida</h3>
+  <p>Las cuatro pantallas siguientes forman una <b>cadena</b>: se <b>Reserva</b> el stock, se <b>Prepara</b> (Picking), se <b>Empaca</b> (Packing) y se <b>Despacha</b>. Cada etapa nace de la anterior y ninguna emite documentos tributarios: es logística interna.</p>
+</div>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">10</span> Reservas y Disponibilidad</h2>
+  <p class="sub">Comprometer stock sin sacarlo todavía de bodega.</p>
+  <p>Una <b>reserva</b> aparta unidades para un pedido: el stock queda <b>comprometido</b> pero <b>no se descuenta</b> hasta que se consume. La regla clave es <span class="em">stock disponible = stock físico − stock reservado activo</span>. Con <b>+ Nueva reserva</b> crea una; el listado muestra las reservas activas, consumidas, liberadas o canceladas.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-10-reservas.png" alt="Reservas y disponibilidad"></div>
+    <figcaption>Las reservas comprometen disponibilidad sin alterar el stock físico.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">11</span> Picking de Bodega</h2>
+  <p class="sub">La orden de preparación: qué sacar y de dónde.</p>
+  <p>El <b>Picking</b> genera órdenes internas de preparación con <b>asignación sugerida</b> multiubicación y multilote: el sistema propone de qué ubicaciones y lotes tomar cada producto, y puede dividir una línea entre varias cuando el stock está fragmentado. Con <b>+ Nueva orden</b> comienza. Los KPIs siguen las órdenes pendientes, en preparación y con diferencias.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-11-picking.png" alt="Picking de bodega"></div>
+    <figcaption>Órdenes de picking con asignación sugerida y control de diferencias.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">12</span> Packing de Bodega</h2>
+  <p class="sub">Empacar lo preparado y controlar diferencias.</p>
+  <p>El <b>Packing</b> nace de un picking <b>completo o con diferencias aceptadas</b>. Con <b>Generar packing</b> se arma el empaque, se controlan las diferencias y se prepara la salida. Esta etapa tampoco emite guías, facturas ni folios tributarios.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-12-packing.png" alt="Packing de bodega"></div>
+    <figcaption>El packing solo se habilita a partir de un picking confirmado.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">13</span> Despachos</h2>
+  <p class="sub">La salida física, controlada desde el empaque.</p>
+  <p>El <b>Despacho interno</b> se genera desde un packing <b>empacado</b>. Con <b>Generar despacho</b> se confirma la salida: se <b>descuenta el stock físico</b>, se registra el movimiento en el Kardex y se libera la reserva asociada. Es el paso que finalmente rebaja las existencias.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-13-despachos.png" alt="Despacho interno"></div>
+    <figcaption>El despacho confirma la salida y descuenta stock; no emite documentos SII.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">14</span> Devoluciones y Reversas</h2>
+  <p class="sub">Corregir después del despacho.</p>
+  <p>Cuando algo vuelve tras un despacho, esta pantalla gestiona el <b>reingreso físico</b>, la <b>reversa total o parcial</b> y las <b>diferencias post-despacho</b>. Las cantidades reversables se calculan contra lo realmente despachado menos lo ya devuelto. Con <b>+ Nueva devolución/reversa</b> inicia el proceso, siempre a partir de un despacho confirmado.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-14-devoluciones.png" alt="Devoluciones y reversas"></div>
+    <figcaption>Control logístico posterior al despacho, sin efectos tributarios.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">15</span> Tomas Físicas</h2>
+  <p class="sub">Contar la bodega y ajustar las diferencias.</p>
+  <p>Una <b>toma física</b> compara el conteo real contra el stock del sistema y genera los <b>ajustes auditables</b> en el Kardex. El flujo recomendado es <b>crear → iniciar → registrar conteos → cerrar → ajustar</b>. La regla crítica: la toma se compara contra el <b>stock físico</b>, no contra el disponible, y las reservas activas no alteran el conteo.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-15-tomas.png" alt="Tomas físicas"></div>
+    <figcaption>Las tomas físicas generan ajustes trazables a partir del conteo real.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">16</span> Reportes</h2>
+  <p class="sub">Todo el módulo, exportable a CSV.</p>
+  <p>La pantalla de <b>Reportes</b> centraliza la información gerencial en tarjetas: Stock, Movimientos, Valorización, Lotes, Reservas, Tomas físicas, Ajustes y Reposición y alertas. Cada reporte se puede <b>filtrar</b> (producto, bodega, estado) y <b>Exportar CSV</b> para llevarlo a una planilla o a contabilidad.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m8-16-reportes.png" alt="Reportes de inventario"></div>
+    <figcaption>Ocho reportes exportables con filtros por producto, bodega y estado.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">17</span> Auditoría y Eventos de Integración</h2>
+  <p class="sub">La trazabilidad técnica del módulo.</p>
+  <p>Dos pantallas de control avanzado cierran el módulo:</p>
+  <table>
+    <thead><tr><th>Pantalla</th><th>Para qué sirve</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-clipboard-check"></i>Auditoría Operativa</td><td>Bitácora de trazabilidad por empresa, usuario, acción, entidad, severidad e IP. Registra solo operaciones que <b>cambian datos</b> (no las consultas), sin guardar tokens ni contraseñas. No reemplaza la auditoría tributaria.</td></tr>
+      <tr><td><i class="fas fa-plug"></i>Eventos de Integración</td><td>Bandeja técnica de eventos internos para preparar la integración futura entre Inventario y otros módulos (Facturación, Contabilidad). Útil para soporte y diagnóstico.</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m8-17-auditoria.png" alt="Auditoría de inventario"></div>
+    <figcaption>La auditoría operativa deja rastro de cada operación que modifica el inventario.</figcaption>
+  </figure>
+</section>
+
+<div class="band">
+  <h3><i class="fas fa-shield-halved"></i> Aislamiento y permisos</h3>
+  <p>Todo el inventario está <b>aislado por empresa</b>: cada organización ve solo sus bodegas y productos. Además, el acceso a cada pantalla depende de sus <b>permisos</b>: si su rol no habilita, por ejemplo, Despachos o Tomas Físicas, esa opción no aparecerá en el menú.</p>
+</div>
+
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:18px;"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">En <b>resumen</b></div>
+  <p class="intro">Inventario cubre el ciclo completo de la mercadería: desde el catálogo y la valorización, hasta la preparación, el despacho y el conteo físico, con trazabilidad total.</p>
+  <div class="recap">
+    <div class="c"><div class="ic"><i class="fas fa-sitemap"></i></div><h4>Catálogo y stock</h4><p>Productos, bodegas, ubicaciones, movimientos, Kardex, valorización y lotes.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-truck-ramp-box"></i></div><h4>Operación de salida</h4><p>Reserva, picking, packing, despacho y devoluciones, sin emitir DTE.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-gauge-high"></i></div><h4>Control</h4><p>Dashboard, alertas, tomas físicas, reportes y auditoría operativa.</p></div>
+  </div>
+  <div class="cta">
+    <div class="l"><b>Siguiente módulo</b><span>F29, Renta, Declaraciones Juradas y Libro de Compras y Ventas.</span></div>
+    <div class="go">09 · Gestión Tributaria <i class="fas fa-arrow-right"></i></div>
+  </div>
+  <div class="foot"><span><b>Tenri ERP Cloud</b> · Manual de usuario 08 — Inventario</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>
