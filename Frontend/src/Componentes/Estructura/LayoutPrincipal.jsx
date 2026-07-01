@@ -63,7 +63,7 @@ const LayoutPrincipal = ({ children }) => {
                     <button onClick={openSidebar} className="text-slate-600 dark:text-slate-300 focus:outline-none">
                         <Menu size={24} strokeWidth={1.75} />
                     </button>
-                    <span className="font-bold text-slate-800 dark:text-slate-100">ERP Contable</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100">Tenri ERP Cloud</span>
                     <ToggleTema />
                 </header>
 

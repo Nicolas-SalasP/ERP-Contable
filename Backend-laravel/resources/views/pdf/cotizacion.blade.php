@@ -347,7 +347,7 @@
     </table>
 
     <div class="footer">
-        Generado vía Sistema ERP Contable Centralizado por {{ $empresa->razon_social ?? 'Empresa' }}
+        Generado vía Tenri ERP Cloud por {{ $empresa->razon_social ?? 'Empresa' }}
     </div>
 
 </body>
