@@ -143,6 +143,7 @@ class EmpresaController extends Controller
                 'banco' => 'sometimes|required|string|max:100',
                 'tipo_cuenta' => 'sometimes|required|string|max:50',
                 'numero_cuenta' => 'sometimes|required|string|max:50',
+                'cuenta_contable' => 'nullable|string|max:20',
             ]);
 
             $cuenta = $this->empresaService->actualizarBanco($request->user()->empresa_id, $id, $datos);

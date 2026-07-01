@@ -109,6 +109,10 @@ class ProveedorController
                 $datos['direccion'] = $request->direccion;
             if ($request->has('telefono'))
                 $datos['telefono'] = $request->telefono;
+            if ($request->has('region'))
+                $datos['region'] = $request->region;
+            if ($request->has('comuna'))
+                $datos['comuna'] = $request->comuna;
 
             $proveedor = $this->service->actualizarProveedor($request->user()->empresa_id, $id, $datos);
 

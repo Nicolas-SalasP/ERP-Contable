@@ -52,7 +52,9 @@ const PerfilEmpresa = () => {
     const [modalCentroOpen, setModalCentroOpen] = useState(false);
     const [centroEditado, setCentroEditado] = useState(null);
 
-    const BASE_URL_IMG = API_BASE_URL.replace('/api', '/storage/');
+    const BASE_URL_IMG = (() => {
+        try { return new URL(API_BASE_URL).origin + '/storage/'; } catch { return '/storage/'; }
+    })();
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -180,7 +182,8 @@ const PerfilEmpresa = () => {
             id: banco.id,
             banco: banco.banco,
             tipo_cuenta: banco.tipo_cuenta,
-            numero_cuenta: banco.numero_cuenta
+            numero_cuenta: banco.numero_cuenta,
+            cuenta_contable: banco.cuenta_contable ?? null,
         });
         setModalBancoOpen(true);
     };

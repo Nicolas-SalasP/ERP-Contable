@@ -74,6 +74,7 @@ class EmpresaService
             'banco' => $datos['banco'] ?? $cuenta->banco,
             'tipo_cuenta' => $datos['tipo_cuenta'] ?? $cuenta->tipo_cuenta,
             'numero_cuenta' => $datos['numero_cuenta'] ?? $cuenta->numero_cuenta,
+            'cuenta_contable' => array_key_exists('cuenta_contable', $datos) ? $datos['cuenta_contable'] : $cuenta->cuenta_contable,
         ]);
 
         return $cuenta;

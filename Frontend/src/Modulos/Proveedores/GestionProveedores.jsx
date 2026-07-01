@@ -240,7 +240,7 @@ const GestionProveedores = () => {
     const paisRef = useRef(null);
 
     const initialFormState = {
-        codigo: '', rut: '', razonSocial: '', paisIso: 'CL', moneda: 'CLP', nombreContacto: '', emailContacto: '', direccion: '', telefono: ''
+        codigo: '', rut: '', razonSocial: '', paisIso: 'CL', moneda: 'CLP', nombreContacto: '', emailContacto: '', direccion: '', telefono: '', region: '', comuna: ''
     };
     const [formData, setFormData] = useState(initialFormState);
     const [editingId, setEditingId] = useState(null);
@@ -325,7 +325,9 @@ const GestionProveedores = () => {
             nombreContacto: prov.nombre_contacto || '',
             emailContacto: prov.email_contacto || '',
             direccion: prov.direccion || '',
-            telefono: prov.telefono || ''
+            telefono: prov.telefono || '',
+            region: prov.region || '',
+            comuna: prov.comuna || ''
         });
         const nombrePais = paises.find(p => p.iso === prov.pais_iso)?.nombre || prov.pais_iso;
         setBusquedaPais(nombrePais);
@@ -642,6 +644,22 @@ const GestionProveedores = () => {
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Email de Facturación / Pagos</label>
                                                 <input type="email" className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" value={formData.emailContacto} onChange={e => setFormData({ ...formData, emailContacto: e.target.value })} placeholder="pagos@empresa.com" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Teléfono</label>
+                                                <input className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" value={formData.telefono} onChange={e => setFormData({ ...formData, telefono: e.target.value })} placeholder="+56 9 1234 5678" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Dirección</label>
+                                                <input className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" value={formData.direccion} onChange={e => setFormData({ ...formData, direccion: e.target.value })} placeholder="Av. Ejemplo 123, piso 4..." />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Región</label>
+                                                <input className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" value={formData.region} onChange={e => setFormData({ ...formData, region: e.target.value })} placeholder="Ej: Metropolitana" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Comuna</label>
+                                                <input className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700" value={formData.comuna} onChange={e => setFormData({ ...formData, comuna: e.target.value })} placeholder="Ej: Providencia" />
                                             </div>
                                         </div>
                                     </div>

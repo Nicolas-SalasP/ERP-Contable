@@ -7,8 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        // Produccion fue creada desde SQL legacy con INT — forzar BIGINT UNSIGNED
-        // Sin ->unique() en el change(): el indice ya existe desde la migration original
         Schema::table('facturas', function (Blueprint $table) {
             $table->unsignedBigInteger('codigo_unico')->change();
         });
