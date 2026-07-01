@@ -8,7 +8,7 @@ on:
         type: boolean
         default: true
   push:
-    branches: [ "main", "dev", "NSalas-dev" ]
+    branches: [ "main", "dev" ]
   schedule:
     - cron: '0 4 * * *'
 
