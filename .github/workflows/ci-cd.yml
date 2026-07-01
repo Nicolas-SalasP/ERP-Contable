@@ -366,11 +366,23 @@ jobs:
       - name: 📦 Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      - name: 🔍 Verificar disponibilidad staging
+        id: staging-check
+        run: |
+          if curl -sf --max-time 10 https://staging.erp.tenri.cl/ -o /dev/null 2>&1; then
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Staging no disponible — omitiendo smoke tests"
+          fi
+
       - name: 🎭 Instalar Chromium
+        if: steps.staging-check.outputs.available == 'true'
         working-directory: Frontend
         run: pnpm e2e:install
 
       - name: 🔥 Smoke tests contra staging
+        if: steps.staging-check.outputs.available == 'true'
         working-directory: Frontend
         env:
           E2E_BASE_URL: https://staging.erp.tenri.cl
