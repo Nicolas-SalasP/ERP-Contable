@@ -37,6 +37,6 @@ return Application::configure(basePath: dirname(__DIR__))
         Integration::handles($exceptions);
 
         $exceptions->render(function (AuthenticationException $e, $request) {
-            return response()->json(['success' => false, 'message' => 'No autenticado.'], 401);
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         });
     })->create();
