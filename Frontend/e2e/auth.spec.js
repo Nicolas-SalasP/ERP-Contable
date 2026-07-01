@@ -12,8 +12,8 @@
 
 import { test, expect } from '@playwright/test';
 
-const USER_EMAIL = process.env.E2E_USER_EMAIL || 'admin@test.cl';
-const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password';
+const USER_EMAIL = process.env.E2E_USER_EMAIL || 'e2e_runner@tenri.cl';
+const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'E2ePassword_2026';
 
 test.describe('Autenticacion', () => {
     test.use({ storageState: { cookies: [], origins: [] } });
