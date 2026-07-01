@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrackUltimoAcceso;
 use App\Http\Middleware\VerifyWebApiKey;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,7 +34,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Reporta a Sentry las excepciones no controladas (no-op si SENTRY_LARAVEL_DSN
-        // está vacío, p. ej. en desarrollo/tests).
         Integration::handles($exceptions);
+
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            return response()->json(['success' => false, 'message' => 'No autenticado.'], 401);
+        });
     })->create();
