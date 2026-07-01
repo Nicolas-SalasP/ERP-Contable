@@ -7,24 +7,23 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        // Produccion fue creada desde SQL legacy con INT — forzar BIGINT UNSIGNED
         Schema::table('facturas', function (Blueprint $table) {
-            $table->unsignedBigInteger('codigo_unico')->unique()->change();
+            $table->unsignedBigInteger('codigo_unico')->change();
         });
 
         Schema::table('asientos_contables', function (Blueprint $table) {
-            $table->unsignedBigInteger('codigo_unico')->nullable()->unique()->change();
+            $table->unsignedBigInteger('codigo_unico')->nullable()->change();
         });
     }
 
     public function down(): void
     {
         Schema::table('facturas', function (Blueprint $table) {
-            $table->unsignedInteger('codigo_unico')->unique()->change();
+            $table->unsignedInteger('codigo_unico')->change();
         });
 
         Schema::table('asientos_contables', function (Blueprint $table) {
-            $table->unsignedInteger('codigo_unico')->nullable()->unique()->change();
+            $table->unsignedInteger('codigo_unico')->nullable()->change();
         });
     }
 };
