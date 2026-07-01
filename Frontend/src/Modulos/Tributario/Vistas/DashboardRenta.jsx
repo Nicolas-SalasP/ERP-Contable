@@ -201,6 +201,20 @@ const DashboardRenta = () => {
         );
     }
 
+    // Resguardo: mientras no haya datos cargados (por ejemplo, durante la
+    // recarga tras abortar la petición inicial en el montaje), mostramos el
+    // estado de carga en lugar de intentar desestructurar un valor nulo.
+    if (!datosRenta) {
+        return (
+            <EstadoCarga
+                cargando={true}
+                mensajeCargando="Calculando Base Imponible Tributaria..."
+                tamano="completo"
+                color="indigo"
+            />
+        );
+    }
+
     const { resumen, desglose, tasa_impuesto, correccion_monetaria: cm } = datosRenta;
 
     return (
