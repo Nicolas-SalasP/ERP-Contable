@@ -33,7 +33,7 @@ class ActivoFijoSeguridadTest extends TestCase
     public function test_usuario_no_autenticado_es_rechazado()
     {
         $response = $this->getJson('/api/activos');
-        $response->assertStatus(401)->assertJson(['message' => 'Unauthenticated.']);
+        $response->assertStatus(401)->assertJson(['message' => 'No autenticado.']);
     }
 
     public function test_aislamiento_de_datos_multitenant_evita_fuga_de_informacion()
