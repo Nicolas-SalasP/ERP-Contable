@@ -463,8 +463,8 @@ class InventarioReservaService
             $key = implode(':', [
                 $detalle['producto']->id,
                 $detalle['bodega']->id,
-                $detalle['ubicacion']?->id ?? 'sin_ubicacion',
-                $detalle['lote']?->id ?? 'sin_lote',
+                $detalle['ubicacion']->id ?? 'sin_ubicacion',
+                $detalle['lote']->id ?? 'sin_lote',
             ]);
 
             if (!isset($grupos[$key])) {

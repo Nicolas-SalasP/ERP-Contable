@@ -23,11 +23,8 @@ class DteXmlBuilderTipo39Test extends TestCase
         $this->prepararEntornoBase();
         $this->builder = new DteXmlBuilder(new DteXsdValidator());
 
-        // DTE_v10.xsd NO lista el tipo 39 (boleta) en su enumeracion. Las
-        // boletas viven en EnvioBOLETA_v11.xsd con un sobre y estructura
-        // distinta (OT-0 v2 hallazgo H4). Soporte de boletas llega en una
-        // sub-OT posterior (F6-bis: BoletaXmlBuilder + EnvioBOLETA_v11.xsd).
-        $this->markTestSkipped('Boletas (tipo 39/41) viven en EnvioBOLETA_v11.xsd, no en DTE_v10.xsd. Soporte llega en F6-bis.');
+        // DteXmlBuilder omite validación XSD para tipo 39/41 (usan EnvioBOLETA_v11.xsd).
+        // Los tests validan estructura XML del DTE individual, no el sobre de envío.
     }
 
     private function boleta(array $overrides = []): SiiDteEmitido

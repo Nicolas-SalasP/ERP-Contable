@@ -9,6 +9,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Registro de uso de folio de un CAF.
+ *
+ * @property int $id
+ * @property int $caf_id
+ * @property int $folio
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class SiiCafFolioUso extends Model
 {
     use HasFactory;

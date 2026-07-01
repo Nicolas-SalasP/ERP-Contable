@@ -4,6 +4,8 @@ namespace App\Domains\Rrhh\Services;
 
 use App\Domains\Core\Models\SolicitudArco;
 use App\Domains\Rrhh\Exceptions\RrhhException;
+use App\Domains\Rrhh\Models\CargaFamiliar;
+use App\Domains\Rrhh\Models\Contrato;
 use App\Domains\Rrhh\Models\Empleado;
 use App\Domains\Rrhh\Models\Liquidacion;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +37,39 @@ class ArcoService
     {
         $empleado = $this->resolver($empresaId, $id);
 
+        /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Rrhh\Models\Contrato> $contratos */
+        $contratos = $empleado->contratos;
+        $contratosExport = $contratos->map(fn (Contrato $c) => [
+            'id'                 => $c->id,
+            'tipo'               => $c->tipo,
+            'cargo'              => $c->cargo,
+            'fecha_inicio'       => optional($c->fecha_inicio)->toDateString(),
+            'fecha_termino'      => optional($c->fecha_termino)->toDateString(),
+            'fecha_termino_real' => optional($c->fecha_termino_real)->toDateString(),
+            'estado'             => $c->estado,
+            'es_contrato_activo' => $c->es_contrato_activo,
+        ])->all();
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Rrhh\Models\CargaFamiliar> $cargasFamiliares */
+        $cargasFamiliares = $empleado->cargasFamiliares;
+        $cargasExport = $cargasFamiliares->map(fn (CargaFamiliar $cf) => [
+            'rut'    => $cf->rut,
+            'nombre' => $cf->nombre,
+            'tipo'   => $cf->tipo,
+        ])->all();
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Rrhh\Models\Liquidacion> $liquidacionesCol */
+        $liquidacionesCol = $empleado->liquidaciones()
+            ->orderBy('anio')
+            ->orderBy('mes')
+            ->get(['anio', 'mes', 'liquido_a_pagar']);
+        $liquidacionesExport = $liquidacionesCol->map(fn (Liquidacion $l) => [
+            'periodo'         => sprintf('%04d-%02d', $l->anio, $l->mes),
+            'anio'            => $l->anio,
+            'mes'             => $l->mes,
+            'liquido_a_pagar' => $l->liquido_a_pagar,
+        ])->all();
+
         $datos = [
             'identidad' => [
                 'rut'              => $empleado->rut,
@@ -58,31 +93,9 @@ class ArcoService
                 'banco_tipo_cuenta' => $empleado->banco_tipo_cuenta,
                 'numero_cuenta'     => $this->enmascararCuenta($empleado->banco_numero_cuenta),
             ],
-            'contratos' => $empleado->contratos->map(fn ($c) => [
-                'id'                 => $c->id,
-                'tipo'               => $c->tipo,
-                'cargo'              => $c->cargo,
-                'fecha_inicio'       => optional($c->fecha_inicio)->toDateString(),
-                'fecha_termino'      => optional($c->fecha_termino)->toDateString(),
-                'fecha_termino_real' => optional($c->fecha_termino_real)->toDateString(),
-                'estado'             => $c->estado,
-                'es_contrato_activo' => $c->es_contrato_activo,
-            ])->all(),
-            'cargas_familiares' => $empleado->cargasFamiliares->map(fn ($cf) => [
-                'rut'    => $cf->rut,
-                'nombre' => $cf->nombre,
-                'tipo'   => $cf->tipo,
-            ])->all(),
-            'liquidaciones' => $empleado->liquidaciones()
-                ->orderBy('anio')
-                ->orderBy('mes')
-                ->get(['anio', 'mes', 'liquido_a_pagar'])
-                ->map(fn ($l) => [
-                    'periodo'         => sprintf('%04d-%02d', $l->anio, $l->mes),
-                    'anio'            => $l->anio,
-                    'mes'             => $l->mes,
-                    'liquido_a_pagar' => $l->liquido_a_pagar,
-                ])->all(),
+            'contratos'         => $contratosExport,
+            'cargas_familiares' => $cargasExport,
+            'liquidaciones'     => $liquidacionesExport,
         ];
 
         $datos['accesos'] = DB::table('auditorias')
@@ -273,6 +286,7 @@ class ArcoService
 
         // Anonimiza las cargas familiares del titular (datos de terceros vinculados).
         foreach ($empleado->cargasFamiliares()->withoutGlobalScopes()->get() as $carga) {
+            /** @var CargaFamiliar $carga */
             $carga->rut = null;
             $carga->nombre = 'ANONIMIZADO';
             $carga->save();

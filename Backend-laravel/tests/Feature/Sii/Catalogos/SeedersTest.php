@@ -59,31 +59,31 @@ class SeedersTest extends TestCase
         $this->assertGreaterThanOrEqual(21, UnidadSii::count());
     }
 
-    public function test_sii_cat_comunas_tabla_creada_y_vacia(): void
+    public function test_sii_cat_comunas_cargada_con_datos(): void
     {
         $this->assertTrue(
             Schema::hasTable('sii_cat_comunas'),
             'La tabla sii_cat_comunas no existe.'
         );
 
-        $this->assertSame(
-            0,
+        $this->assertGreaterThanOrEqual(
+            300,
             ComunaSii::count(),
-            'sii_cat_comunas deberia quedar vacia en esta sub-OT (carga real en F1.1-bis).'
+            'sii_cat_comunas debe tener al menos 300 comunas (seeder SiiCatComunasSeeder).'
         );
     }
 
-    public function test_sii_cat_acteco_tabla_creada_y_vacia(): void
+    public function test_sii_cat_acteco_cargada_con_datos(): void
     {
         $this->assertTrue(
             Schema::hasTable('sii_cat_acteco'),
             'La tabla sii_cat_acteco no existe.'
         );
 
-        $this->assertSame(
-            0,
+        $this->assertGreaterThanOrEqual(
+            400,
             ActecoSii::count(),
-            'sii_cat_acteco deberia quedar vacia en esta sub-OT (carga real en F1.1-bis).'
+            'sii_cat_acteco debe tener al menos 400 actividades económicas (seeder SiiCatActecoSeeder).'
         );
     }
 }

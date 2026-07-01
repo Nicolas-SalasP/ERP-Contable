@@ -5,7 +5,9 @@ namespace App\Domains\Sii\Console\Commands;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Models\SiiDteEmitidoDetalle;
+use App\Domains\Sii\Models\SiiDteEmitidoEvento;
 use App\Domains\Sii\Models\SiiEnvioDte;
+use App\Domains\Sii\Models\SiiEnvioDteEvento;
 use App\Domains\Sii\Services\Emision\EmitirDteService;
 use App\Domains\Sii\Services\Envio\EnvioSiiService;
 use App\Domains\Sii\Services\Polling\PollearEstadoSiiService;
@@ -137,6 +139,7 @@ class FlujoCompletoPruebaCommand extends Command
             'con-reparos' => 'Aceptado con reparos menores',
             'rechazado'   => 'Envio Rechazado',
             'procesando'  => 'En Proceso',
+            default       => throw new \InvalidArgumentException("Escenario no soportado: {$escenario}"),
         };
 
         Http::fake([
@@ -257,10 +260,12 @@ class FlujoCompletoPruebaCommand extends Command
         $this->line('Estado final envio     : ' . $envio->estado_envio);
         $this->line('Eventos del DTE        : ' . $dte->eventos->count());
         foreach ($dte->eventos as $ev) {
+            /** @var SiiDteEmitidoEvento $ev */
             $this->line('  ' . ($ev->estado_anterior ?? 'NULL') . ' -> ' . $ev->estado_nuevo . ' @ ' . $ev->created_at->format('H:i:s'));
         }
         $this->line('Eventos del envio      : ' . $envio->eventos->count());
         foreach ($envio->eventos as $ev) {
+            /** @var SiiEnvioDteEvento $ev */
             $code = $ev->codigo_sii_raw ? " [code={$ev->codigo_sii_raw}]" : '';
             $this->line('  ' . ($ev->estado_anterior ?? 'NULL') . ' -> ' . $ev->estado_nuevo . $code);
         }

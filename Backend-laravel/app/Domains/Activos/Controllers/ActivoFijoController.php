@@ -392,4 +392,18 @@ class ActivoFijoController
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
         }
     }
+
+    public function amortizacion(Request $request, $id)
+    {
+        try {
+            $resultado = $this->service->tablaAmortizacion(
+                $request->user()->empresa_id,
+                (int) $id
+            );
+            return response()->json(['success' => true, 'data' => $resultado]);
+        } catch (Exception $e) {
+            $status = $e->getCode() === 404 ? 404 : 400;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+        }
+    }
 }

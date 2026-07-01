@@ -108,7 +108,7 @@ export const formatearIdentificador = (numero, paisIso) => {
         case 'BR':
             return limpio;
 
-        default: return limpio;
+        default: return numero;  // preservar input tal cual para países sin formato específico
     }
 };
 

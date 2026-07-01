@@ -36,12 +36,16 @@ class InventarioPickingAsignacionService
 
         return $query->get()
             ->filter(function (StockUbicacionInventario $stock) {
-                if ($stock->ubicacion && !$stock->ubicacion->activo) {
+                /** @var \App\Domains\Inventario\Models\InventarioUbicacion|null $ubicacion */
+                $ubicacion = $stock->ubicacion;
+                if ($ubicacion && !$ubicacion->activo) {
                     return false;
                 }
 
-                if ($stock->lote) {
-                    if (!$stock->lote->activo || $stock->lote->estaVencido() || $stock->lote->estaBloqueadoOperativamente()) {
+                /** @var \App\Domains\Inventario\Models\LoteInventario|null $lote */
+                $lote = $stock->lote;
+                if ($lote) {
+                    if (!$lote->activo || $lote->estaVencido() || $lote->estaBloqueadoOperativamente()) {
                         return false;
                     }
                 }
@@ -49,9 +53,11 @@ class InventarioPickingAsignacionService
                 return $stock->stockDisponible() > 0;
             })
             ->sortBy(function (StockUbicacionInventario $stock) {
-                $fechaVencimiento = $stock->lote?->fecha_vencimiento?->format('Y-m-d') ?? '9999-12-31';
-                $fechaFabricacion = $stock->lote?->fecha_fabricacion?->format('Y-m-d') ?? '9999-12-31';
-                $codigoUbicacion = $stock->ubicacion?->codigo ?? 'ZZZ';
+                /** @var \App\Domains\Inventario\Models\LoteInventario|null $lote */
+                $lote = $stock->lote;
+                $fechaVencimiento = $lote?->fecha_vencimiento?->format('Y-m-d') ?? '9999-12-31';
+                $fechaFabricacion = $lote?->fecha_fabricacion?->format('Y-m-d') ?? '9999-12-31';
+                $codigoUbicacion = $stock->ubicacion->codigo ?? 'ZZZ';
 
                 return $fechaVencimiento . '|' . $fechaFabricacion . '|' . $codigoUbicacion . '|' . str_pad((string) $stock->id, 12, '0', STR_PAD_LEFT);
             })
@@ -75,6 +81,7 @@ class InventarioPickingAsignacionService
         $asignaciones = [];
         $candidatos = $this->candidatosDisponibles($empresaId, (int) $producto->id, $bodegaId, $loteId);
 
+        /** @var StockUbicacionInventario $stock */
         foreach ($candidatos as $stock) {
             if ($pendiente <= 0) {
                 break;

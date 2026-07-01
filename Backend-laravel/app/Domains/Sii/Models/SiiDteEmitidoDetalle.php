@@ -9,6 +9,25 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $dte_emitido_id
+ * @property int $numero_linea
+ * @property string|null $codigo_item
+ * @property string $nombre_item
+ * @property string|null $descripcion
+ * @property string|null $unidad_medida
+ * @property float|null $cantidad
+ * @property float $precio_unitario
+ * @property float|null $descuento_pct
+ * @property float|null $descuento_monto
+ * @property float|null $recargo_pct
+ * @property float|null $recargo_monto
+ * @property float|null $monto_item
+ * @property bool|null $exento
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class SiiDteEmitidoDetalle extends Model
 {
     use HasFactory;

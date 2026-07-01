@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AgregarRequestId;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureSubscriptionWritable;
 use App\Http\Middleware\EnsureUserHasPermission;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(AgregarRequestId::class);
         $middleware->alias([
             'web.api.key' => VerifyWebApiKey::class,
             'check.subscription' => CheckSubscription::class,

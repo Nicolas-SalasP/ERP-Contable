@@ -45,7 +45,16 @@ const GestionCotizaciones = () => {
     }, []);
 
     const handleCambiarEstado = async (id, nuevoEstado) => {
-        if (!window.confirm(`¿Estás seguro de que deseas marcar la cotización #${String(id).padStart(5, '0')} como ${nuevoEstado}?`)) return;
+        const { isConfirmed } = await Swal.fire({
+            title: `¿Cambiar estado?`,
+            text: `Cotización #${String(id).padStart(5, '0')} → ${nuevoEstado}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0f172a',
+        });
+        if (!isConfirmed) return;
         try {
             const res = await api.put(`/cotizaciones/${id}/estado`, {
                 estado: nuevoEstado
@@ -82,8 +91,9 @@ const GestionCotizaciones = () => {
         const nombreEstado = c.estado?.nombre || 'Borrador';
         const matchEstado = filtros.estado === '' || nombreEstado === filtros.estado;
 
-        const matchFecha = (!filtros.fechaInicio || c.fecha_emision >= filtros.fechaInicio) &&
-            (!filtros.fechaFin || c.fecha_emision <= filtros.fechaFin);
+        const fechaDoc = (c.fecha_emision ?? '').substring(0, 10);
+        const matchFecha = (!filtros.fechaInicio || fechaDoc >= filtros.fechaInicio) &&
+            (!filtros.fechaFin || fechaDoc <= filtros.fechaFin);
 
         return matchBusqueda && matchEstado && matchFecha;
     });

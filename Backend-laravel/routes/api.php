@@ -16,6 +16,7 @@ use App\Domains\Comercial\Controllers\ProveedorController;
 use App\Domains\Comercial\Controllers\FacturaController;
 use App\Domains\Comercial\Controllers\CotizacionController;
 use App\Domains\Comercial\Controllers\AnticipoProveedorController;
+use App\Domains\Comercial\Controllers\OrdenCompraController;
 use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
 use App\Domains\Contabilidad\Controllers\ReporteController;
@@ -32,6 +33,7 @@ use App\Domains\Rrhh\Controllers\CentralizacionController;
 use App\Domains\Rrhh\Controllers\PreviredController;
 use App\Domains\Rrhh\Controllers\LreController;
 use App\Domains\Rrhh\Controllers\EmrclController;
+use App\Domains\Rrhh\Controllers\LibroRemuneracionesController;
 use App\Domains\Tesoreria\Controllers\BancoController;
 use App\Domains\Tesoreria\Controllers\ConciliacionController;
 use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
@@ -63,11 +65,17 @@ use App\Domains\Core\Controllers\IncidenteSeguridadController;
 use App\Domains\Contabilidad\Controllers\Dj1887Controller;
 use App\Domains\Contabilidad\Controllers\Dj1879Controller;
 use App\Domains\Contabilidad\Controllers\Dj1947Controller;
+use App\Domains\Contabilidad\Controllers\Dj1835Controller;
+use App\Domains\Contabilidad\Controllers\Dj1837Controller;
+use App\Domains\Contabilidad\Controllers\Dj1926Controller;
 use App\Domains\Core\Controllers\PropietariosController;
 use App\Domains\Comercial\Controllers\HonorariosController;
 use App\Domains\Soporte\Controllers\SoporteController;
 use App\Domains\Core\Controllers\EmpresaCambioController;
 use App\Domains\Core\Controllers\DashboardResumenController;
+use App\Domains\Contabilidad\Controllers\ArAgingController;
+use App\Domains\Contabilidad\Controllers\ApAgingController;
+use App\Domains\Contabilidad\Controllers\LibroComprasVentasController;
 
 /*
 |--------------------------------------------------------------------------
@@ -234,6 +242,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/facturas/{id}/auditoria', [FacturaController::class, 'auditoria'])->middleware('permiso:compras.ver,contabilidad.ver');
     Route::post('/facturas/{id}/pagar', [FacturaController::class, 'pagar'])->middleware('permiso:tesoreria.crear,compras.crear');
     Route::post('/facturas/{id}/anular', [FacturaController::class, 'anular'])->middleware('permiso:compras.crear');
+    Route::post('/facturas/{id}/nota-credito', [FacturaController::class, 'notaCredito'])->middleware('permiso:ventas.crear,compras.crear');
+    Route::post('/facturas/{id}/nota-debito', [FacturaController::class, 'notaDebito'])->middleware('permiso:ventas.crear,compras.crear');
     Route::post('/facturas/{id}/vincular-proyecto', [FacturaController::class, 'vincularProyecto'])->middleware('permiso:activos.crear,compras.crear');
 
     // ---------------------------------------------------------------------
@@ -248,6 +258,14 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/cotizaciones', [CotizacionController::class, 'index'])->middleware('permiso:ventas.ver');
     Route::post('/cotizaciones', [CotizacionController::class, 'store'])->middleware('permiso:ventas.crear');
     Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->middleware('permiso:ventas.crear');
+
+    // Comercial - Órdenes de Compra
+    Route::get('/comercial/ordenes-compra', [OrdenCompraController::class, 'index'])->middleware('permiso:compras.ver');
+    Route::post('/comercial/ordenes-compra', [OrdenCompraController::class, 'store'])->middleware('permiso:compras.crear');
+    Route::get('/comercial/ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'show'])->middleware('permiso:compras.ver');
+    Route::put('/comercial/ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'update'])->middleware('permiso:compras.crear');
+    Route::delete('/comercial/ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'destroy'])->middleware('permiso:compras.crear');
+    Route::post('/comercial/ordenes-compra/{ordenCompra}/recibir', [OrdenCompraController::class, 'recibirMercaderia'])->middleware('permiso:compras.crear');
 
     // ---------------------------------------------------------------------
     // Tesoreria - Cuentas de Proveedores
@@ -310,11 +328,18 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
     // Contabilidad - Formularios 29 y 22 (Renta)
     Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/cierre-f29/descargar/{mes}/{anio}', [ImpuestosController::class, 'descargarF29'])->middleware('permiso:tributario.ver');
     Route::post('/impuestos/cierre-f29/ejecutar', [ImpuestosController::class, 'ejecutarF29'])->middleware('permiso:tributario.crear');
     Route::get('/renta/pre-calculo/{anio}', [ImpuestosController::class, 'preCalculoRenta'])->middleware('permiso:tributario.ver');
     Route::get('/renta/mapeo', [ImpuestosController::class, 'obtenerMapeo'])->middleware('permiso:tributario.ver');
     Route::post('/renta/mapeo', [ImpuestosController::class, 'guardarMapeo'])->middleware('permiso:tributario.crear');
     Route::delete('/renta/mapeo/{id}', [ImpuestosController::class, 'eliminarMapeo'])->middleware('permiso:tributario.crear');
+
+    // LCV — Libro de Compras y Ventas (Res. Ex. SII N°45/2003)
+    Route::get('/impuestos/lcv/ventas/{mes}/{anio}',            [LibroComprasVentasController::class, 'ventas'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/compras/{mes}/{anio}',           [LibroComprasVentasController::class, 'compras'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/ventas/{mes}/{anio}/descargar',  [LibroComprasVentasController::class, 'descargarVentas'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/compras/{mes}/{anio}/descargar', [LibroComprasVentasController::class, 'descargarCompras'])->middleware('permiso:tributario.ver');
 
     // Correccion Monetaria (parte de contabilidad)
     Route::prefix('correccion-monetaria')->group(function () {
@@ -335,6 +360,10 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/anulacion/buscar', [AnulacionController::class, 'buscar'])->middleware('permiso:compras.ver,ventas.ver,contabilidad.ver');
     Route::post('/anulacion/anular', [AnulacionController::class, 'anular'])->middleware('permiso:compras.crear,ventas.crear,contabilidad.crear');
 
+    // Contabilidad - Aging (Cuentas por Cobrar y por Pagar por Antigüedad)
+    Route::get('/contabilidad/ar-aging', [ArAgingController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/ap-aging', [ApAgingController::class, 'index'])->middleware('permiso:contabilidad.ver');
+
     // ---------------------------------------------------------------------
     // Activos Fijos
     // ---------------------------------------------------------------------
@@ -343,6 +372,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/activos', [ActivoFijoController::class, 'store'])->middleware('permiso:activos.crear');
     Route::get('/activos/parametros', [ActivoFijoController::class, 'parametros'])->middleware('permiso:activos.ver');
     Route::post('/activos/depreciar-mes', [ActivoFijoController::class, 'depreciarMes'])->middleware('permiso:activos.crear');
+    Route::get('/activos/{id}/amortizacion', [ActivoFijoController::class, 'amortizacion'])->middleware('permiso:activos.ver');
     Route::put('/activos/{id}/baja', [ActivoFijoController::class, 'darDeBaja'])->middleware('permiso:activos.crear');
     Route::put('/activos/{id}', [ActivoFijoController::class, 'update'])->middleware('permiso:activos.crear');
 
@@ -552,6 +582,10 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
         // R8 — EMRCL: Encuesta Mensual INE de Remuneraciones y Costos Laborales
         Route::get('/emrcl/{anio}/{mes}', [EmrclController::class, 'generar'])->middleware('permiso:rrhh.remuneraciones.ver');
+
+        // R9 — Libro de Remuneraciones Digital (DFL-1 Art. 62 C.T.)
+        Route::get('/libro-remuneraciones/{anio}/{mes}', [LibroRemuneracionesController::class, 'simular'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/libro-remuneraciones/{anio}/{mes}/descargar', [LibroRemuneracionesController::class, 'descargar'])->middleware('permiso:rrhh.remuneraciones.ver');
     });
 });
 
@@ -580,6 +614,33 @@ Route::prefix('dj/1947')->middleware(['auth:sanctum', 'check.subscription'])->gr
     Route::post('/{djEnvio}/validar',                 [Dj1947Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
     Route::get('/{djEnvio}/descargar',                [Dj1947Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
     Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1947Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1835 — Retenciones Art. 59 LIR (Exterior)
+Route::prefix('dj/1835')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1835Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1835Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1835Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1835Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1835Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1837 — Retenciones y otros impuestos de trabajadores dependientes
+Route::prefix('dj/1837')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1837Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1837Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1837Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1837Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1837Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+});
+
+// DJ 1926 — Impuesto adicional servicios digitales
+Route::prefix('dj/1926')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                                   [Dj1926Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar',                           [Dj1926Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar',                 [Dj1926Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar',                [Dj1926Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1926Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 // Propietarios de la empresa (para DJ 1947 / Propyme)

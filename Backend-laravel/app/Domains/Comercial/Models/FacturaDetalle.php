@@ -7,6 +7,25 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $factura_id
+ * @property int $numero_linea
+ * @property int|null $producto_id
+ * @property string|null $codigo_item
+ * @property string|null $tipo_codigo
+ * @property string $nombre_item
+ * @property string|null $descripcion
+ * @property string $cantidad
+ * @property string|null $unidad_medida
+ * @property string $precio_unitario
+ * @property string $descuento_pct
+ * @property string $descuento_monto
+ * @property string $recargo_pct
+ * @property string $recargo_monto
+ * @property bool $exento
+ * @property int|null $codigo_impuesto_adicional
+ * @property string $monto_item
+ */
 class FacturaDetalle extends Model
 {
     protected $table = 'facturas_detalles';

@@ -41,36 +41,43 @@ class ReservaDetalleInventario extends Model
         'cantidad_liberada' => 'decimal:4',
     ];
 
+    /** @return BelongsTo<Empresa, $this> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    /** @return BelongsTo<ReservaInventario, $this> */
     public function reserva(): BelongsTo
     {
         return $this->belongsTo(ReservaInventario::class, 'reserva_id');
     }
 
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return BelongsTo<Bodega, $this> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
+    /** @return BelongsTo<LoteInventario, $this> */
     public function lote(): BelongsTo
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');
     }
 
+    /** @return BelongsTo<InventarioUbicacion, $this> */
     public function ubicacion(): BelongsTo
     {
         return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_id');
     }
 
+    /** @return HasMany<ReservaConsumoInventario, $this> */
     public function consumos(): HasMany
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'reserva_detalle_id');
@@ -119,7 +126,7 @@ class ReservaDetalleInventario extends Model
     public function scopeReservasQueComprometenDisponibilidad(Builder $query): Builder
     {
         return $query->whereHas('reserva', function (Builder $subQuery) {
-            $subQuery->comprometenDisponibilidad();
+            $subQuery->whereIn('estado', ReservaInventario::estadosQueComprometenDisponibilidad());
         });
     }
 

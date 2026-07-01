@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;background:#0b1120;color:#fff;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;} .em{color:var(--emerald-d);font-weight:700;}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+  .cta{margin-top:18px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;color:#04241a;box-shadow:0 16px 30px rgba(16,185,129,.30);}
+  .cta .l b{font-family:'Poppins';font-size:13pt;color:#04241a;display:block;} .cta .l span{font-size:9.5pt;color:#063f2e;}
+  .cta .go{font-family:'Poppins';font-weight:800;color:#fff;font-size:12pt;display:flex;align-items:center;gap:9px;}
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+<body>
+
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 09</div>
+  <h1><b>Gestión</b> Tributaria</h1>
+  <p class="lead">Del IVA mensual a la renta anual: el módulo que calcula el F29, prepara las Declaraciones Juradas y arma el Libro de Compras y Ventas, listo para el SII.</p>
+  <div class="hero"><img src="../assets/m9-01-f29.png" alt="Cierre de IVA F29"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Gestión Tributaria</div>
+    <div><b>Capturas</b>Sistema real en vivo</div>
+  </div>
+</div>
+
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Gestión Tributaria</h2>
+  <p class="sub">Todo lo que se declara al SII, en un solo lugar.</p>
+  <p>Este módulo toma la contabilidad que ya generó el sistema y la transforma en los <b>reportes y declaraciones</b> que exige el Servicio de Impuestos Internos. Sus pantallas se agrupan así:</p>
+  <table>
+    <thead><tr><th>Bloque</th><th>Pantallas</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-calendar-day"></i>IVA mensual</td><td>Cierre de IVA (F29).</td></tr>
+      <tr><td><i class="fas fa-calendar-check"></i>Renta anual</td><td>Operación Renta, Corrección Monetaria.</td></tr>
+      <tr><td><i class="fas fa-file-signature"></i>Declaraciones Juradas</td><td>DJ 1887, 1879, 1947, 1835, 1837 y 1926.</td></tr>
+      <tr><td><i class="fas fa-book"></i>Libros</td><td>Libro de Compras y Ventas.</td></tr>
+    </tbody>
+  </table>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-circle-info"></i></div>
+    <div class="tx"><b>Cómo funciona.</b> Tenri ERP Cloud <b>calcula y arma</b> cada formulario a partir de su contabilidad. La <b>presentación final</b> se hace en el portal del SII con su Clave Tributaria: el sistema le entrega los montos y el archivo listos para subir.</div>
+  </div>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">2</span> Cierre de IVA (F29)</h2>
+  <p class="sub">El impuesto mensual, calculado automáticamente.</p>
+  <p>Elija el <b>mes</b> y el <b>año</b> arriba a la derecha. El sistema calcula, a partir de sus ventas y compras del período:</p>
+  <table>
+    <thead><tr><th>Concepto</th><th>De dónde sale</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-arrow-up"></i>IVA Débito Fiscal</td><td>El IVA generado por sus <b>ventas</b> del mes.</td></tr>
+      <tr><td><i class="fas fa-arrow-down"></i>IVA Crédito Fiscal</td><td>El IVA soportado en sus <b>compras</b> del mes.</td></tr>
+      <tr><td><i class="fas fa-equals"></i>Resultado del mes</td><td>La diferencia: <b>IVA a pagar</b> o <b>remanente</b> para el mes siguiente.</td></tr>
+    </tbody>
+  </table>
+  <p>La <b>Vista Previa del Asiento de Centralización</b> muestra el asiento que dejará en cero las cuentas mensuales de IVA; con <b>Generar Centralización</b> se contabiliza. También puede <b>Exportar</b> el F29 a Excel o PDF.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m9-01-f29.png" alt="Cierre de IVA F29"></div>
+    <figcaption>F29 de junio: IVA crédito de $340.480 que queda como remanente para el mes siguiente.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">3</span> Operación Renta y Corrección Monetaria</h2>
+  <p class="sub">La preparación del impuesto anual a la renta.</p>
+  <p><b>Operación Renta</b> consolida todo el año comercial en el <b>pre‑cálculo del Formulario 22</b>: toma los ingresos y egresos del ejercicio, aplica el <b>régimen tributario</b> de la empresa (14&nbsp;A, 14&nbsp;D, Propyme) y determina la <b>base imponible</b> y el impuesto de primera categoría. Muestra el detalle de ingresos y egresos y permite exportar el papel de trabajo a PDF o Excel.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m9-02-renta.png" alt="Operación Renta"></div>
+    <figcaption>Pre‑cálculo del F22 con ingresos, egresos, base imponible e impuesto estimado del ejercicio.</figcaption>
+  </figure>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-triangle-exclamation"></i></div>
+    <div class="tx"><b>Cálculo orientativo.</b> Es una proyección de apoyo, <b>no</b> la declaración oficial F22. La renta definitiva requiere el PPM del año, gastos rechazados, FUT/RAI y créditos de los propietarios: valídela con su contador antes de declarar.</div>
+  </div>
+  <p>La <b>Corrección Monetaria</b> (Art. 41 LIR) revaloriza activos y patrimonio según la variación del <b>IPC</b>. En la pestaña <b>Índices IPC</b> se ingresa la variación mensual publicada por el INE; el sistema calcula los factores y aplica el ajuste. Las pestañas <b>Configuración</b>, <b>Simulador</b> e <b>Historial</b> permiten parametrizar, probar y revisar cada corrección.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m9-03-correccion.png" alt="Corrección Monetaria"></div>
+    <figcaption>Índices IPC mensuales; cada mes alimenta el factor de corrección del ejercicio.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">4</span> Libro de Compras y Ventas</h2>
+  <p class="sub">El registro electrónico obligatorio de IVA (Res. Ex. SII N°45/2003).</p>
+  <p>El Libro de Compras y Ventas (LCV) reúne todos los documentos tributarios del período. Elija el <b>mes</b> y el <b>año</b> y presione <b>Consultar</b>. El resultado se divide en dos pestañas:</p>
+  <ol class="steps">
+    <li><b>Libro de Ventas</b> — las facturas y boletas emitidas, con neto, IVA, exento y total.</li>
+    <li><b>Libro de Compras</b> — las facturas recibidas, distinguiendo el <b>IVA recuperable</b> del no recuperable.</li>
+  </ol>
+  <p>Cada libro se puede <b>descargar</b> en CSV o Excel para respaldo o para el portal del SII.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m9-04-libro-cv.png" alt="Libro de Compras y Ventas"></div>
+    <figcaption>Seleccione el período y presione Consultar para ver los libros de Ventas y Compras.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Declaraciones Juradas</h2>
+  <p class="sub">Seis declaraciones anuales, con el mismo flujo de trabajo.</p>
+  <p>Las <b>Declaraciones Juradas (DJ)</b> informan al SII distintos hechos del año. Todas comparten la misma mecánica: elija el <b>año tributario</b>, presione <b>Generar DJ</b>, revise el resultado y descargue el archivo para subirlo al portal de <i>Declaraciones Juradas</i> del SII. El <b>Historial de declaraciones</b> guarda cada generación.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m9-05-dj1879.png" alt="DJ 1879"></div>
+    <figcaption>Estructura común de las DJ: generar por año tributario, con nota de contexto e historial.</figcaption>
+  </figure>
+  <p>Estas son las Declaraciones Juradas disponibles y qué informa cada una:</p>
+  <table>
+    <thead><tr><th>DJ</th><th>Qué declara</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-users"></i>DJ 1887</td><td>Rentas y retenciones de los <b>trabajadores</b> (sueldos, art. 42 N°1 LIR).</td></tr>
+      <tr><td><i class="fas fa-user-tie"></i>DJ 1879</td><td>Retenciones sobre <b>honorarios</b> de segunda categoría (art. 74 N°2 LIR).</td></tr>
+      <tr><td><i class="fas fa-building"></i>DJ 1947</td><td>Rentas atribuidas a los propietarios en régimen <b>Propyme Transparente</b> (14 D N°8).</td></tr>
+      <tr><td><i class="fas fa-hand-holding-dollar"></i>DJ 1837</td><td>Honorarios pagados <b>sin retención</b> durante el año.</td></tr>
+      <tr><td><i class="fas fa-globe"></i>DJ 1835</td><td>Retenciones a servicios prestados desde el <b>exterior</b> (art. 59 LIR).</td></tr>
+      <tr><td><i class="fas fa-ban"></i>DJ 1926</td><td>Gastos <b>rechazados</b> y no deducibles (art. 33 N°1 LIR).</td></tr>
+    </tbody>
+  </table>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-lightbulb"></i></div>
+    <div class="tx"><b>Para que una DJ salga completa</b>, los datos base deben estar bien cargados: por ejemplo, la DJ 1926 solo incluye las cuentas marcadas como <b>Gasto Rechazado</b> en el Plan de Cuentas, y la DJ 1947 requiere tener registrados a los <b>propietarios</b> de la empresa.</div>
+  </div>
+</section>
+
+<div class="band">
+  <h3><i class="fas fa-building-columns"></i> El sistema calcula; usted declara</h3>
+  <p>Tenri ERP Cloud arma cada formulario y archivo a partir de su contabilidad, pero <b>no presenta las declaraciones por usted</b>. El paso final —subir el F29, la Renta o cada DJ— se realiza en el portal del SII con su <b>Clave Tributaria</b>. Así mantiene el control y la responsabilidad de la presentación.</p>
+</div>
+
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:18px;"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">En <b>resumen</b></div>
+  <p class="intro">Gestión Tributaria convierte su contabilidad en las obligaciones del SII: IVA mensual, renta anual, declaraciones juradas y el libro de compras y ventas.</p>
+  <div class="recap">
+    <div class="c"><div class="ic"><i class="fas fa-calendar-day"></i></div><h4>IVA mensual</h4><p>El F29 se calcula solo, con su asiento de centralización y exportación.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-calendar-check"></i></div><h4>Renta anual</h4><p>Pre‑cálculo del F22 y corrección monetaria por IPC.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-file-signature"></i></div><h4>Declaraciones</h4><p>Seis DJ y el Libro de Compras y Ventas, listos para el SII.</p></div>
+  </div>
+  <div class="cta">
+    <div class="l"><b>Siguiente módulo</b><span>Certificado digital, folios CAF y emisión de documentos electrónicos.</span></div>
+    <div class="go">10 · Facturación Electrónica (SII) <i class="fas fa-arrow-right"></i></div>
+  </div>
+  <div class="foot"><span><b>Tenri ERP Cloud</b> · Manual de usuario 09 — Gestión Tributaria</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>

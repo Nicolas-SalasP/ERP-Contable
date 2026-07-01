@@ -197,7 +197,7 @@ describe('RegistroFactura - flujo completo de 3 pasos', () => {
         completarPaso1('F-DUP');
         fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
 
-        expect(await screen.findByText('Factura Duplicada')).toBeDefined();
+        expect(await screen.findByText(/ya existe para este proveedor/i)).toBeDefined();
         expect(screen.queryByText('Seleccionar Cuenta de Pago (Destino)')).toBeNull();
     });
 

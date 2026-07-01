@@ -143,8 +143,7 @@ describe('GestionCotizaciones - cambio de estado', () => {
         await waitForList();
         const botonAceptar = screen.getAllByRole('button', { name: /^Aceptar$/i })[0];
         fireEvent.click(botonAceptar);
-        const botonConfirmar = await screen.findByRole('button', { name: /Sí, Confirmar/i });
-        fireEvent.click(botonConfirmar);
+        // Swal mockeado auto-confirma: no requiere clic adicional en el DOM
         await waitFor(() => {
             const putCalls = fetchMock.mock.calls.filter(
                 ([url, init]) =>
@@ -167,9 +166,7 @@ describe('GestionCotizaciones - cambio de estado', () => {
 
         const botonRechazar = screen.getAllByRole('button', { name: /^Rechazar$/i })[0];
         fireEvent.click(botonRechazar);
-
-        const botonConfirmar = await screen.findByRole('button', { name: /Sí, Confirmar/i });
-        fireEvent.click(botonConfirmar);
+        // Swal mockeado auto-confirma: no requiere clic adicional en el DOM
 
         await waitFor(() => {
             const putCalls = fetchMock.mock.calls.filter(

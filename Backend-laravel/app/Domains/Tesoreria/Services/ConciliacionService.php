@@ -5,8 +5,10 @@ namespace App\Domains\Tesoreria\Services;
 use App\Domains\Tesoreria\Exceptions\TesoreriaException;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Tesoreria\Services\BancoService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ConciliacionService
@@ -71,15 +73,70 @@ class ConciliacionService
         return $this->bancoService->obtenerAnticiposPendientes($empresaId);
     }
 
-    public function obtenerSugerenciasConciliacion(int $empresaId, int $movimientoId)
+    public function obtenerSugerenciasConciliacion(int $empresaId, int $movimientoId): \Illuminate\Support\Collection
     {
         $movimiento = $this->bancoService->obtenerMovimiento($empresaId, $movimientoId);
-        
-        $esIngreso = $movimiento->abono > 0;
-        $monto = $esIngreso ? (float) $movimiento->abono : (float) $movimiento->cargo;
-        $tipoFactura = $esIngreso ? 'VENTA' : 'COMPRA';
 
-        return $this->facturaService->obtenerFacturasImpagasPorMontoExacto($empresaId, $tipoFactura, $monto);
+        $esIngreso = (float) $movimiento->abono > 0;
+        $monto     = $esIngreso ? (float) $movimiento->abono : (float) $movimiento->cargo;
+        $tipoOperacion = $esIngreso ? 'cobrar' : 'pagar';
+
+        // Obtiene facturas candidatas con tolerancia mas/menos 10% en el monto
+        $candidatas = $this->facturaService->obtenerSugerenciasBancarias(
+            $empresaId,
+            $tipoOperacion,
+            $monto,
+            0.10
+        );
+
+        $fechaMovimiento = Carbon::parse((string) $movimiento->fecha);
+
+        // Prioridad para ordenamiento final: alta=0, media=1, baja=2
+        $ordenScore = ['alta' => 0, 'media' => 1, 'baja' => 2];
+
+        /** @var array<int, array<string, mixed>> $sugerencias */
+        $sugerencias = [];
+
+        // Clasifica cada candidata y descarta las de baja confianza
+        foreach ($candidatas as $factura) {
+            $montoBruto    = (float) $factura->monto_bruto;
+            $esMontoExacto = abs($montoBruto - $monto) <= 0.01;
+
+            $fechaEmision    = Carbon::parse((string) $factura->fecha_emision);
+            $diferenciaDias  = (int) abs($fechaMovimiento->diffInDays($fechaEmision));
+            $esFechaProxima  = $diferenciaDias <= 7;
+
+            // Determina el score segun las reglas de negocio
+            if ($esMontoExacto && $esFechaProxima) {
+                $score = 'alta';
+            } elseif ($esMontoExacto) {
+                $score = 'media';
+            } elseif ($esFechaProxima) {
+                $score = 'baja';
+            } else {
+                // Monto aproximado + fecha lejana: descarta la sugerencia
+                continue;
+            }
+
+            $sugerencias[] = [
+                'id'              => $factura->id,
+                'numero_factura'  => $factura->numero_factura,
+                'monto_bruto'     => $montoBruto,
+                'fecha_emision'   => $fechaEmision->format('Y-m-d'),
+                'razon_social'    => (string) ($factura->razon_social ?? ''),
+                'score'           => $score,
+                'diferencia_dias' => $diferenciaDias,
+            ];
+        }
+
+        // Ordena: alta -> media -> baja
+        usort($sugerencias, function (array $a, array $b) use ($ordenScore): int {
+            $scoreA = isset($a['score']) ? (int) ($ordenScore[(string) $a['score']] ?? 99) : 99;
+            $scoreB = isset($b['score']) ? (int) ($ordenScore[(string) $b['score']] ?? 99) : 99;
+            return $scoreA - $scoreB;
+        });
+
+        return collect($sugerencias);
     }
 
     public function procesarPagoFacturas(int $empresaId, int $usuarioId, int $movimientoId, array $facturasIds, ?int $entidadId = null)
@@ -108,18 +165,30 @@ class ConciliacionService
             if ($facturas->count() > 0) {
                 $saldoRestante = $montoMovimiento;
                 $facturas = $facturas->sortBy('fecha_emision');
-                
+
+                /** @var array<int, int> $idsPagadas */
+                $idsPagadas = [];
+                $idAbonada  = null;
+
                 foreach ($facturas as $fac) {
                     $montoFactura = (float) $fac->monto_bruto;
                     if ($saldoRestante >= $montoFactura) {
-                        $this->facturaService->cambiarEstado($empresaId, $fac->id, 'PAGADA');
+                        $idsPagadas[] = (int) $fac->id;
                         $saldoRestante -= $montoFactura;
                     } elseif ($saldoRestante > 0) {
-                        $this->facturaService->cambiarEstado($empresaId, $fac->id, 'ABONADA');
+                        $idAbonada    = (int) $fac->id;
                         $saldoRestante = 0;
                     } else {
-                        break; 
+                        break;
                     }
+                }
+
+                // Batch UPDATE: máximo 2 queries en lugar de N, sin alterar la lógica de saldo.
+                if (!empty($idsPagadas)) {
+                    Factura::whereIn('id', $idsPagadas)->where('empresa_id', $empresaId)->update(['estado' => 'PAGADA']);
+                }
+                if ($idAbonada !== null) {
+                    Factura::where('id', $idAbonada)->where('empresa_id', $empresaId)->update(['estado' => 'ABONADA']);
                 }
             }
 

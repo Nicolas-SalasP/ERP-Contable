@@ -197,7 +197,7 @@ class CertificadoService
             throw CertificadoInvalidoException::sinCertActivo($empresa->id);
         }
 
-        if ($cert->subject_rut !== null && $cert->subject_rut !== '') {
+        if ($cert->subject_rut !== '') {
             return $cert->subject_rut;
         }
 
@@ -240,12 +240,6 @@ class CertificadoService
      */
     private function leerPfxOFallar(string $pfxBinary, string $password): array
     {
-        // Limpiar la cola de errores OpenSSL antes de la operacion para que
-        // openssl_error_string() despues refleje SOLO el error de esta llamada.
-        while (openssl_error_string() !== false) {
-            // drain
-        }
-
         $info = [];
         $ok   = @openssl_pkcs12_read($pfxBinary, $info, $password);
 

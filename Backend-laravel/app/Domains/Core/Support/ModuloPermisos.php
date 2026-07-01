@@ -168,7 +168,7 @@ final class ModuloPermisos
         $usuario->loadMissing('rol');
 
         $moduleKeys = self::normalizarLista($usuario->module_keys ?? []);
-        $permisosRol = self::normalizarLista($usuario->rol?->permisos ?? []);
+        $permisosRol = self::normalizarLista($usuario->rol->permisos ?? []);
         $permisosModulos = self::permisosDesdeModulos($moduleKeys);
 
         // SuperAdmin / staff interno (jerarquia >= 100): sin tope de plan.

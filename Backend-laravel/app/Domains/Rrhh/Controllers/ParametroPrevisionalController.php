@@ -29,7 +29,7 @@ class ParametroPrevisionalController extends Controller
     public function storeParametro(Request $request): JsonResponse
     {
         // Tablas globales: solo staff interno puede escribirlas.
-        if ((int) ($request->user()?->rol?->jerarquia ?? 0) < 100) {
+        if ((int) ($request->user()?->rol->jerarquia ?? 0) < 100) {
             abort(403, 'Solo el equipo de soporte puede modificar parámetros legales globales.');
         }
 
@@ -66,7 +66,7 @@ class ParametroPrevisionalController extends Controller
             }
         }
 
-        $parametro = DB::transaction(function () use ($datos, $actual) {
+        $parametro = DB::transaction(function () use ($datos, $actual): ParametroPrevisional {
             // Cerrar vigencia del parámetro anterior
             if ($actual) {
                 $actual->update([
@@ -97,7 +97,7 @@ class ParametroPrevisionalController extends Controller
     public function storeIndicador(Request $request): JsonResponse
     {
         // Tablas globales: solo staff interno puede escribirlas.
-        if ((int) ($request->user()?->rol?->jerarquia ?? 0) < 100) {
+        if ((int) ($request->user()?->rol->jerarquia ?? 0) < 100) {
             abort(403, 'Solo el equipo de soporte puede modificar parámetros legales globales.');
         }
 

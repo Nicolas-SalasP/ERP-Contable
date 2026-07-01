@@ -3,11 +3,23 @@
 namespace App\Domains\Comercial\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Traits\HasEmpresaScope;
 use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
 
+/**
+ * @property int|null $sii_dte_emitido_id
+ * @property int|null $tipo_dte
+ * @property int|null $cliente_id
+ * @property \Illuminate\Support\Carbon $fecha_emision
+ * @property-read \App\Domains\Sii\Models\SiiDteEmitido|null $dteEmitido
+ * @property-read \App\Domains\Comercial\Models\Cliente|null $cliente
+ * @property-read \App\Domains\Comercial\Models\Proveedor|null $proveedor
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Comercial\Models\FacturaDetalle> $detalles
+ */
 class Factura extends Model
 {
     use SoftDeletes;
@@ -39,6 +51,15 @@ class Factura extends Model
         'estado',
         'archivo_pdf',
         'comprobante_contable',
+        'moneda',
+        'tipo_cambio',
+        'monto_bruto_origen',
+        'es_documento_exterior',
+        'tipo_gasto_art59',
+        'retencion_art59',
+        'factura_referencia_id',
+        'razon_nota_credito',
+        'razon_nota_debito',
     ];
 
     protected $casts = [
@@ -47,16 +68,20 @@ class Factura extends Model
         'monto_bruto' => 'decimal:2',
         'monto_neto' => 'decimal:2',
         'monto_iva' => 'decimal:2',
+        'tipo_cambio' => 'decimal:4',
+        'monto_bruto_origen' => 'decimal:2',
+        'es_documento_exterior' => 'boolean',
+        'retencion_art59' => 'decimal:2',
     ];
 
     protected $appends = ['nombre_proveedor'];
 
-    public function empresa()
+    public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    public function proveedor()
+    public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
     }
@@ -67,12 +92,22 @@ class Factura extends Model
             $this->load('proveedor');
         }
 
-        return trim((string) ($this->proveedor?->razon_social ?? ''));
+        return trim((string) ($this->proveedor->razon_social ?? ''));
     }
 
-    public function cuentaBancaria()
+    public function cuentaBancaria(): BelongsTo
     {
         return $this->belongsTo(CuentaBancariaProveedor::class, 'cuenta_bancaria_id');
+    }
+
+    public function facturaOrigen(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'factura_referencia_id');
+    }
+
+    public function notasCredito(): HasMany
+    {
+        return $this->hasMany(self::class, 'factura_referencia_id');
     }
 
     public static function generarCodigoUnico(): int

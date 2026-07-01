@@ -56,7 +56,7 @@ class InventarioReporteService
             ->get()
             ->map(function (StockProducto $stock) use ($comprometido) {
                 $stockActual = (float) $stock->stock_actual;
-                $stockMinimo = (float) ($stock->producto?->stock_minimo ?? 0);
+                $stockMinimo = (float) ($stock->producto->stock_minimo ?? 0);
                 $key = $this->claveProductoBodega((int) $stock->producto_id, (int) $stock->bodega_id);
                 $cantidadComprometida = (float) ($comprometido[$key] ?? 0);
 
@@ -64,7 +64,7 @@ class InventarioReporteService
                     'producto_id' => (int) $stock->producto_id,
                     'producto_sku' => $stock->producto?->sku,
                     'producto_nombre' => $stock->producto?->nombre,
-                    'producto_activo' => (bool) ($stock->producto?->activo ?? false),
+                    'producto_activo' => (bool) ($stock->producto->activo ?? false),
                     'bodega_id' => (int) $stock->bodega_id,
                     'bodega_codigo' => $stock->bodega?->codigo,
                     'bodega_nombre' => $stock->bodega?->nombre,
@@ -77,7 +77,8 @@ class InventarioReporteService
                     'estado_stock' => $this->estadoStock($stockActual, $stockMinimo),
                 ];
             })
-            ->when(!empty($filtros['estado_stock']), function (Collection $items) use ($filtros) {
+            ->when(!empty($filtros['estado_stock']), function ($items) use ($filtros) {
+                /** @var \Illuminate\Support\Collection<int, array<string, mixed>> $items */
                 return $items->filter(fn (array $item) => $item['estado_stock'] === $filtros['estado_stock'])->values();
             })
             ->values();
@@ -155,6 +156,7 @@ class InventarioReporteService
             ->selectRaw('SUM(cantidad) as cantidad_total')
             ->selectRaw('SUM(costo_total) as costo_total')
             ->groupBy('tipo')
+            ->toBase()
             ->get()
             ->mapWithKeys(fn ($item) => [
                 $item->tipo => [
@@ -202,6 +204,7 @@ class InventarioReporteService
             ->groupBy('inventario_stock.producto_id', 'inventario_productos.sku', 'inventario_productos.nombre')
             ->orderByDesc('valor_total')
             ->limit($limit)
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'producto_id' => (int) $item->producto_id,
@@ -224,6 +227,8 @@ class InventarioReporteService
             ->selectRaw('SUM(inventario_stock.valor_total) as valor_total')
             ->groupBy('inventario_stock.bodega_id', 'inventario_bodegas.codigo', 'inventario_bodegas.nombre')
             ->orderByDesc('valor_total')
+            ->limit($limit)
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'bodega_id' => (int) $item->bodega_id,
@@ -279,7 +284,7 @@ class InventarioReporteService
             ->get()
             ->map(function (StockLoteInventario $stock) use ($hoy, $hasta) {
                 $fechaVencimiento = $stock->lote?->fecha_vencimiento ? CarbonImmutable::parse($stock->lote->fecha_vencimiento->toDateString()) : null;
-                $estado = $this->estadoLote($fechaVencimiento, $hoy, $hasta, (bool) ($stock->lote?->activo ?? false));
+                $estado = $this->estadoLote($fechaVencimiento, $hoy, $hasta, (bool) ($stock->lote->activo ?? false));
 
                 return [
                     'producto_id' => (int) $stock->producto_id,
@@ -295,10 +300,11 @@ class InventarioReporteService
                     'dias_para_vencer' => $fechaVencimiento ? $hoy->diffInDays($fechaVencimiento, false) : null,
                     'stock_actual' => $this->redondear((float) $stock->stock_actual),
                     'estado_lote' => $estado,
-                    'activo' => (bool) ($stock->lote?->activo ?? false),
+                    'activo' => (bool) ($stock->lote->activo ?? false),
                 ];
             })
-            ->when(!empty($filtros['estado_lote']), function (Collection $items) use ($filtros) {
+            ->when(!empty($filtros['estado_lote']), function ($items) use ($filtros) {
+                /** @var \Illuminate\Support\Collection<int, array<string, mixed>> $items */
                 return $items->filter(fn (array $item) => $item['estado_lote'] === $filtros['estado_lote'])->values();
             })
             ->values();
@@ -368,7 +374,7 @@ class InventarioReporteService
                     'cantidad_consumida' => $this->redondear($cantidadConsumida),
                     'cantidad_liberada' => $this->redondear($cantidadLiberada),
                     'cantidad_pendiente' => $this->redondear($cantidadPendiente),
-                    'reservado_por' => $reserva->reservadoPor?->name ?? $reserva->reservadoPor?->email,
+                    'reservado_por' => $reserva->reservadoPor->nombre ?? $reserva->reservadoPor?->email,
                 ];
             })
             ->values();
@@ -387,6 +393,7 @@ class InventarioReporteService
             ->groupBy('inventario_reserva_detalles.producto_id', 'inventario_productos.sku', 'inventario_productos.nombre')
             ->orderByDesc('cantidad_comprometida')
             ->limit(10)
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'producto_id' => (int) $item->producto_id,
@@ -519,7 +526,7 @@ class InventarioReporteService
             ->get()
             ->map(fn (AjusteCriticoInventario $ajuste) => [
                 'id' => (int) $ajuste->id,
-                'fecha' => $ajuste->created_at?->toDateTimeString(),
+                'fecha' => $ajuste->created_at->toDateTimeString(),
                 'producto_id' => (int) $ajuste->producto_id,
                 'producto_sku' => $ajuste->producto?->sku,
                 'producto_nombre' => $ajuste->producto?->nombre,
@@ -536,7 +543,7 @@ class InventarioReporteService
                 'motivo' => $ajuste->motivo,
                 'referencia' => $ajuste->referencia,
                 'observacion' => $ajuste->observacion,
-                'registrado_por' => $ajuste->registradoPor?->name ?? $ajuste->registradoPor?->email,
+                'registrado_por' => $ajuste->registradoPor->nombre ?? $ajuste->registradoPor?->email,
             ])
             ->values();
 
@@ -654,6 +661,7 @@ class InventarioReporteService
             ])
             ->selectRaw('SUM(cantidad_reservada - cantidad_consumida - cantidad_liberada) as cantidad_comprometida')
             ->groupBy('inventario_reserva_detalles.producto_id', 'inventario_reserva_detalles.bodega_id')
+            ->toBase()
             ->get()
             ->mapWithKeys(fn ($item) => [
                 $this->claveProductoBodega((int) $item->producto_id, (int) $item->bodega_id) => max((float) $item->cantidad_comprometida, 0),

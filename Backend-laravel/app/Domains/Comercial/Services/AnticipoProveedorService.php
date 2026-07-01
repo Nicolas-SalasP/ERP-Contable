@@ -34,7 +34,7 @@ class AnticipoProveedorService
 
     public function aplicarAFactura(int $empresaId, int $anticipoId, int $facturaId, float $montoAplicar): AnticipoProveedor
     {
-        return DB::transaction(function () use ($empresaId, $anticipoId, $facturaId, $montoAplicar) {
+        return DB::transaction(function () use ($empresaId, $anticipoId, $montoAplicar) {
             $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)
                 ->lockForUpdate()
                 ->find($anticipoId);

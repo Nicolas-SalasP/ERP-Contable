@@ -3,17 +3,8 @@ import { test, expect } from '@playwright/test';
 const USER_EMAIL = process.env.E2E_USER_EMAIL || 'superadmin@tenri.cl';
 const USER_PASSWORD = process.env.E2E_USER_PASSWORD || 'password123';
 
-async function login(page) {
-    await page.goto('/login');
-    const emailInput = page.locator('input[type="email"], input[name="email"]').first();
-    await emailInput.waitFor({ state: 'visible', timeout: 5000 });
-    await emailInput.fill(USER_EMAIL);
-    await page.locator('input[type="password"]').first().fill(USER_PASSWORD);
-    await Promise.all([
-        page.waitForNavigation({ url: '**/', timeout: 15_000 }).catch(() => {}),
-        page.locator('button[type="submit"]').first().click()
-    ]);
-    await expect(page).not.toHaveURL(/.*\/login/, { timeout: 15_000 });
+async function login(_page) {
+    // Auth provista por storageState — cada test navega directo a su URL objetivo
 }
 
 test.describe('Módulo RRHH y Remuneraciones', () => {
@@ -64,6 +55,9 @@ test.describe('Módulo RRHH y Remuneraciones', () => {
     test('el modal de ayuda se abre desde la ficha de personal', async ({ page }) => {
         await page.goto('/rrhh/empleados');
         await expect(page.getByText(/Ficha de Personal/i).first()).toBeVisible({ timeout: 10_000 });
+        // Cerrar cualquier dialog/alert que pueda bloquear el click
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
         await page.getByTestId('ayuda-modulo-boton').first().click();
         await expect(page.getByTestId('ayuda-modulo-modal')).toBeVisible({ timeout: 5_000 });
         await expect(page.getByText(/Como se usa/i).first()).toBeVisible();

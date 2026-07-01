@@ -28,12 +28,13 @@ class PlanCuentaController
     {
         try {
             $datos = $request->validate([
-                'codigo' => 'required|string|regex:/^[0-9.-]+$/',
-                'nombre' => 'required|string',
-                'tipo' => 'required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
-                'nivel' => 'integer|max:6',
-                'imputable' => 'boolean',
-                'activo' => 'boolean'
+                'codigo'             => 'required|string|regex:/^[0-9.-]+$/',
+                'nombre'             => 'required|string',
+                'tipo'               => 'required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
+                'nivel'              => 'integer|max:6',
+                'imputable'          => 'boolean',
+                'activo'             => 'boolean',
+                'es_gasto_rechazado' => 'boolean',
             ]);
 
             if ($datos['nivel'] == 1 && !empty($datos['imputable'])) {
@@ -66,12 +67,13 @@ class PlanCuentaController
     {
         try {
             $datos = $request->validate([
-                'codigo' => 'sometimes|required|string|regex:/^[0-9.-]+$/',
-                'nombre' => 'sometimes|required|string',
-                'tipo' => 'sometimes|required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
-                'nivel' => 'sometimes|integer|max:6',
-                'imputable' => 'sometimes|boolean',
-                'activo' => 'sometimes|boolean'
+                'codigo'             => 'sometimes|required|string|regex:/^[0-9.-]+$/',
+                'nombre'             => 'sometimes|required|string',
+                'tipo'               => 'sometimes|required|in:ACTIVO,PASIVO,PATRIMONIO,INGRESO,GASTO',
+                'nivel'              => 'sometimes|integer|max:6',
+                'imputable'          => 'sometimes|boolean',
+                'activo'             => 'sometimes|boolean',
+                'es_gasto_rechazado' => 'sometimes|boolean',
             ]);
 
             if (isset($datos['nivel']) && $datos['nivel'] == 1 && !empty($datos['imputable'])) {

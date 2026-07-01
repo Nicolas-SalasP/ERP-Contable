@@ -15,6 +15,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * SEGURIDAD: pfx_cifrado y password_cifrada NUNCA deben aparecer en JSON.
  * El $hidden de Eloquent los excluye automaticamente de toJson()/toArray().
+ *
+ * @property int $id
+ * @property int $empresa_id
+ * @property string $subject_rut
+ * @property string $estado
+ * @property \Illuminate\Support\Carbon $valido_hasta
+ * @property string $pfx_cifrado
+ * @property string $password_cifrada
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class SiiCertificadoEmpresa extends Model
 {
@@ -89,10 +99,6 @@ class SiiCertificadoEmpresa extends Model
 
     public function isVigente(): bool
     {
-        if ($this->valido_hasta === null) {
-            return false;
-        }
-
         return $this->valido_hasta->isFuture();
     }
 
@@ -103,10 +109,6 @@ class SiiCertificadoEmpresa extends Model
      */
     public function diasParaVencer(): int
     {
-        if ($this->valido_hasta === null) {
-            return 0;
-        }
-
         $diffSegundos = $this->valido_hasta->getTimestamp() - now()->getTimestamp();
 
         return (int) floor($diffSegundos / 86400);

@@ -61,7 +61,7 @@ class ProveedorService
         ]);
 
         $proveedor->update([
-            'codigo_interno' => 'PROV-' . str_pad($proveedor->id, 5, '0', STR_PAD_LEFT)
+            'codigo_interno' => 'PROV-' . str_pad((string) $proveedor->id, 5, '0', STR_PAD_LEFT)
         ]);
 
         return $proveedor;
@@ -180,13 +180,11 @@ class ProveedorService
 
             $nuevoEstadoFactura = ($totalAFavor == $totalDeuda) ? 'PAGADA' : 'ABONADA';
 
-            if (!empty($facturasIds)) {
-                DB::table('facturas')
-                    ->where('empresa_id', $empresaId)
-                    ->where('proveedor_id', $proveedorId)
-                    ->whereIn('id', $facturasIds)
-                    ->update(['estado' => $nuevoEstadoFactura]);
-            }
+            DB::table('facturas')
+                ->where('empresa_id', $empresaId)
+                ->where('proveedor_id', $proveedorId)
+                ->whereIn('id', $facturasIds)
+                ->update(['estado' => $nuevoEstadoFactura]);
 
             if (!empty($ncIds)) {
                 DB::table('facturas')

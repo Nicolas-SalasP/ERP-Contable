@@ -167,22 +167,32 @@ class AsientoContableController
         }
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, $id): \Illuminate\Http\JsonResponse
     {
         try {
-            $asiento = $this->service->obtenerAsientoPorId($request->user()->empresa_id, $id);
+            /** @var \App\Domains\Core\Models\User $usuario */
+            $usuario = $request->user();
+
+            $asiento = $this->service->obtenerAsientoPorId($usuario->empresa_id, (int) $id);
+
+            $detalles = $asiento->detalles->map(function ($d) {
+                return [
+                    'id'              => $d->id,
+                    'cuenta_contable' => $d->cuenta_contable,
+                    'cuenta_nombre'   => $d->cuenta->nombre ?? 'Sin nombre',
+                    'descripcion'     => $d->descripcion_extensa ?? '',
+                    'debe'            => $d->debe,
+                    'haber'           => $d->haber,
+                ];
+            });
+
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'cabecera' => $asiento,
-                    'detalles' => $asiento->detalles->map(function ($d) {
-                        return [
-                            'cuenta_contable' => $d->cuenta_contable,
-                            'cuenta_nombre' => $d->cuenta->nombre ?? 'Sin nombre',
-                            'debe' => $d->debe,
-                            'haber' => $d->haber,
-                        ];
-                    })
+                'data'    => [
+                    'cabecera'    => $asiento,
+                    'detalles'    => $detalles,
+                    'total_debe'  => $detalles->sum(fn ($d) => (float) $d['debe']),
+                    'total_haber' => $detalles->sum(fn ($d) => (float) $d['haber']),
                 ]
             ]);
         } catch (Exception $e) {

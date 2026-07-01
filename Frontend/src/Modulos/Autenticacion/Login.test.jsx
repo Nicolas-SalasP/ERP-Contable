@@ -40,7 +40,10 @@ describe('Login', () => {
 
     it('login exitoso guarda el token y redirige al panel', async () => {
         api.auth.login.mockResolvedValue({ token: 'tok-123', user: { id: 1, nombre: 'Ana', empresa_id: 5, permisos: [] } });
-        api.get.mockResolvedValue({ id: 1, nombre: 'Ana', empresa_id: 5, permisos: [] });
+        api.get.mockImplementation((url) => {
+            if (url.includes('/empresa/mis-empresas')) return Promise.resolve({ data: [] });
+            return Promise.resolve({ id: 1, nombre: 'Ana', empresa_id: 5, permisos: [] });
+        });
 
         renderLogin();
         enviarFormulario();

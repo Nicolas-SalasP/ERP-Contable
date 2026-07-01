@@ -4,9 +4,9 @@ namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Sii\Models\SiiDteEmitido;
+use App\Domains\Contabilidad\Exceptions\ContabilidadException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class ImpuestosService
 {
@@ -54,7 +54,7 @@ class ImpuestosService
 
         $neto = (float) $ventas->sum('monto_neto') - (float) $notasCredito->sum('monto_neto');
         $iva = (float) $ventas->sum('iva') - (float) $notasCredito->sum('iva');
-        $cantidad = $ventas->count() + $notasCredito->count();
+        $cantidad = $ventas->count();
 
         return [
             'neto' => $neto,
@@ -65,7 +65,7 @@ class ImpuestosService
 
     public function simularF29(int $empresaId, int $mes, int $anio)
     {
-        $fechaInicio = "$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-01";
+        $fechaInicio = "$anio-" . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "-01";
         $fechaFin = date('Y-m-t', strtotime($fechaInicio));
 
         // Ventas reales del periodo: DTEs emitidos (no cotizaciones). Ver resumenVentasAfectas().
@@ -73,9 +73,35 @@ class ImpuestosService
         $totalVentasNeto = $ventasResumen['neto'];
         $ivaDebito = $ventasResumen['iva'];
 
-        $compras = DB::table('facturas')->where('empresa_id', $empresaId)->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])->where('estado', '!=', 'ANULADA')->get();
+        $compras = DB::table('facturas')
+            ->where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
+            ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])
+            ->where('estado', '!=', 'ANULADA')
+            ->where('es_documento_exterior', false)
+            ->get();
         $totalComprasNeto = $compras->sum('monto_neto');
-        $ivaCredito = $compras->sum('monto_iva');
+        $ivaCreditoFacturas = (float) $compras->sum('monto_iva');
+
+        // Remanente IVA acumulado del mes anterior: si el F29 del mes previo fue
+        // mayorizado, el DEBE sobre cuenta 152542 representa el remanente generado
+        // ese mes. Se suma al crédito fiscal del periodo actual (art. 26 Ley IVA).
+        $mesPrev  = $mes === 1 ? 12 : $mes - 1;
+        $anioPrev = $mes === 1 ? $anio - 1 : $anio;
+        $glosaPrev = "Centralización F29 - " . str_pad((string) $mesPrev, 2, '0', STR_PAD_LEFT) . "/$anioPrev";
+
+        $remanenteMesAnterior = (float) DB::table('asientos_contables')
+            ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
+            ->where('asientos_contables.empresa_id', $empresaId)
+            ->where('asientos_contables.origen_modulo', 'impuestos')
+            ->where('asientos_contables.glosa', $glosaPrev)
+            ->where('asientos_contables.estado', 'MAYORIZADO')
+            ->where('detalles_asiento.cuenta_contable', '152542')
+            ->sum('detalles_asiento.debe');
+
+        // Las líneas HABER en 152542 (consumo de remanente anterior) tienen debe=0,
+        // por lo que sum('debe') devuelve exclusivamente el remanente nuevo generado.
+        $ivaCredito = $ivaCreditoFacturas + $remanenteMesAnterior;
 
         $retencionHonorarios = (int) \Illuminate\Support\Facades\DB::table('honorarios_recibidos')
             ->where('empresa_id', $empresaId)
@@ -121,17 +147,81 @@ class ImpuestosService
             $totalAPagar = $retencionHonorarios + $montoPpm;
         }
 
-        $glosaCierre = "Centralización F29 - " . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio";
+        $glosaCierre = "Centralización F29 - " . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio";
         $yaCerrado = DB::table('asientos_contables')->where('empresa_id', $empresaId)->where('origen_modulo', 'impuestos')->where('glosa', $glosaCierre)->where('estado', 'MAYORIZADO')->exists();
 
-        return [
-            'periodo' => str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio",
-            'ya_cerrado' => $yaCerrado,
-            'ventas' => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
-            'compras' => ['cantidad' => $compras->count(), 'neto' => $totalComprasNeto, 'iva_credito' => $ivaCredito],
+        $lineasF29 = $this->lineasFormularioF29([
+            'ventas'      => ['neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito, 'cantidad' => $ventasResumen['cantidad']],
+            'compras'     => ['neto' => $totalComprasNeto, 'iva_credito_facturas' => $ivaCreditoFacturas, 'remanente_mes_anterior' => $remanenteMesAnterior],
             'retenciones' => $retencionHonorarios,
-            'ppm' => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
-            'resumen' => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar]
+            'ppm'         => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
+            'resumen'     => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar],
+        ]);
+
+        return [
+            'periodo'     => str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio",
+            'ya_cerrado'  => $yaCerrado,
+            'ventas'      => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
+            'compras'     => [
+                'cantidad'               => $compras->count(),
+                'neto'                   => $totalComprasNeto,
+                'iva_credito'            => $ivaCredito,
+                'iva_credito_facturas'   => $ivaCreditoFacturas,
+                'remanente_mes_anterior' => $remanenteMesAnterior,
+            ],
+            'retenciones' => $retencionHonorarios,
+            'ppm'         => ['tasa' => $tasaPpm, 'monto' => $montoPpm],
+            'resumen'     => ['iva_determinado' => $ivaDeterminado, 'remanente' => $remanenteSiguienteMes, 'total_a_pagar' => $totalAPagar],
+            'lineas_f29'  => $lineasF29,
+        ];
+    }
+
+    /**
+     * Mapea los datos ya calculados de simularF29 a las líneas del Formulario 29 del SII.
+     *
+     * Invariantes garantizados:
+     *   - L27 = L24 + L26 (crédito facturas + remanente anterior)
+     *   - L28 y L36 son mutuamente excluyentes: solo uno puede ser > 0
+     *   - L89 = L91 = resumen.total_a_pagar
+     *
+     * @param array<string, mixed> $sim
+     * @return array<string, array{desc: string, valor: int|float}>
+     */
+    private function lineasFormularioF29(array $sim): array
+    {
+        $ivaDebito    = (float) $sim['ventas']['iva_debito'];
+        $ivaCredFac   = (float) $sim['compras']['iva_credito_facturas'];
+        $remanente    = (float) $sim['compras']['remanente_mes_anterior'];
+        $totalDebito  = $ivaDebito;
+        $totalCredito = $ivaCredFac + $remanente;
+        $diferencia   = $totalDebito - $totalCredito;
+
+        return [
+            // SECCIÓN A — VENTAS Y DÉBITOS
+            'L1'  => ['desc' => 'Ventas y/o Serv. del Giro Netos (afectos)',    'valor' => (int) round((float) $sim['ventas']['neto'])],
+            'L2'  => ['desc' => 'Ventas y/o Serv. Exentos / No Afectos',        'valor' => 0],
+            'L7'  => ['desc' => 'Débito Fiscal',                                 'valor' => (int) round($ivaDebito)],
+            'L11' => ['desc' => 'Total Débito Fiscal',                           'valor' => (int) round($totalDebito)],
+
+            // SECCIÓN B — COMPRAS Y CRÉDITOS
+            'L20' => ['desc' => 'Compras Internas Afectas del Giro (neto)',      'valor' => (int) round((float) $sim['compras']['neto'])],
+            'L24' => ['desc' => 'Total Crédito Fiscal del Período',              'valor' => (int) round($ivaCredFac)],
+            'L26' => ['desc' => 'Remanente Crédito Fiscal Período Anterior',     'valor' => (int) round($remanente)],
+            'L27' => ['desc' => 'Total Crédito Fiscal Disponible',               'valor' => (int) round($totalCredito)],
+            'L28' => ['desc' => 'IVA Determinado (L11 - L27)',                   'valor' => $diferencia > 0 ? (int) round($diferencia) : 0],
+            'L36' => ['desc' => 'Remanente para el Período Siguiente',           'valor' => $diferencia < 0 ? (int) round(abs($diferencia)) : 0],
+
+            // SECCIÓN C — PPM
+            'L63' => ['desc' => 'Base Imponible PPM',                            'valor' => (int) round((float) $sim['ventas']['neto'])],
+            'L64' => ['desc' => 'Tasa PPM (%)',                                  'valor' => (float) $sim['ppm']['tasa']],
+            'L65' => ['desc' => 'Monto PPM',                                     'valor' => (int) round((float) $sim['ppm']['monto'])],
+
+            // SECCIÓN D — RETENCIONES
+            'L49' => ['desc' => 'Retención Honorarios (Art. 74 N°2)',            'valor' => (int) $sim['retenciones']],
+
+            // SECCIÓN E — DETERMINACIÓN IMPUESTO
+            'L89' => ['desc' => 'Total Impuesto Determinado',                    'valor' => (int) round((float) $sim['resumen']['total_a_pagar'])],
+            'L91' => ['desc' => 'Total a Pagar (o Remanente)',                   'valor' => (int) round((float) $sim['resumen']['total_a_pagar'])],
         ];
     }
 
@@ -141,24 +231,27 @@ class ImpuestosService
             ->whereIn('codigo', ['152540', '353360'])->pluck('codigo')->toArray();
 
         if (count($cuentasBase) < 2) {
-            throw new Exception("Falta configuración: Se requieren cuentas de IVA Crédito (152540) y Débito (353360) en el plan de la empresa.");
+            throw ContabilidadException::regla("Falta configuración: Se requieren cuentas de IVA Crédito (152540) y Débito (353360) en el plan de la empresa.");
         }
 
         // Lock atómico: evita race check-then-act entre requests concurrentes.
         $lockKey = "centralizacion-f29-{$empresaId}-{$anio}-{$mes}";
         if (!Cache::add($lockKey, true, 30)) {
-            throw new Exception("La centralización del F29 para {$mes}/{$anio} ya está en curso. Espere unos segundos y vuelva a intentarlo.");
+            throw ContabilidadException::conflicto("La centralización del F29 para {$mes}/{$anio} ya está en curso. Espere unos segundos y vuelva a intentarlo.");
         }
 
         try {
             $simulacion = $this->simularF29($empresaId, $mes, $anio);
 
             if ($simulacion['ya_cerrado']) {
-                throw new Exception("El F29 para este período ya ha sido centralizado.");
+                throw ContabilidadException::conflicto("El F29 para este período ya ha sido centralizado.");
             }
 
-            if ($simulacion['ventas']['iva_debito'] == 0 && $simulacion['compras']['iva_credito'] == 0) {
-                throw new Exception("No hay movimientos de IVA para centralizar en este período.");
+            if ($simulacion['ventas']['iva_debito'] == 0
+                && $simulacion['compras']['iva_credito'] == 0
+                && $simulacion['ppm']['monto'] == 0
+                && $simulacion['retenciones'] == 0) {
+                throw ContabilidadException::regla("No hay movimientos de IVA, PPM ni retenciones para centralizar en este período.");
             }
 
             $detalles = [];
@@ -172,14 +265,20 @@ class ImpuestosService
             if ($simulacion['resumen']['remanente'] > 0) {
                 $detalles[] = ['cuenta_contable' => '152542', 'debe' => $simulacion['resumen']['remanente'], 'haber' => 0, 'glosa_detalle' => 'Remanente IVA F29'];
             }
-            if ($simulacion['compras']['iva_credito'] > 0) {
-                $detalles[] = ['cuenta_contable' => '152540', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito'], 'glosa_detalle' => 'Reversa IVA Crédito'];
+            // Reversa IVA Crédito: solo el proveniente de facturas de compra del periodo.
+            if ($simulacion['compras']['iva_credito_facturas'] > 0) {
+                $detalles[] = ['cuenta_contable' => '152540', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito_facturas'], 'glosa_detalle' => 'Reversa IVA Crédito'];
+            }
+            // Aplicar remanente del mes anterior: HABER en 152542 cancela el activo
+            // generado en el asiento F29 del mes previo (mantiene partida doble).
+            if ($simulacion['compras']['remanente_mes_anterior'] > 0) {
+                $detalles[] = ['cuenta_contable' => '152542', 'debe' => 0, 'haber' => $simulacion['compras']['remanente_mes_anterior'], 'glosa_detalle' => 'Aplicación remanente IVA mes anterior'];
             }
             if ($simulacion['resumen']['total_a_pagar'] > 0) {
                 $detalles[] = ['cuenta_contable' => '353365', 'debe' => 0, 'haber' => $simulacion['resumen']['total_a_pagar'], 'glosa_detalle' => 'Impuesto a Pagar F29'];
             }
 
-            $fechaAsiento = date('Y-m-t', strtotime("$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-01"));
+            $fechaAsiento = date('Y-m-t', strtotime("$anio-" . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "-01"));
 
             $asientoService = app(AsientoContableService::class);
 
@@ -187,7 +286,7 @@ class ImpuestosService
                 'empresa_id' => $empresaId,
                 'usuario_id' => $usuarioId,
                 'fecha' => $fechaAsiento,
-                'glosa' => "Centralización F29 - " . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio",
+                'glosa' => "Centralización F29 - " . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio",
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'impuestos',
                 'estado' => 'MAYORIZADO'
@@ -217,6 +316,7 @@ class ImpuestosService
 
         $queryCompras = DB::table('facturas')
             ->where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
             ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin])
             ->where('estado', '!=', 'ANULADA');
 
@@ -415,7 +515,7 @@ class ImpuestosService
 
         if (!$eliminado) {
             // Para el usuario autenticado, un mapeo de otra empresa simplemente no existe.
-            throw new Exception("El mapeo no existe o no pertenece a la empresa.", 404);
+            throw ContabilidadException::noEncontrado("El mapeo no existe o no pertenece a la empresa.");
         }
 
         return true;

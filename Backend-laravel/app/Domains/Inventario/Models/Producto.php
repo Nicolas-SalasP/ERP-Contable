@@ -6,7 +6,13 @@ use App\Domains\Core\Traits\HasEmpresaScope;
 
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property-read \App\Domains\Inventario\Models\UnidadMedida|null $unidadMedida
+ * @property-read \App\Domains\Inventario\Models\Bodega|null $bodegaDefecto
+ */
 class Producto extends Model
 {
     use HasEmpresaScope;
@@ -50,59 +56,70 @@ class Producto extends Model
         'activo' => 'boolean',
     ];
 
-    public function empresa()
+    /** @return BelongsTo<Empresa, $this> */
+    public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    public function unidadMedida()
+    /** @return BelongsTo<UnidadMedida, $this> */
+    public function unidadMedida(): BelongsTo
     {
         return $this->belongsTo(UnidadMedida::class, 'unidad_medida_id');
     }
 
-    public function bodegaDefecto()
+    /** @return BelongsTo<Bodega, $this> */
+    public function bodegaDefecto(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_defecto_id');
     }
 
-    public function stocks()
+    /** @return HasMany<StockProducto, $this> */
+    public function stocks(): HasMany
     {
         return $this->hasMany(StockProducto::class, 'producto_id');
     }
 
-    public function lotes()
+    /** @return HasMany<LoteInventario, $this> */
+    public function lotes(): HasMany
     {
         return $this->hasMany(LoteInventario::class, 'producto_id');
     }
 
-    public function stockLotes()
+    /** @return HasMany<StockLoteInventario, $this> */
+    public function stockLotes(): HasMany
     {
         return $this->hasMany(StockLoteInventario::class, 'producto_id');
     }
 
-    public function movimientosLotes()
+    /** @return HasMany<MovimientoLoteInventario, $this> */
+    public function movimientosLotes(): HasMany
     {
         return $this->hasMany(MovimientoLoteInventario::class, 'producto_id');
     }
 
-    public function ajustesCriticos()
+    /** @return HasMany<AjusteCriticoInventario, $this> */
+    public function ajustesCriticos(): HasMany
     {
         return $this->hasMany(AjusteCriticoInventario::class, 'producto_id');
     }
 
-    public function reservaDetalles()
+    /** @return HasMany<ReservaDetalleInventario, $this> */
+    public function reservaDetalles(): HasMany
     {
         return $this->hasMany(ReservaDetalleInventario::class, 'producto_id');
     }
 
-    public function reservaConsumos()
+    /** @return HasMany<ReservaConsumoInventario, $this> */
+    public function reservaConsumos(): HasMany
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'producto_id');
     }
-    public function tomaFisicaDetalles()
+
+    /** @return HasMany<TomaFisicaDetalleInventario, $this> */
+    public function tomaFisicaDetalles(): HasMany
     {
-    
-    return $this->hasMany(TomaFisicaDetalleInventario::class, 'producto_id');
+        return $this->hasMany(TomaFisicaDetalleInventario::class, 'producto_id');
     }
     public function estaActivo(): bool
     {

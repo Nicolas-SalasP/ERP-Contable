@@ -137,11 +137,11 @@ class CentralizacionRemuneracionesService
             ->get()
             ->keyBy('codigo_concepto');
 
-        $afpTotal   = (float) ($detallesAgg->get(ConceptoRemuneracion::AFP_COTIZACION)?->total ?? 0)
-                    + (float) ($detallesAgg->get(ConceptoRemuneracion::AFP_COMISION)?->total ?? 0);
-        $saludTotal = (float) ($detallesAgg->get(ConceptoRemuneracion::SALUD)?->total ?? 0);
-        $afcTrab    = (float) ($detallesAgg->get(ConceptoRemuneracion::AFC_TRABAJADOR)?->total ?? 0);
-        $iuscTotal  = (float) ($detallesAgg->get(ConceptoRemuneracion::IMPUESTO_UNICO)?->total ?? 0);
+        $afpTotal   = (float) ($detallesAgg->get(ConceptoRemuneracion::AFP_COTIZACION)->total ?? 0)
+                    + (float) ($detallesAgg->get(ConceptoRemuneracion::AFP_COMISION)->total ?? 0);
+        $saludTotal = (float) ($detallesAgg->get(ConceptoRemuneracion::SALUD)->total ?? 0);
+        $afcTrab    = (float) ($detallesAgg->get(ConceptoRemuneracion::AFC_TRABAJADOR)->total ?? 0);
+        $iuscTotal  = (float) ($detallesAgg->get(ConceptoRemuneracion::IMPUESTO_UNICO)->total ?? 0);
         $retencionesPrev = $afpTotal + $saludTotal + $afcTrab;
 
         // Provisión de vacaciones del período (opcional)

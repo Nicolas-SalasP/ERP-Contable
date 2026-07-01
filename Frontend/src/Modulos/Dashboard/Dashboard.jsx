@@ -11,6 +11,15 @@ import GraficoStock from './componentes/GraficoStock';
 import AlertasPendientes from './componentes/AlertasPendientes';
 import RhrrhResumen from './componentes/RhrrhResumen';
 import ExportacionDashboard from './componentes/ExportacionDashboard';
+import GraficoFlujoCaja from './componentes/GraficoFlujoCaja';
+import GraficoAgingAR from './componentes/GraficoAgingAR';
+import GraficoAgingAP from './componentes/GraficoAgingAP';
+import GraficoOrdenesPendientes from './componentes/GraficoOrdenesPendientes';
+import GraficoMargenBruto from './componentes/GraficoMargenBruto';
+import GraficoDistribucionFacturas from './componentes/GraficoDistribucionFacturas';
+import GraficoPipelineCotizaciones from './componentes/GraficoPipelineCotizaciones';
+import GraficoClientesNuevos from './componentes/GraficoClientesNuevos';
+import TablaProximasVencer from './componentes/TablaProximasVencer';
 
 /* ------------------------------------------------------------------ */
 /* Utilidades de formato                                                */
@@ -227,6 +236,19 @@ const Dashboard = () => {
                     bgIcono="bg-indigo-50"
                 />
 
+                {resumen?.dso !== null && resumen?.dso !== undefined && (
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col gap-3 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">DSO</p>
+                            <div className="bg-purple-50 text-purple-600 w-9 h-9 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-calendar-check text-sm" />
+                            </div>
+                        </div>
+                        <p className="text-3xl font-black text-purple-600 dark:text-purple-400">{resumen.dso}d</p>
+                        <p className="text-xs text-slate-400">días promedio cobro</p>
+                    </div>
+                )}
+
                 {/* Acceso rápido — columna extra en grilla de 3 */}
                 <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
                     <p className="text-xs font-bold text-emerald-100 uppercase tracking-widest">Acciones rápidas</p>
@@ -271,7 +293,7 @@ const Dashboard = () => {
             {/* ---- Alertas pendientes (DJ, F29, RRHH) ---- */}
             <AlertasPendientes alertas={resumen?.alertas_pendientes} />
 
-            {/* ---- Ventas vs Compras + secciones opcionales por permiso ---- */}
+            {/* ---- Ventas vs Compras ---- */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
                 {/* Gráfico ventas vs compras — siempre visible */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 xl:col-span-1">
@@ -284,25 +306,58 @@ const Dashboard = () => {
                         compras={resumen?.compras_12m ?? []}
                     />
                 </div>
-
-                {/* Inventario — solo si tiene permiso y el backend devolvió datos */}
-                {tieneInventario && resumen?.inventario && (
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 xl:col-span-1">
-                        <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
-                            <i className="fas fa-boxes text-teal-500" />
-                            Estado de inventario
-                        </h3>
-                        <GraficoStock datos={resumen.inventario} />
-                    </div>
-                )}
-
-                {/* RRHH — solo si tiene permiso y el backend devolvió datos */}
-                {tieneRrhh && resumen?.rrhh && (
-                    <div className="xl:col-span-1">
-                        <RhrrhResumen datos={resumen.rrhh} />
-                    </div>
-                )}
             </div>
+
+            {/* ---- Margen bruto (ventas vs compras + línea margen) ---- */}
+            <div className="mb-8">
+                <GraficoMargenBruto ventas={resumen?.serie_ventas_12m} compras={resumen?.compras_12m} />
+            </div>
+
+            {/* ---- Distribución de facturas + Pipeline cotizaciones ---- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <GraficoDistribucionFacturas datos={resumen?.distribucion_facturas} />
+                <GraficoPipelineCotizaciones datos={resumen?.pipeline_cotizaciones} />
+            </div>
+
+            {/* ---- Clientes nuevos + Próximas a vencer ---- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <GraficoClientesNuevos datos={resumen?.clientes_nuevos_6m} />
+                <TablaProximasVencer datos={resumen?.proximas_vencer_7d} />
+            </div>
+
+            {/* ---- Flujo de caja 30 días ---- */}
+            <div className="mb-8">
+                <GraficoFlujoCaja datos={resumen?.flujo_caja_30d} />
+            </div>
+
+            {/* ---- Aging AR + AP ---- */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                <GraficoAgingAR datos={resumen?.aging_ar ?? []} />
+                <GraficoAgingAP datos={resumen?.aging_ap ?? []} />
+            </div>
+
+            {/* ---- Stock + Órdenes de compra pendientes ---- */}
+            {(tieneInventario && resumen?.inventario) || resumen?.ordenes_compra_pendientes ? (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                    {tieneInventario && resumen?.inventario && (
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                            <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+                                <i className="fas fa-boxes text-teal-500" />
+                                Estado de inventario
+                            </h3>
+                            <GraficoStock datos={resumen.inventario} />
+                        </div>
+                    )}
+                    <GraficoOrdenesPendientes datos={resumen?.ordenes_compra_pendientes} />
+                </div>
+            ) : null}
+
+            {/* ---- RRHH — solo si tiene permiso ---- */}
+            {tieneRrhh && resumen?.rrhh && (
+                <div className="mb-8">
+                    <RhrrhResumen datos={resumen.rrhh} />
+                </div>
+            )}
 
             {/* ---- Facturas urgentes ---- */}
             <div>

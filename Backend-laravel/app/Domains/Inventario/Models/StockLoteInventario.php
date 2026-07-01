@@ -30,21 +30,25 @@ class StockLoteInventario extends Model
         'stock_actual' => 'decimal:4',
     ];
 
+    /** @return BelongsTo<Empresa, $this> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return BelongsTo<Bodega, $this> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
+    /** @return BelongsTo<LoteInventario, $this> */
     public function lote(): BelongsTo
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');

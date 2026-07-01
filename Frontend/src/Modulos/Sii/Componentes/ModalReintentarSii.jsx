@@ -9,6 +9,7 @@ const RAZON_MAX = 200;
 export function ModalReintentarSii({
     abierto,
     facturaId,
+    dteId = null,
     resumenEstado = null,
     onCerrar,
     onReintentoExitoso,
@@ -35,10 +36,10 @@ export function ModalReintentarSii({
         setErrorInline(null);
 
         try {
-            const respuesta = await siiApi.facturas.reintentar(
-                facturaId,
-                razon.trim() ? { razon: razon.trim() } : {}
-            );
+            const payload = razon.trim() ? { razon: razon.trim() } : {};
+            const respuesta = dteId
+                ? await siiApi.dte.reintentar(dteId, payload)
+                : await siiApi.facturas.reintentar(facturaId, payload);
             onReintentoExitoso?.(respuesta);
             onCerrar?.();
         } catch (err) {

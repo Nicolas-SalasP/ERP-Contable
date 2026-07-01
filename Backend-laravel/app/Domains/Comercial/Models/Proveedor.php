@@ -2,6 +2,8 @@
 namespace App\Domains\Comercial\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Pais;
@@ -30,17 +32,17 @@ class Proveedor extends Model
         'nombre_contacto',
     ];
 
-    public function empresa()
+    public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    public function pais()
+    public function pais(): BelongsTo
     {
         return $this->belongsTo(Pais::class, 'pais_iso', 'iso');
     }
 
-    public function cuentasBancarias()
+    public function cuentasBancarias(): HasMany
     {
         return $this->hasMany(CuentaBancariaProveedor::class);
     }

@@ -139,7 +139,7 @@ class AuditoriaPiiObserver
             Auditoria::create([
                 'auditable_type' => get_class($model),
                 'auditable_id'   => $model->getKey(),
-                'nombre_usuario' => auth()->user()?->nombre ?? 'Sistema',
+                'nombre_usuario' => auth()->user()->nombre ?? 'Sistema',
                 'operacion'      => $operacion,
                 'estado_anterior' => null,
                 'estado_nuevo'    => null,

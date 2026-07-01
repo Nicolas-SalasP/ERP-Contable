@@ -49,7 +49,7 @@ const Login = () => {
                             <div className="bg-white p-2 rounded-lg bg-opacity-20 backdrop-blur-sm">
                                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                             </div>
-                            <h1 className="text-2xl font-bold tracking-wider">ERP CONTABLE</h1>
+                            <h1 className="text-2xl font-bold tracking-wider">TENRI ERP CLOUD</h1>
                         </div>
                         <h2 className="text-4xl font-extrabold mb-4 leading-tight">Control total de tu negocio.</h2>
                         <p className="text-blue-100 text-lg opacity-90">Gestiona facturas, proveedores y contabilidad en un solo lugar, seguro y rápido.</p>

@@ -10,6 +10,27 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $empresa_id
+ * @property int $movimiento_inventario_id
+ * @property int $tipo_ajuste_critico_id
+ * @property int $producto_id
+ * @property int $bodega_id
+ * @property int|null $lote_id
+ * @property string $cantidad
+ * @property string $costo_unitario
+ * @property string $costo_total
+ * @property string|null $motivo
+ * @property string|null $observacion
+ * @property string|null $referencia
+ * @property string|null $origen_modulo
+ * @property int|null $origen_id
+ * @property int $registrado_por
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ * @property-read int|null $total_ajustes
+ */
 class AjusteCriticoInventario extends Model
 {
     use HasEmpresaScope;
@@ -48,36 +69,43 @@ class AjusteCriticoInventario extends Model
         'costo_total' => 'decimal:4',
     ];
 
+    /** @return BelongsTo<Empresa, $this> */
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    /** @return BelongsTo<MovimientoInventario, $this> */
     public function movimiento(): BelongsTo
     {
         return $this->belongsTo(MovimientoInventario::class, 'movimiento_inventario_id');
     }
 
+    /** @return BelongsTo<TipoAjusteCritico, $this> */
     public function tipo(): BelongsTo
     {
         return $this->belongsTo(TipoAjusteCritico::class, 'tipo_ajuste_critico_id');
     }
 
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return BelongsTo<Bodega, $this> */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 
+    /** @return BelongsTo<LoteInventario, $this> */
     public function lote(): BelongsTo
     {
         return $this->belongsTo(LoteInventario::class, 'lote_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function registradoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registrado_por');

@@ -239,6 +239,7 @@ class CafService
                 ->get();
 
             foreach ($reservados as $folioUso) {
+                /** @var SiiCafFolioUso $folioUso */
                 $this->liberarFolioHuerfano(
                     $folioUso->id,
                     sprintf('CAF revocado: %s', $motivo)

@@ -45,7 +45,7 @@ const GestionProyectosActivos = ({ onNotificar }) => {
 
         // FIX: Validación de seguridad para que el Backend no arroje Error 500 al activar
         if (!nuevoProyecto.tipo_activo_id) {
-            alert("Error: Debe seleccionar una 'Cuenta de Activo' para que el proyecto pueda ser capitalizado contablemente.");
+            onNotificar('warning', "Selecciona una 'Cuenta de Activo' para capitalizar contablemente el proyecto.");
             return;
         }
 

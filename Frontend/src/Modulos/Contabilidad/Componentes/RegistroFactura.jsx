@@ -52,7 +52,12 @@ const RegistroFactura = () => {
         motivoCorreccion: '',
         cuentaDestino: '',
         cuentaIva: '353350',
-        cuentaProveedor: '352105'
+        cuentaProveedor: '352105',
+        esDocumentoExterior: false,
+        tipoCambio: '',
+        montoOrigenDivisa: '',
+        tipoGastoArt59: '',
+        retencionArt59: '',
     });
 
     const {
@@ -80,8 +85,8 @@ const RegistroFactura = () => {
             let iva = 0;
 
             if (formData.tieneIva) {
-                neto = Math.round(bruto / 1.19);
-                iva = bruto - neto;
+                iva = Math.round(bruto * 19 / 119);
+                neto = bruto - iva;
             }
 
             setFormData(prev => ({
@@ -100,6 +105,28 @@ const RegistroFactura = () => {
         setFormData(prev => ({ ...prev, montoBruto: val, montoVisual: formatCurrency(val) }));
     };
 
+    const handleTipoCambioChange = (val) => {
+        const montoOrigen = parseFloat(formData.montoOrigenDivisa) || 0;
+        const tc = parseFloat(val) || 0;
+        const montoCLP = montoOrigen > 0 && tc > 0 ? Math.round(montoOrigen * tc).toString() : '';
+        setFormData(prev => ({
+            ...prev,
+            tipoCambio: val,
+            ...(montoCLP ? { montoBruto: montoCLP, montoVisual: new Intl.NumberFormat('es-CL').format(parseInt(montoCLP)) } : {})
+        }));
+    };
+
+    const handleMontoOrigenChange = (val) => {
+        const tc = parseFloat(formData.tipoCambio) || 0;
+        const montoOrigen = parseFloat(val) || 0;
+        const montoCLP = montoOrigen > 0 && tc > 0 ? Math.round(montoOrigen * tc).toString() : '';
+        setFormData(prev => ({
+            ...prev,
+            montoOrigenDivisa: val,
+            ...(montoCLP ? { montoBruto: montoCLP, montoVisual: new Intl.NumberFormat('es-CL').format(parseInt(montoCLP)) } : {})
+        }));
+    };
+
     const handleIvaManualChange = (e) => {
         const rawIva = cleanNumber(e.target.value);
         const bruto = parseInt(formData.montoBruto || 0);
@@ -116,7 +143,10 @@ const RegistroFactura = () => {
             rut: p.rut || 'N/A',
             pais: p.pais_iso === 'CL' ? 'Chile' : 'Extranjero',
             moneda: p.moneda_defecto || 'CLP',
-            tieneIva: p.pais_iso === 'CL'
+            tieneIva: p.pais_iso === 'CL',
+            esDocumentoExterior: p.pais_iso !== 'CL',
+            tipoGastoArt59: '',
+            retencionArt59: '',
         }));
         setBusqueda('');
         setMostrarSugerencias(false);
@@ -130,7 +160,7 @@ const RegistroFactura = () => {
     const handleNextStep = async () => {
         if (currentStep === 1) {
             if (!formData.proveedorId || !formData.numeroFactura || !formData.montoBruto || !formData.fechaContable) {
-                alert("Por favor complete todos los campos obligatorios.");
+                toast("Completa todos los campos obligatorios.", 'warning');
                 return;
             }
 
@@ -145,7 +175,7 @@ const RegistroFactura = () => {
                 }
             } catch (error) {
                 logger.error(error);
-                alert("Error validando factura. Verifique conexión.");
+                toast("Error al validar el documento. Verifica la conexión.", 'error');
             } finally {
                 setCheckingDuplicate(false);
             }
@@ -156,9 +186,9 @@ const RegistroFactura = () => {
     };
 
     const handlePreSave = () => {
-        if (!formData.cuentaDestino) return alert("Debe seleccionar una cuenta de Destino (Gasto/Activo)");
-        if (!formData.cuentaProveedor) return alert("Debe seleccionar una cuenta de Proveedor (Pasivo)");
-        if (formData.tieneIva && !formData.cuentaIva) return alert("Debe seleccionar una cuenta de IVA");
+        if (!formData.cuentaDestino) { toast("Selecciona una cuenta de Destino (Gasto/Activo).", 'warning'); return; }
+        if (!formData.cuentaProveedor) { toast("Selecciona una cuenta de Proveedor (Pasivo).", 'warning'); return; }
+        if (formData.tieneIva && !formData.cuentaIva) { toast("Selecciona una cuenta de IVA.", 'warning'); return; }
 
         const bruto = parseInt(formData.montoBruto || 0);
         const ivaTeorico = formData.tieneIva ? (bruto - Math.round(bruto / 1.19)) : 0;
@@ -178,7 +208,13 @@ const RegistroFactura = () => {
             ...formData,
             motivoCorreccion: motivo,
             tipo_documento: formData.tipoDocumento,
-            numero_factura: formData.numeroFactura
+            numero_factura: formData.numeroFactura,
+            es_documento_exterior: formData.esDocumentoExterior,
+            tipo_cambio: formData.tipoCambio ? parseFloat(formData.tipoCambio) : null,
+            monto_bruto_origen: formData.montoOrigenDivisa ? parseFloat(formData.montoOrigenDivisa) : null,
+            moneda: formData.moneda,
+            tipo_gasto_art59: formData.esDocumentoExterior && formData.tipoGastoArt59 ? formData.tipoGastoArt59 : null,
+            retencion_art59: formData.esDocumentoExterior && formData.retencionArt59 ? parseFloat(formData.retencionArt59) : null,
         };
 
         api.post('/facturas', payload)
@@ -192,14 +228,13 @@ const RegistroFactura = () => {
                     });
                 } else {
                     logger.error("Errores:", data.errors);
-                    const errorMsgs = data.errors ? Object.values(data.errors).flat().join('\n') : data.message;
-                    alert('❌ Error de Validación:\n' + errorMsgs);
+                    const errorMsgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Error de validación.');
+                    toast(errorMsgs, 'error');
                 }
             })
             .catch(error => {
-                const msj = error.response?.data?.message || error.message;
-                const errs = error.response?.data?.errors ? Object.values(error.response.data.errors).flat().join('\n') : '';
-                alert('Error crítico:\n' + msj + '\n' + errs);
+                const msj = error.response?.data?.message || error.message || 'Error al guardar la factura.';
+                toast(msj, 'error');
             })
             .finally(() => setSaving(false));
     };
@@ -275,6 +310,8 @@ const RegistroFactura = () => {
                         onLimpiarProveedor={limpiarProveedor}
                         onChange={handleChange}
                         onMontoChange={handleMontoChange}
+                        onTipoCambioChange={handleTipoCambioChange}
+                        onMontoOrigenChange={handleMontoOrigenChange}
                     />
                 )}
 

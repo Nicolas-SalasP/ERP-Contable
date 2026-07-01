@@ -20,6 +20,7 @@ class PlanCuenta extends Model
         'nivel',
         'imputable',
         'activo',
+        'es_gasto_rechazado',
     ];
 
     public function empresa()
