@@ -58,7 +58,7 @@ class LiquidacionController extends Controller
                 Auditoria::create([
                     'auditable_type'     => Liquidacion::class,
                     'auditable_id'       => $liq->id,
-                    'nombre_usuario'     => $request->user()?->nombre ?? 'Sistema',
+                    'nombre_usuario'     => $request->user()->nombre ?? 'Sistema',
                     'operacion'          => 'LECTURA',
                     'estado_anterior'    => null,
                     'estado_nuevo'       => null,

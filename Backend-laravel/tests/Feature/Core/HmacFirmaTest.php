@@ -75,15 +75,15 @@ class HmacFirmaTest extends TestCase
             ->assertStatus(401);
     }
 
-    public function test_legacy_key_aceptada_solo_con_flag_de_compat(): void
+    public function test_legacy_key_rechazada_en_fase_2(): void
     {
-        // Durante una migración coordinada el flag puede reactivar la llave legacy.
+        // Fase 2: el flag allow_legacy_key fue eliminado; la llave estática siempre se rechaza.
         config(['services.tenri_web.allow_legacy_key' => true]);
 
         $payload = ['tenri_user_id' => 123456, 'password_hash' => bcrypt('x')];
 
         $this->json('POST', self::URL, $payload, ['X-WEB-API-KEY' => self::SECRETO])
-            ->assertStatus(404); // auth OK (flag activo) -> usuario inexistente
+            ->assertStatus(401);
     }
 
     public function test_firma_invalida_es_rechazada(): void

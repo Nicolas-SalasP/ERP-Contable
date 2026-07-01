@@ -3,10 +3,17 @@
 namespace App\Domains\Comercial\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Traits\HasEmpresaScope;
 
+/**
+ * @property-read \App\Domains\Comercial\Models\Cliente|null $cliente
+ * @property-read \App\Domains\Comercial\Models\EstadoCotizacion|null $estado
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Comercial\Models\CotizacionDetalle> $detalles
+ */
 class Cotizacion extends Model
 {
     use HasEmpresaScope;
@@ -33,7 +40,12 @@ class Cotizacion extends Model
         'estado_id',
         'empresa_id',
         'es_afecta',
-        'notas_condiciones'
+        'notas_condiciones',
+        'metodo_pago',
+        'condiciones_pago',
+        'plazo_entrega',
+        'comentarios',
+        'garantia',
     ];
 
     protected $casts = [
@@ -44,22 +56,22 @@ class Cotizacion extends Model
         'es_afecta' => 'boolean',
     ];
 
-    public function cliente()
+    public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
     }
 
-    public function estado()
+    public function estado(): BelongsTo
     {
         return $this->belongsTo(EstadoCotizacion::class, 'estado_id');
     }
 
-    public function empresa()
+    public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
-    public function detalles()
+    public function detalles(): HasMany
     {
         return $this->hasMany(CotizacionDetalle::class);
     }

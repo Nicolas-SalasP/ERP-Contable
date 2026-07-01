@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
 import { formatearIdentificador, validarIdentificador } from '../../../Utilidades/identificadores';
+import { useToast } from '../../../Contextos/ToastContext';
 
 const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
+    const { toast } = useToast();
     const [formData, setFormData] = useState({
         rut: '',
         razon_social: '',
@@ -47,7 +49,7 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
         e.preventDefault();
 
         if (idError) {
-            alert("El identificador fiscal ingresado no es válido.");
+            toast("Identificador fiscal inválido.", 'error');
             return;
         }
 
@@ -60,7 +62,7 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
             }
             if (res.success) onSuccess();
         } catch (error) {
-            alert(error.message || "Error al procesar la solicitud");
+            toast(error.message || "Error al procesar la solicitud.", 'error');
         }
     };
 
@@ -79,6 +81,7 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
                             value={formData.rut}
                             onChange={handleIdChange}
                             required
+                            maxLength={20}
                             className={`w-full border rounded p-2.5 font-mono outline-none transition-all ${
                                 idError ? 'border-red-500 bg-red-50' : 'border-gray-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700'
                             }`}
@@ -92,6 +95,7 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
                             value={formData.razon_social}
                             onChange={handleChange}
                             required
+                            maxLength={200}
                             className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all bg-white dark:bg-slate-700"
                             placeholder="Nombre de la empresa"
                         />
@@ -104,15 +108,15 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="col-span-2 space-y-1">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Nombre Completo</label>
-                        <input name="contacto_nombre" value={formData.contacto_nombre} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
+                        <input name="contacto_nombre" value={formData.contacto_nombre} onChange={handleChange} maxLength={100} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                     </div>
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Email Contacto</label>
-                        <input type="email" name="contacto_email" value={formData.contacto_email} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
+                        <input type="email" name="contacto_email" value={formData.contacto_email} onChange={handleChange} maxLength={100} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                     </div>
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Teléfono</label>
-                        <input name="contacto_telefono" value={formData.contacto_telefono} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
+                        <input name="contacto_telefono" value={formData.contacto_telefono} onChange={handleChange} maxLength={20} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                     </div>
                 </div>
             </section>
@@ -121,11 +125,11 @@ const FormularioCliente = ({ clienteInicial, onSuccess, onCancel }) => {
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b pb-2">Logística y Envío</h4>
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Dirección Comercial</label>
-                    <input name="direccion" value={formData.direccion} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
+                    <input name="direccion" value={formData.direccion} onChange={handleChange} maxLength={250} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                 </div>
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1">Email Facturación / Cobranza</label>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} maxLength={100} className="w-full border border-gray-300 dark:border-slate-600 rounded p-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 bg-white dark:bg-slate-700" />
                 </div>
             </section>
 

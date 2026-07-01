@@ -33,6 +33,14 @@ const RegistroFacturaPaso3 = ({
                 </label>
             </div>
 
+            {!formData.tieneIva && formData.esDocumentoExterior && (
+                <div className="max-w-5xl mx-auto mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 text-sm text-blue-700 dark:text-blue-300">
+                    <p className="font-bold mb-1">Documento del Exterior</p>
+                    <p>El IVA cobrado por proveedores del regimen simplificado SII (servicios digitales) se absorbe como gasto. No constituye credito fiscal recuperable en el F29 (Art. 11 DL 825).</p>
+                    <p className="mt-1 text-xs text-blue-500">El asiento registrara el total ({formData.moneda} convertido a CLP) integramente como gasto.</p>
+                </div>
+            )}
+
             <div className="max-w-5xl mx-auto border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg bg-white dark:bg-slate-800 mb-36">
                 <div className="bg-slate-50 dark:bg-slate-900 rounded-t-xl px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center">
                     <h3 className="font-bold text-slate-700 dark:text-slate-300">Previsualización y Clasificación del Asiento</h3>

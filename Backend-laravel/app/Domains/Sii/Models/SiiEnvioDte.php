@@ -18,6 +18,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * SEGURIDAD: request_body_completo_cifrado y respuesta_body_completo_cifrado
  * NUNCA en JSON. El $hidden los excluye automaticamente.
+ *
+ * @property int $id
+ * @property int $empresa_id
+ * @property int $dte_emitido_id
+ * @property int|null $token_sesion_id
+ * @property string|null $track_id
+ * @property string $estado_envio
+ * @property string|null $ambiente_sii
+ * @property int $intentos_envio
+ * @property int $intentos_polling
+ * @property \Illuminate\Support\Carbon|null $fecha_envio
+ * @property \Illuminate\Support\Carbon|null $fecha_ultimo_polling
+ * @property \Illuminate\Support\Carbon|null $fecha_resolucion
+ * @property string|null $estado_sii_ultimo
+ * @property string|null $glosa_sii
+ * @property int|null $http_status_ultimo_envio
+ * @property string|null $http_status_ultimo_polling
+ * @property string|null $respuesta_body_completo_cifrado
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class SiiEnvioDte extends Model
 {

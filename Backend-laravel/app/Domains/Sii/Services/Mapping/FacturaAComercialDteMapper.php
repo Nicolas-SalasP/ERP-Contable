@@ -84,7 +84,7 @@ class FacturaAComercialDteMapper
 
     private function validarFactura(Factura $factura): void
     {
-        if ($factura->tipo_dte === null) {
+        if (!$factura->tipo_dte) {
             throw FacturaIncompletaParaSii::tipoDteFaltante((int) $factura->id);
         }
 
@@ -97,7 +97,7 @@ class FacturaAComercialDteMapper
             );
         }
 
-        if ($factura->cliente_id === null) {
+        if (!$factura->cliente_id) {
             throw FacturaIncompletaParaSii::clienteFaltante((int) $factura->id);
         }
 
@@ -291,7 +291,7 @@ class FacturaAComercialDteMapper
                 'folio_referencia'           => (string) $ref['folio_ref'],
                 'fecha_referencia'           => (string) $ref['fecha_ref'],
                 'codigo_referencia'          => $ref['cod_ref'] ?? null,
-                'razon_referencia'           => isset($ref['razon_ref']) && $ref['razon_ref'] !== null
+                'razon_referencia'           => isset($ref['razon_ref'])
                     ? Iso88591Helper::sanitize((string) $ref['razon_ref'], 90)
                     : null,
                 'rut_otro_contribuyente'     => $ref['rut_otro'] ?? null,

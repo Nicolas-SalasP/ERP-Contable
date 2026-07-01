@@ -3,8 +3,9 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-
+use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\FacturaService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Exception;
@@ -92,7 +93,11 @@ class FacturaController
             'montoNeto' => 'monto_neto',
             'montoIva' => 'monto_iva',
             'montoBruto' => 'monto_bruto',
-            'autorizadorId' => 'autorizador_id'
+            'autorizadorId' => 'autorizador_id',
+            'esDocumentoExterior' => 'es_documento_exterior',
+            'tipoCambio' => 'tipo_cambio',
+            'montoBrutoOrigen' => 'monto_bruto_origen',
+            'tipoGastoArt59' => 'tipo_gasto_art59',
         ];
 
         $input = $request->all();
@@ -108,16 +113,22 @@ class FacturaController
         try {
             $request->validate([
                 'numero_factura' => 'required|string|max:255',
-                'tipo_documento' => 'required|string|in:FACTURA,NOTA_CREDITO,BOLETA,NOTA_DEBITO,COMPRA',
+                'tipo_documento' => 'required|string|in:FACTURA,NOTA_CREDITO,BOLETA,NOTA_DEBITO,COMPRA,FACTURA_EXTERIOR',
                 'monto_bruto' => 'required|numeric|gt:0',
                 'monto_neto' => 'required|numeric|gt:0',
                 'cuentaDestino' => 'sometimes|string',
-                'cuentaIva' => 'nullable|string',   
+                'cuentaIva' => 'nullable|string',
                 'cuentaProveedor' => 'nullable|string',
                 'centro_costo_id' => 'nullable|integer',
                 'fecha_emision' => 'nullable|date',
                 'fecha_vencimiento' => 'nullable|date',
                 'factura_referencia_id' => 'nullable|integer',
+                'es_documento_exterior' => 'nullable|boolean',
+                'tipo_cambio' => 'nullable|numeric|min:0',
+                'monto_bruto_origen' => 'nullable|numeric|min:0',
+                'moneda' => 'nullable|string|max:3',
+                'tipo_gasto_art59' => 'nullable|string|in:intereses,regalias,servicios_tecnicos,honorarios,otros',
+                'cuentaRetencion' => 'nullable|string|max:20',
             ], [
                 'monto_bruto.gt' => 'El monto bruto debe ser mayor a 0',
                 'monto_neto.gt' => 'El monto neto debe ser mayor a 0',
@@ -161,6 +172,12 @@ class FacturaController
                 'cuentaProveedor' => $input['cuentaProveedor'] ?? null,
                 'centro_costo_id' => $input['centro_costo_id'] ?? null,
                 'factura_referencia_id' => $input['factura_referencia_id'] ?? null,
+                'es_documento_exterior' => $input['es_documento_exterior'] ?? false,
+                'tipo_cambio' => $input['tipo_cambio'] ?? null,
+                'monto_bruto_origen' => $input['monto_bruto_origen'] ?? null,
+                'moneda' => $input['moneda'] ?? 'CLP',
+                'tipo_gasto_art59' => $input['tipo_gasto_art59'] ?? null,
+                'cuentaRetencion' => $input['cuentaRetencion'] ?? null,
             ];
 
             $factura = $this->service->registrarFacturaCompra($datos);
@@ -399,6 +416,149 @@ class FacturaController
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+        }
+    }
+
+    /**
+     * Resumen de retenciones Art. 59 LIR para el Formulario 50.
+     * GET /facturas/f50?periodo=YYYY-MM
+     */
+    public function f50(Request $request)
+    {
+        $empresaId = $request->user()->empresa_id;
+        $periodo = $request->query('periodo', now()->format('Y-m'));
+
+        [$anio, $mes] = explode('-', $periodo);
+
+        $retenciones = DB::table('facturas')
+            ->where('empresa_id', $empresaId)
+            ->whereYear('fecha_emision', $anio)
+            ->whereMonth('fecha_emision', $mes)
+            ->whereNotNull('retencion_art59')
+            ->where('retencion_art59', '>', 0)
+            ->where('estado', '!=', 'ANULADA')
+            ->whereNull('deleted_at')
+            ->select(
+                'tipo_gasto_art59',
+                DB::raw('COUNT(*) as cantidad_facturas'),
+                DB::raw('SUM(monto_bruto) as base_imponible'),
+                DB::raw('SUM(retencion_art59) as total_retencion')
+            )
+            ->groupBy('tipo_gasto_art59')
+            ->get();
+
+        $tasas = [
+            'intereses'          => 4.0,
+            'regalias'           => 30.0,
+            'servicios_tecnicos' => 15.0,
+            'honorarios'         => 15.0,
+            'otros'              => 35.0,
+        ];
+
+        $detalle = $retenciones->map(function (object $r) use ($tasas) {
+            /** @var object{tipo_gasto_art59: string|null, cantidad_facturas: int, base_imponible: string|null, total_retencion: string|null} $r */
+            return [
+                'tipo_gasto' => $r->tipo_gasto_art59,
+                'tasa_porcentaje' => $tasas[$r->tipo_gasto_art59 ?? ''] ?? null,
+                'cantidad_facturas' => $r->cantidad_facturas,
+                'base_imponible' => round((float) $r->base_imponible, 2),
+                'total_retencion' => round((float) $r->total_retencion, 2),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'periodo' => $periodo,
+            'total_retener' => round($detalle->sum('total_retencion'), 2),
+            'detalle' => $detalle->values(),
+        ]);
+    }
+
+    /**
+     * Emite una Nota de Crédito sobre una factura de VENTA.
+     * POST /facturas/{id}/nota-credito
+     */
+    public function notaCredito(Request $request, int $id)
+    {
+        try {
+            $datos = $request->validate([
+                'numero_nc'     => 'required|string|max:255',
+                'monto_neto'    => 'required|numeric|min:0',
+                'monto_iva'     => 'required|numeric|min:0',
+                'monto_bruto'   => 'required|numeric|gt:0',
+                'razon'         => 'required|string|min:5|max:255',
+                'fecha_emision' => 'nullable|date',
+                'emitir_dte'    => 'nullable|boolean',
+            ]);
+
+            $nc = $this->service->emitirNotaCreditoVenta(
+                $request->user()->empresa_id,
+                $id,
+                $datos
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nota de Crédito emitida y contabilidad reversada.',
+                'data'    => $nc,
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors'  => $e->errors(),
+            ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Emite una Nota de Débito sobre una factura de VENTA.
+     * POST /facturas/{id}/nota-debito
+     */
+    public function notaDebito(Request $request, int $id)
+    {
+        try {
+            $datos = $request->validate([
+                'numero_nd'     => 'required|string|max:255',
+                'monto_neto'    => 'required|numeric|min:0',
+                'monto_iva'     => 'required|numeric|min:0',
+                'monto_bruto'   => 'required|numeric|gt:0',
+                'razon'         => 'required|string|min:5|max:255',
+                'fecha_emision' => 'nullable|date',
+                'emitir_dte'    => 'nullable|boolean',
+            ]);
+
+            $nd = $this->service->emitirNotaDebitoVenta(
+                $request->user()->empresa_id,
+                $id,
+                $datos
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nota de Débito registrada correctamente.',
+                'data'    => $nd,
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors'  => $e->errors(),
+            ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
         }
     }
 }

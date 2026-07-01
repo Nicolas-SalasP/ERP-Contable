@@ -12,5 +12,20 @@ export default defineConfig({
             '**/e2e/**',
             '**/.{idea,git,cache,output,temp}/**',
         ],
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'html', 'json-summary'],
+            reportsDirectory: './coverage',
+            reportOnFailure: true,
+            include: ['src/**/*.{js,jsx}'],
+            exclude: [
+                'src/main.jsx',
+                'src/**/*.test.{js,jsx}',
+                'src/**/__mocks__/**',
+            ],
+            thresholds: {
+                lines: 20,
+            },
+        },
     },
 });

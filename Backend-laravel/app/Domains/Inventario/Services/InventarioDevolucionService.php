@@ -88,7 +88,9 @@ class InventarioDevolucionService
 
         $this->validarDespachoReversible($despacho);
 
-        $detalles = $despacho->detalles->map(function (InventarioDespachoDetalle $detalle) use ($despacho) {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, InventarioDespachoDetalle> $despachoDetallesRel */
+        $despachoDetallesRel = $despacho->detalles;
+        $detalles = $despachoDetallesRel->map(function (InventarioDespachoDetalle $detalle) use ($despacho) {
             $despachada = $this->redondearCantidad((float) $detalle->cantidad_despachada);
             $yaReversada = $this->cantidadConfirmadaReversada((int) $despacho->empresa_id, (int) $detalle->id);
             $pendienteReservada = $this->cantidadPendienteReservada((int) $despacho->empresa_id, (int) $detalle->id);
@@ -168,7 +170,7 @@ class InventarioDevolucionService
             ]);
 
             foreach ($payloadDetalles as $item) {
-                /** @var InventarioDespachoDetalle $detalle */
+                /** @var InventarioDespachoDetalle|null $detalle */
                 $detalle = $detallesDespacho->get($item['despacho_detalle_id']);
                 if (!$detalle) {
                     throw ValidationException::withMessages(['detalles' => 'Uno de los detalles no pertenece al despacho indicado.']);
@@ -264,6 +266,7 @@ class InventarioDevolucionService
             $hayDiferencias = false;
 
             foreach ($detalles as $detalle) {
+                /** @var \App\Domains\Inventario\Models\InventarioDespachoDetalle|null $despachoDetalle */
                 $despachoDetalle = $detalle->despachoDetalle;
                 if (!$despachoDetalle || (int) $despachoDetalle->empresa_id !== $empresaId || (int) $despachoDetalle->despacho_orden_id !== (int) $despacho->id) {
                     throw InventarioException::noEncontrado('Un detalle de devolución no pertenece al despacho asociado.');
@@ -399,6 +402,7 @@ class InventarioDevolucionService
             ->toArray();
 
         $ordenIds = (clone $base)->pluck('id');
+        /** @var object{cantidad_solicitada: numeric-string, cantidad_aceptada: numeric-string, cantidad_rechazada: numeric-string} $totales */
         $totales = InventarioDevolucionDetalle::query()
             ->where('empresa_id', $usuario->empresa_id)
             ->whereIn('devolucion_orden_id', $ordenIds)
@@ -514,7 +518,10 @@ class InventarioDevolucionService
         ]);
     }
 
-    private function normalizarDetallesCreacion(string $tipo, array $detallesPayload, $detallesDespacho, mixed $ubicacionDestinoGlobal): array
+    /**
+     * @param \Illuminate\Database\Eloquent\Collection<int, InventarioDespachoDetalle> $detallesDespacho
+     */
+    private function normalizarDetallesCreacion(string $tipo, array $detallesPayload, \Illuminate\Database\Eloquent\Collection $detallesDespacho, mixed $ubicacionDestinoGlobal): array
     {
         if ($tipo === InventarioDevolucionOrden::TIPO_REVERSA_TOTAL) {
             return $detallesDespacho
@@ -692,10 +699,15 @@ class InventarioDevolucionService
         int $ubicacionDestinoId,
         ?string $observacionDetalle = null
     ): MovimientoInventario {
+        /** @var \App\Domains\Inventario\Models\MovimientoInventario|null $movimientoOriginal */
         $movimientoOriginal = $despachoDetalle->movimiento;
+        /** @var \App\Domains\Inventario\Models\Producto|null $productoDespachoDetalle */
+        $productoDespachoDetalle = $despachoDetalle->producto;
+        /** @var \App\Domains\Inventario\Models\InventarioDespachoOrden|null $despachoOrdenRel */
+        $despachoOrdenRel = $orden->despacho;
         $costoUnitario = $movimientoOriginal?->costo_unitario !== null
             ? (float) $movimientoOriginal->costo_unitario
-            : (float) ($despachoDetalle->producto?->costo_promedio ?? 0);
+            : (float) ($productoDespachoDetalle->costo_promedio ?? 0);
 
         return $this->movimientoService->registrarMovimiento([
             'tipo' => MovimientoInventario::TIPO_ENTRADA,
@@ -710,7 +722,7 @@ class InventarioDevolucionService
             'observacion' => trim(sprintf(
                 '%s post-despacho %s. %s',
                 strtolower(str_replace('_', ' ', $orden->tipo)),
-                $orden->despacho?->codigo ?? ('#' . $orden->despacho_orden_id),
+                $despachoOrdenRel->codigo ?? ('#' . $orden->despacho_orden_id),
                 (string) ($observacionDetalle ?: $detalle->observacion ?: $orden->observacion ?: '')
             )),
             'fecha_movimiento' => now(),

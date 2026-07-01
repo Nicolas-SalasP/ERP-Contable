@@ -24,6 +24,7 @@ class AnulacionService
 
             $total = 0;
             foreach ($asiento->detalles as $det) {
+                /** @var \App\Domains\Contabilidad\Models\DetalleAsiento $det */
                 if ($det->tipo_operacion === 'DEBE') {
                     $total += $det->debe;
                 }
@@ -76,10 +77,11 @@ class AnulacionService
 
                 $anio = date('y', strtotime($asientoReverso->fecha));
                 $tipoCode = '10';
-                $secuencia = str_pad($asientoReverso->id, 6, '0', STR_PAD_LEFT);
+                $secuencia = str_pad((string) $asientoReverso->id, 6, '0', STR_PAD_LEFT);
                 $asientoReverso->update(['numero_comprobante' => $anio . $tipoCode . $secuencia]);
 
                 foreach ($asientoOriginal->detalles as $det) {
+                    /** @var \App\Domains\Contabilidad\Models\DetalleAsiento $det */
                     $asientoReverso->detalles()->create([
                         'cuenta_contable' => $det->cuenta_contable,
                         'debe' => $det->haber,

@@ -3,6 +3,15 @@ namespace App\Domains\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int|null $empresa_id
+ * @property string $nombre
+ * @property int $jerarquia
+ * @property array $permisos
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Rol extends Model
 {
     protected $table = 'roles';

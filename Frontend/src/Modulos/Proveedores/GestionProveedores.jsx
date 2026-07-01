@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { TablaSkeleton } from '../../Componentes/Skeleton';
@@ -7,7 +7,18 @@ import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { formatearIdentificador, validarIdentificador, enmascararIdentificador } from '../../Utilidades/identificadores';
 import { logger } from '../../Configuracion/logger';
-import { CreditCard, AlertCircle, Trash2, Plus, Settings, Building2 } from 'lucide-react';
+import { CreditCard, AlertCircle, Trash2, Plus, Settings, Building2, Search } from 'lucide-react';
+
+const MONEDAS_LABELS = {
+    CLP: 'Peso Chileno', USD: 'Dólar Americano', EUR: 'Euro',
+    ARS: 'Peso Argentino', PEN: 'Sol Peruano', BRL: 'Real Brasileño',
+    MXN: 'Peso Mexicano', COP: 'Peso Colombiano', UYU: 'Peso Uruguayo',
+    PYG: 'Guaraní', BOB: 'Boliviano', VES: 'Bolívar', GBP: 'Libra Esterlina',
+    CAD: 'Dólar Canadiense', CNY: 'Yuan', JPY: 'Yen', KRW: 'Won',
+    INR: 'Rupia India', AUD: 'Dólar Australiano', CHF: 'Franco Suizo',
+    SEK: 'Corona Sueca', SGD: 'Dólar Singapur', ILS: 'Séquel',
+};
+
 const BANCOS_CHILE = [
     "Banco de Chile", "Banco Estado", "Banco Santander", "BCI", "Scotiabank", "Itaú",
     "Banco Security", "Banco BICE", "Banco Falabella", "Banco Ripley", "Banco Consorcio",
@@ -224,6 +235,9 @@ const GestionProveedores = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('info');
     const [idError, setIdError] = useState(false);
+    const [busquedaPais, setBusquedaPais] = useState('Chile');
+    const [mostrarSugerenciasPais, setMostrarSugerenciasPais] = useState(false);
+    const paisRef = useRef(null);
 
     const initialFormState = {
         codigo: '', rut: '', razonSocial: '', paisIso: 'CL', moneda: 'CLP', nombreContacto: '', emailContacto: '', direccion: '', telefono: ''
@@ -262,8 +276,39 @@ const GestionProveedores = () => {
         return p ? p.etiqueta_id : 'Identificador';
     };
 
+    const paisesFiltrados = busquedaPais.trim()
+        ? paises.filter(p =>
+            p.nombre.toLowerCase().includes(busquedaPais.toLowerCase()) ||
+            p.iso.toLowerCase().includes(busquedaPais.toLowerCase())
+        )
+        : paises;
+
+    const monedasDisponibles = (paisIso) => {
+        const pInfo = paises.find(p => p.iso === paisIso);
+        const mDefecto = pInfo?.moneda_defecto;
+        const lista = [];
+        if (mDefecto && !['USD', 'EUR'].includes(mDefecto)) lista.push(mDefecto);
+        lista.push('USD');
+        lista.push('EUR');
+        return lista;
+    };
+
+    const seleccionarPais = (pais) => {
+        setFormData(prev => ({
+            ...prev,
+            paisIso: pais.iso,
+            rut: '',
+            moneda: pais.moneda_defecto || 'USD',
+        }));
+        setBusquedaPais(pais.nombre);
+        setMostrarSugerenciasPais(false);
+        setIdError(false);
+    };
+
     const openCreate = () => {
         setFormData(initialFormState);
+        setBusquedaPais('Chile');
+        setMostrarSugerenciasPais(false);
         setEditingId(null);
         setActiveTab('info');
         setIdError(false);
@@ -282,6 +327,9 @@ const GestionProveedores = () => {
             direccion: prov.direccion || '',
             telefono: prov.telefono || ''
         });
+        const nombrePais = paises.find(p => p.iso === prov.pais_iso)?.nombre || prov.pais_iso;
+        setBusquedaPais(nombrePais);
+        setMostrarSugerenciasPais(false);
         setEditingId(prov.id);
         setActiveTab('info');
         setIdError(false);
@@ -291,6 +339,15 @@ const GestionProveedores = () => {
     const handleIdChange = (e) => {
         const val = e.target.value;
         const pais = formData.paisIso;
+
+        if (pais !== 'CL') {
+            // Para países extranjeros: aceptar identificador fiscal libre, sin validación chilena
+            setFormData(prev => ({ ...prev, rut: val }));
+            setIdError(false);
+            return;
+        }
+
+        // Solo para Chile: formatear y validar RUT
         const formatted = formatearIdentificador(val, pais);
         setFormData(prev => ({ ...prev, rut: formatted }));
         const cleanVal = formatted.replace(/[^0-9kK]/g, '');
@@ -300,19 +357,6 @@ const GestionProveedores = () => {
         } else {
             setIdError(false);
         }
-    };
-
-    const handlePaisChange = (e) => {
-        const newIso = e.target.value;
-        const pInfo = paises.find(p => p.iso === newIso);
-
-        setFormData(prev => ({
-            ...prev,
-            paisIso: newIso,
-            rut: '',
-            moneda: pInfo ? pInfo.moneda_defecto : 'USD'
-        }));
-        setIdError(false);
     };
 
     const handleSaveInfo = async () => {
@@ -542,24 +586,46 @@ const GestionProveedores = () => {
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        <div>
+                                        <div className="relative" ref={paisRef}>
                                             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">País de Residencia</label>
-                                            <select className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium text-slate-700 dark:text-slate-300" value={formData.paisIso} onChange={handlePaisChange}>
-                                                {paises.map(p => (
-                                                    <option key={p.iso} value={p.iso}>{p.nombre}</option>
-                                                ))}
-                                            </select>
+                                            <div className="relative">
+                                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                                <input
+                                                    type="text"
+                                                    className="w-full border border-slate-300 dark:border-slate-600 rounded-lg pl-8 pr-3 py-2.5 bg-white dark:bg-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 text-sm"
+                                                    value={busquedaPais}
+                                                    onChange={e => { setBusquedaPais(e.target.value); setMostrarSugerenciasPais(true); }}
+                                                    onFocus={() => setMostrarSugerenciasPais(true)}
+                                                    onBlur={() => setTimeout(() => setMostrarSugerenciasPais(false), 150)}
+                                                    placeholder="Buscar país..."
+                                                />
+                                            </div>
+                                            {mostrarSugerenciasPais && paisesFiltrados.length > 0 && (
+                                                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl max-h-52 overflow-y-auto">
+                                                    {paisesFiltrados.map(p => (
+                                                        <button
+                                                            key={p.iso}
+                                                            type="button"
+                                                            onMouseDown={() => seleccionarPais(p)}
+                                                            className={`w-full text-left px-3 py-2 text-sm transition-colors flex justify-between items-center ${
+                                                                formData.paisIso === p.iso
+                                                                    ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold'
+                                                                    : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                                            }`}
+                                                        >
+                                                            <span>{p.nombre}</span>
+                                                            <span className="text-xs text-slate-400 font-mono">{p.iso}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Moneda de Pago</label>
                                             <select className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 font-mono" value={formData.moneda} onChange={e => setFormData({ ...formData, moneda: e.target.value })}>
-                                                <option value="CLP">CLP - Peso Chileno</option>
-                                                <option value="USD">USD - Dólar Americano</option>
-                                                <option value="EUR">EUR - Euro</option>
-                                                <option value="PEN">PEN - Sol Peruano</option>
-                                                <option value="ARS">ARS - Peso Argentino</option>
-                                                <option value="BRL">BRL - Real Brasileño</option>
-                                                <option value="MXN">MXN - Peso Mexicano</option>
+                                                {monedasDisponibles(formData.paisIso).map(m => (
+                                                    <option key={m} value={m}>{m} — {MONEDAS_LABELS[m] || m}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>

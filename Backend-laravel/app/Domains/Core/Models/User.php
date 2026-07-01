@@ -6,6 +6,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @property-read \App\Domains\Core\Models\Rol|null $rol
+ * @property-read \App\Domains\Core\Models\Empresa|null $empresa
+ * @property-read \App\Domains\Core\Models\Empresa|null $empresaActiva
+ * @property-read \App\Domains\Core\Models\EstadoSuscripcion|null $estadoSuscripcion
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
@@ -72,12 +78,12 @@ class User extends Authenticatable
         return $this->belongsTo(Empresa::class, 'empresa_activa_id');
     }
 
-    public function rol()
+    public function rol(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Rol::class);
     }
 
-    public function estadoSuscripcion()
+    public function estadoSuscripcion(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(EstadoSuscripcion::class);
     }

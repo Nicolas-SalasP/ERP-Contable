@@ -44,8 +44,7 @@ class CmConfiguracionCuenta extends Model
             self::ROL_DEPRECIACION_ACUMULADA => 'Depreciación Acumulada',
             self::ROL_INVENTARIO => 'Existencias / Inventario',
             self::ROL_PATRIMONIO_CAPITAL => 'Patrimonio / Capital',
-            self::ROL_PASIVO_NO_MONETARIO => 'Pasivo No Monetario',
-            default => $this->rol_cm,
+            default => 'Pasivo No Monetario',
         };
     }
 }

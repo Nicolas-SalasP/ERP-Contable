@@ -3,6 +3,7 @@
 namespace App\Domains\Rrhh\Services\Provisiones;
 
 use App\Domains\Rrhh\Models\Contrato;
+use App\Domains\Rrhh\Models\Empleado;
 use App\Domains\Rrhh\Models\ProvisionVacaciones;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,9 @@ class VacacionesService
                 ->with(['empleado', 'contrato'])
                 ->findOrFail($liquidacionId);
 
+            /** @var \App\Domains\Rrhh\Models\Contrato $contrato */
             $contrato = $liq->contrato;
+            /** @var \App\Domains\Rrhh\Models\Empleado $empleado */
             $empleado = $liq->empleado;
             $anio = $liq->anio;
             $mes = $liq->mes;
@@ -92,9 +95,7 @@ class VacacionesService
      */
     public function calcularVacacionesProporcionales(Contrato $contrato, string $fechaTermino): array
     {
-        $fechaInicio = $contrato->fecha_inicio instanceof Carbon
-            ? $contrato->fecha_inicio
-            : Carbon::parse($contrato->fecha_inicio);
+        $fechaInicio = $contrato->fecha_inicio;
         $fechaFin = Carbon::parse($fechaTermino);
 
         // Aniversario relativo a la fecha de término (no a now())
@@ -151,9 +152,7 @@ class VacacionesService
     private function diasAnualesSegunAntigüedad(Contrato $contrato, ?Carbon $referencia = null): float
     {
         $ref = $referencia ?? Carbon::now();
-        $fechaInicio = $contrato->fecha_inicio instanceof Carbon
-            ? $contrato->fecha_inicio
-            : Carbon::parse($contrato->fecha_inicio);
+        $fechaInicio = $contrato->fecha_inicio;
 
         // Vacaciones progresivas Art. 68: 10+ años → 1 día extra c/3 años adicionales
         $anios = (int) $fechaInicio->diffInYears($ref);

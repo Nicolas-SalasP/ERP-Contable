@@ -48,9 +48,7 @@ class FiniquitoService
             }
 
             $fechaTerminoDate = Carbon::parse($fechaTermino);
-            $fechaInicioDate = $contrato->fecha_inicio instanceof Carbon
-                ? $contrato->fecha_inicio
-                : Carbon::parse($contrato->fecha_inicio);
+            $fechaInicioDate = $contrato->fecha_inicio;
 
             // ── Años de servicio ──────────────────────────────────────────
             $aniosCompletos = (int) $fechaInicioDate->diffInYears($fechaTerminoDate);

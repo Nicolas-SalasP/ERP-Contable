@@ -9,6 +9,32 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $empresa_id
+ * @property int $producto_id
+ * @property string $tipo
+ * @property int|null $bodega_origen_id
+ * @property int|null $bodega_destino_id
+ * @property int|null $ubicacion_origen_id
+ * @property int|null $ubicacion_destino_id
+ * @property string $cantidad
+ * @property string|null $stock_origen_antes
+ * @property string|null $stock_origen_despues
+ * @property string|null $stock_destino_antes
+ * @property string|null $stock_destino_despues
+ * @property string|null $estado_stock_origen
+ * @property string|null $estado_stock_destino
+ * @property string|null $costo_unitario
+ * @property string|null $costo_total
+ * @property string|null $referencia
+ * @property string|null $motivo
+ * @property string|null $observacion
+ * @property int|null $created_by
+ * @property \Carbon\Carbon|null $fecha_movimiento
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ */
 class MovimientoInventario extends Model
 {
     use HasEmpresaScope;
@@ -74,43 +100,52 @@ class MovimientoInventario extends Model
         'fecha_movimiento' => 'datetime',
     ];
 
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return BelongsTo<Bodega, $this> */
     public function bodegaOrigen(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_origen_id');
     }
 
+    /** @return BelongsTo<Bodega, $this> */
     public function bodegaDestino(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_destino_id');
     }
 
+    /** @return HasMany<MovimientoLoteInventario, $this> */
     public function lotes(): HasMany
     {
         return $this->hasMany(MovimientoLoteInventario::class, 'movimiento_inventario_id');
     }
 
+    /** @return BelongsTo<InventarioUbicacion, $this> */
     public function ubicacionOrigen(): BelongsTo
     {
         return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_origen_id');
     }
 
+    /** @return BelongsTo<InventarioUbicacion, $this> */
     public function ubicacionDestino(): BelongsTo
     {
         return $this->belongsTo(InventarioUbicacion::class, 'ubicacion_destino_id');
     }
 
+    /** @return HasMany<ReservaConsumoInventario, $this> */
     public function consumosReserva(): HasMany
     {
         return $this->hasMany(ReservaConsumoInventario::class, 'movimiento_inventario_id');
     }
+
+    /** @return HasMany<TomaFisicaDetalleInventario, $this> */
     public function tomaFisicaDetalles(): HasMany
     {
-    return $this->hasMany(TomaFisicaDetalleInventario::class, 'movimiento_ajuste_id');
+        return $this->hasMany(TomaFisicaDetalleInventario::class, 'movimiento_ajuste_id');
     }
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder

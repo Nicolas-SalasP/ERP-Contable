@@ -74,7 +74,7 @@ class PeriodoContableService
 
     public function reabrir(int $empresaId, int $anio, int $mes, User $usuario, string $motivo): PeriodoContable
     {
-        if ((int) ($usuario->rol?->jerarquia ?? 0) < self::JERARQUIA_REABRIR) {
+        if ((int) ($usuario->rol->jerarquia ?? 0) < self::JERARQUIA_REABRIR) {
             throw new AuthorizationException('No tienes jerarquia suficiente para reabrir un periodo contable.');
         }
 
@@ -118,7 +118,7 @@ class PeriodoContableService
     }
 
     /**
-     * @return array{anio:int, mes:int}
+     * @return array{int, int}
      */
     private function descomponer(string|Carbon $fecha): array
     {

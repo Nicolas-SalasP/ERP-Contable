@@ -14,6 +14,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * SEGURIDAD: token NUNCA debe aparecer en JSON. El $hidden lo excluye
  * automaticamente de toJson()/toArray().
+ *
+ * @property int $id
+ * @property int $empresa_id
+ * @property string $ambiente
+ * @property string $token
+ * @property \Illuminate\Support\Carbon $fecha_obtencion
+ * @property \Illuminate\Support\Carbon $fecha_expiracion
+ * @property int $intentos_uso
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class SiiTokenSesion extends Model
 {
@@ -78,6 +88,6 @@ class SiiTokenSesion extends Model
 
     public function estaVigente(): bool
     {
-        return $this->fecha_expiracion !== null && $this->fecha_expiracion->isFuture();
+        return $this->fecha_expiracion->isFuture();
     }
 }

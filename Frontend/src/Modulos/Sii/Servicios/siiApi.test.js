@@ -125,3 +125,69 @@ describe('siiApi.caf', () => {
         expect(api.get).toHaveBeenCalledWith('/sii/caf/7');
     });
 });
+
+describe('siiApi.dte', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('reintentar llama POST /sii/dte/{id}/reintentar con payload y silent', () => {
+        api.post.mockResolvedValue({ data: { encolado: true } });
+        siiApi.dte.reintentar(42, { razon: 'Reintento manual' });
+        expect(api.post).toHaveBeenCalledWith(
+            '/sii/dte/42/reintentar',
+            { razon: 'Reintento manual' },
+            { silent: true }
+        );
+    });
+
+    it('reintentar sin payload usa objeto vacío por defecto', () => {
+        api.post.mockResolvedValue({ data: {} });
+        siiApi.dte.reintentar(7);
+        expect(api.post).toHaveBeenCalledWith('/sii/dte/7/reintentar', {}, { silent: true });
+    });
+
+    it('reintentar desenvuelve .data correctamente', async () => {
+        const respuesta = { data: { estado: 'ENCOLADO' } };
+        api.post.mockResolvedValue(respuesta);
+        const resultado = await siiApi.dte.reintentar(1, {}).then((r) => r.data);
+        expect(resultado).toEqual({ estado: 'ENCOLADO' });
+    });
+});
+
+describe('siiApi.facturas', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('listar llama GET /sii/facturas con los parámetros dados', () => {
+        api.get.mockResolvedValue({ data: [] });
+        siiApi.facturas.listar({ por_pagina: 10, pagina: 2 });
+        expect(api.get).toHaveBeenCalledWith(
+            '/sii/facturas',
+            expect.objectContaining({ params: { por_pagina: 10, pagina: 2 } })
+        );
+    });
+
+    it('obtenerEstado llama GET /sii/facturas/{id}/estado', () => {
+        api.get.mockResolvedValue({ data: { estado: 'ACEPTADO' } });
+        siiApi.facturas.obtenerEstado(5);
+        expect(api.get).toHaveBeenCalledWith('/sii/facturas/5/estado');
+    });
+
+    it('obtener llama GET /sii/facturas/{id}', () => {
+        api.get.mockResolvedValue({ data: {} });
+        siiApi.facturas.obtener(10);
+        expect(api.get).toHaveBeenCalledWith('/sii/facturas/10');
+    });
+
+    it('reintentar llama POST /sii/facturas/{id}/reintentar con silent', () => {
+        api.post.mockResolvedValue({ data: {} });
+        siiApi.facturas.reintentar(99, { razon: 'Error previo' });
+        expect(api.post).toHaveBeenCalledWith(
+            '/sii/facturas/99/reintentar',
+            { razon: 'Error previo' },
+            { silent: true }
+        );
+    });
+});

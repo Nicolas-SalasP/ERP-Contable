@@ -6,10 +6,12 @@ import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
 import Swal from 'sweetalert2';
 import ModalAsiento from '../Componentes/ModalAsiento';
+import ModalNotaCredito from '../Componentes/ModalNotaCredito';
+import ModalNotaDebito from '../Componentes/ModalNotaDebito';
 import HistorialFiltros from '../Componentes/HistorialFiltros';
 import WorkbenchReclasificacion from '../Componentes/WorkbenchReclasificacion';
 import { useFacturasHistorial } from '../Hooks/useFacturasHistorial';
-import { Calendar, BookOpen, ArrowLeftRight, Clock, MoreVertical, FileText, ChevronLeft, ChevronRight, CircleDollarSign } from 'lucide-react';
+import { Calendar, BookOpen, ArrowLeftRight, Clock, MoreVertical, FileText, ChevronLeft, ChevronRight, CircleDollarSign, FileMinus, FilePlus } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 const formatDate = (dateString) => {
@@ -40,6 +42,12 @@ const HistorialFacturas = () => {
 
     const [cuentasPlan, setCuentasPlan] = useState([]);
 
+    const [ncModalOpen, setNcModalOpen] = useState(false);
+    const [ncFactura, setNcFactura] = useState(null);
+
+    const [ndModalOpen, setNdModalOpen] = useState(false);
+    const [ndFactura, setNdFactura] = useState(null);
+
     // Click outside del menu de acciones - se ejecuta junto al click outside del autocomplete
     const handleMenuClickOutside = useCallback((event) => {
         if (!event.target.closest('.menu-acciones-container')) setMenuAbiertoId(null);
@@ -61,6 +69,18 @@ const HistorialFacturas = () => {
         ejecutarBusqueda,
         seleccionarProveedor,
     } = useFacturasHistorial({ vistaActual, onMenuClickOutside: handleMenuClickOutside });
+
+    const abrirModalNd = (factura) => {
+        setMenuAbiertoId(null);
+        setNdFactura(factura);
+        setNdModalOpen(true);
+    };
+
+    const abrirModalNc = (factura) => {
+        setMenuAbiertoId(null);
+        setNcFactura(factura);
+        setNcModalOpen(true);
+    };
 
     const abrirModalPago = (factura) => {
         setMenuAbiertoId(null);
@@ -214,6 +234,8 @@ const HistorialFacturas = () => {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans text-slate-800 dark:text-slate-200 pb-10">
             <ModalAsiento isOpen={modalOpen} onClose={() => setModalOpen(false)} data={asientoData} loading={loadingAsiento} />
+            <ModalNotaCredito isOpen={ncModalOpen} onClose={() => setNcModalOpen(false)} factura={ncFactura} onNcEmitida={() => window.location.reload()} />
+            <ModalNotaDebito isOpen={ndModalOpen} onClose={() => setNdModalOpen(false)} factura={ndFactura} onNdEmitida={() => window.location.reload()} />
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
@@ -294,7 +316,14 @@ const HistorialFacturas = () => {
                                                         <div className="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono mb-0.5">
                                                             {vistaActual === 2 && fac.comprobante_contable ? `Asiento: ${fac.comprobante_contable}` : `${isNotaCredito ? 'NC' : 'Fac'} N° ${fac.numero_factura}`}
                                                         </div>
-                                                        <h3 className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{fac.proveedor?.razon_social || 'Proveedor Desconocido'}</h3>
+                                                        <h3 className="font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                                                            {fac.proveedor?.razon_social || 'Proveedor Desconocido'}
+                                                            {fac.es_documento_exterior && (
+                                                                <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 rounded uppercase align-middle">
+                                                                    {fac.moneda || 'EXT'}
+                                                                </span>
+                                                            )}
+                                                        </h3>
                                                     </div>
                                                     <span className={`inline-flex px-2 py-1 text-[10px] font-bold rounded uppercase border ${isNotaCredito && fac.estado === 'REGISTRADA' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                                                             fac.estado === 'PAGADA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
@@ -412,6 +441,11 @@ const HistorialFacturas = () => {
                                                                     ) : (
                                                                         <span className="font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs border border-slate-200 dark:border-slate-600 font-bold">Fac N° {fac.numero_factura}</span>
                                                                     )}
+                                                                    {fac.es_documento_exterior && (
+                                                                        <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 rounded uppercase">
+                                                                            {fac.moneda || 'EXT'}
+                                                                        </span>
+                                                                    )}
                                                                 </td>
                                                                 <td className={`px-6 py-4 whitespace-nowrap text-right font-bold text-base ${isNotaCredito ? 'text-indigo-600' : 'text-slate-800'}`}>
                                                                     {isNotaCredito ? '-' : ''}{formatCurrency(fac.monto_bruto)}
@@ -474,6 +508,28 @@ const HistorialFacturas = () => {
                                                                                 >
                                                                                     <CircleDollarSign size={16} strokeWidth={1.75} />
                                                                                     Pagar Documento
+                                                                                </button>
+                                                                            </li>
+                                                                        )}
+                                                                        {fac.tipo === 'VENTA' && !isNotaCredito && fac.estado !== 'ANULADA' && (
+                                                                            <li>
+                                                                                <button
+                                                                                    onClick={() => abrirModalNc(fac)}
+                                                                                    className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center gap-3 font-bold text-indigo-600 border-b border-slate-100 dark:border-slate-700"
+                                                                                >
+                                                                                    <FileMinus size={16} strokeWidth={1.75} />
+                                                                                    Nota de Crédito
+                                                                                </button>
+                                                                            </li>
+                                                                        )}
+                                                                        {fac.tipo === 'VENTA' && !isNotaCredito && fac.tipo_documento !== 'NOTA_DEBITO' && fac.estado !== 'ANULADA' && (
+                                                                            <li>
+                                                                                <button
+                                                                                    onClick={() => abrirModalNd(fac)}
+                                                                                    className="w-full text-left px-4 py-2.5 hover:bg-amber-50 hover:text-amber-700 transition-colors flex items-center gap-3 font-bold text-amber-600 border-b border-slate-100 dark:border-slate-700"
+                                                                                >
+                                                                                    <FilePlus size={16} strokeWidth={1.75} />
+                                                                                    Nota de Débito
                                                                                 </button>
                                                                             </li>
                                                                         )}

@@ -65,6 +65,9 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/contabilidad/plan-cuentas', label: 'Plan de Cuentas' },
                 { path: '/contabilidad/anulacion', label: 'Anulaciones' },
                 { path: '/contabilidad/asiento-manual', label: 'Asiento Manual' },
+                { path: '/contabilidad/ar-aging', label: 'CxC por Antigüedad' },
+                { path: '/contabilidad/ap-aging', label: 'CxP por Antigüedad' },
+                { path: '/contabilidad/cierre-periodo', label: 'Cierre de Períodos' },
             ]
         },
         {
@@ -227,6 +230,10 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/tributario/dj-1887', label: 'DJ 1887 — Rentas Empleados' },
                 { path: '/tributario/dj-1879', label: 'DJ 1879 — Retenciones Honorarios' },
                 { path: '/tributario/dj-1947', label: 'DJ 1947 — Propyme' },
+                { path: '/tributario/dj-1835', label: 'DJ 1835 — Retenciones Art. 59' },
+                { path: '/tributario/dj-1837', label: 'DJ 1837 — Gastos Rechazados' },
+                { path: '/tributario/dj-1926', label: 'DJ 1926 — Créditos al Exterior' },
+                { path: '/tributario/libro-cv', label: 'Libro de Compras y Ventas' },
             ]
         },
         {
@@ -281,6 +288,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/rrhh/previred', label: 'Archivo Previred', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
                 { path: '/rrhh/lre', label: 'LRE — Libro de Remuneraciones', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
                 { path: '/rrhh/emrcl', label: 'EMRCL — Encuesta INE', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
+                { path: '/rrhh/libro-remuneraciones', label: 'Libro de Remuneraciones', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
             ]
         },
         {

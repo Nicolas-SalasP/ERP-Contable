@@ -141,7 +141,7 @@ class MovimientoController
 
     private function validarBodegasMovimiento(array $datos): void
     {
-        $tipo = $datos['tipo'];
+        $tipo = (string) $datos['tipo'];
 
         if (
             in_array($tipo, [

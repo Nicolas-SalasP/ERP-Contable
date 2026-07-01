@@ -6,6 +6,7 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import BotonAccion from '../../../Componentes/BotonAccion';
 import GestionProyectosActivos from './GestionProyectosActivos';
+import TablaAmortizacion from '../Componentes/TablaAmortizacion';
 import { logger } from '../../../Configuracion/logger';
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
 
@@ -37,6 +38,7 @@ const GestionActivos = () => {
     const [activoEditando, setActivoEditando] = useState(null);
     const [formEditar, setFormEditar] = useState({ nombre: '', descripcion: '' });
     const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+    const [activoAmortizacion, setActivoAmortizacion] = useState(null);
 
     const mostrarNotificacion = (tipo, mensaje) => {
         setNotificacion({ tipo, mensaje });
@@ -284,6 +286,14 @@ const GestionActivos = () => {
                                                         {!dadoDeBaja ? (
                                                             <div className="flex items-center justify-center gap-2">
                                                                 <button
+                                                                    onClick={() => setActivoAmortizacion(activo)}
+                                                                    className="text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-indigo-200"
+                                                                    title="Ver tabla de amortización"
+                                                                    aria-label="Ver amortización"
+                                                                >
+                                                                    <i className="fas fa-chart-line"></i>
+                                                                </button>
+                                                                <button
                                                                     onClick={() => abrirModalEditar(activo)}
                                                                     className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-blue-200"
                                                                     aria-label="Editar activo"
@@ -436,6 +446,14 @@ const GestionActivos = () => {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {activoAmortizacion && (
+                <TablaAmortizacion
+                    activoId={activoAmortizacion.id}
+                    activoNombre={`${activoAmortizacion.codigo} - ${activoAmortizacion.nombre}`}
+                    onCerrar={() => setActivoAmortizacion(null)}
+                />
             )}
         </div>
     );

@@ -55,7 +55,7 @@ class CargarCafCommand extends Command
                 ['folio_actual',       (string) $caf->folio_actual],
                 ['sii_idk',            $caf->sii_idk],
                 ['rut_empresa',        $caf->rut_empresa_caf],
-                ['fecha_autorizacion', $caf->fecha_autorizacion?->toDateString() ?? '—'],
+                ['fecha_autorizacion', $caf->fecha_autorizacion->toDateString()],
                 ['fecha_vencimiento',  $caf->fecha_vencimiento?->toDateString() ?? '—'],
                 ['estado',             $caf->estado],
             ]

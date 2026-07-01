@@ -6,6 +6,7 @@ use App\Domains\Rrhh\Services\EmpleadoService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class EmpleadoController extends Controller
 {
@@ -43,9 +44,9 @@ class EmpleadoController extends Controller
             'direccion' => 'nullable|string|max:255',
             'ciudad' => 'nullable|string|max:100',
             'region' => 'nullable|string|max:100',
-            'afp' => 'nullable|string|max:30',
+            'afp' => ['nullable', Rule::in(['Capital', 'Cuprum', 'Habitat', 'Modelo', 'PlanVital', 'ProVida', 'Uno'])],
             'tipo_salud' => 'nullable|in:FONASA,ISAPRE',
-            'isapre_nombre' => 'nullable|string|max:50',
+            'isapre_nombre' => ['nullable', Rule::in(['BANMEDICA', 'COLMENA', 'CONSALUD', 'MASVIDA', 'NUEVA MASVIDA', 'VIDA TRES', 'ESENCIAL'])],
             'isapre_plan_uf' => 'nullable|numeric|min:0',
             'isapre_cotizacion_adicional_pct' => 'nullable|numeric|min:0',
             'banco_nombre' => 'nullable|string|max:80',
@@ -78,9 +79,9 @@ class EmpleadoController extends Controller
             'direccion' => 'nullable|string|max:255',
             'ciudad' => 'nullable|string|max:100',
             'region' => 'nullable|string|max:100',
-            'afp' => 'nullable|string|max:30',
+            'afp' => ['nullable', Rule::in(['Capital', 'Cuprum', 'Habitat', 'Modelo', 'PlanVital', 'ProVida', 'Uno'])],
             'tipo_salud' => 'nullable|in:FONASA,ISAPRE',
-            'isapre_nombre' => 'nullable|string|max:50',
+            'isapre_nombre' => ['nullable', Rule::in(['BANMEDICA', 'COLMENA', 'CONSALUD', 'MASVIDA', 'NUEVA MASVIDA', 'VIDA TRES', 'ESENCIAL'])],
             'isapre_plan_uf' => 'nullable|numeric|min:0',
             'banco_nombre' => 'nullable|string|max:80',
             'banco_tipo_cuenta' => 'nullable|string|max:30',

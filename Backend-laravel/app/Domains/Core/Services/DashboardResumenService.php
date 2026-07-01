@@ -6,6 +6,7 @@ use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\OrdenCompra;
 use App\Domains\Contabilidad\Models\DjEnvio;
 use App\Domains\Rrhh\Models\Liquidacion;
 use Carbon\Carbon;
@@ -47,7 +48,16 @@ class DashboardResumenService
             $resultado['rrhh'] = $this->resumenRrhh($empresaId);
         }
 
-        $resultado['alertas_pendientes'] = $this->alertasPendientes($empresaId, $permisos);
+        $resultado['alertas_pendientes']          = $this->alertasPendientes($empresaId, $permisos);
+        $resultado['aging_ar']                    = $this->agingAR($empresaId);
+        $resultado['aging_ap']                    = $this->agingAP($empresaId);
+        $resultado['flujo_caja_30d']              = $this->flujoCaja30d($empresaId);
+        $resultado['ordenes_compra_pendientes']   = $this->ordenesCompraPendientes($empresaId);
+        $resultado['distribucion_facturas']       = $this->distribucionFacturas($empresaId);
+        $resultado['pipeline_cotizaciones']       = $this->pipelineCotizaciones($empresaId);
+        $resultado['clientes_nuevos_6m']          = $this->clientesNuevos6m($empresaId);
+        $resultado['dso']                         = $this->dso($empresaId);
+        $resultado['proximas_vencer_7d']          = $this->proximasVencer($empresaId, 7);
 
         return $resultado;
     }
@@ -67,14 +77,16 @@ class DashboardResumenService
         $ventasMes = Factura::where('empresa_id', $empresaId)
             ->where('tipo', 'VENTA')
             ->where('estado', '!=', 'ANULADA')
-            ->whereBetween('fecha_emision', [$inicio->toDateString(), $fin->toDateString()])
+            ->whereDate('fecha_emision', '>=', $inicio->toDateString())
+            ->whereDate('fecha_emision', '<=', $fin->toDateString())
             ->sum('monto_bruto');
 
         // Ventas periodo anterior (para variacion)
         $ventasMesAnterior = Factura::where('empresa_id', $empresaId)
             ->where('tipo', 'VENTA')
             ->where('estado', '!=', 'ANULADA')
-            ->whereBetween('fecha_emision', [$inicioAnt->toDateString(), $finAnt->toDateString()])
+            ->whereDate('fecha_emision', '>=', $inicioAnt->toDateString())
+            ->whereDate('fecha_emision', '<=', $finAnt->toDateString())
             ->sum('monto_bruto');
 
         // Variacion porcentual
@@ -134,13 +146,13 @@ class DashboardResumenService
         $filas = Factura::where('empresa_id', $empresaId)
             ->where('tipo', 'VENTA')
             ->where('estado', '!=', 'ANULADA')
-            ->where('fecha_emision', '>=', $desde->toDateString())
+            ->whereDate('fecha_emision', '>=', $desde->toDateString())
             ->get(['fecha_emision', 'monto_bruto']);
 
         // Inicializar los 12 meses con cero
         $meses = [];
         for ($i = 11; $i >= 0; $i--) {
-            $clave = Carbon::now()->subMonths($i)->format('Y-m');
+            $clave = Carbon::now()->startOfMonth()->subMonths($i)->format('Y-m');
             $meses[$clave] = 0.0;
         }
 
@@ -170,13 +182,13 @@ class DashboardResumenService
         $filas = Factura::where('empresa_id', $empresaId)
             ->where('tipo', 'COMPRA')
             ->where('estado', '!=', 'ANULADA')
-            ->where('fecha_emision', '>=', $desde->toDateString())
+            ->whereDate('fecha_emision', '>=', $desde->toDateString())
             ->get(['fecha_emision', 'monto_bruto']);
 
         // Inicializar los 12 meses con cero
         $meses = [];
         for ($i = 11; $i >= 0; $i--) {
-            $clave = Carbon::now()->subMonths($i)->format('Y-m');
+            $clave = Carbon::now()->startOfMonth()->subMonths($i)->format('Y-m');
             $meses[$clave] = 0.0;
         }
 
@@ -193,6 +205,128 @@ class DashboardResumenService
             array_keys($meses),
             array_values($meses)
         );
+    }
+
+    // -------------------------------------------------------------------------
+    // AR Aging: facturas VENTA pendientes por tramos de antigüedad
+    // -------------------------------------------------------------------------
+
+    private function agingAR(int $empresaId): array
+    {
+        $hoy = Carbon::now()->toDateString();
+        $filas = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->whereNotNull('fecha_emision')
+            ->get(['fecha_emision', 'monto_bruto']);
+
+        $tramos = ['0-30' => 0.0, '31-60' => 0.0, '61-90' => 0.0, '91+' => 0.0];
+        foreach ($filas as $f) {
+            $dias = (int) Carbon::parse($f->fecha_emision)->diffInDays($hoy);
+            if ($dias <= 30) {
+                $tramos['0-30'] += (float) $f->monto_bruto;
+            } elseif ($dias <= 60) {
+                $tramos['31-60'] += (float) $f->monto_bruto;
+            } elseif ($dias <= 90) {
+                $tramos['61-90'] += (float) $f->monto_bruto;
+            } else {
+                $tramos['91+'] += (float) $f->monto_bruto;
+            }
+        }
+
+        return array_map(
+            fn ($tramo, $monto) => ['tramo' => $tramo, 'monto' => round($monto, 2)],
+            array_keys($tramos),
+            array_values($tramos)
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // AP Aging: facturas COMPRA pendientes por tramos de antigüedad
+    // -------------------------------------------------------------------------
+
+    private function agingAP(int $empresaId): array
+    {
+        $hoy = Carbon::now()->toDateString();
+        $filas = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->whereNotNull('fecha_emision')
+            ->get(['fecha_emision', 'monto_bruto']);
+
+        $tramos = ['0-30' => 0.0, '31-60' => 0.0, '61-90' => 0.0, '91+' => 0.0];
+        foreach ($filas as $f) {
+            $dias = (int) Carbon::parse($f->fecha_emision)->diffInDays($hoy);
+            if ($dias <= 30) {
+                $tramos['0-30'] += (float) $f->monto_bruto;
+            } elseif ($dias <= 60) {
+                $tramos['31-60'] += (float) $f->monto_bruto;
+            } elseif ($dias <= 90) {
+                $tramos['61-90'] += (float) $f->monto_bruto;
+            } else {
+                $tramos['91+'] += (float) $f->monto_bruto;
+            }
+        }
+
+        return array_map(
+            fn ($tramo, $monto) => ['tramo' => $tramo, 'monto' => round($monto, 2)],
+            array_keys($tramos),
+            array_values($tramos)
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Proyección flujo de caja próximos 30 días
+    // -------------------------------------------------------------------------
+
+    private function flujoCaja30d(int $empresaId): array
+    {
+        $hoy  = Carbon::now();
+        $en30 = Carbon::now()->addDays(30);
+
+        $entradas = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->whereNotNull('fecha_vencimiento')
+            ->whereDate('fecha_vencimiento', '>=', $hoy->toDateString())
+            ->whereDate('fecha_vencimiento', '<=', $en30->toDateString())
+            ->sum('monto_bruto');
+
+        $salidas = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->whereNotNull('fecha_vencimiento')
+            ->whereDate('fecha_vencimiento', '>=', $hoy->toDateString())
+            ->whereDate('fecha_vencimiento', '<=', $en30->toDateString())
+            ->sum('monto_bruto');
+
+        return [
+            'entradas_30d' => round((float) $entradas, 2),
+            'salidas_30d'  => round((float) $salidas, 2),
+            'neto_30d'     => round((float) $entradas - (float) $salidas, 2),
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Órdenes de compra en estados no terminales
+    // -------------------------------------------------------------------------
+
+    private function ordenesCompraPendientes(int $empresaId): array
+    {
+        $estados = ['BORRADOR', 'ENVIADA', 'RECIBIDA_PARCIAL'];
+
+        $total = OrdenCompra::where('empresa_id', $empresaId)
+            ->whereIn('estado', $estados)
+            ->count();
+
+        $monto = OrdenCompra::where('empresa_id', $empresaId)
+            ->whereIn('estado', $estados)
+            ->sum('total');
+
+        return [
+            'cantidad'    => (int) $total,
+            'monto_total' => round((float) $monto, 2),
+        ];
     }
 
     // -------------------------------------------------------------------------
@@ -339,10 +473,12 @@ class DashboardResumenService
 
         // Para facturas de VENTA, el nombre del cliente está en proveedor.razon_social
         // (el campo proveedor_id apunta al cliente cuando tipo=VENTA)
-        $filas = Factura::where('facturas.empresa_id', $empresaId)
+        $filas = DB::table('facturas')
+            ->where('facturas.empresa_id', $empresaId)
             ->where('facturas.tipo', 'VENTA')
             ->where('facturas.estado', '!=', 'ANULADA')
-            ->where('facturas.fecha_emision', '>=', $desde)
+            ->whereDate('facturas.fecha_emision', '>=', $desde)
+            ->whereNull('facturas.deleted_at')
             ->join('proveedores', 'proveedores.id', '=', 'facturas.proveedor_id')
             ->groupBy('facturas.proveedor_id', 'proveedores.razon_social')
             ->selectRaw('proveedores.razon_social as nombre, SUM(facturas.monto_bruto) as monto')
@@ -350,10 +486,13 @@ class DashboardResumenService
             ->limit(5)
             ->get();
 
-        return $filas->map(fn ($f) => [
-            'nombre' => $f->nombre,
-            'monto'  => round((float) $f->monto, 2),
-        ])->all();
+        return $filas->map(function (object $f) {
+            /** @var object{nombre: string, monto: string|null} $f */
+            return [
+                'nombre' => $f->nombre,
+                'monto'  => round((float) $f->monto, 2),
+            ];
+        })->all();
     }
 
     // -------------------------------------------------------------------------
@@ -372,10 +511,179 @@ class DashboardResumenService
         return $filas->map(fn ($f) => [
             'id'               => $f->id,
             'numero_factura'   => $f->numero_factura,
-            'fecha_emision'    => $f->fecha_emision?->toDateString(),
+            'fecha_emision'    => $f->fecha_emision->toDateString(),
             'fecha_vencimiento'=> $f->fecha_vencimiento?->toDateString(),
             'monto_bruto'      => (float) $f->monto_bruto,
             'estado'           => $f->estado,
+        ])->all();
+    }
+
+    // -------------------------------------------------------------------------
+    // Distribución de facturas VENTA por estado simplificado
+    // -------------------------------------------------------------------------
+
+    private function distribucionFacturas(int $empresaId): array
+    {
+        $hoy = Carbon::now()->toDateString();
+
+        $filas = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->get(['estado', 'fecha_vencimiento', 'monto_bruto']);
+
+        $dist = [
+            'pagadas'    => ['cantidad' => 0, 'monto' => 0.0],
+            'pendientes' => ['cantidad' => 0, 'monto' => 0.0],
+            'vencidas'   => ['cantidad' => 0, 'monto' => 0.0],
+            'anuladas'   => ['cantidad' => 0, 'monto' => 0.0],
+        ];
+
+        foreach ($filas as $f) {
+            $monto = (float) $f->monto_bruto;
+            if ($f->estado === 'PAGADA') {
+                $dist['pagadas']['cantidad']++;
+                $dist['pagadas']['monto'] += $monto;
+            } elseif ($f->estado === 'ANULADA') {
+                $dist['anuladas']['cantidad']++;
+                $dist['anuladas']['monto'] += $monto;
+            } elseif ($f->fecha_vencimiento !== null && Carbon::parse($f->fecha_vencimiento)->toDateString() < $hoy) {
+                $dist['vencidas']['cantidad']++;
+                $dist['vencidas']['monto'] += $monto;
+            } else {
+                $dist['pendientes']['cantidad']++;
+                $dist['pendientes']['monto'] += $monto;
+            }
+        }
+
+        foreach ($dist as $k => $v) {
+            $dist[$k]['monto'] = round($v['monto'], 2);
+        }
+
+        return $dist;
+    }
+
+    // -------------------------------------------------------------------------
+    // Pipeline de cotizaciones por estado (últimos 12 meses) + tasa de conversión
+    // -------------------------------------------------------------------------
+
+    private function pipelineCotizaciones(int $empresaId): array
+    {
+        $desde = Carbon::now()->startOfMonth()->subMonths(11)->toDateString();
+
+        $estados  = EstadoCotizacion::all(['id', 'nombre']);
+        $pipeline = [];
+
+        foreach ($estados as $estado) {
+            $count = Cotizacion::where('empresa_id', $empresaId)
+                ->where('estado_id', $estado->id)
+                ->whereDate('fecha_emision', '>=', $desde)
+                ->count();
+            $monto = (float) Cotizacion::where('empresa_id', $empresaId)
+                ->where('estado_id', $estado->id)
+                ->whereDate('fecha_emision', '>=', $desde)
+                ->sum('monto_total');
+            $pipeline[] = [
+                'estado'   => $estado->nombre,
+                'cantidad' => $count,
+                'monto'    => round($monto, 2),
+            ];
+        }
+
+        // Tasa de conversión: Aceptadas / (Aceptadas + Rechazadas + Expiradas)
+        $aceptadas   = collect($pipeline)->firstWhere('estado', 'Aceptada')['cantidad'] ?? 0;
+        $rechazadas  = collect($pipeline)->firstWhere('estado', 'Rechazada')['cantidad'] ?? 0;
+        $expiradas   = collect($pipeline)->firstWhere('estado', 'Expirada')['cantidad'] ?? 0;
+        $denominador = $aceptadas + $rechazadas + $expiradas;
+        $tasaConversion = $denominador > 0 ? round($aceptadas / $denominador * 100, 1) : null;
+
+        return [
+            'etapas'          => $pipeline,
+            'tasa_conversion' => $tasaConversion,
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Clientes nuevos en los últimos 6 meses, agrupados por mes
+    // -------------------------------------------------------------------------
+
+    private function clientesNuevos6m(int $empresaId): array
+    {
+        $desde = Carbon::now()->startOfMonth()->subMonths(5)->toDateString();
+
+        $filas = Cliente::where('empresa_id', $empresaId)
+            ->whereDate('created_at', '>=', $desde)
+            ->get(['created_at']);
+
+        $meses = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $clave         = Carbon::now()->startOfMonth()->subMonths($i)->format('Y-m');
+            $meses[$clave] = 0;
+        }
+
+        foreach ($filas as $cliente) {
+            $clave = Carbon::parse($cliente->created_at)->format('Y-m');
+            if (isset($meses[$clave])) {
+                $meses[$clave]++;
+            }
+        }
+
+        return array_map(
+            fn ($mes, $count) => ['mes' => $mes, 'cantidad' => $count],
+            array_keys($meses),
+            array_values($meses)
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Days Sales Outstanding (DSO): rotación de cuentas por cobrar
+    // -------------------------------------------------------------------------
+
+    private function dso(int $empresaId): ?float
+    {
+        $desde = Carbon::now()->startOfMonth()->subMonths(11)->toDateString();
+
+        $ventas12m = (float) Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->where('estado', '!=', 'ANULADA')
+            ->whereDate('fecha_emision', '>=', $desde)
+            ->sum('monto_bruto');
+
+        if ($ventas12m <= 0) {
+            return null;
+        }
+
+        $cuentasCobrar = (float) Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->sum('monto_bruto');
+
+        return round(($cuentasCobrar / $ventas12m) * 365, 1);
+    }
+
+    // -------------------------------------------------------------------------
+    // Facturas VENTA pendientes que vencen en los próximos $dias días
+    // -------------------------------------------------------------------------
+
+    private function proximasVencer(int $empresaId, int $dias = 7): array
+    {
+        $hoy    = Carbon::now()->toDateString();
+        $limite = Carbon::now()->addDays($dias)->toDateString();
+
+        $filas = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->whereNotNull('fecha_vencimiento')
+            ->whereDate('fecha_vencimiento', '>=', $hoy)
+            ->whereDate('fecha_vencimiento', '<=', $limite)
+            ->orderBy('fecha_vencimiento', 'asc')
+            ->get(['id', 'numero_factura', 'fecha_emision', 'fecha_vencimiento', 'monto_bruto', 'estado']);
+
+        return $filas->map(fn ($f) => [
+            'id'               => $f->id,
+            'numero_factura'   => $f->numero_factura,
+            'fecha_vencimiento'=> optional($f->fecha_vencimiento)->toDateString(),
+            'monto_bruto'      => round((float) $f->monto_bruto, 2),
+            'estado'           => $f->estado,
+            'dias_restantes'   => (int) Carbon::now()->diffInDays($f->fecha_vencimiento, false),
         ])->all();
     }
 

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('@smoke - Sistema vivo', () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
+
     test('la app carga y muestra el login', async ({ page }) => {
         await page.goto('/');
         await expect(page).toHaveTitle(/ERP|Tenri|Contable/i, { timeout: 10_000 });
@@ -26,7 +28,7 @@ test.describe('@smoke - Sistema vivo', () => {
 
     test('el glosario es accesible sin autenticacion (si la app lo permite)', async ({ page }) => {
         await page.goto('/glosario');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
         const body = await page.locator('body').textContent();
         expect(body.length).toBeGreaterThan(50);
     });

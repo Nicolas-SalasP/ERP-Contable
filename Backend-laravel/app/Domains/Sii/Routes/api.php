@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Sii\Http\Controllers\DteRetryController;
 use App\Domains\Sii\Http\Controllers\FacturaSiiController;
 use App\Domains\Sii\Http\Controllers\SiiCafController;
 use App\Domains\Sii\Http\Controllers\SiiCertificadoController;
@@ -55,6 +56,12 @@ Route::prefix('caf')->group(function () {
     Route::delete('{id}', [SiiCafController::class, 'destroy'])
         ->whereNumber('id')
         ->middleware('permiso:sii.caf.revocar');
+});
+
+Route::prefix('dte')->group(function () {
+    Route::post('{siiDteEmitido}/reintentar', [DteRetryController::class, 'reintentar'])
+        ->whereNumber('siiDteEmitido')
+        ->middleware('permiso:sii.dte.reintentar');
 });
 
 Route::prefix('facturas')->group(function () {

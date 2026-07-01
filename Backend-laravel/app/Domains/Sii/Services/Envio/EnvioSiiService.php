@@ -60,6 +60,7 @@ class EnvioSiiService
 
         try {
             $envio = $envio->fresh(['dteEmitido.empresa']);
+            /** @var SiiDteEmitido $dte */
             $dte   = $envio->dteEmitido;
             /** @var Empresa $empresa */
             $empresa = $dte->empresa;
@@ -115,10 +116,11 @@ class EnvioSiiService
                 'fecha_envio'                     => now(),
             ]);
 
+            /** @var SiiDteEmitido $dte */
             $dte = SiiDteEmitido::query()
                 ->where('id', $envio->dte_emitido_id)
                 ->lockForUpdate()
-                ->first();
+                ->firstOrFail();
 
             $dte->update([
                 'estado'          => SiiDteEmitido::ESTADO_ENVIADO_SII,

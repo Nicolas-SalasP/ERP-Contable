@@ -7,6 +7,7 @@ import { Eye, Download, ArrowLeft } from 'lucide-react';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { useToast } from '../../../Contextos/ToastContext';
+import ModalDetalleAsiento from '../Componentes/ModalDetalleAsiento';
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -48,6 +49,7 @@ const LibroMayor = () => {
     const wrapperRef = useRef(null);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, asientoId: null });
     const [asientoSeleccionado, setAsientoSeleccionado] = useState(null);
+    const [detalleId, setDetalleId] = useState(null);
 
     useEffect(() => {
         cargarPlanCuentas();
@@ -221,6 +223,7 @@ const LibroMayor = () => {
     };
 
     return (
+        <>
         <div className="max-w-7xl mx-auto p-6 font-sans text-slate-800 dark:text-slate-200 relative">
 
             {contextMenu.visible && (
@@ -369,9 +372,10 @@ const LibroMayor = () => {
                                             return (
                                                 <tr
                                                     key={idx}
+                                                    onClick={() => setDetalleId(row.asiento_id)}
                                                     onContextMenu={(e) => handleContextMenu(e, row.asiento_id)}
-                                                    className={`transition-colors cursor-context-menu ${esAnulado ? 'bg-red-50/60 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/40 opacity-80' : 'hover:bg-blue-50 dark:hover:bg-slate-700/60'}`}
-                                                    title={esAnulado ? 'Asiento Anulado/Interno' : 'Click derecho para opciones'}
+                                                    className={`transition-colors cursor-pointer ${esAnulado ? 'bg-red-50/60 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/40 opacity-80' : 'hover:bg-blue-50 dark:hover:bg-slate-700/60'}`}
+                                                    title={esAnulado ? 'Asiento Anulado/Interno — Click para ver detalle' : 'Click para ver detalle del comprobante'}
                                                 >
                                                     <td className="px-4 py-2 font-mono text-blue-600 dark:text-blue-400 font-bold border-r border-slate-100 dark:border-slate-700">
                                                         {row.codigo_unico || row.asiento_id}
@@ -466,6 +470,13 @@ const LibroMayor = () => {
                 </div>
             )}
         </div>
+
+        <ModalDetalleAsiento
+            isOpen={detalleId !== null}
+            asientoId={detalleId}
+            onClose={() => setDetalleId(null)}
+        />
+        </>
     );
 };
 

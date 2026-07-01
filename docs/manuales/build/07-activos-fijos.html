@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;background:#0b1120;color:#fff;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;} .em{color:var(--emerald-d);font-weight:700;}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+  .cta{margin-top:18px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;color:#04241a;box-shadow:0 16px 30px rgba(16,185,129,.30);}
+  .cta .l b{font-family:'Poppins';font-size:13pt;color:#04241a;display:block;} .cta .l span{font-size:9.5pt;color:#063f2e;}
+  .cta .go{font-family:'Poppins';font-weight:800;color:#fff;font-size:12pt;display:flex;align-items:center;gap:9px;}
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+<body>
+
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 07</div>
+  <h1><b>Activos</b> Fijos</h1>
+  <p class="lead">Registre su patrimonio, calcule la depreciación mes a mes, siga los proyectos en construcción y retire los bienes que ya no usa &mdash; todo con la contabilidad generada de forma automática.</p>
+  <div class="hero"><img src="../assets/m7-02-registrados.png" alt="Listado de activos fijos registrados"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Activos Fijos</div>
+    <div><b>Capturas</b>Sistema real en vivo</div>
+  </div>
+</div>
+
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Activos Fijos</h2>
+  <p class="sub">Gestión patrimonial, depreciación y control de proyectos en construcción.</p>
+  <p>Un <b>activo fijo</b> es un bien de larga duración que su empresa usa para operar y no para revender: computadores, vehículos, maquinaria, mobiliario o edificios. Como se aprovechan durante varios años, su costo no se lleva a gasto de una sola vez, sino que se <span class="em">deprecia</span> repartiéndolo a lo largo de su vida útil.</p>
+  <p>Abra <span class="em">Activos Fijos → Inventario Activos</span> en la barra lateral. La pantalla se organiza en <b>tres pestañas</b>:</p>
+  <ol class="steps">
+    <li><b>Pendientes</b> — facturas de compra ya reconocidas como activo, a la espera de ser convertidas en un bien o proyecto.</li>
+    <li><b>Activos Registrados</b> — el inventario patrimonial: todos sus bienes con su valor, depreciación y valor libro.</li>
+    <li><b>Proyectos en Curso</b> — activos aún <i>en construcción</i>, donde se acumulan costos antes de capitalizarlos.</li>
+  </ol>
+  <figure>
+    <div class="shot"><img src="../assets/m7-01-panel.png" alt="Panel de Activos Fijos con la barra lateral expandida"></div>
+    <figcaption>El módulo abierto en la pestaña <b>Pendientes</b>. En la barra lateral, el grupo <b>Activos Fijos</b> expone la pantalla <b>Inventario Activos</b>.</figcaption>
+  </figure>
+</section>
+
+<div class="tip">
+  <div class="ic"><i class="fas fa-lightbulb"></i></div>
+  <div class="tx"><b>De dónde nacen los activos:</b> los activos no se digitan a mano en un formulario suelto. Nacen de una <b>factura de compra</b> clasificada en una cuenta de activo (pestaña Pendientes) o de un <b>proyecto en construcción</b> que se capitaliza. Así, cada activo queda siempre respaldado por su documento contable de origen.</div>
+</div>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">2</span> Conceptos contables clave</h2>
+  <p class="sub">Cuatro términos que verá en todo el módulo.</p>
+  <p>Antes de operar, conviene tener claras las nociones que el sistema calcula por usted:</p>
+  <table>
+    <thead><tr><th>Concepto</th><th>Qué significa</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-tag"></i>Valor de adquisición</td><td>El <b>costo original</b> del bien: lo que pagó por él (valor neto, sin IVA). Es la base sobre la que se calcula la depreciación.</td></tr>
+      <tr><td><i class="fas fa-hourglass-half"></i>Vida útil</td><td>Los <b>meses</b> durante los que el bien será útil para la empresa (p. ej. 36 meses un notebook, 84 una camioneta). Define el ritmo de la depreciación.</td></tr>
+      <tr><td><i class="fas fa-arrow-trend-down"></i>Depreciación acumulada</td><td>La suma del <b>desgaste</b> ya reconocido como gasto desde que se compró el bien hasta hoy.</td></tr>
+      <tr><td><i class="fas fa-scale-balanced"></i>Valor libro</td><td>El <b>valor contable actual</b>: valor de adquisición menos depreciación acumulada. Representa cuánto “vale” todavía el activo en su contabilidad.</td></tr>
+      <tr><td><i class="fas fa-coins"></i>Valor residual</td><td>El valor estimado del bien al <b>final</b> de su vida útil. La depreciación nunca baja del valor residual.</td></tr>
+    </tbody>
+  </table>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-calculator"></i></div>
+    <div class="tx"><b>Fórmula esencial:</b> <span class="chip">Valor Libro = Valor de Adquisición − Depreciación Acumulada</span>. Cada mes que ejecuta la depreciación, la acumulada sube una cuota y el valor libro baja en la misma cantidad.</div>
+  </div>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">3</span> Activos Registrados</h2>
+  <p class="sub">El inventario patrimonial de su empresa.</p>
+  <p>Esta pestaña es el corazón del módulo. Cada fila es un bien y las columnas resumen su situación de un vistazo:</p>
+  <table>
+    <thead><tr><th>Columna</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-barcode"></i>Código / Nombre</td><td>El <b>código interno</b> del activo (ej. NB-001) y su nombre. Debajo aparece la cuenta contable a la que pertenece.</td></tr>
+      <tr><td><i class="fas fa-layer-group"></i>Clasificación</td><td>La categoría del bien según su cuenta de activo (Hardware, Vehículos, Maquinarias…).</td></tr>
+      <tr><td><i class="fas fa-hourglass-half"></i>Vida útil</td><td>Muestra los <b>meses restantes</b> sobre el total (ej. <span class="chip">31 / 36m</span>): cuánta vida le queda al bien.</td></tr>
+      <tr><td><i class="fas fa-tag"></i>Costo Orig.</td><td>El valor de adquisición del bien.</td></tr>
+      <tr><td><i class="fas fa-scale-balanced"></i>Valor Libro</td><td>El valor contable actual, resaltado en <span class="em">verde</span>.</td></tr>
+      <tr><td><i class="fas fa-gear"></i>Acciones</td><td>Ver la tabla de amortización, editar el activo o darlo de baja.</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m7-02-registrados.png" alt="Pestaña de Activos Registrados"></div>
+    <figcaption>El inventario con datos reales. Note cómo el <b>Valor Libro</b> es menor al costo original: esa diferencia es la depreciación acumulada.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2 class="doc-h2"><span class="num">4</span> Ejecutar la depreciación mensual</h2>
+  <p class="sub">Reconozca el desgaste del período con un clic.</p>
+  <p>En la parte superior derecha de <b>Activos Registrados</b> encontrará el selector <b>Período a Depreciar</b> y el botón <b>Ejecutar Depreciación</b>. El proceso es simple:</p>
+  <ol class="steps">
+    <li>Seleccione el <b>mes y año</b> que desea depreciar en el campo de período.</li>
+    <li>Presione <b>Ejecutar Depreciación</b>.</li>
+    <li>El sistema calcula la cuota de cada activo activo, actualiza su depreciación acumulada y genera el <b>asiento contable</b> del gasto por depreciación del período.</li>
+  </ol>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-shield-halved"></i></div>
+    <div class="tx"><b>Sin duplicados:</b> el sistema controla qué meses ya fueron depreciados, de modo que ejecutar dos veces el mismo período no vuelve a cargar el gasto. Lo habitual es correr la depreciación <b>una vez al cierre de cada mes</b>.</div>
+  </div>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Tabla de amortización</h2>
+  <p class="sub">El plan de depreciación completo, mes a mes.</p>
+  <p>Con el ícono de <b>gráfico</b> (<i class="fas fa-chart-line" style="color:#4f46e5"></i>) de cada activo abre su <b>tabla de amortización</b>: el cronograma detallado de toda su vida útil. En la parte superior, cuatro tarjetas resumen la situación del bien:</p>
+  <table>
+    <thead><tr><th>Tarjeta</th><th>Qué muestra</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-tag"></i>Valor Adquisición</td><td>El costo original del activo.</td></tr>
+      <tr><td><i class="fas fa-coins"></i>Valor Residual</td><td>El valor estimado al final de la vida útil.</td></tr>
+      <tr><td><i class="fas fa-arrow-trend-down"></i>Dep. Acumulada</td><td>Lo depreciado a la fecha, con el <b>porcentaje</b> ya consumido.</td></tr>
+      <tr><td><i class="fas fa-scale-balanced"></i>Valor Libro Actual</td><td>El valor contable vigente del bien.</td></tr>
+    </tbody>
+  </table>
+  <p>Bajo las tarjetas, cada fila representa un mes con su <b>cuota</b>, la <b>depreciación acumulada</b>, el <b>valor libro</b> resultante y el <b>estado</b>: <span class="chip">Ejecutado</span> para los meses ya depreciados o <span class="chip">Pendiente</span> para los futuros.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m7-03-amortizacion.png" alt="Tabla de amortización de un activo"></div>
+    <figcaption>Amortización del notebook NB-001: los meses en verde ya fueron ejecutados; los siguientes están proyectados.</figcaption>
+  </figure>
+</section>
+
+<div class="band">
+  <h3><i class="fas fa-circle-info"></i> Depreciación lineal</h3>
+  <p>Tenri ERP Cloud aplica el método de <b>depreciación lineal</b>: reparte el costo depreciable (valor de adquisición menos valor residual) en cuotas <b>iguales</b> a lo largo de toda la vida útil. Por eso, en la tabla, la columna <i>Cuota</i> se mantiene constante mes a mes.</p>
+</div>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">6</span> Editar un activo</h2>
+  <p>Con el ícono del <b>lápiz</b> (<i class="fas fa-pen" style="color:#3b82f6"></i>) abre el editor del activo. Por seguridad contable, solo puede modificar datos <b>descriptivos</b>:</p>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-font"></i>Nombre del activo</td><td>El nombre visible del bien. Obligatorio.</td></tr>
+      <tr><td><i class="fas fa-align-left"></i>Descripción</td><td>Detalles adicionales (serie, ubicación, responsable…). Opcional.</td></tr>
+    </tbody>
+  </table>
+  <p>Los <b>valores contables</b> (valor de adquisición, vida útil y depreciación) <span class="em">no</span> se editan, porque ya tienen movimientos calculados que quedarían inconsistentes. Ajuste el texto y presione <b>Guardar Cambios</b>.</p>
+  <figure>
+    <div class="shot mid"><img src="../assets/m7-04-editar.png" alt="Modal de edición de un activo"></div>
+    <figcaption>Editor de activo. El aviso recuerda que solo se editan nombre y descripción.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2 class="doc-h2"><span class="num">7</span> Dar de baja un activo</h2>
+  <p class="sub">Retire un bien vendido, robado, obsoleto o destruido.</p>
+  <p>Cuando un bien deja de existir para la empresa, use el botón <b>Baja</b> (<i class="fas fa-arrow-down" style="color:#f43f5e"></i>). El sistema muestra el impacto contable antes de confirmar:</p>
+  <ol class="steps">
+    <li>Ve el <b>valor de adquisición</b> y la <b>depreciación acumulada</b> del bien.</li>
+    <li>Calcula la <b>pérdida al castigar</b> — el valor libro que aún quedaba y que se reconoce como pérdida.</li>
+    <li>Puede indicar un <b>motivo</b> (obsolescencia, destrucción, robo, venta…) y presionar <b>Confirmar Baja</b>.</li>
+  </ol>
+  <p>El activo pasa a estado <span class="chip">RETIRADO</span>, deja de depreciarse y el sistema registra el asiento de baja.</p>
+  <figure>
+    <div class="shot mid"><img src="../assets/m7-05-baja.png" alt="Modal de baja de un activo"></div>
+    <figcaption>Confirmación de baja. La <b>pérdida al castigar</b> equivale al valor libro pendiente.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">8</span> Proyectos en Curso</h2>
+  <p class="sub">Activos en construcción que aún no están operativos.</p>
+  <p>Algunos activos no se compran terminados: se <b>construyen o ensamblan</b> acumulando varias facturas (una obra, la instalación de un servidor, el montaje de una máquina). Para esos casos existe la pestaña <b>Proyectos en Curso</b>.</p>
+  <p>Cada proyecto se muestra como una tarjeta con su <b>costo acumulado</b> y su estado: <span class="chip">En Construcción</span> mientras suma facturas o <span class="chip">Activo Operativo</span> una vez capitalizado. Con <b>Analizar</b> abre el visor del proyecto para ver y vincular sus documentos.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m7-06-proyectos.png" alt="Pestaña de Proyectos en Curso"></div>
+    <figcaption>Proyectos en construcción. El costo se acumula factura a factura hasta capitalizar el activo.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2 class="doc-h2"><span class="num">9</span> Crear un proyecto</h2>
+  <p>Presione <b>+ Nuevo Proyecto</b> y complete el formulario:</p>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-font"></i>Nombre del Proyecto</td><td>Identifica la obra o activo en construcción (ej. “Maquinaria Industrial”).</td></tr>
+      <tr><td><i class="fas fa-book"></i>Cuenta de Activo</td><td>La cuenta contable donde se <b>capitalizará</b> el bien terminado. <span class="em">Obligatoria</span> para la contabilización.</td></tr>
+      <tr><td><i class="fas fa-hourglass-half"></i>Vida Útil (Meses)</td><td>Los meses de vida útil que tendrá el activo una vez operativo, para depreciarlo después.</td></tr>
+    </tbody>
+  </table>
+  <p>Guarde con <b>Guardar Proyecto</b>. A partir de ahí podrá vincularle facturas hasta capitalizarlo.</p>
+  <figure>
+    <div class="shot mid"><img src="../assets/m7-07-nuevo-proyecto.png" alt="Modal de creación de proyecto"></div>
+    <figcaption>Alta de un proyecto en construcción. La cuenta de activo es obligatoria para capitalizar el costo.</figcaption>
+  </figure>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-hard-hat"></i></div>
+    <div class="tx"><b>Del proyecto al activo:</b> mientras el proyecto está <b>En Construcción</b>, sus facturas suman costo sin depreciarse. Al capitalizarlo pasa a <b>Activo Operativo</b>, aparece en <i>Activos Registrados</i> y comienza a depreciarse según la vida útil definida.</div>
+  </div>
+</section>
+
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:18px;"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">En <b>resumen</b></div>
+  <p class="intro">Activos Fijos controla el patrimonio de su empresa de punta a punta: registra los bienes, calcula su depreciación automáticamente, sigue los proyectos en construcción y deja la contabilidad lista sin cálculos manuales.</p>
+  <div class="recap">
+    <div class="c"><div class="ic"><i class="fas fa-cubes"></i></div><h4>Inventario patrimonial</h4><p>Cada bien con su código, valor, vida útil y valor libro siempre al día.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-arrow-trend-down"></i></div><h4>Depreciación automática</h4><p>Ejecute el mes y el sistema calcula cuotas y genera el asiento del gasto.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-hard-hat"></i></div><h4>Proyectos y bajas</h4><p>Acumule costos en construcción y retire bienes con su pérdida calculada.</p></div>
+  </div>
+  <div class="cta">
+    <div class="l"><b>Siguiente módulo</b><span>Controle su stock, bodegas y movimientos de mercadería.</span></div>
+    <div class="go">08 · Inventario <i class="fas fa-arrow-right"></i></div>
+  </div>
+  <div class="foot"><span><b>Tenri ERP Cloud</b> · Manual de usuario 07 — Activos Fijos</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>

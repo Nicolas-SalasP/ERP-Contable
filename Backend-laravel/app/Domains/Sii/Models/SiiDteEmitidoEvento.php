@@ -14,6 +14,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * Por diseño NO tiene updated_at: los registros no se sobreescriben nunca.
  * Para corregir errores se crea un nuevo evento (compensating event).
+ *
+ * @property int $id
+ * @property int $dte_emitido_id
+ * @property string|null $estado_anterior
+ * @property string $estado_nuevo
+ * @property string|null $glosa
+ * @property array|null $payload
+ * @property \Illuminate\Support\Carbon|null $created_at
  */
 class SiiDteEmitidoEvento extends Model
 {

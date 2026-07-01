@@ -3,8 +3,11 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\ImpuestosService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Exception;
 
@@ -42,6 +45,56 @@ class ImpuestosController
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
+    }
+
+    /**
+     * GET /api/impuestos/cierre-f29/descargar/{mes}/{anio}?formato=excel|pdf
+     *
+     * Descarga el F29 del período indicado en formato Excel (HTML-as-XLS) o PDF.
+     */
+    public function descargarF29(Request $request, int $mes, int $anio): Response
+    {
+        if ($mes < 1 || $mes > 12) {
+            return response('El mes debe estar entre 1 y 12.', 422);
+        }
+
+        if ($anio < 2000 || $anio > 2100) {
+            return response('El año debe estar entre 2000 y 2100.', 422);
+        }
+
+        $empresaId = $request->user()->empresa_id;
+        $simulacion = $this->service->simularF29($empresaId, $mes, $anio);
+        $lineas = $simulacion['lineas_f29'];
+
+        /** @var \stdClass|null $empresaRow */
+        $empresaRow = DB::table('empresas')->where('id', $empresaId)->first();
+        $empresa = [
+            'razon_social' => $empresaRow->razon_social ?? '',
+            'rut'          => $empresaRow->rut ?? '',
+        ];
+
+        $periodo = str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . '/' . $anio;
+        $formato = strtolower((string) $request->query('formato', 'excel'));
+
+        if ($formato === 'pdf') {
+            $pdf = Pdf::loadView('pdf.f29', compact('simulacion', 'empresa', 'lineas', 'periodo'))
+                ->setPaper('a4', 'portrait');
+
+            $nombre = sprintf('F29_%02d_%04d.pdf', $mes, $anio);
+
+            return response($pdf->output(), 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => "attachment; filename=\"{$nombre}\"",
+            ]);
+        }
+
+        $html = view('pdf.f29_excel', compact('simulacion', 'empresa', 'lineas', 'periodo'))->render();
+        $nombre = sprintf('F29_%02d_%04d.xls', $mes, $anio);
+
+        return response($html, 200, [
+            'Content-Type'        => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$nombre}\"",
+        ]);
     }
 
     public function ejecutarF29(Request $request)

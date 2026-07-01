@@ -75,13 +75,24 @@ describe('ErrorBoundary', () => {
 
         expect(screen.getByTestId('error-boundary')).toBeDefined();
 
-        // Desactiva el error antes de hacer clic para que el remontaje tenga éxito
         debeThrow = false;
         fireEvent.click(screen.getByRole('button', { name: /Reintentar/i }));
 
         expect(screen.getByText('recuperado')).toBeDefined();
         expect(screen.queryByTestId('error-boundary')).toBeNull();
 
+        spy.mockRestore();
+    });
+
+    it('recargar página llama window.location.reload', () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const reloadSpy = vi.fn();
+        Object.defineProperty(window, 'location', { writable: true, value: { reload: reloadSpy } });
+
+        render(<ErrorBoundary><Bomba /></ErrorBoundary>);
+        fireEvent.click(screen.getByRole('button', { name: /Recargar página/i }));
+
+        expect(reloadSpy).toHaveBeenCalled();
         spy.mockRestore();
     });
 });

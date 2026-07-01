@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;background:#0b1120;color:#fff;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;} .em{color:var(--emerald-d);font-weight:700;}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+  .cta{margin-top:18px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;color:#04241a;box-shadow:0 16px 30px rgba(16,185,129,.30);}
+  .cta .l b{font-family:'Poppins';font-size:13pt;color:#04241a;display:block;} .cta .l span{font-size:9.5pt;color:#063f2e;}
+  .cta .go{font-family:'Poppins';font-weight:800;color:#fff;font-size:12pt;display:flex;align-items:center;gap:9px;}
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 03</div>
+  <h1><b>Ventas</b> y Comercial</h1>
+  <p class="lead">Gestione su cartera de clientes y transforme oportunidades en negocios: cree, envíe y controle sus cotizaciones de principio a fin.</p>
+  <div class="hero"><img src="../assets/m3-01-clientes.png" alt="Directorio de clientes"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Ventas y Comercial</div>
+    <div><b>Capturas</b>Sistema real en vivo</div>
+  </div>
+</div>
+
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Ventas y Comercial</h2>
+  <p class="sub">Todo lo relacionado con sus clientes y propuestas.</p>
+  <p>Al abrir <span class="em">Ventas y Comercial</span> en la barra lateral, el módulo se despliega en tres pantallas:</p>
+  <ol class="steps">
+    <li><b>Directorio de Clientes</b> — la base de datos de sus clientes.</li>
+    <li><b>Nueva Cotización</b> — el formulario para crear una propuesta.</li>
+    <li><b>Gestión de Cotizaciones</b> — el historial y seguimiento de todas sus cotizaciones.</li>
+  </ol>
+</section>
+
+<section>
+  <h2 class="doc-h2"><span class="num">2</span> Directorio de Clientes</h2>
+  <p>Muestra la <b>base de datos centralizada</b> de sus clientes. Puede <b>buscar</b> por RUT, razón social o código en el buscador superior, y para cada cliente ver su <b>identificador</b>, <b>razón social</b>, <b>contacto</b> y <b>estado</b>.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m3-01-clientes.png" alt="Directorio de Clientes"></div>
+    <figcaption>Cada fila ofrece <b>Gestionar</b> (ver/editar) y un botón para <b>bloquear</b> el cliente.</figcaption>
+  </figure>
+</section>
+
+<div class="tip">
+  <div class="ic"><i class="fas fa-shield-halved"></i></div>
+  <div class="tx"><b>Privacidad:</b> por seguridad, el RUT de los clientes puede mostrarse <b>parcialmente enmascarado</b> en el listado (por ejemplo <span class="chip">88.***.**8-8</span>). El dato completo permanece protegido conforme a la Ley 21.719.</div>
+</div>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">3</span> Registrar un cliente nuevo</h2>
+  <p>Presione <b>+ Nuevo Cliente</b> (arriba a la derecha). Se abre una ficha con tres secciones:</p>
+  <table>
+    <thead><tr><th>Sección</th><th>Campos</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-id-card"></i>Identificación legal</td><td>RUT / ID Fiscal y Razón Social.</td></tr>
+      <tr><td><i class="fas fa-user"></i>Personal de contacto</td><td>Nombre completo, email de contacto y teléfono.</td></tr>
+      <tr><td><i class="fas fa-truck"></i>Logística y envío</td><td>Dirección comercial y email de facturación / cobranza.</td></tr>
+    </tbody>
+  </table>
+  <p>Complete los datos y presione <b>Registrar Cliente</b>. La pestaña <i>Histórico Cotizaciones</i> le permite, en clientes ya existentes, revisar sus propuestas anteriores.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m3-02-nuevo-cliente.png" alt="Registro de nuevo cliente"></div>
+    <figcaption>Ficha de registro de cliente.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">4</span> Crear una cotización</h2>
+  <p class="sub">Menú <i>Nueva Cotización</i>.</p>
+  <p>En la parte superior defina los datos generales de la propuesta:</p>
+  <ol class="steps">
+    <li><b>Cliente</b> — búsquelo por RUT o razón social.</li>
+    <li><b>Fecha de emisión</b> y <b>días de validez</b> (por defecto 15).</li>
+    <li><b>Impuestos</b> — elija <span class="em">Afecta (Con IVA)</span> o <span class="em">Exento (Sin IVA)</span>; la tasa de IVA (19%) se aplica automáticamente.</li>
+    <li><b>Condiciones comerciales</b> — método y condiciones de pago, plazo de entrega, garantía y comentarios.</li>
+  </ol>
+  <figure>
+    <div class="shot"><img src="../assets/m3-04-nueva-cotizacion.png" alt="Formulario de nueva cotización"></div>
+    <figcaption>Encabezado de la cotización: cliente, vigencia, impuestos y condiciones.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Detalle y total</h2>
+  <p>En <b>Detalle de Cotización</b>, use <b>+ Agregar Línea</b> por cada producto o servicio. En cada línea indique el <b>nombre</b>, la <b>cantidad</b> y el <b>precio unitario</b>; el sistema calcula el <b>subtotal</b> de la línea. Puede añadir una <i>descripción detallada</i> y eliminar una línea con el ícono de papelera.</p>
+  <p>Al pie se calculan automáticamente el <b>Neto</b>, el <b>IVA</b> y el <b>Total final</b>. Cuando esté listo, presione <b>Generar Cotización</b>.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m3-05-detalle-totales.png" alt="Detalle y totales de la cotización"></div>
+    <figcaption>Líneas de detalle y cálculo automático de Neto, IVA y Total.</figcaption>
+  </figure>
+</section>
+
+<div class="band">
+  <h3><i class="fas fa-calculator"></i> Todo se calcula solo</h3>
+  <p>No necesita sacar cuentas: al ingresar cantidades y precios, Tenri ERP Cloud calcula subtotales, IVA y total en tiempo real. Así evita errores y entrega propuestas consistentes.</p>
+</div>
+
+<section>
+  <h2 class="doc-h2"><span class="num">6</span> Gestión de Cotizaciones</h2>
+  <p>El <b>Historial de Cotizaciones</b> reúne todas sus propuestas. Puede <b>filtrar</b> por folio o cliente, por <b>estado</b> y por <b>rango de fechas</b>. Cada fila muestra folio, cliente, fecha, total y estado.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m3-03-cotizaciones.png" alt="Historial de cotizaciones"></div>
+    <figcaption>Historial con filtros y acciones por cotización.</figcaption>
+  </figure>
+  <p>Según el estado, dispone de distintas <b>acciones</b>: en una cotización <span class="chip">ENVIADA</span> puede marcarla como <b>aceptada (✓)</b> o <b>rechazada (✗)</b>; en cualquier estado puede descargar el <b>PDF</b> de la propuesta.</p>
+</section>
+
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:18px;"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">En <b>resumen</b></div>
+  <p class="intro">Ventas y Comercial es el punto de partida del ciclo de ventas: del cliente a la propuesta, y de la propuesta al negocio cerrado.</p>
+  <div class="recap">
+    <div class="c"><div class="ic"><i class="fas fa-address-book"></i></div><h4>Clientes</h4><p>Base centralizada con búsqueda, estados y ficha completa de cada cliente.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-file-invoice"></i></div><h4>Cotizaciones</h4><p>Cree propuestas con IVA, condiciones y líneas; el total se calcula solo.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-list-check"></i></div><h4>Seguimiento</h4><p>Historial con filtros y estados: enviada, aceptada o rechazada, con PDF.</p></div>
+  </div>
+  <div class="cta">
+    <div class="l"><b>Siguiente módulo</b><span>Registre a sus proveedores y sus facturas de compra.</span></div>
+    <div class="go">04 · Compras y Gastos <i class="fas fa-arrow-right"></i></div>
+  </div>
+  <div class="foot"><span><b>Tenri ERP Cloud</b> · Manual de usuario 03 — Ventas y Comercial</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>

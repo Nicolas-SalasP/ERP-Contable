@@ -29,6 +29,7 @@ import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
 import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
 import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
 const CierreF29 = lazy(() => import('./Modulos/Contabilidad/Vistas/CierreF29'));
+const CierrePeriodo = lazy(() => import('./Modulos/Contabilidad/Vistas/CierrePeriodo'));
 const AsientoManual = lazy(() => import('./Modulos/Contabilidad/Vistas/AsientoManual'));
 import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
 import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
@@ -67,15 +68,22 @@ const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/Centralizaci
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
 const LreRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LreRrhh'));
 const EmrclRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/EmrclRrhh'));
+const LibroRemuneraciones = lazy(() => import('./Modulos/Rrhh/Vistas/LibroRemuneraciones'));
 const Dj1887 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1887'));
 const HonorariosRecibidos = lazy(() => import('./Modulos/Comercial/Vistas/HonorariosRecibidos'));
 const Dj1879 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1879'));
 const Dj1947 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1947'));
+const Dj1835 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1835'));
+const Dj1837 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1837'));
+const Dj1926 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1926'));
+const LibroComprasVentas = lazy(() => import('./Modulos/Tributario/Vistas/LibroComprasVentas'));
 const PropietariosEmpresa = lazy(() => import('./Modulos/Core/Vistas/PropietariosEmpresa'));
 import Glosario from './Modulos/Glosario/Glosario';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 const SoporteTickets = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTickets'));
 const SoporteTicketDetalle = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTicketDetalle'));
+const ArAging = lazy(() => import('./Modulos/Contabilidad/Vistas/ArAging'));
+const ApAging = lazy(() => import('./Modulos/Contabilidad/Vistas/ApAging'));
 
 // Si ya está autenticado, redirige al inicio (evita volver a /login sin logout).
 const RutaPublica = ({ children }) => {
@@ -335,6 +343,38 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/tributario/dj-1835" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1835 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1837" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1837 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/dj-1926" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><Dj1926 /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/tributario/libro-cv" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="tributario.ver">
+                <LayoutPrincipal><LibroComprasVentas /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
           <Route path="/empresa/propietarios" element={
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.ver">
@@ -375,6 +415,14 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/contabilidad/cierre-periodo" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><CierrePeriodo /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
           <Route path="/contabilidad/cierre-f29" element={
             <RutaPrivada>
               <RutaProtegida permiso="tributario.ver">
@@ -387,6 +435,22 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.crear">
                 <LayoutPrincipal><AsientoManual /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/ar-aging" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><ArAging /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/ap-aging" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><ApAging /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -740,6 +804,16 @@ function App() {
               <RutaPorModulo modulo="rrhh">
                 <RutaProtegida permiso="rrhh.remuneraciones.ver">
                   <LayoutPrincipal><EmrclRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/libro-remuneraciones" element={
+            <RutaPrivada>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><LibroRemuneraciones /></LayoutPrincipal>
                 </RutaProtegida>
               </RutaPorModulo>
             </RutaPrivada>

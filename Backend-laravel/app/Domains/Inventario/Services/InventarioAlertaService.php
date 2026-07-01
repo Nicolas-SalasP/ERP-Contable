@@ -285,7 +285,7 @@ class InventarioAlertaService
                     'descripcion' => sprintf(
                         'El lote %s del producto %s está vencido y aún registra stock.',
                         $lote->codigo_lote,
-                        $stockLote->producto?->nombre ?? ('#' . $stockLote->producto_id)
+                        $stockLote->producto->nombre ?? ('#' . $stockLote->producto_id)
                     ),
                     'producto_id' => (int) $stockLote->producto_id,
                     'producto_nombre' => $stockLote->producto?->nombre,
@@ -370,11 +370,12 @@ class InventarioAlertaService
                 continue;
             }
 
+            /** @var \App\Domains\Inventario\Models\ReservaInventario $reserva */
             $reserva = $detalle->reserva;
             $expiraPronto = false;
             $diasExpiracion = null;
 
-            if ($reserva?->fecha_expiracion) {
+            if ($reserva->fecha_expiracion) {
                 $fechaExpiracion = CarbonImmutable::parse($reserva->fecha_expiracion->toDateString());
                 $diasExpiracion = $hoy->diffInDays($fechaExpiracion, false);
                 $expiraPronto = $diasExpiracion <= self::DIAS_RESERVA_CRITICA;
@@ -392,29 +393,36 @@ class InventarioAlertaService
                 continue;
             }
 
+            /** @var \App\Domains\Inventario\Models\Producto|null $productoDetalle */
+            $productoDetalle = $detalle->producto;
+            /** @var \App\Domains\Inventario\Models\Bodega|null $bodegaDetalle */
+            $bodegaDetalle = $detalle->bodega;
+            /** @var \App\Domains\Inventario\Models\LoteInventario|null $loteDetalle */
+            $loteDetalle = $detalle->lote;
+
             $alertas[] = $this->crearAlerta([
                 'tipo' => 'RESERVA_CRITICA',
                 'severidad' => $diasExpiracion !== null && $diasExpiracion < 0 ? 'critica' : ($stockBajo ? 'alta' : 'media'),
                 'titulo' => 'Reserva crítica',
                 'descripcion' => sprintf(
                     'La reserva %s mantiene %s unidades pendientes%s.',
-                    $reserva?->codigo_reserva ?? ('#' . $detalle->reserva_id),
+                    $reserva->codigo_reserva ?? ('#' . $detalle->reserva_id),
                     $this->formatoCantidad($pendiente),
                     $stockBajo ? ' y el stock disponible está bajo el umbral operativo' : ''
                 ),
                 'producto_id' => (int) $detalle->producto_id,
-                'producto_nombre' => $detalle->producto?->nombre,
+                'producto_nombre' => $productoDetalle?->nombre,
                 'bodega_id' => (int) $detalle->bodega_id,
-                'bodega_nombre' => $detalle->bodega?->nombre,
+                'bodega_nombre' => $bodegaDetalle?->nombre,
                 'lote_id' => $detalle->lote_id !== null ? (int) $detalle->lote_id : null,
-                'lote_codigo' => $detalle->lote?->codigo_lote,
+                'lote_codigo' => $loteDetalle?->codigo_lote,
                 'cantidad_actual' => $stockDisponible,
                 'stock_minimo' => $stockMinimo,
-                'fecha_referencia' => $reserva?->fecha_expiracion?->toDateString(),
-                'referencia' => $reserva?->referencia ?: $reserva?->codigo_reserva,
+                'fecha_referencia' => $reserva->fecha_expiracion?->toDateString(),
+                'referencia' => $reserva->referencia ?: $reserva->codigo_reserva,
                 'metadata' => [
                     'reserva_id' => (int) $detalle->reserva_id,
-                    'codigo_reserva' => $reserva?->codigo_reserva,
+                    'codigo_reserva' => $reserva->codigo_reserva,
                     'cantidad_pendiente' => $pendiente,
                     'dias_expiracion' => $diasExpiracion,
                 ],
@@ -446,7 +454,7 @@ class InventarioAlertaService
 
         foreach ($tomas as $toma) {
             $fechaBase = $toma->fecha_inicio ?: $toma->created_at;
-            $diasPendiente = $fechaBase ? CarbonImmutable::parse($fechaBase)->diffInDays($hoy) : 0;
+            $diasPendiente = CarbonImmutable::parse($fechaBase)->diffInDays($hoy);
             $pendienteAjuste = false;
 
             if ($toma->estado === TomaFisicaInventario::ESTADO_CERRADA) {
@@ -474,7 +482,7 @@ class InventarioAlertaService
                 ),
                 'bodega_id' => $toma->bodega_id !== null ? (int) $toma->bodega_id : null,
                 'bodega_nombre' => $toma->bodega?->nombre,
-                'fecha_referencia' => $fechaBase?->toDateString(),
+                'fecha_referencia' => $fechaBase->toDateString(),
                 'referencia' => $toma->referencia ?: $toma->codigo_toma,
                 'metadata' => [
                     'toma_fisica_id' => (int) $toma->id,
@@ -520,7 +528,7 @@ class InventarioAlertaService
                     'titulo' => 'Ajuste crítico reciente',
                     'descripcion' => sprintf(
                         'Se registró un ajuste crítico %s por %s unidades.',
-                        $ajuste->tipo?->nombre ?? 'operativo',
+                        $ajuste->tipo->nombre ?? 'operativo',
                         $this->formatoCantidad((float) $ajuste->cantidad)
                     ),
                     'producto_id' => (int) $ajuste->producto_id,
@@ -530,7 +538,7 @@ class InventarioAlertaService
                     'lote_id' => $ajuste->lote_id !== null ? (int) $ajuste->lote_id : null,
                     'lote_codigo' => $ajuste->lote?->codigo_lote,
                     'cantidad_actual' => (float) $ajuste->cantidad,
-                    'fecha_referencia' => $ajuste->created_at?->toDateString(),
+                    'fecha_referencia' => $ajuste->created_at->toDateString(),
                     'referencia' => $ajuste->referencia,
                     'metadata' => [
                         'ajuste_critico_id' => (int) $ajuste->id,
@@ -585,7 +593,7 @@ class InventarioAlertaService
         };
     }
 
-    private function normalizarAlertaPersistida(int $empresaId, array $alerta, $calculadoEn): array
+    private function normalizarAlertaPersistida(int $empresaId, array $alerta, \Illuminate\Support\Carbon $calculadoEn): array
     {
         $referencia = $alerta['referencia'] ?? null;
 
@@ -650,7 +658,7 @@ class InventarioAlertaService
     {
         $regla = $this->reposicionService->resolverReglaActiva($empresaId, $productoId, $bodegaId);
 
-        return max((int) ($regla?->dias_alerta_vencimiento ?? self::DEFAULT_DIAS_VENCIMIENTO), 0);
+        return max((int) ($regla->dias_alerta_vencimiento ?? self::DEFAULT_DIAS_VENCIMIENTO), 0);
     }
 
     private function crearAlerta(array $datos): array

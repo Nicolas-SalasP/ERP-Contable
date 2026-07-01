@@ -86,14 +86,16 @@ class BancoService
             $numerosFacturas = [];
             $fechaHoy = now()->format('Y-m-d');
 
+            $ids = [];
             foreach ($facturas as $factura) {
                 /** @var Factura $factura */
-                $factura->estado = 'PAGADA';
-                $factura->save();
-
+                $ids[] = $factura->id;
                 $totalNomina += $factura->monto_bruto;
                 $numerosFacturas[] = $factura->numero_factura;
             }
+
+            // Batch UPDATE: marca todas como PAGADAS en una sola query en lugar de N saves.
+            Factura::whereIn('id', $ids)->where('empresa_id', $empresaId)->update(['estado' => 'PAGADA']);
 
             // Usa la cuenta contable real del banco; lanza excepción si no está configurada.
             $cuentaContableBanco = $this->obtenerCuentaContableDeBanco($empresaId, $cuentaBancariaId);
@@ -181,7 +183,7 @@ class BancoService
             // TesoreriaException por falta del import, dejando la transacción abierta).
             return DB::transaction(function () use (
                 $empresaId, $usuarioId, $cuentaBancariaId, $cuentaContrapartida, $codigoCuentaBanco, $archivo
-            ) {
+            ): array {
                 $gestor = fopen($archivo->getRealPath(), "r");
                 $importados = 0;
                 $ignorados = 0;
@@ -348,7 +350,7 @@ class BancoService
 
     public function vincularMovimientoAAnticipo(int $empresaId, int $movimientoId, int $anticipoId)
     {
-        return DB::transaction(function () use ($empresaId, $movimientoId, $anticipoId) {
+        DB::transaction(function () use ($empresaId, $movimientoId, $anticipoId) {
             // Lock pesimista + guard de estado para evitar doble conciliación en carrera.
             $movimiento = $this->obtenerMovimientoParaConciliar($empresaId, $movimientoId);
 

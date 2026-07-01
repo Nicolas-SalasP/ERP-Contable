@@ -41,6 +41,11 @@ jobs:
       - name: 🔧 Configurar OPENSSL_CONF
         run: echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
+      - name: Auditar dependencias PHP
+        working-directory: Backend-laravel
+        run: composer audit --format=plain
+        continue-on-error: true
+
       - name: 🧪 Correr tests (SQLite)
         working-directory: Backend-laravel
         run: php artisan test --stop-on-failure
@@ -108,6 +113,11 @@ jobs:
             fi
             sleep 2
           done
+
+      - name: Auditar dependencias PHP
+        working-directory: Backend-laravel
+        run: composer audit --format=plain
+        continue-on-error: true
 
       - name: 🧪 Correr tests (MySQL)
         working-directory: Backend-laravel
@@ -180,7 +190,12 @@ jobs:
 
       - name: 🧪 Tests
         working-directory: Frontend
-        run: pnpm run test --run
+        run: pnpm run test --coverage --run
+
+      - name: Auditar dependencias Node
+        working-directory: Frontend
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
 
       - name: 🏗️ Build (verifica que compila)
         working-directory: Frontend
@@ -351,11 +366,23 @@ jobs:
       - name: 📦 Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      - name: 🔍 Verificar disponibilidad staging
+        id: staging-check
+        run: |
+          if curl -sf --max-time 10 https://staging.erp.tenri.cl/ -o /dev/null 2>&1; then
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Staging no disponible — omitiendo smoke tests"
+          fi
+
       - name: 🎭 Instalar Chromium
+        if: steps.staging-check.outputs.available == 'true'
         working-directory: Frontend
         run: pnpm e2e:install
 
       - name: 🔥 Smoke tests contra staging
+        if: steps.staging-check.outputs.available == 'true'
         working-directory: Frontend
         env:
           E2E_BASE_URL: https://staging.erp.tenri.cl

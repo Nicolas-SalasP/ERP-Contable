@@ -94,7 +94,7 @@ class ActivoFijoService
                     $datos['empresa_id'],
                     'activo_codigo'
                 );
-                $datos['codigo'] = 'AF-' . str_pad($correlativo, 5, '0', STR_PAD_LEFT);
+                $datos['codigo'] = 'AF-' . str_pad((string) $correlativo, 5, '0', STR_PAD_LEFT);
             }
 
             $datos['estado'] = $datos['estado'] ?? 'ACTIVO';
@@ -348,7 +348,7 @@ class ActivoFijoService
 
     public function imputarFacturaAProyecto(int $empresaId, int $proyectoId, array $datos)
     {
-        return DB::transaction(function () use ($empresaId, $proyectoId, $datos) {
+        DB::transaction(function () use ($empresaId, $proyectoId, $datos) {
             $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($proyectoId);
 
             if ($proyecto->estado !== 'EN_CONSTRUCCION') {
@@ -375,7 +375,7 @@ class ActivoFijoService
 
     public function activarProyecto(int $empresaId, int $usuarioId, int $proyectoId): array
     {
-        return DB::transaction(function () use ($empresaId, $usuarioId, $proyectoId) {
+        return DB::transaction(function () use ($empresaId, $proyectoId) {
             $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($proyectoId);
             if (!$proyecto->tipo_activo_id || !$proyecto->cuenta_depreciacion_id || !$proyecto->cuenta_gasto_id) {
                 throw new Exception("Configuración Incompleta: El proyecto requiere asignar las 3 cuentas contables (Activo, Depreciación y Gasto) antes de ser capitalizado.");
@@ -505,5 +505,62 @@ class ActivoFijoService
                 'activo' => $activo
             ];
         });
+    }
+
+    public function tablaAmortizacion(int $empresaId, int $activoId): array
+    {
+        $activo = ActivoFijo::where('empresa_id', $empresaId)->find($activoId);
+
+        if (!$activo) {
+            throw new Exception("Activo no encontrado.", 404);
+        }
+
+        $valorAdquisicion = (int) $activo->valor_adquisicion;
+        $valorResidual    = (int) $activo->valor_residual;
+        $vidaUtilMeses    = (int) $activo->vida_util_meses;
+        $depreciacionReal = (int) $activo->depreciacion_acumulada;
+
+        $montoDepreciable = $valorAdquisicion - $valorResidual;
+        $cuotaBase        = $vidaUtilMeses > 0 ? (int) round($montoDepreciable / $vidaUtilMeses, 0) : 0;
+
+        $fechaInicio = Carbon::parse($activo->fecha_adquisicion)->addMonth()->startOfMonth();
+
+        $filas                = [];
+        $depreciacionAcum     = 0;
+
+        for ($i = 0; $i < $vidaUtilMeses; $i++) {
+            $esUltimo = ($i === $vidaUtilMeses - 1);
+            $cuota    = $esUltimo ? ($montoDepreciable - $depreciacionAcum) : $cuotaBase;
+
+            $depreciacionAcum += $cuota;
+            $valorLibro        = $valorAdquisicion - $depreciacionAcum;
+            $yaEjecutado       = $depreciacionReal >= $depreciacionAcum;
+
+            $filas[] = [
+                'numero_mes'             => $i + 1,
+                'periodo'                => $fechaInicio->copy()->addMonths($i)->format('Y-m'),
+                'cuota'                  => $cuota,
+                'depreciacion_acumulada' => $depreciacionAcum,
+                'valor_libro'            => $valorLibro,
+                'ya_ejecutado'           => $yaEjecutado,
+            ];
+        }
+
+        $valorLibroActual   = $valorAdquisicion - $depreciacionReal;
+        $porcentajeDeprec   = $montoDepreciable > 0
+            ? round(($depreciacionReal / $montoDepreciable) * 100, 1)
+            : 0.0;
+
+        return [
+            'resumen' => [
+                'total_meses'                => $vidaUtilMeses,
+                'valor_adquisicion'          => $valorAdquisicion,
+                'valor_residual'             => $valorResidual,
+                'depreciacion_acumulada_real' => $depreciacionReal,
+                'valor_libro_actual'         => $valorLibroActual,
+                'porcentaje_depreciado'      => $porcentajeDeprec,
+            ],
+            'filas' => $filas,
+        ];
     }
 }

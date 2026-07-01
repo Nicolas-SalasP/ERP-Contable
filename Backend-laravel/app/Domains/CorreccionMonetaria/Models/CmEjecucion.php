@@ -3,9 +3,14 @@
 namespace App\Domains\CorreccionMonetaria\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Core\Models\User;
 
+/**
+ * @property-read \App\Domains\Contabilidad\Models\AsientoContable|null $asiento
+ * @property-read \App\Domains\Core\Models\User|null $usuario
+ */
 class CmEjecucion extends Model
 {
     protected $table = 'cm_ejecuciones';
@@ -42,12 +47,12 @@ class CmEjecucion extends Model
         'total_cm_neto' => 'decimal:2',
     ];
 
-    public function asiento()
+    public function asiento(): BelongsTo
     {
         return $this->belongsTo(AsientoContable::class, 'asiento_id');
     }
 
-    public function usuario()
+    public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_id');
     }

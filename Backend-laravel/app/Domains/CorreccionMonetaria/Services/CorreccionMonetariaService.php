@@ -200,7 +200,7 @@ class CorreccionMonetariaService
             'tiene_ipc'              => $tieneIpc,
             'puede_ejecutar'         => $puedeEjecutar,
             'puede_simular'          => $tieneIpc && $config?->activo,
-            'aplica_cm'              => $config?->aplica_cm ?? false,
+            'aplica_cm'              => $config->aplica_cm ?? false,
             'modalidad'              => $config?->modalidad,
             'mes_cierre'             => $config?->mes_cierre,
             'bloqueado_por_modalidad'=> $config && !$config->puedeEjecutarMes($mes),
@@ -405,8 +405,7 @@ class CorreccionMonetariaService
                 CmConfiguracionCuenta::ROL_INVENTARIO              => max(0.0, $saldoBruto),
                 CmConfiguracionCuenta::ROL_DEPRECIACION_ACUMULADA  => max(0.0, -$saldoBruto),
                 CmConfiguracionCuenta::ROL_PATRIMONIO_CAPITAL      => max(0.0, -$saldoBruto),
-                CmConfiguracionCuenta::ROL_PASIVO_NO_MONETARIO     => max(0.0, -$saldoBruto),
-                default => 0.0,
+                default                                            => max(0.0, -$saldoBruto),
             };
 
             if ($saldoAjustable <= 0) {

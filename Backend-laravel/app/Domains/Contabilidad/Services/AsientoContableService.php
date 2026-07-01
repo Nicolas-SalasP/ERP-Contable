@@ -8,7 +8,7 @@ use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Exception;
+use App\Domains\Contabilidad\Exceptions\ContabilidadException;
 
 class AsientoContableService
 {
@@ -66,7 +66,7 @@ class AsientoContableService
         $centrosInvalidos = array_diff($centroCostoIds, $centrosValidos);
 
         if (!empty($centrosInvalidos)) {
-            throw new Exception(
+            throw ContabilidadException::regla(
                 "Centro(s) de costo invalido(s): " . implode(', ', $centrosInvalidos) .
                 ". Deben existir en la empresa y estar activos."
             );
@@ -92,7 +92,7 @@ class AsientoContableService
         $diferencia = round(abs($totalDebe - $totalHaber), 2);
 
         if ($diferencia > 0.00) {
-            throw new Exception("Rechazado por Partida Doble: El Debe ({$totalDebe}) no cuadra con el Haber ({$totalHaber}).");
+            throw ContabilidadException::regla("Rechazado por Partida Doble: El Debe ({$totalDebe}) no cuadra con el Haber ({$totalHaber}).");
         }
 
         $cuentasValidas = PlanCuenta::where('empresa_id', $datosAsiento['empresa_id'])
@@ -102,17 +102,17 @@ class AsientoContableService
 
         foreach ($codigosCuentas as $codigo) {
             if (!$cuentasValidas->has($codigo)) {
-                throw new Exception("La cuenta contable {$codigo} no existe o pertenece a otra empresa.");
+                throw ContabilidadException::regla("La cuenta contable {$codigo} no existe o pertenece a otra empresa.");
             }
 
             $cuenta = $cuentasValidas->get($codigo);
 
             if (!$cuenta->imputable) {
-                throw new Exception("La cuenta contable {$codigo} no es imputable (es una cuenta padre o agrupadora).");
+                throw ContabilidadException::regla("La cuenta contable {$codigo} no es imputable (es una cuenta padre o agrupadora).");
             }
 
             if (!$cuenta->activo) {
-                throw new Exception("La cuenta contable {$codigo} se encuentra inactiva.");
+                throw ContabilidadException::regla("La cuenta contable {$codigo} se encuentra inactiva.");
             }
         }
 
@@ -183,7 +183,7 @@ class AsientoContableService
             'asiento_comprobante'
         );
 
-        $secuencia = str_pad($correlativo, 6, '0', STR_PAD_LEFT);
+        $secuencia = str_pad((string) $correlativo, 6, '0', STR_PAD_LEFT);
 
         $asiento->update([
             'numero_comprobante' => $anio . $tipoCode . $secuencia
@@ -195,7 +195,7 @@ class AsientoContableService
         $asientoOriginal = AsientoContable::where('empresa_id', $empresaId)->findOrFail($asientoId);
 
         if ($fechaReversa < $asientoOriginal->fecha->format('Y-m-d')) {
-            throw new Exception('No puedes reversar con una fecha anterior al asiento original.');
+            throw ContabilidadException::regla('No puedes reversar con una fecha anterior al asiento original.');
         }
 
         return $this->procesarReversa($asientoOriginal, $userId, $fechaReversa, $motivo);
@@ -213,6 +213,7 @@ class AsientoContableService
     private function procesarReversa(AsientoContable $asientoOriginal, int $userId, string $fechaReversa, string $motivo)
     {
         $asientoOriginal->load('detalles');
+        $this->validarMesAbierto($asientoOriginal->empresa_id, $fechaReversa);
 
         return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
             $tempNum = 'TMP-' . Str::uuid()->toString();
@@ -229,6 +230,7 @@ class AsientoContableService
             ]);
 
             foreach ($asientoOriginal->detalles as $detalle) {
+                /** @var \App\Domains\Contabilidad\Models\DetalleAsiento $detalle */
                 $nuevoAsiento->detalles()->create([
                     'cuenta_contable' => $detalle->cuenta_contable,
                     'fecha' => $fechaReversa,

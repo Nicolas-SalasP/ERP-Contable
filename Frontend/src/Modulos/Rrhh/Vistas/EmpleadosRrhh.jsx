@@ -11,6 +11,15 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 
 const AFPS = ['Capital', 'Cuprum', 'Habitat', 'Modelo', 'PlanVital', 'ProVida', 'Uno'];
+const ISAPRES = [
+    { value: 'BANMEDICA', label: 'Banmédica' },
+    { value: 'COLMENA', label: 'Colmena' },
+    { value: 'CONSALUD', label: 'Consalud' },
+    { value: 'MASVIDA', label: 'MásVida' },
+    { value: 'NUEVA MASVIDA', label: 'Nueva MásVida' },
+    { value: 'VIDA TRES', label: 'Vida Tres' },
+    { value: 'ESENCIAL', label: 'Esencial' },
+];
 
 const FORM_VACIO = {
     rut: '', nombres: '', apellido_paterno: '', apellido_materno: '',
@@ -267,7 +276,10 @@ const EmpleadosRrhh = () => {
                             {form.tipo_salud === 'ISAPRE' && (
                                 <>
                                     <Campo label="ISAPRE">
-                                        <input value={form.isapre_nombre} onChange={(e) => setCampo('isapre_nombre', e.target.value)} className={inputCls} />
+                                        <select value={form.isapre_nombre} onChange={(e) => setCampo('isapre_nombre', e.target.value)} className={inputCls}>
+                                            <option value="">— Selecciona —</option>
+                                            {ISAPRES.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
+                                        </select>
                                     </Campo>
                                     <Campo label="Plan pactado (UF)">
                                         <input type="number" step="0.01" value={form.isapre_plan_uf} onChange={(e) => setCampo('isapre_plan_uf', e.target.value)} className={inputCls} />
