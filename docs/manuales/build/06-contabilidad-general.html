@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;background:#0b1120;color:#fff;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;} .em{color:var(--emerald-d);font-weight:700;}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+  .cta{margin-top:18px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;color:#04241a;box-shadow:0 16px 30px rgba(16,185,129,.30);}
+  .cta .l b{font-family:'Poppins';font-size:13pt;color:#04241a;display:block;} .cta .l span{font-size:9.5pt;color:#063f2e;}
+  .cta .go{font-family:'Poppins';font-weight:800;color:#fff;font-size:12pt;display:flex;align-items:center;gap:9px;}
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+<body>
+
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 06</div>
+  <h1><b>Contabilidad</b> General</h1>
+  <p class="lead">El corazón contable del sistema: el plan de cuentas, los asientos, los libros oficiales, el balance, la antigüedad de saldos y el cierre de cada período.</p>
+  <div class="hero"><img src="../assets/m6-03-libro-mayor.png" alt="Libros contables"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Contabilidad General</div>
+    <div><b>Capturas</b>Sistema real en vivo</div>
+  </div>
+</div>
+
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Contabilidad General</h2>
+  <p class="sub">Ocho pantallas que cubren todo el ciclo contable.</p>
+  <p>La mayor parte de la contabilidad se genera <b>sola</b>: cada factura de compra o venta y cada pago crean su asiento automáticamente. Este módulo es donde usted <b>consulta, ajusta y cierra</b> esa contabilidad. Al abrir <span class="em">Contabilidad General</span> encontrará:</p>
+  <table>
+    <thead><tr><th>Pantalla</th><th>Para qué sirve</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-book"></i>Libro Mayor</td><td>Consulta los movimientos contables (Libro Diario y Mayor) en un rango de fechas.</td></tr>
+      <tr><td><i class="fas fa-scale-balanced"></i>Balance de Comprobación</td><td>Resumen de saldos de todas las cuentas: debe, haber y saldo por período.</td></tr>
+      <tr><td><i class="fas fa-sitemap"></i>Plan de Cuentas</td><td>El catálogo de cuentas contables de la empresa.</td></tr>
+      <tr><td><i class="fas fa-rotate-left"></i>Anulaciones</td><td>Reversa contable de un documento ya registrado.</td></tr>
+      <tr><td><i class="fas fa-pen-ruler"></i>Asiento Manual</td><td>Traspasos y ajustes de partida doble hechos a mano.</td></tr>
+      <tr><td><i class="fas fa-hourglass-half"></i>CxC / CxP por Antigüedad</td><td>Antigüedad de los saldos por cobrar y por pagar.</td></tr>
+      <tr><td><i class="fas fa-lock"></i>Cierre de Períodos</td><td>Bloquea un mes para que su contabilidad no se altere.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">2</span> Plan de Cuentas</h2>
+  <p class="sub">El catálogo sobre el que se apoya toda la contabilidad.</p>
+  <p>El Plan de Cuentas lista todas las cuentas contables de la empresa. Puede <b>buscar</b> por código o nombre y <b>filtrar</b> por tipo (Activos, Pasivos, Patrimonio, Ingresos, Gastos) y por estado. Cada fila muestra:</p>
+  <table>
+    <thead><tr><th>Columna</th><th>Significado</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-hashtag"></i>Código</td><td>El número de la cuenta. Los códigos cortos (1, 11, 1120) son <b>grupos</b>; los largos (112005) son cuentas de detalle.</td></tr>
+      <tr><td><i class="fas fa-tag"></i>Nombre / Clasificación</td><td>El nombre de la cuenta y su naturaleza (Activo, Pasivo, etc.).</td></tr>
+      <tr><td><i class="fas fa-pen"></i>Imputable</td><td><b>Sí</b> significa que acepta movimientos directos; <b>No</b> es una cuenta de agrupación que solo suma a sus hijas.</td></tr>
+      <tr><td><i class="fas fa-toggle-on"></i>Estado</td><td>Si la cuenta está <b>Activa</b> y disponible para usarse.</td></tr>
+    </tbody>
+  </table>
+  <p>Con <b>+ Nueva Cuenta</b> agrega una cuenta y con <b>Configurar</b> edita su nombre, comportamiento o visibilidad.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m6-01-plan-cuentas.png" alt="Plan de cuentas"></div>
+    <figcaption>El plan de cuentas viene precargado con una estructura contable chilena estándar.</figcaption>
+  </figure>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-circle-info"></i></div>
+    <div class="tx"><b>Solo las cuentas “imputables”</b> reciben movimientos. Por eso, al hacer un asiento, siempre elegirá una cuenta de detalle (código largo), nunca un grupo.</div>
+  </div>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">3</span> Asiento Manual</h2>
+  <p class="sub">Para traspasos y ajustes que no genera ningún otro módulo.</p>
+  <p>Un asiento manual se usa para registrar hechos contables que no vienen de una factura o un pago (provisiones, correcciones, reclasificaciones). Funciona con <b>partida doble</b>: el total del <b>Debe</b> siempre debe igualar al total del <b>Haber</b>.</p>
+  <p>Complete primero la cabecera:</p>
+  <ol class="steps">
+    <li><b>Fecha Contable</b> — el día al que se imputa el asiento.</li>
+    <li><b>Glosa General del Comprobante</b> — una descripción que explica el asiento completo.</li>
+  </ol>
+  <p>Luego, en el <b>Panel de Ingreso de Cuentas</b>, agregue línea por línea:</p>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-magnifying-glass"></i>Cuenta Contable</td><td>Busque y elija la cuenta imputable.</td></tr>
+      <tr><td><i class="fas fa-arrows-left-right"></i>Tipo</td><td>Si la línea va al <b>Debe</b> o al <b>Haber</b>.</td></tr>
+      <tr><td><i class="fas fa-dollar-sign"></i>Monto</td><td>El valor de la línea.</td></tr>
+      <tr><td><i class="fas fa-align-left"></i>Glosa Específica</td><td>Opcional: detalle particular de esa cuenta.</td></tr>
+      <tr><td><i class="fas fa-diagram-project"></i>Centro de Costo / Empleado</td><td>Opcional: para analizar el gasto por área o persona.</td></tr>
+    </tbody>
+  </table>
+  <p>Presione <b>Agregar Línea</b> (o Enter). El sistema totaliza el <b>Debe</b> y el <b>Haber</b> en vivo y no le permitirá guardar mientras no estén <b>cuadrados</b>.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m6-02-asiento-manual.png" alt="Asiento manual"></div>
+    <figcaption>El asiento empieza vacío; se arma agregando líneas hasta que Debe = Haber.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">4</span> Libro Mayor y Libro Diario</h2>
+  <p class="sub">La consulta oficial de todos los movimientos contables.</p>
+  <p>En <b>Libros Contables</b> consulta el detalle de los asientos. Configure la búsqueda con:</p>
+  <table>
+    <thead><tr><th>Filtro</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-calendar"></i>Desde / Hasta</td><td>El rango de fechas a consultar.</td></tr>
+      <tr><td><i class="fas fa-magnifying-glass"></i>Buscar Cuenta</td><td>Escriba un código o nombre (“Caja”, “1101”) para ver una sola cuenta; déjelo vacío para ver todo.</td></tr>
+      <tr><td><i class="fas fa-quote-left"></i>Palabra en Glosa</td><td>Filtra por texto de la descripción (ej.: “Traspaso”, “Pago”).</td></tr>
+      <tr><td><i class="fas fa-shield-halved"></i>Auditoría</td><td>Acota a asientos conciliados/válidos u otros estados.</td></tr>
+    </tbody>
+  </table>
+  <p>Presione <b>Consultar</b>. El resultado muestra, por cada línea: comprobante, fecha, cuenta, glosa, referencia y montos al <b>Debe</b> y al <b>Haber</b>. Con <b>Excel</b> exporta lo consultado y con <b>Libro Diario / Mayor</b> alterna la forma de presentación.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m6-03-libro-mayor.png" alt="Libro Mayor"></div>
+    <figcaption>Cada factura de compra genera su asiento automático: gasto, IVA crédito fiscal y cuenta por pagar.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Balance de Comprobación y Saldos</h2>
+  <p class="sub">El resumen que demuestra que la contabilidad cuadra.</p>
+  <p>Elija <b>Fecha Inicio</b> y <b>Fecha Fin</b> y presione <b>Consultar</b>. El balance lista todas las cuentas con sus saldos agrupados en tres bloques:</p>
+  <table>
+    <thead><tr><th>Bloque</th><th>Qué contiene</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-clock-rotate-left"></i>Período Anterior</td><td>El saldo con que venía cada cuenta antes del rango (SD = saldo deudor, SA = saldo acreedor).</td></tr>
+      <tr><td><i class="fas fa-right-left"></i>Movimientos del Período</td><td>El Debe y el Haber del rango consultado y el saldo resultante.</td></tr>
+      <tr><td><i class="fas fa-calendar-check"></i>Acumulado Año</td><td>El saldo acumulado en el ejercicio.</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m6-04b-balance-head.png" alt="Balance de comprobación, estructura"></div>
+    <figcaption>Estructura del balance: cada cuenta con su período anterior, movimientos y acumulado.</figcaption>
+  </figure>
+  <p>Las cuentas de agrupación aparecen en cero; los saldos reales están en las cuentas de detalle. En este ejemplo, el <b>IVA Crédito Fiscal</b> y las <b>Cuentas por Pagar Proveedores</b> muestran los movimientos del mes:</p>
+  <figure>
+    <div class="shot"><img src="../assets/m6-04-balance.png" alt="Balance de comprobación con saldos"></div>
+    <figcaption>Cuentas de detalle con saldos reales del período.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">6</span> Cartera por Antigüedad (CxC y CxP)</h2>
+  <p class="sub">Cuánto le deben y cuánto debe, ordenado por antigüedad.</p>
+  <p>Hay dos pantallas gemelas: <b>CxC por Antigüedad</b> (lo que le deben sus clientes) y <b>CxP por Antigüedad</b> (lo que usted debe a sus proveedores). Ambas clasifican cada saldo pendiente en cinco <b>tramos</b> según cuánto lleva sin pagarse:</p>
+  <table>
+    <thead><tr><th>Tramo</th><th>Interpretación</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-circle" style="color:#10b981"></i>Corriente</td><td>Aún dentro del plazo (no vencido).</td></tr>
+      <tr><td><i class="fas fa-circle" style="color:#eab308"></i>1 – 30 días</td><td>Vencido hace poco; conviene gestionarlo.</td></tr>
+      <tr><td><i class="fas fa-circle" style="color:#f97316"></i>31 – 60 / 61 – 90 días</td><td>Mora media; requiere seguimiento.</td></tr>
+      <tr><td><i class="fas fa-circle" style="color:#ef4444"></i>+90 días</td><td>Deuda antigua; riesgo alto.</td></tr>
+    </tbody>
+  </table>
+  <p>Arriba se resumen los totales por tramo y el <b>Total General</b>; abajo, el detalle por entidad. Con <b>Exportar CSV</b> lleva el reporte a una planilla.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m6-06-ap-aging.png" alt="Cartera de proveedores por pagar"></div>
+    <figcaption>Antigüedad de saldos por pagar (CxP). La vista de clientes por cobrar (CxC) funciona igual.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">7</span> Anulaciones</h2>
+  <p class="sub">Reversar un documento sin borrar el historial.</p>
+  <p>Cuando un documento se registró por error, no se elimina: se <b>reversa</b>. En <b>Anulación de Documentos</b>, escriba el <b>código único</b> del documento y presione <b>Buscar Documento</b>. El sistema le mostrará el detalle y, al confirmar, generará el <b>asiento inverso</b> que deja la contabilidad en su estado anterior, con la <b>trazabilidad</b> de quién anuló y por qué.</p>
+  <figure>
+    <div class="shot mid"><img src="../assets/m6-07-anulacion.png" alt="Anulación de documentos"></div>
+    <figcaption>La anulación exige buscar el documento por su código único antes de reversarlo.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">8</span> Cierre de Períodos</h2>
+  <p class="sub">Blindar los meses ya terminados.</p>
+  <p>Una vez revisado y cuadrado un mes, se <b>cierra</b> para que nadie pueda alterarlo. La pantalla muestra los doce meses del año con su estado <span class="chip">Abierto</span> o <span class="chip">Cerrado</span>. Presione <b>Cerrar período</b> en el mes que corresponda; use las flechas ‹ › para cambiar de año.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m6-08-cierre.png" alt="Cierre de períodos contables"></div>
+    <figcaption>Grilla anual de períodos. Cada mes se cierra o reabre de forma independiente.</figcaption>
+  </figure>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-lock"></i></div>
+    <div class="tx"><b>Efecto del cierre:</b> en un mes cerrado <b>no se puede crear, modificar ni eliminar</b> ningún asiento. La reapertura requiere <b>perfil de Administrador</b> y un <b>motivo obligatorio</b>, que queda registrado.</div>
+  </div>
+</section>
+
+<div class="band">
+  <h3><i class="fas fa-robot"></i> Contabilidad automática</h3>
+  <p>Recuerde: no necesita hacer asientos a mano para lo cotidiano. Al registrar compras, ventas y pagos, Tenri ERP Cloud genera los asientos por usted. Este módulo existe para <b>consultar, ajustar y controlar</b> esa contabilidad, no para escribirla línea a línea.</p>
+</div>
+
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:18px;"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">En <b>resumen</b></div>
+  <p class="intro">Contabilidad General reúne el catálogo de cuentas, los libros oficiales, el balance, la antigüedad de saldos y el control de cierres en un solo lugar.</p>
+  <div class="recap">
+    <div class="c"><div class="ic"><i class="fas fa-sitemap"></i></div><h4>Base y asientos</h4><p>Plan de cuentas y asientos manuales de partida doble cuando hace falta.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-book-open"></i></div><h4>Libros y balance</h4><p>Consulta el mayor, exporta a Excel y verifica que todo cuadre.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-lock"></i></div><h4>Control</h4><p>Antigüedad de saldos, anulaciones con trazabilidad y cierre de períodos.</p></div>
+  </div>
+  <div class="cta">
+    <div class="l"><b>Siguiente módulo</b><span>Registro y depreciación de sus activos fijos.</span></div>
+    <div class="go">07 · Activos Fijos <i class="fas fa-arrow-right"></i></div>
+  </div>
+  <div class="foot"><span><b>Tenri ERP Cloud</b> · Manual de usuario 06 — Contabilidad General</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>
