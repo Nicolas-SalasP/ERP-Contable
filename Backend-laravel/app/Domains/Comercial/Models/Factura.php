@@ -113,7 +113,7 @@ class Factura extends Model
     public static function generarCodigoUnico(): int
     {
         for ($intento = 0; $intento < 5; $intento++) {
-            $codigo = (int) (intval(microtime(true) * 10000) . random_int(1000, 9999));
+            $codigo = (int) (time() . str_pad((string) random_int(0, 99999), 5, '0', STR_PAD_LEFT));
             $existeFactura = self::where('codigo_unico', $codigo)->exists();
             if (!$existeFactura) {
                 return $codigo;
