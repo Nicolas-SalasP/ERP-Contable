@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendDir = path.resolve(__dirname, '../../Backend-laravel');
 const baseUrl    = process.env.E2E_BASE_URL  || 'http://localhost:3000';
-const isRemote   = !baseUrl.includes('localhost');
+const isRemote   = !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1');
 const backendUrl = process.env.E2E_API_URL || (isRemote ? baseUrl : 'http://localhost:8001');
 
 async function backendReachable() {
