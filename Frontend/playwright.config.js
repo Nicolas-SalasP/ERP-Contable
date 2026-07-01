@@ -37,12 +37,14 @@ export default defineConfig({
             use: { ...devices['Desktop Chrome'] },
         },
     ],
-    webServer: [
-        {
-            command: 'pnpm dev',
-            url: 'http://localhost:3000',
-            reuseExistingServer: true,
-            timeout: 120_000,
-        },
-    ],
+    webServer: process.env.E2E_BASE_URL && !process.env.E2E_BASE_URL.includes('localhost')
+        ? []
+        : [
+            {
+                command: 'pnpm dev',
+                url: 'http://localhost:3000',
+                reuseExistingServer: true,
+                timeout: 120_000,
+            },
+        ],
 });
