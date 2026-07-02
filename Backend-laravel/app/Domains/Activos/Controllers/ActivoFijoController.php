@@ -3,6 +3,7 @@
 namespace App\Domains\Activos\Controllers;
 
 use App\Domains\Activos\Services\ActivoFijoService;
+use App\Support\MensajeErrorGenerico;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use Illuminate\Http\Request;
@@ -55,7 +56,7 @@ class ActivoFijoController
                 ]
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -65,7 +66,7 @@ class ActivoFijoController
             $pendientes = $this->service->listarPendientes($request->user()->empresa_id);
             return response()->json(['success' => true, 'data' => $pendientes]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -108,10 +109,10 @@ class ActivoFijoController
             return response()->json(['success' => true, 'message' => 'Activo registrado exitosamente', 'data' => $activo], 201);
 
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -141,14 +142,14 @@ class ActivoFijoController
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : ($e->getCode() === 403 ? 403 : 400);
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], $status);
         }
     }
@@ -187,7 +188,7 @@ class ActivoFijoController
                 ]
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -197,7 +198,7 @@ class ActivoFijoController
             $proyectos = $this->service->listarProyectos($request->user()->empresa_id);
             return response()->json(['success' => true, 'data' => $proyectos]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -220,10 +221,10 @@ class ActivoFijoController
 
             return response()->json(['success' => true, 'message' => 'Proyecto creado exitosamente', 'data' => $proyecto], 201);
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -242,10 +243,10 @@ class ActivoFijoController
 
             return response()->json(['success' => true, 'message' => $resultado['mensaje'], 'data' => $resultado]);
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -265,7 +266,7 @@ class ActivoFijoController
             $facturas = $this->service->listarFacturasDisponibles($request->user()->empresa_id);
             return response()->json(['success' => true, 'data' => $facturas]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -282,10 +283,10 @@ class ActivoFijoController
             $this->service->imputarFacturaAProyecto($request->user()->empresa_id, (int) $id, $datos);
             return response()->json(['success' => true, 'message' => 'Costo imputado exitosamente']);
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -298,7 +299,7 @@ class ActivoFijoController
             return response()->json(['success' => true, 'message' => 'Proyecto activado y capitalizado', 'data' => $activo]);
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -331,7 +332,7 @@ class ActivoFijoController
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'El proyecto no existe o no pertenece a su empresa.'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -351,7 +352,7 @@ class ActivoFijoController
                 'message' => $resultado['mensaje']
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -368,7 +369,7 @@ class ActivoFijoController
             ]);
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : ($e->getCode() === 403 ? 403 : 400);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -389,7 +390,7 @@ class ActivoFijoController
             ]);
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -403,7 +404,7 @@ class ActivoFijoController
             return response()->json(['success' => true, 'data' => $resultado]);
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 }
