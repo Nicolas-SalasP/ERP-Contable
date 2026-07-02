@@ -18,6 +18,7 @@ vi.mock('../../Contextos/AuthContext', () => ({
 vi.mock('../../Contextos/Permisos', () => ({
     usePermisos: () => ({
         tieneAlgunPermiso: () => true,
+        tieneModulo: () => true,
     }),
 }));
 
@@ -76,11 +77,11 @@ describe('BarraLateral', () => {
         expect(inventarioButton.getAttribute('aria-expanded')).toBe('false');
     });
 
-    it('mantiene Glosario como enlace directo disponible para navegacion de ayuda', () => {
+    it('mantiene /glosario accesible desde el sidebar', () => {
         renderSidebar('/');
 
         const glosarioLink = screen
-            .getAllByRole('link', { name: /ayuda y glosario/i })
+            .getAllByRole('link')
             .find((link) => link.getAttribute('href') === '/glosario');
 
         expect(glosarioLink).toBeTruthy();

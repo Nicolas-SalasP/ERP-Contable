@@ -14,7 +14,8 @@ class EstadoCotizacionSeeder extends Seeder
             ['nombre' => 'Enviada', 'descripcion' => 'Enviada al cliente'],
             ['nombre' => 'Aceptada', 'descripcion' => 'Aprobada para facturar'],
             ['nombre' => 'Rechazada', 'descripcion' => 'Rechazada por el cliente'],
-            ['nombre' => 'Expirada', 'descripcion' => 'Fuera de plazo de validez']
+            ['nombre' => 'Expirada', 'descripcion' => 'Fuera de plazo de validez'],
+            ['nombre' => 'Facturada', 'descripcion' => 'Convertida en factura de venta'],
         ];
 
         foreach ($estados as $estado) {

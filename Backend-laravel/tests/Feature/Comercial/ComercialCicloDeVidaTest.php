@@ -29,7 +29,7 @@ class ComercialCicloDeVidaTest extends TestCase
         EstadoCotizacion::insert([
             ['id' => 1, 'nombre' => 'Borrador'],
             ['id' => 2, 'nombre' => 'Enviada'],
-            ['id' => 3, 'nombre' => 'Aprobada'],
+            ['id' => 3, 'nombre' => 'Aceptada'],
             ['id' => 4, 'nombre' => 'Rechazada'],
             ['id' => 5, 'nombre' => 'Facturada']
         ]);
@@ -60,7 +60,7 @@ class ComercialCicloDeVidaTest extends TestCase
     {
         $cliente = Cliente::create(['empresa_id' => $this->empresa->id, 'rut' => '2.2.2.2-2', 'razon_social' => 'Cliente Facturable', 'estado' => 'ACTIVO']);
         
-        // Cotización está "Aprobada" (id: 3)
+        // Cotización está "Aceptada" (id: 3)
         $cotizacion = Cotizacion::create(['empresa_id' => $this->empresa->id, 'cliente_id' => $cliente->id, 'nombre_cliente' => $cliente->razon_social, 'estado_id' => 3, 'numero_cotizacion' => 'COT-VENTA', 'subtotal' => 50000, 'monto_neto' => 50000, 'monto_iva' => 9500, 'monto_total' => 59500, 'total' => 59500, 'fecha_emision' => now()]);
 
         // Cuentas del plan para centralizar la venta (CxC / Ventas / IVA Debito).

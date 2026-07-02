@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { logger } from '../../Configuracion/logger';
-import { Search, Calendar, FileText, Check, X } from 'lucide-react';
+import { Search, Calendar, FileText, Check, X, ReceiptText } from 'lucide-react';
 import { TablaSkeleton } from '../../Componentes/Skeleton';
 import { EstadoVacio } from '../../Componentes/EstadoVacio';
 import { useToast } from '../../Contextos/ToastContext';
@@ -65,6 +65,28 @@ const GestionCotizaciones = () => {
             }
         } catch (error) {
             Swal.fire('Error', error.response?.data?.message || 'No se pudo actualizar el estado de la cotización.', 'error');
+        }
+    };
+
+    const handleFacturar = async (id) => {
+        const { isConfirmed } = await Swal.fire({
+            title: '¿Generar factura?',
+            text: `Se creará una factura de venta a partir de la cotización #${String(id).padStart(5, '0')} y se registrará el asiento contable.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Facturar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0f172a',
+        });
+        if (!isConfirmed) return;
+        try {
+            const res = await api.post(`/cotizaciones/${id}/facturar`);
+            if (res.success) {
+                toast(`Factura ${res.data?.numero_factura || ''} generada correctamente.`, 'success');
+                fetchCotizaciones();
+            }
+        } catch (error) {
+            Swal.fire('Error', error.response?.data?.message || 'No se pudo generar la factura.', 'error');
         }
     };
 
@@ -223,6 +245,12 @@ const GestionCotizaciones = () => {
                                             </button>
                                         </>
                                     )}
+                                    {nombreEstado === 'Aceptada' && (
+                                        <button onClick={() => handleFacturar(c.id)} className="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 font-bold text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                                            <ReceiptText size={14} strokeWidth={1.75} />
+                                            Facturar
+                                        </button>
+                                    )}
                                     <button onClick={() => descargarPDF(c.id, c.nombre_cliente)} className={`flex-1 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 font-bold text-xs py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-600 flex items-center justify-center gap-2`}>
                                         <FileText size={16} strokeWidth={1.75} />
                                         PDF
@@ -281,6 +309,16 @@ const GestionCotizaciones = () => {
                                                                 <X size={16} strokeWidth={1.75} />
                                                             </button>
                                                         </>
+                                                    )}
+                                                    {nombreEstado === 'Aceptada' && (
+                                                        <button
+                                                            onClick={() => handleFacturar(c.id)}
+                                                            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-all font-bold text-xs"
+                                                            title="Generar Factura de Venta"
+                                                        >
+                                                            <ReceiptText size={16} strokeWidth={1.75} />
+                                                            Facturar
+                                                        </button>
                                                     )}
                                                     <button
                                                         onClick={() => descargarPDF(c.id, c.nombre_cliente)}

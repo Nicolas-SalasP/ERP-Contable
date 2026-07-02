@@ -205,10 +205,10 @@ class CotizacionService
                 throw ComercialException::noEncontrado("Cotizacion no encontrada.");
             }
 
-            $estadoAprobada = EstadoCotizacion::where('nombre', 'Aprobada')->first();
+            $estadoAprobada = EstadoCotizacion::where('nombre', 'Aceptada')->first();
             if (!$estadoAprobada || $cotizacion->estado_id !== $estadoAprobada->id) {
                 throw ComercialException::regla(
-                    "Solo cotizaciones APROBADAS pueden ser facturadas. " .
+                    "Solo cotizaciones ACEPTADAS pueden ser facturadas. " .
                     "Estado actual: " . ($cotizacion->estado->nombre ?? '?')
                 );
             }
