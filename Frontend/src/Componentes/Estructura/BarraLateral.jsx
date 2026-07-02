@@ -313,10 +313,13 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
             ]
         },
         {
-            id: 'glosario',
-            label: 'Ayuda y Glosario',
-            icon: 'fas fa-book',
-            path: '/glosario',
+            id: 'ayuda',
+            label: 'Ayuda',
+            icon: 'fas fa-life-ring',
+            subItems: [
+                { path: '/glosario', label: 'Glosario de Módulos' },
+                { path: '/manuales', label: 'Manuales de Usuario' },
+            ]
         }
     ];
 
@@ -408,8 +411,8 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 <div className={`flex items-center justify-center h-16 border-b border-slate-800/50 bg-slate-950 shrink-0 gap-2 ${colapsado ? 'px-0' : 'px-4'}`}>
                     <i className="fas fa-layer-group text-emerald-500 text-xl flex-shrink-0"></i>
                     {!colapsado && (
-                        <h1 className="text-xl font-black tracking-widest text-white flex items-center gap-2">
-                            ERP<span className="text-emerald-500">CONTABLE</span>
+                        <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-1 whitespace-nowrap">
+                            Tenri <span className="text-emerald-500">ERP&nbsp;Cloud</span>
                         </h1>
                     )}
                 </div>

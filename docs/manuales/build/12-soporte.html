@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+
+  .tip.warn{background:linear-gradient(0deg,#fffbeb,#fef9e7);border-color:#fde68a;}
+  .tip.warn .ic{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 5px 12px rgba(245,158,11,.35);}
+  .tip.warn .tx{color:#78350f;} .tip.warn .tx b{color:#b45309;}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;}
+  .chip.dark{background:#0b1120;color:#fff;}
+  .chip.blue{background:#dbeafe;color:#1d4ed8;}
+  .chip.amber{background:#fef3c7;color:#b45309;}
+  .chip.purple{background:#ede9fe;color:#6d28d9;}
+  .chip.green{background:#dcfce7;color:#166534;}
+  .chip.slate{background:#f1f5f9;color:#475569;}
+  .em{color:var(--emerald-d);font-weight:700;}
+
+  /* Lifecycle visual */
+  .lifecycle{display:flex;align-items:center;gap:0;margin:14px 0 6px;flex-wrap:wrap;}
+  .lifecycle .st{flex:1;min-width:0;text-align:center;padding:9px 6px;font-size:8.5pt;font-weight:700;border-radius:0;background:var(--soft);border:1px solid var(--line);border-right:none;color:var(--body);}
+  .lifecycle .st:first-child{border-radius:10px 0 0 10px;}
+  .lifecycle .st:last-child{border-radius:0 10px 10px 0;border-right:1px solid var(--line);}
+  .lifecycle .st .lbl{display:block;font-size:7.5pt;font-weight:400;color:var(--muted);margin-top:2px;}
+  .lifecycle .arr{font-size:14px;color:var(--emerald-d);flex:0 0 auto;margin:0 -2px;z-index:1;}
+  .lifecycle .st.hi{background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-color:transparent;color:#fff;}
+  .lifecycle .st.hi .lbl{color:rgba(255,255,255,.8);}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+  .cta{margin-top:18px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;color:#04241a;box-shadow:0 16px 30px rgba(16,185,129,.30);}
+  .cta .l b{font-family:'Poppins';font-size:13pt;color:#04241a;display:block;} .cta .l span{font-size:9.5pt;color:#063f2e;}
+  .cta .go{font-family:'Poppins';font-weight:800;color:#fff;font-size:12pt;display:flex;align-items:center;gap:9px;}
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ PORTADA ═══════════════════ -->
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-headset"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 12</div>
+  <h1><b>Soporte</b></h1>
+  <p class="lead">Abra y haga seguimiento de tickets de ayuda directamente desde el ERP. Todo el historial de conversación con el equipo de soporte, en un solo lugar, sin salir del sistema.</p>
+  <div class="hero"><img src="../assets/m12-01-tickets-lista.png" alt="Lista de tickets de soporte"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Soporte</div>
+    <div><b>Capturas</b>Sistema real en vivo</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SECCIÓN 1 — DESCRIPCIÓN GENERAL ═══════════════════ -->
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Soporte</h2>
+  <p class="sub">Un canal directo con el equipo de Tenri, integrado al ERP.</p>
+  <p>El módulo <b>Soporte</b> permite abrir, consultar y responder <b>tickets de ayuda</b> sin salir de Tenri ERP Cloud. Cada ticket conserva el historial completo de mensajes entre la empresa y el equipo de soporte, con su estado y prioridad siempre visibles.</p>
+
+  <table>
+    <thead><tr><th>Función</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-inbox"></i>Mis tickets</td><td>Listado de todos los tickets de su empresa, con estado, prioridad y número de mensajes.</td></tr>
+      <tr><td><i class="fas fa-plus-circle"></i>Nuevo ticket</td><td>Formulario para abrir una solicitud nueva: asunto, categoría, prioridad y descripción detallada.</td></tr>
+      <tr><td><i class="fas fa-comments"></i>Detalle / conversación</td><td>Vista del hilo de mensajes del ticket, con posibilidad de responder mientras esté abierto.</td></tr>
+      <tr><td><i class="fas fa-filter"></i>Filtro por estado</td><td>Filtre su lista por: Todos, Nuevo, Abierto, Esperando respuesta, Resuelto o Cerrado.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <div class="ic"><i class="fas fa-plug"></i></div>
+    <div class="tx"><b>Conexión con el servicio Tenri.</b> El módulo de soporte se conecta en tiempo real con el sistema central de Tenri. Para que funcione, la empresa debe tener <b>acceso a internet</b> y el servicio debe estar activo en su plan. En entornos sin conexión los tickets no se cargarán.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 2 — LISTA DE TICKETS ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">2</span> Lista de tickets</h2>
+  <p class="sub">La bandeja de entrada de todas sus solicitudes de soporte.</p>
+  <p>Al ingresar a <b>Soporte → Mis tickets</b>, verá el listado de tickets de su empresa. Si no existen solicitudes previas, la pantalla muestra el estado vacío <em>"Sin tickets de soporte"</em>.</p>
+
+  <figure>
+    <div class="shot"><img src="../assets/m12-01-tickets-lista.png" alt="Lista de tickets de soporte"></div>
+    <figcaption>Vista principal de Soporte: estado vacío con el filtro de estados y el botón "Nuevo ticket".</figcaption>
+  </figure>
+
+  <p style="margin-top:12px;">Cuando existen tickets, cada tarjeta de la lista muestra:</p>
+  <table>
+    <thead><tr><th>Dato</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-heading"></i>Asunto</td><td>El título del ticket, truncado si es muy largo.</td></tr>
+      <tr><td><i class="fas fa-hashtag"></i>Código</td><td>Identificador único del ticket (<em>p. ej.</em> <span class="chip dark">TKT-0042</span>).</td></tr>
+      <tr><td><i class="fas fa-comment-dots"></i>Mensajes</td><td>Cantidad de mensajes en el hilo de conversación.</td></tr>
+      <tr><td><i class="fas fa-circle-dot"></i>Estado</td><td>Badge de color: <span class="chip blue">Nuevo</span> <span class="chip amber">Abierto</span> <span class="chip purple">Esperando resp.</span> <span class="chip green">Resuelto</span> <span class="chip slate">Cerrado</span></td></tr>
+      <tr><td><i class="fas fa-flag"></i>Prioridad</td><td>Badge secundario: Baja, Media, Alta o Crítica.</td></tr>
+      <tr><td><i class="fas fa-calendar"></i>Fecha</td><td>Fecha de creación del ticket.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="divider"><span class="dot"><i class="fas fa-filter"></i></span></div>
+
+  <p><b>Filtrar por estado.</b> Use el selector <em>"Todos los estados"</em> para acotar la lista. Puede filtrar por cualquier estado: <em>Nuevo, Abierto, Esperando respuesta, Resuelto</em> o <em>Cerrado</em>. La lista se actualiza automáticamente al cambiar el filtro.</p>
+
+  <div class="tip">
+    <div class="ic"><i class="fas fa-hand-pointer"></i></div>
+    <div class="tx"><b>Acceder al detalle.</b> Haga clic en cualquier ticket de la lista para abrir su conversación completa y responder si el ticket aún está activo.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 3 — CREAR TICKET ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">3</span> Crear un nuevo ticket</h2>
+  <p class="sub">Abra una solicitud de soporte en menos de un minuto.</p>
+  <p>Presione el botón <b>Nuevo ticket</b> (arriba a la derecha) para abrir el formulario de creación. Complete los cuatro campos y haga clic en <b>Crear ticket</b>:</p>
+
+  <figure>
+    <div class="shot mid"><img src="../assets/m12-02-tickets-crear.png" alt="Formulario Nuevo ticket"></div>
+    <figcaption>Modal "Nuevo ticket de soporte" con los campos vacíos listos para completar.</figcaption>
+  </figure>
+
+  <table style="margin-top:14px;">
+    <thead><tr><th>Campo</th><th>Descripción</th><th>Opciones disponibles</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-pen"></i>Asunto</td><td>Resumen breve del problema. Sea específico para que soporte entienda el contexto de inmediato.</td><td>Texto libre</td></tr>
+      <tr><td><i class="fas fa-tag"></i>Categoría</td><td>Área del sistema relacionada con el problema reportado.</td><td>ERP · Facturación · Soporte general</td></tr>
+      <tr><td><i class="fas fa-flag"></i>Prioridad</td><td>Nivel de urgencia del problema. Use <em>Crítica</em> solo si el problema detiene la operación del negocio.</td><td>Baja · Media · Alta · Crítica</td></tr>
+      <tr><td><i class="fas fa-align-left"></i>Descripción</td><td>Explique el problema con detalle: qué acción realizó, qué esperaba y qué ocurrió en cambio.</td><td>Texto libre (campo grande)</td></tr>
+    </tbody>
+  </table>
+
+  <figure style="margin-top:16px;">
+    <div class="shot mid"><img src="../assets/m12-03-tickets-formulario.png" alt="Formulario con datos de ejemplo"></div>
+    <figcaption>Formulario completado: asunto descriptivo, categoría Facturación, prioridad Alta y descripción detallada del error.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="band">
+    <h3><i class="fas fa-lightbulb"></i> ¿Qué escribir en la descripción?</h3>
+    <p>Una buena descripción acelera la resolución. Incluya: <b>(1)</b> qué intentaba hacer, <b>(2)</b> en qué pantalla o módulo ocurrió, <b>(3)</b> qué mensaje de error apareció exactamente, y <b>(4)</b> si el problema ocurre siempre o solo en ciertos casos (período, empresa, usuario). Si puede, adjunte el número de RUT, folio o período afectado.</p>
+  </div>
+
+  <ol class="steps">
+    <li>Presione <b>Nuevo ticket</b> en la esquina superior derecha.</li>
+    <li>Escriba un <b>asunto</b> descriptivo que resuma el problema en una línea.</li>
+    <li>Seleccione la <b>categoría</b> que mejor corresponde al área del ERP afectada.</li>
+    <li>Indique la <b>prioridad</b>: use Alta o Crítica solo cuando el problema bloquea la operación.</li>
+    <li>Redacte la <b>descripción</b> con el mayor detalle posible: qué hizo, qué ocurrió, en qué período.</li>
+    <li>Haga clic en <b>Crear ticket</b>. El ticket aparecerá en su lista con estado <span class="chip blue">Nuevo</span>.</li>
+  </ol>
+
+  <div class="tip">
+    <div class="ic"><i class="fas fa-circle-xmark"></i></div>
+    <div class="tx"><b>Para cancelar</b>, presione <b>Cancelar</b> o la <b>×</b> en la esquina del formulario. Ningún dato se guarda.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 4 — CICLO DE VIDA ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">4</span> Ciclo de vida de un ticket</h2>
+  <p class="sub">De la apertura al cierre, siempre con visibilidad del estado.</p>
+  <p>Cada ticket avanza por estados que indican en qué etapa de resolución se encuentra. El equipo de soporte de Tenri gestiona las transiciones; usted puede ver el estado en cualquier momento:</p>
+
+  <div class="lifecycle">
+    <div class="st"><i class="fas fa-circle-dot" style="color:#3b82f6"></i> <span class="lbl">Nuevo</span></div>
+    <div class="arr"><i class="fas fa-chevron-right"></i></div>
+    <div class="st"><i class="fas fa-folder-open" style="color:#f59e0b"></i> <span class="lbl">Abierto</span></div>
+    <div class="arr"><i class="fas fa-chevron-right"></i></div>
+    <div class="st"><i class="fas fa-clock" style="color:#8b5cf6"></i> <span class="lbl">Esp. respuesta</span></div>
+    <div class="arr"><i class="fas fa-chevron-right"></i></div>
+    <div class="st hi"><i class="fas fa-circle-check"></i> <span class="lbl">Resuelto</span></div>
+    <div class="arr"><i class="fas fa-chevron-right"></i></div>
+    <div class="st"><i class="fas fa-lock" style="color:#64748b"></i> <span class="lbl">Cerrado</span></div>
+  </div>
+
+  <table style="margin-top:12px;">
+    <thead><tr><th>Estado</th><th>Significado</th><th>¿Puede responder?</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip blue">Nuevo</span></td><td>Ticket creado, aún no revisado por soporte.</td><td>Sí</td></tr>
+      <tr><td><span class="chip amber">Abierto</span></td><td>Soporte está trabajando en la resolución.</td><td>Sí</td></tr>
+      <tr><td><span class="chip purple">Esp. respuesta</span></td><td>Soporte requiere más información de su parte.</td><td>Sí — responda para avanzar</td></tr>
+      <tr><td><span class="chip green">Resuelto</span></td><td>El problema fue solucionado por el equipo.</td><td>No</td></tr>
+      <tr><td><span class="chip slate">Cerrado</span></td><td>Ticket archivado (resuelto + confirmado).</td><td>No</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip warn">
+    <div class="ic"><i class="fas fa-triangle-exclamation"></i></div>
+    <div class="tx"><b>Estado "Esperando respuesta":</b> cuando soporte le pide información adicional, el ticket queda en este estado. <b>Responda a la brevedad</b> para evitar que el ticket se cierre automáticamente por inactividad.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 5 — DETALLE Y CONVERSACIÓN ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Detalle del ticket y conversación</h2>
+  <p class="sub">El hilo completo de mensajes, en orden cronológico.</p>
+  <p>Al hacer clic en un ticket de la lista, se abre la <b>vista de detalle</b>. Esta pantalla muestra toda la información del ticket y el hilo de mensajes entre su empresa y el equipo de soporte:</p>
+
+  <table>
+    <thead><tr><th>Elemento</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-file-lines"></i>Encabezado del ticket</td><td>Asunto, código, categoría, prioridad y estado actual del ticket.</td></tr>
+      <tr><td><i class="fas fa-user-tie"></i>Asignado a</td><td>El agente de soporte de Tenri responsable de su caso (si ya fue asignado).</td></tr>
+      <tr><td><i class="fas fa-comments"></i>Hilo de mensajes</td><td>Conversación cronológica. Los mensajes del equipo de soporte aparecen con la etiqueta <span class="chip blue">Soporte</span>; los suyos aparecen con su nombre.</td></tr>
+      <tr><td><i class="fas fa-reply"></i>Campo de respuesta</td><td>Área de texto para agregar un nuevo mensaje al hilo. Visible solo si el ticket está activo (no resuelto ni cerrado).</td></tr>
+      <tr><td><i class="fas fa-paper-plane"></i>Botón Responder</td><td>Envía su mensaje y actualiza el hilo en tiempo real.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="divider"><span class="dot"><i class="fas fa-comment"></i></span></div>
+
+  <p><b>Cómo responder en un ticket:</b></p>
+  <ol class="steps">
+    <li>En la lista, haga clic en el ticket al que desea responder.</li>
+    <li>Lea el hilo de mensajes para ponerse en contexto con la última respuesta del equipo.</li>
+    <li>Escriba su respuesta en el campo de texto al final de la pantalla.</li>
+    <li>Haga clic en <b>Responder</b>. Su mensaje queda registrado y el equipo recibirá una notificación.</li>
+  </ol>
+
+  <div class="tip">
+    <div class="ic"><i class="fas fa-arrow-left"></i></div>
+    <div class="tx"><b>Volver a la lista</b> en cualquier momento con el enlace <em>← Volver a tickets</em> que aparece en la parte superior de la vista de detalle.</div>
+  </div>
+
+  <div class="tip warn">
+    <div class="ic"><i class="fas fa-ban"></i></div>
+    <div class="tx"><b>Tickets cerrados o resueltos</b> no permiten agregar más respuestas. Si el problema persiste después del cierre, abra un <b>nuevo ticket</b> haciendo referencia al código del ticket anterior.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 6 — BUENAS PRÁCTICAS ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">6</span> Buenas prácticas de soporte</h2>
+  <p class="sub">Cómo obtener la resolución más rápida.</p>
+
+  <table>
+    <thead><tr><th>Situación</th><th>Recomendación</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-bolt"></i>Problema crítico</td><td>Abra el ticket con prioridad <b>Crítica</b> y describa el impacto en la operación: qué proceso está detenido y desde cuándo.</td></tr>
+      <tr><td><i class="fas fa-bug"></i>Error del sistema</td><td>Indique la <b>pantalla exacta</b>, el <b>mensaje de error</b> completo, el <b>período o folio</b> afectado, y los pasos para reproducir el error.</td></tr>
+      <tr><td><i class="fas fa-circle-question"></i>Consulta de uso</td><td>Use categoría <b>ERP</b> y prioridad <b>Media</b> o <b>Baja</b>. Describa qué intenta hacer y en qué módulo.</td></tr>
+      <tr><td><i class="fas fa-file-invoice"></i>Problema de facturación / SII</td><td>Use categoría <b>Facturación</b> e incluya el RUT receptor, folio del DTE, y el código o mensaje de error del SII.</td></tr>
+      <tr><td><i class="fas fa-clock-rotate-left"></i>Seguimiento</td><td>Revise el ticket en el ERP: si el estado es <span class="chip purple">Esp. respuesta</span>, soporte le ha preguntado algo. Responda para desbloquear la resolución.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="band" style="margin-top:18px;">
+    <h3><i class="fas fa-shield-halved"></i> Privacidad de los tickets</h3>
+    <p>Los tickets son visibles <b>solo para los usuarios de su empresa</b> y el equipo de soporte de Tenri. No comparta en los mensajes credenciales, contraseñas, ni datos personales de terceros más allá de lo necesario para diagnosticar el problema. Tenri ERP Cloud opera bajo la <b>Ley 19.628</b> y la <b>Ley 21.719</b> de protección de datos personales.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ CIERRE ═══════════════════ -->
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:18px;"><span class="mark"><i class="fas fa-headset"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">En <b>resumen</b></div>
+  <p class="intro">El módulo Soporte conecta a su empresa directamente con el equipo de Tenri: abra tickets, siga su avance y mantenga el historial de conversación sin salir del ERP.</p>
+  <div class="recap">
+    <div class="c"><div class="ic"><i class="fas fa-inbox"></i></div><h4>Mis tickets</h4><p>Lista con estado, prioridad y mensajes de cada solicitud. Filtre por estado en un clic.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-plus"></i></div><h4>Nuevo ticket</h4><p>Formulario rápido: asunto, categoría, prioridad y descripción detallada del problema.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-comments"></i></div><h4>Conversación</h4><p>Hilo de mensajes bidireccional. Responda mientras el ticket está activo para agilizar la resolución.</p></div>
+  </div>
+  <div class="cta">
+    <div class="l"><b>Siguiente módulo</b><span>Administración del sistema: usuarios, roles y empresa.</span></div>
+    <div class="go">13 · Administración <i class="fas fa-arrow-right"></i></div>
+  </div>
+  <div class="foot"><span><b>Tenri ERP Cloud</b> · Manual de usuario 12 — Soporte</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>
