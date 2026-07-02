@@ -3,6 +3,7 @@
 namespace App\Domains\Inventario\Controllers;
 
 use App\Domains\Inventario\Exceptions\InventarioException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Inventario\Services\InventarioService;
 use Exception;
@@ -52,7 +53,7 @@ class ProductoController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
             ], 404);
         }
     }
@@ -89,7 +90,7 @@ class ProductoController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }
@@ -125,7 +126,7 @@ class ProductoController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }

@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\PlanCuentaService;
+use App\Support\MensajeErrorGenerico;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Exception;
@@ -58,7 +59,7 @@ class PlanCuentaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -97,7 +98,7 @@ class PlanCuentaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -112,7 +113,7 @@ class PlanCuentaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 500);
         }
     }
@@ -129,7 +130,7 @@ class PlanCuentaController
             $code = $e->getCode() === 404 ? 404 : 422;
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], $code);
         }
     }

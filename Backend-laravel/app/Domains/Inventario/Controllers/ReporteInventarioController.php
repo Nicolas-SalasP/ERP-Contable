@@ -3,6 +3,7 @@
 namespace App\Domains\Inventario\Controllers;
 
 use App\Domains\Inventario\Exceptions\InventarioException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
@@ -307,7 +308,7 @@ class ReporteInventarioController
     {
         return response()->json([
             'success' => false,
-            'message' => $e->getMessage(),
+            'message' => MensajeErrorGenerico::desde($e),
         ], 422);
     }
 }
