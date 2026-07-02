@@ -17,6 +17,9 @@
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/poppins": "^5.2.7",
+    "@fortawesome/fontawesome-free": "^7.3.0",
     "@sentry/react": "^10.57.0",
     "axios": "^1.13.2",
     "jspdf": "^4.2.0",
