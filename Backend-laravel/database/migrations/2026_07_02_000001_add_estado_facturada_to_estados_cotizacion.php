@@ -7,18 +7,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!DB::table('estados_cotizacion')->where('nombre', 'Facturada')->exists()) {
-            DB::table('estados_cotizacion')->insert([
+        if (!DB::table('estado_cotizaciones')->where('nombre', 'Facturada')->exists()) {
+            DB::table('estado_cotizaciones')->insert([
                 'nombre'      => 'Facturada',
                 'descripcion' => 'Convertida en factura de venta',
-                'created_at'  => now(),
-                'updated_at'  => now(),
             ]);
         }
     }
 
     public function down(): void
     {
-        DB::table('estados_cotizacion')->where('nombre', 'Facturada')->delete();
+        DB::table('estado_cotizaciones')->where('nombre', 'Facturada')->delete();
     }
 };
