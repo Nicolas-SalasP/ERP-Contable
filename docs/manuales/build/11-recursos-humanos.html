@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;background:#0b1120;color:#fff;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;} .em{color:var(--emerald-d);font-weight:700;}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+  .cta{margin-top:18px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;color:#04241a;box-shadow:0 16px 30px rgba(16,185,129,.30);}
+  .cta .l b{font-family:'Poppins';font-size:13pt;color:#04241a;display:block;} .cta .l span{font-size:9.5pt;color:#063f2e;}
+  .cta .go{font-family:'Poppins';font-weight:800;color:#fff;font-size:12pt;display:flex;align-items:center;gap:9px;}
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+<body>
+
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 11</div>
+  <h1><b>Recursos</b> Humanos</h1>
+  <p class="lead">Del contrato al pago: administre a su personal, calcule las liquidaciones de sueldo con la normativa chilena y genere Previred, LRE y los libros obligatorios, todo conectado a la contabilidad.</p>
+  <div class="hero"><img src="../assets/m11-01-empleados.png" alt="Ficha de Personal"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Recursos Humanos</div>
+    <div><b>Capturas</b>Sistema real en vivo</div>
+  </div>
+</div>
+
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Recursos Humanos</h2>
+  <p class="sub">Diez pantallas que cubren el ciclo completo de remuneraciones.</p>
+  <p>Recursos Humanos gestiona a las personas y su remuneración de punta a punta. Sus pantallas siguen el flujo natural del trabajo:</p>
+  <table>
+    <thead><tr><th>Bloque</th><th>Pantallas</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-id-card"></i>Personal</td><td>Empleados (Ficha de Personal), Contratos.</td></tr>
+      <tr><td><i class="fas fa-sliders"></i>Configuración</td><td>Parámetros Previsionales, Centralización Contable.</td></tr>
+      <tr><td><i class="fas fa-calculator"></i>Cálculo</td><td>Liquidaciones de Sueldo, Finiquitos.</td></tr>
+      <tr><td><i class="fas fa-file-arrow-up"></i>Declaraciones y libros</td><td>Archivo Previred, LRE, EMRCL, Libro de Remuneraciones.</td></tr>
+    </tbody>
+  </table>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-shield-halved"></i></div>
+    <div class="tx"><b>Datos sensibles protegidos.</b> Los datos personales, previsionales y bancarios de cada trabajador (RUT, cuenta bancaria) se guardan <b>cifrados</b>. En los listados el RUT aparece <b>enmascarado</b> por privacidad, conforme a la Ley 21.719 de protección de datos.</div>
+  </div>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">2</span> Empleados (Ficha de Personal)</h2>
+  <p class="sub">El registro maestro de cada trabajador.</p>
+  <p>Con <b>+ Nuevo empleado</b> crea una ficha. Cada trabajador reúne sus datos personales, previsionales y bancarios, que luego alimentan el cálculo de sueldos:</p>
+  <table>
+    <thead><tr><th>Grupo de datos</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-user"></i>Personales</td><td>RUT, nombres y apellidos, fecha de nacimiento, estado civil, dirección y contacto.</td></tr>
+      <tr><td><i class="fas fa-piggy-bank"></i>Previsionales</td><td><b>AFP</b> y sistema de <b>salud</b> (FONASA o ISAPRE, con su plan en UF).</td></tr>
+      <tr><td><i class="fas fa-building-columns"></i>Bancarios</td><td>Banco, tipo y número de cuenta para el pago del sueldo (cifrados).</td></tr>
+      <tr><td><i class="fas fa-toggle-on"></i>Estado</td><td>Si el empleado está <b>Activo</b> en la empresa.</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m11-01-empleados.png" alt="Ficha de Personal"></div>
+    <figcaption>Listado de empleados con AFP, salud, fecha de ingreso y estado. El RUT se muestra enmascarado.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">3</span> Contratos</h2>
+  <p class="sub">La relación laboral de cada empleado.</p>
+  <p>Cada trabajador tiene un <b>contrato vigente</b> que define su remuneración y condiciones. Seleccione un empleado para ver su historial de contratos; con <b>+ Nuevo contrato</b> registra uno nuevo (lo que desactiva el anterior). El contrato define:</p>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-file-contract"></i>Tipo</td><td>Indefinido, plazo fijo u obra/faena.</td></tr>
+      <tr><td><i class="fas fa-briefcase"></i>Cargo y departamento</td><td>La función y el área del trabajador.</td></tr>
+      <tr><td><i class="fas fa-money-bill-wave"></i>Sueldo base</td><td>La remuneración fija mensual, base del cálculo.</td></tr>
+      <tr><td><i class="fas fa-clock"></i>Jornada</td><td>Horas semanales y tipo de jornada.</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m11-02-contratos.png" alt="Contratos"></div>
+    <figcaption>Contrato vigente del empleado seleccionado, con tipo, cargo, inicio, sueldo base y estado.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">4</span> Parámetros Previsionales</h2>
+  <p class="sub">El motor legal que alimenta todo el cálculo.</p>
+  <p>Antes de liquidar sueldos, el sistema necesita las <b>tasas, topes e indicadores legales</b> vigentes. Esta pantalla los centraliza, evitando “números mágicos” en el cálculo. Se organiza en tres pestañas:</p>
+  <ol class="steps">
+    <li><b>Previsionales</b> — cotización AFP (10%), SIS, salud FONASA (7%), tope imponible (90 UF), tasas de AFC (seguro de cesantía), comisiones de cada AFP y el ingreso mínimo.</li>
+    <li><b>Indicadores UF/UTM</b> — los valores mensuales de UF y UTM.</li>
+    <li><b>Tabla Impuesto Único</b> — los tramos del impuesto de segunda categoría.</li>
+  </ol>
+  <figure>
+    <div class="shot"><img src="../assets/m11-05-parametros.png" alt="Parámetros Previsionales"></div>
+    <figcaption>Parámetros vigentes desde enero 2026: tasas, topes, comisiones AFP e ingreso mínimo.</figcaption>
+  </figure>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-circle-info"></i></div>
+    <div class="tx">Estos valores cambian por normativa (Superintendencia de Pensiones, SII, INE). Manténgalos actualizados: <b>de ellos dependen todas las liquidaciones</b>.</div>
+  </div>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Liquidaciones de Sueldo</h2>
+  <p class="sub">El cálculo mensual del sueldo líquido, automático.</p>
+  <p>Elija el <b>año</b> y el <b>mes</b> y presione <b>Calcular liquidación</b>. Para cada empleado con contrato vigente, el sistema calcula automáticamente, según los parámetros legales:</p>
+  <table>
+    <thead><tr><th>Concepto</th><th>Qué incluye</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-plus"></i>Haberes imponibles</td><td>Sueldo base, gratificación y otros haberes afectos.</td></tr>
+      <tr><td><i class="fas fa-minus"></i>Descuentos</td><td>AFP, salud, seguro de cesantía (AFC) e impuesto único.</td></tr>
+      <tr><td><i class="fas fa-equals"></i>Líquido a pagar</td><td>El monto final que recibe el trabajador.</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <div class="shot"><img src="../assets/m11-03-liquidaciones.png" alt="Liquidaciones de Sueldo"></div>
+    <figcaption>Liquidaciones del período con imponible, descuentos y líquido de cada trabajador.</figcaption>
+  </figure>
+  <p>Cada liquidación tiene un ciclo de estados: <span class="chip">BORRADOR</span> → <span class="chip">EMITIDA</span> → <span class="chip">PAGADA</span>. Solo las liquidaciones <b>emitidas</b> alimentan Previred, el LRE y los libros.</p>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">6</span> Finiquitos</h2>
+  <p class="sub">El cálculo del término de la relación laboral.</p>
+  <p>Al terminar un contrato, la pantalla de <b>Finiquitos</b> calcula la <b>indemnización por años de servicio</b>, el <b>aviso previo</b> y las <b>vacaciones proporcionales</b> según el Código del Trabajo y la causal de término. Con <b>Calcular finiquito</b> genera el documento con su total neto.</p>
+  <figure>
+    <div class="shot mid"><img src="../assets/m11-04-finiquitos.png" alt="Finiquitos"></div>
+    <figcaption>Bandeja de finiquitos: empleado, causal, fecha de término, total neto y estado.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">7</span> Centralización Contable</h2>
+  <p class="sub">Del sueldo a la contabilidad, en un asiento.</p>
+  <p>La <b>Centralización Contable</b> convierte las liquidaciones emitidas del mes en el <b>asiento de remuneraciones</b> (partida doble). El <b>Mapeo contable</b> asocia cada categoría de RR.HH. a una cuenta imputable de su Plan de Cuentas:</p>
+  <table>
+    <thead><tr><th>Categoría</th><th>Ejemplo de cuenta</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-arrow-trend-up"></i>Gasto: Remuneraciones</td><td>621005 · Gasto Remuneraciones.</td></tr>
+      <tr><td><i class="fas fa-arrow-trend-up"></i>Gasto: Leyes sociales (empleador)</td><td>621010 · Gasto Leyes Sociales.</td></tr>
+      <tr><td><i class="fas fa-arrow-trend-down"></i>Pasivo: Líquido por pagar</td><td>353205 · Remuneraciones por pagar.</td></tr>
+      <tr><td><i class="fas fa-arrow-trend-down"></i>Pasivo: Retenciones previsionales</td><td>353248 · Retenciones Previsionales.</td></tr>
+    </tbody>
+  </table>
+  <p>Elija el período y presione <b>Centralizar período</b> para generar el asiento en Contabilidad General.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m11-06-centralizacion.png" alt="Centralización Contable"></div>
+    <figcaption>Mapeo de categorías de remuneraciones a las cuentas contables del Plan de Cuentas.</figcaption>
+  </figure>
+</section>
+
+<div class="band">
+  <h3><i class="fas fa-file-arrow-up"></i> Cumplimiento: lo que se declara cada mes</h3>
+  <p>A partir de las liquidaciones <b>emitidas</b>, el módulo genera automáticamente los archivos y libros que exige la normativa: la planilla <b>Previred</b>, el <b>Libro de Remuneraciones Electrónico (LRE)</b>, la encuesta <b>EMRCL</b> del INE y el <b>Libro de Remuneraciones</b>.</p>
+</div>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">8</span> Archivo Previred</h2>
+  <p class="sub">La planilla mensual de cotizaciones previsionales.</p>
+  <p>Genera la <b>planilla Previred</b> (CSV) del mes a partir de las liquidaciones emitidas, lista para subir a <i>previred.com</i> y pagar las cotizaciones. Elija el período, use <b>Previsualizar</b> para revisar los datos de los trabajadores y <b>Descargar CSV</b> para obtener el archivo.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m11-07-previred.png" alt="Archivo Previred"></div>
+    <figcaption>Previsualización de la planilla Previred con los 5 trabajadores del período.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">9</span> LRE — Libro de Remuneraciones Electrónico</h2>
+  <p class="sub">El libro obligatorio de la Dirección del Trabajo.</p>
+  <p>El <b>LRE</b> es el libro que se sube al portal <b>Mi DT</b> de la Dirección del Trabajo. Con <b>Generar LRE</b> se arma el libro del período; luego puede <b>Validar</b> su formato y <b>Descargar archivo</b>. El <b>Historial de LRE</b> registra cada libro generado y su estado de confirmación.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m11-08-lre.png" alt="LRE"></div>
+    <figcaption>LRE de junio generado con 5 trabajadores, listo para validar y descargar.</figcaption>
+  </figure>
+</section>
+
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">10</span> Libro de Remuneraciones y EMRCL</h2>
+  <p class="sub">El libro auxiliar y la encuesta del INE.</p>
+  <p>El <b>Libro de Remuneraciones</b> (DFL‑1 Art. 62 del Código del Trabajo, obligatorio desde 5 trabajadores) resume, por empleado, sueldo base, haberes, descuentos previsionales y líquido, con sus totales. Se puede descargar en Excel o PDF.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m11-10-libro.png" alt="Libro de Remuneraciones"></div>
+    <figcaption>Libro de Remuneraciones de junio con el detalle por trabajador y los totales del mes.</figcaption>
+  </figure>
+  <p>El <b>Reporte EMRCL</b> arma la <i>Encuesta de Remuneraciones y Costo de la Mano de Obra</i> del INE, con los cuadros de trabajadores, remuneraciones y deducciones. Es un <b>reporte de apoyo</b>: los valores se copian al formulario web oficial del INE.</p>
+  <figure>
+    <div class="shot"><img src="../assets/m11-09-emrcl.png" alt="Reporte EMRCL"></div>
+    <figcaption>EMRCL: cuadros de trabajadores y remuneraciones por sexo, listos para el formulario del INE.</figcaption>
+  </figure>
+</section>
+
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:18px;"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">En <b>resumen</b></div>
+  <p class="intro">Recursos Humanos administra al personal, calcula las remuneraciones con la normativa chilena y genera las declaraciones y libros obligatorios, todo conectado a la contabilidad.</p>
+  <div class="recap">
+    <div class="c"><div class="ic"><i class="fas fa-id-card"></i></div><h4>Personal</h4><p>Fichas de empleados y contratos como base de todo el módulo.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-calculator"></i></div><h4>Remuneraciones</h4><p>Liquidaciones y finiquitos calculados con AFP, salud, AFC e impuesto.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-file-arrow-up"></i></div><h4>Cumplimiento</h4><p>Previred, LRE, EMRCL, Libro de Remuneraciones y centralización contable.</p></div>
+  </div>
+  <div class="cta">
+    <div class="l"><b>Siguiente módulo</b><span>Tickets de ayuda y seguimiento de soporte.</span></div>
+    <div class="go">12 · Soporte <i class="fas fa-arrow-right"></i></div>
+  </div>
+  <div class="foot"><span><b>Tenri ERP Cloud</b> · Manual de usuario 11 — Recursos Humanos</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>

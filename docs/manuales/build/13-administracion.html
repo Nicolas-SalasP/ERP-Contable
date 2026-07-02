@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+  .tip.warn{background:linear-gradient(0deg,#fffbeb,#fef9e7);border-color:#fde68a;}
+  .tip.warn .ic{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 5px 12px rgba(245,158,11,.35);}
+  .tip.warn .tx{color:#78350f;} .tip.warn .tx b{color:#b45309;}
+  .tip.info{background:linear-gradient(0deg,#eff6ff,#ebf4ff);border-color:#bfdbfe;}
+  .tip.info .ic{background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 5px 12px rgba(59,130,246,.30);}
+  .tip.info .tx{color:#1e3a5f;} .tip.info .tx b{color:#1d4ed8;}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;}
+  .chip.dark{background:#0b1120;color:#fff;}
+  .chip.green{background:#dcfce7;color:#166534;}
+  .chip.blue{background:#dbeafe;color:#1d4ed8;}
+  .chip.red{background:#fee2e2;color:#991b1b;}
+  .em{color:var(--emerald-d);font-weight:700;}
+
+  /* Two-column grid for screenshots */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0;}
+  .grid2 figure{margin:0;}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+  .cta{margin-top:18px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;color:#04241a;box-shadow:0 16px 30px rgba(16,185,129,.30);}
+  .cta .l b{font-family:'Poppins';font-size:13pt;color:#04241a;display:block;} .cta .l span{font-size:9.5pt;color:#063f2e;}
+  .cta .go{font-family:'Poppins';font-weight:800;color:#fff;font-size:12pt;display:flex;align-items:center;gap:9px;}
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ PORTADA ═══════════════════ -->
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-cogs"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 13</div>
+  <h1><b>Administración</b></h1>
+  <p class="lead">Configure su empresa, gestione el equipo de trabajo, defina roles y permisos, y mantenga el cumplimiento legal de protección de datos, todo desde un único panel.</p>
+  <div class="hero"><img src="../assets/m13-04-usuarios.png" alt="Gestión de Equipo"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Administración</div>
+    <div><b>Capturas</b>Sistema real en vivo</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SECCIÓN 1 — DESCRIPCIÓN GENERAL ═══════════════════ -->
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Administración</h2>
+  <p class="sub">Configuración de empresa, usuarios, roles y cumplimiento legal.</p>
+  <p>La sección <b>Administración</b> agrupa todo lo que define el funcionamiento del ERP para su empresa: los datos legales, las cuentas bancarias, el equipo de trabajo y sus permisos, y el cumplimiento normativo de protección de datos personales.</p>
+  <table>
+    <thead><tr><th>Pantalla</th><th>Ruta</th><th>Para qué sirve</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-building"></i>Mi Empresa</td><td>/empresa/perfil</td><td>Datos legales, logo, régimen tributario, bancos y centros de costo.</td></tr>
+      <tr><td><i class="fas fa-users"></i>Gestión de Equipo</td><td>/empresa/usuarios</td><td>Lista de usuarios activos, invitación y cambio de rol.</td></tr>
+      <tr><td><i class="fas fa-shield-halved"></i>Roles y Permisos</td><td>/empresa/roles</td><td>Creación y edición de roles con permisos granulares por módulo.</td></tr>
+      <tr><td><i class="fas fa-user-tie"></i>Propietarios Empresa</td><td>/empresa/propietarios</td><td>Registro de propietarios para el cumplimiento de la Ley 20.447.</td></tr>
+      <tr><td><i class="fas fa-lock"></i>Protección de Datos (DPO)</td><td>/cumplimiento</td><td>Auditoría de acceso a datos personales e incidentes de seguridad.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <div class="ic"><i class="fas fa-crown"></i></div>
+    <div class="tx"><b>Acceso restringido.</b> Las pantallas de Administración solo son visibles para usuarios con los permisos <span class="chip dark">usuarios.ver</span> o <span class="chip dark">usuarios.gestionar</span>. El Dueño/Super Admin tiene acceso completo; los demás roles solo acceden a lo que su perfil permite.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 2 — PERFIL EMPRESA ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">2</span> Mi Empresa — Datos generales</h2>
+  <p class="sub">Los datos legales y tributarios que identifican a su empresa en el ERP.</p>
+  <p>Acceda desde <b>Administración → Mi Empresa</b> o desde el nombre de empresa en la parte inferior de la barra lateral. La pantalla tiene tres pestañas: <b>Información &amp; Logo</b>, <b>Cuentas Bancarias</b> y <b>Centros de Costo</b>.</p>
+
+  <figure>
+    <div class="shot"><img src="../assets/m13-01-perfil-empresa.png" alt="Perfil de Empresa - General"></div>
+    <figcaption>Pestaña "Información &amp; Logo": RUT, razón social, régimen tributario, dirección y datos de contacto.</figcaption>
+  </figure>
+
+  <p style="margin-top:12px;">Los campos de la pestaña <b>Información &amp; Logo</b> configuran la identidad legal de la empresa en documentos y operaciones:</p>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-id-card"></i>RUT Empresa</td><td>El RUT legal chileno de la empresa (se usa en DTE, F29, F22 y todos los documentos tributarios).</td></tr>
+      <tr><td><i class="fas fa-building"></i>Razón Social</td><td>El nombre legal completo de la empresa tal como aparece en el SII.</td></tr>
+      <tr><td><i class="fas fa-scale-balanced"></i>Régimen Tributario</td><td>El régimen vigente (Renta Pro Pyme General, Renta Atribuida, etc.), que determina la tasa de impuesto y el cálculo del F22.</td></tr>
+      <tr><td><i class="fas fa-location-dot"></i>Dirección Comercial</td><td>Calle, número, comuna: aparece en las facturas electrónicas emitidas.</td></tr>
+      <tr><td><i class="fas fa-envelope"></i>Email / Teléfono</td><td>Datos de contacto de la empresa para notificaciones del sistema.</td></tr>
+      <tr><td><i class="fas fa-image"></i>Logo</td><td>Imagen en PNG/JPG que aparece en las cotizaciones y documentos PDF exportados.</td></tr>
+    </tbody>
+  </table>
+  <div class="tip">
+    <div class="ic"><i class="fas fa-floppy-disk"></i></div>
+    <div class="tx">Presione <b>Guardar Cambios</b> al finalizar la edición. El RUT y la razón social deben coincidir exactamente con los registros del SII.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 3 — BANCOS Y CENTROS ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">3</span> Cuentas Bancarias y Centros de Costo</h2>
+  <p class="sub">Las dos pestañas complementarias del Perfil de Empresa.</p>
+
+  <div class="grid2">
+    <figure>
+      <div class="shot"><img src="../assets/m13-02-empresa-bancos.png" alt="Cuentas Bancarias"></div>
+      <figcaption>Pestaña Cuentas Bancarias: formulario de alta y tabla de cuentas registradas.</figcaption>
+    </figure>
+    <figure>
+      <div class="shot"><img src="../assets/m13-03-empresa-centros.png" alt="Centros de Costo"></div>
+      <figcaption>Pestaña Centros de Costo: código, nombre del departamento y lista de centros creados.</figcaption>
+    </figure>
+  </div>
+
+  <p style="margin-top:14px;"><b>Cuentas Bancarias</b> — Registre las cuentas con las que la empresa paga proveedores o recibe pagos. Cada cuenta requiere:</p>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-university"></i>Institución</td><td>Banco o entidad financiera (Banco de Chile, BCI, Santander, etc.).</td></tr>
+      <tr><td><i class="fas fa-credit-card"></i>Tipo de cuenta</td><td>Cuenta corriente, vista, ahorro u otra.</td></tr>
+      <tr><td><i class="fas fa-hashtag"></i>N° de cuenta</td><td>Número completo de la cuenta bancaria.</td></tr>
+      <tr><td><i class="fas fa-link"></i>Cuenta contable</td><td>La cuenta del Plan de Cuentas asociada para la conciliación bancaria.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="divider"><span class="dot"><i class="fas fa-chart-pie"></i></span></div>
+
+  <p><b>Centros de Costo</b> — Divida los gastos e ingresos por área o proyecto para un análisis financiero más detallado. Cada centro tiene un <b>código</b> corto (p. ej., <span class="chip dark">ADMIN</span>) y un <b>nombre</b> descriptivo (p. ej., "Administración Central"). Una vez creados, puede asignarlos en asientos contables, compras y facturas.</p>
+
+  <div class="tip">
+    <div class="ic"><i class="fas fa-chart-bar"></i></div>
+    <div class="tx"><b>Beneficio de los centros de costo:</b> permiten filtrar el Libro Mayor y los reportes financieros por área, proyecto o sucursal, sin necesidad de llevar una contabilidad separada por empresa.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 4 — GESTIÓN DE EQUIPO ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">4</span> Gestión de Equipo</h2>
+  <p class="sub">Los usuarios que tienen acceso a su empresa en el ERP.</p>
+  <p>En <b>Administración → Gestión de Equipo</b> verá el listado de todos los usuarios que pueden ingresar al sistema con el contexto de su empresa. Para cada usuario se muestra:</p>
+
+  <figure>
+    <div class="shot"><img src="../assets/m13-04-usuarios.png" alt="Gestión de Equipo"></div>
+    <figcaption>Lista de usuarios activos con su rol, estado y acciones de edición.</figcaption>
+  </figure>
+
+  <table style="margin-top:12px;">
+    <thead><tr><th>Columna</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-user"></i>Usuario</td><td>Nombre, correo electrónico y avatar del usuario.</td></tr>
+      <tr><td><i class="fas fa-shield-halved"></i>Rol en el sistema</td><td>El rol asignado (Super Admin, Administrador, Contador, Auditor, etc.).</td></tr>
+      <tr><td><i class="fas fa-circle-dot"></i>Estado</td><td><span class="chip green">ACTIVO</span> o <span class="chip red">INACTIVO</span>.</td></tr>
+      <tr><td><i class="fas fa-wrench"></i>Acciones</td><td>Editar el rol del usuario o eliminarlo del equipo.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="band" style="margin-top:16px;">
+    <h3><i class="fas fa-user-plus"></i> Invitar a un nuevo miembro del equipo</h3>
+    <p>Presione <b>Invitar Usuario</b> para agregar a alguien al equipo. Solo necesita su correo electrónico y el rol inicial que tendrá. El sistema envía una invitación: si el usuario ya existe en Tenri, queda activo de inmediato; si no, recibirá un correo para crear su cuenta.</p>
+  </div>
+</section>
+
+<section>
+  <figure>
+    <div class="shot mid"><img src="../assets/m13-05-invitar-usuario.png" alt="Invitar usuario"></div>
+    <figcaption>Modal "Invitar al Equipo": ingrese el correo y elija el rol asignado inicialmente.</figcaption>
+  </figure>
+
+  <p style="margin-top:12px;"><b>Cómo invitar a un usuario:</b></p>
+  <ol class="steps">
+    <li>Presione el botón <b>Invitar Usuario</b> en la esquina superior derecha.</li>
+    <li>Ingrese el <b>correo electrónico</b> del nuevo integrante.</li>
+    <li>Seleccione el <b>rol</b> que tendrá desde el primer acceso (puede modificarse después).</li>
+    <li>Haga clic en <b>Enviar Invitación</b>. El usuario aparecerá en la lista de inmediato.</li>
+  </ol>
+
+  <div class="tip warn">
+    <div class="ic"><i class="fas fa-triangle-exclamation"></i></div>
+    <div class="tx"><b>Un usuario, un rol.</b> Cada integrante del equipo tiene un único rol activo. Si necesita que alguien tenga más accesos, cree un rol personalizado con los permisos exactos que necesita, en lugar de asignar el Super Admin.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 5 — ROLES Y PERMISOS ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Roles y Permisos</h2>
+  <p class="sub">Defina qué puede hacer cada perfil de su equipo.</p>
+  <p>Los <b>roles</b> son plantillas de permisos que se asignan a los usuarios. Tenri ERP Cloud incluye roles predeterminados (Super Admin, Administrador, Contador, Auditor) y permite crear roles personalizados con acceso granular a cada módulo.</p>
+
+  <figure>
+    <div class="shot"><img src="../assets/m13-06-roles.png" alt="Roles y Permisos"></div>
+    <figcaption>Panel de Roles y Permisos: lista de perfiles disponibles y matriz de permisos del rol seleccionado.</figcaption>
+  </figure>
+
+  <p style="margin-top:12px;">La pantalla se divide en dos paneles:</p>
+  <table>
+    <thead><tr><th>Panel</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-list"></i>Perfiles disponibles</td><td>Lista de todos los roles de la empresa. Los roles del sistema (<span class="chip dark">SISTEMA</span>) no se pueden eliminar. Se pueden <b>duplicar</b> para crear variantes personalizadas.</td></tr>
+      <tr><td><i class="fas fa-grid-2"></i>Matriz de permisos</td><td>Al seleccionar un rol, se muestra la cuadrícula de permisos por módulo: <b>Ver</b> y <b>Crear/Gestionar</b> para cada área del ERP.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="divider"><span class="dot"><i class="fas fa-plus"></i></span></div>
+
+  <p><b>Crear un rol personalizado:</b></p>
+  <ol class="steps">
+    <li>Haga clic en <b>+ Crear Nuevo Rol</b> en la parte inferior de la lista de perfiles.</li>
+    <li>Asigne un nombre descriptivo (p. ej., "Vendedor", "Cajero", "Gerente Comercial").</li>
+    <li>En la matriz, active los permisos <b>Ver</b> y <b>Crear</b> solo para los módulos que este rol necesita.</li>
+    <li>Alternativamente, use el botón <b>Duplicar</b> en un rol existente y ajuste los permisos.</li>
+  </ol>
+
+  <div class="tip">
+    <div class="ic"><i class="fas fa-copy"></i></div>
+    <div class="tx"><b>Consejo:</b> empiece duplicando el rol más cercano a lo que necesita y quite los permisos que sobran. Es más rápido que construir un rol desde cero.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 6 — PROPIETARIOS ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">6</span> Propietarios de la Empresa</h2>
+  <p class="sub">Registro obligatorio para transparencia corporativa.</p>
+  <p>La pantalla de <b>Propietarios</b> registra a las personas naturales o jurídicas que poseen participación en la empresa, cumpliendo con la <b>Ley 20.447 (Registro de Propietarios Finales)</b>. Para cada propietario se debe indicar:</p>
+
+  <figure>
+    <div class="shot"><img src="../assets/m13-07-propietarios.png" alt="Propietarios de la Empresa"></div>
+    <figcaption>Formulario de registro de propietarios con RUT, nombre y porcentaje de participación.</figcaption>
+  </figure>
+
+  <table style="margin-top:12px;">
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-id-card"></i>RUT</td><td>RUT chileno del propietario (persona natural o empresa).</td></tr>
+      <tr><td><i class="fas fa-user"></i>Nombre</td><td>Nombre completo del propietario o razón social si es persona jurídica.</td></tr>
+      <tr><td><i class="fas fa-percent"></i>% Participación</td><td>Porcentaje de participación accionaria o societaria.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip warn">
+    <div class="ic"><i class="fas fa-scale-balanced"></i></div>
+    <div class="tx"><b>Obligatorio para transparencia.</b> El registro de propietarios con participación ≥ 10% es un requisito legal para empresas sujetas a la Ley 20.447 de transparencia corporativa. Manténgalo actualizado cuando cambie la estructura societaria.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 7 — PANEL DPO ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">7</span> Protección de Datos — Panel DPO</h2>
+  <p class="sub">Auditoría de acceso a datos personales e incidentes de seguridad.</p>
+  <p>El <b>Panel del Delegado de Protección de Datos (DPO)</b> da cumplimiento a la <b>Ley 21.719</b> (Protección de Datos Personales) y la <b>Ley 21.663</b> (Marco de Ciberseguridad). Registra automáticamente toda operación sobre datos sensibles y gestiona los incidentes que deben notificarse a la CSIRT y la Agencia.</p>
+
+  <figure>
+    <div class="shot"><img src="../assets/m13-08-dpo.png" alt="Panel DPO"></div>
+    <figcaption>Panel DPO: pista de auditoría con fecha, operación, recurso afectado, usuario y campos modificados.</figcaption>
+  </figure>
+
+  <p style="margin-top:12px;">El panel tiene dos pestañas:</p>
+  <table>
+    <thead><tr><th>Pestaña</th><th>Qué muestra</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-file-shield"></i>Auditoría PII</td><td>Log completo de operaciones sobre datos personales: creación, actualización, eliminación y lectura de empleados, contratos, liquidaciones, cuentas bancarias y más. Filtrable por operación, tipo de recurso y rango de fechas.</td></tr>
+      <tr><td><i class="fas fa-triangle-exclamation"></i>Incidentes de seguridad</td><td>Registro de brechas de seguridad con su severidad (Baja / Media / Alta / Crítica), estado (Abierto / Contenido / Cerrado) y el plazo legal de notificación (72 h al CSIRT).</td></tr>
+    </tbody>
+  </table>
+
+  <div class="divider"><span class="dot"><i class="fas fa-filter"></i></span></div>
+
+  <p><b>Filtros disponibles en Auditoría PII:</b></p>
+  <table>
+    <thead><tr><th>Filtro</th><th>Valores posibles</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-bolt"></i>Operación</td><td>Todas · CREAR · ACTUALIZAR · ELIMINAR · LECTURA</td></tr>
+      <tr><td><i class="fas fa-layer-group"></i>Tipo de recurso</td><td>Empleado · Contrato · Liquidación · Carga familiar · Cuenta bancaria empresa · Cuenta bancaria proveedor</td></tr>
+      <tr><td><i class="fas fa-calendar"></i>Rango de fechas</td><td>Fecha desde / Fecha hasta en formato dd/mm/aaaa</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip info">
+    <div class="ic"><i class="fas fa-circle-info"></i></div>
+    <div class="tx"><b>Registro automático.</b> No requiere ninguna acción del usuario: el sistema registra automáticamente toda operación sobre datos personales o sensibles. El log es de solo lectura; no puede modificarse ni eliminarse, garantizando su integridad como evidencia legal.</div>
+  </div>
+
+  <div class="tip warn">
+    <div class="ic"><i class="fas fa-bell"></i></div>
+    <div class="tx"><b>Incidentes de seguridad:</b> según la Ley 21.663, los incidentes de ciberseguridad con impacto en datos personales deben notificarse al <b>CSIRT Nacional en un plazo máximo de 72 horas</b>. El panel registra la fecha del incidente y el plazo legal restante para facilitar este cumplimiento.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ CIERRE ═══════════════════ -->
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:18px;"><span class="mark"><i class="fas fa-cogs"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">En <b>resumen</b></div>
+  <p class="intro">Administración centraliza la configuración legal de la empresa, el acceso del equipo y el cumplimiento normativo de protección de datos, todo desde un único panel seguro.</p>
+  <div class="recap">
+    <div class="c"><div class="ic"><i class="fas fa-building"></i></div><h4>Mi Empresa</h4><p>Datos legales, logo, régimen tributario, cuentas bancarias y centros de costo.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-users-gear"></i></div><h4>Equipo y Roles</h4><p>Invitación de usuarios, asignación de roles y permisos granulares por módulo.</p></div>
+    <div class="c"><div class="ic"><i class="fas fa-shield-halved"></i></div><h4>Cumplimiento DPO</h4><p>Auditoría de datos personales e incidentes de seguridad según Ley 21.719 y 21.663.</p></div>
+  </div>
+  <div class="cta">
+    <div class="l"><b>Siguiente módulo</b><span>Glosario de términos y ayuda contextual del sistema.</span></div>
+    <div class="go">14 · Ayuda y Glosario <i class="fas fa-arrow-right"></i></div>
+  </div>
+  <div class="foot"><span><b>Tenri ERP Cloud</b> · Manual de usuario 13 — Administración</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>
