@@ -245,6 +245,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/facturas/{id}/nota-credito', [FacturaController::class, 'notaCredito'])->middleware('permiso:ventas.crear,compras.crear');
     Route::post('/facturas/{id}/nota-debito', [FacturaController::class, 'notaDebito'])->middleware('permiso:ventas.crear,compras.crear');
     Route::post('/facturas/{id}/vincular-proyecto', [FacturaController::class, 'vincularProyecto'])->middleware('permiso:activos.crear,compras.crear');
+    Route::post('/facturas/{id}/pdf', [FacturaController::class, 'subirPdf'])->middleware('permiso:compras.crear');
 
     // ---------------------------------------------------------------------
     // Comercial - Cotizaciones

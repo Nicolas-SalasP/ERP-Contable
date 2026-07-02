@@ -88,16 +88,9 @@ const CartolaBancaria = () => {
         Swal.fire({ title: 'Procesando Cartola...', text: 'Analizando ingresos y egresos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         try {
-            let token = localStorage.getItem('token') || sessionStorage.getItem('erp_token');
-            if (token && token.startsWith('"')) token = JSON.parse(token);
-
-            const response = await fetch(`${api.defaults?.baseURL || 'http://localhost/ERP-Contable/Backend/Public/api'}/banco/cartola/importar`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
+            const { data } = await api.post('/banco/importar', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
-
-            const data = await response.json();
 
             if (data.success) {
                 Swal.fire({

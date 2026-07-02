@@ -23,8 +23,8 @@ export default function SoporteTicketDetalle() {
   const cargar = async (signal) => {
     setError('');
     try {
-      const { data } = await api.get(`/soporte/tickets/${id}`, { signal });
-      setTicket(data);
+      const res = await api.get(`/soporte/tickets/${id}`, { signal });
+      setTicket(res?.data ?? res);
       setTimeout(() => {
         if (hiloRef.current) {
           hiloRef.current.scrollTop = hiloRef.current.scrollHeight;

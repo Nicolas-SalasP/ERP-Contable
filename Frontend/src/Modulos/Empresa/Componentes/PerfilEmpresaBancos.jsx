@@ -81,6 +81,9 @@ const PerfilEmpresaBancos = ({
                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                 N° Cuenta
                             </th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                Cta. Contable
+                            </th>
                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
                                 Acción
                             </th>
@@ -99,6 +102,12 @@ const PerfilEmpresaBancos = ({
                                     <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{b.banco}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-mono text-sm">
                                         {b.tipo_cuenta} • {b.numero_cuenta}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {b.cuenta_contable
+                                            ? <span className="font-mono text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded">{b.cuenta_contable}</span>
+                                            : <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded">Sin asignar</span>
+                                        }
                                     </td>
                                     <td className="px-6 py-4 text-center flex justify-center gap-2">
                                         <button

@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('file:///home/user/ERP-Contable/Frontend/node_modules/@fortawesome/fontawesome-free/css/all.min.css');
+  @font-face{font-family:'Inter';font-weight:400;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:700;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Poppins';font-weight:800;src:url('file:///home/user/ERP-Contable/Frontend/node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2') format('woff2');}
+
+  :root{--navy:#0b1120;--emerald:#10b981;--emerald-d:#059669;--emerald-l:#34d399;--ink:#0f172a;--body:#334155;--muted:#64748b;--line:#e6eaf0;--soft:#f8fafc;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{margin:0;padding:0;} body{font-family:'Inter',sans-serif;color:var(--body);font-size:10.5pt;line-height:1.55;}
+  @page{size:A4;margin:15mm 15mm 16mm 15mm;} @page:first{margin:0;} @page closing{margin:0;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;color:var(--ink);margin:0;} p{margin:0 0 8px;}
+  section{break-inside:avoid;margin:0 0 18px;} .page-break{break-after:page;} .break-before{break-before:page;}
+
+  .cover{height:297mm;width:210mm;color:#fff;padding:30mm 22mm;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(1200px 500px at 80% -10%, rgba(16,185,129,.20), transparent 60%),linear-gradient(160deg,#0b1120 0%,#0d1528 55%,#0a1322 100%);}
+  .cover::after{content:"";position:absolute;right:-60mm;bottom:-60mm;width:140mm;height:140mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),transparent 70%);}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Poppins';font-weight:800;font-size:17pt;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(16,185,129,.45);color:#fff;font-size:15px;}
+  .brand em{font-style:normal;color:var(--emerald);}
+  .cover .kicker{margin-top:auto;color:#9fb3c8;font-weight:600;letter-spacing:3px;text-transform:uppercase;font-size:9pt;}
+  .cover h1{color:#fff;font-size:33pt;line-height:1.08;font-weight:800;margin:10px 0 6px;}
+  .cover h1 b{background:linear-gradient(100deg,var(--emerald-l),var(--emerald) 55%,#0ea5a4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cover .lead{color:#c7d2e0;font-size:12pt;max-width:135mm;}
+  .cover .hero{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);}
+  .cover .hero img{display:block;width:100%;}
+  .cover .meta{display:flex;gap:26px;margin-top:18px;color:#9fb3c8;font-size:9.5pt;} .cover .meta b{color:#fff;display:block;font-size:10.5pt;}
+
+  .doc-h2{font-size:15.5pt;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .doc-h2 .num{flex:0 0 auto;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-size:11pt;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter';box-shadow:0 4px 10px rgba(16,185,129,.35);}
+  .sub{color:var(--muted);font-size:10pt;margin:0 0 12px;padding-left:38px;}
+
+  figure{margin:10px 0 2px;}
+  .shot{border:1px solid var(--line);border-radius:11px;overflow:hidden;box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .shot img{display:block;width:100%;}
+  .shot.mid{max-width:110mm;margin:0 auto;} .shot.small{max-width:72mm;margin:0 auto;}
+  figcaption{color:var(--muted);font-size:8.6pt;margin:7px 4px 0;font-style:italic;text-align:center;}
+
+  .tip{display:flex;gap:13px;background:linear-gradient(0deg,#f0fdf9,#ecfdf5);border:1px solid #c7f0e0;border-radius:12px;padding:13px 16px;margin:14px 0;break-inside:avoid;}
+  .tip .ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 5px 12px rgba(16,185,129,.35);}
+  .tip .tx{font-size:9.6pt;color:#0f5132;} .tip .tx b{color:var(--emerald-d);}
+  .tip.info{background:linear-gradient(0deg,#eff6ff,#ebf4ff);border-color:#bfdbfe;}
+  .tip.info .ic{background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 5px 12px rgba(59,130,246,.30);}
+  .tip.info .tx{color:#1e3a5f;} .tip.info .tx b{color:#1d4ed8;}
+
+  .band{margin:16px 0;border-radius:14px;padding:18px 22px;color:#eafff6;break-inside:avoid;position:relative;overflow:hidden;background:radial-gradient(600px 200px at 90% -40%, rgba(16,185,129,.35),transparent 60%),linear-gradient(135deg,#0b1120,#0f2438);}
+  .band h3{color:#fff;font-size:12.5pt;margin:0 0 4px;display:flex;align-items:center;gap:9px;} .band h3 i{color:var(--emerald-l);}
+  .band p{color:#bcd4c9;font-size:9.6pt;margin:0;}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:18px 4px;color:var(--muted);}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent);}
+  .divider .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:9.6pt;}
+  thead th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-weight:700;}
+  thead th:first-child{border-radius:9px 0 0 0;} thead th:last-child{border-radius:0 9px 0 0;}
+  tbody td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  tbody td:first-child{font-weight:700;color:var(--ink);white-space:nowrap;}
+  tbody td:first-child i{color:var(--emerald-d);margin-right:7px;width:14px;text-align:center;}
+  ol.steps{margin:6px 0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{position:relative;padding:2px 0 8px 30px;counter-increment:s;}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:#e7f7f0;color:var(--emerald-d);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-block;border-radius:6px;padding:1px 8px;font-size:8.5pt;font-weight:600;}
+  .chip.dark{background:#0b1120;color:#fff;}
+  .chip.blue{background:#dbeafe;color:#1d4ed8;}
+  .em{color:var(--emerald-d);font-weight:700;}
+
+  /* Grid de 2 columnas para capturas */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0;}
+  .grid2 figure{margin:0;}
+
+  /* Tabla de índice compacta de 3 columnas */
+  .indice{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 18px;margin:10px 0;}
+  .indice-item{display:flex;align-items:baseline;gap:6px;padding:4px 0;border-bottom:1px dotted var(--line);font-size:9pt;}
+  .indice-item .ico{font-size:11pt;line-height:1;}
+  .indice-item .lbl{color:var(--body);}
+
+  /* Detalle de sección del glosario */
+  .gsec{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:10px 0;break-inside:avoid;}
+  .gsec .gtit{font-family:'Poppins';font-weight:800;color:var(--ink);font-size:11pt;margin:0 0 6px;display:flex;align-items:center;gap:9px;}
+  .gsec .gtit .gbadge{font-size:8pt;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;border-radius:5px;padding:1px 7px;font-family:'Inter';}
+  .gsec ul{margin:4px 0;padding-left:16px;font-size:9.3pt;}
+  .gsec ul li{margin-bottom:3px;}
+
+  /* Ayuda contextual - botón decorativo */
+  .help-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#2563eb;color:#fff;font-weight:800;font-size:10pt;vertical-align:middle;margin:0 3px;box-shadow:0 3px 8px rgba(37,99,235,.4);}
+
+  .closing{page:closing;width:210mm;min-height:297mm;background:radial-gradient(900px 400px at 15% -10%, rgba(16,185,129,.18),transparent 55%),linear-gradient(160deg,#0b1120,#0d1a2e);color:#dbe6f0;padding:26mm 22mm;display:flex;flex-direction:column;}
+  .closing .ttl{font-family:'Poppins';font-weight:800;color:#fff;font-size:22pt;margin:0 0 4px;} .closing .ttl b{color:var(--emerald);}
+  .closing .intro{color:#aebfce;font-size:11pt;max-width:140mm;margin-bottom:18px;}
+
+  .recap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0 auto;}
+  .recap .c{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:13px;padding:16px;}
+  .recap .c .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+  .recap .c h4{font-family:'Poppins';color:#fff;font-size:11pt;margin:0 0 4px;} .recap .c p{color:#9fb3c8;font-size:9pt;margin:0;}
+
+  /* Serie completa de manuales — tabla final */
+  .serie{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin:14px 0;}
+  .serie-item{display:flex;align-items:center;gap:9px;padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:9px;font-size:9pt;}
+  .serie-item .n{width:24px;height:24px;flex:0 0 auto;border-radius:7px;background:linear-gradient(135deg,var(--emerald),var(--emerald-d));color:#fff;font-weight:800;font-size:9pt;display:flex;align-items:center;justify-content:center;font-family:'Inter';}
+  .serie-item .t{color:#cdd9e7;font-weight:600;}
+
+  .closing .foot{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:12px;color:#7e93a8;font-size:8.6pt;display:flex;justify-content:space-between;} .closing .foot b{color:#cdd9e7;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ PORTADA ═══════════════════ -->
+<div class="cover page-break">
+  <div class="brand"><span class="mark"><i class="fas fa-book-open"></i></span> Tenri <em>ERP&nbsp;Cloud</em></div>
+  <div class="kicker">Manual de usuario · 14</div>
+  <h1>Ayuda y <b>Glosario</b></h1>
+  <p class="lead">35 conceptos contables explicados en lenguaje claro, con pasos de uso y errores comunes. Más la ayuda contextual disponible en cada pantalla del sistema.</p>
+  <div class="hero"><img src="../assets/m14-01-glosario-grid.png" alt="Glosario del Sistema"></div>
+  <div class="meta">
+    <div><b>Versión 1.0</b>Documento de usuario</div>
+    <div><b>Módulo</b>Ayuda y Glosario</div>
+    <div><b>35 conceptos</b>Cubiertos en el glosario</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SECCIÓN 1 — DESCRIPCIÓN GENERAL ═══════════════════ -->
+<section>
+  <h2 class="doc-h2"><span class="num">1</span> El módulo Ayuda y Glosario</h2>
+  <p class="sub">Su guía de referencia siempre disponible, sin salir del ERP.</p>
+  <p>El módulo <b>Ayuda y Glosario</b> (accesible desde el menú lateral como "Ayuda y Glosario") es la enciclopedia interna del sistema: explica qué es cada concepto, cómo se usa la pantalla y cómo resolver los errores más comunes, todo en lenguaje claro y sin tecnicismos innecesarios.</p>
+
+  <table>
+    <thead><tr><th>Recurso</th><th>Dónde está</th><th>Para qué sirve</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-book"></i>Glosario del Sistema</td><td>Menú → Ayuda y Glosario</td><td>Buscador y catálogo completo de 35 conceptos del ERP.</td></tr>
+      <tr><td><i class="fas fa-circle-info"></i>Ayuda contextual</td><td>Botón <span class="help-btn">i</span> en cada pantalla</td><td>Abre al instante la ficha del glosario del módulo activo, sin navegar.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 2 — GLOSARIO GRID ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">2</span> Glosario del Sistema — Vista principal</h2>
+  <p class="sub">El catálogo de 35 conceptos organizado en tarjetas.</p>
+  <p>Al ingresar al Glosario verá una cuadrícula con todos los conceptos disponibles. Cada tarjeta muestra el <b>icono</b>, el <b>título</b> del módulo o concepto y un <b>resumen</b> de una línea.</p>
+
+  <figure>
+    <div class="shot"><img src="../assets/m14-01-glosario-grid.png" alt="Glosario - Vista principal en cuadrícula"></div>
+    <figcaption>Vista principal del Glosario: 35 conceptos en cuadrícula de 3 columnas, con icono y resumen.</figcaption>
+  </figure>
+
+  <div class="tip">
+    <div class="ic"><i class="fas fa-hand-pointer"></i></div>
+    <div class="tx"><b>Para abrir un concepto</b>, haga clic en cualquier tarjeta. Se abrirá la ficha completa con la descripción detallada, conceptos clave, pasos de uso y errores frecuentes.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 3 — BÚSQUEDA ═══════════════════ -->
+<section>
+  <h2 class="doc-h2"><span class="num">3</span> Búsqueda de conceptos</h2>
+  <p class="sub">Encuentra cualquier término en segundos.</p>
+  <p>Use la barra de búsqueda en la parte superior del Glosario para filtrar las tarjetas. La búsqueda es <b>instantánea</b>: filtra por título, resumen y conceptos internos mientras escribe. No es necesario presionar Enter.</p>
+
+  <div class="grid2">
+    <figure>
+      <div class="shot"><img src="../assets/m14-01-glosario-grid.png" alt="Sin filtro - 35 módulos"></div>
+      <figcaption>Sin filtro: los 35 conceptos disponibles.</figcaption>
+    </figure>
+    <figure>
+      <div class="shot"><img src="../assets/m14-02-glosario-busqueda.png" alt="Búsqueda filtrada"></div>
+      <figcaption>Buscando "factura": se reducen las tarjetas a los conceptos relacionados.</figcaption>
+    </figure>
+  </div>
+
+  <div class="tip info">
+    <div class="ic"><i class="fas fa-magnifying-glass"></i></div>
+    <div class="tx"><b>Tip de búsqueda:</b> puede buscar por el nombre del módulo ("Inventario"), por un concepto ("kardex", "UF", "AFP") o por una acción ("liquidar", "conciliar", "facturar"). El buscador encuentra coincidencias en todos los campos del glosario.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 4 — DETALLE ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">4</span> Ficha de detalle de un concepto</h2>
+  <p class="sub">Todo lo que necesita saber de un módulo en una sola pantalla.</p>
+  <p>Al hacer clic en una tarjeta se abre la <b>vista de detalle</b>. Cada ficha tiene hasta cinco secciones:</p>
+
+  <table>
+    <thead><tr><th>Sección</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><i class="fas fa-book-open"></i>¿Qué es?</td><td>Explicación en lenguaje simple de qué hace el módulo o concepto, sin tecnicismos.</td></tr>
+      <tr><td><i class="fas fa-key"></i>Conceptos clave</td><td>Glosario interno: los términos más importantes del módulo con su definición breve.</td></tr>
+      <tr><td><i class="fas fa-rocket"></i>Cómo se usa</td><td>Lista numerada de los pasos para operar la pantalla desde cero.</td></tr>
+      <tr><td><i class="fas fa-triangle-exclamation"></i>Errores comunes</td><td>Los problemas más frecuentes y su solución paso a paso.</td></tr>
+      <tr><td><i class="fas fa-lightbulb"></i>Tip</td><td>Un consejo avanzado de productividad o buena práctica para ese módulo.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid2" style="margin-top:12px;">
+    <figure>
+      <div class="shot"><img src="../assets/m14-03-glosario-detalle.png" alt="Detalle - Asiento Manual"></div>
+      <figcaption>Ficha "Asiento Manual": ¿Qué es?, Conceptos clave y Cómo se usa.</figcaption>
+    </figure>
+    <figure>
+      <div class="shot"><img src="../assets/m14-04-glosario-detalle2.png" alt="Detalle - Liquidaciones de Sueldo"></div>
+      <figcaption>Ficha "Liquidaciones de Sueldo": explicación del cálculo y conceptos previsionales.</figcaption>
+    </figure>
+  </div>
+
+  <p style="margin-top:10px;">Use el enlace <b>← Volver al listado</b> (esquina superior derecha de la ficha) para regresar a la cuadrícula de conceptos.</p>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 5 — AYUDA CONTEXTUAL ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">5</span> Ayuda contextual — El botón <span class="help-btn">i</span></h2>
+  <p class="sub">La ficha del glosario, disponible sin salir de la pantalla en la que trabaja.</p>
+  <p>En la mayoría de las pantallas del ERP verá un pequeño botón azul circular con la letra <b>i</b> junto al título de la página. Es el botón de <b>Ayuda contextual</b>: al presionarlo se abre directamente la ficha del glosario correspondiente al módulo activo, sin necesidad de navegar al Glosario.</p>
+
+  <div class="grid2">
+    <figure>
+      <div class="shot"><img src="../assets/m14-05-ayuda-contextual.png" alt="Botón i en pantalla"></div>
+      <figcaption>El botón <span class="help-btn" style="width:16px;height:16px;font-size:8pt;">i</span> aparece junto al título de la pantalla (aquí, Activos Fijos).</figcaption>
+    </figure>
+    <figure>
+      <div class="shot"><img src="../assets/m14-06-ayuda-modal.png" alt="Modal de ayuda contextual"></div>
+      <figcaption>Al hacer clic, se abre el modal con la ficha completa del módulo activo.</figcaption>
+    </figure>
+  </div>
+
+  <p style="margin-top:12px;">El modal de ayuda contextual muestra exactamente el mismo contenido que la ficha del Glosario: descripción, conceptos clave, pasos de uso, errores comunes y tip. Para cerrarlo presione <b>×</b>, haga clic fuera del modal o presione <b>Escape</b>.</p>
+
+  <div class="band">
+    <h3><i class="fas fa-wand-magic-sparkles"></i> ¿Cuándo usar cada recurso?</h3>
+    <p><b>Botón i en la pantalla</b> → cuando ya está trabajando y tiene una duda puntual sobre esa pantalla específica. <br>
+    <b>Glosario (menú lateral)</b> → cuando quiere explorar un concepto sin estar en esa pantalla, buscar un término que no recuerda, o aprender antes de usar una función nueva.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ SECCIÓN 6 — ÍNDICE COMPLETO ═══════════════════ -->
+<section class="break-before">
+  <h2 class="doc-h2"><span class="num">6</span> Índice completo del Glosario</h2>
+  <p class="sub">Los 35 conceptos disponibles en el sistema.</p>
+  <p>A continuación, el catálogo completo de fichas disponibles en el Glosario, organizadas por área temática:</p>
+
+  <div class="gsec">
+    <div class="gtit"><span>📊</span> Contabilidad General <span class="gbadge">7 conceptos</span></div>
+    <ul>
+      <li><b>Asiento Manual</b> — Partida doble, cuentas, glosas y cuadratura del debe/haber.</li>
+      <li><b>Plan de Cuentas</b> — Catálogo de cuentas contables imputables y de agrupación.</li>
+      <li><b>Libro Mayor</b> — Saldos y movimientos por cuenta en un período.</li>
+      <li><b>Reclasificar Asiento</b> — Corrección de cuentas o glosas en asientos ya registrados.</li>
+      <li><b>Anulación de Documentos</b> — Reversión de facturas, asientos y cotizaciones.</li>
+      <li><b>Cierre Tributario F29</b> — Declaración mensual de IVA, retenciones y PPM.</li>
+      <li><b>Dashboard de Renta</b> — Base imponible anual y proyección del Impuesto de Primera Categoría.</li>
+    </ul>
+  </div>
+
+  <div class="gsec">
+    <div class="gtit"><span>🧾</span> Compras y Ventas <span class="gbadge">7 conceptos</span></div>
+    <ul>
+      <li><b>Registro de Factura</b> — Ingreso de facturas de compra con asiento automático.</li>
+      <li><b>Historial de Facturas</b> — Listado con filtros, estados y acciones rápidas.</li>
+      <li><b>Cotizaciones</b> — Propuestas comerciales previas a la factura.</li>
+      <li><b>Crear Cotización</b> — Formulario paso a paso para armar una propuesta.</li>
+      <li><b>Gestión de Clientes</b> — Directorio de clientes con datos y movimientos.</li>
+      <li><b>Gestión de Proveedores</b> — Directorio de proveedores con cuentas asociadas.</li>
+      <li><b>Anticipos a Proveedores</b> — Pagos anticipados y su imputación posterior.</li>
+    </ul>
+  </div>
+
+  <div class="gsec">
+    <div class="gtit"><span>🏦</span> Tesorería y Banco <span class="gbadge">4 conceptos</span></div>
+    <ul>
+      <li><b>Conciliación Bancaria</b> — Cotejo del libro con la cartola del banco.</li>
+      <li><b>Cartola Bancaria</b> — Importación del detalle de movimientos bancarios.</li>
+      <li><b>Nómina de Pagos</b> — Agrupación de facturas para pagar en lote al banco.</li>
+      <li><b>Honorarios Recibidos</b> — Registro de boletas de honorarios recibidas.</li>
+    </ul>
+  </div>
+
+  <div class="gsec">
+    <div class="gtit"><span>🏭</span> Activos e Inventario <span class="gbadge">4 conceptos</span></div>
+    <ul>
+      <li><b>Activos Fijos</b> — Bienes del activo, depreciación y vida útil.</li>
+      <li><b>Proyecto de Activo</b> — Acumulación de costos antes de activar un bien.</li>
+      <li><b>Inventario</b> — Stock, bodegas, lotes, reservas y trazabilidad logística.</li>
+      <li><b>Nómina de Pagos</b> — (ver Tesorería).</li>
+    </ul>
+  </div>
+
+  <div class="gsec">
+    <div class="gtit"><span>👥</span> Recursos Humanos <span class="gbadge">9 conceptos</span></div>
+    <ul>
+      <li><b>Ficha de Personal</b> — Datos personales, previsionales y bancarios del trabajador.</li>
+      <li><b>Contratos</b> — Historial contractual: tipo, cargo, sueldo base y jornada.</li>
+      <li><b>Liquidaciones de Sueldo</b> — Cálculo mensual con AFP, salud, AFC e impuesto único.</li>
+      <li><b>Finiquitos</b> — Término de contrato con indemnización y vacaciones proporcionales.</li>
+      <li><b>Parámetros Previsionales</b> — Tasas, topes, UF/UTM y tabla de impuesto único.</li>
+      <li><b>Centralización Contable</b> — Asiento automático de remuneraciones en contabilidad.</li>
+      <li><b>Archivo Previred</b> — Planilla CSV mensual para el portal de cotizaciones.</li>
+      <li><b>LRE</b> — Libro de Remuneraciones Electrónico para la Dirección del Trabajo.</li>
+      <li><b>DJ 1887 — Rentas de Empleados</b> — Declaración jurada anual de rentas del trabajo.</li>
+    </ul>
+  </div>
+
+  <div class="gsec">
+    <div class="gtit"><span>🏛️</span> Tributario y Empresa <span class="gbadge">4 conceptos</span></div>
+    <ul>
+      <li><b>DJ 1879 — Retenciones de Honorarios</b> — Declaración de honorarios pagados con retención.</li>
+      <li><b>DJ 1947 — Propyme Transparente</b> — Régimen 14D N°8: imputación directa a socios.</li>
+      <li><b>Perfil de Empresa</b> — Configuración general, logo, régimen y cuentas bancarias.</li>
+      <li><b>Propietarios de la Empresa</b> — Registro de participación societaria (Ley 20.447).</li>
+      <li><b>Crear Empresa</b> — Alta de una nueva empresa en el sistema multi-empresa.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════ CIERRE ═══════════════════ -->
+<div class="closing break-before">
+  <div class="brand" style="margin-bottom:16px;"><span class="mark"><i class="fas fa-layer-group"></i></span> Tenri <em style="color:var(--emerald)">ERP&nbsp;Cloud</em></div>
+  <div class="ttl">Serie <b>completa</b></div>
+  <p class="intro" style="margin-bottom:14px;">Ha llegado al final de la colección de manuales de Tenri ERP Cloud. Los 14 módulos cubren el ciclo completo de la gestión empresarial chilena.</p>
+
+  <div class="serie">
+    <div class="serie-item"><span class="n">01</span><span class="t">Dashboard</span></div>
+    <div class="serie-item"><span class="n">02</span><span class="t">Ventas y Cotizaciones</span></div>
+    <div class="serie-item"><span class="n">03</span><span class="t">Compras y Gastos</span></div>
+    <div class="serie-item"><span class="n">04</span><span class="t">Tesorería y Banco</span></div>
+    <div class="serie-item"><span class="n">05</span><span class="t">Contabilidad General</span></div>
+    <div class="serie-item"><span class="n">06</span><span class="t">Activos Fijos</span></div>
+    <div class="serie-item"><span class="n">07</span><span class="t">Inventario</span></div>
+    <div class="serie-item"><span class="n">08</span><span class="t">Inventario (avanzado)</span></div>
+    <div class="serie-item"><span class="n">09</span><span class="t">Gestión Tributaria</span></div>
+    <div class="serie-item"><span class="n">10</span><span class="t">Facturación Electrónica (SII)</span></div>
+    <div class="serie-item"><span class="n">11</span><span class="t">Recursos Humanos</span></div>
+    <div class="serie-item"><span class="n">12</span><span class="t">Soporte</span></div>
+    <div class="serie-item"><span class="n">13</span><span class="t">Administración</span></div>
+    <div class="serie-item"><span class="n">14</span><span class="t">Ayuda y Glosario</span></div>
+  </div>
+
+  <div class="foot" style="margin-top:auto;"><span><b>Tenri ERP Cloud</b> · Manual de usuario 14 — Ayuda y Glosario</span><span>Versión 1.0</span></div>
+</div>
+
+</body>
+</html>

@@ -79,6 +79,7 @@ const Dj1926 = lazy(() => import('./Modulos/Tributario/Vistas/Dj1926'));
 const LibroComprasVentas = lazy(() => import('./Modulos/Tributario/Vistas/LibroComprasVentas'));
 const PropietariosEmpresa = lazy(() => import('./Modulos/Core/Vistas/PropietariosEmpresa'));
 import Glosario from './Modulos/Glosario/Glosario';
+import Manuales from './Modulos/Manuales/Manuales';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 const SoporteTickets = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTickets'));
 const SoporteTicketDetalle = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTicketDetalle'));
@@ -822,6 +823,12 @@ function App() {
           <Route path="/glosario" element={
             <RutaPrivada>
               <LayoutPrincipal><Glosario /></LayoutPrincipal>
+            </RutaPrivada>
+          } />
+
+          <Route path="/manuales" element={
+            <RutaPrivada>
+              <LayoutPrincipal><Manuales /></LayoutPrincipal>
             </RutaPrivada>
           } />
 

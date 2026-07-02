@@ -168,10 +168,11 @@ const MesaConciliacion = () => {
         try {
             const res = await api.get('/facturas');
             const todas = res.success ? res.data : (res.data?.data || []);
-            const pendientes = todas.filter(f => 
-                f.tipo === tipo && 
-                f.estado !== 'PAGADA' && 
-                (esEgreso ? f.proveedor_id === selected.value : f.cliente_id === selected.value)
+            const pendientes = todas.filter(f =>
+                f.tipo === tipo &&
+                f.estado !== 'PAGADA' &&
+                f.estado !== 'ANULADA' &&
+                (esEgreso ? Number(f.proveedor_id) === Number(selected.value) : Number(f.cliente_id) === Number(selected.value))
             );
             
             setFacturasManuales(pendientes);
