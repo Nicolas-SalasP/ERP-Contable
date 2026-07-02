@@ -51,6 +51,7 @@ class Factura extends Model
         'estado',
         'archivo_pdf',
         'comprobante_contable',
+        'asiento_pago_id',
         'moneda',
         'tipo_cambio',
         'monto_bruto_origen',

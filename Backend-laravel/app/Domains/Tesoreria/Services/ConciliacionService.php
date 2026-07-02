@@ -47,7 +47,7 @@ class ConciliacionService
             );
             $glosa = "Pago Factura N° {$factura->numero_factura} a Proveedor";
 
-            $this->asientoService->registrarAsiento([
+            $asientoPago = $this->asientoService->registrarAsiento([
                 'empresa_id' => $datos['empresa_id'],
                 'fecha' => $datos['fecha_pago'],
                 'glosa' => $glosa,
@@ -58,6 +58,8 @@ class ConciliacionService
                 ['cuenta_contable' => $cuentaProveedores, 'debe' => $factura->monto_bruto, 'haber' => 0],
                 ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $factura->monto_bruto]
             ]);
+
+            $factura->update(['asiento_pago_id' => $asientoPago->id]);
 
             return $factura;
         });
@@ -162,13 +164,13 @@ class ConciliacionService
             $detallesAsiento = [];
             $glosaAsiento = "";
 
+            /** @var array<int, int> $idsPagadas */
+            $idsPagadas = [];
+            $idAbonada  = null;
+
             if ($facturas->count() > 0) {
                 $saldoRestante = $montoMovimiento;
                 $facturas = $facturas->sortBy('fecha_emision');
-
-                /** @var array<int, int> $idsPagadas */
-                $idsPagadas = [];
-                $idAbonada  = null;
 
                 foreach ($facturas as $fac) {
                     $montoFactura = (float) $fac->monto_bruto;
@@ -258,7 +260,15 @@ class ConciliacionService
             ], $detallesAsiento);
 
             $this->bancoService->vincularAsientoAMovimiento($empresaId, $movimiento->id, $asiento->id);
-            return $asiento; 
+
+            // Vincula el asiento de pago a las facturas afectadas para que una
+            // anulación posterior (Anulación General) pueda revertir su estado.
+            $idsAfectadas = array_filter(array_merge($idsPagadas ?? [], [$idAbonada ?? null]));
+            if (!empty($idsAfectadas)) {
+                Factura::whereIn('id', $idsAfectadas)->where('empresa_id', $empresaId)->update(['asiento_pago_id' => $asiento->id]);
+            }
+
+            return $asiento;
         });
     }
 

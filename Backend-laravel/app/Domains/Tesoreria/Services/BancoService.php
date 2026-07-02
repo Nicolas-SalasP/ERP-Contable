@@ -45,9 +45,9 @@ class BancoService
         return CuentaBancariaEmpresa::create($datos);
     }
 
-    public function pagarNominaMasiva($empresaId, $usuarioId, $facturasIds, $cuentaBancariaId)
+    public function pagarNominaMasiva($empresaId, $usuarioId, $facturasIds, $cuentaBancariaId, ?string $fecha = null)
     {
-        return DB::transaction(function () use ($empresaId, $usuarioId, $facturasIds, $cuentaBancariaId) {
+        return DB::transaction(function () use ($empresaId, $usuarioId, $facturasIds, $cuentaBancariaId, $fecha) {
 
             // SEGURIDAD: validar que la cuenta bancaria pertenezca a la empresa del usuario.
             $cuentaPertenece = CuentaBancariaEmpresa::where('id', $cuentaBancariaId)
@@ -84,7 +84,7 @@ class BancoService
 
             $totalNomina = 0;
             $numerosFacturas = [];
-            $fechaHoy = now()->format('Y-m-d');
+            $fechaHoy = $fecha ?? now()->format('Y-m-d');
 
             $ids = [];
             foreach ($facturas as $factura) {
@@ -124,6 +124,10 @@ class BancoService
             ];
 
             $asiento = $this->asientoService->registrarAsiento($datosAsiento, $datosAsiento['detalles']);
+
+            // Vincula el asiento de pago a las facturas para que una anulación posterior
+            // (Anulación General) pueda revertir su estado automáticamente.
+            Factura::whereIn('id', $ids)->where('empresa_id', $empresaId)->update(['asiento_pago_id' => $asiento->id]);
 
             return [
                 'success'    => true,

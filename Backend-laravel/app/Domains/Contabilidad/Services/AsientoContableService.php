@@ -5,6 +5,7 @@ namespace App\Domains\Contabilidad\Services;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Comercial\Models\Factura;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -244,6 +245,12 @@ class AsientoContableService
             }
 
             $this->generarNumeroComprobante($nuevoAsiento);
+
+            // Si el asiento reversado era el pago de una o más facturas, libera su
+            // estado para que puedan volver a pagarse (mismo fix que AnulacionService).
+            Factura::where('empresa_id', $asientoOriginal->empresa_id)
+                ->where('asiento_pago_id', $asientoOriginal->id)
+                ->update(['estado' => 'REGISTRADA', 'asiento_pago_id' => null]);
 
             return $nuevoAsiento;
         });

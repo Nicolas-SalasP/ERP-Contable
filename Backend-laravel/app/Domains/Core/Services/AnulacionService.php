@@ -3,6 +3,7 @@
 namespace App\Domains\Core\Services;
 
 use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -90,6 +91,14 @@ class AnulacionService
                         'tipo_operacion' => $det->tipo_operacion === 'DEBE' ? 'HABER' : 'DEBE'
                     ]);
                 }
+
+                // Si este era el asiento de pago de una o más facturas (Nómina de Pagos,
+                // Mesa de Conciliación), revierte su estado a REGISTRADA para que puedan
+                // volver a pagarse. Sin esto la factura quedaba "PAGADA" para siempre
+                // aunque el asiento de pago ya estuviera anulado.
+                Factura::where('empresa_id', $empresaId)
+                    ->where('asiento_pago_id', $asientoOriginal->id)
+                    ->update(['estado' => 'REGISTRADA', 'asiento_pago_id' => null]);
 
                 return [
                     'nuevo_asiento_id' => $asientoReverso->numero_comprobante

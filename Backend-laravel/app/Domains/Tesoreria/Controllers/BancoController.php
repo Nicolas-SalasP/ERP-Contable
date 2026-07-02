@@ -80,7 +80,8 @@ class BancoController
     {
         $request->validate([
             'facturas_ids' => 'required|array',
-            'cuenta_bancaria_id' => 'required|integer'
+            'cuenta_bancaria_id' => 'required|integer',
+            'fecha' => 'nullable|date',
         ]);
 
         try {
@@ -88,7 +89,8 @@ class BancoController
                 $request->user()->empresa_id,
                 $request->user()->id,
                 $request->facturas_ids,
-                $request->cuenta_bancaria_id
+                $request->cuenta_bancaria_id,
+                $request->fecha
             );
 
             return response()->json(array_merge(['success' => true], $resultado));
