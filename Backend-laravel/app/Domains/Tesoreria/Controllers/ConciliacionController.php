@@ -3,6 +3,7 @@
 namespace App\Domains\Tesoreria\Controllers;
 
 use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Tesoreria\Services\ConciliacionService;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class ConciliacionController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -51,7 +52,7 @@ class ConciliacionController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'mensaje' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -65,7 +66,7 @@ class ConciliacionController
         } catch (TesoreriaException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'mensaje' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -89,7 +90,7 @@ class ConciliacionController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'mensaje' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -109,7 +110,7 @@ class ConciliacionController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
-            return response()->json(['success' => false, 'mensaje' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'mensaje' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -121,7 +122,7 @@ class ConciliacionController
         } catch (TesoreriaException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -152,7 +153,7 @@ class ConciliacionController
         } catch (TesoreriaException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 }

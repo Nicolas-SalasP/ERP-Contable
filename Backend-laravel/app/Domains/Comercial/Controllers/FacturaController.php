@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Support\MensajeErrorGenerico;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\FacturaService;
 use Illuminate\Support\Facades\DB;
@@ -76,7 +77,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 404);
         }
     }
@@ -198,7 +199,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -217,7 +218,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 404);
         }
     }
@@ -245,7 +246,7 @@ class FacturaController
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
                 'errors' => $e->errors()
             ], 422);
         } catch (ComercialException $e) {
@@ -253,7 +254,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }
@@ -271,7 +272,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al obtener auditoría: ' . $e->getMessage()
+                'mensaje' => 'Error al obtener auditoría: ' . MensajeErrorGenerico::desde($e)
             ], 404);
         }
     }
@@ -296,7 +297,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }
@@ -321,7 +322,7 @@ class FacturaController
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
                 'errors' => $e->errors()
             ], 422);
         } catch (ComercialException $e) {
@@ -329,7 +330,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }
@@ -345,7 +346,7 @@ class FacturaController
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -361,7 +362,7 @@ class FacturaController
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -375,7 +376,7 @@ class FacturaController
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -409,14 +410,14 @@ class FacturaController
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
                 'errors' => $e->errors()
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -514,7 +515,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
             ], 400);
         }
     }
@@ -542,11 +543,11 @@ class FacturaController
 
             return response()->json(['success' => true, 'archivo_pdf' => $rutaPdf]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -589,7 +590,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
             ], 400);
         }
     }

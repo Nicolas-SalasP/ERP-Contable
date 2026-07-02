@@ -3,6 +3,7 @@
 namespace App\Domains\Core\Controllers;
 
 use App\Domains\Core\Services\UsuarioService;
+use App\Support\MensajeErrorGenerico;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Support\ModuloPermisos;
@@ -73,7 +74,7 @@ class UsuarioController
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 422);
         }
     }
 

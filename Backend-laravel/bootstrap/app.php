@@ -7,7 +7,9 @@ use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrackUltimoAcceso;
 use App\Http\Middleware\VerifyWebApiKey;
+use App\Support\MensajeErrorGenerico;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -38,5 +40,16 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (AuthenticationException $e, $request) {
             return response()->json(['success' => false, 'message' => 'No autenticado.'], 401);
+        });
+
+        // Red de seguridad: cualquier QueryException no capturada localmente por un
+        // controller/servicio no debe filtrar SQL crudo (tabla, columnas, valores) al cliente.
+        $exceptions->render(function (QueryException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => MensajeErrorGenerico::desde($e),
+                ], 500);
+            }
         });
     })->create();

@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Comercial\Services\ProveedorService;
 use Illuminate\Support\Facades\Storage;
@@ -66,7 +67,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -84,7 +85,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 404);
         }
     }
@@ -120,7 +121,7 @@ class ProveedorController
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 422);
         }
     }
 
@@ -156,7 +157,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => $e->getMessage()
+                'mensaje' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }
@@ -176,7 +177,7 @@ class ProveedorController
 
             return response()->json(['success' => true, 'data' => $anticipo]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
@@ -185,7 +186,7 @@ class ProveedorController
                 Storage::disk('public')->delete($pathToDelete);
             }
 
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -213,7 +214,7 @@ class ProveedorController
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
                 'errors' => $e->errors()
             ], 422);
         } catch (ComercialException $e) {
@@ -221,7 +222,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }

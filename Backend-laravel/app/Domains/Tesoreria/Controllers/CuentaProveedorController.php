@@ -3,6 +3,7 @@
 namespace App\Domains\Tesoreria\Controllers;
 
 use App\Domains\Tesoreria\Exceptions\TesoreriaException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Tesoreria\Services\CuentaProveedorService;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class CuentaProveedorController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -59,7 +60,7 @@ class CuentaProveedorController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -74,7 +75,7 @@ class CuentaProveedorController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 }

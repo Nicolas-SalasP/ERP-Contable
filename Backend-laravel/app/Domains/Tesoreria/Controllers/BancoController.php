@@ -8,6 +8,7 @@ use App\Domains\Tesoreria\Services\BancoService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+use App\Support\MensajeErrorGenerico;
 use Exception;
 
 class BancoController
@@ -37,7 +38,7 @@ class BancoController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }
@@ -70,7 +71,7 @@ class BancoController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -124,7 +125,7 @@ class BancoController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 
@@ -155,7 +156,7 @@ class BancoController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false, 
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -177,7 +178,7 @@ class BancoController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 404);
         }
     }
