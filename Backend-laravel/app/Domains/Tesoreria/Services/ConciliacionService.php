@@ -263,7 +263,7 @@ class ConciliacionService
 
             // Vincula el asiento de pago a las facturas afectadas para que una
             // anulación posterior (Anulación General) pueda revertir su estado.
-            $idsAfectadas = array_filter(array_merge($idsPagadas ?? [], [$idAbonada ?? null]));
+            $idsAfectadas = array_filter(array_merge($idsPagadas, [$idAbonada]));
             if (!empty($idsAfectadas)) {
                 Factura::whereIn('id', $idsAfectadas)->where('empresa_id', $empresaId)->update(['asiento_pago_id' => $asiento->id]);
             }
