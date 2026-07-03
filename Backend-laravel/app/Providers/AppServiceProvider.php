@@ -20,6 +20,8 @@ use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\CargaFamiliar;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
+use App\Domains\Comercial\Models\Cliente;
+use App\Domains\Comercial\Models\Proveedor;
 
 use App\Domains\CorreccionMonetaria\Providers\IpcProviderInterface;
 use App\Domains\CorreccionMonetaria\Providers\ManualIpcProvider;
@@ -73,6 +75,11 @@ class AppServiceProvider extends ServiceProvider
         CargaFamiliar::observe(AuditoriaPiiObserver::class);
         CuentaBancariaEmpresa::observe(AuditoriaPiiObserver::class);
         CuentaBancariaProveedor::observe(AuditoriaPiiObserver::class);
+        // Cliente/Proveedor tienen PII propia (rut, email, telefono, direccion)
+        // y habian quedado fuera del observer pese a estar cubiertos por la
+        // misma obligacion (Ley 21.719).
+        Cliente::observe(AuditoriaPiiObserver::class);
+        Proveedor::observe(AuditoriaPiiObserver::class);
 
         // Inventario — eventos de dominio
         Event::listen(StockMinimoPerforado::class, RegistrarEventoInventarioListener::class);
