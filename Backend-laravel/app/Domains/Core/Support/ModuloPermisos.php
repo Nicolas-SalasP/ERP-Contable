@@ -251,14 +251,11 @@ final class ModuloPermisos
             return false;
         }
 
-        $jerarquia = (int) ($rol->jerarquia ?? 0);
-        $nombreRol = strtolower(trim((string) ($rol->nombre ?? '')));
-
-        return $jerarquia >= 80 || in_array($nombreRol, [
-            'administrador',
-            'admin',
-            'super admin',
-            'superadmin',
-        ], true);
+        // Solo la jerarquia real habilita el set de permisos de administrador.
+        // Antes tambien bastaba con que el ROL se llamara "administrador"/"admin",
+        // lo que permitia escalar privilegios creando un rol con ese nombre y
+        // jerarquia baja (un usuario con usuarios.gestionar podia crearlo y
+        // autoasignarselo sin pasar por el guard de jerarquia de storeRol/updateRol).
+        return (int) ($rol->jerarquia ?? 0) >= 80;
     }
 }

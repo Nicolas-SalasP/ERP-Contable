@@ -18,6 +18,7 @@ class InventarioPermisoServiceTest extends TestCase
 
         $usuario->setRelation('rol', new Rol([
             'nombre' => 'Administrador',
+            'jerarquia' => 80,
             'permisos' => [],
         ]));
 
@@ -26,6 +27,31 @@ class InventarioPermisoServiceTest extends TestCase
         $service->exigir($usuario, 'inventario.productos.crear');
 
         $this->assertTrue(true);
+    }
+
+    /**
+     * Regresión: un rol llamado "Administrador" con jerarquía baja NO debe
+     * eludir la validación de permisos. Antes del fix, el nombre del rol solo
+     * bastaba para obtener acceso total a Inventario sin importar la jerarquía
+     * real -- permitía escalar privilegios creando un rol con ese nombre.
+     */
+    public function test_rol_llamado_administrador_con_jerarquia_baja_no_tiene_acceso_total(): void
+    {
+        $this->expectException(Exception::class);
+
+        $usuario = new User([
+            'rol_id' => 4,
+        ]);
+
+        $usuario->setRelation('rol', new Rol([
+            'nombre' => 'Administrador',
+            'jerarquia' => 10,
+            'permisos' => [],
+        ]));
+
+        $service = new InventarioPermisoService();
+
+        $service->exigir($usuario, 'inventario.ajustes_criticos.crear');
     }
 
     public function test_usuario_con_permiso_puede_ejecutar_operacion(): void
