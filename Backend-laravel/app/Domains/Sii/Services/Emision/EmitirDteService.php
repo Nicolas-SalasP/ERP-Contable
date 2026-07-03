@@ -12,6 +12,7 @@ use App\Domains\Sii\Services\Certificado\CertificadoService;
 use App\Domains\Sii\Services\Validators\CuadraturaMontosValidator;
 use App\Domains\Sii\Services\Xml\DteSigner;
 use App\Domains\Sii\Services\Xml\DteXmlBuilder;
+use App\Domains\Sii\Services\Xml\EnvioDteXsdValidator;
 use App\Domains\Sii\Services\Xml\SetDte\SetDteBuilder;
 use App\Domains\Sii\Services\Xml\SetDte\SetDteSigner;
 use Illuminate\Support\Facades\Crypt;
@@ -36,7 +37,8 @@ class EmitirDteService
         private readonly DteSigner $dteSigner,
         private readonly SetDteBuilder $setDteBuilder,
         private readonly SetDteSigner $setDteSigner,
-        private readonly CuadraturaMontosValidator $cuadraturaValidator
+        private readonly CuadraturaMontosValidator $cuadraturaValidator,
+        private readonly EnvioDteXsdValidator $envioXsdValidator
     ) {
     }
 
@@ -89,6 +91,11 @@ class EmitirDteService
             $xmlDteFirmado = $this->dteSigner->firmar($xmlConTed, $dte->empresa);
             $setSinFirma   = $this->setDteBuilder->build($dte->empresa, [['dte' => $dte, 'xml' => $xmlDteFirmado]]);
             $envioFirmado  = $this->setDteSigner->firmar($setSinFirma, $dte->empresa);
+
+            // Valida el sobre EnvioDTE final (Caratula + SetDTE firmado) contra el
+            // XSD oficial -- antes solo se validaba el <Documento> interno, nunca
+            // el payload completo que realmente se envia al SII.
+            $this->envioXsdValidator->validar($envioFirmado);
 
             // Hash SHA256 sobre XML EN CLARO (antes de cifrar).
             $hashSha256 = hash('sha256', $envioFirmado);
