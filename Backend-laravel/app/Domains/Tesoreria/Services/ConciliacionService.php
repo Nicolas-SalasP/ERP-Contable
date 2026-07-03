@@ -6,6 +6,7 @@ use App\Domains\Tesoreria\Exceptions\TesoreriaException;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Exceptions\ComercialException;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Tesoreria\Services\BancoService;
 use Carbon\Carbon;
@@ -31,7 +32,18 @@ class ConciliacionService
     {
         return DB::transaction(function () use ($datos) {
             $cuentaBanco = $this->bancoService->obtenerCuentaBancaria($datos['empresa_id'], $datos['cuenta_bancaria_id']);
-            $factura = $this->facturaService->obtenerFacturaPorId($datos['empresa_id'], $datos['factura_id']);
+
+            // Lock pesimista: sin esto, dos conciliaciones casi simultaneas sobre la
+            // misma factura (doble clic) podian leer ambas "no pagada" antes de que
+            // cualquiera comiteara y generar dos asientos de egreso duplicados.
+            $factura = Factura::where('empresa_id', $datos['empresa_id'])
+                ->where('id', $datos['factura_id'])
+                ->lockForUpdate()
+                ->first();
+
+            if (!$factura) {
+                throw ComercialException::noEncontrado("La factura solicitada no existe o no pertenece a su empresa.");
+            }
 
             if ($factura->estado === 'PAGADA') {
                 throw TesoreriaException::regla("La factura {$factura->numero_factura} ya está pagada.");

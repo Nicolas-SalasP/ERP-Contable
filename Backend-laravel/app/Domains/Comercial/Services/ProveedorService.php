@@ -154,22 +154,30 @@ class ProveedorService
                 throw ComercialException::regla("Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.");
             }
 
+            // Lock pesimista sobre facturas/NC/anticipos involucrados: sin esto, dos
+            // compensaciones concurrentes que comparten un mismo anticipo/NC podian
+            // leer ambas el saldo disponible antes de comitear y aplicarlo dos veces.
             $totalDeuda = DB::table('facturas')
                 ->where('empresa_id', $empresaId)
                 ->where('proveedor_id', $proveedorId)
                 ->whereIn('id', $facturasIds)
+                ->lockForUpdate()
                 ->sum('monto_bruto');
 
             $totalNC = DB::table('facturas')
                 ->where('empresa_id', $empresaId)
                 ->where('proveedor_id', $proveedorId)
                 ->whereIn('id', $ncIds)
+                ->where('estado', '!=', 'APLICADA')
+                ->lockForUpdate()
                 ->sum('monto_bruto');
 
             $totalAnticipos = DB::table('anticipos_proveedores')
                 ->where('empresa_id', $empresaId)
                 ->where('proveedor_id', $proveedorId)
                 ->whereIn('id', $anticiposIds)
+                ->where('estado', '!=', 'APLICADO')
+                ->lockForUpdate()
                 ->sum('monto');
 
             $totalAFavor = $totalNC + $totalAnticipos;
