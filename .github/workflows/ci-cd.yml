@@ -291,7 +291,13 @@ jobs:
             !backend.zip
 
       # ── Servidor staging ──
-      - name: 🛠️ Descomprimir y configurar Laravel (staging)
+      # Deploy atomico por releases+symlink (ver docs/deploy-atomico.md):
+      # se arma la release nueva aislada, se migra y cachea ADENTRO de esa
+      # carpeta, y solo si todo el script termina sin error se hace el swap
+      # del symlink. Si algo falla a mitad de camino (unzip cortado, migracion
+      # rota), el symlink erp_backend_staging sigue apuntando a la release
+      # anterior y el sitio nunca sirve un estado a medias.
+      - name: 🛠️ Descomprimir y configurar Laravel (staging, releases+symlink)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST_STAGING }}
@@ -301,32 +307,71 @@ jobs:
           script: |
             set -e
 
-            FTP_ROOT=~/domains/staging.erp.tenri.cl
-            LARAVEL_ROOT=~/erp_backend_staging
-            ERP_PUBLIC=~/domains/staging.erp.tenri.cl/public_html
+            DOMAIN_ROOT=~/domains/staging.erp.tenri.cl
+            ERP_PUBLIC=$DOMAIN_ROOT/public_html
+            APP_LINK=~/erp_backend_staging
+            RELEASES_DIR=~/erp_backend_staging_releases
+            SHARED=~/erp_backend_staging_shared
+            TIMESTAMP=$(date +%Y%m%d%H%M%S)
+            NEW_RELEASE=$RELEASES_DIR/$TIMESTAMP
+            KEEP_RELEASES=5
+            KEEP_BACKUPS=5
 
-            if [ -f "$FTP_ROOT/backend.zip" ]; then
-              mv "$FTP_ROOT/backend.zip" "$LARAVEL_ROOT/backend.zip"
+            mkdir -p "$RELEASES_DIR" "$SHARED/storage" "$SHARED/backups"
+
+            # ── Migracion unica al patron releases+symlink (idempotente) ──
+            # Si erp_backend_staging todavia es una carpeta real (deploy viejo,
+            # pre-symlink), se preserva .env y storage en shared/ y se renombra
+            # la carpeta vieja como backup en vez de borrarla.
+            if [ -d "$APP_LINK" ] && [ ! -L "$APP_LINK" ]; then
+              echo "🔧 Primer deploy con releases+symlink: preservando estado actual en shared/"
+              [ -f "$APP_LINK/.env" ] && cp -n "$APP_LINK/.env" "$SHARED/.env" || true
+              [ -d "$APP_LINK/storage" ] && rsync -a "$APP_LINK/storage/" "$SHARED/storage/" || true
+              mv "$APP_LINK" "${APP_LINK}.pre-symlink-backup-$TIMESTAMP"
             fi
 
-            cd $LARAVEL_ROOT
-            unzip -o backend.zip
-            rm backend.zip
+            if [ ! -f "$SHARED/.env" ]; then
+              echo "❌ No existe $SHARED/.env -- no se puede continuar sin config de staging."
+              echo "   Copialo manualmente a $SHARED/.env antes del proximo deploy."
+              exit 1
+            fi
 
-            chmod -R 775 storage bootstrap/cache
-            mkdir -p storage/framework/sessions
-            mkdir -p storage/framework/views
-            mkdir -p storage/framework/cache
-            mkdir -p storage/logs
+            # ── Preparar release nueva (aislada, el sitio en vivo no la ve todavia) ──
+            mkdir -p "$NEW_RELEASE"
+            if [ -f "$DOMAIN_ROOT/backend.zip" ]; then
+              mv "$DOMAIN_ROOT/backend.zip" "$NEW_RELEASE/backend.zip"
+            fi
+            cd "$NEW_RELEASE"
+            unzip -q -o backend.zip
+            rm -f backend.zip
 
-            cp public/index.php  $ERP_PUBLIC/index.php
-            cp public/favicon.ico $ERP_PUBLIC/favicon.ico 2>/dev/null || true
-            cp public/robots.txt  $ERP_PUBLIC/robots.txt  2>/dev/null || true
+            rm -rf storage
+            ln -s "$SHARED/storage" storage
+            ln -sf "$SHARED/.env" .env
+
+            mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs
+            chmod -R 775 "$SHARED/storage" bootstrap/cache
 
             rm -f bootstrap/cache/config.php
             rm -f bootstrap/cache/routes-v7.php
 
             php artisan optimize:clear
+
+            # ── Backup de BD antes de migrar (best-effort, no bloquea el deploy si falta mysqldump) ──
+            if command -v mysqldump >/dev/null 2>&1; then
+              mapfile -t DBCFG < <(php -r '
+                require "vendor/autoload.php";
+                $d = Dotenv\Dotenv::createImmutable(getcwd());
+                $d->safeLoad();
+                foreach (["DB_HOST","DB_PORT","DB_DATABASE","DB_USERNAME","DB_PASSWORD"] as $k) { echo ($_ENV[$k] ?? "")."\n"; }
+              ')
+              MYSQL_PWD="${DBCFG[4]}" mysqldump -h "${DBCFG[0]}" -P "${DBCFG[1]:-3306}" -u "${DBCFG[3]}" "${DBCFG[2]}" \
+                | gzip > "$SHARED/backups/db-$TIMESTAMP.sql.gz" \
+                && echo "✅ Backup de BD: $SHARED/backups/db-$TIMESTAMP.sql.gz"
+            else
+              echo "⚠️ mysqldump no disponible en el servidor -- deploy continua SIN backup previo de BD."
+            fi
+
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
@@ -334,7 +379,19 @@ jobs:
             php artisan event:cache
             php artisan storage:link --force 2>/dev/null || true
 
-            echo "✅ Deploy ERP staging completado"
+            cp public/index.php  "$ERP_PUBLIC/index.php"
+            cp public/favicon.ico "$ERP_PUBLIC/favicon.ico" 2>/dev/null || true
+            cp public/robots.txt  "$ERP_PUBLIC/robots.txt"  2>/dev/null || true
+
+            # ── Swap atomico: recien aqui el sitio en vivo pasa a usar la release nueva ──
+            ln -sfn "$NEW_RELEASE" "${APP_LINK}.new"
+            mv -Tf "${APP_LINK}.new" "$APP_LINK"
+
+            echo "✅ Deploy ERP staging completado -- release activa: $TIMESTAMP"
+
+            # ── Limpieza: conservar solo las ultimas releases/backups ──
+            cd "$RELEASES_DIR" && ls -1t | tail -n +$((KEEP_RELEASES + 1)) | xargs -r -I{} rm -rf -- "{}"
+            cd "$SHARED/backups" && ls -1t db-*.sql.gz 2>/dev/null | tail -n +$((KEEP_BACKUPS + 1)) | xargs -r rm --
 
   # ══════════════════════════════════════════════
   # JOB 3B — SMOKE TESTS STAGING (post-deploy)
@@ -478,7 +535,13 @@ jobs:
           target: /home/atlasdig/domains/erp.tenri.cl/
 
       # ── Servidor ──
-      - name: 🛠️ Descomprimir y configurar Laravel
+      # Deploy atomico por releases+symlink (ver docs/deploy-atomico.md):
+      # se arma la release nueva aislada, se migra y cachea ADENTRO de esa
+      # carpeta, y solo si todo el script termina sin error se hace el swap
+      # del symlink. Si algo falla a mitad de camino (unzip cortado, migracion
+      # rota), el symlink erp_backend sigue apuntando a la release anterior y
+      # produccion nunca sirve un estado a medias.
+      - name: 🛠️ Descomprimir y configurar Laravel (releases+symlink)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -488,33 +551,87 @@ jobs:
           script: |
             set -e
 
-            LARAVEL_ROOT=~/erp_backend
-            ERP_PUBLIC=~/domains/erp.tenri.cl/public_html
+            DOMAIN_ROOT=~/domains/erp.tenri.cl
+            ERP_PUBLIC=$DOMAIN_ROOT/public_html
+            APP_LINK=~/erp_backend
+            RELEASES_DIR=~/erp_backend_releases
+            SHARED=~/erp_backend_shared
+            TIMESTAMP=$(date +%Y%m%d%H%M%S)
+            NEW_RELEASE=$RELEASES_DIR/$TIMESTAMP
+            KEEP_RELEASES=5
+            KEEP_BACKUPS=5
 
-            mv ~/domains/erp.tenri.cl/backend.zip $LARAVEL_ROOT/backend.zip
+            mkdir -p "$RELEASES_DIR" "$SHARED/storage" "$SHARED/backups"
 
-            cd $LARAVEL_ROOT
-            unzip -o backend.zip
-            rm backend.zip
+            # ── Migracion unica al patron releases+symlink (idempotente) ──
+            # Si erp_backend todavia es una carpeta real (deploy viejo,
+            # pre-symlink), se preserva .env y storage en shared/ y se renombra
+            # la carpeta vieja como backup en vez de borrarla.
+            if [ -d "$APP_LINK" ] && [ ! -L "$APP_LINK" ]; then
+              echo "🔧 Primer deploy con releases+symlink: preservando estado actual en shared/"
+              [ -f "$APP_LINK/.env" ] && cp -n "$APP_LINK/.env" "$SHARED/.env" || true
+              [ -d "$APP_LINK/storage" ] && rsync -a "$APP_LINK/storage/" "$SHARED/storage/" || true
+              mv "$APP_LINK" "${APP_LINK}.pre-symlink-backup-$TIMESTAMP"
+            fi
 
-            chmod -R 775 storage bootstrap/cache
-            mkdir -p storage/framework/sessions
-            mkdir -p storage/framework/views
-            mkdir -p storage/framework/cache
-            mkdir -p storage/logs
+            if [ ! -f "$SHARED/.env" ]; then
+              echo "❌ No existe $SHARED/.env -- no se puede continuar sin config de produccion."
+              echo "   Copialo manualmente a $SHARED/.env antes del proximo deploy."
+              exit 1
+            fi
 
-            cp public/index.php  $ERP_PUBLIC/index.php
-            cp public/favicon.ico $ERP_PUBLIC/favicon.ico 2>/dev/null || true
-            cp public/robots.txt  $ERP_PUBLIC/robots.txt  2>/dev/null || true
+            # ── Preparar release nueva (aislada, produccion no la ve todavia) ──
+            mkdir -p "$NEW_RELEASE"
+            mv "$DOMAIN_ROOT/backend.zip" "$NEW_RELEASE/backend.zip"
+            cd "$NEW_RELEASE"
+            unzip -q -o backend.zip
+            rm -f backend.zip
+
+            rm -rf storage
+            ln -s "$SHARED/storage" storage
+            ln -sf "$SHARED/.env" .env
+
+            mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs
+            chmod -R 775 "$SHARED/storage" bootstrap/cache
 
             # Limpiar cache de config antes de arrancar artisan
             rm -f bootstrap/cache/config.php
             rm -f bootstrap/cache/routes-v7.php
 
             php artisan optimize:clear
+
+            # ── Backup de BD antes de migrar (best-effort, no bloquea el deploy si falta mysqldump) ──
+            if command -v mysqldump >/dev/null 2>&1; then
+              mapfile -t DBCFG < <(php -r '
+                require "vendor/autoload.php";
+                $d = Dotenv\Dotenv::createImmutable(getcwd());
+                $d->safeLoad();
+                foreach (["DB_HOST","DB_PORT","DB_DATABASE","DB_USERNAME","DB_PASSWORD"] as $k) { echo ($_ENV[$k] ?? "")."\n"; }
+              ')
+              MYSQL_PWD="${DBCFG[4]}" mysqldump -h "${DBCFG[0]}" -P "${DBCFG[1]:-3306}" -u "${DBCFG[3]}" "${DBCFG[2]}" \
+                | gzip > "$SHARED/backups/db-$TIMESTAMP.sql.gz" \
+                && echo "✅ Backup de BD: $SHARED/backups/db-$TIMESTAMP.sql.gz"
+            else
+              echo "⚠️ mysqldump no disponible en el servidor -- deploy continua SIN backup previo de BD."
+            fi
+
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
             php artisan event:cache
             php artisan storage:link --force 2>/dev/null || true
+
+            cp public/index.php  "$ERP_PUBLIC/index.php"
+            cp public/favicon.ico "$ERP_PUBLIC/favicon.ico" 2>/dev/null || true
+            cp public/robots.txt  "$ERP_PUBLIC/robots.txt"  2>/dev/null || true
+
+            # ── Swap atomico: recien aqui produccion pasa a usar la release nueva ──
+            ln -sfn "$NEW_RELEASE" "${APP_LINK}.new"
+            mv -Tf "${APP_LINK}.new" "$APP_LINK"
+
+            echo "✅ Deploy ERP produccion completado -- release activa: $TIMESTAMP"
+
+            # ── Limpieza: conservar solo las ultimas releases/backups ──
+            cd "$RELEASES_DIR" && ls -1t | tail -n +$((KEEP_RELEASES + 1)) | xargs -r -I{} rm -rf -- "{}"
+            cd "$SHARED/backups" && ls -1t db-*.sql.gz 2>/dev/null | tail -n +$((KEEP_BACKUPS + 1)) | xargs -r rm --
