@@ -110,7 +110,7 @@ class ActivoFijoService
             throw new Exception("Activo no encontrado.", 404);
         }
 
-        if ($activo->estado === 'DADO_DE_BAJA' || $activo->estado === 'BAJA') {
+        if ($activo->estado === 'DADO_DE_BAJA') {
             throw new Exception("No se puede editar un activo dado de baja.", 400);
         }
 
