@@ -373,9 +373,9 @@ class ActivoFijoService
         });
     }
 
-    public function activarProyecto(int $empresaId, int $usuarioId, int $proyectoId): array
+    public function activarProyecto(int $empresaId, int $usuarioId, int $proyectoId, ?string $fechaAdquisicion = null): array
     {
-        return DB::transaction(function () use ($empresaId, $proyectoId) {
+        return DB::transaction(function () use ($empresaId, $proyectoId, $fechaAdquisicion) {
             $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($proyectoId);
             if (!$proyecto->tipo_activo_id || !$proyecto->cuenta_depreciacion_id || !$proyecto->cuenta_gasto_id) {
                 throw new Exception("Configuración Incompleta: El proyecto requiere asignar las 3 cuentas contables (Activo, Depreciación y Gasto) antes de ser capitalizado.");
@@ -406,7 +406,7 @@ class ActivoFijoService
                 'cuenta_depreciacion_codigo' => $cuentaDepre->codigo,
                 'cuenta_gasto_codigo' => $cuentaGasto->codigo,
                 'valor_adquisicion' => (float) $proyecto->valor_total_original,
-                'fecha_adquisicion' => now()->toDateString(),
+                'fecha_adquisicion' => $fechaAdquisicion ?? now()->toDateString(),
                 'vida_util_meses' => $proyecto->vida_util_meses,
                 'valor_residual' => 1,
                 'estado' => 'ACTIVO'
@@ -486,7 +486,7 @@ class ActivoFijoService
             $cabecera = [
                 'empresa_id' => $empresaId,
                 'usuario_id' => $usuarioId,
-                'fecha' => now()->toDateString(),
+                'fecha' => $datos['fecha'] ?? now()->toDateString(),
                 'glosa' => "Baja de Activo Fijo {$activo->codigo} - {$activo->nombre}",
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'activos',

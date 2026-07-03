@@ -295,7 +295,11 @@ class ActivoFijoController
         try {
             $this->autorizarAccesoContable($request->user());
 
-            $activo = $this->service->activarProyecto($request->user()->empresa_id, $request->user()->id, (int) $id);
+            $datos = $request->validate([
+                'fecha_adquisicion' => 'nullable|date_format:Y-m-d',
+            ]);
+
+            $activo = $this->service->activarProyecto($request->user()->empresa_id, $request->user()->id, (int) $id, $datos['fecha_adquisicion'] ?? null);
             return response()->json(['success' => true, 'message' => 'Proyecto activado y capitalizado', 'data' => $activo]);
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
@@ -342,7 +346,8 @@ class ActivoFijoController
             $this->autorizarAccesoContable($request->user());
 
             $datos = $request->validate([
-                'motivo' => 'nullable|string|max:255'
+                'motivo' => 'nullable|string|max:255',
+                'fecha' => 'nullable|date_format:Y-m-d',
             ]);
 
             $resultado = $this->service->darDeBaja($request->user()->empresa_id, $request->user()->id, (int) $id, $datos);
