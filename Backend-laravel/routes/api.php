@@ -555,6 +555,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::post('/finiquitos/calcular', [FiniquitoController::class, 'calcular'])->middleware('permiso:rrhh.remuneraciones.procesar');
         Route::get('/finiquitos/{id}', [FiniquitoController::class, 'show'])->middleware('permiso:rrhh.remuneraciones.ver');
         Route::post('/finiquitos/{id}/firmar', [FiniquitoController::class, 'firmar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/finiquitos/{id}/anular', [FiniquitoController::class, 'anular'])->middleware('permiso:rrhh.remuneraciones.procesar');
 
         // Parametrización legal (R2): tasas, indicadores UF/UTM, tabla impuesto único
         Route::get('/parametros', [ParametroPrevisionalController::class, 'indexParametros'])->middleware('permiso:rrhh.parametros.ver');
