@@ -23,7 +23,11 @@ class SecurityHeaders
 
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+            // Sin 'unsafe-inline': este backend Laravel no sirve el SPA (Frontend/ se
+            // despliega aparte a public_html vía FTP, ver .github/workflows/ci-cd.yml).
+            // Las únicas vistas Blade servidas aquí (welcome.blade.php, error pages) no
+            // usan <script> inline, así que quitarlo no rompe nada y cierra el vector XSS.
+            "script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
             "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
             "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:",
             "img-src 'self' data: blob:",

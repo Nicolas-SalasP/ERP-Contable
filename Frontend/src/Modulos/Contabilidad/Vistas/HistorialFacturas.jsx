@@ -13,7 +13,8 @@ import WorkbenchReclasificacion from '../Componentes/WorkbenchReclasificacion';
 import { useFacturasHistorial } from '../Hooks/useFacturasHistorial';
 import { Calendar, BookOpen, ArrowLeftRight, Clock, MoreVertical, FileText, ChevronLeft, ChevronRight, CircleDollarSign, FileMinus, FilePlus } from 'lucide-react';
 
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+import { formatearMoneda } from '../../../Utilidades/formato';
+const formatCurrency = formatearMoneda;
 const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);

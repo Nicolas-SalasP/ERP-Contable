@@ -9,8 +9,9 @@ const ANIOS = Array.from({ length: 6 }, (_, i) => anioActual - i);
 const inputCls =
     'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
-const pesos = (valor) =>
-    new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(valor ?? 0);
+import { formatearMoneda } from '../../../Utilidades/formato';
+
+const pesos = formatearMoneda;
 
 const thCls = 'px-4 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide bg-slate-50 dark:bg-slate-900';
 const tdCls = 'px-4 py-3 text-sm text-slate-700 dark:text-slate-300';

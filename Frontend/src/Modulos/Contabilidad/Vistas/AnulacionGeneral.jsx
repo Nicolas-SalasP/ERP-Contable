@@ -5,7 +5,8 @@ import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
 import { AlertCircle, CheckCircle, FileText, Pencil, AlertTriangle } from 'lucide-react';
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+import { formatearMoneda } from '../../../Utilidades/formato';
+const formatCurrency = formatearMoneda;
 const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('es-CL', { timeZone: 'UTC' });

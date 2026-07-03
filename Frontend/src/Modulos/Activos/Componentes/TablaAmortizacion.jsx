@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCLP = (amount) =>
-    new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount ?? 0);
+const formatCLP = formatearMoneda;
 
 const TablaAmortizacion = ({ activoId, activoNombre, onCerrar }) => {
     const [datos, setDatos] = useState(null);

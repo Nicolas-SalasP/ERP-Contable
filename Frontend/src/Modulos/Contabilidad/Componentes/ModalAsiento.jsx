@@ -1,13 +1,8 @@
 ﻿import React from 'react';
 import { X } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCurrency = (amount) =>
-    new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount);
+const formatCurrency = formatearMoneda;
 
 const formatDate = (dateString) => {
     if (!dateString) return '-';

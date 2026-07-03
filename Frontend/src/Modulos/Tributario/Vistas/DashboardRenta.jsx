@@ -6,8 +6,9 @@ import ModalMapeoSII from './ModalMapeoSII';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from "@e965/xlsx";
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+const formatCurrency = formatearMoneda;
 
 const DashboardRenta = () => {
     const [anio, setAnio] = useState(new Date().getFullYear());

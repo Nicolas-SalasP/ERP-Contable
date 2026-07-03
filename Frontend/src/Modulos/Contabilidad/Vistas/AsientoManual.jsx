@@ -6,8 +6,9 @@ import Select from 'react-select';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import BotonAccion from '../../../Componentes/BotonAccion';
 import { List, Inbox, Pencil, Trash2, Plus, SlidersHorizontal, Save } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+const formatCurrency = formatearMoneda;
 
 const AsientoManual = () => {
     const [loading, setLoading] = useState(false);

@@ -1,6 +1,7 @@
 import React from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 export const formatNumber = (value, decimals = 0) => {
     const number = Number(value ?? 0);
@@ -11,13 +12,7 @@ export const formatNumber = (value, decimals = 0) => {
     }).format(Number.isFinite(number) ? number : 0);
 };
 
-export const formatCurrency = (value) => {
-    return new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        maximumFractionDigits: 0,
-    }).format(Number(value ?? 0));
-};
+export const formatCurrency = (value) => formatearMoneda(value ?? 0);
 
 export const formatDate = (value) => {
     if (!value) {

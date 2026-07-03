@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../Configuracion/api';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCLP = (n) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n ?? 0);
+const formatCLP = formatearMoneda;
 
 const BADGE_ESTADO = {
     ejecutada: 'bg-emerald-100 text-emerald-700 border-emerald-200',

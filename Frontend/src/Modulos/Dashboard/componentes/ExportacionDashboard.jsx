@@ -3,9 +3,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from '@e965/xlsx';
 import { sanitizarCeldaExcel, sanitizarFilasExcel } from '../../../Utilidades/exportarExcelSeguro';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCLP = (monto) =>
-    new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(monto ?? 0);
+const formatCLP = formatearMoneda;
 
 const fechaHoy = () => new Date().toISOString().slice(0, 10);
 

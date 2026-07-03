@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 /* Convierte "2025-07" → "Julio 2025" */
 const formatMesReferencia = (mesRef) => {
@@ -9,12 +10,7 @@ const formatMesReferencia = (mesRef) => {
     return fecha.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
 };
 
-const formatMoneda = (valor) =>
-    new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        maximumFractionDigits: 0,
-    }).format(valor ?? 0);
+const formatMoneda = formatearMoneda;
 
 const RhrrhResumen = ({ datos }) => {
     const sinPendientes = !datos || datos.liquidaciones_pendientes === 0;

@@ -7,12 +7,12 @@ import { EstadoVacioDiv } from '../../../Componentes/EstadoVacio';
 
 const POR_PAGINA_DEFECTO = 25;
 
+import { formatearMoneda } from '../../../Utilidades/formato';
+
 const formatCLP = (n) => {
     if (n === null || n === undefined) return '—';
     try {
-        return new Intl.NumberFormat('es-CL', {
-            style: 'currency', currency: 'CLP', maximumFractionDigits: 0,
-        }).format(Number(n));
+        return formatearMoneda(Number(n));
     } catch {
         return n;
     }
