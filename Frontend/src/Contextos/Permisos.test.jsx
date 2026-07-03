@@ -107,6 +107,27 @@ describe('usePermisos — tieneModulo', () => {
         render(<ConsumidorPermisos modulo="inventario" />);
         expect(screen.getByTestId('tiene-modulo').textContent).toBe('false');
     });
+
+    // Regresion: ModuloPermisos::MAP (backend) nunca emite una clave bare
+    // "rrhh"/"inventario"/"sii" -- solo subclaves granulares como
+    // "rrhh.empleados". RutaPorModulo protege rutas con modulo="rrhh", asi
+    // que sin match por prefijo cualquier usuario SSO con module_keys real
+    // de plan quedaba bloqueado de esas rutas pese a tener los permisos
+    // correctos (bug real detectado en produccion 2026-07-06).
+    it('retorna true cuando el plan solo tiene subclaves granulares del dominio (module_keys real de produccion)', () => {
+        guardarUsuario({
+            permisos: [],
+            module_keys: ['rrhh.empleados', 'rrhh.remuneraciones', 'rrhh.parametros', 'inventario.dashboard', 'sii.dte'],
+        });
+        render(<ConsumidorPermisos modulo="rrhh" />);
+        expect(screen.getByTestId('tiene-modulo').textContent).toBe('true');
+    });
+
+    it('el match por prefijo no confunde dominios distintos (rrhh vs rrhh_otro)', () => {
+        guardarUsuario({ permisos: [], module_keys: ['rrhh_otro.algo'] });
+        render(<ConsumidorPermisos modulo="rrhh" />);
+        expect(screen.getByTestId('tiene-modulo').textContent).toBe('false');
+    });
 });
 
 describe('usePermisos — permisosUsuario', () => {
