@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../Configuracion/api';
 import { logger } from '../../../Configuracion/logger';
 import { X } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '-';
-    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+    return formatearMoneda(amount);
 };
 
 const formatDate = (dateString) => {

@@ -7,8 +7,9 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import Select from 'react-select';
 import { CreditCard, X, Check } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+const formatCurrency = formatearMoneda;
 
 const MesaConciliacion = () => {
     const [cuentasBanco, setCuentasBanco] = useState([]);
@@ -166,15 +167,17 @@ const MesaConciliacion = () => {
         const tipo = esEgreso ? 'COMPRA' : 'VENTA';
         
         try {
-            const res = await api.get('/facturas');
+            // Filtramos server-side por tipo + entidad para no depender de traer
+            // todas las facturas de la empresa (el endpoint ahora pagina).
+            const res = await api.get('/facturas', {
+                params: { tipo, proveedor_id: selected.value, limit: 500 }
+            });
             const todas = res.success ? res.data : (res.data?.data || []);
             const pendientes = todas.filter(f =>
-                f.tipo === tipo &&
                 f.estado !== 'PAGADA' &&
-                f.estado !== 'ANULADA' &&
-                (esEgreso ? Number(f.proveedor_id) === Number(selected.value) : Number(f.cliente_id) === Number(selected.value))
+                f.estado !== 'ANULADA'
             );
-            
+
             setFacturasManuales(pendientes);
         } catch (error) {
             Swal.fire('Error', 'No se pudieron cargar las facturas de esta entidad.', 'error');

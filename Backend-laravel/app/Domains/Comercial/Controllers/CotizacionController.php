@@ -27,9 +27,23 @@ class CotizacionController
 
     public function index(Request $request)
     {
+        $perPage = (int) $request->query('per_page', 100);
+        $perPage = $perPage > 0 && $perPage <= 200 ? $perPage : 100;
+
+        $paginado = $this->service->obtenerPorEmpresa($request->user()->empresa_id, $perPage);
+
+        // 'data' se mantiene como arreglo plano (compatibilidad con el frontend
+        // actual, que no implementa aun controles de paginacion); 'meta' expone
+        // la info de paginacion para que un futuro consumidor pueda usarla.
         return response()->json([
             'success' => true,
-            'data' => $this->service->obtenerPorEmpresa($request->user()->empresa_id)
+            'data' => $paginado->items(),
+            'meta' => [
+                'current_page' => $paginado->currentPage(),
+                'last_page' => $paginado->lastPage(),
+                'per_page' => $paginado->perPage(),
+                'total' => $paginado->total(),
+            ],
         ]);
     }
 

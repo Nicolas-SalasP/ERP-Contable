@@ -24,12 +24,8 @@ import TablaProximasVencer from './componentes/TablaProximasVencer';
 /* ------------------------------------------------------------------ */
 /* Utilidades de formato                                                */
 /* ------------------------------------------------------------------ */
-const formatMoneda = (valor) =>
-    new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        maximumFractionDigits: 0,
-    }).format(valor ?? 0);
+import { formatearMoneda } from '../../Utilidades/formato';
+const formatMoneda = formatearMoneda;
 
 const formatFecha = (fecha) => {
     if (!fecha) return '—';

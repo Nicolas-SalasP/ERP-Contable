@@ -4,7 +4,8 @@ import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { useNavigate } from 'react-router-dom';
 import { logger } from '../../../Configuracion/logger';
 import { ArrowUpRight } from 'lucide-react';
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+import { formatearMoneda } from '../../../Utilidades/formato';
+const formatCurrency = formatearMoneda;
 
 const HistorialCotizaciones = ({ clienteId }) => {
     const [cotizaciones, setCotizaciones] = useState([]);

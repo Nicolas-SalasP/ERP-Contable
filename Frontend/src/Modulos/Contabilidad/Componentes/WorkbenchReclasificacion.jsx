@@ -1,14 +1,9 @@
 ﻿import React from 'react';
 import BuscadorCuentasReclasificar from './BuscadorCuentasReclasificar';
 import { X, Lock, Download } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCurrency = (amount) =>
-    new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount);
+const formatCurrency = formatearMoneda;
 
 const CUENTAS_BLOQUEADAS = ['110001', '210101', '210102'];
 const esBloqueada = (codigoCuenta) => CUENTAS_BLOQUEADAS.includes(codigoCuenta);

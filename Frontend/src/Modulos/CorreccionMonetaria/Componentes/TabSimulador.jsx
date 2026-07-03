@@ -2,9 +2,11 @@
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 
+import { formatearMoneda } from '../../../Utilidades/formato';
+
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-const formatCLP = (n) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n ?? 0);
+const formatCLP = formatearMoneda;
 
 const COLORES_ROL = {
     ACTIVO_NO_MONETARIO:    'blue',

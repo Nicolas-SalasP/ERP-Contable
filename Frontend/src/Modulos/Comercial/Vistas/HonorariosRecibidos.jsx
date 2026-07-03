@@ -5,9 +5,11 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { BotonEliminar } from '../../../Componentes/ConfirmacionInline';
 
+import { formatearMoneda } from '../../../Utilidades/formato';
+
 const TASAS = { 2024: 13.75, 2025: 14.50, 2026: 15.25, 2027: 16.25, 2028: 17.00 };
 
-const clpFmt = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' });
+const clpFmt = { format: formatearMoneda };
 
 const inputCls =
     'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';

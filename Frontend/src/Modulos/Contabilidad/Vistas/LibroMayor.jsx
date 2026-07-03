@@ -9,9 +9,10 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { useToast } from '../../../Contextos/ToastContext';
 import ModalDetalleAsiento from '../Componentes/ModalDetalleAsiento';
+import { formatearMoneda } from '../../../Utilidades/formato';
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
-    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+    return formatearMoneda(amount);
 };
 
 const formatDate = (dateString) => {

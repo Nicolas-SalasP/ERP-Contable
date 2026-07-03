@@ -8,8 +8,9 @@ import Swal from 'sweetalert2';
 import * as XLSX from "@e965/xlsx";
 import { sanitizarFilasExcel } from '../../../Utilidades/exportarExcelSeguro';
 import { ChevronRight, CreditCard, AlertTriangle, Download, CheckCircle } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+const formatCurrency = formatearMoneda;
 
 const NominaPagos = () => {
     const [facturas, setFacturas] = useState([]);

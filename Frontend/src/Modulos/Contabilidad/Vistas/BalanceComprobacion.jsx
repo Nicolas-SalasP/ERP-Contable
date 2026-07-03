@@ -8,10 +8,11 @@ import { Download } from 'lucide-react';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { useToast } from '../../../Contextos/ToastContext';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 const formatMoney = (amount) => {
     if (!amount || parseFloat(amount) === 0) return '';
-    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+    return formatearMoneda(amount);
 };
 
 const hoy = new Date().toISOString().split('T')[0];

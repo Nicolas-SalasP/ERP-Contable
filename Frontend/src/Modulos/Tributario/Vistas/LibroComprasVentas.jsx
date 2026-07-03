@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { usePermisos } from '../../../Contextos/Permisos';
 import { lcv } from '../Servicios/tributarioApi';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 const hoy = new Date();
 const MES_ACTUAL  = hoy.getMonth() + 1;
@@ -26,8 +27,7 @@ const ANIOS = Array.from({ length: ANIO_ACTUAL - 2019 }, (_, i) => ANIO_ACTUAL -
 const selectCls =
     'px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
-const formatMoneda = (v) =>
-    new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(v ?? 0);
+const formatMoneda = formatearMoneda;
 
 const descargarBlob = (blob, nombre) => {
     const url = URL.createObjectURL(blob);

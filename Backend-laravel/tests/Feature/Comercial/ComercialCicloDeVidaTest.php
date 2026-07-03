@@ -85,6 +85,16 @@ class ComercialCicloDeVidaTest extends TestCase
                  'tipo' => 'VENTA',
                  'monto_bruto' => 59500
              ]);
+
+             // cliente_id debe quedar seteado en la factura resultante: es la
+             // relacion real que usa FacturaAComercialDteMapper para armar el
+             // receptor del DTE (receptor_rut/razon_social) y ArAgingService.
+             // Sin esto, toda factura de venta emitia DTE con el receptor vacio.
+             $this->assertDatabaseHas('facturas', [
+                 'empresa_id' => $this->empresa->id,
+                 'tipo' => 'VENTA',
+                 'cliente_id' => $cliente->id,
+             ]);
         }
     }
 }

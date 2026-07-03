@@ -1,12 +1,9 @@
+import { formatearMoneda } from '../../../Utilidades/formato';
+
 export default function TablaProximasVencer({ datos = [] }) {
     if (!datos.length) return null;
 
-    const formatCLP = (v) =>
-        new Intl.NumberFormat('es-CL', {
-            style: 'currency',
-            currency: 'CLP',
-            maximumFractionDigits: 0,
-        }).format(v);
+    const formatCLP = formatearMoneda;
 
     return (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4">

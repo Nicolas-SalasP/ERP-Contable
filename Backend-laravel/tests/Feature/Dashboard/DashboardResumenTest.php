@@ -10,6 +10,7 @@ use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Rrhh\Models\Liquidacion;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardResumenTest extends TestCase
 {
@@ -324,5 +325,60 @@ class DashboardResumenTest extends TestCase
         $clientes = $response->json('data.clientes_nuevos_6m');
         $this->assertIsArray($clientes);
         $this->assertCount(6, $clientes);
+    }
+
+    /**
+     * Caracterización: una segunda request al mismo dashboard (misma empresa,
+     * periodo y permisos) debe usar cache y NO volver a ejecutar las ~30
+     * queries del calculo (Cache::remember evita recalcular).
+     */
+    public function test_segunda_request_al_dashboard_usa_cache(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $proveedor = $this->crearProveedor($empresa->id);
+        $this->crearFacturaVenta($empresa->id, $proveedor->id, 100000);
+
+        $primera = $this->actingAs($usuario)->getJson('/api/dashboard/resumen?periodo=mes');
+        $primera->assertOk();
+
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+
+        $segunda = $this->actingAs($usuario)->getJson('/api/dashboard/resumen?periodo=mes');
+        $segunda->assertOk();
+
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
+
+        // La segunda respuesta debe ser identica (viene de cache) y no debe
+        // haber disparado las decenas de queries del calculo del dashboard.
+        $this->assertEquals($primera->json('data'), $segunda->json('data'));
+        $this->assertLessThan(
+            10,
+            count($queries),
+            'La segunda request no deberia recalcular el dashboard (debe venir de cache).'
+        );
+    }
+
+    /** El cache es por empresa: dos empresas distintas nunca deben compartir resultado. */
+    public function test_cache_del_dashboard_no_mezcla_empresas(): void
+    {
+        [$empresaA, $usuarioA] = $this->crearEmpresaConAdmin();
+        [$empresaB, $usuarioB] = $this->crearEmpresaConAdmin();
+
+        $proveedorA = $this->crearProveedor($empresaA->id, 'Cliente de A');
+        $proveedorB = $this->crearProveedor($empresaB->id, 'Cliente de B');
+
+        $this->crearFacturaVenta($empresaA->id, $proveedorA->id, 111000);
+        $this->crearFacturaVenta($empresaB->id, $proveedorB->id, 222000);
+
+        $respA = $this->actingAs($usuarioA)->getJson('/api/dashboard/resumen?periodo=mes');
+        $respB = $this->actingAs($usuarioB)->getJson('/api/dashboard/resumen?periodo=mes');
+
+        $respA->assertOk();
+        $respB->assertOk();
+
+        $this->assertEquals(111000.0, (float) $respA->json('data.kpis.ventas_mes'));
+        $this->assertEquals(222000.0, (float) $respB->json('data.kpis.ventas_mes'));
     }
 }

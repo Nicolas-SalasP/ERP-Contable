@@ -7,7 +7,8 @@ import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { logger } from '../../../Configuracion/logger';
 import { CreditCard, Upload, FileText, Check, Plus } from 'lucide-react';
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+import { formatearMoneda } from '../../../Utilidades/formato';
+const formatCurrency = formatearMoneda;
 
 const CartolaBancaria = () => {
     const [cuentas, setCuentas] = useState([]);

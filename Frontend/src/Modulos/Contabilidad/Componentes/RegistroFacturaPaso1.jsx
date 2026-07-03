@@ -1,5 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 const TIPOS_GASTO_ART59 = [
     { value: 'intereses',          label: 'Intereses (4%)' },
@@ -153,7 +154,7 @@ const RegistroFacturaPaso1 = ({
                             <div className="bg-amber-100 dark:bg-amber-900/40 rounded-lg p-3 text-center">
                                 <span className="text-xs text-amber-600 dark:text-amber-400 font-bold uppercase">Total en CLP: </span>
                                 <span className="font-mono font-bold text-amber-800 dark:text-amber-200 text-lg">
-                                    {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(
+                                    {formatearMoneda(
                                         Math.round(parseFloat(formData.montoOrigenDivisa) * parseFloat(formData.tipoCambio))
                                     )}
                                 </span>
