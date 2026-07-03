@@ -480,6 +480,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/ajustes-criticos', [AjusteCriticoController::class, 'ajustesCriticos']);
         Route::post('/ajustes-criticos', [AjusteCriticoController::class, 'registrarAjusteCritico']);
         Route::get('/ajustes-criticos/{id}', [AjusteCriticoController::class, 'verAjusteCritico']);
+        Route::post('/ajustes-criticos/{id}/anular', [AjusteCriticoController::class, 'anularAjusteCritico']);
 
         Route::get('/lotes', [LoteController::class, 'lotes']);
         Route::post('/lotes', [LoteController::class, 'storeLote']);

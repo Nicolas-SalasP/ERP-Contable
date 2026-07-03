@@ -132,6 +132,36 @@ class AjusteCriticoController
         }
     }
 
+    public function anularAjusteCritico(Request $request, int $id): JsonResponse
+    {
+        try {
+            $motivo = (string) $request->input('motivo_anulacion', '');
+
+            $ajuste = $this->ajusteCriticoService->anularAjusteCritico(
+                $request->user(),
+                $id,
+                $motivo
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ajuste crítico anulado: se registró un movimiento compensatorio.',
+                'data' => $ajuste,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $this->mensajeValidacionAjusteCritico($e),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
     private function mensajeValidacionAjusteCritico(ValidationException $e): string
     {
         $errores = $e->errors();
