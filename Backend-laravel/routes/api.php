@@ -117,8 +117,11 @@ Route::prefix('auth')->group(function () {
 // empresa (recien provisionado). No se exige check.subscription porque es el
 // paso previo a configurar la empresa/plan.
 Route::middleware(['auth:sanctum', 'track.ultimo.acceso'])->group(function () {
-    Route::get('/empresas/verificar-rut', [EmpresaController::class, 'verificarRut']);
-    Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding']);
+    // Rate-limiting: aunque requieren sesion, son endpoints livianos que no deberian
+    // llamarse mas de un puñado de veces por usuario legitimo (verificacion de RUT
+    // repetida o reintentos de onboarding). Throttle acota abuso/scripting.
+    Route::get('/empresas/verificar-rut', [EmpresaController::class, 'verificarRut'])->middleware('throttle:30,1');
+    Route::post('/empresas/onboarding', [EmpresaController::class, 'onboarding'])->middleware('throttle:30,1');
 
     // Política de privacidad y consentimiento — Ley 21.719 Fase 4
     Route::prefix('privacidad')->group(function () {
@@ -230,7 +233,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/facturas/historial', [FacturaController::class, 'historial'])->middleware('permiso:compras.ver');
     Route::get('/facturas/check', [FacturaController::class, 'check'])->middleware('permiso:compras.ver');
     Route::get('/facturas/vencidas', [FacturaController::class, 'vencidas'])->middleware('permiso:compras.ver');
-    Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel'])->middleware('permiso:compras.ver');
+    // Throttle: exportacion masiva es operacion pesada (genera Excel completo), se
+    // acota a 10 req/min para evitar abuso/uso como vector de denegacion de servicio.
+    Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel'])->middleware(['permiso:compras.ver', 'throttle:10,1']);
     Route::get('/facturas/disponibles-proyectos', [FacturaController::class, 'disponiblesProyectos'])->middleware('permiso:compras.ver,activos.ver');
 
     // Resource de facturas (index/store/show; update y destroy no existen)
@@ -420,7 +425,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/reportes/packing', [InventarioPackingController::class, 'reporte']);
         Route::get('/reportes/despachos', [InventarioDespachoController::class, 'reporte']);
         Route::get('/reportes/devoluciones', [InventarioDevolucionController::class, 'reporte']);
-        Route::get('/reportes/{tipo}/exportar-csv', [ReporteInventarioController::class, 'exportarReporteCsv']);
+        // Throttle: exportacion masiva de reportes de inventario es pesada; se acota
+        // a 10 req/min para evitar abuso/uso como vector de denegacion de servicio.
+        Route::get('/reportes/{tipo}/exportar-csv', [ReporteInventarioController::class, 'exportarReporteCsv'])->middleware('throttle:10,1');
 
         Route::get('/catalogos', [CatalogoController::class, 'catalogos']);
 
@@ -534,7 +541,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::delete('/empleados/{id}', [EmpleadoController::class, 'destroy'])->middleware('permiso:rrhh.empleados.editar');
 
         // Derechos ARCO+ (Fase 5 — Ley 21.719)
-        Route::get('/empleados/{id}/datos-personales', [ArcoController::class, 'exportar'])->middleware('permiso:rrhh.empleados.ver');
+        // Throttle: exportacion de datos personales (ARCO+) es sensible y pesada;
+        // se acota a 10 req/min para evitar abuso/exfiltracion masiva.
+        Route::get('/empleados/{id}/datos-personales', [ArcoController::class, 'exportar'])->middleware(['permiso:rrhh.empleados.ver', 'throttle:10,1']);
         Route::post('/empleados/{id}/bloquear', [ArcoController::class, 'bloquear'])->middleware('permiso:usuarios.gestionar');
         Route::post('/empleados/{id}/anonimizar', [ArcoController::class, 'suprimir'])->middleware('permiso:usuarios.gestionar');
 

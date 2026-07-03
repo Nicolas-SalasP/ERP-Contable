@@ -15,12 +15,16 @@ use Illuminate\Support\Facades\DB;
 
 class CotizacionService
 {
-    public function obtenerPorEmpresa(int $empresaId)
+    public function obtenerPorEmpresa(int $empresaId, int $perPage = 100)
     {
+        // Antes hacia ->get() sin limite: en empresas con historico grande esto
+        // cargaba TODAS las cotizaciones en memoria en cada llamada al listado.
+        // Se pagina server-side; el controller expone ademas un bloque "meta"
+        // para que el frontend pueda incorporar paginacion incremental.
         return Cotizacion::where('empresa_id', $empresaId)
             ->with(['cliente', 'estado'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage);
     }
 
     public function crearCotizacion(array $datos, array $detalles): Cotizacion
