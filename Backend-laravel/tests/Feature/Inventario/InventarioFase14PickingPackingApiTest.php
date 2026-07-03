@@ -208,6 +208,38 @@ class InventarioFase14PickingPackingApiTest extends TestCase
             ->assertJsonPath('success', false);
     }
 
+    public function test_cancelar_packing_libera_stock_reservado_del_picking(): void
+    {
+        // Antes del fix: cancelar un packing dejaba cantidad_pickeada
+        // reservada para siempre, porque la liberacion solo ocurria en
+        // Despacho::confirmar(), al que nunca se llegaba.
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos($this->permisosFase14());
+        [$producto, $bodega, $ubicacion] = $this->crearStockDisponible($empresa, 10);
+        Sanctum::actingAs($usuario);
+
+        $pickingId = $this->crearPickingCompleto($producto, $bodega, 6);
+
+        $packingId = $this->postJson('/api/inventario/packing', [
+            'picking_orden_id' => $pickingId,
+        ])->assertCreated()->json('data.id');
+
+        $stockTrasPacking = StockUbicacionInventario::where('ubicacion_id', $ubicacion->id)->firstOrFail();
+        $this->assertEquals(6.0, (float) $stockTrasPacking->stock_reservado);
+
+        $this->postJson("/api/inventario/packing/{$packingId}/cancelar")
+            ->assertOk()
+            ->assertJsonPath('data.estado', InventarioPackingOrden::ESTADO_CANCELADO);
+
+        $stockTrasCancelar = StockUbicacionInventario::where('ubicacion_id', $ubicacion->id)->firstOrFail();
+        $this->assertEquals(0.0, (float) $stockTrasCancelar->stock_reservado, 'Cancelar el packing debe liberar el stock que picking dejo reservado.');
+        $this->assertEquals(10.0, (float) $stockTrasCancelar->stock_actual);
+
+        // El stock liberado debe poder reusarse en un picking nuevo.
+        $nuevoPickingId = $this->crearPickingCompleto($producto, $bodega, 10);
+        $this->assertEquals(10.0, (float) StockUbicacionInventario::where('ubicacion_id', $ubicacion->id)->firstOrFail()->stock_reservado);
+        $this->assertNotEquals($pickingId, $nuevoPickingId);
+    }
+
     public function test_picking_respeta_multiempresa(): void
     {
         [$empresa, $usuario] = $this->usuarioContadorConPermisos($this->permisosFase14());
