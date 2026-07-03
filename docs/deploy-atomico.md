@@ -86,3 +86,21 @@ Revisando `index.php` para este fix se notó que el `match()` de `$basePath` sol
 3. Verificar por SSH que `~/erp_backend_staging` ahora es un symlink (`ls -la ~/erp_backend_staging`) apuntando a `~/erp_backend_staging_releases/<timestamp>`.
 4. Prueba de fallo simulado (recomendada por el council antes de confiar en el fix): cortar la conexión SSH a mitad de un deploy de prueba (o forzar un error temporal en una migración) y confirmar que el symlink sigue apuntando a la release anterior y el sitio staging sigue respondiendo con normalidad.
 5. Recién después de validar en staging, dejar que el próximo push a `main` ejercite el mismo patrón en producción.
+
+## Incidente real — primer deploy a producción (2026-07-03, ~11:34 UTC)
+
+No había ambiente de staging real disponible en el hosting (confirmado por SSH: solo existen `admin.tenri.cl`, `api.tenri.cl`, `booking.tenri.cl`, `erp.tenri.cl`, `tenri.cl` bajo la cuenta — ningún `staging.erp.tenri.cl`). El primer deploy real con este patrón corrió directo contra producción vía PR a `main`.
+
+**Qué pasó:**
+
+1. El bootstrap del patrón viejo→nuevo corrió correctamente: `.env` y `storage/` se copiaron a `erp_backend_shared/`, y `~/erp_backend` se renombró a `erp_backend.pre-symlink-backup-20260703113424` (tal como está diseñado, no destructivo).
+2. `php artisan optimize:clear` corrió bien.
+3. El script murió en el paso de backup de BD: `mapfile -t DBCFG < <(php -r '...')` falló con `bash: line 54: /dev/fd/63: No such file or directory`. El contenedor Docker que usa `appleboy/ssh-action@v1.0.3` para ejecutar el script remoto no expone `/dev/fd` en esa sesión, así que la *process substitution* (`<(...)`) no funciona ahí aunque sí funciona en una sesión SSH normal.
+4. `set -e` cortó el script en ese punto — **correcto, funcionó como estaba diseñado**: el swap del symlink nunca se ejecutó porque el script no llegó a esa línea.
+5. **Pero** el paso 1 (bootstrap) ya había corrido y renombrado `erp_backend` fuera de su lugar antes de que el script muriera — como el símlink nunca se creó, `~/erp_backend` quedó **inexistente**, y `index.php` (que apunta a esa ruta absoluta) empezó a devolver 500 en todo `/api/*`. El frontend estático (`/`) seguía respondiendo 200 porque no depende del backend para servirse.
+6. Downtime real de la API: desde el fallo del deploy hasta la restauración manual (unos minutos, verificado por SSH en vivo mientras se diagnosticaba).
+7. **Restauración:** `mv ~/erp_backend.pre-symlink-backup-20260703113424 ~/erp_backend` — un solo comando, sin pérdida de datos (el bootstrap nunca borra, solo renombra). Confirmado `/api/health` → 200 inmediatamente después.
+
+**Causa raíz y fix:** reemplazado `mapfile -t DBCFG < <(php -r '...')` por un archivo temporal (`php -r '...' > "$DBCFG_FILE"; mapfile -t DBCFG < "$DBCFG_FILE"`) en ambos jobs — evita `/dev/fd` por completo. Verificado el fix corriendo el snippet exacto contra el servidor real (subido como script vía SFTP, no inline, para evitar el mismo problema de proceso) — leyó la configuración de BD correctamente.
+
+**Lección para el runbook:** el "probar primero en staging" del veredicto del council no se pudo cumplir porque el ambiente no existe — el primer test real terminó siendo contra producción. La razón por la que el incidente fue recuperable rápido es exactamente la razón por la que se hizo este cambio: el bootstrap no destruye nada (renombra), y `set -e` cortó antes del swap. Un pipeline que hubiera seguido con el `unzip -o` directo sobre el directorio viejo (el diseño original que se estaba reemplazando) habría fallado de forma mucho menos diagnosticable. Aun así, **el bootstrap en sí mismo genera una ventana de riesgo real** la primera vez que corre (deja el directorio viejo momentáneamente renombrado antes de que exista el symlink) — pendiente de evaluar si conviene mover el rename del directorio viejo a *después* de confirmar que la release nueva completó todos sus pasos, en vez de al principio.
