@@ -82,4 +82,17 @@ class PollearEnviosPendientesJob implements ShouldQueue
             'errores'          => $erroresAislados,
         ]);
     }
+
+    /**
+     * Los errores por-envio ya se aislan y loguean dentro de handle(); esto
+     * solo dispara si el job entero revienta antes de llegar al loop (ej.
+     * la query inicial falla). Mismo nivel critical que los demas jobs de Sii.
+     */
+    public function failed(Throwable $exception): void
+    {
+        Log::channel('sii')->critical('PollearEnviosPendientesJob fallo antes de completar.', [
+            'exception_class' => $exception::class,
+            'message'         => $exception->getMessage(),
+        ]);
+    }
 }
