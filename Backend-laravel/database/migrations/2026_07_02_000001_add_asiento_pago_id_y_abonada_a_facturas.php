@@ -31,6 +31,18 @@ return new class extends Migration {
         });
 
         if (DB::getDriverName() === 'mysql') {
+            // Si ya existen facturas ABONADA (el código las escribe desde que esta
+            // migración se aplicó), revertir el enum sin ese valor las truncaría a
+            // '' en modo no-estricto o fallaría en modo estricto. Evitar el rollback
+            // destructivo: abortar con instrucciones en vez de perder datos.
+            $existenAbonadas = DB::table('facturas')->where('estado', 'ABONADA')->exists();
+            if ($existenAbonadas) {
+                throw new \RuntimeException(
+                    'No se puede revertir: existen facturas en estado ABONADA. ' .
+                    'Reasigna su estado manualmente antes de hacer rollback de esta migración.'
+                );
+            }
+
             DB::statement("ALTER TABLE facturas MODIFY estado ENUM('BORRADOR', 'REGISTRADA', 'PAGADA', 'ANULADA') DEFAULT 'REGISTRADA'");
         }
     }
