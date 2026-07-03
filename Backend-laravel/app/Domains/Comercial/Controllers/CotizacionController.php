@@ -225,9 +225,12 @@ class CotizacionController
     public function facturar(Request $request, $id)
     {
         try {
+            $request->validate(['fecha_emision' => 'nullable|date']);
+
             $factura = $this->service->convertirEnFactura(
                 $request->user()->empresa_id,
-                (int) $id
+                (int) $id,
+                $request->fecha_emision
             );
 
             return response()->json([

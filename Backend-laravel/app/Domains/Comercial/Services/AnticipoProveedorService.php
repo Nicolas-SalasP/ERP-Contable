@@ -34,7 +34,7 @@ class AnticipoProveedorService
 
     public function aplicarAFactura(int $empresaId, int $anticipoId, int $facturaId, float $montoAplicar): AnticipoProveedor
     {
-        return DB::transaction(function () use ($empresaId, $anticipoId, $montoAplicar) {
+        return DB::transaction(function () use ($empresaId, $anticipoId, $facturaId, $montoAplicar) {
             $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)
                 ->lockForUpdate()
                 ->find($anticipoId);
@@ -69,8 +69,51 @@ class AnticipoProveedorService
             }
             $anticipo->save();
 
+            // Registra a qué factura se aplicó este monto. Permite que anular esa
+            // factura despues (FacturaService::anularFactura) libere el saldo.
+            DB::table('anticipo_aplicaciones')->insert([
+                'empresa_id' => $empresaId,
+                'anticipo_id' => $anticipo->id,
+                'factura_id' => $facturaId,
+                'monto' => $montoAplicar,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             return $anticipo->fresh();
         });
+    }
+
+    /**
+     * Revierte todas las aplicaciones de anticipo vigentes sobre una factura
+     * anulada: repone el saldo disponible del anticipo y marca la aplicación
+     * como revertida para no volver a liberarla dos veces.
+     */
+    public function revertirAplicacionesDeFactura(int $empresaId, int $facturaId): void
+    {
+        $aplicaciones = DB::table('anticipo_aplicaciones')
+            ->where('empresa_id', $empresaId)
+            ->where('factura_id', $facturaId)
+            ->whereNull('revertido_at')
+            ->get();
+
+        foreach ($aplicaciones as $aplicacion) {
+            $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)
+                ->lockForUpdate()
+                ->find($aplicacion->anticipo_id);
+
+            if ($anticipo) {
+                $saldoActual = (float) ($anticipo->getRawOriginal('saldo_disponible') ?? $anticipo->monto);
+                $anticipo->saldo_disponible = min(
+                    (float) ($anticipo->monto_original ?? $anticipo->monto),
+                    $saldoActual + (float) $aplicacion->monto
+                );
+                $anticipo->estado = 'DISPONIBLE';
+                $anticipo->save();
+            }
+
+            DB::table('anticipo_aplicaciones')->where('id', $aplicacion->id)->update(['revertido_at' => now()]);
+        }
     }
 
     public function listar(int $empresaId, ?int $proveedorId = null)
