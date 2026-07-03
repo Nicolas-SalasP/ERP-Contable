@@ -2,6 +2,7 @@ import React from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from '@e965/xlsx';
+import { sanitizarCeldaExcel, sanitizarFilasExcel } from '../../../Utilidades/exportarExcelSeguro';
 
 const formatCLP = (monto) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(monto ?? 0);
@@ -55,7 +56,7 @@ const exportarExcelCompleto = (datos, _periodo) => {
 
     const topData = [
         ['Cliente', 'Monto (CLP)'],
-        ...(datos?.top_clientes ?? []).map((r) => [r.nombre, r.monto]),
+        ...(datos?.top_clientes ?? []).map((r) => [sanitizarCeldaExcel(r.nombre), r.monto]),
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(topData), 'Top Clientes');
 
@@ -101,7 +102,7 @@ const exportarTopClientesExcel = (topClientes, periodo) => {
         'Monto Facturado (CLP)': Number(item.monto) || 0,
     }));
 
-    const ws = XLSX.utils.json_to_sheet(filas);
+    const ws = XLSX.utils.json_to_sheet(sanitizarFilasExcel(filas));
     ws['!cols'] = [{ wch: 35 }, { wch: 20 }];
 
     const wb = XLSX.utils.book_new();
@@ -122,7 +123,7 @@ const exportarFacturasUrgentesExcel = (facturas, periodo) => {
         Estado: f.estado,
     }));
 
-    const ws = XLSX.utils.json_to_sheet(filas);
+    const ws = XLSX.utils.json_to_sheet(sanitizarFilasExcel(filas));
     ws['!cols'] = [
         { wch: 16 },
         { wch: 15 },
