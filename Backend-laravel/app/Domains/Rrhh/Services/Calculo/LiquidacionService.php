@@ -33,6 +33,10 @@ class LiquidacionService
     private const ORDEN_DESCUENTOS_LEGALES = 300;
     private const ORDEN_DESCUENTOS_VOLUNTARIOS = 400;
 
+    // Art. 42 bis LIR, Régimen A: tope de deducción de APV de la base tributable
+    // mensual del Impuesto Único. Constante legal, no varía por empresa.
+    private const APV_TOPE_UF_MENSUAL = 50.0;
+
     public function calcular(int $empresaId, int $empleadoId, int $anio, int $mes, array $extras = []): Liquidacion
     {
         return DB::transaction(function () use ($empresaId, $empleadoId, $anio, $mes, $extras) {
@@ -245,10 +249,13 @@ class LiquidacionService
             $totalDescLegalesPreImpuesto = $afpCotizacion + $afpComision + $saludLegalMonto + $afcMonto;
             $baseTributable = $totalImponible - $totalDescLegalesPreImpuesto;
 
-            // APV voluntario reduce base tributable (Art. 42 bis LIR)
+            // APV voluntario reduce base tributable (Art. 42 bis LIR), topado a
+            // 50 UF mensuales -- sin este tope se podría declarar una base
+            // tributable arbitrariamente baja (riesgo de fiscalización SII).
             $apv = (float) ($extras['apv_voluntario'] ?? 0);
             if ($apv > 0) {
-                $baseTributable = max(0, $baseTributable - $apv);
+                $apvTopado = min($apv, self::APV_TOPE_UF_MENSUAL * $uf);
+                $baseTributable = max(0, $baseTributable - $apvTopado);
             }
 
             // ── 9. IMPUESTO ÚNICO 2ª CATEGORÍA ────────────────────────────

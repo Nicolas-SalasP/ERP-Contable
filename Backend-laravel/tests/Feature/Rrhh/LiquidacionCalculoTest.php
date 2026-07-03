@@ -263,6 +263,48 @@ class LiquidacionCalculoTest extends TestCase
         $this->assertEqualsWithDelta($totalCon - $totalSin, (float) $lineaHE->monto, 1.0);
     }
 
+    // ── 8b. APV voluntario topado a 50 UF mensuales (Art. 42 bis LIR) ─────────
+
+    public function test_apv_voluntario_se_topa_a_50_uf_mensuales(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        // Sueldo alto para que el 15% de tope de descuentos voluntarios (Art. 58 CT)
+        // no interfiera con el escenario de prueba del tope específico de APV (50 UF).
+        $empleado = $this->empleadoConContrato($empresa->id, 25000000);
+
+        $liqBase = $this->service->calcular($empresa->id, $empleado->id, 2026, 6);
+        $baseTributableSinApv = (float) $liqBase->base_tributable;
+        Liquidacion::where('empresa_id', $empresa->id)->where('empleado_id', $empleado->id)->forceDelete();
+
+        // UF de prueba = 39850 → tope legal = 50 × 39850 = 1.992.500
+        $topeUf = 50 * 39850;
+
+        $liqApvSobreTope = $this->service->calcular(
+            $empresa->id, $empleado->id, 2026, 6, ['apv_voluntario' => 3000000]
+        );
+        Liquidacion::where('empresa_id', $empresa->id)->where('empleado_id', $empleado->id)->forceDelete();
+
+        $liqApvBajoTope = $this->service->calcular(
+            $empresa->id, $empleado->id, 2026, 6, ['apv_voluntario' => 1000000]
+        );
+
+        // APV=3.000.000 (sobre el tope) solo debe deducir hasta el tope, no el monto completo.
+        $this->assertEqualsWithDelta(
+            $baseTributableSinApv - $topeUf,
+            (float) $liqApvSobreTope->base_tributable,
+            1.0,
+            'APV sobre el tope de 50 UF debe deducirse solo hasta el tope.'
+        );
+
+        // APV=1.000.000 (bajo el tope) debe deducir el monto completo, sin recorte.
+        $this->assertEqualsWithDelta(
+            $baseTributableSinApv - 1000000,
+            (float) $liqApvBajoTope->base_tributable,
+            1.0,
+            'APV bajo el tope debe deducirse en su totalidad.'
+        );
+    }
+
     // ── 8. Liquidación contiene campos mínimos requeridos ─────────────────────
 
     public function test_liquidacion_arroja_campos_minimos_requeridos(): void
