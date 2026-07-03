@@ -319,4 +319,18 @@ class GenerarLreTest extends TestCase
             Storage::disk('sii_xml')->exists("lre/{$empresa->id}/2026-06.txt")
         );
     }
+
+    public function test_no_permite_regenerar_un_lre_ya_confirmado_ante_la_dt(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $this->crearEmpleadoConLiquidacion($empresa->id, '12345678-9');
+
+        $envio = $this->service->generar($empresa->id, 2026, 6);
+        $envio->update(['estado' => LreEnvio::ESTADO_CONFIRMADO_DT]);
+
+        $this->expectException(RrhhException::class);
+        $this->expectExceptionMessage('ya fue confirmado ante la Dirección del Trabajo');
+
+        $this->service->generar($empresa->id, 2026, 6);
+    }
 }
