@@ -28,6 +28,7 @@ use App\Domains\Rrhh\Controllers\EmpleadoController;
 use App\Domains\Rrhh\Controllers\ContratoController;
 use App\Domains\Rrhh\Controllers\LiquidacionController;
 use App\Domains\Rrhh\Controllers\FiniquitoController;
+use App\Domains\Rrhh\Controllers\VacacionesController;
 use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
 use App\Domains\Rrhh\Controllers\CentralizacionController;
 use App\Domains\Rrhh\Controllers\PreviredController;
@@ -557,6 +558,14 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
         Route::get('/finiquitos/{id}', [FiniquitoController::class, 'show'])->middleware('permiso:rrhh.remuneraciones.ver');
         Route::post('/finiquitos/{id}/firmar', [FiniquitoController::class, 'firmar'])->middleware('permiso:rrhh.remuneraciones.procesar');
         Route::post('/finiquitos/{id}/anular', [FiniquitoController::class, 'anular'])->middleware('permiso:rrhh.remuneraciones.procesar');
+
+        // Vacaciones: solicitud, saldo y aprobacion (Art. 67-70 Codigo del Trabajo)
+        Route::get('/vacaciones/saldo/{empleadoId}', [VacacionesController::class, 'saldo'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::get('/vacaciones/solicitudes', [VacacionesController::class, 'index'])->middleware('permiso:rrhh.remuneraciones.ver');
+        Route::post('/vacaciones/solicitudes', [VacacionesController::class, 'solicitar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/vacaciones/solicitudes/{id}/aprobar', [VacacionesController::class, 'aprobar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/vacaciones/solicitudes/{id}/rechazar', [VacacionesController::class, 'rechazar'])->middleware('permiso:rrhh.remuneraciones.procesar');
+        Route::post('/vacaciones/solicitudes/{id}/anular', [VacacionesController::class, 'anular'])->middleware('permiso:rrhh.remuneraciones.procesar');
 
         // Parametrización legal (R2): tasas, indicadores UF/UTM, tabla impuesto único
         Route::get('/parametros', [ParametroPrevisionalController::class, 'indexParametros'])->middleware('permiso:rrhh.parametros.ver');

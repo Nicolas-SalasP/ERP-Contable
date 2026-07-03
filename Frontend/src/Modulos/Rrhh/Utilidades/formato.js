@@ -39,6 +39,9 @@ export const colorEstado = (estado) => {
         ACTIVO: 'bg-emerald-100 text-emerald-700',
         INACTIVO: 'bg-slate-200 text-slate-600',
         LICENCIA: 'bg-amber-100 text-amber-700',
+        PENDIENTE: 'bg-amber-100 text-amber-700',
+        APROBADA: 'bg-emerald-100 text-emerald-700',
+        RECHAZADA: 'bg-red-100 text-red-700',
     };
     return mapa[estado] || 'bg-slate-100 text-slate-700';
 };

@@ -63,6 +63,7 @@ const EmpleadosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/EmpleadosRrhh'));
 const ContratosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ContratosRrhh'));
 const LiquidacionesRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/LiquidacionesRrhh'));
 const FiniquitosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/FiniquitosRrhh'));
+const VacacionesRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/VacacionesRrhh'));
 const ParametrosRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/ParametrosRrhh'));
 const CentralizacionRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/CentralizacionRrhh'));
 const PreviredRrhh = lazy(() => import('./Modulos/Rrhh/Vistas/PreviredRrhh'));
@@ -755,6 +756,16 @@ function App() {
               <RutaPorModulo modulo="rrhh">
                 <RutaProtegida permiso="rrhh.remuneraciones.ver">
                   <LayoutPrincipal><FiniquitosRrhh /></LayoutPrincipal>
+                </RutaProtegida>
+              </RutaPorModulo>
+            </RutaPrivada>
+          } />
+
+          <Route path="/rrhh/vacaciones" element={
+            <RutaPrivada>
+              <RutaPorModulo modulo="rrhh">
+                <RutaProtegida permiso="rrhh.remuneraciones.ver">
+                  <LayoutPrincipal><VacacionesRrhh /></LayoutPrincipal>
                 </RutaProtegida>
               </RutaPorModulo>
             </RutaPrivada>

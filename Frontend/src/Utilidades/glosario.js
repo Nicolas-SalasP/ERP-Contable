@@ -1111,6 +1111,33 @@ export const glosario = {
         ],
         tip: 'Revisa bien la causal: es lo que mas cambia el monto final. Una renuncia y un despido por necesidades de la empresa pagan muy distinto.',
     },
+    vacacionesRrhh: {
+        id: 'vacacionesRrhh',
+        titulo: 'Vacaciones',
+        icono: '🏖️',
+        resumen: 'Solicitud y aprobacion del feriado legal de cada trabajador.',
+        queEs:
+            'Modulo para pedir y aprobar dias de vacaciones (feriado legal, Art. 67-70 Codigo del Trabajo). ' +
+            'El saldo disponible se calcula restando los dias ya aprobados al total devengado mes a mes ' +
+            '(1,25 dias habiles por mes trabajado). Una solicitud PENDIENTE no descuenta saldo todavia; ' +
+            'solo se descuenta cuando se aprueba.',
+        conceptos: [
+            { termino: 'Dias devengados', definicion: 'Total acumulado desde el inicio del contrato, calculado automaticamente al emitir cada liquidacion.' },
+            { termino: 'Dias tomados', definicion: 'Suma de dias habiles de todas las solicitudes ya APROBADAS.' },
+            { termino: 'Saldo disponible', definicion: 'Dias devengados menos dias tomados. Es lo que se puede solicitar.' },
+        ],
+        comoUsar: [
+            'Haz click en "Solicitar vacaciones" y elige el empleado: veras su saldo disponible.',
+            'Indica el rango de fechas; el sistema cuenta solo dias habiles (lunes a viernes).',
+            'La solicitud queda PENDIENTE hasta que RRHH la aprueba o rechaza.',
+            'Si una vacacion aprobada se debe deshacer, usa "Anular": repone el saldo consumido.',
+        ],
+        errores: [
+            { problema: 'Dice saldo insuficiente pero el empleado lleva años trabajando.', solucion: 'El saldo depende de que se hayan emitido las liquidaciones mensuales (cada una devenga 1,25 dias). Si faltan liquidaciones emitidas, el devengo esta incompleto.' },
+            { problema: 'No puedo aprobar una solicitud.', solucion: 'Solo se pueden aprobar/rechazar solicitudes en estado PENDIENTE. Si ya fue resuelta, no se puede volver a procesar.' },
+        ],
+        tip: 'Aprobar y luego anular no es lo mismo que rechazar: el rechazo es para una solicitud que nunca debio aprobarse, la anulacion es para una vacacion aprobada que finalmente no se tomo.',
+    },
     parametrosRrhh: {
         id: 'parametrosRrhh',
         titulo: 'Parametros Previsionales',

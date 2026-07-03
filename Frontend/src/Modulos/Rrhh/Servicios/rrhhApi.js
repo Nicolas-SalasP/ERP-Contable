@@ -41,6 +41,16 @@ const rrhhApi = {
         firmar: (id) => api.post(`/rrhh/finiquitos/${id}/firmar`),
     },
 
+    // ── Vacaciones: solicitud, saldo y aprobación (Art. 67-70 C. del Trabajo) ──
+    vacaciones: {
+        saldo: (empleadoId, options = {}) => api.get(`/rrhh/vacaciones/saldo/${empleadoId}`, options),
+        listar: (params = {}, options = {}) => api.get('/rrhh/vacaciones/solicitudes', { params, ...options }),
+        solicitar: (payload) => api.post('/rrhh/vacaciones/solicitudes', payload),
+        aprobar: (id) => api.post(`/rrhh/vacaciones/solicitudes/${id}/aprobar`),
+        rechazar: (id, motivo) => api.post(`/rrhh/vacaciones/solicitudes/${id}/rechazar`, { motivo }),
+        anular: (id, motivo) => api.post(`/rrhh/vacaciones/solicitudes/${id}/anular`, { motivo }),
+    },
+
     // ── R2: Parametrización legal ─────────────────────────────────────────────
     parametros: {
         listar: () => api.get('/rrhh/parametros'),
