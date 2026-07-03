@@ -24,12 +24,23 @@ class FacturaController
         $this->service = $service;
     }
 
-    /** Lista facturas de la empresa (filtrable por ?estado). */
+    /**
+     * Lista facturas de la empresa, paginado (filtrable por ?estado, ?tipo,
+     * ?proveedor_id, ?num, ?search, ?fecha_desde, ?fecha_hasta, ?limit).
+     */
     public function index(Request $request)
     {
+        $filtros = $request->only(['estado', 'tipo', 'proveedor_id', 'search', 'num', 'limit', 'fecha_desde', 'fecha_hasta']);
+        $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_id, $filtros);
+
         return response()->json([
             'success' => true,
-            'data' => $this->service->obtenerFacturasPorEmpresa($request->user()->empresa_id, $request->query('estado'))
+            'data' => $paginador->items(),
+            'pagination' => [
+                'total' => $paginador->total(),
+                'totalPages' => $paginador->lastPage(),
+                'page' => $paginador->currentPage()
+            ]
         ]);
     }
 

@@ -15,12 +15,16 @@ use Illuminate\Support\Facades\DB;
 
 class CotizacionService
 {
-    public function obtenerPorEmpresa(int $empresaId)
+    public function obtenerPorEmpresa(int $empresaId, int $perPage = 100)
     {
+        // Antes hacia ->get() sin limite: en empresas con historico grande esto
+        // cargaba TODAS las cotizaciones en memoria en cada llamada al listado.
+        // Se pagina server-side; el controller expone ademas un bloque "meta"
+        // para que el frontend pueda incorporar paginacion incremental.
         return Cotizacion::where('empresa_id', $empresaId)
             ->with(['cliente', 'estado'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage);
     }
 
     public function crearCotizacion(array $datos, array $detalles): Cotizacion
@@ -244,6 +248,14 @@ class CotizacionService
                 'empresa_id' => $empresaId,
                 'codigo_unico' => $codigoUnico,
                 'proveedor_id' => $proveedor->id,
+                // cliente_id es la relacion real usada por el mapeo a DTE SII
+                // (FacturaAComercialDteMapper lee $factura->cliente para
+                // receptor_rut/razon_social) y por ArAgingService. Sin esto,
+                // toda factura de venta emitia DTE con datos del receptor
+                // vacios -- proveedor_id es una entidad espejo aparte (para
+                // que el modulo de Compras trate al mismo tercero de forma
+                // uniforme), no reemplaza esta relacion.
+                'cliente_id' => $cliente->id,
                 'numero_factura' => 'FV-' . $cotizacion->numero_cotizacion,
                 'tipo' => 'VENTA',
                 'tipo_documento' => 'FACTURA',

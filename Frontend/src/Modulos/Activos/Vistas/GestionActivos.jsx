@@ -8,7 +8,8 @@ import BotonAccion from '../../../Componentes/BotonAccion';
 import GestionProyectosActivos from './GestionProyectosActivos';
 import TablaAmortizacion from '../Componentes/TablaAmortizacion';
 import { logger } from '../../../Configuracion/logger';
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+import { formatearMoneda } from '../../../Utilidades/formato';
+const formatCurrency = formatearMoneda;
 
 const calcularVidaUtilRestante = (activo) => {
     if (!activo.vida_util_meses || !activo.valor_adquisicion || activo.valor_adquisicion === 0) {

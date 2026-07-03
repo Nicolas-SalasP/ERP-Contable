@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ordenesCompra } from '../Servicios/comercialApi';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const clpFmt = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' });
+const clpFmt = { format: formatearMoneda };
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'RECIBIDA_PARCIAL', 'RECIBIDA_TOTAL', 'ANULADA'];
 

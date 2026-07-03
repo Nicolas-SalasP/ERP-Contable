@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 import { FileMinus, X } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
-const formatCurrency = (v) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(v ?? 0);
+const formatCurrency = formatearMoneda;
 
 const EMPTY = { numeroNc: '', montoNeto: '', montoIva: '', montoBruto: '', razon: '', fechaEmision: new Date().toISOString().split('T')[0], emitirDte: false };
 

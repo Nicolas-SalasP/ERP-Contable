@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { Download } from 'lucide-react';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 const SECCIONES_F29 = [
     {
@@ -33,7 +34,7 @@ const SECCIONES_F29 = [
     },
 ];
 
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+const formatCurrency = formatearMoneda;
 
 const CierreF29 = () => {
     const d = new Date();

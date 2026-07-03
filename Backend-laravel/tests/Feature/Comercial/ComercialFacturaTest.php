@@ -294,4 +294,85 @@ class ComercialFacturaTest extends TestCase
         $this->assertIsString($nombre, 'nombre_proveedor SIEMPRE debe ser string, nunca null');
         $this->assertEquals('', $nombre, 'Si razon_social esta vacio, nombre_proveedor debe ser string vacio');
     }
+
+    /**
+     * Caracterización: GET /api/facturas debe paginar (no volcar toda la
+     * tabla), respetando el limite explicito y devolviendo metadata de
+     * paginacion como /api/facturas/historial.
+     */
+    public function test_index_pagina_facturas_y_respeta_limit()
+    {
+        $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '9.9.9.9-9', 'razon_social' => 'P9', 'codigo_interno' => 'P9', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        for ($i = 0; $i < 15; $i++) {
+            Factura::create([
+                'empresa_id' => $this->empresa->id,
+                'proveedor_id' => $prov->id,
+                'numero_factura' => 'F-PAG-' . $i,
+                'codigo_unico' => Factura::generarCodigoUnico() + $i,
+                'fecha_emision' => now()->subDays($i),
+                'monto_bruto' => 1000,
+                'monto_neto' => 840,
+                'monto_iva' => 160,
+                'tipo' => 'COMPRA',
+                'estado' => 'REGISTRADA',
+            ]);
+        }
+
+        $response = $this->actingAs($this->usuario)->getJson('/api/facturas?limit=5');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure(['success', 'data', 'pagination' => ['total', 'totalPages', 'page']]);
+
+        $this->assertCount(5, $response->json('data'), 'Debe respetar el limit explicito');
+        $this->assertEquals(15, $response->json('pagination.total'));
+    }
+
+    /** El limit no puede usarse para volver a volcar toda la tabla (tope duro de 500). */
+    public function test_index_facturas_tiene_tope_duro_de_limit()
+    {
+        $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '8.8.8.8-8', 'razon_social' => 'P8', 'codigo_interno' => 'P8', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+        Factura::create([
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $prov->id,
+            'numero_factura' => 'F-TOPE',
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'fecha_emision' => now(),
+            'monto_bruto' => 1000,
+            'monto_neto' => 840,
+            'monto_iva' => 160,
+            'tipo' => 'COMPRA',
+            'estado' => 'REGISTRADA',
+        ]);
+
+        $response = $this->actingAs($this->usuario)->getJson('/api/facturas?limit=999999');
+
+        $response->assertStatus(200)->assertJsonPath('success', true);
+        $this->assertEquals(1, $response->json('pagination.totalPages'));
+
+        // El paginador de Laravel expone perPage(): confirma que el limit
+        // solicitado (999999) fue acotado al tope duro de 500, no aceptado tal cual.
+        $paginador = app(\App\Domains\Comercial\Services\FacturaService::class)
+            ->obtenerFacturasPaginadas($this->empresa->id, ['limit' => 999999]);
+        $this->assertEquals(500, $paginador->perPage());
+    }
+
+    /** Filtro por tipo + proveedor_id (usado por Tesoreria > Conciliacion Bancaria). */
+    public function test_index_facturas_filtra_por_tipo_y_proveedor()
+    {
+        $provA = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '7.7.7.7-7', 'razon_social' => 'PA', 'codigo_interno' => 'PA', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+        $provB = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '7.7.7.7-8', 'razon_social' => 'PB', 'codigo_interno' => 'PB', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        Factura::create(['empresa_id' => $this->empresa->id, 'proveedor_id' => $provA->id, 'numero_factura' => 'F-A', 'codigo_unico' => Factura::generarCodigoUnico(), 'fecha_emision' => now(), 'monto_bruto' => 1000, 'monto_neto' => 840, 'monto_iva' => 160, 'tipo' => 'COMPRA', 'estado' => 'REGISTRADA']);
+        Factura::create(['empresa_id' => $this->empresa->id, 'proveedor_id' => $provB->id, 'numero_factura' => 'F-B', 'codigo_unico' => Factura::generarCodigoUnico() + 1, 'fecha_emision' => now(), 'monto_bruto' => 2000, 'monto_neto' => 1680, 'monto_iva' => 320, 'tipo' => 'COMPRA', 'estado' => 'REGISTRADA']);
+        Factura::create(['empresa_id' => $this->empresa->id, 'proveedor_id' => $provA->id, 'numero_factura' => 'F-C', 'codigo_unico' => Factura::generarCodigoUnico() + 2, 'fecha_emision' => now(), 'monto_bruto' => 3000, 'monto_neto' => 2520, 'monto_iva' => 480, 'tipo' => 'VENTA', 'estado' => 'REGISTRADA']);
+
+        $response = $this->actingAs($this->usuario)->getJson("/api/facturas?tipo=COMPRA&proveedor_id={$provA->id}");
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertEquals('F-A', $data[0]['numero_factura']);
+    }
 }

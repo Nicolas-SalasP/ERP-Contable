@@ -5,7 +5,8 @@ import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import VisorProyectoActivo from './VisorProyectoActivo';
 import { logger } from '../../../Configuracion/logger';
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+import { formatearMoneda } from '../../../Utilidades/formato';
+const formatCurrency = formatearMoneda;
 
 const GestionProyectosActivos = ({ onNotificar }) => {
     const [proyectos, setProyectos] = useState([]);

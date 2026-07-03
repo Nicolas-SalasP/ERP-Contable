@@ -169,7 +169,11 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Default seguro: Secure=true en produccion sin necesitar que el .env real lo declare.
+    // Se usa env('APP_ENV') directo (no app()->environment()) porque este archivo se
+    // carga en el bootstrap de configuracion, antes de que el contenedor tenga el
+    // entorno resuelto -- app()->environment() aqui rompe el arranque de la app.
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------

@@ -6,11 +6,12 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { useToast } from '../../../Contextos/ToastContext';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 const formatMoney = (valor) => {
     const n = parseFloat(valor);
     if (!n || n === 0) return <span className="text-slate-300 dark:text-slate-600">-</span>;
-    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n);
+    return formatearMoneda(n);
 };
 
 const TARJETAS = [
@@ -122,7 +123,7 @@ const ApAging = () => {
                             <p className={`text-lg font-bold font-mono ${t.texto}`}>
                                 {cargando ? '…' : (
                                     resumen
-                                        ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(resumen[t.key] ?? 0)
+                                        ? formatearMoneda(resumen[t.key] ?? 0)
                                         : '-'
                                 )}
                             </p>
@@ -136,7 +137,7 @@ const ApAging = () => {
                 <div className="mb-6 bg-slate-100 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 p-4 flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Total General</span>
                     <span className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100">
-                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(resumen.total ?? 0)}
+                        {formatearMoneda(resumen.total ?? 0)}
                     </span>
                 </div>
             )}
@@ -186,22 +187,22 @@ const ApAging = () => {
                                 <tr className="text-xs font-bold border-t-2 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
                                     <td className="px-3 py-3" colSpan={2}>TOTALES</td>
                                     <td className="px-3 py-3 text-right font-mono whitespace-nowrap">
-                                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(resumen.corriente ?? 0)}
+                                        {formatearMoneda(resumen.corriente ?? 0)}
                                     </td>
                                     <td className="px-3 py-3 text-right font-mono whitespace-nowrap">
-                                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(resumen.d30 ?? 0)}
+                                        {formatearMoneda(resumen.d30 ?? 0)}
                                     </td>
                                     <td className="px-3 py-3 text-right font-mono whitespace-nowrap">
-                                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(resumen.d60 ?? 0)}
+                                        {formatearMoneda(resumen.d60 ?? 0)}
                                     </td>
                                     <td className="px-3 py-3 text-right font-mono whitespace-nowrap">
-                                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(resumen.d90 ?? 0)}
+                                        {formatearMoneda(resumen.d90 ?? 0)}
                                     </td>
                                     <td className="px-3 py-3 text-right font-mono whitespace-nowrap">
-                                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(resumen.d90plus ?? 0)}
+                                        {formatearMoneda(resumen.d90plus ?? 0)}
                                     </td>
                                     <td className="px-3 py-3 text-right font-mono whitespace-nowrap">
-                                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(resumen.total ?? 0)}
+                                        {formatearMoneda(resumen.total ?? 0)}
                                     </td>
                                 </tr>
                             </tfoot>

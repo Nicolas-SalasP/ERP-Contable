@@ -8,6 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 // Formatea monto abreviado para los ticks del eje Y
 const formatAbreviado = (v) => {
@@ -28,11 +29,7 @@ const formatMes = (valor) => {
   return etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1);
 };
 
-const formatCLP = new Intl.NumberFormat('es-CL', {
-  style: 'currency',
-  currency: 'CLP',
-  maximumFractionDigits: 0,
-});
+const formatCLP = { format: formatearMoneda };
 
 // Tooltip personalizado con ambos valores en CLP completo
 const TooltipPersonalizado = ({ active, payload, label }) => {

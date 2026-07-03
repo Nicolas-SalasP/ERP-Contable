@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 // Tonos de esmeralda para diferencias visuales entre barras (más oscuro al más claro)
 const COLORES_ESMERALDA = [
@@ -25,11 +26,7 @@ const formatAbreviado = (v) => {
   return `$${v}`;
 };
 
-const formatCLP = new Intl.NumberFormat('es-CL', {
-  style: 'currency',
-  currency: 'CLP',
-  maximumFractionDigits: 0,
-});
+const formatCLP = { format: formatearMoneda };
 
 // Tooltip personalizado con monto completo en CLP
 const TooltipPersonalizado = ({ active, payload }) => {

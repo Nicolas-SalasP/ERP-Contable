@@ -29,18 +29,6 @@ class FacturaService
         $this->anticipoService = $anticipoService;
     }
 
-    public function obtenerFacturasPorEmpresa(int $empresaId, ?string $estado = null)
-    {
-        $query = Factura::where('empresa_id', $empresaId)
-            ->with(['proveedor', 'cuentaBancaria']);
-
-        if ($estado) {
-            $query->where('estado', $estado);
-        }
-
-        return $query->orderBy('fecha_emision', 'desc')->get();
-    }
-
     public function obtenerFacturasPaginadas(int $empresaId, array $filtros)
     {
         $query = Factura::where('empresa_id', $empresaId)
@@ -48,6 +36,15 @@ class FacturaService
 
         if (!empty($filtros['estado'])) {
             $query->where('estado', $filtros['estado']);
+        }
+
+        if (!empty($filtros['tipo'])) {
+            $query->where('tipo', $filtros['tipo']);
+        }
+
+        if (!empty($filtros['proveedor_id'])) {
+            // proveedor_id identifica tanto al proveedor (COMPRA) como al cliente (VENTA).
+            $query->where('proveedor_id', $filtros['proveedor_id']);
         }
 
         if (!empty($filtros['num'])) {
@@ -69,7 +66,9 @@ class FacturaService
             $query->whereDate('fecha_emision', '<=', $filtros['fecha_hasta']);
         }
 
-        $limit = $filtros['limit'] ?? 10;
+        // Tope duro de 500 para evitar que un limit arbitrario en query string
+        // vuelva a convertir esto en un dump completo de la tabla.
+        $limit = min((int) ($filtros['limit'] ?? 10), 500);
         return $query->orderBy('fecha_emision', 'desc')->paginate($limit);
     }
 
@@ -539,7 +538,7 @@ class FacturaService
                     'cuenta_contable' => $cuentaCxC->codigo,
                     'debe'            => $bruto,
                     'haber'           => 0,
-                    'glosa_detalle'   => "Aumento CxC ND {$datos['numero_nd']} — cliente {$origen->cliente_id}",
+                    'glosa_detalle'   => "Aumento CxC ND {$datos['numero_nd']} — cliente {$origen->nombre_proveedor}",
                 ],
             ];
 

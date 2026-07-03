@@ -5,8 +5,9 @@ import EstadoCarga from '../../Componentes/EstadoCarga';
 import { TablaSkeleton } from '../../Componentes/Skeleton';
 import { EstadoVacio } from '../../Componentes/EstadoVacio';
 import Swal from 'sweetalert2';
+import { formatearMoneda } from '../../Utilidades/formato';
 
-const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+const formatCurrency = formatearMoneda;
 
 const VisorProveedor = () => {
     const { id } = useParams();
