@@ -152,6 +152,12 @@ class VacacionesService
                 throw RrhhException::regla('La fecha hasta no puede ser anterior a la fecha desde.');
             }
 
+            if ($contrato->fecha_termino && $hasta->gt($contrato->fecha_termino)) {
+                throw RrhhException::regla(
+                    "El rango solicitado excede la fecha de termino del contrato ({$contrato->fecha_termino->toDateString()})."
+                );
+            }
+
             $diasHabiles = $this->diasHabilesEntre($desde, $hasta);
             if ($diasHabiles <= 0) {
                 throw RrhhException::regla('El rango seleccionado no contiene dias habiles.');
@@ -198,6 +204,15 @@ class VacacionesService
             if ($solicitud->estado !== SolicitudVacaciones::ESTADO_PENDIENTE) {
                 throw RrhhException::regla("La solicitud ya fue resuelta (estado {$solicitud->estado}).");
             }
+
+            // lockForUpdate() de arriba solo bloquea ESTA solicitud. Dos
+            // solicitudes PENDIENTE distintas del mismo empleado pueden
+            // aprobarse en paralelo y leer el mismo saldo antes de que
+            // cualquiera comitee. Se bloquea ademas la fila del empleado
+            // como mutex compartido para serializar cualquier aprobacion
+            // concurrente del mismo empleado, sin importar que solicitud
+            // esten tocando.
+            Empleado::where('empresa_id', $empresaId)->where('id', $solicitud->empleado_id)->lockForUpdate()->first();
 
             $saldo = $this->saldoActual($empresaId, $solicitud->empleado_id);
             if ((float) $solicitud->dias_habiles > $saldo['dias_disponibles']) {

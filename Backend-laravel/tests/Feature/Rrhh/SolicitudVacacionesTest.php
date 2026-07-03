@@ -143,6 +143,27 @@ class SolicitudVacacionesTest extends TestCase
         $this->service->aprobar($empresa->id, $solicitud->id, $usuario->id);
     }
 
+    public function test_aprobar_dos_solicitudes_del_mismo_empleado_que_exceden_el_saldo_conjunto_falla(): void
+    {
+        // Ambas solicitudes se crean como PENDIENTE con saldo suficiente cada
+        // una por separado (solicitar() solo mira APROBADA), pero juntas
+        // exceden el saldo -- la segunda aprobacion debe fallar.
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $contrato = $this->contratoConSaldo($empresa->id, 5.0);
+
+        $solicitudA = $this->service->solicitar(
+            $empresa->id, $contrato->empleado_id, '2026-06-08', '2026-06-12', $usuario->id
+        );
+        $solicitudB = $this->service->solicitar(
+            $empresa->id, $contrato->empleado_id, '2026-06-15', '2026-06-19', $usuario->id
+        );
+
+        $this->service->aprobar($empresa->id, $solicitudA->id, $usuario->id);
+
+        $this->expectExceptionMessage('Saldo insuficiente');
+        $this->service->aprobar($empresa->id, $solicitudB->id, $usuario->id);
+    }
+
     public function test_rechazar_solicitud_no_descuenta_saldo(): void
     {
         [$empresa, $usuario] = $this->crearEmpresaConAdmin();
