@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Administración de la parametrización legal (tasas previsionales, indicadores
@@ -112,6 +113,31 @@ class ParametroPrevisionalController extends Controller
 
         $datos['uta_valor'] = $datos['uta_valor'] ?? ($datos['utm_valor'] * 12);
 
+        // Si ya existen liquidaciones EMITIDAS/PAGADAS de este período, fueron
+        // calculadas con el valor UF/UTM anterior -- sobrescribirlo las
+        // desincroniza en silencio. Solo staff interno llega aquí (jerarquia
+        // 100), asi que no bloqueamos (pueden ser correcciones legitimas del
+        // SII), pero avisamos con cuántas liquidaciones quedarían desfasadas.
+        $existente = IndicadorMensual::where('anio', $datos['anio'])->where('mes', $datos['mes'])->first();
+        $liquidacionesAfectadas = 0;
+        if ($existente && ((float) $existente->uf_valor !== (float) $datos['uf_valor'] || (float) $existente->utm_valor !== (float) $datos['utm_valor'])) {
+            $liquidacionesAfectadas = \App\Domains\Rrhh\Models\Liquidacion::where('anio', $datos['anio'])
+                ->where('mes', $datos['mes'])
+                ->whereIn('estado', ['EMITIDA', 'PAGADA'])
+                ->count();
+
+            if ($liquidacionesAfectadas > 0) {
+                Log::warning('IndicadorMensual sobrescrito con liquidaciones ya calculadas en el período.', [
+                    'anio' => $datos['anio'],
+                    'mes' => $datos['mes'],
+                    'uf_anterior' => $existente->uf_valor,
+                    'uf_nuevo' => $datos['uf_valor'],
+                    'liquidaciones_afectadas' => $liquidacionesAfectadas,
+                    'usuario_id' => $request->user()?->id,
+                ]);
+            }
+        }
+
         $indicador = IndicadorMensual::updateOrCreate(
             ['anio' => $datos['anio'], 'mes' => $datos['mes']],
             $datos,
@@ -119,7 +145,9 @@ class ParametroPrevisionalController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Indicador mensual registrado.',
+            'message' => $liquidacionesAfectadas > 0
+                ? "Indicador actualizado. Aviso: {$liquidacionesAfectadas} liquidación(es) EMITIDA/PAGADA de este período fueron calculadas con el valor anterior y quedaron desfasadas."
+                : 'Indicador mensual registrado.',
             'data' => $indicador,
         ], 201);
     }
