@@ -121,7 +121,12 @@ class ParametroPrevisionalController extends Controller
         $existente = IndicadorMensual::where('anio', $datos['anio'])->where('mes', $datos['mes'])->first();
         $liquidacionesAfectadas = 0;
         if ($existente && ((float) $existente->uf_valor !== (float) $datos['uf_valor'] || (float) $existente->utm_valor !== (float) $datos['utm_valor'])) {
-            $liquidacionesAfectadas = \App\Domains\Rrhh\Models\Liquidacion::where('anio', $datos['anio'])
+            // IndicadorMensual es global (sin empresa_id): el cambio afecta a
+            // TODAS las empresas que ya calcularon liquidaciones con el valor
+            // anterior, no solo a la empresa del usuario staff que edita esto
+            // -- por eso se bypassea el scope en vez de agregarlo.
+            $liquidacionesAfectadas = \App\Domains\Rrhh\Models\Liquidacion::withoutGlobalScope(\App\Domains\Core\Scopes\EmpresaScope::class)
+                ->where('anio', $datos['anio'])
                 ->where('mes', $datos['mes'])
                 ->whereIn('estado', ['EMITIDA', 'PAGADA'])
                 ->count();
