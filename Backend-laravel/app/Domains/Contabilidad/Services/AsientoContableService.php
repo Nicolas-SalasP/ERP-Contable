@@ -202,13 +202,19 @@ class AsientoContableService
         return $this->procesarReversa($asientoOriginal, $userId, $fechaReversa, $motivo);
     }
 
-    public function reversarAsiento(int $empresaId, int $userId, string $numeroComprobante, string $motivo)
+    public function reversarAsiento(int $empresaId, int $userId, string $numeroComprobante, string $motivo, ?string $fechaReversa = null)
     {
         $asientoOriginal = AsientoContable::where('empresa_id', $empresaId)
             ->where('numero_comprobante', $numeroComprobante)
             ->firstOrFail();
 
-        return $this->procesarReversa($asientoOriginal, $userId, now()->toDateString(), $motivo);
+        $fechaReversa = $fechaReversa ?? now()->toDateString();
+
+        if ($fechaReversa < $asientoOriginal->fecha->format('Y-m-d')) {
+            throw ContabilidadException::regla('No puedes reversar con una fecha anterior al asiento original.');
+        }
+
+        return $this->procesarReversa($asientoOriginal, $userId, $fechaReversa, $motivo);
     }
 
     private function procesarReversa(AsientoContable $asientoOriginal, int $userId, string $fechaReversa, string $motivo)

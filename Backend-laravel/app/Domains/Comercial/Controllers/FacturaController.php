@@ -306,13 +306,17 @@ class FacturaController
     public function anular(Request $request, $id)
     {
         try {
-            $request->validate(['motivo' => 'required|string|min:5']);
+            $request->validate([
+                'motivo' => 'required|string|min:5',
+                'fecha_anulacion' => 'nullable|date_format:Y-m-d',
+            ]);
 
             $this->service->anularFactura(
                 $request->user()->empresa_id,
                 $request->user()->id,
                 (int) $id,
-                $request->input('motivo')
+                $request->input('motivo'),
+                $request->input('fecha_anulacion')
             );
 
             return response()->json([

@@ -838,9 +838,9 @@ class FacturaService
             ->get();
     }
 
-    public function anularFactura(int $empresaId, int $userId, int $facturaId, string $motivo)
+    public function anularFactura(int $empresaId, int $userId, int $facturaId, string $motivo, ?string $fechaAnulacion = null)
     {
-        return DB::transaction(function () use ($empresaId, $userId, $facturaId, $motivo) {
+        return DB::transaction(function () use ($empresaId, $userId, $facturaId, $motivo, $fechaAnulacion) {
 
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
@@ -857,7 +857,8 @@ class FacturaService
                     $empresaId,
                     $userId,
                     $factura->comprobante_contable,
-                    "Reversa automática por anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}"
+                    "Reversa automática por anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}",
+                    $fechaAnulacion
                 );
             }
             
