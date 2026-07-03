@@ -375,6 +375,7 @@ class LiquidacionService
         $asiento = AsientoContable::where('empresa_id', $empresaId)
             ->where('origen_modulo', 'rrhh')
             ->where('origen_id', $periodoId)
+            ->where('estado', '!=', 'ANULADO')
             ->first();
         if ($asiento) {
             throw RrhhException::regla(
