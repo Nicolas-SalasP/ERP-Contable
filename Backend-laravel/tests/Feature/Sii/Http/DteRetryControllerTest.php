@@ -41,8 +41,11 @@ class DteRetryControllerTest extends TestCase
         $this->postJson('/api/sii/dte/1/reintentar')->assertStatus(401);
     }
 
-    public function test_reintentar_dte_rechazado_encola_job_y_retorna_202(): void
+    public function test_reintentar_dte_rechazado_retorna_422_estado_no_reintentable(): void
     {
+        // RECHAZADO ya consumio el folio SII -- no se puede reanudar la misma
+        // fila via ACCION_REANUDAR_FIRMA (EmitirDteService::emitir exige BORRADOR).
+        // Recuperar este caso requiere emitir un DTE nuevo con folio nuevo.
         Bus::fake([ReintentarEmisionDteJob::class]);
         $e = $this->crearDte(SiiDteEmitido::ESTADO_RECHAZADO);
         Sanctum::actingAs($e['usuario']);
@@ -51,12 +54,10 @@ class DteRetryControllerTest extends TestCase
             'razon' => 'reintento post rechazo SII',
         ]);
 
-        $r->assertStatus(202);
-        $r->assertJsonPath('success', true);
-        $r->assertJsonPath('mensaje', 'Reintento programado');
-        $r->assertJsonPath('data.dte_id', $e['dte']->id);
-        $r->assertJsonPath('data.accion_encolada', ReintentarEmisionDteJob::ACCION_REANUDAR_FIRMA);
-        Bus::assertDispatched(ReintentarEmisionDteJob::class);
+        $r->assertStatus(422);
+        $r->assertJsonPath('error.razon', 'estado_no_reintentable');
+        $r->assertJsonPath('error.estado_actual', SiiDteEmitido::ESTADO_RECHAZADO);
+        Bus::assertNotDispatched(ReintentarEmisionDteJob::class);
     }
 
     public function test_reintentar_dte_borrador_encola_firma(): void
@@ -85,17 +86,19 @@ class DteRetryControllerTest extends TestCase
         Bus::assertDispatched(ReintentarEmisionDteJob::class);
     }
 
-    public function test_reintentar_dte_anulado_fallo_interno_encola_firma(): void
+    public function test_reintentar_dte_anulado_fallo_interno_retorna_422_estado_no_reintentable(): void
     {
+        // Mismo criterio que RECHAZADO: el folio quedo liberado como HUERFANO
+        // (auditado, no reusable) -- no es un BORRADOR valido para reanudar.
         Bus::fake([ReintentarEmisionDteJob::class]);
         $e = $this->crearDte(SiiDteEmitido::ESTADO_ANULADO_FALLO_INTERNO);
         Sanctum::actingAs($e['usuario']);
 
         $r = $this->postJson("/api/sii/dte/{$e['dte']->id}/reintentar");
 
-        $r->assertStatus(202);
-        $r->assertJsonPath('data.accion_encolada', ReintentarEmisionDteJob::ACCION_REANUDAR_FIRMA);
-        Bus::assertDispatched(ReintentarEmisionDteJob::class);
+        $r->assertStatus(422);
+        $r->assertJsonPath('error.razon', 'estado_no_reintentable');
+        Bus::assertNotDispatched(ReintentarEmisionDteJob::class);
     }
 
     public function test_reintentar_dte_aceptado_retorna_422_estado_no_reintentable(): void

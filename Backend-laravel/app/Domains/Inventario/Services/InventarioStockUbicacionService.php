@@ -8,6 +8,7 @@ use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioUbicacion;
 use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\Producto;
+use App\Domains\Inventario\Models\ReservaDetalleInventario;
 use App\Domains\Inventario\Models\StockUbicacionInventario;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -274,6 +275,77 @@ class InventarioStockUbicacionService
         $stock->save();
 
         return $stock;
+    }
+
+    /**
+     * Libera una ReservaDetalleInventario (cantidad_liberada + stock_reservado
+     * de la ubicacion), validando que producto/bodega/ubicacion/lote coincidan.
+     * Fuente de verdad unica compartida por Picking/Packing/Despacho para no
+     * triplicar esta logica financiera -- antes vivia duplicada e inline en
+     * InventarioPickingService::cancelar() y como metodo privado en
+     * InventarioDespachoService::liberarReservaDetalle().
+     *
+     * @return float cantidad realmente liberada (0 si no habia nada pendiente).
+     */
+    public function liberarReservaDetalle(
+        int $empresaId,
+        int $productoId,
+        int $bodegaId,
+        ?int $ubicacionId,
+        ?int $loteId,
+        int $reservaDetalleId,
+        float $cantidadSolicitada,
+        string $campo = 'cantidad'
+    ): float {
+        $reservaDetalle = ReservaDetalleInventario::where('empresa_id', $empresaId)
+            ->where('id', $reservaDetalleId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$reservaDetalle) {
+            throw ValidationException::withMessages([
+                $campo => 'El detalle de reserva asociado no existe.',
+            ]);
+        }
+
+        if ((int) $reservaDetalle->producto_id !== $productoId
+            || (int) $reservaDetalle->bodega_id !== $bodegaId
+            || (int) ($reservaDetalle->ubicacion_id ?? 0) !== (int) ($ubicacionId ?? 0)
+            || (int) ($reservaDetalle->lote_id ?? 0) !== (int) ($loteId ?? 0)) {
+            throw ValidationException::withMessages([
+                $campo => 'La reserva asociada no coincide con producto, bodega, ubicación o lote.',
+            ]);
+        }
+
+        $cantidadALiberar = $this->redondearCantidad(min($cantidadSolicitada, $reservaDetalle->cantidadPendiente()));
+
+        if ($cantidadALiberar <= 0) {
+            return 0.0;
+        }
+
+        if (!$reservaDetalle->puedeLiberar($cantidadALiberar)) {
+            throw ValidationException::withMessages([
+                $campo => 'No se puede liberar más que la cantidad pendiente de la reserva.',
+            ]);
+        }
+
+        $reservaDetalle->update([
+            'cantidad_liberada' => $this->redondearCantidad((float) $reservaDetalle->cantidad_liberada + $cantidadALiberar),
+        ]);
+
+        if ($ubicacionId !== null) {
+            $this->liberarReserva(
+                empresaId: $empresaId,
+                productoId: $productoId,
+                bodegaId: $bodegaId,
+                ubicacionId: $ubicacionId,
+                loteId: $loteId,
+                cantidad: $cantidadALiberar,
+                campo: $campo
+            );
+        }
+
+        return $cantidadALiberar;
     }
 
     public function consumirReserva(

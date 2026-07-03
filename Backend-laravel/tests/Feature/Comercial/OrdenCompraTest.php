@@ -179,6 +179,56 @@ class OrdenCompraTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_no_se_puede_anular_una_oc_ya_recibida_totalmente(): void
+    {
+        $crearResp = $this->actingAs($this->usuario)
+            ->postJson('/api/comercial/ordenes-compra', $this->payloadBase());
+        $id = $crearResp->json('data.id');
+        $detalles = $crearResp->json('data.detalles');
+
+        $this->actingAs($this->usuario)->postJson("/api/comercial/ordenes-compra/{$id}/recibir", [
+            'recepciones' => array_map(fn ($d) => ['detalle_id' => $d['id'], 'cantidad_recibida' => $d['cantidad']], $detalles),
+        ])->assertJsonPath('data.estado', 'RECIBIDA_TOTAL');
+
+        $this->actingAs($this->usuario)
+            ->deleteJson("/api/comercial/ordenes-compra/{$id}")
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('ordenes_compra', ['id' => $id, 'estado' => 'RECIBIDA_TOTAL']);
+    }
+
+    public function test_no_se_puede_recibir_mercaderia_de_una_oc_anulada(): void
+    {
+        $crearResp = $this->actingAs($this->usuario)
+            ->postJson('/api/comercial/ordenes-compra', $this->payloadBase());
+        $id = $crearResp->json('data.id');
+        $detalles = $crearResp->json('data.detalles');
+
+        $this->actingAs($this->usuario)->deleteJson("/api/comercial/ordenes-compra/{$id}")->assertOk();
+
+        $this->actingAs($this->usuario)
+            ->postJson("/api/comercial/ordenes-compra/{$id}/recibir", [
+                'recepciones' => [['detalle_id' => $detalles[0]['id'], 'cantidad_recibida' => 1]],
+            ])
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('detalle_ordenes_compra', ['id' => $detalles[0]['id'], 'cantidad_recibida' => 0]);
+    }
+
+    public function test_update_ignora_estado_enviado_por_el_cliente(): void
+    {
+        $crearResp = $this->actingAs($this->usuario)
+            ->postJson('/api/comercial/ordenes-compra', $this->payloadBase());
+        $id = $crearResp->json('data.id');
+
+        $this->actingAs($this->usuario)
+            ->putJson("/api/comercial/ordenes-compra/{$id}", ['estado' => 'RECIBIDA_TOTAL'])
+            ->assertOk()
+            ->assertJsonPath('data.estado', 'BORRADOR');
+
+        $this->assertDatabaseHas('ordenes_compra', ['id' => $id, 'estado' => 'BORRADOR']);
+    }
+
     public function test_oc_de_otra_empresa_retorna_404(): void
     {
         [$otraEmpresa, $otroUsuario] = $this->crearEmpresaConAdmin();

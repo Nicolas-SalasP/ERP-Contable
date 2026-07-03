@@ -211,13 +211,14 @@ class XmlDsigSigner
         $pem = $key->key;
         $res = @openssl_pkey_get_private($pem) ?: @openssl_pkey_get_public($pem);
         if ($res === false) {
-            // Sin acceso a modulus/exponent no podemos cumplir el XSD; salir
-            // silenciosamente para no romper casos donde el XSD no se valida.
-            return;
+            // ds:KeyValue es exigido por el XSD oficial del sobre EnvioDTE
+            // (EnvioDteXsdValidator ya lo valida) -- omitirlo en silencio solo
+            // pospone el fallo a un error de XSD confuso rio abajo.
+            throw new RuntimeException('No se pudo leer la clave RSA para construir ds:KeyValue: certificado invalido o corrupto.');
         }
         $detalles = openssl_pkey_get_details($res);
         if (! is_array($detalles) || ! isset($detalles['rsa']['n'], $detalles['rsa']['e'])) {
-            return;
+            throw new RuntimeException('La clave RSA no expone modulus/exponent: no se puede construir ds:KeyValue.');
         }
 
         $modulusB64  = base64_encode($detalles['rsa']['n']);

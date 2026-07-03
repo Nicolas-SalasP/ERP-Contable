@@ -283,6 +283,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/rrhh/contratos', label: 'Contratos', permisosRequeridos: ['rrhh.empleados.ver'] },
                 { path: '/rrhh/liquidaciones', label: 'Liquidaciones de Sueldo', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
                 { path: '/rrhh/finiquitos', label: 'Finiquitos', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
+                { path: '/rrhh/vacaciones', label: 'Vacaciones', permisosRequeridos: ['rrhh.remuneraciones.ver'] },
                 { path: '/rrhh/parametros', label: 'Parámetros Previsionales', permisosRequeridos: ['rrhh.parametros.ver'] },
                 { path: '/rrhh/centralizacion', label: 'Centralización Contable', permisosRequeridos: ['rrhh.parametros.ver'] },
                 { path: '/rrhh/previred', label: 'Archivo Previred', permisosRequeridos: ['rrhh.remuneraciones.ver'] },

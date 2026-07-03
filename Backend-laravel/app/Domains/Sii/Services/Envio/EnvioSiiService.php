@@ -150,6 +150,13 @@ class EnvioSiiService
     /**
      * @throws EnvioSiiException
      */
+    /** Estados de un envio previo que admiten reintentar el envio del mismo DTE. */
+    private const ESTADOS_ENVIO_REINTENTABLES = [
+        SiiEnvioDte::ESTADO_ERROR_TRANSPORTE,
+        SiiEnvioDte::ESTADO_ERROR_TIMEOUT,
+        SiiEnvioDte::ESTADO_ERROR_PERMANENTE,
+    ];
+
     private function validarDtePuedeEnviarse(SiiDteEmitido $dte): void
     {
         if ($dte->estado === SiiDteEmitido::ESTADO_FIRMADO) {
@@ -164,6 +171,21 @@ class EnvioSiiService
 
         if ($envioPrevio !== null) {
             throw EnvioSiiException::yaEnviado($dte->id, (string) $envioPrevio->track_id);
+        }
+
+        // DTE quedo en ENVIADO_SII porque un envio anterior fallo por transporte/
+        // timeout/error permanente (marcarTimeout() en PollearEstadoSiiService no
+        // toca dte->estado, solo el envio) y ningun envio fue exitoso todavia --
+        // es reintentable, no un DTE "no firmado".
+        if ($dte->estado === SiiDteEmitido::ESTADO_ENVIADO_SII) {
+            $ultimoEnvio = SiiEnvioDte::query()
+                ->where('dte_emitido_id', $dte->id)
+                ->orderByDesc('id')
+                ->first();
+
+            if ($ultimoEnvio !== null && in_array($ultimoEnvio->estado_envio, self::ESTADOS_ENVIO_REINTENTABLES, true)) {
+                return;
+            }
         }
 
         throw EnvioSiiException::dteNoFirmado($dte->id, (string) $dte->estado);

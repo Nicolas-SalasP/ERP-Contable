@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Comercial\Services\CotizacionService;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
@@ -103,7 +104,7 @@ class CotizacionController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -124,7 +125,7 @@ class CotizacionController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 500);
         }
     }
@@ -179,7 +180,7 @@ class CotizacionController
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], $status);
         }
     }
@@ -217,16 +218,19 @@ class CotizacionController
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
     public function facturar(Request $request, $id)
     {
         try {
+            $request->validate(['fecha_emision' => 'nullable|date']);
+
             $factura = $this->service->convertirEnFactura(
                 $request->user()->empresa_id,
-                (int) $id
+                (int) $id,
+                $request->fecha_emision
             );
 
             return response()->json([
@@ -240,7 +244,7 @@ class CotizacionController
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], $status);
         }
     }

@@ -6,6 +6,9 @@ use App\Domains\Comercial\Exceptions\ComercialException;
 
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Proveedor;
+use App\Domains\Comercial\Models\Cotizacion;
+use App\Domains\Comercial\Models\EstadoCotizacion;
+use App\Domains\Comercial\Services\AnticipoProveedorService;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\AsientoContableService;
@@ -18,10 +21,12 @@ use \Carbon\Carbon;
 class FacturaService
 {
     protected $asientoService;
+    protected AnticipoProveedorService $anticipoService;
 
-    public function __construct(AsientoContableService $asientoService)
+    public function __construct(AsientoContableService $asientoService, AnticipoProveedorService $anticipoService)
     {
         $this->asientoService = $asientoService;
+        $this->anticipoService = $anticipoService;
     }
 
     public function obtenerFacturasPorEmpresa(int $empresaId, ?string $estado = null)
@@ -768,10 +773,13 @@ class FacturaService
     {
         // Solo se usa para aplicar pagos en la conciliacion bancaria: excluye
         // facturas ya PAGADAS o ANULADAS para evitar pagarlas dos veces y que el
-        // excedente se registre erroneamente como anticipo.
+        // excedente se registre erroneamente como anticipo. lockForUpdate evita
+        // que la misma factura se pague dos veces si aparece en dos movimientos
+        // bancarios distintos conciliados en paralelo.
         return Factura::where('empresa_id', $empresaId)
             ->whereIn('id', $ids)
             ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->lockForUpdate()
             ->get();
     }
 
@@ -830,9 +838,9 @@ class FacturaService
             ->get();
     }
 
-    public function anularFactura(int $empresaId, int $userId, int $facturaId, string $motivo)
+    public function anularFactura(int $empresaId, int $userId, int $facturaId, string $motivo, ?string $fechaAnulacion = null)
     {
-        return DB::transaction(function () use ($empresaId, $userId, $facturaId, $motivo) {
+        return DB::transaction(function () use ($empresaId, $userId, $facturaId, $motivo, $fechaAnulacion) {
 
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
@@ -840,7 +848,7 @@ class FacturaService
                 throw ComercialException::regla("Esta factura ya fue anulada anteriormente.");
             }
 
-            if ($factura->estado === 'PAGADA') {
+            if (in_array($factura->estado, ['PAGADA', 'ABONADA'], true)) {
                 throw ComercialException::regla("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.");
             }
 
@@ -849,7 +857,8 @@ class FacturaService
                     $empresaId,
                     $userId,
                     $factura->comprobante_contable,
-                    "Reversa automática por anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}"
+                    "Reversa automática por anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}",
+                    $fechaAnulacion
                 );
             }
             
@@ -860,6 +869,21 @@ class FacturaService
             }
 
             $factura->save();
+
+            // Libera cualquier anticipo que se hubiese aplicado a esta factura
+            // (quedaban consumidos permanentemente aunque la deuda ya no existiera).
+            $this->anticipoService->revertirAplicacionesDeFactura($empresaId, $facturaId);
+
+            // Si la factura vino de convertir una cotización, esta quedaba
+            // "Facturada" para siempre al anularla, sin poder refacturarse.
+            if ($factura->cotizacion_id) {
+                $estadoAceptada = EstadoCotizacion::where('nombre', 'Aceptada')->first();
+                if ($estadoAceptada) {
+                    Cotizacion::where('empresa_id', $empresaId)
+                        ->where('id', $factura->cotizacion_id)
+                        ->update(['estado_id' => $estadoAceptada->id]);
+                }
+            }
 
             return $factura;
         });

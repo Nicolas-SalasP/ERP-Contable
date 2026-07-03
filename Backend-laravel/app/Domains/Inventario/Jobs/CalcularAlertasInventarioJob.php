@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class CalcularAlertasInventarioJob implements ShouldQueue
 {
@@ -43,5 +44,15 @@ class CalcularAlertasInventarioJob implements ShouldQueue
                 'criticas' => $resultado['resumen']['criticas'] ?? null,
             ]);
         }
+    }
+
+    /** Idempotente (recalcula desde cero): solo se pierde una corrida, no hay dato corrupto. */
+    public function failed(Throwable $exception): void
+    {
+        Log::error('CalcularAlertasInventarioJob agoto reintentos.', [
+            'empresa_id' => $this->empresaId,
+            'exception' => $exception::class,
+            'message' => $exception->getMessage(),
+        ]);
     }
 }

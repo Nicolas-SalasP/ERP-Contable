@@ -2,6 +2,7 @@
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
+import { sanitizarFilasExcel } from '../../../Utilidades/exportarExcelSeguro';
 import { logger } from '../../../Configuracion/logger';
 import { Download } from 'lucide-react';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
@@ -76,7 +77,7 @@ const BalanceComprobacion = () => {
             'Acum. Saldo Acreedor': parseFloat(c.acumulado.saldo_acreedor) || 0,
         }));
 
-        const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+        const worksheet = XLSX.utils.json_to_sheet(sanitizarFilasExcel(datosExcel));
         worksheet['!cols'] = [
             { wch: 10 }, { wch: 35 }, { wch: 12 },
             { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 },

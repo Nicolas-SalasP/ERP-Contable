@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\ReporteContableService;
+use App\Support\MensajeErrorGenerico;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -59,7 +60,7 @@ class ReporteController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400); 
         }
     }
@@ -93,7 +94,7 @@ class ReporteController
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Errores de validación', 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 422);
         }
     }
 
@@ -123,7 +124,7 @@ class ReporteController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
             ], 400);
         }
     }

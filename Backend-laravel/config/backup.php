@@ -27,6 +27,13 @@ return [
                 'exclude' => [
                     base_path('vendor'),
                     base_path('node_modules'),
+                    // Nunca respaldar credenciales en texto plano: DB_PASSWORD, APP_KEY,
+                    // llaves de integracion (ERP_INTEGRATION_KEY, WEB_INTEGRATION_KEY),
+                    // CIPHERSWEET_KEY. Si se necesita recuperar config, restaurarla desde
+                    // el gestor de secretos, no desde el backup.
+                    base_path('.env'),
+                    base_path('.env.production'),
+                    base_path('.env.local'),
                 ],
 
                 /*

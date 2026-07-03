@@ -50,7 +50,12 @@ class PlanCuentaService
                 throw new Exception("El código contable ya está en uso por otra cuenta.");
         }
 
-        $tieneMovimientos = DetalleAsiento::where('cuenta_contable', $cuenta->codigo)->exists();
+        // detalles_asiento no tiene empresa_id propio -- sin el whereHas, el
+        // codigo de cuenta (compartido entre empresas por convencion chilena,
+        // ej. 110101 Caja) bloqueaba a esta empresa por movimientos de OTRA.
+        $tieneMovimientos = DetalleAsiento::where('cuenta_contable', $cuenta->codigo)
+            ->whereHas('asiento', fn ($q) => $q->where('empresa_id', $empresa_id))
+            ->exists();
 
         if ($tieneMovimientos && isset($datos['tipo']) && $datos['tipo'] !== $cuenta->tipo) {
             throw new Exception("No puedes cambiar el tipo (naturaleza) de una cuenta que ya posee movimientos.");
@@ -84,7 +89,10 @@ class PlanCuentaService
         if (!$cuenta)
             throw new Exception("La cuenta contable no existe o pertenece a otra empresa.", 404);
 
-        if (DetalleAsiento::where('cuenta_contable', $cuenta->codigo)->exists()) {
+        $tieneMovimientos = DetalleAsiento::where('cuenta_contable', $cuenta->codigo)
+            ->whereHas('asiento', fn ($q) => $q->where('empresa_id', $empresa_id))
+            ->exists();
+        if ($tieneMovimientos) {
             throw new Exception("No puedes eliminar una cuenta que ya posee movimientos históricos.");
         }
 

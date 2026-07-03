@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import * as XLSX from "@e965/xlsx";
+import { sanitizarFilasExcel } from '../../../Utilidades/exportarExcelSeguro';
 import { logger } from '../../../Configuracion/logger';
 import { Eye, Download, ArrowLeft } from 'lucide-react';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
@@ -213,7 +214,7 @@ const LibroMayor = () => {
             "Haber": parseFloat(fila.haber) || 0
         }));
 
-        const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+        const worksheet = XLSX.utils.json_to_sheet(sanitizarFilasExcel(datosExcel));
         worksheet['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Libro Diario");

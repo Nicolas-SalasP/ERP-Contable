@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Comercial\Services\ProveedorService;
 use Illuminate\Support\Facades\Storage;
@@ -66,7 +67,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -84,7 +85,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 404);
         }
     }
@@ -120,7 +121,7 @@ class ProveedorController
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 422);
         }
     }
 
@@ -156,7 +157,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => $e->getMessage()
+                'mensaje' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }
@@ -168,25 +169,38 @@ class ProveedorController
             $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
 
             if ($request->hasFile('pdf')) {
-                $path = $request->file('pdf')->store('anticipos_proveedores/pdfs', 'public');
-                $rutaPdf = 'storage/' . $path;
+                // Disco 'local' (privado): comprobante de anticipo con montos/proveedor,
+                // no debe quedar servible por URL directa (ver descargarPdfAnticipo()).
+                $rutaPdf = $request->file('pdf')->store('anticipos_proveedores/pdfs', 'local');
             }
 
             $anticipo = $this->service->adjuntarPdfAnticipo($request->user()->empresa_id, $id, $rutaPdf);
 
             return response()->json(['success' => true, 'data' => $anticipo]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             if ($rutaPdf) {
-                $pathToDelete = str_replace('storage/', '', $rutaPdf);
-                Storage::disk('public')->delete($pathToDelete);
+                Storage::disk('local')->delete($rutaPdf);
             }
 
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
+    }
+
+    /** Descarga el PDF de un anticipo, autenticado y acotado a la empresa. GET /proveedores/anticipos/{id}/pdf */
+    public function descargarPdfAnticipo(Request $request, int $id)
+    {
+        $anticipo = \App\Domains\Comercial\Models\AnticipoProveedor::where('empresa_id', $request->user()->empresa_id)
+            ->findOrFail($id);
+
+        if (!$anticipo->archivo_pdf || !Storage::disk('local')->exists($anticipo->archivo_pdf)) {
+            return response()->json(['success' => false, 'message' => 'No hay PDF adjunto para este anticipo.'], 404);
+        }
+
+        return Storage::disk('local')->response($anticipo->archivo_pdf, "Anticipo-{$anticipo->id}.pdf");
     }
 
     public function cruzarDocumentos(Request $request, $id)
@@ -213,7 +227,7 @@ class ProveedorController
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
                 'errors' => $e->errors()
             ], 422);
         } catch (ComercialException $e) {
@@ -221,7 +235,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }

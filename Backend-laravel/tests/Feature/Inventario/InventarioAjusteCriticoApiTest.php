@@ -177,6 +177,96 @@ class InventarioAjusteCriticoApiTest extends TestCase
         ]);
     }
 
+    public function test_anular_ajuste_critico_negativo_repone_stock_con_movimiento_compensatorio(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa);
+        $bodega = $this->crearBodega($empresa);
+        $this->crearStock($empresa, $producto, $bodega, 10, 100);
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_DETERIORO);
+
+        $registro = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 3,
+            'motivo' => 'Producto deteriorado',
+            'observacion' => 'Detectado en control físico',
+        ]);
+        $registro->assertStatus(201);
+        $ajusteId = $registro->json('data.id');
+
+        $this->assertEquals(7.0, (float) $this->stock($empresa, $producto, $bodega)->stock_actual);
+
+        $anulacion = $this->postJson("/api/inventario/ajustes-criticos/{$ajusteId}/anular", [
+            'motivo_anulacion' => 'Cantidad digitada por error, era 0.3 no 3',
+        ]);
+
+        $anulacion->assertOk()->assertJson(['success' => true]);
+
+        $this->assertEquals(10.0, (float) $this->stock($empresa, $producto, $bodega)->stock_actual);
+
+        $this->assertDatabaseHas('inventario_ajustes_criticos', [
+            'id' => $ajusteId,
+            'motivo_anulacion' => 'Cantidad digitada por error, era 0.3 no 3',
+        ]);
+
+        $ajuste = AjusteCriticoInventario::find($ajusteId);
+        $this->assertNotNull($ajuste->anulado_at);
+        $this->assertNotNull($ajuste->movimiento_reversa_id);
+
+        $movimientoReversa = MovimientoInventario::find($ajuste->movimiento_reversa_id);
+        $this->assertSame(MovimientoInventario::TIPO_AJUSTE_POSITIVO, $movimientoReversa->tipo);
+        $this->assertEquals(3.0, (float) $movimientoReversa->cantidad);
+    }
+
+    public function test_anular_ajuste_critico_dos_veces_falla(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa);
+        $bodega = $this->crearBodega($empresa);
+        $this->crearStock($empresa, $producto, $bodega, 10, 100);
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_PERDIDA);
+
+        $registro = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 1,
+            'motivo' => 'Pérdida detectada',
+            'observacion' => 'Conteo físico',
+        ]);
+        $ajusteId = $registro->json('data.id');
+
+        $this->postJson("/api/inventario/ajustes-criticos/{$ajusteId}/anular", [
+            'motivo_anulacion' => 'Error de digitación',
+        ])->assertOk();
+
+        $segundaAnulacion = $this->postJson("/api/inventario/ajustes-criticos/{$ajusteId}/anular", [
+            'motivo_anulacion' => 'Intento repetido',
+        ]);
+
+        $segundaAnulacion->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Este ajuste crítico ya fue anulado anteriormente.',
+            ]);
+    }
+
     public function test_auditor_puede_listar_ajustes_criticos_pero_no_registrar(): void
     {
         [$empresa, $usuario] = $this->usuarioAuditorConPermisos([

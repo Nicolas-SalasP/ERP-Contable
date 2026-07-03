@@ -72,14 +72,10 @@ class InventarioPermisoService
             return false;
         }
 
-        // Admin local sin plan: mantiene el atajo historico.
-        $nombreRol = strtolower(trim((string) ($rol->nombre ?? '')));
-
-        return $jerarquia >= 80 || in_array($nombreRol, [
-            'administrador',
-            'admin',
-            'super admin',
-            'superadmin',
-        ], true);
+        // Admin local sin plan: solo la jerarquia real habilita el atajo. Antes
+        // tambien bastaba con que el rol se llamara "administrador"/"admin",
+        // permitiendo escalar privilegios creando un rol con ese nombre y
+        // jerarquia baja (ver ModuloPermisos::esAdministradorOperativo, mismo fix).
+        return $jerarquia >= 80;
     }
 }

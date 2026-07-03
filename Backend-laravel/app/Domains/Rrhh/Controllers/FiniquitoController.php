@@ -70,4 +70,17 @@ class FiniquitoController extends Controller
             'data' => $finiquito,
         ]);
     }
+
+    public function anular(Request $request, int $id): JsonResponse
+    {
+        $datos = $request->validate(['motivo' => 'required|string|min:5|max:500']);
+
+        $finiquito = $this->service->anular($request->user()->empresa_id, $id, $datos['motivo']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Finiquito anulado. El contrato fue reactivado si correspondía.',
+            'data' => $finiquito,
+        ]);
+    }
 }

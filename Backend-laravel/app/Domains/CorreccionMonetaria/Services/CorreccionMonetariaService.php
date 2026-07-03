@@ -497,7 +497,7 @@ class CorreccionMonetariaService
 
     private function actualizarActivosFijos(int $empresaId, float $factor, int $mes, int $anio): void
     {
-        $activos = ActivoFijo::where('empresa_id', $empresaId)->where('estado', 'ACTIVO')->get();
+        $activos = ActivoFijo::where('empresa_id', $empresaId)->where('estado', 'ACTIVO')->lockForUpdate()->get();
 
         $periodoActual = sprintf('%04d-%02d', $anio, $mes);
 

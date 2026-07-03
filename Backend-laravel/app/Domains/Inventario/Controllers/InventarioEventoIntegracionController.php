@@ -3,6 +3,7 @@
 namespace App\Domains\Inventario\Controllers;
 
 use App\Domains\Inventario\Exceptions\InventarioException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Services\InventarioEventoIntegracionService;
@@ -170,7 +171,7 @@ class InventarioEventoIntegracionController
     {
         return response()->json([
             'success' => false,
-            'message' => $e->getMessage(),
+            'message' => MensajeErrorGenerico::desde($e),
         ], 422);
     }
 }

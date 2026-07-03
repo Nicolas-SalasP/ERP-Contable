@@ -6,6 +6,7 @@ use App\Domains\Tesoreria\Exceptions\TesoreriaException;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Exceptions\ComercialException;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Tesoreria\Services\BancoService;
 use Carbon\Carbon;
@@ -31,7 +32,18 @@ class ConciliacionService
     {
         return DB::transaction(function () use ($datos) {
             $cuentaBanco = $this->bancoService->obtenerCuentaBancaria($datos['empresa_id'], $datos['cuenta_bancaria_id']);
-            $factura = $this->facturaService->obtenerFacturaPorId($datos['empresa_id'], $datos['factura_id']);
+
+            // Lock pesimista: sin esto, dos conciliaciones casi simultaneas sobre la
+            // misma factura (doble clic) podian leer ambas "no pagada" antes de que
+            // cualquiera comiteara y generar dos asientos de egreso duplicados.
+            $factura = Factura::where('empresa_id', $datos['empresa_id'])
+                ->where('id', $datos['factura_id'])
+                ->lockForUpdate()
+                ->first();
+
+            if (!$factura) {
+                throw ComercialException::noEncontrado("La factura solicitada no existe o no pertenece a su empresa.");
+            }
 
             if ($factura->estado === 'PAGADA') {
                 throw TesoreriaException::regla("La factura {$factura->numero_factura} ya está pagada.");
@@ -47,7 +59,7 @@ class ConciliacionService
             );
             $glosa = "Pago Factura N° {$factura->numero_factura} a Proveedor";
 
-            $this->asientoService->registrarAsiento([
+            $asientoPago = $this->asientoService->registrarAsiento([
                 'empresa_id' => $datos['empresa_id'],
                 'fecha' => $datos['fecha_pago'],
                 'glosa' => $glosa,
@@ -58,6 +70,8 @@ class ConciliacionService
                 ['cuenta_contable' => $cuentaProveedores, 'debe' => $factura->monto_bruto, 'haber' => 0],
                 ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $factura->monto_bruto]
             ]);
+
+            $factura->update(['asiento_pago_id' => $asientoPago->id]);
 
             return $factura;
         });
@@ -162,13 +176,13 @@ class ConciliacionService
             $detallesAsiento = [];
             $glosaAsiento = "";
 
+            /** @var array<int, int> $idsPagadas */
+            $idsPagadas = [];
+            $idAbonada  = null;
+
             if ($facturas->count() > 0) {
                 $saldoRestante = $montoMovimiento;
                 $facturas = $facturas->sortBy('fecha_emision');
-
-                /** @var array<int, int> $idsPagadas */
-                $idsPagadas = [];
-                $idAbonada  = null;
 
                 foreach ($facturas as $fac) {
                     $montoFactura = (float) $fac->monto_bruto;
@@ -258,7 +272,15 @@ class ConciliacionService
             ], $detallesAsiento);
 
             $this->bancoService->vincularAsientoAMovimiento($empresaId, $movimiento->id, $asiento->id);
-            return $asiento; 
+
+            // Vincula el asiento de pago a las facturas afectadas para que una
+            // anulación posterior (Anulación General) pueda revertir su estado.
+            $idsAfectadas = array_filter(array_merge($idsPagadas, [$idAbonada]));
+            if (!empty($idsAfectadas)) {
+                Factura::whereIn('id', $idsAfectadas)->where('empresa_id', $empresaId)->update(['asiento_pago_id' => $asiento->id]);
+            }
+
+            return $asiento;
         });
     }
 
