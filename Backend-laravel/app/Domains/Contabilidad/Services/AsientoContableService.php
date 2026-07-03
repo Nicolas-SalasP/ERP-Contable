@@ -216,7 +216,13 @@ class AsientoContableService
         $asientoOriginal->load('detalles');
         $this->validarMesAbierto($asientoOriginal->empresa_id, $fechaReversa);
 
+        if (in_array($asientoOriginal->estado, ['ANULADO', 'RECLASIFICADO'], true)) {
+            throw ContabilidadException::regla('Este asiento ya se encontraba anulado o procesado internamente.');
+        }
+
         return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
+            $asientoOriginal->update(['estado' => 'ANULADO']);
+
             $tempNum = 'TMP-' . Str::uuid()->toString();
             $nuevoAsiento = AsientoContable::create([
                 'empresa_id' => $asientoOriginal->empresa_id,
