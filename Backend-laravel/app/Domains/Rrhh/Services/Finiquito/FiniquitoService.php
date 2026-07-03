@@ -168,7 +168,7 @@ class FiniquitoService
     public function anular(int $empresaId, int $finiquitoId, string $motivo): Finiquito
     {
         return DB::transaction(function () use ($empresaId, $finiquitoId, $motivo) {
-            $finiquito = Finiquito::where('empresa_id', $empresaId)->findOrFail($finiquitoId);
+            $finiquito = Finiquito::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($finiquitoId);
 
             if ($finiquito->estado === 'ANULADO') {
                 throw RrhhException::regla('Este finiquito ya fue anulado anteriormente.');
