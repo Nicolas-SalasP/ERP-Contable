@@ -169,8 +169,9 @@ class ProveedorController
             $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
 
             if ($request->hasFile('pdf')) {
-                $path = $request->file('pdf')->store('anticipos_proveedores/pdfs', 'public');
-                $rutaPdf = 'storage/' . $path;
+                // Disco 'local' (privado): comprobante de anticipo con montos/proveedor,
+                // no debe quedar servible por URL directa (ver descargarPdfAnticipo()).
+                $rutaPdf = $request->file('pdf')->store('anticipos_proveedores/pdfs', 'local');
             }
 
             $anticipo = $this->service->adjuntarPdfAnticipo($request->user()->empresa_id, $id, $rutaPdf);
@@ -182,12 +183,24 @@ class ProveedorController
             throw $e;
         } catch (Exception $e) {
             if ($rutaPdf) {
-                $pathToDelete = str_replace('storage/', '', $rutaPdf);
-                Storage::disk('public')->delete($pathToDelete);
+                Storage::disk('local')->delete($rutaPdf);
             }
 
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
+    }
+
+    /** Descarga el PDF de un anticipo, autenticado y acotado a la empresa. GET /proveedores/anticipos/{id}/pdf */
+    public function descargarPdfAnticipo(Request $request, int $id)
+    {
+        $anticipo = \App\Domains\Comercial\Models\AnticipoProveedor::where('empresa_id', $request->user()->empresa_id)
+            ->findOrFail($id);
+
+        if (!$anticipo->archivo_pdf || !Storage::disk('local')->exists($anticipo->archivo_pdf)) {
+            return response()->json(['success' => false, 'message' => 'No hay PDF adjunto para este anticipo.'], 404);
+        }
+
+        return Storage::disk('local')->response($anticipo->archivo_pdf, "Anticipo-{$anticipo->id}.pdf");
     }
 
     public function cruzarDocumentos(Request $request, $id)

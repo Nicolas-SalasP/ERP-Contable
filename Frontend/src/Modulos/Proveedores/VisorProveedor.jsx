@@ -129,6 +129,17 @@ const VisorProveedor = () => {
         }
     };
 
+    const verPdfDocumento = async (item) => {
+        if (item._tipo !== 'FACTURA' && item._tipo !== 'NOTA_CREDITO') {
+            return Swal.fire({ icon: 'info', title: 'No disponible', text: 'La visualización de comprobantes de anticipo aún no está habilitada.' });
+        }
+        try {
+            await api.download(`/facturas/${item.id}/pdf`, `Factura-${item.numero_factura || item.id}.pdf`);
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Error', text: error?.message || 'No se pudo descargar el documento.' });
+        }
+    };
+
     const guardarAnticipo = async () => {
         if (!formAnticipo.monto) return Swal.fire('Faltan Datos', 'El monto es obligatorio.', 'warning');
         try {
@@ -727,14 +738,13 @@ const VisorProveedor = () => {
                                         </td>
                                         <td className="px-6 py-3 text-center">
                                             {item._archivo ? (
-                                                <a
-                                                    href={`${import.meta.env.VITE_API_URL.replace('/api', '')}/${item._archivo}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                <button
+                                                    type="button"
+                                                    onClick={() => verPdfDocumento(item)}
                                                     className="text-slate-500 hover:text-blue-600 font-bold text-xs transition-colors"
                                                 >
                                                     Ver Doc
-                                                </a>
+                                                </button>
                                             ) : (
                                                 <label className="text-blue-500 hover:text-blue-700 font-bold text-xs cursor-pointer transition-colors">
                                                     Subir PDF

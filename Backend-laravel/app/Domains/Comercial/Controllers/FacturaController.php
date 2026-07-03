@@ -532,10 +532,11 @@ class FacturaController
 
             if ($request->hasFile('pdf')) {
                 if ($factura->archivo_pdf) {
-                    Storage::disk('public')->delete(str_replace('storage/', '', $factura->archivo_pdf));
+                    Storage::disk('local')->delete($factura->archivo_pdf);
                 }
-                $path    = $request->file('pdf')->store('facturas/pdfs', 'public');
-                $rutaPdf = 'storage/' . $path;
+                // Disco 'local' (privado): un PDF de factura tiene RUT/montos/proveedor,
+                // no debe quedar servible por URL directa sin autenticación (ver descargarPdf()).
+                $rutaPdf = $request->file('pdf')->store('facturas/pdfs', 'local');
             }
 
             $factura->archivo_pdf = $rutaPdf;
@@ -549,6 +550,18 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
+    }
+
+    /** Descarga el PDF adjunto de una factura, autenticado y acotado a la empresa. GET /facturas/{id}/pdf */
+    public function descargarPdf(Request $request, int $id)
+    {
+        $factura = Factura::where('empresa_id', $request->user()->empresa_id)->findOrFail($id);
+
+        if (!$factura->archivo_pdf || !Storage::disk('local')->exists($factura->archivo_pdf)) {
+            return response()->json(['success' => false, 'message' => 'No hay PDF adjunto para esta factura.'], 404);
+        }
+
+        return Storage::disk('local')->response($factura->archivo_pdf, "Factura-{$factura->numero_factura}.pdf");
     }
 
     /**
