@@ -117,7 +117,11 @@ class InventarioDespachoService
                 throw ValidationException::withMessages(['picking_orden_id' => 'No se puede generar despacho desde un picking cancelado.']);
             }
 
-            if (InventarioDespachoOrden::where('empresa_id', $empresaId)->where('packing_orden_id', $packing->id)->exists()) {
+            if (InventarioDespachoOrden::where('empresa_id', $empresaId)
+                ->where('packing_orden_id', $packing->id)
+                ->where('estado', '!=', InventarioDespachoOrden::ESTADO_CANCELADO)
+                ->exists()
+            ) {
                 throw ValidationException::withMessages(['packing_orden_id' => 'Ya existe una orden de despacho para este packing.']);
             }
 

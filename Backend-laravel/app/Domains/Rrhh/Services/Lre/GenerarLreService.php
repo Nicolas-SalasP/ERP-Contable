@@ -34,6 +34,13 @@ class GenerarLreService
         'Esencial'    => '13',
     ];
 
+    // ADVERTENCIA (hallazgo pendiente de validar con contador/experto RRHH, no
+    // corregido a ciegas): el manual oficial LRE (docs/rrhh-leyes/suplemento_manual_lre.md,
+    // campo 1107) define códigos de 3 dígitos -- 101 ORDINARIA, 201 PARCIAL, 601
+    // JORNADA EXCEPCIONAL, etc -- que no coinciden con este mapeo (1/2/3). Además
+    // 'TURNO' (valor válido de contratos.tipo_jornada) no tiene código aquí y el
+    // campo se omite en silencio para esos contratos. Verificar contra la tabla
+    // oficial antes de corregir: un código legal incorrecto es peor que omitirlo.
     private const JORNADA_CODIGOS = [
         'COMPLETA'   => 1,
         'PARCIAL'    => 2,
@@ -52,6 +59,22 @@ class GenerarLreService
         if ($liquidaciones->isEmpty()) {
             throw RrhhException::regla(
                 "No hay liquidaciones emitidas para el período {$mes}/{$anio}."
+            );
+        }
+
+        // Regenerar sobrescribia el archivo y forzaba estado GENERADO incondicionalmente,
+        // incluso si ya estaba CONFIRMADO_DT -- perdiendo la confirmación previa en
+        // silencio. Bloquea; si de verdad hay que corregir un LRE ya confirmado, debe
+        // hacerse explícitamente (no como efecto colateral de volver a generar).
+        $envioExistente = LreEnvio::where('empresa_id', $empresaId)
+            ->where('anio', $anio)
+            ->where('mes', $mes)
+            ->first();
+
+        if ($envioExistente && $envioExistente->estado === LreEnvio::ESTADO_CONFIRMADO_DT) {
+            throw RrhhException::regla(
+                "El LRE de {$mes}/{$anio} ya fue confirmado ante la Dirección del Trabajo. " .
+                "No puede regenerarse; contacte soporte si necesita corregirlo."
             );
         }
 

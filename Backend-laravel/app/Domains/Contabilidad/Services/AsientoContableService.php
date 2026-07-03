@@ -5,6 +5,7 @@ namespace App\Domains\Contabilidad\Services;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Comercial\Models\Factura;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -201,13 +202,19 @@ class AsientoContableService
         return $this->procesarReversa($asientoOriginal, $userId, $fechaReversa, $motivo);
     }
 
-    public function reversarAsiento(int $empresaId, int $userId, string $numeroComprobante, string $motivo)
+    public function reversarAsiento(int $empresaId, int $userId, string $numeroComprobante, string $motivo, ?string $fechaReversa = null)
     {
         $asientoOriginal = AsientoContable::where('empresa_id', $empresaId)
             ->where('numero_comprobante', $numeroComprobante)
             ->firstOrFail();
 
-        return $this->procesarReversa($asientoOriginal, $userId, now()->toDateString(), $motivo);
+        $fechaReversa = $fechaReversa ?? now()->toDateString();
+
+        if ($fechaReversa < $asientoOriginal->fecha->format('Y-m-d')) {
+            throw ContabilidadException::regla('No puedes reversar con una fecha anterior al asiento original.');
+        }
+
+        return $this->procesarReversa($asientoOriginal, $userId, $fechaReversa, $motivo);
     }
 
     private function procesarReversa(AsientoContable $asientoOriginal, int $userId, string $fechaReversa, string $motivo)
@@ -215,7 +222,13 @@ class AsientoContableService
         $asientoOriginal->load('detalles');
         $this->validarMesAbierto($asientoOriginal->empresa_id, $fechaReversa);
 
+        if (in_array($asientoOriginal->estado, ['ANULADO', 'RECLASIFICADO'], true)) {
+            throw ContabilidadException::regla('Este asiento ya se encontraba anulado o procesado internamente.');
+        }
+
         return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
+            $asientoOriginal->update(['estado' => 'ANULADO']);
+
             $tempNum = 'TMP-' . Str::uuid()->toString();
             $nuevoAsiento = AsientoContable::create([
                 'empresa_id' => $asientoOriginal->empresa_id,
@@ -244,6 +257,12 @@ class AsientoContableService
             }
 
             $this->generarNumeroComprobante($nuevoAsiento);
+
+            // Si el asiento reversado era el pago de una o más facturas, libera su
+            // estado para que puedan volver a pagarse (mismo fix que AnulacionService).
+            Factura::where('empresa_id', $asientoOriginal->empresa_id)
+                ->where('asiento_pago_id', $asientoOriginal->id)
+                ->update(['estado' => 'REGISTRADA', 'asiento_pago_id' => null]);
 
             return $nuevoAsiento;
         });

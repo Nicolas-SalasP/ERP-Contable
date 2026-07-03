@@ -86,6 +86,7 @@ class CentralizacionRemuneracionesService
             if (AsientoContable::where('empresa_id', $empresaId)
                 ->where('origen_modulo', 'rrhh')
                 ->where('origen_id', $periodoId)
+                ->where('estado', '!=', 'ANULADO')
                 ->exists()
             ) {
                 throw RrhhException::regla(

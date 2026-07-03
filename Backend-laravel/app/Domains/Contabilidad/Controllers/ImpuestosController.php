@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\ImpuestosService;
+use App\Support\MensajeErrorGenerico;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class ImpuestosController
             $resultado = $this->service->simularF29($request->user()->empresa_id, $mesInt, $anioInt);
             return response()->json(['success' => true, 'data' => $resultado]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -126,7 +127,7 @@ class ImpuestosController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => $e->getMessage()
+                'mensaje' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }
@@ -137,7 +138,7 @@ class ImpuestosController
             $resultado = $this->service->preCalculoRenta($request->user()->empresa_id, (int) $anio);
             return response()->json(['success' => true, 'data' => $resultado]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -147,7 +148,7 @@ class ImpuestosController
             $data = $this->service->obtenerMapeo($request->user()->empresa_id);
             return response()->json(['success' => true, 'data' => $data]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -173,7 +174,7 @@ class ImpuestosController
 
             return response()->json(['success' => true, 'message' => 'Mapeo guardado exitosamente.']);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 422);
         }
     }
 
@@ -184,7 +185,7 @@ class ImpuestosController
             return response()->json(['success' => true, 'message' => 'Mapeo eliminado.']);
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
-            return response()->json(['success' => false, 'message' => $e->getMessage()], $status);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
 }

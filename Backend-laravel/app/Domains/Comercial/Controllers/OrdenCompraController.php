@@ -63,7 +63,10 @@ class OrdenCompraController extends Controller
             'proveedor_id' => 'nullable|integer|exists:proveedores,id',
             'fecha_emision' => 'nullable|date',
             'fecha_entrega_esperada' => 'nullable|date',
-            'estado' => 'nullable|in:BORRADOR,ENVIADA,RECIBIDA_PARCIAL,RECIBIDA_TOTAL,ANULADA',
+            // 'estado' NO es editable via este endpoint -- solo cambia por
+            // anular()/recibirParcial(), que llevan sus propios guards de
+            // transicion. Aceptarlo aqui permitia saltar RECIBIDA_TOTAL sin
+            // pasar por el conteo real de cantidades recibidas por detalle.
             'moneda' => 'nullable|string|max:10',
             'tipo_cambio' => 'nullable|numeric|min:0',
             'impuesto' => 'nullable|numeric|min:0',

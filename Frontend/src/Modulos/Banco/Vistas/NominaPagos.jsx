@@ -6,6 +6,7 @@ import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import * as XLSX from "@e965/xlsx";
+import { sanitizarFilasExcel } from '../../../Utilidades/exportarExcelSeguro';
 import { ChevronRight, CreditCard, AlertTriangle, Download, CheckCircle } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
@@ -157,7 +158,7 @@ const NominaPagos = () => {
             };
         });
 
-        const ws = XLSX.utils.json_to_sheet(dataParaBanco);
+        const ws = XLSX.utils.json_to_sheet(sanitizarFilasExcel(dataParaBanco));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Nomina_Pagos");
         XLSX.writeFile(wb, `Nomina_Banco_${new Date().toISOString().split('T')[0]}.xlsx`);

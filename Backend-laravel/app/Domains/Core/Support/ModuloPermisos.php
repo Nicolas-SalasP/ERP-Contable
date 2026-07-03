@@ -63,6 +63,7 @@ final class ModuloPermisos
         'rrhh.contratos' => ['rrhh.empleados.ver', 'rrhh.contratos.crear'],
         'rrhh.remuneraciones' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
         'rrhh.finiquitos' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
+        'rrhh.vacaciones' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
         'rrhh.parametros' => ['rrhh.parametros.ver', 'rrhh.parametros.editar'],
         'rrhh.centralizacion' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
         'rrhh.previred' => ['rrhh.remuneraciones.ver', 'rrhh.remuneraciones.procesar'],
@@ -141,6 +142,7 @@ final class ModuloPermisos
         'rrhh.contratos' => ['Contratos', 'RRHH'],
         'rrhh.remuneraciones' => ['Liquidaciones de sueldo', 'RRHH'],
         'rrhh.finiquitos' => ['Finiquitos', 'RRHH'],
+        'rrhh.vacaciones' => ['Vacaciones', 'RRHH'],
         'rrhh.parametros' => ['Parámetros previsionales', 'RRHH'],
         'rrhh.centralizacion' => ['Centralización contable RRHH', 'RRHH'],
         'rrhh.previred' => ['Archivo Previred', 'RRHH'],
@@ -251,14 +253,11 @@ final class ModuloPermisos
             return false;
         }
 
-        $jerarquia = (int) ($rol->jerarquia ?? 0);
-        $nombreRol = strtolower(trim((string) ($rol->nombre ?? '')));
-
-        return $jerarquia >= 80 || in_array($nombreRol, [
-            'administrador',
-            'admin',
-            'super admin',
-            'superadmin',
-        ], true);
+        // Solo la jerarquia real habilita el set de permisos de administrador.
+        // Antes tambien bastaba con que el ROL se llamara "administrador"/"admin",
+        // lo que permitia escalar privilegios creando un rol con ese nombre y
+        // jerarquia baja (un usuario con usuarios.gestionar podia crearlo y
+        // autoasignarselo sin pasar por el guard de jerarquia de storeRol/updateRol).
+        return (int) ($rol->jerarquia ?? 0) >= 80;
     }
 }

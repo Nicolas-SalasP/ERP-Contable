@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Comercial\Services\ClienteService;
 use Illuminate\Validation\ValidationException;
@@ -54,7 +55,7 @@ class ClienteController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 500);
         }
     }
@@ -97,7 +98,7 @@ class ClienteController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }
@@ -164,7 +165,7 @@ class ClienteController
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 422);
         }
     }
 
@@ -184,7 +185,7 @@ class ClienteController
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -204,7 +205,7 @@ class ClienteController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }

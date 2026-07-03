@@ -21,7 +21,7 @@ class Dj1887Service implements DeclaracionJuradaContract
 
         $liquidaciones = Liquidacion::where('empresa_id', $empresaId)
             ->where('anio', $anio)
-            ->whereIn('estado', [Liquidacion::ESTADO_EMITIDA, 'PAGADA'])
+            ->whereIn('estado', [Liquidacion::ESTADO_EMITIDA, Liquidacion::ESTADO_PAGADA])
             ->with(['empleado', 'contrato', 'detalles'])
             ->orderBy('empleado_id')
             ->orderBy('mes')

@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Http\Controllers\Controller;
 use App\Domains\Comercial\Services\AnticipoProveedorService;
@@ -46,7 +47,7 @@ class AnticipoProveedorController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
                 'errors' => $e->errors()
             ], 422);
         } catch (ComercialException $e) {
@@ -54,7 +55,7 @@ class AnticipoProveedorController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }
@@ -83,7 +84,7 @@ class AnticipoProveedorController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => MensajeErrorGenerico::desde($e),
                 'errors' => $e->errors()
             ], 422);
         } catch (ComercialException $e) {
@@ -92,7 +93,7 @@ class AnticipoProveedorController extends Controller
             $status = $e->getCode() === 404 ? 404 : 400;
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], $status);
         }
     }
@@ -108,7 +109,7 @@ class AnticipoProveedorController extends Controller
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 }

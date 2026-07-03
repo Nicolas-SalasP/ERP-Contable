@@ -3,6 +3,7 @@
 namespace App\Domains\Inventario\Controllers;
 
 use App\Domains\Inventario\Exceptions\InventarioException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Inventario\Models\InventarioPickingOrden;
 use App\Domains\Inventario\Services\InventarioPickingService;
@@ -216,7 +217,7 @@ class InventarioPickingController
     {
         return response()->json([
             'success' => false,
-            'message' => $e->getMessage(),
+            'message' => MensajeErrorGenerico::desde($e),
         ], 422);
     }
 }

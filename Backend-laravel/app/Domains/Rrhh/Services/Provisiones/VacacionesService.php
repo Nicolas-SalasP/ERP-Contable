@@ -2,9 +2,11 @@
 
 namespace App\Domains\Rrhh\Services\Provisiones;
 
+use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\Contrato;
 use App\Domains\Rrhh\Models\Empleado;
 use App\Domains\Rrhh\Models\ProvisionVacaciones;
+use App\Domains\Rrhh\Models\SolicitudVacaciones;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -78,11 +80,228 @@ class VacacionesService
             ->orderByDesc('mes')
             ->first();
 
+        $diasDevengados = $ultimo ? (float) $ultimo->saldo_dias_habiles : 0.0;
+        $diasTomados = $this->diasTomados($empresaId, $empleadoId);
+
         return [
-            'dias_disponibles' => $ultimo ? (float) $ultimo->saldo_dias_habiles : 0.0,
+            'dias_devengados' => $diasDevengados,
+            'dias_tomados' => $diasTomados,
+            'dias_disponibles' => round($diasDevengados - $diasTomados, 4),
             'monto_provisionado' => $ultimo ? (float) $ultimo->monto_provisionado_total : 0.0,
             'ultimo_periodo' => $ultimo ? "{$ultimo->mes}/{$ultimo->anio}" : null,
         ];
+    }
+
+    private function diasTomados(int $empresaId, int $empleadoId): float
+    {
+        return (float) SolicitudVacaciones::where('empresa_id', $empresaId)
+            ->where('empleado_id', $empleadoId)
+            ->where('estado', SolicitudVacaciones::ESTADO_APROBADA)
+            ->sum('dias_habiles');
+    }
+
+    /**
+     * Cuenta dias habiles (lunes a viernes) entre dos fechas, ambas incluidas.
+     */
+    public function diasHabilesEntre(Carbon $desde, Carbon $hasta): int
+    {
+        if ($hasta->lt($desde)) {
+            return 0;
+        }
+
+        $dias = 0;
+        $cursor = $desde->copy();
+        while ($cursor->lte($hasta)) {
+            if ($cursor->isWeekday()) {
+                $dias++;
+            }
+            $cursor->addDay();
+        }
+
+        return $dias;
+    }
+
+    /**
+     * Crea una solicitud de vacaciones en estado PENDIENTE. No descuenta saldo
+     * todavia -- el descuento ocurre al aprobar (saldoActual solo suma
+     * solicitudes APROBADA), asi que dos solicitudes simultaneas del mismo
+     * empleado no se bloquean entre si hasta que una se aprueba.
+     */
+    public function solicitar(int $empresaId, int $empleadoId, string $fechaDesde, string $fechaHasta, int $userId, ?string $observacion = null): SolicitudVacaciones
+    {
+        return DB::transaction(function () use ($empresaId, $empleadoId, $fechaDesde, $fechaHasta, $userId, $observacion) {
+            $empleado = Empleado::where('empresa_id', $empresaId)->find($empleadoId);
+            if (!$empleado) {
+                throw RrhhException::noEncontrado('El empleado no existe o no pertenece a la empresa.');
+            }
+
+            $contrato = Contrato::where('empresa_id', $empresaId)
+                ->where('empleado_id', $empleadoId)
+                ->where('estado', 'VIGENTE')
+                ->orderByDesc('fecha_inicio')
+                ->first();
+
+            if (!$contrato) {
+                throw RrhhException::regla('El empleado no tiene un contrato vigente.');
+            }
+
+            $desde = Carbon::parse($fechaDesde)->startOfDay();
+            $hasta = Carbon::parse($fechaHasta)->startOfDay();
+
+            if ($hasta->lt($desde)) {
+                throw RrhhException::regla('La fecha hasta no puede ser anterior a la fecha desde.');
+            }
+
+            if ($contrato->fecha_termino && $hasta->gt($contrato->fecha_termino)) {
+                throw RrhhException::regla(
+                    "El rango solicitado excede la fecha de termino del contrato ({$contrato->fecha_termino->toDateString()})."
+                );
+            }
+
+            $diasHabiles = $this->diasHabilesEntre($desde, $hasta);
+            if ($diasHabiles <= 0) {
+                throw RrhhException::regla('El rango seleccionado no contiene dias habiles.');
+            }
+
+            $saldo = $this->saldoActual($empresaId, $empleadoId);
+            if ($diasHabiles > $saldo['dias_disponibles']) {
+                throw RrhhException::regla(
+                    "Saldo insuficiente: solicita {$diasHabiles} dias habiles y el saldo disponible es " .
+                    "{$saldo['dias_disponibles']}."
+                );
+            }
+
+            return SolicitudVacaciones::create([
+                'empresa_id' => $empresaId,
+                'empleado_id' => $empleadoId,
+                'contrato_id' => $contrato->id,
+                'fecha_desde' => $desde->toDateString(),
+                'fecha_hasta' => $hasta->toDateString(),
+                'dias_habiles' => $diasHabiles,
+                'estado' => SolicitudVacaciones::ESTADO_PENDIENTE,
+                'observacion' => $observacion,
+                'solicitado_por' => $userId,
+            ]);
+        });
+    }
+
+    /**
+     * Aprueba una solicitud PENDIENTE. Revalida el saldo con lock para evitar
+     * que dos solicitudes del mismo empleado se aprueben en paralelo y dejen
+     * el saldo en negativo.
+     */
+    public function aprobar(int $empresaId, int $solicitudId, int $userId): SolicitudVacaciones
+    {
+        return DB::transaction(function () use ($empresaId, $solicitudId, $userId) {
+            $solicitud = SolicitudVacaciones::where('empresa_id', $empresaId)
+                ->lockForUpdate()
+                ->find($solicitudId);
+
+            if (!$solicitud) {
+                throw RrhhException::noEncontrado('La solicitud no existe o no pertenece a la empresa.');
+            }
+
+            if ($solicitud->estado !== SolicitudVacaciones::ESTADO_PENDIENTE) {
+                throw RrhhException::regla("La solicitud ya fue resuelta (estado {$solicitud->estado}).");
+            }
+
+            // lockForUpdate() de arriba solo bloquea ESTA solicitud. Dos
+            // solicitudes PENDIENTE distintas del mismo empleado pueden
+            // aprobarse en paralelo y leer el mismo saldo antes de que
+            // cualquiera comitee. Se bloquea ademas la fila del empleado
+            // como mutex compartido para serializar cualquier aprobacion
+            // concurrente del mismo empleado, sin importar que solicitud
+            // esten tocando.
+            Empleado::where('empresa_id', $empresaId)->where('id', $solicitud->empleado_id)->lockForUpdate()->first();
+
+            $saldo = $this->saldoActual($empresaId, $solicitud->empleado_id);
+            if ((float) $solicitud->dias_habiles > $saldo['dias_disponibles']) {
+                throw RrhhException::regla(
+                    "Saldo insuficiente al momento de aprobar: {$solicitud->dias_habiles} dias solicitados, " .
+                    "{$saldo['dias_disponibles']} disponibles."
+                );
+            }
+
+            $solicitud->update([
+                'estado' => SolicitudVacaciones::ESTADO_APROBADA,
+                'resuelto_por' => $userId,
+                'resuelto_at' => now(),
+            ]);
+
+            return $solicitud->fresh();
+        });
+    }
+
+    public function rechazar(int $empresaId, int $solicitudId, int $userId, string $motivo): SolicitudVacaciones
+    {
+        return DB::transaction(function () use ($empresaId, $solicitudId, $userId, $motivo) {
+            $solicitud = SolicitudVacaciones::where('empresa_id', $empresaId)
+                ->lockForUpdate()
+                ->find($solicitudId);
+
+            if (!$solicitud) {
+                throw RrhhException::noEncontrado('La solicitud no existe o no pertenece a la empresa.');
+            }
+
+            if ($solicitud->estado !== SolicitudVacaciones::ESTADO_PENDIENTE) {
+                throw RrhhException::regla("La solicitud ya fue resuelta (estado {$solicitud->estado}).");
+            }
+
+            $solicitud->update([
+                'estado' => SolicitudVacaciones::ESTADO_RECHAZADA,
+                'motivo_rechazo' => $motivo,
+                'resuelto_por' => $userId,
+                'resuelto_at' => now(),
+            ]);
+
+            return $solicitud->fresh();
+        });
+    }
+
+    /**
+     * Anula una solicitud APROBADA por error (repone el saldo, ya que
+     * saldoActual solo suma solicitudes en estado APROBADA).
+     */
+    public function anular(int $empresaId, int $solicitudId, int $userId, string $motivo): SolicitudVacaciones
+    {
+        return DB::transaction(function () use ($empresaId, $solicitudId, $userId, $motivo) {
+            $solicitud = SolicitudVacaciones::where('empresa_id', $empresaId)
+                ->lockForUpdate()
+                ->find($solicitudId);
+
+            if (!$solicitud) {
+                throw RrhhException::noEncontrado('La solicitud no existe o no pertenece a la empresa.');
+            }
+
+            if ($solicitud->estado !== SolicitudVacaciones::ESTADO_APROBADA) {
+                throw RrhhException::regla('Solo se puede anular una solicitud APROBADA.');
+            }
+
+            $solicitud->update([
+                'estado' => SolicitudVacaciones::ESTADO_ANULADA,
+                'motivo_anulacion' => $motivo,
+                'resuelto_por' => $userId,
+                'resuelto_at' => now(),
+            ]);
+
+            return $solicitud->fresh();
+        });
+    }
+
+    public function listarSolicitudes(int $empresaId, array $filtros = [])
+    {
+        $query = SolicitudVacaciones::where('empresa_id', $empresaId)
+            ->with(['empleado:id,nombres,apellido_paterno,apellido_materno,rut'])
+            ->orderByDesc('created_at');
+
+        if (!empty($filtros['empleado_id'])) {
+            $query->where('empleado_id', (int) $filtros['empleado_id']);
+        }
+        if (!empty($filtros['estado'])) {
+            $query->where('estado', $filtros['estado']);
+        }
+
+        return $query->paginate(30);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Domains\Inventario\Controllers;
 
 use App\Domains\Inventario\Exceptions\InventarioException;
+use App\Support\MensajeErrorGenerico;
 
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Controllers\Concerns\RespondeInventario;

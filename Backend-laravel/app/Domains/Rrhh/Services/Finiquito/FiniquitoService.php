@@ -159,4 +159,50 @@ class FiniquitoService
             return $finiquito->fresh();
         });
     }
+
+    /**
+     * Revierte un finiquito FIRMADO por error: reactiva el contrato asociado
+     * si sigue terminado por este mismo finiquito. No hay asiento contable que
+     * reversar (Finiquito.comprobante_contable nunca se setea en este servicio).
+     */
+    public function anular(int $empresaId, int $finiquitoId, string $motivo): Finiquito
+    {
+        return DB::transaction(function () use ($empresaId, $finiquitoId, $motivo) {
+            $finiquito = Finiquito::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($finiquitoId);
+
+            if ($finiquito->estado === 'ANULADO') {
+                throw RrhhException::regla('Este finiquito ya fue anulado anteriormente.');
+            }
+            if ($finiquito->estado === 'PAGADO') {
+                throw RrhhException::regla('No se puede anular un finiquito ya pagado.');
+            }
+            if ($finiquito->estado !== 'FIRMADO') {
+                throw RrhhException::regla("No se puede anular un finiquito en estado {$finiquito->estado}.");
+            }
+
+            $finiquito->update([
+                'estado' => 'ANULADO',
+                'observaciones' => trim(($finiquito->observaciones ?? '') . "\n[ANULADO] {$motivo}"),
+            ]);
+
+            // Reactiva el contrato solo si sigue terminado por ESTE finiquito
+            // (mismo causal + fecha que firmar() escribio) -- si algo mas lo
+            // modifico despues, no lo tocamos para no pisar otro estado.
+            $contrato = Contrato::find($finiquito->contrato_id);
+            if ($contrato
+                && $contrato->estado === 'TERMINADO'
+                && $contrato->causal_termino === $finiquito->causal
+                && $contrato->fecha_termino_real?->toDateString() === $finiquito->fecha_termino->toDateString()
+            ) {
+                $contrato->update([
+                    'estado' => 'VIGENTE',
+                    'es_contrato_activo' => true,
+                    'causal_termino' => null,
+                    'fecha_termino_real' => null,
+                ]);
+            }
+
+            return $finiquito->fresh();
+        });
+    }
 }

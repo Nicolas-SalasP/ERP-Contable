@@ -194,11 +194,16 @@ class CotizacionService
         });
     }
 
-    public function convertirEnFactura(int $empresaId, int $cotizacionId): Factura
+    public function convertirEnFactura(int $empresaId, int $cotizacionId, ?string $fechaEmision = null): Factura
     {
-        return DB::transaction(function () use ($empresaId, $cotizacionId) {
+        return DB::transaction(function () use ($empresaId, $cotizacionId, $fechaEmision) {
+            $fecha = $fechaEmision ?? date('Y-m-d');
+            // Lock pesimista: sin esto, doble clic o reintento de red podia leer
+            // la cotizacion como "Aceptada" dos veces antes de que la primera
+            // transaccion comiteara, duplicando la factura de venta generada.
             $cotizacion = Cotizacion::where('empresa_id', $empresaId)
                 ->with('estado', 'cliente')
+                ->lockForUpdate()
                 ->find($cotizacionId);
 
             if (!$cotizacion) {
@@ -220,6 +225,7 @@ class CotizacionService
 
             $proveedor = \App\Domains\Comercial\Models\Proveedor::where('empresa_id', $empresaId)
                 ->where('rut', $cliente->rut)
+                ->lockForUpdate()
                 ->first();
 
             if (!$proveedor) {
@@ -241,11 +247,12 @@ class CotizacionService
                 'numero_factura' => 'FV-' . $cotizacion->numero_cotizacion,
                 'tipo' => 'VENTA',
                 'tipo_documento' => 'FACTURA',
-                'fecha_emision' => date('Y-m-d'),
+                'fecha_emision' => $fecha,
                 'monto_neto' => $cotizacion->monto_neto,
                 'monto_iva' => $cotizacion->monto_iva,
                 'monto_bruto' => $cotizacion->monto_total ?? $cotizacion->total,
                 'estado' => 'REGISTRADA',
+                'cotizacion_id' => $cotizacion->id,
             ]);
 
             // Centralización contable de la VENTA (antes la factura de venta no
@@ -275,7 +282,7 @@ class CotizacionService
 
             $asientoVenta = app(AsientoContableService::class)->registrarAsiento([
                 'empresa_id' => $empresaId,
-                'fecha' => date('Y-m-d'),
+                'fecha' => $fecha,
                 'glosa' => "Centralización Venta - {$factura->numero_factura}",
                 'tipo_asiento' => 'ingreso',
                 'origen_modulo' => 'ventas',

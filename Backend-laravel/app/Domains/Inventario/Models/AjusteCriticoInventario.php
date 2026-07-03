@@ -52,6 +52,10 @@ class AjusteCriticoInventario extends Model
         'origen_modulo',
         'origen_id',
         'registrado_por',
+        'anulado_at',
+        'anulado_por',
+        'motivo_anulacion',
+        'movimiento_reversa_id',
     ];
 
     protected $casts = [
@@ -63,6 +67,9 @@ class AjusteCriticoInventario extends Model
         'lote_id' => 'integer',
         'origen_id' => 'integer',
         'registrado_por' => 'integer',
+        'anulado_por' => 'integer',
+        'movimiento_reversa_id' => 'integer',
+        'anulado_at' => 'datetime',
 
         'cantidad' => 'decimal:4',
         'costo_unitario' => 'decimal:4',
@@ -109,6 +116,23 @@ class AjusteCriticoInventario extends Model
     public function registradoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registrado_por');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function anuladoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'anulado_por');
+    }
+
+    /** @return BelongsTo<MovimientoInventario, $this> */
+    public function movimientoReversa(): BelongsTo
+    {
+        return $this->belongsTo(MovimientoInventario::class, 'movimiento_reversa_id');
+    }
+
+    public function estaAnulado(): bool
+    {
+        return $this->anulado_at !== null;
     }
 
     public function scopeEmpresa(Builder $query, int $empresaId): Builder

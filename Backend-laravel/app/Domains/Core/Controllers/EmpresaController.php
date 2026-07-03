@@ -8,6 +8,7 @@ use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Services\EmpresaService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Support\MensajeErrorGenerico;
 use App\Domains\Core\Support\ModuloPermisos;
 use App\Domains\Sii\Support\RutHelper;
 use Illuminate\Validation\ValidationException;
@@ -184,7 +185,7 @@ class EmpresaController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'error' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 
@@ -213,7 +214,7 @@ class EmpresaController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'error' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
 

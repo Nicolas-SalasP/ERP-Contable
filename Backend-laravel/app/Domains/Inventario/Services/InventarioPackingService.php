@@ -20,7 +20,8 @@ class InventarioPackingService
 {
     public function __construct(
         private readonly InventarioPermisoService $permisos,
-        private readonly InventarioEventoIntegracionService $eventosIntegracion
+        private readonly InventarioEventoIntegracionService $eventosIntegracion,
+        private readonly InventarioStockUbicacionService $stockUbicacionService
     ) {
     }
 
@@ -91,7 +92,11 @@ class InventarioPackingService
                 throw ValidationException::withMessages(['picking_orden_id' => 'Packing solo puede generarse desde picking completo o con diferencias aceptadas.']);
             }
 
-            if (InventarioPackingOrden::where('empresa_id', $empresaId)->where('picking_orden_id', $picking->id)->exists()) {
+            if (InventarioPackingOrden::where('empresa_id', $empresaId)
+                ->where('picking_orden_id', $picking->id)
+                ->where('estado', '!=', InventarioPackingOrden::ESTADO_CANCELADO)
+                ->exists()
+            ) {
                 throw ValidationException::withMessages(['picking_orden_id' => 'Ya existe una orden de packing para este picking.']);
             }
 
@@ -256,7 +261,41 @@ class InventarioPackingService
                 throw InventarioException::regla('La orden de packing no puede cancelarse en su estado actual.');
             }
 
-            InventarioPackingDetalle::where('empresa_id', $usuario->empresa_id)
+            $empresaId = (int) $usuario->empresa_id;
+
+            // puedeCancelarse() excluye EMPACADO, y un despacho solo puede
+            // crearse desde un packing EMPACADO -- nunca hay un despacho que
+            // ya haya consumido esta reserva en este punto, asi que liberar
+            // cantidad_pickeada completa (via cantidadPendiente(), no un
+            // numero fijo) es seguro.
+            $detalles = InventarioPackingDetalle::where('empresa_id', $empresaId)
+                ->where('packing_orden_id', $orden->id)
+                ->with('pickingAsignacion:id,empresa_id,reserva_detalle_id')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($detalles as $detalle) {
+                /** @var InventarioPackingDetalle $detalle */
+                /** @var InventarioPickingAsignacion|null $asignacion */
+                $asignacion = $detalle->pickingAsignacion;
+                $reservaDetalleId = $asignacion?->reserva_detalle_id;
+                $cantidadPickeada = (float) $detalle->cantidad_pickeada;
+
+                if ($reservaDetalleId && $cantidadPickeada > 0) {
+                    $this->stockUbicacionService->liberarReservaDetalle(
+                        empresaId: $empresaId,
+                        productoId: (int) $detalle->producto_id,
+                        bodegaId: (int) $orden->bodega_id,
+                        ubicacionId: $detalle->ubicacion_origen_id ? (int) $detalle->ubicacion_origen_id : null,
+                        loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
+                        reservaDetalleId: (int) $reservaDetalleId,
+                        cantidadSolicitada: $cantidadPickeada,
+                        campo: 'cantidad_pickeada'
+                    );
+                }
+            }
+
+            InventarioPackingDetalle::where('empresa_id', $empresaId)
                 ->where('packing_orden_id', $orden->id)
                 ->update(['estado' => InventarioPackingDetalle::ESTADO_CANCELADO]);
 

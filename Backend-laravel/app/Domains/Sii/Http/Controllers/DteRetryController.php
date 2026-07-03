@@ -13,14 +13,21 @@ use Illuminate\Http\JsonResponse;
  */
 class DteRetryController
 {
-    /** Estados del DTE que admiten reintento manual directo. */
+    /**
+     * Estados del DTE que admiten reintento manual directo.
+     *
+     * RECHAZADO y ANULADO_FALLO_INTERNO NO son reintentables por esta via:
+     * en ambos el folio CAF ya fue consumido o liberado como HUERFANO (no
+     * reusable), y EmitirDteService::emitir() exige estado===BORRADOR --
+     * reintentarlos aqui siempre lanzaba una excepcion interna no controlada.
+     * Recuperar esos casos requiere emitir un DTE nuevo con folio nuevo
+     * (mismo criterio que ReintentarEmisionFacturaService::ESTADOS_TERMINALES_DTE).
+     */
     private const ESTADOS_REINTENTABLES = [
         SiiDteEmitido::ESTADO_BORRADOR,
         SiiDteEmitido::ESTADO_FOLIO_RESERVADO,
         SiiDteEmitido::ESTADO_XML_GENERADO,
         SiiDteEmitido::ESTADO_FIRMADO,
-        SiiDteEmitido::ESTADO_RECHAZADO,
-        SiiDteEmitido::ESTADO_ANULADO_FALLO_INTERNO,
     ];
 
     /** Estados donde solo hace falta reenviar (ya tienen firma valida). */
@@ -44,10 +51,14 @@ class DteRetryController
             ->findOrFail($siiDteEmitido);
 
         if (!in_array($dte->estado, self::ESTADOS_REINTENTABLES, true)) {
+            $mensaje = in_array($dte->estado, [SiiDteEmitido::ESTADO_RECHAZADO, SiiDteEmitido::ESTADO_ANULADO_FALLO_INTERNO], true)
+                ? "El DTE en estado '{$dte->estado}' no puede reanudarse: el folio ya fue consumido o liberado. Debe emitir un documento nuevo."
+                : "El DTE en estado '{$dte->estado}' no admite reintento manual.";
+
             return response()->json([
                 'error' => [
                     'razon'         => 'estado_no_reintentable',
-                    'mensaje'       => "El DTE en estado '{$dte->estado}' no admite reintento manual.",
+                    'mensaje'       => $mensaje,
                     'estado_actual' => $dte->estado,
                 ],
             ], 422);

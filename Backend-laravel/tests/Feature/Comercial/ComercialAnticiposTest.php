@@ -7,6 +7,8 @@ use Tests\TestCase;
 use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\AnticipoProveedor;
+use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Services\AnticipoProveedorService;
 
 class ComercialAnticiposTest extends TestCase
 {
@@ -105,5 +107,48 @@ class ComercialAnticiposTest extends TestCase
             $response->assertStatus(200);
             $this->assertEquals(60000, $anticipo->fresh()->saldo_disponible);
         }
+    }
+
+    public function test_anular_factura_libera_el_anticipo_aplicado()
+    {
+        $factura = Factura::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'proveedor_id' => $this->prov->id,
+            'numero_factura' => 'F-ANTICIPO-1',
+            'tipo' => 'COMPRA',
+            'tipo_documento' => 'FACTURA',
+            'fecha_emision' => now(),
+            'monto_neto' => 100000,
+            'monto_iva' => 19000,
+            'monto_bruto' => 119000,
+            'estado' => 'REGISTRADA',
+        ]);
+
+        $anticipo = AnticipoProveedor::create([
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $this->prov->id,
+            'monto' => 100000,
+            'monto_original' => 100000,
+            'saldo_disponible' => 100000,
+            'fecha' => now(),
+            'estado' => 'DISPONIBLE',
+        ]);
+
+        app(AnticipoProveedorService::class)->aplicarAFactura(
+            $this->empresa->id, $anticipo->id, $factura->id, 40000
+        );
+        $this->assertEquals(60000, $anticipo->fresh()->saldo_disponible);
+
+        $this->actingAs($this->usuario)
+            ->postJson("/api/facturas/{$factura->id}/anular", ['motivo' => 'Prueba de reversa de anticipo'])
+            ->assertStatus(200);
+
+        $this->assertEquals(
+            100000,
+            (float) $anticipo->fresh()->saldo_disponible,
+            'El anticipo debe recuperar su saldo completo al anular la factura a la que se aplicó.'
+        );
+        $this->assertEquals('DISPONIBLE', $anticipo->fresh()->estado);
     }
 }

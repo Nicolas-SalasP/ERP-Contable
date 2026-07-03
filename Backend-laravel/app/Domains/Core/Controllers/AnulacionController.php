@@ -4,6 +4,7 @@ namespace App\Domains\Core\Controllers;
 
 use Illuminate\Http\Request;
 use App\Domains\Core\Services\AnulacionService;
+use App\Support\MensajeErrorGenerico;
 use Exception;
 
 class AnulacionController
@@ -36,7 +37,7 @@ class AnulacionController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 404);
         }
     }
@@ -68,7 +69,7 @@ class AnulacionController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }

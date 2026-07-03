@@ -247,6 +247,112 @@ class InventarioAjusteCriticoService
         });
     }
 
+    /**
+     * Revierte un ajuste crítico registrado por error: crea un movimiento
+     * compensatorio (opuesto al original) en vez de editar/borrar el ajuste
+     * o el movimiento original -- mismo criterio que AsientoContableService::
+     * procesarReversa. Reusa registrarMovimiento() para que la valorización
+     * y las capas FIFO/lote se calculen con la misma lógica probada que
+     * cualquier otro movimiento, no con aritmética manual sobre el stock.
+     */
+    public function anularAjusteCritico(User $usuario, int $ajusteCriticoId, string $motivoAnulacion): AjusteCriticoInventario
+    {
+        $this->permisos->exigir($usuario, 'inventario.ajustes_criticos.crear');
+
+        $empresaId = (int) $usuario->empresa_id;
+
+        $motivoAnulacion = $this->normalizarTextoObligatorio(
+            $motivoAnulacion,
+            'motivo_anulacion',
+            'El motivo de anulación es obligatorio.',
+            500
+        );
+
+        return DB::transaction(function () use ($usuario, $empresaId, $ajusteCriticoId, $motivoAnulacion) {
+            $ajuste = AjusteCriticoInventario::query()
+                ->with(['tipo', 'movimiento'])
+                ->empresa($empresaId)
+                ->lockForUpdate()
+                ->find($ajusteCriticoId);
+
+            if (!$ajuste) {
+                throw InventarioException::noEncontrado('El ajuste crítico solicitado no existe o no pertenece a la empresa.');
+            }
+
+            if ($ajuste->estaAnulado()) {
+                throw InventarioException::regla('Este ajuste crítico ya fue anulado anteriormente.');
+            }
+
+            $tipo = $ajuste->tipo;
+            $movimientoOriginal = $ajuste->movimiento;
+
+            $datosReversa = [
+                'producto_id' => $ajuste->producto_id,
+                'cantidad' => (float) $ajuste->cantidad,
+                'referencia' => $ajuste->referencia,
+                'motivo' => MovimientoInventario::MOTIVO_CORRECCION_STOCK,
+                'observacion' => "Reversa de ajuste crítico #{$ajuste->id} ({$tipo->codigo}). Motivo: {$motivoAnulacion}",
+                'fecha_movimiento' => now(),
+                '_origen_operativo' => 'inventario_ajuste_critico_reversa',
+            ];
+
+            $loteId = $movimientoOriginal?->lotes()->value('lote_id');
+            if ($loteId) {
+                $datosReversa['lote_id'] = $loteId;
+            }
+
+            if ($tipo->esAjustePositivo()) {
+                // Original sumó stock en bodega_destino -> reversa resta en la misma bodega.
+                $datosReversa['tipo'] = MovimientoInventario::TIPO_AJUSTE_NEGATIVO;
+                $datosReversa['bodega_origen_id'] = $ajuste->bodega_id;
+            } else {
+                // Original restó stock en bodega_origen -> reversa suma en la misma bodega,
+                // preservando el costo unitario original para no distorsionar el promedio.
+                $datosReversa['tipo'] = MovimientoInventario::TIPO_AJUSTE_POSITIVO;
+                $datosReversa['bodega_destino_id'] = $ajuste->bodega_id;
+                $datosReversa['costo_unitario'] = (float) $ajuste->costo_unitario;
+            }
+
+            $movimientoReversa = $this->movimientoService->registrarMovimiento(
+                $datosReversa,
+                $empresaId,
+                (int) $usuario->id
+            );
+
+            $ajuste->update([
+                'anulado_at' => now(),
+                'anulado_por' => $usuario->id,
+                'motivo_anulacion' => $motivoAnulacion,
+                'movimiento_reversa_id' => $movimientoReversa->id,
+            ]);
+
+            $this->auditoria->registrarEvento($usuario, [
+                'empresa_id' => $empresaId,
+                'accion' => InventarioAuditoriaEvento::ACCION_AJUSTE_CRITICO_CREADO,
+                'entidad_tipo' => AjusteCriticoInventario::class,
+                'entidad_id' => (int) $ajuste->id,
+                'severidad' => InventarioAuditoriaEvento::SEVERIDAD_CRITICAL,
+                'descripcion' => 'Ajuste crítico de inventario anulado (movimiento compensatorio registrado).',
+                'motivo' => $motivoAnulacion,
+                'metadata_json' => [
+                    'ajuste_critico_id' => $ajuste->id,
+                    'movimiento_original_id' => $ajuste->movimiento_inventario_id,
+                    'movimiento_reversa_id' => $movimientoReversa->id,
+                ],
+            ]);
+
+            return $ajuste->fresh([
+                'tipo:id,codigo,nombre,descripcion,tipo_movimiento,requiere_stock,activo',
+                'producto:id,empresa_id,sku,nombre,activo,permite_merma',
+                'bodega:id,empresa_id,codigo,nombre,estado',
+                'movimiento',
+                'movimientoReversa',
+                'registradoPor:id,nombre,email',
+                'anuladoPor:id,nombre,email',
+            ]);
+        });
+    }
+
     private function prepararDatosMovimiento(
         TipoAjusteCritico $tipo,
         Producto $producto,

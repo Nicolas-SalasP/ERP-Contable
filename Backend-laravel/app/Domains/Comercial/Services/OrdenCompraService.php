@@ -2,6 +2,7 @@
 
 namespace App\Domains\Comercial\Services;
 
+use App\Domains\Comercial\Exceptions\ComercialException;
 use App\Domains\Comercial\Models\OrdenCompra;
 use App\Domains\Comercial\Models\DetalleOrdenCompra;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -85,18 +86,38 @@ class OrdenCompraService
         });
     }
 
+    private const ESTADOS_NO_ANULABLES = ['RECIBIDA_TOTAL', 'RECIBIDA_PARCIAL', 'ANULADA'];
+
     public function anular(OrdenCompra $oc): OrdenCompra
     {
-        $oc->update(['estado' => 'ANULADA']);
-        return $oc;
+        return DB::transaction(function () use ($oc) {
+            /** @var OrdenCompra $ocLock */
+            $ocLock = OrdenCompra::where('empresa_id', $oc->empresa_id)->lockForUpdate()->findOrFail($oc->id);
+
+            if (in_array($ocLock->estado, self::ESTADOS_NO_ANULABLES, true)) {
+                throw ComercialException::regla(
+                    "No se puede anular una orden de compra en estado {$ocLock->estado}."
+                );
+            }
+
+            $ocLock->update(['estado' => 'ANULADA']);
+            return $ocLock;
+        });
     }
 
     public function recibirParcial(OrdenCompra $oc, array $recepciones): OrdenCompra
     {
-        DB::transaction(function () use ($oc, $recepciones) {
+        return DB::transaction(function () use ($oc, $recepciones) {
+            /** @var OrdenCompra $ocLock */
+            $ocLock = OrdenCompra::where('empresa_id', $oc->empresa_id)->lockForUpdate()->findOrFail($oc->id);
+
+            if ($ocLock->estado === 'ANULADA') {
+                throw ComercialException::regla('No se puede recibir mercadería de una orden de compra anulada.');
+            }
+
             foreach ($recepciones as $recepcion) {
                 $detalleId = (int) ($recepcion['detalle_id'] ?? 0);
-                $detalle = DetalleOrdenCompra::where('orden_compra_id', $oc->id)->where('id', $detalleId)->first();
+                $detalle = DetalleOrdenCompra::where('orden_compra_id', $ocLock->id)->where('id', $detalleId)->lockForUpdate()->first();
                 if ($detalle === null) {
                     continue;
                 }
@@ -104,22 +125,22 @@ class OrdenCompraService
                 $detalle->update(['cantidad_recibida' => $nuevaCantidad]);
             }
 
-            $oc->load('detalles');
-            $todosRecibidos = $oc->detalles->every(
+            $ocLock->load('detalles');
+            $todosRecibidos = $ocLock->detalles->every(
                 fn ($d) => (float) $d->cantidad_recibida >= (float) $d->cantidad
             );
-            $algunoRecibido = $oc->detalles->some(
+            $algunoRecibido = $ocLock->detalles->some(
                 fn ($d) => (float) $d->cantidad_recibida > 0
             );
 
             if ($todosRecibidos) {
-                $oc->update(['estado' => 'RECIBIDA_TOTAL']);
+                $ocLock->update(['estado' => 'RECIBIDA_TOTAL']);
             } elseif ($algunoRecibido) {
-                $oc->update(['estado' => 'RECIBIDA_PARCIAL']);
+                $ocLock->update(['estado' => 'RECIBIDA_PARCIAL']);
             }
-        });
 
-        return $oc->load('detalles', 'proveedor');
+            return $ocLock->load('detalles', 'proveedor');
+        });
     }
 
     private function generarNumeroOc(int $empresaId): string
