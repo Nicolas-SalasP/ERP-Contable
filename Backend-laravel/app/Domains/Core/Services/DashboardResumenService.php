@@ -10,10 +10,18 @@ use App\Domains\Comercial\Models\OrdenCompra;
 use App\Domains\Contabilidad\Models\DjEnvio;
 use App\Domains\Rrhh\Models\Liquidacion;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardResumenService
 {
+    // TTL corto: el dashboard debe verse razonablemente fresco (facturas/pagos
+    // nuevos) pero no necesita recalcular ~30 queries en cada request. No hay
+    // invalidación activa (no hay un hook limpio y único de "algo cambió" que
+    // cubra facturas/pagos/inventario/rrhh a la vez): un TTL corto es la
+    // estrategia correcta acá.
+    private const TTL_SEGUNDOS = 90;
+
     /**
      * Retorna el resumen de KPIs, serie de ventas, top clientes, facturas urgentes
      * y secciones gateadas por permiso: compras_12m, inventario, rrhh, alertas_pendientes.
@@ -23,6 +31,29 @@ class DashboardResumenService
      * @param  array  $permisos   Lista de permisos efectivos del usuario (ModuloPermisos::permisosUsuario)
      */
     public function obtener(int $empresaId, string $periodo = 'mes', array $permisos = []): array
+    {
+        // La clave incluye empresa_id (aislamiento multitenant obligatorio) +
+        // periodo + los permisos que efectivamente cambian el resultado (las
+        // secciones "inventario"/"rrhh"/"alertas.dj" son condicionales).
+        $permisosRelevantes = array_values(array_intersect($permisos, [
+            'inventario.productos.ver',
+            'rrhh.remuneraciones.ver',
+            'contabilidad.dj.ver',
+        ]));
+        sort($permisosRelevantes);
+        $claveCache = sprintf(
+            'dashboard_resumen:empresa_%d:periodo_%s:permisos_%s',
+            $empresaId,
+            $periodo,
+            md5(implode(',', $permisosRelevantes))
+        );
+
+        return Cache::remember($claveCache, self::TTL_SEGUNDOS, function () use ($empresaId, $periodo, $permisos) {
+            return $this->calcular($empresaId, $periodo, $permisos);
+        });
+    }
+
+    private function calcular(int $empresaId, string $periodo, array $permisos): array
     {
         [$inicio, $fin]            = $this->rangoPeriodo($periodo);
         [$inicioAnt, $finAnt]      = $this->rangoPeriodoAnterior($periodo);
