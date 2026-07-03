@@ -314,8 +314,8 @@ jobs:
             SHARED=~/erp_backend_staging_shared
             TIMESTAMP=$(date +%Y%m%d%H%M%S)
             NEW_RELEASE=$RELEASES_DIR/$TIMESTAMP
-            KEEP_RELEASES=5
-            KEEP_BACKUPS=5
+            KEEP_RELEASES=3
+            KEEP_BACKUPS=3
 
             mkdir -p "$RELEASES_DIR" "$SHARED/storage" "$SHARED/backups"
 
@@ -573,8 +573,8 @@ jobs:
             SHARED=~/erp_backend_shared
             TIMESTAMP=$(date +%Y%m%d%H%M%S)
             NEW_RELEASE=$RELEASES_DIR/$TIMESTAMP
-            KEEP_RELEASES=5
-            KEEP_BACKUPS=5
+            KEEP_RELEASES=3
+            KEEP_BACKUPS=3
 
             mkdir -p "$RELEASES_DIR" "$SHARED/storage" "$SHARED/backups"
 

@@ -54,7 +54,14 @@ Mismo patrón que Capistrano/Deployer/Laravel Envoyer, adaptado a hosting compar
    mv -Tf "${APP_LINK}.new" "$APP_LINK"
    ```
    `mv -T` entre dos symlinks en el mismo filesystem es una operación atómica a nivel de sistema de archivos — no hay ventana donde el servidor vea un estado intermedio.
-7. Limpieza: se conservan las últimas 5 releases y los últimos 5 backups de BD; el resto se borra.
+7. Limpieza: se conservan las últimas 3 releases (`KEEP_RELEASES`) y los últimos 3 backups de BD (`KEEP_BACKUPS`); el resto se borra. Esta rotación **no incluye** el respaldo único de la migración (`erp_backend.pre-symlink-backup-<timestamp>`, ver sección de arquitectura abajo) — ese queda permanente hasta que se borre a mano.
+
+### Arquitectura: qué es cada carpeta
+
+- `~/erp_backend` — puntero en vivo (symlink), sin costo de espacio propio. `index.php` siempre lee de acá.
+- `~/erp_backend_releases/` — todas las versiones completas (código + `vendor/`), incluida la activa. Se conservan las últimas `KEEP_RELEASES` (3).
+- `~/erp_backend_shared/` — lo que NO puede duplicarse por release: `.env` y `storage/` (uploads, logs, certificados SII cifrados). Cada release symlinkea a esto, así todas comparten el mismo estado real.
+- `~/erp_backend.pre-symlink-backup-<timestamp>` — la carpeta original de antes de este sistema (de cuando `erp_backend` era carpeta real). Se crea **una sola vez**, en la migración del esquema viejo al nuevo. No es parte de la rotación de releases y no se borra automáticamente.
 
 ### Si algo falla a mitad de camino
 
