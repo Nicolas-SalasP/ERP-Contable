@@ -91,7 +91,11 @@ class InventarioPackingService
                 throw ValidationException::withMessages(['picking_orden_id' => 'Packing solo puede generarse desde picking completo o con diferencias aceptadas.']);
             }
 
-            if (InventarioPackingOrden::where('empresa_id', $empresaId)->where('picking_orden_id', $picking->id)->exists()) {
+            if (InventarioPackingOrden::where('empresa_id', $empresaId)
+                ->where('picking_orden_id', $picking->id)
+                ->where('estado', '!=', InventarioPackingOrden::ESTADO_CANCELADO)
+                ->exists()
+            ) {
                 throw ValidationException::withMessages(['picking_orden_id' => 'Ya existe una orden de packing para este picking.']);
             }
 
