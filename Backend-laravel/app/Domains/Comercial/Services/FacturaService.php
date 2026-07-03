@@ -538,7 +538,7 @@ class FacturaService
                     'cuenta_contable' => $cuentaCxC->codigo,
                     'debe'            => $bruto,
                     'haber'           => 0,
-                    'glosa_detalle'   => "Aumento CxC ND {$datos['numero_nd']} — cliente {$origen->cliente_id}",
+                    'glosa_detalle'   => "Aumento CxC ND {$datos['numero_nd']} — cliente {$origen->nombre_proveedor}",
                 ],
             ];
 

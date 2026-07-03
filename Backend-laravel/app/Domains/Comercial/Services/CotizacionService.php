@@ -248,6 +248,14 @@ class CotizacionService
                 'empresa_id' => $empresaId,
                 'codigo_unico' => $codigoUnico,
                 'proveedor_id' => $proveedor->id,
+                // cliente_id es la relacion real usada por el mapeo a DTE SII
+                // (FacturaAComercialDteMapper lee $factura->cliente para
+                // receptor_rut/razon_social) y por ArAgingService. Sin esto,
+                // toda factura de venta emitia DTE con datos del receptor
+                // vacios -- proveedor_id es una entidad espejo aparte (para
+                // que el modulo de Compras trate al mismo tercero de forma
+                // uniforme), no reemplaza esta relacion.
+                'cliente_id' => $cliente->id,
                 'numero_factura' => 'FV-' . $cotizacion->numero_cotizacion,
                 'tipo' => 'VENTA',
                 'tipo_documento' => 'FACTURA',
