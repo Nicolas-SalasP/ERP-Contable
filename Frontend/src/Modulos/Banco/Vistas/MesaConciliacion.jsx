@@ -69,12 +69,16 @@ const MesaConciliacion = () => {
             try {
                 const resAnticipos = await api.get('/banco/anticipos-pendientes');
                 if (resAnticipos.success) setAnticiposPendientes(resAnticipos.data);
-            } catch (err) {}
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'No se pudieron cargar los anticipos pendientes', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+            }
 
             try {
                 const resCentros = await api.get('/empresas/centros-costo');
                 if (resCentros.success) setCentrosCosto(resCentros.data);
-            } catch (err) {}
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'No se pudieron cargar los centros de costo', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+            }
 
         } catch (error) {
             Swal.fire({
@@ -146,7 +150,9 @@ const MesaConciliacion = () => {
                 label: `${e.rut || ''} - ${e.razon_social || e.nombre}`
             }));
             setEntidades(options);
-        } catch (error) {}
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'No se pudieron cargar proveedores/clientes para conciliar', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+        }
     };
 
     const handleCambioModo = (modo) => {
