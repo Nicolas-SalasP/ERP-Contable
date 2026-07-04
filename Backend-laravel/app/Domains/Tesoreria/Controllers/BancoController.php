@@ -137,7 +137,7 @@ class BancoController
             $request->validate([
                 'cuenta_bancaria_id' => 'required|integer',
                 'cuenta_contrapartida' => 'required|string',
-                'archivo' => 'required|file|mimes:csv,txt'
+                'archivo' => 'required|file|mimes:csv,txt,xlsx,xls'
             ]);
 
             $resultado = $this->service->procesarCartola(
