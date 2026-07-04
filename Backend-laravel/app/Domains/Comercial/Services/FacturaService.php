@@ -117,7 +117,7 @@ class FacturaService
                 throw ComercialException::regla("El monto neto debe ser mayor a 0.");
             }
             $neto = round((float) $datos['monto_neto'], 2);
-            $iva = isset($datos['monto_iva']) ? round((float) $datos['monto_iva'], 2) : round($neto * 0.19, 2);
+            $iva = isset($datos['monto_iva']) ? round((float) $datos['monto_iva'], 2) : round($neto * config('fiscal.tasa_iva'), 2);
             $bruto = isset($datos['monto_bruto']) ? round((float) $datos['monto_bruto'], 2) : round($neto + $iva, 2);
             if (abs(($neto + $iva) - $bruto) > 0.01) {
                 throw ComercialException::regla("Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.");

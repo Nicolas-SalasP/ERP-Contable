@@ -96,7 +96,7 @@ class EmitirDtePruebaCommand extends Command
     {
         return DB::transaction(function () use ($empresa, $tipoDte) {
             $neto  = 1000;
-            $iva   = (int) round($neto * 0.19);
+            $iva   = (int) round($neto * config('fiscal.tasa_iva'));
             $total = $neto + $iva;
 
             // Folio placeholder alto para no colisionar con el unique
