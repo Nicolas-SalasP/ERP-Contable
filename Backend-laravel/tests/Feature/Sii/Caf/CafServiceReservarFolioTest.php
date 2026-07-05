@@ -179,4 +179,41 @@ class CafServiceReservarFolioTest extends TestCase
         $this->expectException(SinFoliosDisponiblesException::class);
         $this->service->reservarSiguienteFolio($empresa->id, 33);
     }
+
+    public function test_caf_vencido_no_reserva_folio_y_pasa_a_estado_vencido(): void
+    {
+        $empresa = $this->empresa();
+        $caf = SiiCaf::factory()->tipo33()->vencido()->create(['empresa_id' => $empresa->id]);
+
+        $this->expectException(SinFoliosDisponiblesException::class);
+
+        try {
+            $this->service->reservarSiguienteFolio($empresa->id, 33);
+        } finally {
+            $this->assertSame(SiiCaf::ESTADO_VENCIDO, $caf->fresh()->estado);
+        }
+    }
+
+    public function test_caf_vencido_no_bloquea_otro_caf_vigente_del_mismo_tipo(): void
+    {
+        $empresa = $this->empresa();
+        $cafVencido = SiiCaf::factory()->tipo33()->vencido()->create([
+            'empresa_id'  => $empresa->id,
+            'folio_desde' => 1,
+            'folio_hasta' => 10,
+            'folio_actual' => 1,
+        ]);
+        $cafVigente = SiiCaf::factory()->tipo33()->create([
+            'empresa_id'  => $empresa->id,
+            'folio_desde' => 100,
+            'folio_hasta' => 150,
+            'folio_actual' => 100,
+        ]);
+
+        $uso = $this->service->reservarSiguienteFolio($empresa->id, 33);
+
+        $this->assertSame($cafVigente->id, $uso->caf_id);
+        $this->assertSame(100, $uso->folio);
+        $this->assertSame(SiiCaf::ESTADO_VENCIDO, $cafVencido->fresh()->estado);
+    }
 }
