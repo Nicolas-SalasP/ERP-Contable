@@ -349,6 +349,18 @@ class FacturaService
             $bruto = round((float) $datos['monto_bruto'], 2);
             $fecha = $datos['fecha_emision'] ?? now()->toDateString();
 
+            // A diferencia de crear una factura normal (que sí exige monto_neto > 0),
+            // esta validación faltaba acá: un monto_bruto/neto en 0 o negativo pasaba
+            // el guard de "no superar el original" (0 <= cualquier cosa) sin problema,
+            // y registrarAsiento solo exige que el DEBE cuadre con el HABER, no que
+            // las líneas sean positivas -- una NC con montos negativos invierte el
+            // efecto contable en vez de anularlo.
+            if ($neto <= 0 || $iva < 0 || $bruto <= 0) {
+                throw ComercialException::regla(
+                    "Los montos de la Nota de Crédito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo)."
+                );
+            }
+
             $nc = Factura::create([
                 'empresa_id'          => $empresaId,
                 'tipo'                => 'VENTA',
@@ -490,6 +502,15 @@ class FacturaService
             $iva   = round((float) $datos['monto_iva'], 2);
             $bruto = round((float) $datos['monto_bruto'], 2);
             $fecha = $datos['fecha_emision'] ?? now()->toDateString();
+
+            // Mismo hallazgo que en emitirNotaCreditoVenta: sin este guard, una ND
+            // con montos en 0 o negativos pasaba sin problema (registrarAsiento solo
+            // exige partida doble cuadrada, no montos positivos por línea).
+            if ($neto <= 0 || $iva < 0 || $bruto <= 0) {
+                throw ComercialException::regla(
+                    "Los montos de la Nota de Débito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo)."
+                );
+            }
 
             $nd = Factura::create([
                 'empresa_id'            => $empresaId,
