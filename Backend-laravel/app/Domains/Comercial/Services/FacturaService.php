@@ -900,26 +900,44 @@ class FacturaService
             ->get();
     }
 
-    public function generarCsvExportacion(int $empresaId): string
+    /**
+     * Genera el CSV de exportacion de facturas. fechaDesde/fechaHasta acotan
+     * el rango (formato Y-m-d); sin ellos exporta el historial completo.
+     *
+     * Usa chunk() en vez de get(): antes cargaba TODAS las facturas de la
+     * empresa como coleccion Eloquent en un solo request sincrono, sin limite
+     * ni filtro de fecha (una empresa con anios de historial podia agotar
+     * memoria). chunk() trae de a 500 filas por pagina (y si respeta el
+     * eager load de 'proveedor', a diferencia de cursor(), que lo ignora).
+     */
+    public function generarCsvExportacion(int $empresaId, ?string $fechaDesde = null, ?string $fechaHasta = null): string
     {
-        $facturas = Factura::where('empresa_id', $empresaId)
+        $query = Factura::where('empresa_id', $empresaId)
             ->with('proveedor')
-            ->orderBy('fecha_emision', 'desc')
-            ->get();
+            ->orderBy('fecha_emision', 'desc');
+
+        if ($fechaDesde !== null) {
+            $query->whereDate('fecha_emision', '>=', $fechaDesde);
+        }
+        if ($fechaHasta !== null) {
+            $query->whereDate('fecha_emision', '<=', $fechaHasta);
+        }
 
         $csvData = "ID,Numero Factura,Proveedor,RUT,Fecha Emision,Fecha Vencimiento,Monto Neto,IVA,Monto Bruto,Estado\n";
 
-        foreach ($facturas as $f) {
-            $provNombre = $f->proveedor->razon_social ?? 'Sin Proveedor';
-            $provRut = $f->proveedor->rut ?? 'N/A';
-            $emision = $f->fecha_emision->format('Y-m-d');
-            $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
-            $csvData .= "{$f->id},"
-                . $this->escaparCampoCsv((string) $f->numero_factura) . ","
-                . $this->escaparCampoCsv($provNombre) . ","
-                . $this->escaparCampoCsv($provRut) . ","
-                . "{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
-        }
+        $query->chunk(500, function ($facturas) use (&$csvData) {
+            foreach ($facturas as $f) {
+                $provNombre = $f->proveedor->razon_social ?? 'Sin Proveedor';
+                $provRut = $f->proveedor->rut ?? 'N/A';
+                $emision = $f->fecha_emision->format('Y-m-d');
+                $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
+                $csvData .= "{$f->id},"
+                    . $this->escaparCampoCsv((string) $f->numero_factura) . ","
+                    . $this->escaparCampoCsv($provNombre) . ","
+                    . $this->escaparCampoCsv($provRut) . ","
+                    . "{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
+            }
+        });
 
         return $csvData;
     }

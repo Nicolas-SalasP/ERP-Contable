@@ -368,12 +368,23 @@ class FacturaController
     public function exportarExcel(Request $request)
     {
         try {
-            $csvContent = $this->service->generarCsvExportacion($request->user()->empresa_id);
+            $request->validate([
+                'fecha_desde' => 'nullable|date',
+                'fecha_hasta' => 'nullable|date',
+            ]);
+
+            $csvContent = $this->service->generarCsvExportacion(
+                $request->user()->empresa_id,
+                $request->query('fecha_desde'),
+                $request->query('fecha_hasta'),
+            );
             
             return response($csvContent, 200, [
                 'Content-Type' => 'text/csv',
                 'Content-Disposition' => 'attachment; filename="reporte_facturas_' . date('Y_m_d') . '.csv"',
             ]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
