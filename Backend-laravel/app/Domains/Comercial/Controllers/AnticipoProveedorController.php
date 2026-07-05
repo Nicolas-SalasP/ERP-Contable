@@ -34,7 +34,7 @@ class AnticipoProveedorController extends Controller
             ]);
 
             $anticipo = $this->service->registrar(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $datos
             );
 
@@ -69,7 +69,7 @@ class AnticipoProveedorController extends Controller
             ]);
 
             $anticipo = $this->service->aplicarAFactura(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 (int) $id,
                 (int) $datos['factura_id'],
                 (float) $datos['monto_a_aplicar']
@@ -102,7 +102,7 @@ class AnticipoProveedorController extends Controller
     {
         try {
             $anticipos = $this->service->listar(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->query('proveedor_id') ? (int) $request->query('proveedor_id') : null
             );
             return response()->json(['success' => true, 'data' => $anticipos]);

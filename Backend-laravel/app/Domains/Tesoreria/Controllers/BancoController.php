@@ -28,7 +28,7 @@ class BancoController
     public function cuentasEmpresa(Request $request)
     {
         try {
-            $cuentas = $this->service->obtenerCuentasPorEmpresa($request->user()->empresa_id);
+            $cuentas = $this->service->obtenerCuentasPorEmpresa($request->user()->empresa_activa_id);
             return response()->json([
                 'success' => true,
                 'data' => $cuentas
@@ -54,7 +54,7 @@ class BancoController
                 'rut_titular' => 'required|string|max:20',
             ]);
 
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            $datos['empresa_id'] = $request->user()->empresa_activa_id;
 
             $cuenta = $this->service->registrarCuentaPropia($datos);
 
@@ -86,7 +86,7 @@ class BancoController
 
         try {
             $resultado = $this->service->pagarNominaMasiva(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
                 $request->facturas_ids,
                 $request->cuenta_bancaria_id,
@@ -114,7 +114,7 @@ class BancoController
                 'descripcion' => 'required|string|max:255',
             ]);
 
-            $resultado = $this->service->registrarIngresoManual($request->user()->empresa_id, $datos);
+            $resultado = $this->service->registrarIngresoManual($request->user()->empresa_activa_id, $datos);
 
             return response()->json([
                 'success' => true,
@@ -141,7 +141,7 @@ class BancoController
             ]);
 
             $resultado = $this->service->procesarCartola(
-                $request->user()->empresa_id, 
+                $request->user()->empresa_activa_id, 
                 $request->user()->id,
                 $request->cuenta_bancaria_id, 
                 $request->cuenta_contrapartida, 
@@ -167,7 +167,7 @@ class BancoController
     {
         try {
             $movimientos = $this->service->obtenerMovimientosPorCuenta(
-                $request->user()->empresa_id, 
+                $request->user()->empresa_activa_id, 
                 $idCuenta
             );
             

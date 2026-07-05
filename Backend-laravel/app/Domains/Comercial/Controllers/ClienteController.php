@@ -28,7 +28,7 @@ class ClienteController
     {
         return response()->json([
             'success' => true,
-            'data' => $this->service->buscarClientesPorEmpresa($request->user()->empresa_id, $request->search)
+            'data' => $this->service->buscarClientesPorEmpresa($request->user()->empresa_activa_id, $request->search)
         ]);
     }
 
@@ -36,7 +36,7 @@ class ClienteController
     public function show(Request $request, $id)
     {
         try {
-            $cliente = \App\Domains\Comercial\Models\Cliente::where('empresa_id', $request->user()->empresa_id)
+            $cliente = \App\Domains\Comercial\Models\Cliente::where('empresa_id', $request->user()->empresa_activa_id)
                 ->find($id);
 
             if (!$cliente) {
@@ -70,7 +70,7 @@ class ClienteController
             ]);
 
             $datos = [
-                'empresa_id' => $request->user()->empresa_id,
+                'empresa_id' => $request->user()->empresa_activa_id,
                 'rut' => $request->rut,
                 'razon_social' => $request->razonSocial ?? $request->razon_social,
                 'contacto_nombre' => $request->nombre_contacto ?? $request->contacto_nombre ?? null,
@@ -112,7 +112,7 @@ class ClienteController
                     'sometimes',
                     'string',
                     Rule::unique('clientes', 'rut')
-                        ->where('empresa_id', $request->user()->empresa_id)
+                        ->where('empresa_id', $request->user()->empresa_activa_id)
                         ->ignore($id)
                 ],
                 'razon_social' => 'sometimes|string',
@@ -156,7 +156,7 @@ class ClienteController
             if ($request->has('telefono'))
                 $datos['telefono'] = $request->telefono;
 
-            $cliente = $this->service->actualizarCliente($request->user()->empresa_id, $id, $datos);
+            $cliente = $this->service->actualizarCliente($request->user()->empresa_activa_id, $id, $datos);
 
             return response()->json(['success' => true, 'data' => $cliente]);
 
@@ -172,7 +172,7 @@ class ClienteController
     /** Inactiva (borrado logico) un cliente. */
     public function destroy(Request $request, $id)
     {
-        $this->service->inactivarCliente($request->user()->empresa_id, $id);
+        $this->service->inactivarCliente($request->user()->empresa_activa_id, $id);
         return response()->json(['success' => true]);
     }
 
@@ -180,7 +180,7 @@ class ClienteController
     public function activar(Request $request, $id)
     {
         try {
-            $cliente = $this->service->activarCliente($request->user()->empresa_id, $id);
+            $cliente = $this->service->activarCliente($request->user()->empresa_activa_id, $id);
             return response()->json(['success' => true, 'message' => 'Cliente activado']);
         } catch (ComercialException $e) {
             throw $e;
@@ -193,7 +193,7 @@ class ClienteController
     public function reactivar(Request $request, $id)
     {
         try {
-            $cliente = $this->service->reactivarCliente($request->user()->empresa_id, (int) $id);
+            $cliente = $this->service->reactivarCliente($request->user()->empresa_activa_id, (int) $id);
 
             return response()->json([
                 'success' => true,

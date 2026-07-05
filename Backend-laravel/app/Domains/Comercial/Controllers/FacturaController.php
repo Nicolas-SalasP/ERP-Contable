@@ -31,7 +31,7 @@ class FacturaController
     public function index(Request $request)
     {
         $filtros = $request->only(['estado', 'tipo', 'proveedor_id', 'search', 'num', 'limit', 'fecha_desde', 'fecha_hasta']);
-        $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_id, $filtros);
+        $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_activa_id, $filtros);
 
         return response()->json([
             'success' => true,
@@ -47,7 +47,7 @@ class FacturaController
     public function historial(Request $request)
     {
         $filtros = $request->only(['estado', 'search', 'num', 'limit', 'fecha_desde', 'fecha_hasta']);
-        $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_id, $filtros);
+        $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_activa_id, $filtros);
 
         return response()->json([
             'success' => true,
@@ -63,7 +63,7 @@ class FacturaController
     public function check(Request $request)
     {
         $existe = $this->service->verificarDuplicado(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             (int) ($request->query('proveedorId') ?? $request->query('proveedor_id')),
             $request->query('numeroFactura') ?? $request->query('numero_factura')
         );
@@ -77,7 +77,7 @@ class FacturaController
     public function show(Request $request, $id)
     {
         try {
-            $factura = $this->service->obtenerFacturaPorId($request->user()->empresa_id, (int) $id);
+            $factura = $this->service->obtenerFacturaPorId($request->user()->empresa_activa_id, (int) $id);
 
             return response()->json([
                 'success' => true,
@@ -148,7 +148,7 @@ class FacturaController
             ]);
 
             if ($input['tipo_documento'] === 'NOTA_CREDITO' && !empty($input['factura_referencia_id'])) {
-                $facturaOriginal = \App\Domains\Comercial\Models\Factura::where('empresa_id', $request->user()->empresa_id)
+                $facturaOriginal = \App\Domains\Comercial\Models\Factura::where('empresa_id', $request->user()->empresa_activa_id)
                     ->find($input['factura_referencia_id']);
 
                 if (!$facturaOriginal) {
@@ -168,7 +168,7 @@ class FacturaController
             }
 
             $datos = [
-                'empresa_id' => $request->user()->empresa_id,
+                'empresa_id' => $request->user()->empresa_activa_id,
                 'proveedor_id' => $input['proveedor_id'] ?? null,
                 'cuenta_bancaria_id' => $input['cuenta_bancaria_id'] ?? null,
                 'numero_factura' => $input['numero_factura'],
@@ -218,7 +218,7 @@ class FacturaController
     public function verAsiento(Request $request, $id)
     {
         try {
-            $datosAsiento = $this->service->obtenerAsientoDeFactura($request->user()->empresa_id, $id);
+            $datosAsiento = $this->service->obtenerAsientoDeFactura($request->user()->empresa_activa_id, $id);
 
             return response()->json([
                 'success' => true,
@@ -244,7 +244,7 @@ class FacturaController
             ]);
 
             $this->service->reclasificarAsiento(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
                 $id,
                 $datos
@@ -273,7 +273,7 @@ class FacturaController
     public function auditoria(Request $request, $id)
     {
         try {
-            $data = $this->service->obtenerAuditoriaCompleta($request->user()->empresa_id, $id);
+            $data = $this->service->obtenerAuditoriaCompleta($request->user()->empresa_activa_id, $id);
             return response()->json([
                 'success' => true,
                 'data' => $data
@@ -293,7 +293,7 @@ class FacturaController
     {
         try {
             $factura = $this->service->registrarPago(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $id,
                 $request->all()
             );
@@ -323,7 +323,7 @@ class FacturaController
             ]);
 
             $this->service->anularFactura(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
                 (int) $id,
                 $request->input('motivo'),
@@ -353,7 +353,7 @@ class FacturaController
     public function vencidas(Request $request)
     {
         try {
-            $vencidas = $this->service->obtenerVencidas($request->user()->empresa_id);
+            $vencidas = $this->service->obtenerVencidas($request->user()->empresa_activa_id);
             return response()->json([
                 'success' => true,
                 'data' => $vencidas
@@ -374,7 +374,7 @@ class FacturaController
             ]);
 
             $csvContent = $this->service->generarCsvExportacion(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->query('fecha_desde'),
                 $request->query('fecha_hasta'),
             );
@@ -396,7 +396,7 @@ class FacturaController
     {
         try {
             $facturas = $this->service->obtenerFacturasDisponiblesParaProyectos(
-                $request->user()->empresa_id
+                $request->user()->empresa_activa_id
             );
             return response()->json(['success' => true, 'data' => $facturas]);
         } catch (ComercialException $e) {
@@ -424,7 +424,7 @@ class FacturaController
             }
 
             $this->service->vincularAProyecto(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 (int) $id,
                 (int) $proyectoId
             );
@@ -453,7 +453,7 @@ class FacturaController
      */
     public function f50(Request $request)
     {
-        $empresaId = $request->user()->empresa_id;
+        $empresaId = $request->user()->empresa_activa_id;
         $periodo = $request->query('periodo', now()->format('Y-m'));
 
         [$anio, $mes] = explode('-', $periodo);
@@ -511,7 +511,7 @@ class FacturaController
         try {
             $datos = $request->validate([
                 'numero_nc'     => 'required|string|max:255',
-                'monto_neto'    => 'required|numeric|min:0',
+                'monto_neto'    => 'required|numeric|gt:0',
                 'monto_iva'     => 'required|numeric|min:0',
                 'monto_bruto'   => 'required|numeric|gt:0',
                 'razon'         => 'required|string|min:5|max:255',
@@ -520,7 +520,7 @@ class FacturaController
             ]);
 
             $nc = $this->service->emitirNotaCreditoVenta(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $id,
                 $datos
             );
@@ -553,7 +553,7 @@ class FacturaController
         try {
             $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
 
-            $empresaId = $request->user()->empresa_id;
+            $empresaId = $request->user()->empresa_activa_id;
             $factura   = Factura::where('empresa_id', $empresaId)->findOrFail($id);
 
             if ($request->hasFile('pdf')) {
@@ -581,7 +581,7 @@ class FacturaController
     /** Descarga el PDF adjunto de una factura, autenticado y acotado a la empresa. GET /facturas/{id}/pdf */
     public function descargarPdf(Request $request, int $id)
     {
-        $factura = Factura::where('empresa_id', $request->user()->empresa_id)->findOrFail($id);
+        $factura = Factura::where('empresa_id', $request->user()->empresa_activa_id)->findOrFail($id);
 
         if (!$factura->archivo_pdf || !Storage::disk('local')->exists($factura->archivo_pdf)) {
             return response()->json(['success' => false, 'message' => 'No hay PDF adjunto para esta factura.'], 404);
@@ -599,7 +599,7 @@ class FacturaController
         try {
             $datos = $request->validate([
                 'numero_nd'     => 'required|string|max:255',
-                'monto_neto'    => 'required|numeric|min:0',
+                'monto_neto'    => 'required|numeric|gt:0',
                 'monto_iva'     => 'required|numeric|min:0',
                 'monto_bruto'   => 'required|numeric|gt:0',
                 'razon'         => 'required|string|min:5|max:255',
@@ -608,7 +608,7 @@ class FacturaController
             ]);
 
             $nd = $this->service->emitirNotaDebitoVenta(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $id,
                 $datos
             );

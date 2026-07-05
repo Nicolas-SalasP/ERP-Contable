@@ -36,7 +36,7 @@ class AuditoriaController extends Controller
             'hasta'          => 'nullable|date|after_or_equal:desde',
         ]);
 
-        $empresaId = (string) $request->user()->empresa_id;
+        $empresaId = (string) $request->user()->empresa_activa_id;
 
         $query = Auditoria::query()
             ->where('referencia_cruzada', $empresaId)

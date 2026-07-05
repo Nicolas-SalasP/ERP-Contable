@@ -25,7 +25,7 @@ class CuentaProveedorController
         try {
             return response()->json([
                 'success' => true,
-                'data' => $this->service->obtenerPorProveedor($request->user()->empresa_id, $proveedorId)
+                'data' => $this->service->obtenerPorProveedor($request->user()->empresa_activa_id, $proveedorId)
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Proveedor no encontrado.'], 404);
@@ -48,7 +48,7 @@ class CuentaProveedorController
                 'paisIso' => 'nullable|string|size:2'
             ]);
 
-            $cuenta = $this->service->registrar($request->user()->empresa_id, $datos);
+            $cuenta = $this->service->registrar($request->user()->empresa_activa_id, $datos);
 
             return response()->json(['success' => true, 'data' => $cuenta], 201);
 
@@ -67,7 +67,7 @@ class CuentaProveedorController
     public function destroy(Request $request, $id)
     {
         try {
-            $this->service->eliminar($request->user()->empresa_id, $id);
+            $this->service->eliminar($request->user()->empresa_activa_id, $id);
             return response()->json(['success' => true]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Cuenta bancaria no encontrada.'], 404);

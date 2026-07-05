@@ -25,7 +25,7 @@ class AnulacionController
             ]);
 
             $documento = $this->service->buscarDocumento(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $datos['tipo_documento'],
                 $datos['numero_documento']
             );
@@ -53,7 +53,7 @@ class AnulacionController
             ]);
 
             $resultado = $this->service->anularDocumento(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $datos['tipo_documento'],
                 $datos['documento_id'],
                 $datos['motivo'],
