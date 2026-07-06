@@ -1,6 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
-import BuscadorCuentaContable from '../../Contabilidad/Componentes/BuscadorCuentaContable';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
@@ -17,7 +16,6 @@ const CartolaBancaria = () => {
     const [movimientos, setMovimientos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [archivo, setArchivo] = useState(null);
-    const [cuentaContrapartida, setCuentaContrapartida] = useState('');
     const fileInputRef = useRef(null);
 
     const [formManual, setFormManual] = useState({
@@ -83,12 +81,10 @@ const CartolaBancaria = () => {
     const subirExcel = async () => {
         if (!archivo) return;
         if (!cuentaActiva) return Swal.fire('Atención', 'Seleccione una cuenta bancaria destino.', 'warning');
-        if (!cuentaContrapartida) return Swal.fire('Atención', 'Seleccione la cuenta contable de contrapartida.', 'warning');
 
         const formData = new FormData();
         formData.append('archivo', archivo);
         formData.append('cuenta_bancaria_id', cuentaActiva);
-        formData.append('cuenta_contrapartida', cuentaContrapartida);
 
         Swal.fire({ title: 'Procesando Cartola...', text: 'Analizando ingresos y egresos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
@@ -102,6 +98,10 @@ const CartolaBancaria = () => {
             // campo interno data:{importados,ignorados} en vez del body completo, asi
             // que data.success siempre daba undefined y una importacion EXITOSA caia
             // igual al catch con "Error de Importación".
+            //
+            // El import ya no pide cuenta de contrapartida: solo deja los movimientos
+            // PENDIENTE (con la fecha real del banco), se contabilizan uno por uno en
+            // Mesa de Conciliación eligiendo ahí la cuenta que corresponda a cada uno.
             const data = await api.upload('/banco/importar', formData);
 
             Swal.fire({
@@ -113,7 +113,7 @@ const CartolaBancaria = () => {
             });
             setArchivo(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
-            cargarCuentas();
+            cargarMovimientos();
         } catch (error) {
             Swal.fire({
                 icon: 'error',
@@ -243,13 +243,6 @@ const CartolaBancaria = () => {
                                 </div>
                                 <p className="font-bold text-slate-800 dark:text-slate-200 mb-1">{archivo.name}</p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">{(archivo.size / 1024).toFixed(1)} KB</p>
-                                <div className="w-full max-w-xs text-left mb-4">
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cuenta de Contrapartida</label>
-                                    <BuscadorCuentaContable
-                                        valor={cuentaContrapartida}
-                                        onChange={setCuentaContrapartida}
-                                    />
-                                </div>
                                 <div className="flex gap-3 w-full max-w-xs">
                                     <button onClick={() => { setArchivo(null); fileInputRef.current.value = ''; }} className="flex-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-sm">
                                         Cancelar

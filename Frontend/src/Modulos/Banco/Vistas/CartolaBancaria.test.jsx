@@ -4,11 +4,6 @@ import { screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
 import { renderWithRouter, mockJsonResponse, setupFetchRouter, cleanTestEnv } from '../../../test-utils';
 import CartolaBancaria from './CartolaBancaria';
 
-const PLAN_CUENTAS = [
-    { codigo: '111102', nombre: 'Banco Chile', imputable: true },
-    { codigo: '690199', nombre: 'Cuenta Puente', imputable: true },
-];
-
 const mockSwal = vi.hoisted(() => ({
     fire: vi.fn().mockResolvedValue({ isConfirmed: true }),
     showLoading: vi.fn(),
@@ -129,12 +124,11 @@ describe('CartolaBancaria — importar excel/csv', () => {
         setupFetchRouter({
             'GET /banco/cuentas': () => mockJsonResponse(200, { success: true, data: CUENTAS }),
             'GET /banco/movimientos': () => mockJsonResponse(200, { success: true, data: MOVIMIENTOS }),
-            'GET /contabilidad/plan-cuentas': () => mockJsonResponse(200, { success: true, data: PLAN_CUENTAS }),
             'POST /banco/importar': (body, url, init) => {
                 initCapturado = init;
                 return mockJsonResponse(200, {
                     success: true,
-                    message: 'Proceso completado. Importados: 2 | Ignorados (Duplicados): 0',
+                    message: 'Proceso completado. Importados: 2 (quedan pendientes de conciliar) | Ignorados (Duplicados): 0',
                     data: { importados: 2, ignorados: 0 },
                 });
             },
@@ -150,7 +144,6 @@ describe('CartolaBancaria — importar excel/csv', () => {
 
         await waitFor(() => expect(screen.getByText('cartola.xls')).toBeTruthy());
 
-        // BuscadorCuentaContable autoselecciona la primera cuenta imputable al cargar.
         await waitFor(() => expect(screen.getByRole('button', { name: /Procesar/i })).toBeTruthy());
 
         fireEvent.click(screen.getByRole('button', { name: /Procesar/i }));
@@ -170,7 +163,7 @@ describe('CartolaBancaria — importar excel/csv', () => {
         await waitFor(() => {
             const llamadaExito = mockSwal.fire.mock.calls.find((args) => args[0]?.icon === 'success');
             expect(llamadaExito).toBeTruthy();
-            expect(llamadaExito[0].text).toBe('Proceso completado. Importados: 2 | Ignorados (Duplicados): 0');
+            expect(llamadaExito[0].text).toBe('Proceso completado. Importados: 2 (quedan pendientes de conciliar) | Ignorados (Duplicados): 0');
         });
     });
 });
