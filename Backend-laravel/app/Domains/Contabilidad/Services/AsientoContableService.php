@@ -227,6 +227,20 @@ class AsientoContableService
         }
 
         return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
+            // Re-lee con lockForUpdate() DENTRO de la transaccion: el chequeo de estado
+            // de arriba lee sin bloquear la fila, asi que dos reversas concurrentes
+            // (doble clic/doble pestaña) podian pasar el guard antes de que la primera
+            // confirmara el update a ANULADO, generando dos asientos de reverso
+            // duplicados para el mismo comprobante original.
+            $asientoOriginal = AsientoContable::where('id', $asientoOriginal->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (in_array($asientoOriginal->estado, ['ANULADO', 'RECLASIFICADO'], true)) {
+                throw ContabilidadException::regla('Este asiento ya se encontraba anulado o procesado internamente.');
+            }
+
+            $asientoOriginal->load('detalles');
             $asientoOriginal->update(['estado' => 'ANULADO']);
 
             $tempNum = 'TMP-' . Str::uuid()->toString();
