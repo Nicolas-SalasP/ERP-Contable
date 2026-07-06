@@ -5,10 +5,30 @@ namespace App\Domains\Comercial\Services;
 use App\Domains\Comercial\Exceptions\ComercialException;
 
 use App\Domains\Comercial\Models\Cliente;
+use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Facades\DB;
 
 class ClienteService
 {
+    public function obtenerFichaCliente(int $empresaId, int $id)
+    {
+        $cliente = Cliente::where('empresa_id', $empresaId)->find($id);
+
+        if (!$cliente) {
+            throw ComercialException::noEncontrado("El cliente solicitado no existe.");
+        }
+
+        $facturas = Factura::where('empresa_id', $empresaId)
+            ->where('cliente_id', $id)
+            ->orderBy('fecha_emision', 'desc')
+            ->get();
+
+        return [
+            'cliente' => $cliente,
+            'facturas' => $facturas,
+        ];
+    }
+
     public function buscarClientesPorEmpresa(int $empresaId, ?string $search = null)
     {
         $query = Cliente::where('empresa_id', $empresaId);

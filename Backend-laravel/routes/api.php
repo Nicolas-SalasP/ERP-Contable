@@ -202,6 +202,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // ---------------------------------------------------------------------
     Route::get('/clientes', [ClienteController::class, 'index'])->middleware('permiso:clientes.ver,ventas.ver');
     Route::post('/clientes', [ClienteController::class, 'store'])->middleware('permiso:clientes.crear');
+    Route::get('/clientes/ficha/{id}', [ClienteController::class, 'ficha'])->middleware('permiso:clientes.ver,ventas.ver');
     Route::get('/clientes/{id}', [ClienteController::class, 'show'])->middleware('permiso:clientes.ver,ventas.ver');
     Route::put('/clientes/{id}', [ClienteController::class, 'update'])->middleware('permiso:clientes.crear');
     Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->middleware('permiso:clientes.crear');
@@ -251,8 +252,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/facturas/{id}/nota-credito', [FacturaController::class, 'notaCredito'])->middleware('permiso:ventas.crear,compras.crear');
     Route::post('/facturas/{id}/nota-debito', [FacturaController::class, 'notaDebito'])->middleware('permiso:ventas.crear,compras.crear');
     Route::post('/facturas/{id}/vincular-proyecto', [FacturaController::class, 'vincularProyecto'])->middleware('permiso:activos.crear,compras.crear');
-    Route::post('/facturas/{id}/pdf', [FacturaController::class, 'subirPdf'])->middleware('permiso:compras.crear');
-    Route::get('/facturas/{id}/pdf', [FacturaController::class, 'descargarPdf'])->middleware('permiso:compras.ver');
+    Route::post('/facturas/{id}/pdf', [FacturaController::class, 'subirPdf'])->middleware('permiso:compras.crear,ventas.crear');
+    Route::get('/facturas/{id}/pdf', [FacturaController::class, 'descargarPdf'])->middleware('permiso:compras.ver,ventas.ver');
 
     // ---------------------------------------------------------------------
     // Comercial - Cotizaciones
