@@ -30,7 +30,7 @@ class CotizacionController
         $perPage = (int) $request->query('per_page', 100);
         $perPage = $perPage > 0 && $perPage <= 200 ? $perPage : 100;
 
-        $paginado = $this->service->obtenerPorEmpresa($request->user()->empresa_id, $perPage);
+        $paginado = $this->service->obtenerPorEmpresa($request->user()->empresa_activa_id, $perPage);
 
         // 'data' se mantiene como arreglo plano (compatibilidad con el frontend
         // actual, que no implementa aun controles de paginacion); 'meta' expone
@@ -65,7 +65,7 @@ class CotizacionController
             ]);
 
             $datos = [
-                'empresa_id' => $request->user()->empresa_id,
+                'empresa_id' => $request->user()->empresa_activa_id,
                 'cliente_id' => $request->clienteId ?? $request->cliente_id,
                 'numero_cotizacion' => $request->numeroCotizacion ?? $request->numero_cotizacion,
                 'fecha_emision' => $request->fechaEmision ?? $request->fecha_emision,
@@ -126,7 +126,7 @@ class CotizacionController
     public function generarPdf(Request $request, $id)
     {
         try {
-            $empresaId = $request->user()->empresa_id;
+            $empresaId = $request->user()->empresa_activa_id;
             $cotizacion = $this->service->obtenerPorId($empresaId, (int) $id);
             $empresa = Empresa::find($empresaId);
             $cuentasBancarias = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->get();
@@ -173,7 +173,7 @@ class CotizacionController
             }
 
             $cotizacion = $this->service->actualizarEstado(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 (int) $id,
                 $estadoNombre
             );
@@ -217,7 +217,7 @@ class CotizacionController
             ]);
 
             $cotizacion = $this->service->actualizarCotizacion(
-                $request->user()->empresa_id, 
+                $request->user()->empresa_activa_id, 
                 (int) $id, 
                 $datos
             );
@@ -242,7 +242,7 @@ class CotizacionController
             $request->validate(['fecha_emision' => 'nullable|date']);
 
             $factura = $this->service->convertirEnFactura(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 (int) $id,
                 $request->fecha_emision
             );

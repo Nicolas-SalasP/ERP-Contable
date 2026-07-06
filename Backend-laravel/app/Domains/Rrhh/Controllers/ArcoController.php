@@ -22,7 +22,7 @@ class ArcoController extends Controller
      */
     public function exportar(Request $request, int $id): JsonResponse
     {
-        $data = $this->service->exportarEmpleado($request->user()->empresa_id, $id);
+        $data = $this->service->exportarEmpleado($request->user()->empresa_activa_id, $id);
 
         return response()->json(['success' => true, 'data' => $data]);
     }
@@ -37,7 +37,7 @@ class ArcoController extends Controller
         ]);
 
         $empleado = $this->service->bloquearEmpleado(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $id,
             $datos['motivo'] ?? null
         );
@@ -59,7 +59,7 @@ class ArcoController extends Controller
         ]);
 
         $resultado = $this->service->suprimirEmpleado(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $id,
             $datos['motivo'] ?? null
         );

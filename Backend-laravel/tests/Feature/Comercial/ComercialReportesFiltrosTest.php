@@ -140,4 +140,46 @@ class ComercialReportesFiltrosTest extends TestCase
         $this->assertStringContainsString('F-EXPORT', $response->getContent());
         $this->assertStringContainsString('Numero Factura', $response->getContent());
     }
+
+    public function test_exportar_excel_filtra_por_rango_de_fechas()
+    {
+        $fEnero = new Factura();
+        $fEnero->empresa_id = $this->empresa->id;
+        $fEnero->proveedor_id = $this->prov->id;
+        $fEnero->numero_factura = 'F-CSV-ENERO';
+        $fEnero->monto_bruto = 100;
+        $fEnero->monto_neto = 100;
+        $fEnero->monto_iva = 0;
+        $fEnero->tipo = 'COMPRA';
+        $fEnero->codigo_unico = 1001;
+        $fEnero->fecha_emision = Carbon::create(2026, 1, 15);
+        $fEnero->save();
+
+        $fMarzo = new Factura();
+        $fMarzo->empresa_id = $this->empresa->id;
+        $fMarzo->proveedor_id = $this->prov->id;
+        $fMarzo->numero_factura = 'F-CSV-MARZO';
+        $fMarzo->monto_bruto = 100;
+        $fMarzo->monto_neto = 100;
+        $fMarzo->monto_iva = 0;
+        $fMarzo->tipo = 'COMPRA';
+        $fMarzo->codigo_unico = 1002;
+        $fMarzo->fecha_emision = Carbon::create(2026, 3, 10);
+        $fMarzo->save();
+
+        $response = $this->actingAs($this->usuario)
+            ->get('/api/facturas/exportar/excel?fecha_desde=2026-03-01&fecha_hasta=2026-03-31');
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('F-CSV-MARZO', $response->getContent());
+        $this->assertStringNotContainsString('F-CSV-ENERO', $response->getContent());
+    }
+
+    public function test_exportar_excel_rechaza_fecha_con_formato_invalido()
+    {
+        $response = $this->actingAs($this->usuario)
+            ->getJson('/api/facturas/exportar/excel?fecha_desde=no-es-una-fecha');
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['fecha_desde']);
+    }
 }

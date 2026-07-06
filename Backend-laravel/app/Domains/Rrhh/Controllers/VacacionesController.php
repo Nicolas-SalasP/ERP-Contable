@@ -16,7 +16,7 @@ class VacacionesController extends Controller
 
     public function saldo(Request $request, int $empleadoId): JsonResponse
     {
-        $saldo = $this->service->saldoActual($request->user()->empresa_id, $empleadoId);
+        $saldo = $this->service->saldoActual($request->user()->empresa_activa_id, $empleadoId);
 
         return response()->json(['success' => true, 'data' => $saldo]);
     }
@@ -28,7 +28,7 @@ class VacacionesController extends Controller
             'estado' => 'nullable|in:PENDIENTE,APROBADA,RECHAZADA,ANULADA',
         ]);
 
-        $solicitudes = $this->service->listarSolicitudes($request->user()->empresa_id, $datos);
+        $solicitudes = $this->service->listarSolicitudes($request->user()->empresa_activa_id, $datos);
 
         return response()->json(['success' => true, 'data' => $solicitudes]);
     }
@@ -43,7 +43,7 @@ class VacacionesController extends Controller
         ]);
 
         $solicitud = $this->service->solicitar(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $datos['empleado_id'],
             $datos['fecha_desde'],
             $datos['fecha_hasta'],
@@ -60,7 +60,7 @@ class VacacionesController extends Controller
 
     public function aprobar(Request $request, int $id): JsonResponse
     {
-        $solicitud = $this->service->aprobar($request->user()->empresa_id, $id, $request->user()->id);
+        $solicitud = $this->service->aprobar($request->user()->empresa_activa_id, $id, $request->user()->id);
 
         return response()->json([
             'success' => true,
@@ -73,7 +73,7 @@ class VacacionesController extends Controller
     {
         $datos = $request->validate(['motivo' => 'required|string|min:5|max:500']);
 
-        $solicitud = $this->service->rechazar($request->user()->empresa_id, $id, $request->user()->id, $datos['motivo']);
+        $solicitud = $this->service->rechazar($request->user()->empresa_activa_id, $id, $request->user()->id, $datos['motivo']);
 
         return response()->json([
             'success' => true,
@@ -86,7 +86,7 @@ class VacacionesController extends Controller
     {
         $datos = $request->validate(['motivo' => 'required|string|min:5|max:500']);
 
-        $solicitud = $this->service->anular($request->user()->empresa_id, $id, $request->user()->id, $datos['motivo']);
+        $solicitud = $this->service->anular($request->user()->empresa_activa_id, $id, $request->user()->id, $datos['motivo']);
 
         return response()->json([
             'success' => true,

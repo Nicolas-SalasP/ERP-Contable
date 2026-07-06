@@ -16,7 +16,7 @@ class FiniquitoController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $finiquitos = Finiquito::where('empresa_id', $request->user()->empresa_id)
+        $finiquitos = Finiquito::where('empresa_id', $request->user()->empresa_activa_id)
             ->with(['empleado:id,nombres,apellido_paterno,apellido_materno,rut'])
             ->orderByDesc('fecha_termino')
             ->paginate(30);
@@ -26,7 +26,7 @@ class FiniquitoController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $finiquito = Finiquito::where('empresa_id', $request->user()->empresa_id)
+        $finiquito = Finiquito::where('empresa_id', $request->user()->empresa_activa_id)
             ->with(['empleado', 'contrato'])
             ->findOrFail($id);
 
@@ -47,7 +47,7 @@ class FiniquitoController extends Controller
         ]);
 
         $finiquito = $this->service->calcular(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $datos['contrato_id'],
             $datos['causal'],
             $datos['fecha_termino'],
@@ -63,7 +63,7 @@ class FiniquitoController extends Controller
 
     public function firmar(Request $request, int $id): JsonResponse
     {
-        $finiquito = $this->service->firmar($request->user()->empresa_id, $id);
+        $finiquito = $this->service->firmar($request->user()->empresa_activa_id, $id);
         return response()->json([
             'success' => true,
             'message' => 'Finiquito firmado. El contrato fue terminado.',
@@ -75,7 +75,7 @@ class FiniquitoController extends Controller
     {
         $datos = $request->validate(['motivo' => 'required|string|min:5|max:500']);
 
-        $finiquito = $this->service->anular($request->user()->empresa_id, $id, $datos['motivo']);
+        $finiquito = $this->service->anular($request->user()->empresa_activa_id, $id, $datos['motivo']);
 
         return response()->json([
             'success' => true,

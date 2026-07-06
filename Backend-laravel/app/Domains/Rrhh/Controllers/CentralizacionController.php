@@ -26,7 +26,7 @@ class CentralizacionController extends Controller
 
     public function indexMapeo(Request $request): JsonResponse
     {
-        $mapeos = RrhhMapeoContable::where('empresa_id', $request->user()->empresa_id)
+        $mapeos = RrhhMapeoContable::where('empresa_id', $request->user()->empresa_activa_id)
             ->orderBy('tipo_cuenta')
             ->get();
 
@@ -48,7 +48,7 @@ class CentralizacionController extends Controller
 
         $mapeo = RrhhMapeoContable::updateOrCreate(
             [
-                'empresa_id' => $request->user()->empresa_id,
+                'empresa_id' => $request->user()->empresa_activa_id,
                 'tipo_cuenta' => $datos['tipo_cuenta'],
             ],
             [
@@ -66,7 +66,7 @@ class CentralizacionController extends Controller
 
     public function destroyMapeo(Request $request, string $tipo): JsonResponse
     {
-        $mapeo = RrhhMapeoContable::where('empresa_id', $request->user()->empresa_id)
+        $mapeo = RrhhMapeoContable::where('empresa_id', $request->user()->empresa_activa_id)
             ->where('tipo_cuenta', $tipo)
             ->firstOrFail();
 
@@ -84,7 +84,7 @@ class CentralizacionController extends Controller
         }
 
         $asiento = $this->service->centralizar(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $anio,
             $mes,
             $request->user()->id

@@ -11,7 +11,7 @@ class PropietariosController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $propietarios = Propietario::where('empresa_id', $request->user()->empresa_id)
+        $propietarios = Propietario::where('empresa_id', $request->user()->empresa_activa_id)
             ->orderBy('nombre')
             ->get();
 
@@ -26,7 +26,7 @@ class PropietariosController extends Controller
             'porcentaje_participacion' => 'required|numeric|min:0.01|max:100',
         ]);
 
-        $empresaId = $request->user()->empresa_id;
+        $empresaId = $request->user()->empresa_activa_id;
 
         // Verificar unicidad de RUT por empresa
         $existe = Propietario::where('empresa_id', $empresaId)
@@ -44,7 +44,7 @@ class PropietariosController extends Controller
 
     public function update(Request $request, Propietario $propietario): JsonResponse
     {
-        abort_unless((int) $propietario->empresa_id === (int) $request->user()->empresa_id, 403);
+        abort_unless((int) $propietario->empresa_id === (int) $request->user()->empresa_activa_id, 403);
 
         $datos = $request->validate([
             'nombre'                   => 'sometimes|string|max:255',
@@ -58,7 +58,7 @@ class PropietariosController extends Controller
 
     public function destroy(Request $request, Propietario $propietario): JsonResponse
     {
-        abort_unless((int) $propietario->empresa_id === (int) $request->user()->empresa_id, 403);
+        abort_unless((int) $propietario->empresa_id === (int) $request->user()->empresa_activa_id, 403);
         $propietario->delete();
         return response()->json(['mensaje' => 'Propietario eliminado.']);
     }

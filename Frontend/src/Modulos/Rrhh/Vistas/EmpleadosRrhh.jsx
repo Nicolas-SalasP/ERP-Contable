@@ -30,12 +30,15 @@ const FORM_VACIO = {
     fecha_ingreso_empresa: '', estado: 'ACTIVO', observaciones: '',
 };
 
-const Campo = ({ label, children, full = false }) => (
-    <div className={full ? 'sm:col-span-2' : ''}>
-        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{label}</label>
-        {children}
-    </div>
-);
+const Campo = ({ label, children, full = false }) => {
+    const id = React.useId();
+    return (
+        <div className={full ? 'sm:col-span-2' : ''}>
+            <label htmlFor={id} className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{label}</label>
+            {React.cloneElement(children, { id: children.props.id ?? id })}
+        </div>
+    );
+};
 
 const inputCls = 'w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none';
 
@@ -144,6 +147,7 @@ const EmpleadosRrhh = () => {
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                         placeholder="Buscar por nombre o RUT completo..."
+                        aria-label="Buscar empleado por nombre o RUT"
                         className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                 </div>

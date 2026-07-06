@@ -41,12 +41,16 @@ const renderModal = (props = {}) =>
         />
     );
 
-const fillRequired = ({ numeroNd = 'ND-001', razon = 'Cobro de intereses por mora', montoBruto = '10000' } = {}) => {
+const fillRequired = ({ numeroNd = 'ND-001', razon = 'Cobro de intereses por mora', montoNeto = '10000', montoBruto = '10000' } = {}) => {
     if (numeroNd !== null) {
         fireEvent.change(screen.getByPlaceholderText('ND-00001'), { target: { value: numeroNd } });
     }
     if (razon !== null) {
         fireEvent.change(screen.getByPlaceholderText('Ej: Cobro de intereses por mora'), { target: { value: razon } });
+    }
+    if (montoNeto !== null) {
+        const spinbuttons = screen.getAllByRole('spinbutton');
+        fireEvent.change(spinbuttons[0], { target: { value: montoNeto } });
     }
     if (montoBruto !== null) {
         const spinbuttons = screen.getAllByRole('spinbutton');
@@ -101,6 +105,15 @@ describe('ModalNotaDebito — validaciones', () => {
         fireEvent.submit(screen.getByRole('button', { name: /Emitir Nota de Débito/i }).closest('form'));
         await waitFor(() => {
             expect(swalMock.fire).toHaveBeenCalledWith('Campo requerido', expect.stringContaining('mayor a 0'), 'warning');
+        });
+    });
+
+    it('Swal warning si montoNeto = 0', async () => {
+        renderModal();
+        fillRequired({ montoNeto: null });
+        fireEvent.submit(screen.getByRole('button', { name: /Emitir Nota de Débito/i }).closest('form'));
+        await waitFor(() => {
+            expect(swalMock.fire).toHaveBeenCalledWith('Monto inválido', expect.stringContaining('monto neto'), 'warning');
         });
     });
 });

@@ -20,7 +20,7 @@ class Dj1926Controller extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $empresaId = $request->user()->empresa_id;
+        $empresaId = $request->user()->empresa_activa_id;
 
         $envios = DjEnvio::where('empresa_id', $empresaId)
             ->porCodigo('1926')
@@ -39,7 +39,7 @@ class Dj1926Controller extends Controller
         try {
             $envio = $this->engine->generar(
                 $this->dj1926,
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 (int) $data['anio'],
             );
 
@@ -54,7 +54,7 @@ class Dj1926Controller extends Controller
 
     public function validar(Request $request, DjEnvio $djEnvio): JsonResponse
     {
-        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_id, 403);
+        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_activa_id, 403);
 
         try {
             $errores = $this->engine->validar($this->dj1926, $djEnvio);
@@ -70,7 +70,7 @@ class Dj1926Controller extends Controller
 
     public function descargar(Request $request, DjEnvio $djEnvio)
     {
-        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_id, 403);
+        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_activa_id, 403);
 
         if (! $djEnvio->archivo_path) {
             return response()->json(['mensaje' => 'No hay archivo generado.'], 422);
@@ -87,7 +87,7 @@ class Dj1926Controller extends Controller
 
     public function confirmarPresentacion(Request $request, DjEnvio $djEnvio): JsonResponse
     {
-        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_id, 403);
+        abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_activa_id, 403);
 
         $data = $request->validate([
             'folio_presentacion' => 'nullable|string|max:50',

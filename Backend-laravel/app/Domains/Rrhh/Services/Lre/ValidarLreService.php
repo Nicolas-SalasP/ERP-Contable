@@ -3,6 +3,7 @@
 namespace App\Domains\Rrhh\Services\Lre;
 
 use App\Domains\Rrhh\Exceptions\RrhhException;
+use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\LreEnvio;
 use Illuminate\Support\Facades\Storage;
 
@@ -63,6 +64,16 @@ class ValidarLreService
             $errores[] = 'El archivo no contiene registros de trabajadores.';
         }
 
+        // El archivo generado codifica AFP/ISAPRE no reconocida con el mismo '99' que
+        // usa IPS para AFP (código real, ver GenerarLreService::AFP_CODIGOS) -- no se
+        // puede distinguir "no reconocida" de "IPS" solo leyendo el texto ya generado.
+        // Por eso se vuelve a mirar el dato fuente (afp/isapre_nombre del empleado) en
+        // vez de re-parsear el archivo: antes este validador nunca detectaba una
+        // institución previsional corrupta y dejaba el LRE en VALIDADO igual.
+        foreach ($this->erroresInstitucionPrevisional($lre) as $error) {
+            $errores[] = $error;
+        }
+
         // Validar campos obligatorios por trabajador (RUT y fecha inicio)
         $bloques = $this->extraerBloques($contenido);
         foreach ($bloques as $i => $bloque) {
@@ -75,6 +86,39 @@ class ValidarLreService
             }
             if (! $this->bloqueContieneCampo($bloque, '2101')) {
                 $errores[] = "Trabajador #{$numTrabajador}: falta campo 2101 (sueldo base).";
+            }
+        }
+
+        return $errores;
+    }
+
+    /** @return list<string> */
+    private function erroresInstitucionPrevisional(LreEnvio $lre): array
+    {
+        $errores = [];
+
+        $liquidaciones = Liquidacion::where('empresa_id', $lre->empresa_id)
+            ->where('anio', $lre->anio)
+            ->where('mes', $lre->mes)
+            ->where('estado', Liquidacion::ESTADO_EMITIDA)
+            ->with('empleado')
+            ->get();
+
+        foreach ($liquidaciones as $liquidacion) {
+            /** @var \App\Domains\Rrhh\Models\Empleado|null $empleado */
+            $empleado = $liquidacion->empleado;
+            if (! $empleado) {
+                continue;
+            }
+
+            $nombre = trim((string) ($empleado->nombres . ' ' . $empleado->apellido_paterno));
+
+            if (! GenerarLreService::afpReconocida($empleado->afp)) {
+                $errores[] = "Trabajador {$nombre}: AFP '{$empleado->afp}' no está en el catálogo reconocido (código 1141 quedaría como '99', ambiguo con IPS).";
+            }
+
+            if ($empleado->tipo_salud === 'ISAPRE' && ! GenerarLreService::isapreReconocida($empleado->isapre_nombre)) {
+                $errores[] = "Trabajador {$nombre}: ISAPRE '{$empleado->isapre_nombre}' no está en el catálogo reconocido (código 1143 quedaría como '99').";
             }
         }
 

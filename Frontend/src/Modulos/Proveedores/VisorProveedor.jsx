@@ -67,7 +67,9 @@ const VisorProveedor = () => {
         try {
             const res = await api.get('/proveedores');
             if (res.success) setListaProveedores(res.data);
-        } catch (error) { }
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'No se pudo cargar la lista de proveedores', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+        }
     };
 
     const cargarFicha = async (proveedorId) => {

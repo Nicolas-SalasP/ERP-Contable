@@ -42,9 +42,9 @@ class ReporteController
             $search = $request->query('search');
 
             if (!empty($cuenta)) {
-                $reporte = $this->service->generarLibroMayor($request->user()->empresa_id, $cuenta, $desde, $hasta, $filtro);
+                $reporte = $this->service->generarLibroMayor($request->user()->empresa_activa_id, $cuenta, $desde, $hasta, $filtro);
             } else {
-                $reporte = $this->service->generarLibroDiario($request->user()->empresa_id, $desde, $hasta, $filtro, $search);
+                $reporte = $this->service->generarLibroDiario($request->user()->empresa_activa_id, $desde, $hasta, $filtro, $search);
             }
 
             return response()->json([
@@ -84,7 +84,7 @@ class ReporteController
             }
 
             $reporte = $this->service->generarLibroMayor(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->cuenta_contable,
                 $request->fecha_inicio,
                 $request->fecha_fin
@@ -110,7 +110,7 @@ class ReporteController
             $fechaInicio = $request->query('fecha_inicio');
             $fechaFin    = $request->query('fecha_fin');
             $filtro      = (int) $request->query('filtro', 1);
-            $empresaId   = $request->user()->empresa_id;
+            $empresaId   = $request->user()->empresa_activa_id;
 
             $resultado = $this->service->generarBalanceComprobacion($empresaId, $fechaInicio, $fechaFin, $filtro);
 

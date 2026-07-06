@@ -117,7 +117,7 @@ class FacturaService
                 throw ComercialException::regla("El monto neto debe ser mayor a 0.");
             }
             $neto = round((float) $datos['monto_neto'], 2);
-            $iva = isset($datos['monto_iva']) ? round((float) $datos['monto_iva'], 2) : round($neto * 0.19, 2);
+            $iva = isset($datos['monto_iva']) ? round((float) $datos['monto_iva'], 2) : round($neto * config('fiscal.tasa_iva'), 2);
             $bruto = isset($datos['monto_bruto']) ? round((float) $datos['monto_bruto'], 2) : round($neto + $iva, 2);
             if (abs(($neto + $iva) - $bruto) > 0.01) {
                 throw ComercialException::regla("Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.");
@@ -349,6 +349,18 @@ class FacturaService
             $bruto = round((float) $datos['monto_bruto'], 2);
             $fecha = $datos['fecha_emision'] ?? now()->toDateString();
 
+            // A diferencia de crear una factura normal (que sí exige monto_neto > 0),
+            // esta validación faltaba acá: un monto_bruto/neto en 0 o negativo pasaba
+            // el guard de "no superar el original" (0 <= cualquier cosa) sin problema,
+            // y registrarAsiento solo exige que el DEBE cuadre con el HABER, no que
+            // las líneas sean positivas -- una NC con montos negativos invierte el
+            // efecto contable en vez de anularlo.
+            if ($neto <= 0 || $iva < 0 || $bruto <= 0) {
+                throw ComercialException::regla(
+                    "Los montos de la Nota de Crédito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo)."
+                );
+            }
+
             $nc = Factura::create([
                 'empresa_id'          => $empresaId,
                 'tipo'                => 'VENTA',
@@ -490,6 +502,15 @@ class FacturaService
             $iva   = round((float) $datos['monto_iva'], 2);
             $bruto = round((float) $datos['monto_bruto'], 2);
             $fecha = $datos['fecha_emision'] ?? now()->toDateString();
+
+            // Mismo hallazgo que en emitirNotaCreditoVenta: sin este guard, una ND
+            // con montos en 0 o negativos pasaba sin problema (registrarAsiento solo
+            // exige partida doble cuadrada, no montos positivos por línea).
+            if ($neto <= 0 || $iva < 0 || $bruto <= 0) {
+                throw ComercialException::regla(
+                    "Los montos de la Nota de Débito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo)."
+                );
+            }
 
             $nd = Factura::create([
                 'empresa_id'            => $empresaId,
@@ -900,26 +921,44 @@ class FacturaService
             ->get();
     }
 
-    public function generarCsvExportacion(int $empresaId): string
+    /**
+     * Genera el CSV de exportacion de facturas. fechaDesde/fechaHasta acotan
+     * el rango (formato Y-m-d); sin ellos exporta el historial completo.
+     *
+     * Usa chunk() en vez de get(): antes cargaba TODAS las facturas de la
+     * empresa como coleccion Eloquent en un solo request sincrono, sin limite
+     * ni filtro de fecha (una empresa con anios de historial podia agotar
+     * memoria). chunk() trae de a 500 filas por pagina (y si respeta el
+     * eager load de 'proveedor', a diferencia de cursor(), que lo ignora).
+     */
+    public function generarCsvExportacion(int $empresaId, ?string $fechaDesde = null, ?string $fechaHasta = null): string
     {
-        $facturas = Factura::where('empresa_id', $empresaId)
+        $query = Factura::where('empresa_id', $empresaId)
             ->with('proveedor')
-            ->orderBy('fecha_emision', 'desc')
-            ->get();
+            ->orderBy('fecha_emision', 'desc');
+
+        if ($fechaDesde !== null) {
+            $query->whereDate('fecha_emision', '>=', $fechaDesde);
+        }
+        if ($fechaHasta !== null) {
+            $query->whereDate('fecha_emision', '<=', $fechaHasta);
+        }
 
         $csvData = "ID,Numero Factura,Proveedor,RUT,Fecha Emision,Fecha Vencimiento,Monto Neto,IVA,Monto Bruto,Estado\n";
 
-        foreach ($facturas as $f) {
-            $provNombre = $f->proveedor->razon_social ?? 'Sin Proveedor';
-            $provRut = $f->proveedor->rut ?? 'N/A';
-            $emision = $f->fecha_emision->format('Y-m-d');
-            $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
-            $csvData .= "{$f->id},"
-                . $this->escaparCampoCsv((string) $f->numero_factura) . ","
-                . $this->escaparCampoCsv($provNombre) . ","
-                . $this->escaparCampoCsv($provRut) . ","
-                . "{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
-        }
+        $query->chunk(500, function ($facturas) use (&$csvData) {
+            foreach ($facturas as $f) {
+                $provNombre = $f->proveedor->razon_social ?? 'Sin Proveedor';
+                $provRut = $f->proveedor->rut ?? 'N/A';
+                $emision = $f->fecha_emision->format('Y-m-d');
+                $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
+                $csvData .= "{$f->id},"
+                    . $this->escaparCampoCsv((string) $f->numero_factura) . ","
+                    . $this->escaparCampoCsv($provNombre) . ","
+                    . $this->escaparCampoCsv($provRut) . ","
+                    . "{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
+            }
+        });
 
         return $csvData;
     }

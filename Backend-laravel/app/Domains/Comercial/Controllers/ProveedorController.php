@@ -26,7 +26,7 @@ class ProveedorController
     public function index(Request $request)
     {
         $limit = (int) $request->query('limit', 15);
-        $paginador = $this->service->obtenerProveedoresPaginados($request->user()->empresa_id, $limit);
+        $paginador = $this->service->obtenerProveedoresPaginados($request->user()->empresa_activa_id, $limit);
 
         return response()->json([
             'success' => true,
@@ -44,7 +44,7 @@ class ProveedorController
     {
         return response()->json([
             'success' => true,
-            'data' => $this->service->obtenerCatalogoBasico($request->user()->empresa_id)
+            'data' => $this->service->obtenerCatalogoBasico($request->user()->empresa_activa_id)
         ]);
     }
 
@@ -53,7 +53,7 @@ class ProveedorController
     {
         try {
             $datos = $request->all();
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            $datos['empresa_id'] = $request->user()->empresa_activa_id;
 
             $proveedor = $this->service->registrarProveedor($datos);
 
@@ -78,7 +78,7 @@ class ProveedorController
         try {
             return response()->json([
                 'success' => true,
-                'data' => $this->service->obtenerFichaProveedor($request->user()->empresa_id, (int) $id)
+                'data' => $this->service->obtenerFichaProveedor($request->user()->empresa_activa_id, (int) $id)
             ]);
         } catch (ComercialException $e) {
             throw $e;
@@ -115,7 +115,7 @@ class ProveedorController
             if ($request->has('comuna'))
                 $datos['comuna'] = $request->comuna;
 
-            $proveedor = $this->service->actualizarProveedor($request->user()->empresa_id, $id, $datos);
+            $proveedor = $this->service->actualizarProveedor($request->user()->empresa_activa_id, $id, $datos);
 
             return response()->json(['success' => true, 'data' => $proveedor]);
         } catch (ComercialException $e) {
@@ -136,7 +136,7 @@ class ProveedorController
             ]);
 
             $anticipo = $this->service->registrarAnticipo(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $datosValidados
             );
 
@@ -174,7 +174,7 @@ class ProveedorController
                 $rutaPdf = $request->file('pdf')->store('anticipos_proveedores/pdfs', 'local');
             }
 
-            $anticipo = $this->service->adjuntarPdfAnticipo($request->user()->empresa_id, $id, $rutaPdf);
+            $anticipo = $this->service->adjuntarPdfAnticipo($request->user()->empresa_activa_id, $id, $rutaPdf);
 
             return response()->json(['success' => true, 'data' => $anticipo]);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -193,7 +193,7 @@ class ProveedorController
     /** Descarga el PDF de un anticipo, autenticado y acotado a la empresa. GET /proveedores/anticipos/{id}/pdf */
     public function descargarPdfAnticipo(Request $request, int $id)
     {
-        $anticipo = \App\Domains\Comercial\Models\AnticipoProveedor::where('empresa_id', $request->user()->empresa_id)
+        $anticipo = \App\Domains\Comercial\Models\AnticipoProveedor::where('empresa_id', $request->user()->empresa_activa_id)
             ->findOrFail($id);
 
         if (!$anticipo->archivo_pdf || !Storage::disk('local')->exists($anticipo->archivo_pdf)) {
@@ -213,7 +213,7 @@ class ProveedorController
             ]);
 
             $resultado = $this->service->compensarPartidas(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
                 (int) $id,
                 $datos

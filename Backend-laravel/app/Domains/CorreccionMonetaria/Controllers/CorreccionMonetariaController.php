@@ -69,7 +69,7 @@ class CorreccionMonetariaController
         try {
             return response()->json([
                 'success' => true,
-                'data'    => $this->service->obtenerConfiguracion($request->user()->empresa_id),
+                'data'    => $this->service->obtenerConfiguracion($request->user()->empresa_activa_id),
             ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
@@ -91,7 +91,7 @@ class CorreccionMonetariaController
                 'activo'                     => 'sometimes|boolean',
             ]);
 
-            $config = $this->service->actualizarConfiguracion($request->user()->empresa_id, $data);
+            $config = $this->service->actualizarConfiguracion($request->user()->empresa_activa_id, $data);
 
             return response()->json([
                 'success' => true,
@@ -110,7 +110,7 @@ class CorreccionMonetariaController
         try {
             return response()->json([
                 'success' => true,
-                'data'    => $this->service->obtenerCuentasConfiguracion($request->user()->empresa_id),
+                'data'    => $this->service->obtenerCuentasConfiguracion($request->user()->empresa_activa_id),
             ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
@@ -127,7 +127,7 @@ class CorreccionMonetariaController
                 'cuentas.*.factor_override'  => 'nullable|numeric|min:-50|max:100',
             ]);
 
-            $this->service->actualizarCuentasConfiguracion($request->user()->empresa_id, $data['cuentas']);
+            $this->service->actualizarCuentasConfiguracion($request->user()->empresa_activa_id, $data['cuentas']);
 
             return response()->json(['success' => true, 'message' => 'Cuentas actualizadas.']);
         } catch (ValidationException $e) {
@@ -146,7 +146,7 @@ class CorreccionMonetariaController
             ]);
 
             $cuenta = $this->service->agregarCuentaConfiguracion(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $data['cuenta_codigo'],
                 $data['rol_cm'],
             );
@@ -168,7 +168,7 @@ class CorreccionMonetariaController
         try {
             return response()->json([
                 'success' => true,
-                'data'    => $this->service->estadoPeriodo($request->user()->empresa_id, $mes, $anio),
+                'data'    => $this->service->estadoPeriodo($request->user()->empresa_activa_id, $mes, $anio),
             ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
@@ -178,7 +178,7 @@ class CorreccionMonetariaController
     public function simular(Request $request, int $mes, int $anio)
     {
         try {
-            $resultado = $this->service->simular($request->user()->empresa_id, $mes, $anio);
+            $resultado = $this->service->simular($request->user()->empresa_activa_id, $mes, $anio);
 
             return response()->json(['success' => true, 'data' => $resultado]);
         } catch (Exception $e) {
@@ -195,7 +195,7 @@ class CorreccionMonetariaController
             ]);
 
             $resultado = $this->service->ejecutar(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
                 $data['mes'],
                 $data['anio'],
@@ -216,7 +216,7 @@ class CorreccionMonetariaController
 
             return response()->json([
                 'success' => true,
-                'data'    => $this->service->obtenerHistorial($request->user()->empresa_id, $anio),
+                'data'    => $this->service->obtenerHistorial($request->user()->empresa_activa_id, $anio),
             ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);

@@ -38,7 +38,7 @@ class OrdenCompraService
             unset($datos['detalles']);
 
             $subtotal = collect($detalles)->sum('subtotal');
-            $impuesto = $datos['impuesto'] ?? round($subtotal * 0.19, 2);
+            $impuesto = $datos['impuesto'] ?? round($subtotal * config('fiscal.tasa_iva'), 2);
             $total = $subtotal + $impuesto;
 
             /** @var OrdenCompra $oc */
@@ -74,7 +74,7 @@ class OrdenCompraService
                     DetalleOrdenCompra::create($detalle);
                     $subtotal += (float) ($detalle['subtotal'] ?? 0);
                 }
-                $impuesto = $datos['impuesto'] ?? round($subtotal * 0.19, 2);
+                $impuesto = $datos['impuesto'] ?? round($subtotal * config('fiscal.tasa_iva'), 2);
                 $datos['subtotal'] = $subtotal;
                 $datos['impuesto'] = $impuesto;
                 $datos['total'] = $subtotal + $impuesto;

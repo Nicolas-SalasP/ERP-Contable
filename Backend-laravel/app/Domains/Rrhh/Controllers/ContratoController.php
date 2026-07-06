@@ -15,13 +15,13 @@ class ContratoController extends Controller
 
     public function indexPorEmpleado(Request $request, int $empleadoId): JsonResponse
     {
-        $contratos = $this->service->listarPorEmpleado($request->user()->empresa_id, $empleadoId);
+        $contratos = $this->service->listarPorEmpleado($request->user()->empresa_activa_id, $empleadoId);
         return response()->json(['success' => true, 'data' => $contratos]);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $contrato = $this->service->obtener($request->user()->empresa_id, $id);
+        $contrato = $this->service->obtener($request->user()->empresa_activa_id, $id);
         return response()->json(['success' => true, 'data' => $contrato]);
     }
 
@@ -50,7 +50,7 @@ class ContratoController extends Controller
             'haberes.*.vigente_desde' => 'required|date',
         ])['haberes'] ?? [];
 
-        $contrato = $this->service->crear($request->user()->empresa_id, $empleadoId, $datos, $haberes);
+        $contrato = $this->service->crear($request->user()->empresa_activa_id, $empleadoId, $datos, $haberes);
 
         return response()->json([
             'success' => true,
@@ -67,7 +67,7 @@ class ContratoController extends Controller
             'observaciones_termino' => 'nullable|string|max:500',
         ]);
 
-        $contrato = $this->service->terminar($request->user()->empresa_id, $id, $datos);
+        $contrato = $this->service->terminar($request->user()->empresa_activa_id, $id, $datos);
 
         return response()->json([
             'success' => true,
@@ -89,7 +89,7 @@ class ContratoController extends Controller
             'vigente_hasta' => 'nullable|date|after:vigente_desde',
         ]);
 
-        $haber = $this->service->agregarHaber($request->user()->empresa_id, $contratoId, $datos);
+        $haber = $this->service->agregarHaber($request->user()->empresa_activa_id, $contratoId, $datos);
 
         return response()->json([
             'success' => true,

@@ -37,7 +37,7 @@ class InventarioAlertaService
     {
         $this->permisos->exigir($usuario, 'inventario.alertas.ver');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
         $alertas = $this->listarPersistidasParaEmpresa($empresaId, $filtros);
 
         return [

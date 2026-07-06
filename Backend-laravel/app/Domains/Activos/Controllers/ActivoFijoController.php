@@ -35,12 +35,12 @@ class ActivoFijoController
             $perPage = $request->query('per_page');
 
             if (!$search && !$perPage) {
-                $activos = $this->service->listarActivos($request->user()->empresa_id);
+                $activos = $this->service->listarActivos($request->user()->empresa_activa_id);
                 return response()->json(['success' => true, 'data' => $activos]);
             }
 
             $resultado = $this->service->listarActivosFiltrado(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $search,
                 $perPage ? (int) $perPage : 15
             );
@@ -63,7 +63,7 @@ class ActivoFijoController
     public function pendientes(Request $request)
     {
         try {
-            $pendientes = $this->service->listarPendientes($request->user()->empresa_id);
+            $pendientes = $this->service->listarPendientes($request->user()->empresa_activa_id);
             return response()->json(['success' => true, 'data' => $pendientes]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
@@ -103,7 +103,7 @@ class ActivoFijoController
                 }
             }
 
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            $datos['empresa_id'] = $request->user()->empresa_activa_id;
             $activo = $this->service->registrarActivo($datos);
 
             return response()->json(['success' => true, 'message' => 'Activo registrado exitosamente', 'data' => $activo], 201);
@@ -128,7 +128,7 @@ class ActivoFijoController
             ]);
 
             $activo = $this->service->actualizarActivo(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 (int) $id,
                 $datos
             );
@@ -157,7 +157,7 @@ class ActivoFijoController
     public function parametros(Request $request)
     {
         try {
-            $planCuentas = PlanCuenta::where('empresa_id', $request->user()->empresa_id)
+            $planCuentas = PlanCuenta::where('empresa_id', $request->user()->empresa_activa_id)
                 ->where('imputable', true)
                 ->where('activo', true)
                 ->get();
@@ -174,7 +174,7 @@ class ActivoFijoController
                 return $c->tipo === 'GASTO';
             })->values();
 
-            $centros = CentroCosto::where('empresa_id', $request->user()->empresa_id)
+            $centros = CentroCosto::where('empresa_id', $request->user()->empresa_activa_id)
                 ->where('activo', true)
                 ->get();
 
@@ -195,7 +195,7 @@ class ActivoFijoController
     public function proyectos(Request $request)
     {
         try {
-            $proyectos = $this->service->listarProyectos($request->user()->empresa_id);
+            $proyectos = $this->service->listarProyectos($request->user()->empresa_activa_id);
             return response()->json(['success' => true, 'data' => $proyectos]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
@@ -216,7 +216,7 @@ class ActivoFijoController
                 'empleado_id' => 'nullable|integer'
             ]);
 
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            $datos['empresa_id'] = $request->user()->empresa_activa_id;
             $proyecto = $this->service->registrarProyecto($datos);
 
             return response()->json(['success' => true, 'message' => 'Proyecto creado exitosamente', 'data' => $proyecto], 201);
@@ -236,7 +236,7 @@ class ActivoFijoController
             $datos = $request->validate(['mes_anio' => 'required|date_format:Y-m']);
 
             $resultado = $this->service->depreciarMes(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
                 $datos['mes_anio']
             );
@@ -253,7 +253,7 @@ class ActivoFijoController
     public function analisisProyecto(Request $request, $id)
     {
         try {
-            $analisis = $this->service->analizarProyecto($request->user()->empresa_id, (int) $id);
+            $analisis = $this->service->analizarProyecto($request->user()->empresa_activa_id, (int) $id);
             return response()->json(['success' => true, 'data' => $analisis]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'No se pudo cargar el análisis del proyecto. Es posible que no exista.'], 404);
@@ -263,7 +263,7 @@ class ActivoFijoController
     public function facturasDisponibles(Request $request)
     {
         try {
-            $facturas = $this->service->listarFacturasDisponibles($request->user()->empresa_id);
+            $facturas = $this->service->listarFacturasDisponibles($request->user()->empresa_activa_id);
             return response()->json(['success' => true, 'data' => $facturas]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
@@ -280,7 +280,7 @@ class ActivoFijoController
                 'monto' => 'required|numeric|min:1'
             ]);
 
-            $this->service->imputarFacturaAProyecto($request->user()->empresa_id, (int) $id, $datos);
+            $this->service->imputarFacturaAProyecto($request->user()->empresa_activa_id, (int) $id, $datos);
             return response()->json(['success' => true, 'message' => 'Costo imputado exitosamente']);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
@@ -299,7 +299,7 @@ class ActivoFijoController
                 'fecha_adquisicion' => 'nullable|date_format:Y-m-d',
             ]);
 
-            $activo = $this->service->activarProyecto($request->user()->empresa_id, $request->user()->id, (int) $id, $datos['fecha_adquisicion'] ?? null);
+            $activo = $this->service->activarProyecto($request->user()->empresa_activa_id, $request->user()->id, (int) $id, $datos['fecha_adquisicion'] ?? null);
             return response()->json(['success' => true, 'message' => 'Proyecto activado y capitalizado', 'data' => $activo]);
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 400;
@@ -320,7 +320,7 @@ class ActivoFijoController
                 'vida_util_meses' => 'nullable|integer|min:1|max:1200'
             ]);
 
-            $proyecto = $this->service->actualizarProyecto($request->user()->empresa_id, (int) $id, $datos);
+            $proyecto = $this->service->actualizarProyecto($request->user()->empresa_activa_id, (int) $id, $datos);
 
             return response()->json([
                 'success' => true,
@@ -350,7 +350,7 @@ class ActivoFijoController
                 'fecha' => 'nullable|date_format:Y-m-d',
             ]);
 
-            $resultado = $this->service->darDeBaja($request->user()->empresa_id, $request->user()->id, (int) $id, $datos);
+            $resultado = $this->service->darDeBaja($request->user()->empresa_activa_id, $request->user()->id, (int) $id, $datos);
 
             return response()->json([
                 'success' => true,
@@ -366,7 +366,7 @@ class ActivoFijoController
         try {
             $this->autorizarAccesoContable($request->user());
 
-            $this->service->eliminarProyecto($request->user()->empresa_id, (int) $id);
+            $this->service->eliminarProyecto($request->user()->empresa_activa_id, (int) $id);
 
             return response()->json([
                 'success' => true,
@@ -384,7 +384,7 @@ class ActivoFijoController
             $this->autorizarAccesoContable($request->user());
 
             $this->service->desvincularFacturaDeProyecto(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 (int) $proyectoId,
                 (int) $facturaId
             );
@@ -403,7 +403,7 @@ class ActivoFijoController
     {
         try {
             $resultado = $this->service->tablaAmortizacion(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 (int) $id
             );
             return response()->json(['success' => true, 'data' => $resultado]);

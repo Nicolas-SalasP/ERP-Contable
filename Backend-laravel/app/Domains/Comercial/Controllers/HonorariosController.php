@@ -17,7 +17,7 @@ class HonorariosController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = HonorarioRecibido::where('empresa_id', $request->user()->empresa_id)
+        $query = HonorarioRecibido::where('empresa_id', $request->user()->empresa_activa_id)
             ->orderByDesc('fecha');
 
         if ($request->filled('mes') && $request->filled('anio')) {
@@ -42,7 +42,7 @@ class HonorariosController extends Controller
         ]);
 
         try {
-            $honorario = $this->service->registrar($request->user()->empresa_id, $datos);
+            $honorario = $this->service->registrar($request->user()->empresa_activa_id, $datos);
             return response()->json(['data' => $honorario], 201);
         } catch (ComercialException $e) {
             return response()->json(['mensaje' => $e->getMessage()], 422);
@@ -51,7 +51,7 @@ class HonorariosController extends Controller
 
     public function destroy(Request $request, HonorarioRecibido $honorariosRecibido): JsonResponse
     {
-        abort_unless((int) $honorariosRecibido->empresa_id === (int) $request->user()->empresa_id, 403);
+        abort_unless((int) $honorariosRecibido->empresa_id === (int) $request->user()->empresa_activa_id, 403);
         $honorariosRecibido->delete();
         return response()->json(['mensaje' => 'Honorario eliminado.']);
     }

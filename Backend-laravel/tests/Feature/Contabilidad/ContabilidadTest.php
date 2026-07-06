@@ -743,6 +743,49 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
         $this->assertTrue(in_array($response->getStatusCode(), [200, 422, 404]));
     }
 
+    // PRUEBA: el asiento de reverso generado por /api/anulacion/anular queda MAYORIZADO
+    // (visible en Libro Diario/Mayor), no ANULADO -- antes quedaba ANULADO y
+    // ReporteContableService::aplicarFiltroEstado lo excluía en silencio del filtro
+    // estándar de reportes, a diferencia del mismo mecanismo en
+    // AsientoContableService::procesarReversa (que sí usa MAYORIZADO).
+    public function test_anulacion_documento_genera_reverso_visible_en_mayorizado()
+    {
+        $cuenta = PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1005', 'nombre' => 'Caja Anulacion', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+
+        $asientoOriginal = AsientoContable::create([
+            'empresa_id' => $this->empresaA->id,
+            'numero_comprobante' => 'C-ANULAR-01',
+            'fecha' => now()->format('Y-m-d'),
+            'glosa' => 'Original a anular',
+            'estado' => 'MAYORIZADO'
+        ]);
+        DetalleAsiento::create(['asiento_id' => $asientoOriginal->id, 'cuenta_contable' => $cuenta->codigo, 'debe' => 5000, 'haber' => 0, 'fecha' => now()->format('Y-m-d'), 'tipo_operacion' => 'DEBE']);
+        DetalleAsiento::create(['asiento_id' => $asientoOriginal->id, 'cuenta_contable' => $cuenta->codigo, 'debe' => 0, 'haber' => 5000, 'fecha' => now()->format('Y-m-d'), 'tipo_operacion' => 'HABER']);
+
+        $response = $this->actingAs($this->usuarioContador)->postJson('/api/anulacion/anular', [
+            'tipo_documento'  => 'ASIENTO',
+            'documento_id'    => $asientoOriginal->id,
+            'motivo'          => 'Error de digitación',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ]);
+
+        $response->assertStatus(200);
+
+        $numeroReverso = $response->json('data.nuevo_asiento_id');
+        $this->assertNotNull($numeroReverso);
+
+        $this->assertDatabaseHas('asientos_contables', [
+            'empresa_id'         => $this->empresaA->id,
+            'numero_comprobante' => $numeroReverso,
+            'estado'             => 'MAYORIZADO',
+        ]);
+
+        $this->assertDatabaseHas('asientos_contables', [
+            'id'     => $asientoOriginal->id,
+            'estado' => 'ANULADO',
+        ]);
+    }
+
     // PRUEBA: RECHAZA INGRESO DE LETRAS O CARACTERES ESPECIALES EN MONTOS FINANCIEROS
     public function test_rechaza_letras_en_montos_financieros()
     {

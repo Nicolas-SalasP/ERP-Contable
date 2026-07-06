@@ -191,4 +191,22 @@ class ComercialNotasDebitoTest extends TestCase
             'estado' => 'REGISTRADA',
         ]);
     }
+
+    public function test_nd_venta_rechaza_monto_neto_cero(): void
+    {
+        $facturaVenta = $this->crearFacturaVenta('FV-ND-004', 1000, 190, 1190, 'REGISTRADA', 205);
+
+        // Antes del fix: monto_neto=0 pasaba la validacion HTTP (min:0, no gt:0)
+        // y no habia ningun guard en el servicio.
+        $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$facturaVenta->id}/nota-debito", [
+            'numero_nd'   => 'ND-CERO',
+            'monto_neto'  => 0,
+            'monto_iva'   => 0,
+            'monto_bruto' => 1,
+            'razon'       => 'Intento de ND con monto neto cero',
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertDatabaseMissing('facturas', ['numero_factura' => 'ND-CERO']);
+    }
 }

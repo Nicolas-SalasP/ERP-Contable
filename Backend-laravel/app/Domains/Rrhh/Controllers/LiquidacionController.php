@@ -27,7 +27,7 @@ class LiquidacionController extends Controller
             'empleado_id' => 'nullable|integer',
         ]);
 
-        $query = Liquidacion::where('empresa_id', $request->user()->empresa_id)
+        $query = Liquidacion::where('empresa_id', $request->user()->empresa_activa_id)
             ->with(['empleado:id,nombres,apellido_paterno,apellido_materno,rut'])
             ->orderByDesc('anio')
             ->orderByDesc('mes');
@@ -47,7 +47,7 @@ class LiquidacionController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $liq = Liquidacion::where('empresa_id', $request->user()->empresa_id)
+        $liq = Liquidacion::where('empresa_id', $request->user()->empresa_activa_id)
             ->with(['detalles', 'empleado', 'contrato', 'parametro', 'indicador'])
             ->findOrFail($id);
 
@@ -88,7 +88,7 @@ class LiquidacionController extends Controller
         ]);
 
         $liq = $this->service->calcular(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $datos['empleado_id'],
             $datos['anio'],
             $datos['mes'],
@@ -96,7 +96,7 @@ class LiquidacionController extends Controller
         );
 
         // Devengar provisión de vacaciones del mes
-        $this->vacaciones->devengarMes($request->user()->empresa_id, $liq->id);
+        $this->vacaciones->devengarMes($request->user()->empresa_activa_id, $liq->id);
 
         return response()->json([
             'success' => true,
@@ -107,7 +107,7 @@ class LiquidacionController extends Controller
 
     public function emitir(Request $request, int $id): JsonResponse
     {
-        $liq = $this->service->emitir($request->user()->empresa_id, $id);
+        $liq = $this->service->emitir($request->user()->empresa_activa_id, $id);
         return response()->json([
             'success' => true,
             'message' => 'Liquidación emitida.',
@@ -117,7 +117,7 @@ class LiquidacionController extends Controller
 
     public function anular(Request $request, int $id): JsonResponse
     {
-        $liq = $this->service->anular($request->user()->empresa_id, $id);
+        $liq = $this->service->anular($request->user()->empresa_activa_id, $id);
         return response()->json([
             'success' => true,
             'message' => 'Liquidación anulada.',

@@ -17,11 +17,17 @@ use App\Domains\Inventario\Models\TomaFisicaDetalleInventario;
 use App\Domains\Inventario\Models\TomaFisicaInventario;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class InventarioDashboardService
 {
     private const DIAS_ALERTA_VENCIMIENTO = 30;
+
+    // Mismo TTL que DashboardResumenService: este dashboard ejecuta ~25 queries
+    // independientes por carga y no tenia ningun cache, a diferencia del
+    // financiero que ya usa este mismo TTL corto.
+    private const TTL_SEGUNDOS = 90;
 
     public function __construct(
         private readonly InventarioPermisoService $permisos,
@@ -55,6 +61,16 @@ class InventarioDashboardService
         ]);
 
         $empresaId = (int) $usuario->empresa_id;
+
+        return Cache::remember(
+            "inventario_dashboard:empresa_{$empresaId}",
+            self::TTL_SEGUNDOS,
+            fn () => $this->calcular($empresaId)
+        );
+    }
+
+    private function calcular(int $empresaId): array
+    {
         $stockTotal = $this->stockTotal($empresaId);
         $valorTotalInventario = $this->stockValorizado($empresaId);
         $totalProductos = $this->totalProductos($empresaId);

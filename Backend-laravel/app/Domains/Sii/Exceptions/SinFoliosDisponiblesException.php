@@ -24,4 +24,13 @@ class SinFoliosDisponiblesException extends RuntimeException
             $empresaId
         );
     }
+
+    public static function vencido(int $tipoDte, int $empresaId): self
+    {
+        return new self(
+            "El CAF para el tipo DTE {$tipoDte} en la empresa {$empresaId} está vencido. Solicite y cargue un CAF nuevo al SII.",
+            $tipoDte,
+            $empresaId
+        );
+    }
 }
