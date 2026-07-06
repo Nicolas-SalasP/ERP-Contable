@@ -93,24 +93,27 @@ const CartolaBancaria = () => {
         Swal.fire({ title: 'Procesando Cartola...', text: 'Analizando ingresos y egresos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         try {
-            const { data } = await api.post('/banco/importar', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            // api.upload() (no api.post con Content-Type manual): fijar el header a
+            // mano sin boundary hace que el body llegue vacio al servidor -- los 3
+            // campos requeridos fallaban validacion aunque el FormData los tuviera bien.
+            //
+            // request() en Configuracion/api.js devuelve el body JSON tal cual (no
+            // envuelto en {data:...} como axios) -- destructurar "{ data }" tomaba el
+            // campo interno data:{importados,ignorados} en vez del body completo, asi
+            // que data.success siempre daba undefined y una importacion EXITOSA caia
+            // igual al catch con "Error de Importación".
+            const data = await api.upload('/banco/importar', formData);
 
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Cartola Importada!',
-                    text: data.mensaje,
-                    customClass: { confirmButton: 'bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg' },
-                    buttonsStyling: false
-                });
-                setArchivo(null);
-                if (fileInputRef.current) fileInputRef.current.value = '';
-                cargarCuentas();
-            } else {
-                throw new Error(data.mensaje);
-            }
+            Swal.fire({
+                icon: 'success',
+                title: '¡Cartola Importada!',
+                text: data.message,
+                customClass: { confirmButton: 'bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg' },
+                buttonsStyling: false
+            });
+            setArchivo(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            cargarCuentas();
         } catch (error) {
             Swal.fire({
                 icon: 'error',

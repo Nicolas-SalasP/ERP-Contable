@@ -1,8 +1,13 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { screen, waitFor, cleanup } from '@testing-library/react';
+import { screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
 import { renderWithRouter, mockJsonResponse, setupFetchRouter, cleanTestEnv } from '../../../test-utils';
 import CartolaBancaria from './CartolaBancaria';
+
+const PLAN_CUENTAS = [
+    { codigo: '111102', nombre: 'Banco Chile', imputable: true },
+    { codigo: '690199', nombre: 'Cuenta Puente', imputable: true },
+];
 
 const mockSwal = vi.hoisted(() => ({
     fire: vi.fn().mockResolvedValue({ isConfirmed: true }),
@@ -114,5 +119,58 @@ describe('CartolaBancaria — registro manual', () => {
         await waitFor(() =>
             expect(screen.getByText(/Ingresa transacciones aisladas/i)).toBeTruthy()
         );
+    });
+});
+
+describe('CartolaBancaria — importar excel/csv', () => {
+    it('sube el archivo sin fijar Content-Type manual y muestra el mensaje real del backend', async () => {
+        let initCapturado = null;
+
+        setupFetchRouter({
+            'GET /banco/cuentas': () => mockJsonResponse(200, { success: true, data: CUENTAS }),
+            'GET /banco/movimientos': () => mockJsonResponse(200, { success: true, data: MOVIMIENTOS }),
+            'GET /contabilidad/plan-cuentas': () => mockJsonResponse(200, { success: true, data: PLAN_CUENTAS }),
+            'POST /banco/importar': (body, url, init) => {
+                initCapturado = init;
+                return mockJsonResponse(200, {
+                    success: true,
+                    message: 'Proceso completado. Importados: 2 | Ignorados (Duplicados): 0',
+                    data: { importados: 2, ignorados: 0 },
+                });
+            },
+        });
+
+        const { container } = renderWithRouter(<CartolaBancaria />);
+
+        await waitFor(() => expect(screen.getByText('Banco Chile - 000-111-222')).toBeTruthy());
+
+        const fileInput = container.querySelector('input[type="file"]');
+        const archivo = new File(['col1,col2\n1,2'], 'cartola.xls', { type: 'application/vnd.ms-excel' });
+        fireEvent.change(fileInput, { target: { files: [archivo] } });
+
+        await waitFor(() => expect(screen.getByText('cartola.xls')).toBeTruthy());
+
+        // BuscadorCuentaContable autoselecciona la primera cuenta imputable al cargar.
+        await waitFor(() => expect(screen.getByRole('button', { name: /Procesar/i })).toBeTruthy());
+
+        fireEvent.click(screen.getByRole('button', { name: /Procesar/i }));
+
+        await waitFor(() => expect(initCapturado).not.toBeNull());
+
+        // Regresión: fijar 'Content-Type': 'multipart/form-data' a mano (sin boundary)
+        // hacía que el body llegara vacío al servidor -- el fix es NO tocar este header
+        // y dejar que fetch() lo autogenere con boundary a partir del FormData.
+        const headers = initCapturado.headers || {};
+        expect(headers['Content-Type']).toBeUndefined();
+        expect(initCapturado.body).toBeInstanceOf(FormData);
+
+        // Regresión: destructurar "{ data }" del resultado de api.upload() tomaba el
+        // campo interno data:{importados,ignorados} en vez del body completo -- una
+        // importación exitosa terminaba mostrando "Error de Importación" igual.
+        await waitFor(() => {
+            const llamadaExito = mockSwal.fire.mock.calls.find((args) => args[0]?.icon === 'success');
+            expect(llamadaExito).toBeTruthy();
+            expect(llamadaExito[0].text).toBe('Proceso completado. Importados: 2 | Ignorados (Duplicados): 0');
+        });
     });
 });
