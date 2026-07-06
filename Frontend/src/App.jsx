@@ -20,6 +20,7 @@ const AnulacionGeneral = lazy(() => import('./Modulos/Contabilidad/Vistas/Anulac
 import GestionCotizaciones from './Modulos/Cotizaciones/GestionCotizaciones';
 import CrearCotizacion from './Modulos/Cotizaciones/CrearCotizacion';
 import GestionClientes from './Modulos/Clientes/GestionClientes';
+import VisorCliente from './Modulos/Clientes/VisorCliente';
 import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
 import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
 const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
@@ -240,6 +241,22 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="clientes.ver">
                 <LayoutPrincipal><GestionClientes /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/clientes/visor" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="clientes.ver">
+                <LayoutPrincipal><VisorCliente /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/clientes/visor/:id" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="clientes.ver">
+                <LayoutPrincipal><VisorCliente /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />

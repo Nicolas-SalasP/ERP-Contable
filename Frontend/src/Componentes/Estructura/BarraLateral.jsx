@@ -26,6 +26,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
             permisosRequeridos: ['ventas.ver', 'clientes.ver'],
             subItems: [
                 { path: '/clientes', label: 'Directorio de Clientes' },
+                { path: '/clientes/visor', label: 'Visor 360 Cliente' },
                 { path: '/cotizaciones/nueva', label: 'Nueva Cotización' },
                 { path: '/cotizaciones', label: 'Gestión de Cotizaciones' },
             ]

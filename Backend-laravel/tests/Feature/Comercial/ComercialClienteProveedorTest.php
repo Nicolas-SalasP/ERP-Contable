@@ -10,6 +10,7 @@ use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Proveedor;
+use App\Domains\Comercial\Models\Factura;
 use App\Domains\Core\Models\EstadoSuscripcion;
 use App\Domains\Core\Models\Pais;
 
@@ -65,5 +66,28 @@ class ComercialClienteProveedorTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertEquals('ACTIVO', $cliente->fresh()->estado);
+    }
+
+    public function test_ficha_cliente_devuelve_cliente_y_sus_facturas_de_venta()
+    {
+        $cliente = Cliente::create(['empresa_id' => $this->empresa->id, 'rut' => '55.555.555-5', 'razon_social' => 'Cliente Ficha', 'estado' => 'ACTIVO']);
+        Factura::create(['empresa_id' => $this->empresa->id, 'cliente_id' => $cliente->id, 'numero_factura' => 'V-001', 'codigo_unico' => 111222, 'fecha_emision' => now(), 'monto_bruto' => 50000, 'monto_neto' => 42017, 'monto_iva' => 7983, 'tipo' => 'VENTA', 'tipo_documento' => 'FACTURA', 'estado' => 'REGISTRADA']);
+
+        $response = $this->actingAs($this->usuario)->getJson("/api/clientes/ficha/{$cliente->id}");
+
+        $response->assertOk();
+        $response->assertJsonPath('data.cliente.id', $cliente->id);
+        $response->assertJsonCount(1, 'data.facturas');
+        $response->assertJsonPath('data.facturas.0.numero_factura', 'V-001');
+    }
+
+    public function test_ficha_cliente_de_otra_empresa_no_encontrada()
+    {
+        $otraEmpresa = Empresa::create(['rut' => '88.888.888-8', 'razon_social' => 'Otra SpA']);
+        $clienteAjeno = Cliente::create(['empresa_id' => $otraEmpresa->id, 'rut' => '66.666.666-6', 'razon_social' => 'Cliente Ajeno', 'estado' => 'ACTIVO']);
+
+        $response = $this->actingAs($this->usuario)->getJson("/api/clientes/ficha/{$clienteAjeno->id}");
+
+        $response->assertStatus(404);
     }
 }
