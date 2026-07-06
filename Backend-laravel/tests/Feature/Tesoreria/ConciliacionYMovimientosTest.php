@@ -292,6 +292,45 @@ class ConciliacionYMovimientosTest extends TestCase
         $response->assertJsonPath('data.importados', 2);
     }
 
+    public function test_importar_cartola_con_metadata_previa_y_columnas_cargo_abono()
+    {
+        // Reproduce el formato real de Scotiabank: bloque de metadata (Nombre
+        // Empresa, Numero Linea, Saldo Disponible, etc.) antes del encabezado
+        // real, y Cargos/Abonos en columnas separadas en vez de un monto unico
+        // con signo. Antes de este fix, esto importaba 0 filas en silencio.
+        Storage::fake('local');
+
+        $this->cuentaA->update(['cuenta_contable' => '1101']);
+        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1101', 'nombre' => 'Banco A', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '4101', 'nombre' => 'Ingresos Varios', 'tipo' => 'INGRESO', 'imputable' => true, 'activo' => true]);
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $hoja = $spreadsheet->getActiveSheet();
+        $hoja->fromArray([
+            ['Nombre Empresa', 'SPA - TEST'],
+            ['Numero Linea', '991980431'],
+            ['Fecha Consulta', '04-07-2026'],
+            ['Moneda', 'CLP'],
+            ['Saldo Disponible', 2387737],
+            ['Fecha', 'Descripcion', 'Sucursal', 'N Doc.', 'Cargos', 'Abonos', 'Saldo'],
+            ['03-07-2026', 'IVA POR COMISION', 'SUCURSAL VIRTUAL', '5755491254', -141, null, 2387737],
+            ['25-06-2026', 'PROVEEDORE 78730890-2', 'NUEVA MORANDE', '5733174661', null, 640000, 2388618],
+        ]);
+        $ruta = tempnam(sys_get_temp_dir(), 'cartola') . '.xlsx';
+        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save($ruta);
+        $file = new UploadedFile($ruta, 'cartola.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        Sanctum::actingAs($this->adminA);
+        $response = $this->postJson('/api/banco/importar', [
+            'cuenta_bancaria_id' => $this->cuentaA->id,
+            'cuenta_contrapartida' => '4101',
+            'archivo' => $file
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.importados', 2);
+    }
+
     public function test_conciliar_factura_inexistente_falla()
     {
         Sanctum::actingAs($this->adminA);
