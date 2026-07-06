@@ -136,21 +136,19 @@ class BancoController
         try {
             $request->validate([
                 'cuenta_bancaria_id' => 'required|integer',
-                'cuenta_contrapartida' => 'required|string',
                 'archivo' => 'required|file|mimes:csv,txt,xlsx,xls'
             ]);
 
             $resultado = $this->service->procesarCartola(
-                $request->user()->empresa_activa_id, 
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
-                $request->cuenta_bancaria_id, 
-                $request->cuenta_contrapartida, 
+                $request->cuenta_bancaria_id,
                 $request->file('archivo')
             );
 
             return response()->json([
                 'success' => true,
-                'message' => "Proceso completado. Importados: {$resultado['importados']} | Ignorados (Duplicados): {$resultado['ignorados']}",
+                'message' => "Proceso completado. Importados: {$resultado['importados']} (quedan pendientes de conciliar) | Ignorados (Duplicados): {$resultado['ignorados']}",
                 'data' => $resultado
             ]);
         } catch (TesoreriaException $e) {

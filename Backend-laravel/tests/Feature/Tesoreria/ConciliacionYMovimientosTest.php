@@ -188,7 +188,6 @@ class ConciliacionYMovimientosTest extends TestCase
         Sanctum::actingAs($this->adminA);
         $response = $this->postJson('/api/banco/importar', [
             'cuenta_bancaria_id' => $this->cuentaA->id,
-            'cuenta_contrapartida' => '1111'
         ]);
         $this->assertTrue(in_array($response->getStatusCode(), [400, 422, 500]));
     }
@@ -200,7 +199,6 @@ class ConciliacionYMovimientosTest extends TestCase
         Sanctum::actingAs($this->adminA);
         $response = $this->postJson('/api/banco/importar', [
             'cuenta_bancaria_id' => $this->cuentaA->id,
-            'cuenta_contrapartida' => '1111',
             'archivo' => $file
         ]);
         $this->assertTrue(in_array($response->getStatusCode(), [400, 422, 500]));
@@ -213,7 +211,6 @@ class ConciliacionYMovimientosTest extends TestCase
         Sanctum::actingAs($this->adminA);
         $response = $this->postJson('/api/banco/importar', [
             'cuenta_bancaria_id' => $this->cuentaB->id,
-            'cuenta_contrapartida' => '1111',
             'archivo' => $file
         ]);
         $this->assertTrue(in_array($response->getStatusCode(), [400, 403, 404, 422, 500]));
@@ -242,10 +239,6 @@ class ConciliacionYMovimientosTest extends TestCase
     {
         Storage::fake('local');
 
-        $this->cuentaA->update(['cuenta_contable' => '1101']);
-        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1101', 'nombre' => 'Banco A', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
-        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '4101', 'nombre' => 'Ingresos Varios', 'tipo' => 'INGRESO', 'imputable' => true, 'activo' => true]);
-
         $csv = "Fecha,Descripcion,Monto\n04/05/2026,Deposito cliente,10000\n05/05/2026,Pago proveedor,-5000\n";
         $ruta = tempnam(sys_get_temp_dir(), 'cartola') . '.csv';
         file_put_contents($ruta, $csv);
@@ -254,21 +247,37 @@ class ConciliacionYMovimientosTest extends TestCase
         Sanctum::actingAs($this->adminA);
         $response = $this->postJson('/api/banco/importar', [
             'cuenta_bancaria_id' => $this->cuentaA->id,
-            'cuenta_contrapartida' => '4101',
             'archivo' => $file
         ]);
 
         $response->assertOk();
         $response->assertJsonPath('data.importados', 2);
+
+        // El import deja los movimientos PENDIENTE con la fecha real del archivo
+        // (no la de hoy) -- se contabilizan recien en Mesa de Conciliación.
+        $this->assertDatabaseHas('movimientos_bancarios', [
+            'empresa_id' => $this->empresaA->id,
+            'cuenta_bancaria_id' => $this->cuentaA->id,
+            'fecha' => '2026-05-04',
+            'descripcion' => 'Deposito cliente',
+            'abono' => 10000,
+            'cargo' => 0,
+            'estado' => 'PENDIENTE',
+        ]);
+        $this->assertDatabaseHas('movimientos_bancarios', [
+            'empresa_id' => $this->empresaA->id,
+            'fecha' => '2026-05-05',
+            'descripcion' => 'Pago proveedor',
+            'abono' => 0,
+            'cargo' => 5000,
+            'estado' => 'PENDIENTE',
+        ]);
+        $this->assertDatabaseMissing('asientos_contables', ['origen_modulo' => 'importacion_banco']);
     }
 
     public function test_importar_cartola_xlsx_procesa_movimientos()
     {
         Storage::fake('local');
-
-        $this->cuentaA->update(['cuenta_contable' => '1101']);
-        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1101', 'nombre' => 'Banco A', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
-        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '4101', 'nombre' => 'Ingresos Varios', 'tipo' => 'INGRESO', 'imputable' => true, 'activo' => true]);
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $hoja = $spreadsheet->getActiveSheet();
@@ -284,12 +293,41 @@ class ConciliacionYMovimientosTest extends TestCase
         Sanctum::actingAs($this->adminA);
         $response = $this->postJson('/api/banco/importar', [
             'cuenta_bancaria_id' => $this->cuentaA->id,
-            'cuenta_contrapartida' => '4101',
             'archivo' => $file
         ]);
 
         $response->assertOk();
         $response->assertJsonPath('data.importados', 2);
+    }
+
+    public function test_importar_cartola_no_colapsa_movimientos_identicos_por_nro_documento()
+    {
+        // Reproduce el caso real: dos transferencias distintas, mismo dia, misma
+        // glosa y mismo monto (ej. nomina con dos pagos de $50.000 al mismo
+        // destinatario). Sin el N° Doc. como clave de dedup, la segunda se
+        // marcaba como "duplicado" y se perdia.
+        Storage::fake('local');
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $hoja = $spreadsheet->getActiveSheet();
+        $hoja->fromArray([
+            ['Fecha', 'Descripcion', 'N Doc.', 'Cargos', 'Abonos'],
+            ['20-05-2026', 'TEF Nicolas Mathias', '5654121544', null, 50000],
+            ['20-05-2026', 'TEF Nicolas Mathias', '5654120597', null, 50000],
+        ]);
+        $ruta = tempnam(sys_get_temp_dir(), 'cartola') . '.xlsx';
+        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save($ruta);
+        $file = new UploadedFile($ruta, 'cartola.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        Sanctum::actingAs($this->adminA);
+        $response = $this->postJson('/api/banco/importar', [
+            'cuenta_bancaria_id' => $this->cuentaA->id,
+            'archivo' => $file
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.importados', 2);
+        $response->assertJsonPath('data.ignorados', 0);
     }
 
     public function test_importar_cartola_con_metadata_previa_y_columnas_cargo_abono()
@@ -299,10 +337,6 @@ class ConciliacionYMovimientosTest extends TestCase
         // real, y Cargos/Abonos en columnas separadas en vez de un monto unico
         // con signo. Antes de este fix, esto importaba 0 filas en silencio.
         Storage::fake('local');
-
-        $this->cuentaA->update(['cuenta_contable' => '1101']);
-        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1101', 'nombre' => 'Banco A', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
-        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '4101', 'nombre' => 'Ingresos Varios', 'tipo' => 'INGRESO', 'imputable' => true, 'activo' => true]);
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $hoja = $spreadsheet->getActiveSheet();
@@ -323,7 +357,6 @@ class ConciliacionYMovimientosTest extends TestCase
         Sanctum::actingAs($this->adminA);
         $response = $this->postJson('/api/banco/importar', [
             'cuenta_bancaria_id' => $this->cuentaA->id,
-            'cuenta_contrapartida' => '4101',
             'archivo' => $file
         ]);
 
