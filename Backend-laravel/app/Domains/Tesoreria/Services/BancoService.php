@@ -11,6 +11,7 @@ use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class BancoService
 {
@@ -198,16 +199,37 @@ class BancoService
                 $ignorados = 0;
                 $ultimaFila = $hoja->getHighestDataRow();
 
-                for ($numeroFila = 2; $numeroFila <= $ultimaFila; $numeroFila++) {
-                    $celdaFecha = $hoja->getCell('A' . $numeroFila);
-                    $celdaDescripcion = $hoja->getCell('B' . $numeroFila);
-                    $celdaMonto = $hoja->getCell('C' . $numeroFila);
+                // Cartolas reales (ej. Scotiabank) traen un bloque de metadata (Nombre
+                // Empresa, Número Línea, Saldo Disponible, etc.) ANTES del encabezado
+                // real de la tabla, y separan Cargos/Abonos en dos columnas en vez de
+                // un solo monto con signo -- asumir fila 1 = encabezado y columna C =
+                // monto (como antes) hacía que todo el archivo importara 0 filas.
+                $encabezado = $this->localizarEncabezadoCartola($hoja, $ultimaFila);
+
+                for ($numeroFila = $encabezado['fila'] + 1; $numeroFila <= $ultimaFila; $numeroFila++) {
+                    $celdaFecha = $hoja->getCell($encabezado['colFecha'] . $numeroFila);
+                    $celdaDescripcion = $hoja->getCell($encabezado['colDescripcion'] . $numeroFila);
 
                     $valorFecha = $celdaFecha->getCalculatedValue();
                     $descripcion = substr(trim((string) $celdaDescripcion->getCalculatedValue()), 0, 255);
-                    $monto = (float) $celdaMonto->getCalculatedValue();
 
                     if ($valorFecha === null && $descripcion === '') continue;
+
+                    if ($encabezado['colMonto'] !== null) {
+                        $monto = (float) $hoja->getCell($encabezado['colMonto'] . $numeroFila)->getCalculatedValue();
+                    } else {
+                        $montoCargo = $encabezado['colCargo'] !== null
+                            ? (float) $hoja->getCell($encabezado['colCargo'] . $numeroFila)->getCalculatedValue()
+                            : 0.0;
+                        $montoAbono = $encabezado['colAbono'] !== null
+                            ? (float) $hoja->getCell($encabezado['colAbono'] . $numeroFila)->getCalculatedValue()
+                            : 0.0;
+
+                        // Cargos/Abonos vienen en columnas separadas; se normaliza el
+                        // signo acá en vez de confiar en como cada banco los exporte
+                        // (algunos traen el Cargo ya negativo, otros en positivo).
+                        $monto = $montoCargo != 0 ? -abs($montoCargo) : ($montoAbono != 0 ? abs($montoAbono) : 0.0);
+                    }
 
                     // Excel/XLS guarda fechas como número serial; CSV las trae como texto.
                     $fecha = (is_numeric($valorFecha) && FechaExcel::isDateTime($celdaFecha))
@@ -261,13 +283,75 @@ class BancoService
                 ];
             });
         } catch (TesoreriaException $e) {
-            // Error de dominio ya claro; no se envuelve.
             throw $e;
         } catch (\Throwable $e) {
-            // El rollback ya ocurrió dentro de DB::transaction. Aquí solo llegan
-            // errores de procesamiento del archivo, que se reportan como tales.
             throw TesoreriaException::regla("El archivo contiene errores y la importación fue abortada. Error: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Encuentra la fila de encabezado real de la cartola y mapea sus columnas por
+     * nombre (no por posición fija) -- los bancos exportan con bloques de metadata
+     * antes de la tabla (Nombre Empresa, Saldo Disponible, etc.) y algunos separan
+     * Cargos/Abonos en dos columnas en vez de un solo monto con signo.
+     *
+     * @return array{fila:int, colFecha:string, colDescripcion:string, colMonto:?string, colCargo:?string, colAbono:?string}
+     */
+    private function localizarEncabezadoCartola(Worksheet $hoja, int $ultimaFila): array
+    {
+        $filasARevisar = min($ultimaFila, 30);
+
+        for ($fila = 1; $fila <= $filasARevisar; $fila++) {
+            $mapa = [];
+            foreach ($hoja->getRowIterator($fila, $fila) as $row) {
+                foreach ($row->getCellIterator('A', $hoja->getHighestColumn()) as $celda) {
+                    $texto = $this->normalizarEncabezado((string) $celda->getCalculatedValue());
+                    if ($texto !== '') {
+                        $mapa[$texto] = $celda->getColumn();
+                    }
+                }
+            }
+
+            $colFecha = $mapa['fecha'] ?? null;
+            $colDescripcion = $mapa['descripcion'] ?? $mapa['detalle'] ?? $mapa['glosa'] ?? null;
+
+            if ($colFecha === null || $colDescripcion === null) {
+                continue;
+            }
+
+            $colMonto = $mapa['monto'] ?? $mapa['importe'] ?? null;
+            $colCargo = $mapa['cargos'] ?? $mapa['cargo'] ?? $mapa['debitos'] ?? $mapa['debito'] ?? null;
+            $colAbono = $mapa['abonos'] ?? $mapa['abono'] ?? $mapa['creditos'] ?? $mapa['credito'] ?? null;
+
+            if ($colMonto === null && $colCargo === null && $colAbono === null) {
+                continue;
+            }
+
+            return [
+                'fila' => $fila,
+                'colFecha' => $colFecha,
+                'colDescripcion' => $colDescripcion,
+                'colMonto' => $colMonto,
+                'colCargo' => $colCargo,
+                'colAbono' => $colAbono,
+            ];
+        }
+
+        throw TesoreriaException::regla(
+            "No se pudo identificar la estructura de la cartola (se esperan columnas Fecha y Descripción, más Monto o Cargos/Abonos). Verifica que el archivo sea el reporte de movimientos del banco."
+        );
+    }
+
+    private function normalizarEncabezado(string $texto): string
+    {
+        $texto = mb_strtolower(trim($texto), 'UTF-8');
+        $texto = str_replace(
+            ['á', 'é', 'í', 'ó', 'ú', 'ñ', '.', '°', 'n°'],
+            ['a', 'e', 'i', 'o', 'u', 'n', '', '', 'n'],
+            $texto
+        );
+
+        return trim($texto);
     }
 
     public function obtenerCuentaBancaria(int $empresaId, int $id)
