@@ -110,6 +110,32 @@ class GenerarLreService
         return $envio->fresh();
     }
 
+    /**
+     * true si el nombre de AFP existe en el catalogo (o esta vacio/null, caso en que
+     * construirLinea() usa el default 'Capital' -- no es un dato corrupto).
+     */
+    public static function afpReconocida(?string $afpNombre): bool
+    {
+        if ($afpNombre === null || trim($afpNombre) === '') {
+            return true;
+        }
+
+        return array_key_exists($afpNombre, self::AFP_CODIGOS);
+    }
+
+    /**
+     * true si el nombre de ISAPRE existe en el catalogo. Solo aplica cuando
+     * tipo_salud=ISAPRE; FONASA siempre usa el codigo fijo '07' (no pasa por este catalogo).
+     */
+    public static function isapreReconocida(?string $isapreNombre): bool
+    {
+        if ($isapreNombre === null || trim($isapreNombre) === '') {
+            return false;
+        }
+
+        return array_key_exists($isapreNombre, self::ISAPRE_CODIGOS);
+    }
+
     private function construirLinea(Liquidacion $liq): LreLineaData
     {
         /** @var \App\Domains\Rrhh\Models\Empleado $empleado */
@@ -153,6 +179,11 @@ class GenerarLreService
         } else {
             $codigoSalud = '07';
         }
+
+        // '99' es un codigo real (IPS, ver AFP_CODIGOS) pero TAMBIEN el fallback cuando
+        // el nombre no matchea el catalogo -- ambiguo para detectar desde el archivo ya
+        // generado. ValidarLreService::validar() por eso vuelve a mirar el dato fuente
+        // (afp/isapre_nombre del empleado) en vez de tratar de inferirlo del texto.
 
         // AFC según tipo contrato
         $codigoAfc = $contrato->tipo === 'INDEFINIDO' ? '1' : '2';
