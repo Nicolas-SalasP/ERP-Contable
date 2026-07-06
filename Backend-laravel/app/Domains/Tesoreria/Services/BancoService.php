@@ -177,19 +177,20 @@ class BancoService
         ];
     }
 
-    public function procesarCartola(int $empresaId, int $usuarioId, int $cuentaBancariaId, string $cuentaContrapartida, $archivo): array
+    public function procesarCartola(int $empresaId, int $usuarioId, int $cuentaBancariaId, $archivo): array
     {
-        // Precondición FUERA de la transacción: valida pertenencia de la cuenta y
-        // que tenga cuenta contable configurada. Sus errores (no encontrada / sin
-        // configuración) deben propagarse tal cual, no envolverse como error de archivo.
-        $codigoCuentaBanco = $this->obtenerCuentaContableDeBanco($empresaId, $cuentaBancariaId);
+        // Precondición FUERA de la transacción: valida pertenencia de la cuenta.
+        // Ya no exige cuenta contable configurada acá -- el import solo deja los
+        // movimientos PENDIENTE, la contabilización (con su cuenta contrapartida
+        // elegida por movimiento) ocurre despues en Mesa de Conciliación.
+        $this->obtenerCuentaBancaria($empresaId, $cuentaBancariaId);
 
         try {
             // DB::transaction garantiza el rollback ante cualquier excepción (antes se
             // usaba beginTransaction()/commit() con un catch que no capturaba las
             // TesoreriaException por falta del import, dejando la transacción abierta).
             return DB::transaction(function () use (
-                $empresaId, $usuarioId, $cuentaBancariaId, $cuentaContrapartida, $codigoCuentaBanco, $archivo
+                $empresaId, $cuentaBancariaId, $archivo
             ): array {
                 // IOFactory detecta el formato real por contenido (CSV, XLS o XLSX),
                 // no por la extensión del archivo -> soporta la cartola tal cual la
@@ -238,42 +239,31 @@ class BancoService
 
                     if ($monto == 0) continue;
 
-                    $existeDuplicado = $this->asientoService->existeAsientoPorOrigen(
-                        $empresaId,
-                        'importacion_banco',
-                        $cuentaBancariaId,
-                        $fecha,
-                        $descripcion
-                    );
+                    $nroDocumento = $encabezado['colDocumento'] !== null
+                        ? trim((string) $hoja->getCell($encabezado['colDocumento'] . $numeroFila)->getCalculatedValue())
+                        : null;
+                    if ($nroDocumento === '') $nroDocumento = null;
 
-                    if ($existeDuplicado) {
+                    if ($this->existeMovimientoDuplicado($empresaId, $cuentaBancariaId, $fecha, $descripcion, $monto, $nroDocumento)) {
                         $ignorados++;
                         continue;
                     }
 
-                    $detalles = [];
-                    $montoAbsoluto = abs($monto);
-
-                    if ($monto > 0) {
-                        $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => $montoAbsoluto, 'haber' => 0];
-                        $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => 0, 'haber' => $montoAbsoluto];
-                    } else {
-                        $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => $montoAbsoluto, 'haber' => 0];
-                        $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $montoAbsoluto];
-                    }
-
-                    $cabeceraAsiento = [
+                    // Se deja PENDIENTE con la fecha real del movimiento (no la de hoy):
+                    // la contabilización recien ocurre en Mesa de Conciliación, y esa
+                    // fecha es la que debe quedar en el asiento cuando eso pase.
+                    DB::table('movimientos_bancarios')->insert([
                         'empresa_id' => $empresaId,
-                        'usuario_id' => $usuarioId,
+                        'cuenta_bancaria_id' => $cuentaBancariaId,
                         'fecha' => $fecha,
-                        'glosa' => $descripcion,
-                        'tipo_asiento' => 'traspaso',
-                        'origen_modulo' => 'importacion_banco',
-                        'origen_id' => $cuentaBancariaId,
-                        'estado' => 'MAYORIZADO'
-                    ];
-
-                    $this->asientoService->registrarAsiento($cabeceraAsiento, $detalles);
+                        'descripcion' => $descripcion,
+                        'nro_documento' => $nroDocumento,
+                        'cargo' => $monto < 0 ? abs($monto) : 0,
+                        'abono' => $monto > 0 ? abs($monto) : 0,
+                        'estado' => 'PENDIENTE',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
                     $importados++;
                 }
 
@@ -290,12 +280,43 @@ class BancoService
     }
 
     /**
+     * Un mismo N° de documento del banco identifica un movimiento de forma
+     * unica -- se usa como clave de dedup cuando el archivo lo trae, porque
+     * fecha+descripcion NO alcanza: es comun tener dos transacciones reales
+     * el mismo dia, con la misma glosa y el mismo monto (ej. dos TEF de
+     * $50.000 al mismo destinatario en fechas distintas de una nomina).
+     */
+    private function existeMovimientoDuplicado(
+        int $empresaId,
+        int $cuentaBancariaId,
+        string $fecha,
+        string $descripcion,
+        float $monto,
+        ?string $nroDocumento
+    ): bool {
+        $query = DB::table('movimientos_bancarios')
+            ->where('empresa_id', $empresaId)
+            ->where('cuenta_bancaria_id', $cuentaBancariaId);
+
+        if ($nroDocumento !== null) {
+            return (clone $query)->where('nro_documento', $nroDocumento)->exists();
+        }
+
+        return $query
+            ->where('fecha', $fecha)
+            ->where('descripcion', $descripcion)
+            ->where('cargo', $monto < 0 ? abs($monto) : 0)
+            ->where('abono', $monto > 0 ? abs($monto) : 0)
+            ->exists();
+    }
+
+    /**
      * Encuentra la fila de encabezado real de la cartola y mapea sus columnas por
      * nombre (no por posición fija) -- los bancos exportan con bloques de metadata
      * antes de la tabla (Nombre Empresa, Saldo Disponible, etc.) y algunos separan
      * Cargos/Abonos en dos columnas en vez de un solo monto con signo.
      *
-     * @return array{fila:int, colFecha:string, colDescripcion:string, colMonto:?string, colCargo:?string, colAbono:?string}
+     * @return array{fila:int, colFecha:string, colDescripcion:string, colMonto:?string, colCargo:?string, colAbono:?string, colDocumento:?string}
      */
     private function localizarEncabezadoCartola(Worksheet $hoja, int $ultimaFila): array
     {
@@ -322,6 +343,7 @@ class BancoService
             $colMonto = $mapa['monto'] ?? $mapa['importe'] ?? null;
             $colCargo = $mapa['cargos'] ?? $mapa['cargo'] ?? $mapa['debitos'] ?? $mapa['debito'] ?? null;
             $colAbono = $mapa['abonos'] ?? $mapa['abono'] ?? $mapa['creditos'] ?? $mapa['credito'] ?? null;
+            $colDocumento = $mapa['n doc'] ?? $mapa['nro documento'] ?? $mapa['numero documento'] ?? $mapa['nro doc'] ?? $mapa['documento'] ?? null;
 
             if ($colMonto === null && $colCargo === null && $colAbono === null) {
                 continue;
@@ -334,6 +356,7 @@ class BancoService
                 'colMonto' => $colMonto,
                 'colCargo' => $colCargo,
                 'colAbono' => $colAbono,
+                'colDocumento' => $colDocumento,
             ];
         }
 
