@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../Configuracion/api';
 import EstadoCarga from '../../Componentes/EstadoCarga';
+import ModalDocumentosFactura from '../../Componentes/ModalDocumentosFactura';
 import Swal from 'sweetalert2';
 import { formatearMoneda } from '../../Utilidades/formato';
 
@@ -81,33 +82,7 @@ const VisorCliente = () => {
     const abrirBuscador = () => { setTerminoBusqueda(''); setModalAbierto(true); };
     const seleccionarCliente = (clienteId) => { setModalAbierto(false); navigate(`/clientes/visor/${clienteId}`); };
 
-    const subirPdfFactura = async (facturaId, e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.type !== 'application/pdf') return Swal.fire({ icon: 'error', title: 'Formato inválido', text: 'Solo se permiten archivos PDF.' });
-
-        const formData = new FormData();
-        formData.append('pdf', file);
-
-        try {
-            Swal.fire({ title: 'Subiendo documento...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const res = await api.upload(`/facturas/${facturaId}/pdf`, formData);
-            if (res.success) {
-                Swal.fire({ icon: 'success', title: '¡Listo!', text: 'PDF adjuntado correctamente.', timer: 2000 });
-                cargarFicha(id);
-            }
-        } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'Error al subir el archivo.' });
-        }
-    };
-
-    const verPdfDocumento = async (item) => {
-        try {
-            await api.download(`/facturas/${item.id}/pdf`, `${item._documento}.pdf`);
-        } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Error', text: error?.message || 'No se pudo descargar el documento.' });
-        }
-    };
+    const [facturaDocumentos, setFacturaDocumentos] = useState(null);
 
     const clientesFiltrados = listaClientes.filter(c => {
         const b = terminoBusqueda.toLowerCase();
@@ -187,7 +162,7 @@ const VisorCliente = () => {
             _cargo: esNC ? 0 : parseFloat(f.monto_bruto || 0),
             _abono: esNC ? parseFloat(f.monto_bruto || 0) : 0,
             _estado: f.estado,
-            _archivo: f.archivo_pdf
+            _cantidadDocumentos: f.documentos_adjuntos_count || 0
         };
     }).sort((a, b) => b._fechaOrden - a._fechaOrden);
 
@@ -341,7 +316,7 @@ const VisorCliente = () => {
                                     <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-right">Cargos (Por Cobrar)</th>
                                     <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-right">Abonos (A Favor)</th>
                                     <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-center">Estado</th>
-                                    <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-center">Adjunto</th>
+                                    <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-center">Documentos</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -379,25 +354,13 @@ const VisorCliente = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-3 text-center">
-                                            {item._archivo ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => verPdfDocumento(item)}
-                                                    className="text-slate-500 hover:text-blue-600 font-bold text-xs transition-colors"
-                                                >
-                                                    Ver Doc
-                                                </button>
-                                            ) : (
-                                                <label className="text-blue-500 hover:text-blue-700 font-bold text-xs cursor-pointer transition-colors">
-                                                    Subir PDF
-                                                    <input
-                                                        type="file"
-                                                        accept="application/pdf"
-                                                        className="hidden"
-                                                        onChange={(e) => subirPdfFactura(item.id, e)}
-                                                    />
-                                                </label>
-                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => setFacturaDocumentos(item)}
+                                                className="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors"
+                                            >
+                                                Documentos{item._cantidadDocumentos > 0 ? ` (${item._cantidadDocumentos})` : ''}
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -406,6 +369,15 @@ const VisorCliente = () => {
                     )}
                 </div>
             </div>
+
+            {facturaDocumentos && (
+                <ModalDocumentosFactura
+                    facturaId={facturaDocumentos.id}
+                    etiqueta={facturaDocumentos._documento}
+                    onCerrar={() => setFacturaDocumentos(null)}
+                    onCambio={() => cargarFicha(id)}
+                />
+            )}
         </div>
     );
 };

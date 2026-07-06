@@ -20,6 +20,7 @@ class ClienteService
 
         $facturas = Factura::where('empresa_id', $empresaId)
             ->where('cliente_id', $id)
+            ->withCount('documentosAdjuntos')
             ->orderBy('fecha_emision', 'desc')
             ->get();
 

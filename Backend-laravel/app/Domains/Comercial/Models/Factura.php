@@ -112,6 +112,11 @@ class Factura extends Model
         return $this->hasMany(self::class, 'factura_referencia_id');
     }
 
+    public function documentosAdjuntos(): HasMany
+    {
+        return $this->hasMany(DocumentoAdjunto::class);
+    }
+
     public static function generarCodigoUnico(): int
     {
         for ($intento = 0; $intento < 5; $intento++) {
