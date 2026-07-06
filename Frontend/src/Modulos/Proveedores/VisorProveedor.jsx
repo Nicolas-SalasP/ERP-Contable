@@ -102,7 +102,9 @@ const VisorProveedor = () => {
 
         try {
             Swal.fire({ title: 'Subiendo documento...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const res = await api.post(`/facturas/${facturaId}/pdf`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            // No fijar Content-Type a mano para FormData: sin boundary explicito el
+            // body llega vacio al servidor (ver fix de CartolaBancaria.jsx).
+            const res = await api.upload(`/facturas/${facturaId}/pdf`, formData);
             if (res.success) {
                 Swal.fire({ icon: 'success', title: '¡Listo!', text: 'PDF adjuntado correctamente.', timer: 2000 });
                 cargarFicha(id);
@@ -122,7 +124,7 @@ const VisorProveedor = () => {
 
         try {
             Swal.fire({ title: 'Subiendo comprobante...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const res = await api.post(`/proveedores/anticipos/${anticipoId}/pdf`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            const res = await api.upload(`/proveedores/anticipos/${anticipoId}/pdf`, formData);
             if (res.success) {
                 Swal.fire({ icon: 'success', title: '¡Listo!', text: 'Documento de anticipo adjuntado correctamente.', timer: 2000 });
                 cargarFicha(id);
