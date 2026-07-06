@@ -79,6 +79,7 @@ class ProveedorService
 
         $facturas = Factura::where('empresa_id', $empresaId)
             ->where('proveedor_id', $id)
+            ->withCount('documentosAdjuntos')
             ->orderBy('fecha_emision', 'desc')
             ->get();
 

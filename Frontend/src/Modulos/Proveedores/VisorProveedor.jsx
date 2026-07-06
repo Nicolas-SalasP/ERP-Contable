@@ -4,6 +4,7 @@ import { api } from '../../Configuracion/api';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { TablaSkeleton } from '../../Componentes/Skeleton';
 import { EstadoVacio } from '../../Componentes/EstadoVacio';
+import ModalDocumentosFactura from '../../Componentes/ModalDocumentosFactura';
 import Swal from 'sweetalert2';
 import { formatearMoneda } from '../../Utilidades/formato';
 
@@ -92,28 +93,6 @@ const VisorProveedor = () => {
     const abrirBuscador = () => { setTerminoBusqueda(''); setModalAbierto(true); };
     const seleccionarProveedor = (proveedorId) => { setModalAbierto(false); navigate(`/proveedores/visor/${proveedorId}`); };
 
-    const subirPdfFactura = async (facturaId, e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.type !== 'application/pdf') return Swal.fire({ icon: 'error', title: 'Formato inválido', text: 'Solo se permiten archivos PDF.' });
-
-        const formData = new FormData();
-        formData.append('pdf', file);
-
-        try {
-            Swal.fire({ title: 'Subiendo documento...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            // No fijar Content-Type a mano para FormData: sin boundary explicito el
-            // body llega vacio al servidor (ver fix de CartolaBancaria.jsx).
-            const res = await api.upload(`/facturas/${facturaId}/pdf`, formData);
-            if (res.success) {
-                Swal.fire({ icon: 'success', title: '¡Listo!', text: 'PDF adjuntado correctamente.', timer: 2000 });
-                cargarFicha(id);
-            }
-        } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.mensaje || 'Error al subir el archivo.' });
-        }
-    };
-
     const subirPdfAnticipo = async (anticipoId, e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -134,16 +113,11 @@ const VisorProveedor = () => {
         }
     };
 
-    const verPdfDocumento = async (item) => {
-        if (item._tipo !== 'FACTURA' && item._tipo !== 'NOTA_CREDITO') {
-            return Swal.fire({ icon: 'info', title: 'No disponible', text: 'La visualización de comprobantes de anticipo aún no está habilitada.' });
-        }
-        try {
-            await api.download(`/facturas/${item.id}/pdf`, `Factura-${item.numero_factura || item.id}.pdf`);
-        } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Error', text: error?.message || 'No se pudo descargar el documento.' });
-        }
+    const verComprobanteAnticipo = () => {
+        Swal.fire({ icon: 'info', title: 'No disponible', text: 'La visualización de comprobantes de anticipo aún no está habilitada.' });
     };
+
+    const [facturaDocumentos, setFacturaDocumentos] = useState(null);
 
     const guardarAnticipo = async () => {
         if (!formAnticipo.monto) return Swal.fire('Faltan Datos', 'El monto es obligatorio.', 'warning');
@@ -339,7 +313,7 @@ const VisorProveedor = () => {
                 _cargo: isNotaCredito ? 0 : parseFloat(f.monto_bruto || 0),
                 _abono: isNotaCredito ? parseFloat(f.monto_bruto || 0) : 0,
                 _estado: f.estado,
-                _archivo: f.archivo_pdf
+                _cantidadDocumentos: f.documentos_adjuntos_count || 0
             };
         }),
         ...anticipos.map(a => ({
@@ -704,7 +678,7 @@ const VisorProveedor = () => {
                                     <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-right">Cargos (Deuda)</th>
                                     <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-right">Abonos (A Favor)</th>
                                     <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-center">Estado</th>
-                                    <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-center">Adjunto</th>
+                                    <th className="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 text-xs text-center">Documentos</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -742,10 +716,18 @@ const VisorProveedor = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-3 text-center">
-                                            {item._archivo ? (
+                                            {(item._tipo === 'FACTURA' || item._tipo === 'NOTA_CREDITO') ? (
                                                 <button
                                                     type="button"
-                                                    onClick={() => verPdfDocumento(item)}
+                                                    onClick={() => setFacturaDocumentos(item)}
+                                                    className="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors"
+                                                >
+                                                    Documentos{item._cantidadDocumentos > 0 ? ` (${item._cantidadDocumentos})` : ''}
+                                                </button>
+                                            ) : item._archivo ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={verComprobanteAnticipo}
                                                     className="text-slate-500 hover:text-blue-600 font-bold text-xs transition-colors"
                                                 >
                                                     Ver Doc
@@ -757,7 +739,7 @@ const VisorProveedor = () => {
                                                         type="file"
                                                         accept="application/pdf"
                                                         className="hidden"
-                                                        onChange={(e) => (item._tipo === 'FACTURA' || item._tipo === 'NOTA_CREDITO') ? subirPdfFactura(item.id, e) : subirPdfAnticipo(item.id, e)}
+                                                        onChange={(e) => subirPdfAnticipo(item.id, e)}
                                                     />
                                                 </label>
                                             )}
@@ -768,6 +750,15 @@ const VisorProveedor = () => {
                         </table>
                     )}
                 </div>
+
+                {facturaDocumentos && (
+                    <ModalDocumentosFactura
+                        facturaId={facturaDocumentos.id}
+                        etiqueta={facturaDocumentos._documento}
+                        onCerrar={() => setFacturaDocumentos(null)}
+                        onCambio={() => cargarFicha(id)}
+                    />
+                )}
             </div>
         </div>
     );

@@ -32,6 +32,24 @@ class ClienteController
         ]);
     }
 
+    /** Ficha 360: cliente + historial de facturas de venta (deuda por cobrar). */
+    public function ficha(Request $request, $id)
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => $this->service->obtenerFichaCliente($request->user()->empresa_activa_id, (int) $id)
+            ]);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => MensajeErrorGenerico::desde($e)
+            ], 404);
+        }
+    }
+
     /** Muestra el detalle de un cliente por id (scope empresa). */
     public function show(Request $request, $id)
     {

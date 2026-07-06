@@ -14,6 +14,7 @@ use App\Domains\Core\Controllers\PrivacidadController;
 use App\Domains\Comercial\Controllers\ClienteController;
 use App\Domains\Comercial\Controllers\ProveedorController;
 use App\Domains\Comercial\Controllers\FacturaController;
+use App\Domains\Comercial\Controllers\DocumentoAdjuntoController;
 use App\Domains\Comercial\Controllers\CotizacionController;
 use App\Domains\Comercial\Controllers\AnticipoProveedorController;
 use App\Domains\Comercial\Controllers\OrdenCompraController;
@@ -202,6 +203,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // ---------------------------------------------------------------------
     Route::get('/clientes', [ClienteController::class, 'index'])->middleware('permiso:clientes.ver,ventas.ver');
     Route::post('/clientes', [ClienteController::class, 'store'])->middleware('permiso:clientes.crear');
+    Route::get('/clientes/ficha/{id}', [ClienteController::class, 'ficha'])->middleware('permiso:clientes.ver,ventas.ver');
     Route::get('/clientes/{id}', [ClienteController::class, 'show'])->middleware('permiso:clientes.ver,ventas.ver');
     Route::put('/clientes/{id}', [ClienteController::class, 'update'])->middleware('permiso:clientes.crear');
     Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->middleware('permiso:clientes.crear');
@@ -251,8 +253,14 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/facturas/{id}/nota-credito', [FacturaController::class, 'notaCredito'])->middleware('permiso:ventas.crear,compras.crear');
     Route::post('/facturas/{id}/nota-debito', [FacturaController::class, 'notaDebito'])->middleware('permiso:ventas.crear,compras.crear');
     Route::post('/facturas/{id}/vincular-proyecto', [FacturaController::class, 'vincularProyecto'])->middleware('permiso:activos.crear,compras.crear');
-    Route::post('/facturas/{id}/pdf', [FacturaController::class, 'subirPdf'])->middleware('permiso:compras.crear');
-    Route::get('/facturas/{id}/pdf', [FacturaController::class, 'descargarPdf'])->middleware('permiso:compras.ver');
+    Route::post('/facturas/{id}/pdf', [FacturaController::class, 'subirPdf'])->middleware('permiso:compras.crear,ventas.crear');
+    Route::get('/facturas/{id}/pdf', [FacturaController::class, 'descargarPdf'])->middleware('permiso:compras.ver,ventas.ver');
+
+    // Documentos adjuntos (varios por factura: guías de despacho, comprobantes, etc.)
+    Route::get('/facturas/{facturaId}/adjuntos', [DocumentoAdjuntoController::class, 'index'])->middleware('permiso:compras.ver,ventas.ver');
+    Route::post('/facturas/{facturaId}/adjuntos', [DocumentoAdjuntoController::class, 'store'])->middleware('permiso:compras.crear,ventas.crear');
+    Route::get('/facturas/{facturaId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'show'])->middleware('permiso:compras.ver,ventas.ver');
+    Route::delete('/facturas/{facturaId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'destroy'])->middleware('permiso:compras.crear,ventas.crear');
 
     // ---------------------------------------------------------------------
     // Comercial - Cotizaciones

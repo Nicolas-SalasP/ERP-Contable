@@ -552,6 +552,28 @@ const downloadBlob = async (endpoint, filename, options = {}) => {
     }
 };
 
+/**
+ * Trae un endpoint autenticado como blob y devuelve una Object URL para
+ * previsualizar inline (ej. <img>), sin disparar la descarga como downloadBlob.
+ * El caller es responsable de hacer URL.revokeObjectURL cuando ya no la use.
+ */
+const obtenerBlobUrl = async (endpoint, options = {}) => {
+    await ensureTokenFresh();
+
+    const url = `${API_BASE_URL}${endpoint}`;
+    const headers = { ...getAuthHeaders(), ...(options.headers || {}) };
+
+    const response = await fetch(url, { method: 'GET', headers, signal: options.signal });
+
+    if (!response.ok) {
+        const payload = await parseBody(response);
+        throw buildError(response.status, payload, response.statusText);
+    }
+
+    const blob = await response.blob();
+    return window.URL.createObjectURL(blob);
+};
+
 export const api = {
     defaults: {
         baseURL: API_BASE_URL,
@@ -609,6 +631,7 @@ export const api = {
     },
 
     download: downloadBlob,
+    blobUrl: obtenerBlobUrl,
 
     auth: {
         async login(credentials) {
