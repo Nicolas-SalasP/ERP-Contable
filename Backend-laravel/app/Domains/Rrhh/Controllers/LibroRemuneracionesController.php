@@ -37,7 +37,7 @@ class LibroRemuneracionesController extends Controller
         /** @var User $usuario */
         $usuario = $request->user();
 
-        $datos = $this->servicio->generar($usuario->empresa_id, $anio, $mes);
+        $datos = $this->servicio->generar($usuario->empresa_activa_id, $anio, $mes);
 
         return response()->json($datos);
     }
@@ -57,7 +57,7 @@ class LibroRemuneracionesController extends Controller
         /** @var User $usuario */
         $usuario = $request->user();
 
-        $datos   = $this->servicio->generar($usuario->empresa_id, $anio, $mes);
+        $datos   = $this->servicio->generar($usuario->empresa_activa_id, $anio, $mes);
         $formato = strtolower((string) $request->query('formato', 'excel'));
 
         if ($formato === 'pdf') {

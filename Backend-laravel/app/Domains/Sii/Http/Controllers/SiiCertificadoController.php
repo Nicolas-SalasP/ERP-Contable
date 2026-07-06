@@ -19,7 +19,7 @@ class SiiCertificadoController extends Controller
 
     public function show(Request $request): JsonResponse
     {
-        $cert = $this->certificadoActivoDe($request->user()->empresa_id);
+        $cert = $this->certificadoActivoDe($request->user()->empresa_activa_id);
 
         if ($cert === null) {
             return response()->json([
@@ -45,7 +45,7 @@ class SiiCertificadoController extends Controller
 
         try {
             $cert = $this->certificados->cargar(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $contenido,
                 $password
             );
@@ -63,7 +63,7 @@ class SiiCertificadoController extends Controller
     {
         $cert = SiiCertificadoEmpresa::query()
             ->where('id', $id)
-            ->where('empresa_id', $request->user()->empresa_id)
+            ->where('empresa_id', $request->user()->empresa_activa_id)
             ->firstOrFail();
 
         $this->certificados->revocar($cert);
@@ -73,7 +73,7 @@ class SiiCertificadoController extends Controller
 
     public function verificar(Request $request): JsonResponse
     {
-        $cert = $this->certificadoActivoDe($request->user()->empresa_id);
+        $cert = $this->certificadoActivoDe($request->user()->empresa_activa_id);
 
         if ($cert === null) {
             return response()->json([

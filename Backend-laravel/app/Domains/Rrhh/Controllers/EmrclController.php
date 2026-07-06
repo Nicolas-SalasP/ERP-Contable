@@ -36,7 +36,7 @@ class EmrclController extends Controller
             /** @var User $usuario */
             $usuario = $request->user();
             $reporte = $this->servicio->generar(
-                $usuario->empresa_id,
+                $usuario->empresa_activa_id,
                 $anio,
                 $mes,
             );

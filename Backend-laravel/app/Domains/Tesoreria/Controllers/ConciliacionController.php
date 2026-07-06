@@ -27,7 +27,7 @@ class ConciliacionController
                 'cuenta_bancaria_id' => 'required|integer',
                 'fecha_pago' => 'required|date',
             ]);
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            $datos['empresa_id'] = $request->user()->empresa_activa_id;
             $factura = $this->service->conciliarPagoFacturaCompra($datos);
 
             return response()->json(['success' => true, 'message' => 'Factura pagada exitosamente.', 'data' => $factura], 200);
@@ -46,7 +46,7 @@ class ConciliacionController
         try {
             return response()->json([
                 'success' => true,
-                'data' => $this->service->obtenerMovimientosPendientes($request->user()->empresa_id, $idCuenta)
+                'data' => $this->service->obtenerMovimientosPendientes($request->user()->empresa_activa_id, $idCuenta)
             ]);
         } catch (TesoreriaException $e) {
             throw $e;
@@ -61,7 +61,7 @@ class ConciliacionController
         try {
             return response()->json([
                 'success' => true,
-                'data' => $this->service->obtenerAnticiposPendientes($request->user()->empresa_id)
+                'data' => $this->service->obtenerAnticiposPendientes($request->user()->empresa_activa_id)
             ]);
         } catch (TesoreriaException $e) {
             throw $e;
@@ -81,7 +81,7 @@ class ConciliacionController
                 'empleado_nombre' => 'nullable|string'
             ]);
 
-            $asiento = $this->service->conciliarDirecto($request->user()->empresa_id, $datos, $request->user()->id);
+            $asiento = $this->service->conciliarDirecto($request->user()->empresa_activa_id, $datos, $request->user()->id);
 
             return response()->json(['success' => true, 'mensaje' => 'Movimiento conciliado.', 'data' => $asiento]);
         } catch (ValidationException $e) {
@@ -101,7 +101,7 @@ class ConciliacionController
                 'movimiento_id' => 'required|integer',
                 'anticipo_id' => 'required|integer'
             ]);
-            $this->service->conciliarAnticipo($request->user()->empresa_id, $datos, $request->user()->id);
+            $this->service->conciliarAnticipo($request->user()->empresa_activa_id, $datos, $request->user()->id);
 
             return response()->json(['success' => true, 'mensaje' => 'Anticipo conciliado correctamente.']);
         } catch (ValidationException $e) {
@@ -117,7 +117,7 @@ class ConciliacionController
     public function sugerencias(Request $request, $id)
     {
         try {
-            $sugerencias = $this->service->obtenerSugerenciasConciliacion($request->user()->empresa_id, $id);
+            $sugerencias = $this->service->obtenerSugerenciasConciliacion($request->user()->empresa_activa_id, $id);
             return response()->json(['success' => true, 'data' => $sugerencias]);
         } catch (TesoreriaException $e) {
             throw $e;
@@ -136,7 +136,7 @@ class ConciliacionController
             ]);
 
             $asiento = $this->service->procesarPagoFacturas(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
                 $datos['movimiento_id'],
                 $datos['facturas_ids'] ?? [],

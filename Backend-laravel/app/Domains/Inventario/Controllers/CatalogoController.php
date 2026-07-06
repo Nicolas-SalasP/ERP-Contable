@@ -41,7 +41,7 @@ class CatalogoController
 
             return response()->json([
                 'success' => true,
-                'data' => $this->service->catalogos($request->user()->empresa_id),
+                'data' => $this->service->catalogos($request->user()->empresa_activa_id),
             ]);
         } catch (InventarioException $e) {
             throw $e;

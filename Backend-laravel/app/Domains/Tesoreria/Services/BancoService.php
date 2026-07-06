@@ -9,6 +9,8 @@ use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
 
 class BancoService
 {
@@ -188,69 +190,69 @@ class BancoService
             return DB::transaction(function () use (
                 $empresaId, $usuarioId, $cuentaBancariaId, $cuentaContrapartida, $codigoCuentaBanco, $archivo
             ): array {
-                $gestor = fopen($archivo->getRealPath(), "r");
+                // IOFactory detecta el formato real por contenido (CSV, XLS o XLSX),
+                // no por la extensión del archivo -> soporta la cartola tal cual la
+                // exporta el banco sin pedirle al usuario que la convierta a CSV.
+                $hoja = IOFactory::load($archivo->getRealPath())->getActiveSheet();
                 $importados = 0;
                 $ignorados = 0;
+                $ultimaFila = $hoja->getHighestDataRow();
 
-                try {
-                    $esCabecera = true;
+                for ($numeroFila = 2; $numeroFila <= $ultimaFila; $numeroFila++) {
+                    $celdaFecha = $hoja->getCell('A' . $numeroFila);
+                    $celdaDescripcion = $hoja->getCell('B' . $numeroFila);
+                    $celdaMonto = $hoja->getCell('C' . $numeroFila);
 
-                    while (($fila = fgetcsv($gestor, 1000, ",")) !== FALSE) {
-                        if ($esCabecera) {
-                            $esCabecera = false;
-                            continue;
-                        }
+                    $valorFecha = $celdaFecha->getCalculatedValue();
+                    $descripcion = substr(trim((string) $celdaDescripcion->getCalculatedValue()), 0, 255);
+                    $monto = (float) $celdaMonto->getCalculatedValue();
 
-                        if (count($fila) < 3) continue;
+                    if ($valorFecha === null && $descripcion === '') continue;
 
-                        $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $fila[0])));
-                        $descripcion = substr(trim($fila[1]), 0, 255);
-                        $monto = (float) $fila[2];
+                    // Excel/XLS guarda fechas como número serial; CSV las trae como texto.
+                    $fecha = (is_numeric($valorFecha) && FechaExcel::isDateTime($celdaFecha))
+                        ? FechaExcel::excelToDateTimeObject($valorFecha)->format('Y-m-d')
+                        : date('Y-m-d', strtotime(str_replace('/', '-', (string) $valorFecha)));
 
-                        if ($monto == 0) continue;
+                    if ($monto == 0) continue;
 
-                        $existeDuplicado = $this->asientoService->existeAsientoPorOrigen(
-                            $empresaId,
-                            'importacion_banco',
-                            $cuentaBancariaId,
-                            $fecha,
-                            $descripcion
-                        );
+                    $existeDuplicado = $this->asientoService->existeAsientoPorOrigen(
+                        $empresaId,
+                        'importacion_banco',
+                        $cuentaBancariaId,
+                        $fecha,
+                        $descripcion
+                    );
 
-                        if ($existeDuplicado) {
-                            $ignorados++;
-                            continue;
-                        }
-
-                        $detalles = [];
-                        $montoAbsoluto = abs($monto);
-
-                        if ($monto > 0) {
-                            $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => $montoAbsoluto, 'haber' => 0];
-                            $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => 0, 'haber' => $montoAbsoluto];
-                        } else {
-                            $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => $montoAbsoluto, 'haber' => 0];
-                            $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $montoAbsoluto];
-                        }
-
-                        $cabeceraAsiento = [
-                            'empresa_id' => $empresaId,
-                            'usuario_id' => $usuarioId,
-                            'fecha' => $fecha,
-                            'glosa' => $descripcion,
-                            'tipo_asiento' => 'traspaso',
-                            'origen_modulo' => 'importacion_banco',
-                            'origen_id' => $cuentaBancariaId,
-                            'estado' => 'MAYORIZADO'
-                        ];
-
-                        $this->asientoService->registrarAsiento($cabeceraAsiento, $detalles);
-                        $importados++;
+                    if ($existeDuplicado) {
+                        $ignorados++;
+                        continue;
                     }
-                } finally {
-                    if (is_resource($gestor)) {
-                        fclose($gestor);
+
+                    $detalles = [];
+                    $montoAbsoluto = abs($monto);
+
+                    if ($monto > 0) {
+                        $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => $montoAbsoluto, 'haber' => 0];
+                        $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => 0, 'haber' => $montoAbsoluto];
+                    } else {
+                        $detalles[] = ['cuenta_contable' => $cuentaContrapartida, 'debe' => $montoAbsoluto, 'haber' => 0];
+                        $detalles[] = ['cuenta_contable' => $codigoCuentaBanco, 'debe' => 0, 'haber' => $montoAbsoluto];
                     }
+
+                    $cabeceraAsiento = [
+                        'empresa_id' => $empresaId,
+                        'usuario_id' => $usuarioId,
+                        'fecha' => $fecha,
+                        'glosa' => $descripcion,
+                        'tipo_asiento' => 'traspaso',
+                        'origen_modulo' => 'importacion_banco',
+                        'origen_id' => $cuentaBancariaId,
+                        'estado' => 'MAYORIZADO'
+                    ];
+
+                    $this->asientoService->registrarAsiento($cabeceraAsiento, $detalles);
+                    $importados++;
                 }
 
                 return [

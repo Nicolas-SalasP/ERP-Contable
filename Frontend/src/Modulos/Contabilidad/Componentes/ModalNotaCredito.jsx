@@ -38,6 +38,8 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
         e.preventDefault();
         if (!form.numeroNc.trim()) return Swal.fire('Campo requerido', 'Ingrese el número de NC.', 'warning');
         if (!form.razon.trim() || form.razon.trim().length < 5) return Swal.fire('Campo requerido', 'La razón debe tener al menos 5 caracteres.', 'warning');
+        if ((parseFloat(form.montoNeto) || 0) <= 0) return Swal.fire('Monto inválido', 'El monto neto debe ser mayor a 0.', 'warning');
+        if ((parseFloat(form.montoBruto) || 0) <= 0) return Swal.fire('Monto inválido', 'El total de la NC debe ser mayor a 0.', 'warning');
 
         setLoading(true);
         try {
@@ -111,11 +113,12 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
 
                     <div className="grid grid-cols-3 gap-3">
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Monto Neto</label>
+                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Monto Neto <span className="text-red-500">*</span></label>
                             <input
                                 type="number"
-                                min="0"
+                                min="1"
                                 step="1"
+                                required
                                 value={form.montoNeto}
                                 onChange={set('montoNeto')}
                                 onBlur={recalcBruto}

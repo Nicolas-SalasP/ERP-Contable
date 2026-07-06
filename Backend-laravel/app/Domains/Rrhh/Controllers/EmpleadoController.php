@@ -17,14 +17,14 @@ class EmpleadoController extends Controller
     public function index(Request $request): JsonResponse
     {
         $filtros = $request->only(['estado', 'buscar', 'por_pagina']);
-        $data = $this->service->listar($request->user()->empresa_id, $filtros);
+        $data = $this->service->listar($request->user()->empresa_activa_id, $filtros);
 
         return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $empleado = $this->service->obtener($request->user()->empresa_id, $id);
+        $empleado = $this->service->obtener($request->user()->empresa_activa_id, $id);
         return response()->json(['success' => true, 'data' => $empleado]);
     }
 
@@ -56,7 +56,7 @@ class EmpleadoController extends Controller
             'observaciones' => 'nullable|string',
         ]);
 
-        $empleado = $this->service->crear($request->user()->empresa_id, $datos);
+        $empleado = $this->service->crear($request->user()->empresa_activa_id, $datos);
 
         return response()->json([
             'success' => true,
@@ -90,7 +90,7 @@ class EmpleadoController extends Controller
             'observaciones' => 'nullable|string',
         ]);
 
-        $empleado = $this->service->actualizar($request->user()->empresa_id, $id, $datos);
+        $empleado = $this->service->actualizar($request->user()->empresa_activa_id, $id, $datos);
 
         return response()->json([
             'success' => true,
@@ -101,7 +101,7 @@ class EmpleadoController extends Controller
 
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $this->service->eliminar($request->user()->empresa_id, $id);
+        $this->service->eliminar($request->user()->empresa_activa_id, $id);
 
         return response()->json([
             'success' => true,

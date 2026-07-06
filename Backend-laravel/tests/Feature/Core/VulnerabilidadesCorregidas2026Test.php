@@ -183,4 +183,41 @@ class VulnerabilidadesCorregidas2026Test extends TestCase
         // El usuario no debe haber quedado vinculado a ninguna empresa.
         $this->assertNull($nuevoUsuario->fresh()->empresa_id);
     }
+
+    // -------------------------------------------------------------------------
+    // Fix 6: onboarding exitoso deja empresa_activa_id seteado, no solo empresa_id
+    // -------------------------------------------------------------------------
+
+    public function test_onboarding_exitoso_setea_empresa_activa_id(): void
+    {
+        // Usuario nuevo sin empresa (ya existe, viene de SSO/provisioning), igual
+        // que en el flujo real: EmpresaController::onboarding hace un UPDATE, no
+        // un INSERT, asi que el hook User::booted() (que solo corre en "creating")
+        // no alcanza a copiar empresa_id -> empresa_activa_id automaticamente.
+        $nuevoUsuario = User::create([
+            'nombre'               => 'Nuevo Usuario',
+            'email'                => 'onboarding@test.cl',
+            'password'             => bcrypt('password123'),
+            'empresa_id'           => null,
+            'rol_id'               => $this->rolAdministrador->id,
+            'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
+        ]);
+
+        Sanctum::actingAs($nuevoUsuario);
+
+        $numero = 15111111;
+        $rutValido = $numero . '-' . \App\Domains\Sii\Support\RutHelper::calcularDv($numero);
+
+        $response = $this->postJson('/api/empresas/onboarding', [
+            'empresa_rut'          => $rutValido,
+            'empresa_razon_social' => 'Empresa Recien Creada',
+        ]);
+
+        $response->assertStatus(200);
+
+        $usuarioFresco = $nuevoUsuario->fresh();
+        $this->assertNotNull($usuarioFresco->empresa_id);
+        $this->assertNotNull($usuarioFresco->empresa_activa_id);
+        $this->assertSame($usuarioFresco->empresa_id, $usuarioFresco->empresa_activa_id);
+    }
 }

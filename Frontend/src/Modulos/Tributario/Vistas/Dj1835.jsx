@@ -57,7 +57,10 @@ const Dj1835 = () => {
             setEnvios(items);
             setHistCargado(true);
             if (!envioSeleccionado && items.length > 0) setSeleccionado(items[0]);
-        } catch (_) {}
+        } catch (err) {
+            const data = err?.response?.data;
+            mostrarMensaje('error', data?.mensaje ?? data?.message ?? 'Error al cargar el historial de DJ 1835.');
+        }
     }, [puedeVer, envioSeleccionado]);
 
     React.useEffect(() => { cargarHistorial(); }, []);
@@ -112,7 +115,9 @@ const Dj1835 = () => {
             a.click();
             URL.revokeObjectURL(url);
             await cargarHistorial();
-        } catch (_) {}
+        } catch (err) {
+            mostrarMensaje('error', 'Error al descargar el archivo de la DJ 1835.');
+        }
         finally { setDescargandoId(null); }
     };
 

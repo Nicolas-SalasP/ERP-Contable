@@ -20,7 +20,7 @@ class PeriodoContableController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $this->service->listarCerrados($request->user()->empresa_id, $anio),
+            'data' => $this->service->listarCerrados($request->user()->empresa_activa_id, $anio),
         ]);
     }
 
@@ -33,7 +33,7 @@ class PeriodoContableController extends Controller
         ]);
 
         $periodo = $this->service->cerrar(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $datos['anio'],
             $datos['mes'],
             $request->user(),
@@ -56,7 +56,7 @@ class PeriodoContableController extends Controller
         ]);
 
         $periodo = $this->service->reabrir(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $datos['anio'],
             $datos['mes'],
             $request->user(),

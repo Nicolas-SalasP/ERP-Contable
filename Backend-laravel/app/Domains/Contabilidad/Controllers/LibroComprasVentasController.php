@@ -22,7 +22,7 @@ class LibroComprasVentasController extends Controller
     public function ventas(Request $request, int $mes, int $anio): JsonResponse
     {
         $this->validarPeriodo($mes, $anio);
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
         $datos = $this->service->generarVentas($empresaId, $mes, $anio);
 
         return response()->json($datos);
@@ -31,7 +31,7 @@ class LibroComprasVentasController extends Controller
     public function compras(Request $request, int $mes, int $anio): JsonResponse
     {
         $this->validarPeriodo($mes, $anio);
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
         $datos = $this->service->generarCompras($empresaId, $mes, $anio);
 
         return response()->json($datos);
@@ -40,7 +40,7 @@ class LibroComprasVentasController extends Controller
     public function descargarVentas(Request $request, int $mes, int $anio): Response|StreamedResponse
     {
         $this->validarPeriodo($mes, $anio);
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
         $datos     = $this->service->generarVentas($empresaId, $mes, $anio);
         $formato   = (string) $request->query('formato', 'csv');
 
@@ -54,7 +54,7 @@ class LibroComprasVentasController extends Controller
     public function descargarCompras(Request $request, int $mes, int $anio): Response|StreamedResponse
     {
         $this->validarPeriodo($mes, $anio);
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
         $datos     = $this->service->generarCompras($empresaId, $mes, $anio);
         $formato   = (string) $request->query('formato', 'csv');
 

@@ -238,6 +238,60 @@ class ConciliacionYMovimientosTest extends TestCase
             ->assertJsonValidationErrors('movimiento_id');
     }
 
+    public function test_importar_cartola_csv_procesa_movimientos()
+    {
+        Storage::fake('local');
+
+        $this->cuentaA->update(['cuenta_contable' => '1101']);
+        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1101', 'nombre' => 'Banco A', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '4101', 'nombre' => 'Ingresos Varios', 'tipo' => 'INGRESO', 'imputable' => true, 'activo' => true]);
+
+        $csv = "Fecha,Descripcion,Monto\n04/05/2026,Deposito cliente,10000\n05/05/2026,Pago proveedor,-5000\n";
+        $ruta = tempnam(sys_get_temp_dir(), 'cartola') . '.csv';
+        file_put_contents($ruta, $csv);
+        $file = new UploadedFile($ruta, 'cartola.csv', 'text/csv', null, true);
+
+        Sanctum::actingAs($this->adminA);
+        $response = $this->postJson('/api/banco/importar', [
+            'cuenta_bancaria_id' => $this->cuentaA->id,
+            'cuenta_contrapartida' => '4101',
+            'archivo' => $file
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.importados', 2);
+    }
+
+    public function test_importar_cartola_xlsx_procesa_movimientos()
+    {
+        Storage::fake('local');
+
+        $this->cuentaA->update(['cuenta_contable' => '1101']);
+        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1101', 'nombre' => 'Banco A', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+        \App\Domains\Contabilidad\Models\PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '4101', 'nombre' => 'Ingresos Varios', 'tipo' => 'INGRESO', 'imputable' => true, 'activo' => true]);
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $hoja = $spreadsheet->getActiveSheet();
+        $hoja->fromArray([
+            ['Fecha', 'Descripcion', 'Monto'],
+            ['04/05/2026', 'Deposito cliente', 10000],
+            ['05/05/2026', 'Pago proveedor', -5000],
+        ]);
+        $ruta = tempnam(sys_get_temp_dir(), 'cartola') . '.xlsx';
+        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save($ruta);
+        $file = new UploadedFile($ruta, 'cartola.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        Sanctum::actingAs($this->adminA);
+        $response = $this->postJson('/api/banco/importar', [
+            'cuenta_bancaria_id' => $this->cuentaA->id,
+            'cuenta_contrapartida' => '4101',
+            'archivo' => $file
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.importados', 2);
+    }
+
     public function test_conciliar_factura_inexistente_falla()
     {
         Sanctum::actingAs($this->adminA);

@@ -90,7 +90,19 @@ class CafService
      */
     public function reservarSiguienteFolio(int $empresaId, int $tipoDte, ?int $usuarioId = null): SiiCafFolioUso
     {
-        return DB::transaction(function () use ($empresaId, $tipoDte, $usuarioId) {
+        // Paso separado y confirmado ANTES de la transaccion de reserva: antes la
+        // query de reserva solo miraba estado=ACTIVO y folios disponibles, sin
+        // chequear fecha_vencimiento (SiiCaf::estaVencido()) -- un CAF vencido
+        // seguia reservando folios indefinidamente hasta que alguien lo revocara a
+        // mano, generando DTEs invalidos ante el SII (el CAF solo autoriza folios
+        // hasta su fecha de vencimiento). Si esta transicion se hiciera dentro de
+        // la misma DB::transaction() de la reserva, un rollback por "sin folios
+        // disponibles" tambien deshace el cambio de estado a VENCIDO -- por eso va
+        // separado, para que quede persistido incluso si despues no hay otro CAF
+        // vigente y se lanza la excepcion.
+        $huboVencido = $this->marcarCafsVencidos($empresaId, $tipoDte);
+
+        return DB::transaction(function () use ($empresaId, $tipoDte, $usuarioId, $huboVencido) {
             $caf = SiiCaf::query()
                 ->where('empresa_id', $empresaId)
                 ->where('tipo_dte', $tipoDte)
@@ -101,7 +113,9 @@ class CafService
                 ->first();
 
             if ($caf === null) {
-                throw SinFoliosDisponiblesException::paraTipo($tipoDte, $empresaId);
+                throw $huboVencido
+                    ? SinFoliosDisponiblesException::vencido($tipoDte, $empresaId)
+                    : SinFoliosDisponiblesException::paraTipo($tipoDte, $empresaId);
             }
 
             $folio = $caf->folio_actual;
@@ -122,6 +136,24 @@ class CafService
 
             return $folioUso;
         });
+    }
+
+    /**
+     * Transiciona a VENCIDO cualquier CAF ACTIVO cuya fecha_vencimiento ya paso,
+     * para la empresa+tipo dado. Devuelve true si transiciono al menos uno
+     * (usado solo para dar un mensaje de error mas claro al caller).
+     */
+    private function marcarCafsVencidos(int $empresaId, int $tipoDte): bool
+    {
+        $afectados = SiiCaf::query()
+            ->where('empresa_id', $empresaId)
+            ->where('tipo_dte', $tipoDte)
+            ->where('estado', SiiCaf::ESTADO_ACTIVO)
+            ->whereNotNull('fecha_vencimiento')
+            ->where('fecha_vencimiento', '<', now()->toDateString())
+            ->update(['estado' => SiiCaf::ESTADO_VENCIDO]);
+
+        return $afectados > 0;
     }
 
     public function marcarFolioUsado(int $folioUsoId, int $dteEmitidoId): void

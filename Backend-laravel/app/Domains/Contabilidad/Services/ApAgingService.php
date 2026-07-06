@@ -4,6 +4,7 @@ namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Servicio de Cuentas por Pagar por Antigüedad (AP Aging).
@@ -15,6 +16,11 @@ use Illuminate\Support\Carbon;
  */
 class ApAgingService
 {
+    // Mismo TTL que DashboardResumenService (que calcula este mismo aging
+    // internamente): sin este cache, /ap-aging repite el mismo trabajo sin
+    // aprovechar nada de lo ya cacheado por el dashboard.
+    private const TTL_SEGUNDOS = 90;
+
     /**
      * Genera el reporte de Cuentas por Pagar por Antigüedad.
      *
@@ -26,6 +32,24 @@ class ApAgingService
      * @return array{resumen: array<string, float>, detalle: list<array<string, mixed>>}
      */
     public function obtenerReporte(): array
+    {
+        $empresaId = auth()->check() ? auth()->user()->empresa_activa_id : null;
+
+        if ($empresaId === null) {
+            return $this->calcular();
+        }
+
+        return Cache::remember(
+            "ap_aging:empresa_{$empresaId}",
+            self::TTL_SEGUNDOS,
+            fn () => $this->calcular()
+        );
+    }
+
+    /**
+     * @return array{resumen: array<string, float>, detalle: list<array<string, mixed>>}
+     */
+    private function calcular(): array
     {
         $hoy = Carbon::today();
 

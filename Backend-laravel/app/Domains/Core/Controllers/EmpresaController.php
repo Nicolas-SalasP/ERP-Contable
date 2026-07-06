@@ -25,7 +25,7 @@ class EmpresaController extends Controller
 
     public function perfil(Request $request)
     {
-        $empresa = Empresa::with(['centrosCosto', 'cuentasBancarias'])->find($request->user()->empresa_id);
+        $empresa = Empresa::with(['centrosCosto', 'cuentasBancarias'])->find($request->user()->empresa_activa_id);
 
         if (!$empresa) {
             return response()->json(['success' => false, 'message' => 'Empresa no encontrada'], 404);
@@ -60,10 +60,10 @@ class EmpresaController extends Controller
                 'ppm_pct' => 'nullable|numeric|min:0|max:10',
             ]);
 
-            $empresa = $this->empresaService->actualizarDatos($request->user()->empresa_id, $datos);
+            $empresa = $this->empresaService->actualizarDatos($request->user()->empresa_activa_id, $datos);
 
             if ($request->hasFile('logo')) {
-                $this->empresaService->actualizarLogo($request->user()->empresa_id, $request->file('logo'));
+                $this->empresaService->actualizarLogo($request->user()->empresa_activa_id, $request->file('logo'));
             }
 
             return response()->json([
@@ -88,7 +88,7 @@ class EmpresaController extends Controller
         try {
             $request->validate(['logo' => 'required|image|mimes:jpeg,png,jpg|max:2048']);
 
-            $path = $this->empresaService->actualizarLogo($request->user()->empresa_id, $request->file('logo'));
+            $path = $this->empresaService->actualizarLogo($request->user()->empresa_activa_id, $request->file('logo'));
 
             return response()->json(['success' => true, 'logo_url' => $path]);
 
@@ -116,7 +116,7 @@ class EmpresaController extends Controller
                 'email_notificacion' => 'nullable|email|max:100'
             ]);
 
-            $cuenta = $this->empresaService->agregarBanco($request->user()->empresa_id, $datos);
+            $cuenta = $this->empresaService->agregarBanco($request->user()->empresa_activa_id, $datos);
             return response()->json(['success' => true, 'data' => $cuenta], 201);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
@@ -129,7 +129,7 @@ class EmpresaController extends Controller
     public function eliminarBanco(Request $request, $id)
     {
         try {
-            $this->empresaService->eliminarBanco($request->user()->empresa_id, $id);
+            $this->empresaService->eliminarBanco($request->user()->empresa_activa_id, $id);
             return response()->json(['success' => true]);
         } catch (Exception $e) {
             Log::error('EmpresaController: ' . $e->getMessage());
@@ -147,7 +147,7 @@ class EmpresaController extends Controller
                 'cuenta_contable' => 'nullable|string|max:20',
             ]);
 
-            $cuenta = $this->empresaService->actualizarBanco($request->user()->empresa_id, $id, $datos);
+            $cuenta = $this->empresaService->actualizarBanco($request->user()->empresa_activa_id, $id, $datos);
             return response()->json(['success' => true, 'data' => $cuenta]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
@@ -159,7 +159,7 @@ class EmpresaController extends Controller
 
     public function listarCentros(Request $request)
     {
-        $centros = \App\Domains\Contabilidad\Models\CentroCosto::where('empresa_id', $request->user()->empresa_id)
+        $centros = \App\Domains\Contabilidad\Models\CentroCosto::where('empresa_id', $request->user()->empresa_activa_id)
             ->where('activo', true)
             ->get();
         $centrosFormateados = $centros->map(function ($c) {
@@ -180,7 +180,7 @@ class EmpresaController extends Controller
                 'nombre' => 'required|string|max:100'
             ]);
 
-            $centro = $this->empresaService->agregarCentroCosto($request->user()->empresa_id, $datos);
+            $centro = $this->empresaService->agregarCentroCosto($request->user()->empresa_activa_id, $datos);
             return response()->json(['success' => true, 'data' => $centro]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
@@ -192,7 +192,7 @@ class EmpresaController extends Controller
     public function eliminarCentro(Request $request, $id)
     {
         try {
-            $this->empresaService->eliminarCentroCosto($request->user()->empresa_id, $id);
+            $this->empresaService->eliminarCentroCosto($request->user()->empresa_activa_id, $id);
             return response()->json(['success' => true]);
         } catch (Exception $e) {
             Log::error('EmpresaController: ' . $e->getMessage());
@@ -209,7 +209,7 @@ class EmpresaController extends Controller
                 'activo' => 'sometimes|boolean',
             ]);
 
-            $centro = $this->empresaService->actualizarCentroCosto($request->user()->empresa_id, $id, $datos);
+            $centro = $this->empresaService->actualizarCentroCosto($request->user()->empresa_activa_id, $id, $datos);
             return response()->json(['success' => true, 'data' => $centro]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
@@ -291,7 +291,13 @@ class EmpresaController extends Controller
                 'regimen_tributario' => $request->regimen_tributario ?? '14_D3',
             ]);
 
+            // User::booted() solo copia empresa_id -> empresa_activa_id en el evento
+            // "creating" (usuario nuevo). Este usuario ya existe (vino de SSO/provisioning
+            // sin empresa), así que hay que setear ambos explícitamente: si solo se
+            // asigna empresa_id, EmpresaScope (que filtra por empresa_activa_id) deja al
+            // usuario recién onboardeado sin ver ningún dato de la empresa que acaba de crear.
             $user->empresa_id = $empresa->id;
+            $user->empresa_activa_id = $empresa->id;
             $user->save();
 
             $user->currentAccessToken()->delete();

@@ -22,7 +22,7 @@ class SiiCafController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
         $tipoDte   = $request->query('tipo_dte');
 
         $query = SiiCaf::query()->porEmpresa($empresaId)->orderBy('id', 'desc');
@@ -36,7 +36,7 @@ class SiiCafController extends Controller
 
     public function saldos(Request $request): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
 
         $tipos = SiiCaf::query()
             ->where('empresa_id', $empresaId)
@@ -58,7 +58,7 @@ class SiiCafController extends Controller
 
     public function store(SubirCafRequest $request): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
         $contenido = (string) file_get_contents($request->file('archivo')->getRealPath());
 
         try {
@@ -75,7 +75,7 @@ class SiiCafController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
 
         // findOrFail dentro de scope porEmpresa = 404 si pertenece a otra empresa (IDOR-safe).
         $caf = SiiCaf::query()->porEmpresa($empresaId)->findOrFail($id);
@@ -85,7 +85,7 @@ class SiiCafController extends Controller
 
     public function destroy(int $id, RevocarCafRequest $request): Response|JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
 
         $caf = SiiCaf::query()->porEmpresa($empresaId)->findOrFail($id);
 

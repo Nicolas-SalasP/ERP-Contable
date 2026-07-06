@@ -18,7 +18,7 @@ class SoporteController extends Controller
     {
         /** @var \App\Domains\Core\Models\User $authUser */
         $authUser  = $request->user();
-        $empresaId = (int) $authUser->empresa_id;
+        $empresaId = (int) $authUser->empresa_activa_id;
         $resultado = $this->soporteCliente->listar($empresaId, $request->only(['status', 'category', 'page']));
 
         if ($resultado === null) {
@@ -32,7 +32,7 @@ class SoporteController extends Controller
     {
         /** @var \App\Domains\Core\Models\User $usuario */
         $usuario   = $request->user();
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
 
         $validated = $request->validate([
             'subject'  => 'required|string|max:255',
@@ -67,7 +67,7 @@ class SoporteController extends Controller
     {
         /** @var \App\Domains\Core\Models\User $authUser */
         $authUser  = $request->user();
-        $empresaId = (int) $authUser->empresa_id;
+        $empresaId = (int) $authUser->empresa_activa_id;
         $resultado = $this->soporteCliente->ver($empresaId, $id);
 
         if ($resultado === null) {
@@ -87,7 +87,7 @@ class SoporteController extends Controller
         ]);
 
         $resultado = $this->soporteCliente->responder(
-            (int) $usuario->empresa_id,
+            (int) $usuario->empresa_activa_id,
             $id,
             $validated['message'],
             $usuario->email,

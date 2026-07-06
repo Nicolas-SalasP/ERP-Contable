@@ -185,4 +185,63 @@ class SoporteControllerTest extends TestCase
             'message' => 'No deberia poder crear tickets.',
         ])->assertStatus(401);
     }
+
+    public function test_reply_con_mensaje_valido(): void
+    {
+        Http::fake([
+            'https://web.test/api/internal/erp/tickets/501/reply' => Http::response([
+                'id' => 501,
+                'status' => 'en_proceso',
+            ], 201),
+        ]);
+
+        Sanctum::actingAs($this->usuario);
+
+        $response = $this->postJson('/api/soporte/tickets/501/reply', [
+            'message' => 'Ya revisamos el problema, adjuntamos captura.',
+        ]);
+
+        $response->assertStatus(201)->assertJson(['id' => 501]);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://web.test/api/internal/erp/tickets/501/reply'
+                && $request['empresa_id'] === $this->empresa->id
+                && $request['message'] === 'Ya revisamos el problema, adjuntamos captura.'
+                && $request->hasHeader('X-Signature');
+        });
+    }
+
+    public function test_reply_rechaza_mensaje_vacio(): void
+    {
+        Http::fake();
+
+        Sanctum::actingAs($this->usuario);
+
+        $response = $this->postJson('/api/soporte/tickets/501/reply', []);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['message']);
+        Http::assertNothingSent();
+    }
+
+    public function test_reply_maneja_fallo_del_servicio_externo(): void
+    {
+        Http::fake([
+            'https://web.test/api/internal/erp/tickets/501/reply' => Http::response(['message' => 'Error interno'], 500),
+        ]);
+
+        Sanctum::actingAs($this->usuario);
+
+        $response = $this->postJson('/api/soporte/tickets/501/reply', [
+            'message' => 'Respuesta que fallará.',
+        ]);
+
+        $response->assertStatus(503);
+    }
+
+    public function test_reply_requiere_autenticacion(): void
+    {
+        $this->postJson('/api/soporte/tickets/501/reply', [
+            'message' => 'Sin sesion',
+        ])->assertStatus(401);
+    }
 }

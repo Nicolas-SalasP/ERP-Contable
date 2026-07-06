@@ -21,7 +21,7 @@ class PlanCuentaController
     {
         return response()->json([
             'success' => true,
-            'data' => $this->service->listarCuentas($request->user()->empresa_id)
+            'data' => $this->service->listarCuentas($request->user()->empresa_activa_id)
         ]);
     }
 
@@ -42,7 +42,7 @@ class PlanCuentaController
                 throw ValidationException::withMessages(['imputable' => 'Una cuenta de nivel 1 no puede ser imputable.']); // TODO 7 resuelto
             }
 
-            $datos['empresa_id'] = $request->user()->empresa_id;
+            $datos['empresa_id'] = $request->user()->empresa_activa_id;
             $cuenta = $this->service->registrarCuenta($datos);
 
             return response()->json([
@@ -81,7 +81,7 @@ class PlanCuentaController
                 throw ValidationException::withMessages(['imputable' => 'Una cuenta de nivel 1 no puede ser imputable.']);
             }
 
-            $cuenta = $this->service->actualizarCuenta($request->user()->empresa_id, $id, $datos);
+            $cuenta = $this->service->actualizarCuenta($request->user()->empresa_activa_id, $id, $datos);
 
             return response()->json([
                 'success' => true,
@@ -108,7 +108,7 @@ class PlanCuentaController
         try {
             return response()->json([
                 'success' => true,
-                'data' => $this->service->listarCuentasImputables($request->user()->empresa_id)
+                'data' => $this->service->listarCuentasImputables($request->user()->empresa_activa_id)
             ]);
         } catch (Exception $e) {
             return response()->json([
@@ -121,7 +121,7 @@ class PlanCuentaController
     public function destroy(Request $request, $id)
     {
         try {
-            $this->service->eliminarCuenta($request->user()->empresa_id, $id);
+            $this->service->eliminarCuenta($request->user()->empresa_activa_id, $id);
             return response()->json([
                 'success' => true,
                 'message' => 'Cuenta eliminada correctamente'

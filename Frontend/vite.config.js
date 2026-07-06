@@ -9,6 +9,15 @@ export default defineConfig({
       // 'prompt' evita recargas silenciosas del SW que descartarian formularios activos.
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      workbox: {
+        // Sin esto, NavigationRoute de Workbox intercepta TODA navegacion
+        // (default allowlist: [/./], sin denylist) -- incluye abrir un PDF
+        // o un manual HTML en pestaña nueva (target="_blank" es una
+        // navegacion de documento, no un fetch). El SW le servia index.html
+        // en vez del archivo real, la SPA no matcheaba esa ruta y terminaba
+        // en login. Excluye /manuales/ (PDFs + HTML) del fallback.
+        navigateFallbackDenylist: [/^\/manuales\//],
+      },
       manifest: {
         name: 'Sistema de Gestión Contable',
         short_name: 'ContaSys', 

@@ -59,7 +59,10 @@ const Dj1926 = () => {
             if (!envioSeleccionado && items.length > 0) {
                 setSeleccionado(items[0]);
             }
-        } catch (_) {}
+        } catch (err) {
+            const data = err?.response?.data;
+            mostrarMensaje('error', data?.mensaje ?? data?.message ?? 'Error al cargar el historial de DJ 1926.');
+        }
     }, [puedeVer, envioSeleccionado]);
 
     React.useEffect(() => {
@@ -117,7 +120,9 @@ const Dj1926 = () => {
             a.click();
             URL.revokeObjectURL(url);
             await cargarHistorial();
-        } catch (_) {}
+        } catch (err) {
+            mostrarMensaje('error', 'Error al descargar el archivo de la DJ 1926.');
+        }
         finally {
             setDescargandoId(null);
         }

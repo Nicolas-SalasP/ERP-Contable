@@ -52,7 +52,14 @@ class AnulacionService
 
         if ($tipoStr === 'ASIENTO' || $tipoStr === 'COMPROBANTE') {
             return DB::transaction(function () use ($empresaId, $id, $motivo, $usuarioId, $fechaAnulacion) {
-                $asientoOriginal = AsientoContable::with('detalles')->where('empresa_id', $empresaId)->find($id);
+                // lockForUpdate() para que dos anulaciones concurrentes del mismo
+                // asiento (doble clic/doble pestaña) no pasen ambas el guard de estado
+                // antes de que la primera confirme el UPDATE a ANULADO -- sin esto se
+                // podian generar dos asientos de reverso duplicados.
+                $asientoOriginal = AsientoContable::with('detalles')
+                    ->where('empresa_id', $empresaId)
+                    ->lockForUpdate()
+                    ->find($id);
 
                 if (!$asientoOriginal)
                     throw new Exception("Asiento no encontrado.");
@@ -64,13 +71,19 @@ class AnulacionService
 
                 $tempNum = 'T' . time() . rand(10, 99);
 
+                // El asiento de reverso queda MAYORIZADO (no ANULADO): antes quedaba
+                // ANULADO, lo que lo excluía de ReporteContableService::aplicarFiltroEstado
+                // -- la reversa quedaba invisible en Libro Diario/Mayor bajo el filtro
+                // estándar, a diferencia del mismo mecanismo en AsientoContableService::
+                // procesarReversa (que sí usa MAYORIZADO, el estado estándar de todo
+                // asiento activo en el resto del sistema).
                 $asientoReverso = AsientoContable::create([
                     'empresa_id' => $empresaId,
                     'usuario_id' => $usuarioId,
                     'fecha' => $fechaAnulacion,
                     'glosa' => "REVERSO N° {$asientoOriginal->numero_comprobante} | Motivo: {$motivo}",
                     'tipo_asiento' => $asientoOriginal->tipo_asiento,
-                    'estado' => 'ANULADO',
+                    'estado' => 'MAYORIZADO',
                     'numero_comprobante' => $tempNum,
                     'origen_modulo' => $asientoOriginal->origen_modulo,
                     'origen_id' => $asientoOriginal->origen_id,

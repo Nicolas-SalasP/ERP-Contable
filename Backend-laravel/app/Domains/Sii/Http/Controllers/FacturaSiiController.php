@@ -68,7 +68,7 @@ class FacturaSiiController
      */
     public function index(Request $request): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
         $perPage   = (int) $request->integer('por_pagina', 25);
         if ($perPage < 1 || $perPage > 100) {
             $perPage = 25;
@@ -99,7 +99,7 @@ class FacturaSiiController
      */
     public function estado(Request $request, int $facturaId): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
 
         $factura = Factura::query()
             ->where('empresa_id', $empresaId)
@@ -127,7 +127,7 @@ class FacturaSiiController
         int $facturaId,
         ReintentarEmisionFacturaService $service
     ): JsonResponse {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
         $factura   = Factura::query()
             ->where('empresa_id', $empresaId)
             ->findOrFail($facturaId);
@@ -170,7 +170,7 @@ class FacturaSiiController
      */
     public function mostrar(Request $request, int $facturaId): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
 
         $factura = Factura::query()
             ->where('empresa_id', $empresaId)

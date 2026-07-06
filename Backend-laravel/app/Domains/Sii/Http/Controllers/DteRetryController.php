@@ -43,7 +43,7 @@ class DteRetryController
      */
     public function reintentar(ReintentarRequest $request, int $siiDteEmitido): JsonResponse
     {
-        $empresaId = (int) $request->user()->empresa_id;
+        $empresaId = (int) $request->user()->empresa_activa_id;
 
         /** @var SiiDteEmitido $dte */
         $dte = SiiDteEmitido::query()

@@ -5,6 +5,7 @@ namespace App\Domains\Comercial\Services\Honorarios;
 use App\Domains\Comercial\Exceptions\ComercialException;
 use App\Domains\Comercial\Models\HonorarioRecibido;
 use App\Domains\Comercial\Models\TasaRetencionHonorarios;
+use App\Domains\Sii\Support\RutHelper;
 
 class RegistrarHonorarioService
 {
@@ -13,7 +14,7 @@ class RegistrarHonorarioService
         $anio = (int) date('Y', strtotime($datos['fecha']));
         $tasa = TasaRetencionHonorarios::porAnio($anio);
 
-        if (! $this->rutValido($datos['rut_prestador'])) {
+        if (! RutHelper::validar($datos['rut_prestador'])) {
             throw ComercialException::regla("RUT del prestador inválido: {$datos['rut_prestador']}");
         }
 
@@ -33,34 +34,5 @@ class RegistrarHonorarioService
             'monto_retencion'    => $retencion,
             'monto_liquido'      => $liquido,
         ]);
-    }
-
-    private function rutValido(string $rut): bool
-    {
-        $rut = trim($rut);
-        if (! preg_match('/^\d{7,8}-[\dKk]$/', $rut)) {
-            return false;
-        }
-        [$numero, $dv] = explode('-', $rut);
-
-        return strtoupper($dv) === strtoupper($this->calcularDv((int) $numero));
-    }
-
-    private function calcularDv(int $numero): string
-    {
-        $suma   = 0;
-        $factor = 2;
-        while ($numero > 0) {
-            $suma  += ($numero % 10) * $factor;
-            $numero = intdiv($numero, 10);
-            $factor = $factor === 7 ? 2 : $factor + 1;
-        }
-        $resto = 11 - ($suma % 11);
-
-        return match ($resto) {
-            11      => '0',
-            10      => 'K',
-            default => (string) $resto,
-        };
     }
 }

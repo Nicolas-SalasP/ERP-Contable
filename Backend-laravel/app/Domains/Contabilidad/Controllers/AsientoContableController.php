@@ -22,7 +22,7 @@ class AsientoContableController
 
     public function index(Request $request)
     {
-        return $this->service->obtenerAsientosPaginados($request->user()->empresa_id);
+        return $this->service->obtenerAsientosPaginados($request->user()->empresa_activa_id);
     }
 
     public function store(Request $request)
@@ -57,7 +57,7 @@ class AsientoContableController
             }
 
             $cabecera = [
-                'empresa_id' => $request->user()->empresa_id,
+                'empresa_id' => $request->user()->empresa_activa_id,
                 'usuario_id' => $request->user()->id,
                 'fecha' => $datosValidados['fecha'],
                 'glosa' => $datosValidados['glosa'],
@@ -117,7 +117,7 @@ class AsientoContableController
             }
 
             $cabecera = [
-                'empresa_id' => $request->user()->empresa_id,
+                'empresa_id' => $request->user()->empresa_activa_id,
                 'usuario_id' => $request->user()->id,
                 'fecha' => $datos['fecha'],
                 'glosa' => $datos['glosa'],
@@ -174,7 +174,7 @@ class AsientoContableController
             /** @var \App\Domains\Core\Models\User $usuario */
             $usuario = $request->user();
 
-            $asiento = $this->service->obtenerAsientoPorId($usuario->empresa_id, (int) $id);
+            $asiento = $this->service->obtenerAsientoPorId($usuario->empresa_activa_id, (int) $id);
 
             $detalles = $asiento->detalles->map(function ($d) {
                 return [
@@ -213,7 +213,7 @@ class AsientoContableController
             ]);
 
             $nuevoAsiento = $this->service->reversarAsientoPorId(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $request->user()->id,
                 (int) $id,
                 $datos['fecha_reversa'],

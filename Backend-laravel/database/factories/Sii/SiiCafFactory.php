@@ -92,6 +92,11 @@ class SiiCafFactory extends Factory
         return $this->state(fn () => ['estado' => SiiCaf::ESTADO_REVOCADO]);
     }
 
+    public function vencido(): static
+    {
+        return $this->state(fn () => ['fecha_vencimiento' => now()->subDay()->toDateString()]);
+    }
+
     private function crearEmpresaStub(string $rut): Empresa
     {
         return Empresa::create([

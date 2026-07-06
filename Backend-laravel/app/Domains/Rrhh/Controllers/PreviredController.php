@@ -31,7 +31,7 @@ class PreviredController extends Controller
         }
 
         $contenido = $this->service->generarArchivo(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $anio,
             $mes
         );
@@ -60,7 +60,7 @@ class PreviredController extends Controller
         }
 
         $contenido = $this->service->generarArchivo(
-            $request->user()->empresa_id,
+            $request->user()->empresa_activa_id,
             $anio,
             $mes
         );

@@ -26,7 +26,7 @@ class UsuarioController
     public function index(Request $request)
     {
         try {
-            $usuarios = $this->service->listarUsuarios($request->user()->empresa_id);
+            $usuarios = $this->service->listarUsuarios($request->user()->empresa_activa_id);
             return response()->json(['success' => true, 'data' => $usuarios]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al cargar usuarios'], 500);
@@ -36,7 +36,7 @@ class UsuarioController
     public function roles(Request $request)
     {
         try {
-            $roles = $this->service->listarRoles($request->user()->empresa_id);
+            $roles = $this->service->listarRoles($request->user()->empresa_activa_id);
             return response()->json(['success' => true, 'data' => $roles]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al cargar roles'], 500);
@@ -61,7 +61,7 @@ class UsuarioController
             ]);
 
             $this->service->invitarUsuario(
-                $request->user()->empresa_id,
+                $request->user()->empresa_activa_id,
                 $datos['email'],
                 $datos['rol_id']
             );
@@ -86,7 +86,7 @@ class UsuarioController
             ]);
 
             $miRol = $request->user()->load('rol')->rol;
-            $empresaId = $request->user()->empresa_id;
+            $empresaId = $request->user()->empresa_activa_id;
 
             // Scope multitenant: el usuario y el rol destino deben pertenecer a
             // la empresa del solicitante (el rol puede ser de sistema). Evita IDOR.
@@ -101,7 +101,7 @@ class UsuarioController
                 return response()->json(['success' => false, 'message' => 'Solo puedes asignar roles de menor jerarquía al tuyo.'], 403);
             }
 
-            $this->service->actualizarRol($request->user()->empresa_id, $id, $datos['rol_id']);
+            $this->service->actualizarRol($request->user()->empresa_activa_id, $id, $datos['rol_id']);
 
             // Invalidar cache de permisos del usuario afectado para que el nuevo rol
             // surta efecto inmediatamente en el siguiente request.
@@ -131,7 +131,7 @@ class UsuarioController
             $miRol = $request->user()->load('rol')->rol;
 
             // Scope multitenant: solo usuarios de la propia empresa. Evita IDOR.
-            $usuarioDestino = User::with('rol')->where('empresa_id', $request->user()->empresa_id)->findOrFail($id);
+            $usuarioDestino = User::with('rol')->where('empresa_id', $request->user()->empresa_activa_id)->findOrFail($id);
 
             if ($request->user()->id === $usuarioDestino->id) {
                 return response()->json(['success' => false, 'message' => 'No puedes eliminarte a ti mismo del sistema.'], 403);
@@ -141,7 +141,7 @@ class UsuarioController
                 return response()->json(['success' => false, 'message' => 'No puedes desvincular a este usuario.'], 403);
             }
 
-            $this->service->desvincularUsuario($request->user()->empresa_id, $id);
+            $this->service->desvincularUsuario($request->user()->empresa_activa_id, $id);
             return response()->json(['success' => true, 'message' => 'Usuario desvinculado.']);
             
         } catch (ModelNotFoundException $e) {
@@ -165,7 +165,7 @@ class UsuarioController
                 return $errorAutorizacion;
             }
 
-            $rol = $this->service->guardarRol($request->user()->empresa_id, $datos);
+            $rol = $this->service->guardarRol($request->user()->empresa_activa_id, $datos);
             return response()->json(['success' => true, 'data' => $rol]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Errores de validación', 'errors' => $e->errors()], 422);
@@ -190,7 +190,7 @@ class UsuarioController
 
             // El servicio solo permite editar roles propios de la empresa
             // (nunca de sistema ni de otra empresa).
-            $rol = $this->service->actualizarRolPermisos($request->user()->empresa_id, $id, $datos);
+            $rol = $this->service->actualizarRolPermisos($request->user()->empresa_activa_id, $id, $datos);
             return response()->json(['success' => true, 'data' => $rol]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Errores de validación', 'errors' => $e->errors()], 422);

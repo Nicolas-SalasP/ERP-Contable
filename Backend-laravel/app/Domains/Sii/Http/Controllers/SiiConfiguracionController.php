@@ -24,14 +24,14 @@ class SiiConfiguracionController extends Controller
 
     public function show(Request $request): JsonResponse
     {
-        $empresa = Empresa::findOrFail($request->user()->empresa_id);
+        $empresa = Empresa::findOrFail($request->user()->empresa_activa_id);
 
         return response()->json($empresa->only(self::CAMPOS_SII));
     }
 
     public function update(ActualizarConfiguracionSiiRequest $request): JsonResponse
     {
-        $empresa = Empresa::findOrFail($request->user()->empresa_id);
+        $empresa = Empresa::findOrFail($request->user()->empresa_activa_id);
 
         // validated() solo contiene las claves declaradas en rules(): empresa_id
         // inyectado en el payload por un atacante NO entra aqui (mass-assignment safe).

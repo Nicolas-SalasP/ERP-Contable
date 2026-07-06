@@ -45,7 +45,7 @@ class LreController extends Controller
         $mes  = (int) $datos['mes'];
 
         try {
-            $lre = $this->generarService->generar($request->user()->empresa_id, $anio, $mes);
+            $lre = $this->generarService->generar($request->user()->empresa_activa_id, $anio, $mes);
         } catch (RrhhException $e) {
             return response()->json(['mensaje' => $e->getMessage()], 422);
         }
@@ -59,7 +59,7 @@ class LreController extends Controller
      */
     public function validar(Request $request, int $id): JsonResponse
     {
-        $lre = LreEnvio::where('empresa_id', $request->user()->empresa_id)
+        $lre = LreEnvio::where('empresa_id', $request->user()->empresa_activa_id)
             ->find($id);
 
         if (! $lre) {
@@ -102,7 +102,7 @@ class LreController extends Controller
             'numero_confirmacion' => 'nullable|string|max:100',
         ]);
 
-        $lre = LreEnvio::where('empresa_id', $request->user()->empresa_id)
+        $lre = LreEnvio::where('empresa_id', $request->user()->empresa_activa_id)
             ->find($id);
 
         if (! $lre) {
@@ -124,7 +124,7 @@ class LreController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = LreEnvio::where('empresa_id', $request->user()->empresa_id)
+        $query = LreEnvio::where('empresa_id', $request->user()->empresa_activa_id)
             ->orderByDesc('anio')
             ->orderByDesc('mes');
 
@@ -145,7 +145,7 @@ class LreController extends Controller
      */
     public function descargar(Request $request, int $id): StreamedResponse|JsonResponse
     {
-        $lre = LreEnvio::where('empresa_id', $request->user()->empresa_id)
+        $lre = LreEnvio::where('empresa_id', $request->user()->empresa_activa_id)
             ->find($id);
 
         if (! $lre) {

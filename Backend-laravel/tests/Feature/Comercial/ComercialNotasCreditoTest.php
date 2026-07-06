@@ -291,4 +291,42 @@ class ComercialNotasCreditoTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_nc_venta_rechaza_monto_neto_cero(): void
+    {
+        $cliente = Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '6.6.6.6-6',
+            'razon_social' => 'Cliente Monto Cero',
+            'estado'       => 'ACTIVO',
+        ]);
+
+        $facturaVenta = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'cliente_id'     => $cliente->id,
+            'numero_factura' => 'FV-004',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'VENTA',
+            'monto_bruto'    => 1190,
+            'monto_neto'     => 1000,
+            'monto_iva'      => 190,
+            'fecha_emision'  => now(),
+            'estado'         => 'REGISTRADA',
+            'codigo_unico'   => 14,
+        ]);
+
+        // Antes del fix: monto_neto=0 pasaba la validacion HTTP (min:0, no gt:0)
+        // y no habia ningun guard en el servicio -- generaba una NC de $0 que
+        // igual creaba un asiento contable.
+        $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$facturaVenta->id}/nota-credito", [
+            'numero_nc'   => 'NC-CERO',
+            'monto_neto'  => 0,
+            'monto_iva'   => 0,
+            'monto_bruto' => 1,
+            'razon'       => 'Intento de NC con monto neto cero',
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertDatabaseMissing('facturas', ['numero_factura' => 'NC-CERO']);
+    }
 }
