@@ -24,9 +24,7 @@ class InventarioDashboardService
 {
     private const DIAS_ALERTA_VENCIMIENTO = 30;
 
-    // Mismo TTL que DashboardResumenService: este dashboard ejecuta ~25 queries
-    // independientes por carga y no tenia ningun cache, a diferencia del
-    // financiero que ya usa este mismo TTL corto.
+    // Mismo TTL corto que DashboardResumenService: este dashboard ejecuta ~25 queries independientes por carga y no tenía cache.
     private const TTL_SEGUNDOS = 90;
 
     public function __construct(

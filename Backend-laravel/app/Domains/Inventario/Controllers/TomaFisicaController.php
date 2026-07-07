@@ -14,12 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Tomas físicas de inventario: listado, creación y máquina de estados completa
- * (iniciar → conteos → cerrar → ajustar/cancelar). Extraído de InventarioController
- * (H7 sprint 8) sin cambiar contratos. Todas las transiciones viven en
- * InventarioTomaFisicaService; el controller solo valida y delega.
- */
+/** Todas las transiciones viven en InventarioTomaFisicaService; el controller solo valida y delega. */
 class TomaFisicaController
 {
     use RespondeInventario;

@@ -12,11 +12,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Catálogos de referencia del módulo (unidades, tipos, etc.) que alimentan los
- * formularios. Extraído de InventarioController (H7 sprint 13b). Su gate de permiso es
- * transversal (varios módulos lo consultan), de ahí el permiso compuesto. Solo trait.
- */
+/** Su gate de permiso es transversal (varios módulos lo consultan), de ahí el permiso compuesto. */
 class CatalogoController
 {
     use RespondeInventario;

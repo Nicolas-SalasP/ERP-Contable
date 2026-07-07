@@ -17,12 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Listado y registro de movimientos de inventario. Extraído de InventarioController
- * (H7 sprint 3) sin cambiar contratos. Los validadores de permiso/bodega por tipo de
- * movimiento son exclusivos de este concern y viajan con él; la capa de respuesta se
- * comparte via el trait RespondeInventario.
- */
+/** Los validadores de permiso/bodega por tipo de movimiento son exclusivos de este concern y viajan con él. */
 class MovimientoController
 {
     use RespondeInventario;

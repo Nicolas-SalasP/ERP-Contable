@@ -263,11 +263,7 @@ class InventarioPackingService
 
             $empresaId = (int) $usuario->empresa_id;
 
-            // puedeCancelarse() excluye EMPACADO, y un despacho solo puede
-            // crearse desde un packing EMPACADO -- nunca hay un despacho que
-            // ya haya consumido esta reserva en este punto, asi que liberar
-            // cantidad_pickeada completa (via cantidadPendiente(), no un
-            // numero fijo) es seguro.
+            // puedeCancelarse() excluye EMPACADO y un despacho solo se crea desde packing EMPACADO, por lo que aquí siempre es seguro liberar la cantidad_pickeada completa.
             $detalles = InventarioPackingDetalle::where('empresa_id', $empresaId)
                 ->where('packing_orden_id', $orden->id)
                 ->with('pickingAsignacion:id,empresa_id,reserva_detalle_id')

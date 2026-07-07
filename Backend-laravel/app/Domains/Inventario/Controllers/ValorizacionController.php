@@ -13,11 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Valorización de inventario (general y por producto). Extraído de InventarioController
- * (H7 sprint 5) sin cambiar contratos. Reutiliza la capa de respuesta compartida
- * (RespondeInventario); no aporta helpers propios.
- */
+/** Reutiliza la capa de respuesta compartida (RespondeInventario); no aporta helpers propios. */
 class ValorizacionController
 {
     use RespondeInventario;

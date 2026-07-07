@@ -15,11 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Consulta del kardex (lado lectura de los movimientos). Extraído de
- * InventarioController (H7 sprint 4) sin cambiar contratos. Solo reutiliza la capa
- * de respuesta compartida (RespondeInventario); no aporta helpers propios.
- */
+/** Solo reutiliza la capa de respuesta compartida (RespondeInventario); no aporta helpers propios. */
 class KardexController
 {
     use RespondeInventario;

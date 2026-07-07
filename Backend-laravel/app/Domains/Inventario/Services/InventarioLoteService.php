@@ -479,8 +479,7 @@ class InventarioLoteService
                 'stock_actual' => 0,
             ]);
         } catch (QueryException) {
-            // Si otro proceso creó el stock entre SELECT e INSERT,
-            // se vuelve a consultar bloqueado dentro de la misma transacción.
+            // Si otro proceso creó el stock entre SELECT e INSERT, se vuelve a consultar bloqueado dentro de la misma transacción.
         }
 
         return StockLoteInventario::query()

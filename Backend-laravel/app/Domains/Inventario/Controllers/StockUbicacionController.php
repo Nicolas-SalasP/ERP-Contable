@@ -14,12 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Distribución de stock entre ubicaciones: listado, movimiento entre ubicaciones y
- * confirmación de putaway. Extraído de InventarioController (H7 sprint 11b). Concern
- * separado de Ubicación (CRUD de ubicaciones). confirmarPutaway delega en
- * moverStockUbicacion (mismo flujo). Un único servicio, solo trait.
- */
+/** Concern separado de Ubicación (CRUD de ubicaciones); confirmarPutaway delega en moverStockUbicacion (mismo flujo). */
 class StockUbicacionController
 {
     use RespondeInventario;

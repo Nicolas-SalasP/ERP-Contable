@@ -643,8 +643,7 @@ class InventarioMovimientoService
                 'valor_total' => 0,
             ]);
         } catch (QueryException) {
-            // Si otro proceso creó el stock entre el SELECT y el INSERT,
-            // volvemos a consultarlo bloqueado dentro de la misma transacción.
+            // Si otro proceso creó el stock entre el SELECT y el INSERT, volvemos a consultarlo bloqueado dentro de la misma transacción.
         }
 
         return StockProducto::query()
