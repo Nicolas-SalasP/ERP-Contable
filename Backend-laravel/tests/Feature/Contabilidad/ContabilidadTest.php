@@ -1175,6 +1175,58 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
     }
 
     // PRUEBA: Búsqueda Textual (Filtro Libro Diario)
+    // PRUEBA: filtro=1 (Válidos) excluye tanto el asiento ANULADO como su reverso -- antes
+    // solo excluía el ANULADO, dejando el reverso (MAYORIZADO) suelto en la vista "Válidos"
+    // y distorsionando el saldo de la cuenta (mostraba una CxP ya pagada como "impaga de
+    // nuevo" por el reverso de un segundo intento de pago erróneo ya anulado).
+    public function test_libro_diario_filtro_validos_excluye_anulado_y_su_reverso_juntos()
+    {
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-VAL-01', 'fecha' => '2026-05-15', 'glosa' => 'Pago Fac. F-1', 'estado' => 'MAYORIZADO']);
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-VAL-02', 'fecha' => '2026-05-15', 'glosa' => 'Pago Fac. F-1', 'estado' => 'ANULADO']);
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-VAL-03', 'fecha' => '2026-05-15', 'glosa' => 'REVERSO N° C-VAL-02 | Motivo: Fecha errónea', 'estado' => 'MAYORIZADO']);
+
+        $response = $this->actingAs($this->usuarioContador)->getJson('/api/contabilidad/libro-diario?desde=2026-05-01&hasta=2026-05-31&filtro=1');
+
+        $response->assertStatus(200);
+        $comprobantes = collect($response->json('data'))->pluck('numero_comprobante');
+
+        $this->assertTrue($comprobantes->contains('C-VAL-01'));
+        $this->assertFalse($comprobantes->contains('C-VAL-02'), 'El asiento ANULADO no debe aparecer en Válidos.');
+        $this->assertFalse($comprobantes->contains('C-VAL-03'), 'El reverso de un ANULADO no debe aparecer en Válidos (neteaba a cero junto al original).');
+    }
+
+    public function test_libro_diario_filtro_anulados_muestra_el_anulado_y_su_reverso()
+    {
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-ANU-01', 'fecha' => '2026-05-15', 'glosa' => 'Pago Fac. F-2', 'estado' => 'MAYORIZADO']);
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-ANU-02', 'fecha' => '2026-05-15', 'glosa' => 'Pago Fac. F-2', 'estado' => 'ANULADO']);
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-ANU-03', 'fecha' => '2026-05-15', 'glosa' => 'REVERSO N° C-ANU-02 | Motivo: Fecha errónea', 'estado' => 'MAYORIZADO']);
+
+        $response = $this->actingAs($this->usuarioContador)->getJson('/api/contabilidad/libro-diario?desde=2026-05-01&hasta=2026-05-31&filtro=2');
+
+        $response->assertStatus(200);
+        $comprobantes = collect($response->json('data'))->pluck('numero_comprobante');
+
+        $this->assertFalse($comprobantes->contains('C-ANU-01'), 'Un asiento vigente no debe aparecer en el filtro de Anulados.');
+        $this->assertTrue($comprobantes->contains('C-ANU-02'));
+        $this->assertTrue($comprobantes->contains('C-ANU-03'), 'El filtro Anulados/Internos debe seguir mostrando el reverso para trazabilidad.');
+    }
+
+    public function test_libro_diario_filtro_historia_completa_muestra_todo()
+    {
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-HIS-01', 'fecha' => '2026-05-15', 'glosa' => 'Pago Fac. F-3', 'estado' => 'MAYORIZADO']);
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-HIS-02', 'fecha' => '2026-05-15', 'glosa' => 'Pago Fac. F-3', 'estado' => 'ANULADO']);
+        AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-HIS-03', 'fecha' => '2026-05-15', 'glosa' => 'REVERSO N° C-HIS-02 | Motivo: Fecha errónea', 'estado' => 'MAYORIZADO']);
+
+        $response = $this->actingAs($this->usuarioContador)->getJson('/api/contabilidad/libro-diario?desde=2026-05-01&hasta=2026-05-31&filtro=0');
+
+        $response->assertStatus(200);
+        $comprobantes = collect($response->json('data'))->pluck('numero_comprobante');
+
+        $this->assertTrue($comprobantes->contains('C-HIS-01'));
+        $this->assertTrue($comprobantes->contains('C-HIS-02'));
+        $this->assertTrue($comprobantes->contains('C-HIS-03'));
+    }
+
     public function test_libro_diario_filtra_correctamente_por_texto_en_glosa()
     {
         AsientoContable::create(['empresa_id' => $this->empresaA->id, 'numero_comprobante' => 'C-01', 'fecha' => '2026-05-15', 'glosa' => 'Pago Proveedor Acme', 'estado' => 'MAYORIZADO']);
