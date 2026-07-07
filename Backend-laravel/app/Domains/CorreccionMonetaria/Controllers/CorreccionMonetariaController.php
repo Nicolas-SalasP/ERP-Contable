@@ -26,8 +26,7 @@ class CorreccionMonetariaController
 
     public function guardarIndice(Request $request)
     {
-        // cm_indices_ipc es una tabla global (sin empresa_id): un índice erróneo
-        // afecta a TODAS las empresas. Solo staff interno (jerarquía >= 100) puede escribir.
+        // cm_indices_ipc es global (sin empresa_id): solo staff interno (jerarquía >= 100) puede escribir.
         $rol = $request->user()->rol;
         if (!$rol || (int) ($rol->jerarquia ?? 0) < 100) {
             return response()->json([
