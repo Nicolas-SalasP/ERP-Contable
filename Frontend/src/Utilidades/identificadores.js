@@ -113,12 +113,7 @@ export const formatearIdentificador = (numero, paisIso) => {
 };
 
 /**
- * Enmascara un identificador fiscal para su presentación en listados (Ley 21.719).
- * Para RUT chileno (CL): muestra los 2 primeros dígitos del cuerpo y el DV;
- * enmascara el resto con asteriscos, preservando los puntos del formato.
- *   Ejemplo: '12.345.678-5' → '12.***.**8-5'
- * Para otros países o entradas inválidas: devuelve el valor sin cambios.
- *
+ * Enmascara un RUT chileno para listados (Ley 21.719): '12.345.678-5' → '12.***.**8-5'. Otros países/inválidos: sin cambios.
  * @param {string} valor  - Número de identificador (con o sin formato).
  * @param {string} pais   - ISO del país (por defecto 'CL').
  * @returns {string}

@@ -15,11 +15,7 @@ class EmrclController extends Controller
         private readonly GenerarEmrclService $servicio,
     ) {}
 
-    /**
-     * GET /api/rrhh/emrcl/{anio}/{mes}
-     * Genera el reporte EMRCL (Encuesta Mensual INE de Remuneraciones y Costos Laborales)
-     * para el período indicado.
-     */
+    /** Genera el reporte EMRCL (Encuesta Mensual INE de Remuneraciones y Costos Laborales) para el período indicado. */
     public function generar(Request $request, int $anio, int $mes): JsonResponse
     {
         $anio = (int) $anio;

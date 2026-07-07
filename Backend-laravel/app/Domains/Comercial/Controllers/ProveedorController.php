@@ -169,8 +169,7 @@ class ProveedorController
             $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
 
             if ($request->hasFile('pdf')) {
-                // Disco 'local' (privado): comprobante de anticipo con montos/proveedor,
-                // no debe quedar servible por URL directa (ver descargarPdfAnticipo()).
+                // Disco 'local' (privado): el comprobante tiene montos/proveedor y no debe ser servible por URL directa (ver descargarPdfAnticipo()).
                 $rutaPdf = $request->file('pdf')->store('anticipos_proveedores/pdfs', 'local');
             }
 

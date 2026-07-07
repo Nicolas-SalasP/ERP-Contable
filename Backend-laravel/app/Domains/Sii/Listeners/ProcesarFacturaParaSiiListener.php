@@ -12,13 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Listener async que orquesta el flujo SII completo desde una Factura:
- * mapeo → firma → envio. El polling automatico lleva el envio a su estado terminal.
- *
- * Si la factura ya tiene un DTE asociado, reanuda desde el paso pendiente segun
- * su estado. Cada paso re-lanza para que la queue reintente segun $tries/$backoff.
- */
+/** Listener async que orquesta el flujo SII completo (mapeo → firma → envio; el polling automatico lleva el envio a su estado terminal); si la factura ya tiene DTE asociado reanuda desde el paso pendiente, y cada paso re-lanza para que la queue reintente segun $tries/$backoff. */
 class ProcesarFacturaParaSiiListener implements ShouldQueue
 {
     use InteractsWithQueue;
@@ -52,8 +46,7 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
             'usuario_id' => $event->usuarioId,
         ];
 
-        // Si el DTE ya esta en un estado terminal/enviado, skip; de lo contrario
-        // se reanuda desde el paso pendiente en vez de relanzar todo.
+        // Si el DTE ya esta en un estado terminal/enviado, skip; de lo contrario se reanuda desde el paso pendiente en vez de relanzar todo.
         $estadosYaProcesados = [
             SiiDteEmitido::ESTADO_ENVIADO_SII,
             SiiDteEmitido::ESTADO_EN_PROCESO_SII,

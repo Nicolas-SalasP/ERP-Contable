@@ -5,13 +5,7 @@ namespace App\Domains\Sii\Services\Xml;
 use App\Domains\Sii\Exceptions\DteXmlInvalidException;
 use DOMDocument;
 
-/**
- * Valida un XML del DTE contra el XSD oficial DTE_v10.xsd del SII.
- *
- * Usa libxml internal errors para capturar el detalle estructurado y
- * empaquetarlo en DteXmlInvalidException, en lugar de imprimir warnings
- * por stderr.
- */
+/** Valida un XML del DTE contra el XSD oficial DTE_v10.xsd del SII; usa libxml internal errors para capturar el detalle estructurado y empaquetarlo en DteXmlInvalidException, en lugar de imprimir warnings por stderr. */
 class DteXsdValidator
 {
     private const XSD_PATH = __DIR__ . '/../../Resources/xsd/DTE_v10.xsd';
@@ -44,8 +38,7 @@ class DteXsdValidator
     }
 
     /**
-     * Validacion "soft": retorna array de errores sin lanzar.
-     * Util para debug y reportes de UI.
+     * Validacion "soft": retorna array de errores sin lanzar; util para debug y reportes de UI.
      *
      * @return array<int, \LibXMLError|array<string, mixed>>
      */

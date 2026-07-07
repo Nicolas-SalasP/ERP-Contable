@@ -31,8 +31,7 @@ class UsuarioService
                 'rol_id' => $rolId
             ]);
         } else {
-            // Buscamos el id del estado 'Activa' en vez de hardcodear 1.
-            // Esto previene fallos si el orden de seeders cambia.
+            // Se busca el id del estado 'Activa' en vez de hardcodear 1, para no depender del orden de seeders.
             $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
 
             User::create([
@@ -60,9 +59,7 @@ class UsuarioService
     {
         $usuario = User::where('empresa_id', $empresaId)->findOrFail($usuarioId);
 
-        // SEGURIDAD: revocar todos los tokens del usuario antes de eliminarlo.
-        // Sin esto, un usuario eliminado podria seguir usando su token activo
-        // hasta que expire.
+        // SEGURIDAD: revocar tokens antes de eliminar, o el usuario podria seguir autenticado hasta que expiren.
         $usuario->tokens()->delete();
 
         $usuario->delete();
@@ -80,8 +77,7 @@ class UsuarioService
 
     public function actualizarRolPermisos(int $empresaId, int $rolId, array $datos)
     {
-        // Solo se pueden editar roles propios de la empresa: nunca roles de
-        // sistema (empresa_id null) ni de otra empresa.
+        // Solo se pueden editar roles propios de la empresa: nunca de sistema (empresa_id null) ni de otra empresa.
         $rol = Rol::where('empresa_id', $empresaId)->findOrFail($rolId);
         $rol->update($datos);
 

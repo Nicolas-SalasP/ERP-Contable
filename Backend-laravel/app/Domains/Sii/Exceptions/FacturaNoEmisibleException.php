@@ -4,16 +4,7 @@ namespace App\Domains\Sii\Exceptions;
 
 use DomainException;
 
-/**
- * F6.2 — Pre-validacion fallida ANTES de dispatchear el evento de emision.
- *
- * Semantica: "esta factura ni siquiera deberia intentarse emitir". Si esto se
- * lanza, el evento NO se dispara, NO se encola job, NO se reserva folio.
- *
- * Diferencia con FacturaIncompletaParaSii (F6.1): aquella se lanza en el
- * mapper DURANTE el listener (con tx abierta, sin efectos persistentes
- * gracias al rollback). Esta se lanza ANTES de cualquier accion sincrona.
- */
+/** F6.2 — pre-validacion fallida ANTES de dispatchear el evento de emision ("esta factura ni siquiera deberia intentarse emitir"): a diferencia de FacturaIncompletaParaSii (F6.1, que se lanza en el mapper durante el listener), esta se lanza antes de cualquier accion sincrona, sin evento, job ni folio reservado. */
 class FacturaNoEmisibleException extends DomainException
 {
     public const RAZON_TIPO_DTE_FALTANTE = 'tipo_dte_faltante';

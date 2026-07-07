@@ -66,8 +66,7 @@ class FacturaService
             $query->whereDate('fecha_emision', '<=', $filtros['fecha_hasta']);
         }
 
-        // Tope duro de 500 para evitar que un limit arbitrario en query string
-        // vuelva a convertir esto en un dump completo de la tabla.
+        // Tope duro de 500: evita que un limit arbitrario en query string vuelva a convertir esto en un dump completo de la tabla.
         $limit = min((int) ($filtros['limit'] ?? 10), 500);
         return $query->orderBy('fecha_emision', 'desc')->paginate($limit);
     }
@@ -124,8 +123,7 @@ class FacturaService
             }
         }
 
-        // Retención Art. 59 LIR: obligación de retener al pagar servicios al exterior.
-        // El retenido se entera al SII vía Formulario 50.
+        // Retención Art. 59 LIR: obligación de retener al pagar servicios al exterior; el retenido se entera al SII vía Formulario 50.
         $tipoGastoArt59 = null;
         $retencionArt59 = 0.0;
         if ($esDocumentoExterior && !empty($datos['tipo_gasto_art59'])) {
@@ -210,14 +208,11 @@ class FacturaService
             $cuentaIva = $codigoIva ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoIva)->first() : null;
             $cuentaProveedor = $codigoProveedor ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoProveedor)->first() : null;
             $cuentaGasto = $codigoDestino ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoDestino)->first() : null;
-            // Antes, una NOTA_CREDITO con cuentas faltantes se registraba SIN asiento
-            // (return silencioso), dejando la contabilidad descuadrada. Ahora exige las
-            // cuentas igual que una factura normal y genera su asiento (invertido).
+            // Antes una NOTA_CREDITO con cuentas faltantes se registraba sin asiento (descuadre); ahora exige las mismas cuentas que una factura normal.
             if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
                 throw ComercialException::regla("Configuración Contable Incompleta: Verifique que las cuentas de IVA ({$codigoIva}), Proveedor ({$codigoProveedor}) y Destino ({$codigoDestino}) existan en el plan de cuentas de esta empresa.");
             }
 
-            // Validar cuenta de retención Art. 59 si corresponde
             $cuentaRetencionArt59 = null;
             if ($retencionArt59 > 0) {
                 $codigoRetencion = $datos['cuentaRetencion'] ?? '252200';
@@ -239,12 +234,9 @@ class FacturaService
                 'usuario_id' => auth()->id() ?? $datos['autorizador_id'] ?? null,
             ];
 
-            // Una factura de compra debita gasto + IVA y acredita la CxP del proveedor.
-            // Una NOTA DE CRÉDITO de compra invierte los signos: reduce el gasto y el
-            // IVA crédito (HABER) y disminuye la CxP del proveedor (DEBE).
+            // Una factura de compra debita gasto+IVA y acredita la CxP; una NOTA DE CRÉDITO invierte los signos (reduce gasto/IVA en HABER, reduce CxP en DEBE).
             $detallesAsiento = [];
 
-            // Gasto / Destino
             $detallesAsiento[] = [
                 'cuenta_contable' => $cuentaGasto->codigo,
                 'debe' => $esNotaCredito ? 0 : $neto,
@@ -253,7 +245,6 @@ class FacturaService
                 'centro_costo_id' => $datos['centro_costo_id'] ?? null
             ];
 
-            // IVA Crédito Fiscal
             if ($iva > 0) {
                 $detallesAsiento[] = [
                     'cuenta_contable' => $cuentaIva->codigo,
@@ -294,11 +285,7 @@ class FacturaService
     }
 
     /**
-     * Emite una Nota de Crédito sobre una factura de VENTA, revirtiendo
-     * el asiento de ingreso original (IVA Débito + CxC + Ingresos).
-     *
-     * Si la factura original tiene DTE firmado y se solicita emisión SII,
-     * despacha el DTE tipo 61 con referencia al folio original.
+     * Emite una Nota de Crédito sobre una factura de VENTA revirtiendo el asiento de ingreso original; si hay DTE firmado y se solicita, despacha el tipo 61 referenciando el folio original.
      *
      * @param array{
      *   numero_nc: string,
@@ -349,12 +336,7 @@ class FacturaService
             $bruto = round((float) $datos['monto_bruto'], 2);
             $fecha = $datos['fecha_emision'] ?? now()->toDateString();
 
-            // A diferencia de crear una factura normal (que sí exige monto_neto > 0),
-            // esta validación faltaba acá: un monto_bruto/neto en 0 o negativo pasaba
-            // el guard de "no superar el original" (0 <= cualquier cosa) sin problema,
-            // y registrarAsiento solo exige que el DEBE cuadre con el HABER, no que
-            // las líneas sean positivas -- una NC con montos negativos invierte el
-            // efecto contable en vez de anularlo.
+            // A diferencia de una factura normal, esta validación faltaba: un monto en 0 o negativo pasaba el guard "no superar el original" y registrarAsiento solo exige DEBE=HABER, no montos positivos -- una NC negativa invierte el efecto contable en vez de anularlo.
             if ($neto <= 0 || $iva < 0 || $bruto <= 0) {
                 throw ComercialException::regla(
                     "Los montos de la Nota de Crédito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo)."
@@ -384,7 +366,6 @@ class FacturaService
                 'codigo_interno' => 'NC-' . str_pad((string) $nc->id, 5, '0', STR_PAD_LEFT),
             ]);
 
-            // Cuentas contables usadas en el asiento original de la venta.
             $cuentaCxC      = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
             $cuentaVentas   = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
             $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
@@ -430,19 +411,16 @@ class FacturaService
 
             $nc->update(['comprobante_contable' => $asiento->numero_comprobante]);
 
-            // Si el monto de la NC iguala al total de la factura, la anulamos.
             if (abs($bruto - (float) $origen->monto_bruto) < 0.01) {
                 $origen->estado = 'ANULADA';
                 $origen->save();
 
-                // Actualizar estado del DTE original en el registro SII.
                 if ($origen->sii_dte_emitido_id) {
                     SiiDteEmitido::where('id', $origen->sii_dte_emitido_id)
                         ->update(['estado' => SiiDteEmitido::ESTADO_ANULADO_CON_NC]);
                 }
             }
 
-            // Despachar emisión DTE tipo 61 si se solicita y la factura tiene DTE original.
             if (!empty($datos['emitir_dte']) && $origen->sii_dte_emitido_id) {
                 /** @var SiiDteEmitido|null $dteOrigen */
                 $dteOrigen = $origen->dteEmitido;
@@ -469,8 +447,7 @@ class FacturaService
     }
 
     /**
-     * Emite una Nota de Débito sobre una factura de VENTA, registrando
-     * un cargo adicional al cliente (aumento de CxC, Ventas e IVA Débito).
+     * Emite una Nota de Débito sobre una factura de VENTA registrando un cargo adicional al cliente (aumento de CxC, Ventas e IVA Débito).
      *
      * @param array{
      *   numero_nd: string,
@@ -503,9 +480,7 @@ class FacturaService
             $bruto = round((float) $datos['monto_bruto'], 2);
             $fecha = $datos['fecha_emision'] ?? now()->toDateString();
 
-            // Mismo hallazgo que en emitirNotaCreditoVenta: sin este guard, una ND
-            // con montos en 0 o negativos pasaba sin problema (registrarAsiento solo
-            // exige partida doble cuadrada, no montos positivos por línea).
+            // Mismo hallazgo que en emitirNotaCreditoVenta: sin este guard, una ND con montos en 0 o negativos pasaba (registrarAsiento solo exige partida doble cuadrada, no montos positivos por línea).
             if ($neto <= 0 || $iva < 0 || $bruto <= 0) {
                 throw ComercialException::regla(
                     "Los montos de la Nota de Débito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo)."
@@ -535,9 +510,6 @@ class FacturaService
                 'codigo_interno' => 'ND-' . str_pad((string) $nd->id, 5, '0', STR_PAD_LEFT),
             ]);
 
-            // Cuentas contables para el asiento de la ND:
-            // DEBE CxC (aumenta la deuda del cliente)
-            // HABER Ventas + HABER IVA Débito (ingreso adicional)
             $cuentaCxC       = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
             $cuentaVentas    = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
             $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
@@ -625,8 +597,7 @@ class FacturaService
         DB::transaction(function () use ($empresaId, $usuarioId, $facturaId, $datos) {
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
-            // Guard de integridad: no se puede reclasificar el asiento de una factura
-            // anulada (su efecto contable ya fue reversado).
+            // Guard de integridad: no se puede reclasificar el asiento de una factura anulada (su efecto contable ya fue reversado).
             if (strtoupper((string) $factura->estado) === 'ANULADA') {
                 throw ComercialException::regla('No se puede reclasificar el asiento de una factura anulada.');
             }
@@ -778,11 +749,7 @@ class FacturaService
 
     public function registrarPago(int $empresaId, int $facturaId, array $datos)
     {
-        // El atajo de "marcar pagada" se deshabilito: marcaba la factura como
-        // PAGADA sin generar el asiento de egreso, dejando la cuenta por pagar
-        // del proveedor abierta en contabilidad (descuadre subdiario vs mayor).
-        // Los pagos deben registrarse desde Tesoreria > Conciliacion Bancaria,
-        // que genera el asiento contra la cuenta bancaria real.
+        // Se deshabilito el atajo de "marcar pagada" directo: dejaba la CxP abierta en contabilidad (descuadre subdiario vs mayor) al no generar el asiento de egreso; los pagos deben registrarse desde Tesoreria > Conciliacion Bancaria.
         throw ComercialException::regla(
             "Los pagos de facturas se registran desde Tesoreria > Conciliacion Bancaria "
             . "para contabilizar el egreso. Esta accion directa fue deshabilitada."
@@ -791,11 +758,7 @@ class FacturaService
 
     public function obtenerFacturasPorIds(int $empresaId, array $ids)
     {
-        // Solo se usa para aplicar pagos en la conciliacion bancaria: excluye
-        // facturas ya PAGADAS o ANULADAS para evitar pagarlas dos veces y que el
-        // excedente se registre erroneamente como anticipo. lockForUpdate evita
-        // que la misma factura se pague dos veces si aparece en dos movimientos
-        // bancarios distintos conciliados en paralelo.
+        // Excluye facturas PAGADAS/ANULADAS para evitar doble pago o excedente mal registrado como anticipo; lockForUpdate evita doble pago en conciliaciones paralelas.
         return Factura::where('empresa_id', $empresaId)
             ->whereIn('id', $ids)
             ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
@@ -820,24 +783,19 @@ class FacturaService
             ->get();
     }
 
-    /**
-     * Retorna facturas impagadas cuyo monto bruto esta dentro de la tolerancia indicada.
-     * Usado por el motor de sugerencias de conciliacion bancaria.
-     */
+    /** Retorna facturas impagadas cuyo monto bruto esta dentro de la tolerancia indicada; usado por el motor de sugerencias de conciliacion bancaria. */
     public function obtenerSugerenciasBancarias(
         int $empresaId,
         string $tipo,
         float $monto,
         float $toleranciaPct
     ): \Illuminate\Support\Collection {
-        // Mapea el tipo de operacion al tipo de factura almacenado en BD
         $tipoFactura = $tipo === 'cobrar' ? 'VENTA' : 'COMPRA';
 
         $montoMin = $monto * (1 - $toleranciaPct);
         $montoMax = $monto * (1 + $toleranciaPct);
 
-        // JOIN directo para obtener razon_social sin pasar por relaciones Eloquent.
-        // Se restringe empresa_id en el join para evitar exposicion de datos cross-tenant.
+        // JOIN directo (sin relaciones Eloquent) restringiendo empresa_id en el join para evitar exposicion de datos cross-tenant.
         return DB::table('facturas')
             ->leftJoin('proveedores', function ($join) use ($empresaId) {
                 $join->on('facturas.proveedor_id', '=', 'proveedores.id')
@@ -890,12 +848,10 @@ class FacturaService
 
             $factura->save();
 
-            // Libera cualquier anticipo que se hubiese aplicado a esta factura
-            // (quedaban consumidos permanentemente aunque la deuda ya no existiera).
+            // Libera anticipos aplicados a esta factura (antes quedaban consumidos permanentemente aunque la deuda ya no existiera).
             $this->anticipoService->revertirAplicacionesDeFactura($empresaId, $facturaId);
 
-            // Si la factura vino de convertir una cotización, esta quedaba
-            // "Facturada" para siempre al anularla, sin poder refacturarse.
+            // Si la factura vino de convertir una cotización, esta quedaba "Facturada" para siempre al anularla, sin poder refacturarse.
             if ($factura->cotizacion_id) {
                 $estadoAceptada = EstadoCotizacion::where('nombre', 'Aceptada')->first();
                 if ($estadoAceptada) {
@@ -921,16 +877,7 @@ class FacturaService
             ->get();
     }
 
-    /**
-     * Genera el CSV de exportacion de facturas. fechaDesde/fechaHasta acotan
-     * el rango (formato Y-m-d); sin ellos exporta el historial completo.
-     *
-     * Usa chunk() en vez de get(): antes cargaba TODAS las facturas de la
-     * empresa como coleccion Eloquent en un solo request sincrono, sin limite
-     * ni filtro de fecha (una empresa con anios de historial podia agotar
-     * memoria). chunk() trae de a 500 filas por pagina (y si respeta el
-     * eager load de 'proveedor', a diferencia de cursor(), que lo ignora).
-     */
+    /** Genera el CSV de facturas (fechaDesde/fechaHasta acotan el rango); usa chunk() en vez de get() para no cargar todo el historial en memoria, y a diferencia de cursor() respeta el eager load de 'proveedor'. */
     public function generarCsvExportacion(int $empresaId, ?string $fechaDesde = null, ?string $fechaHasta = null): string
     {
         $query = Factura::where('empresa_id', $empresaId)

@@ -18,10 +18,7 @@ class ProvisionUserService
 
             $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
 
-            // Match determinista por la identidad estable de Tenri (tenri_user_id)
-            // y solo despues por email. Si el email ya pertenece a OTRA identidad
-            // Tenri, es una colision y NO se sobreescribe ese usuario (evita
-            // secuestrar la cuenta de un usuario de otra empresa).
+            // Match por tenri_user_id primero (identidad estable); si el email ya es de otra identidad Tenri, no se sobreescribe (evita secuestrar cuenta ajena).
             $tenriUserId = $payload['tenri_user_id'] ?? null;
             $user = $tenriUserId ? User::where('tenri_user_id', $tenriUserId)->first() : null;
 

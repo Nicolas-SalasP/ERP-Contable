@@ -5,19 +5,12 @@ namespace App\Domains\Rrhh\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Catálogo de conceptos de remuneración. Es un modelo HÍBRIDO: contiene
- * conceptos del sistema (empresa_id = null, globales y compartidos por todas las
- * empresas) y conceptos personalizados por empresa (empresa_id no nulo). Por eso
- * NO usa HasEmpresaScope — un scope global ocultaría los conceptos del sistema.
- * El filtrado por empresa, cuando aplica, es explícito: where empresa_id IN (null, X).
- * Excluido del guardián de cobertura de scope (ver EmpresaScopeCoberturaTest).
- */
+/** Modelo HÍBRIDO (conceptos del sistema con empresa_id null + conceptos por empresa): no usa HasEmpresaScope porque ocultaría los conceptos del sistema, filtrado explícito via empresa_id IN (null, X); excluido del guardián de cobertura (ver EmpresaScopeCoberturaTest). */
 class ConceptoRemuneracion extends Model
 {
     protected $table = 'concepto_remuneraciones';
 
-    // Códigos de los conceptos del sistema (no cambiar sin revisar LiquidacionService)
+    // Códigos de los conceptos del sistema; no cambiar sin revisar LiquidacionService.
     public const SUELDO_BASE         = 'SUELDO_BASE';
     public const GRATIFICACION       = 'GRATIFICACION';
     public const HORAS_EXTRA         = 'HORAS_EXTRA';

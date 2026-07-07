@@ -22,8 +22,7 @@ class SiiServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Reservado para inyeccion de servicios en fases futuras
-        // (CertificadoService, CafService, XmlSignerService, etc.).
+        // Reservado para inyeccion de servicios en fases futuras (CertificadoService, CafService, XmlSignerService, etc.).
     }
 
     public function boot(): void
@@ -32,9 +31,7 @@ class SiiServiceProvider extends ServiceProvider
 
         $this->mergeConfigFrom(__DIR__ . '/../../../config/sii.php', 'sii');
 
-        // HARDENING-1 R6: throttle por empresa (60 req/min) en TODAS las rutas SII.
-        // El throttle 'sii-uploads-pesados' (10/h) se aplica adicionalmente a
-        // endpoints especificos dentro de Routes/api.php (cert + caf store).
+        // HARDENING-1 R6: throttle por empresa (60 req/min) en todas las rutas SII; el throttle 'sii-uploads-pesados' (10/h) se aplica ademas a endpoints especificos en Routes/api.php (cert + caf store).
         Route::middleware(['api', 'auth:sanctum', 'throttle:sii-empresa'])
             ->prefix('api/sii')
             ->group(__DIR__ . '/Routes/api.php');
@@ -56,8 +53,7 @@ class SiiServiceProvider extends ServiceProvider
             ]);
         }
 
-        // Schedule: monitoreo diario de vencimiento de certificados a las 09:00 hora Chile.
-        // F5.3: polling de envios pendientes cada 5 minutos.
+        // Schedule: monitoreo diario de certificados a las 09:00 hora Chile; F5.3 pollea envios pendientes cada 5 minutos.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             $schedule->command('sii:monitorear-certificados')
                 ->dailyAt('09:00')
@@ -73,10 +69,7 @@ class SiiServiceProvider extends ServiceProvider
                 ->withoutOverlapping(10);
         });
 
-        // F6.2 — Puerto de entrada desde Comercial. El evento dispara el
-        // listener async (queue=sii) que orquesta map -> emit -> send.
-        // ShouldDispatchAfterCommit del evento garantiza que jobs solo se
-        // encolan si la transaccion contenedora commitea.
+        // F6.2 — puerto de entrada desde Comercial: el evento dispara el listener async (queue=sii) que orquesta map -> emit -> send; ShouldDispatchAfterCommit garantiza que solo se encola si la transaccion contenedora commitea.
         Event::listen(
             FacturaListaParaEmitirEvent::class,
             [ProcesarFacturaParaSiiListener::class, 'handle']

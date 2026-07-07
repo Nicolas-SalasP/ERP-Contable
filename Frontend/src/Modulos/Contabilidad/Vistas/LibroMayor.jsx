@@ -32,8 +32,7 @@ const LibroMayor = () => {
     const [asientos, setAsientos] = useState([]);
     const [planCuentas, setPlanCuentas] = useState([]);
     const [loading, setLoading] = useState(false);
-    // Versiona las cargas del libro diario para descartar respuestas fuera de orden
-    // (una respuesta lenta de un filtro viejo no debe pisar la del filtro actual).
+    // Versiona las cargas del libro diario para descartar respuestas fuera de orden (filtro viejo pisando al actual).
     const peticionDiarioRef = useRef(0);
     const cuentaGuardada = localStorage.getItem('ultimaCuentaLibroDiario') || '';
 

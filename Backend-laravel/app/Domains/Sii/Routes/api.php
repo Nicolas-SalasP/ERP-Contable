@@ -7,11 +7,7 @@ use App\Domains\Sii\Http\Controllers\SiiCertificadoController;
 use App\Domains\Sii\Http\Controllers\SiiConfiguracionController;
 use Illuminate\Support\Facades\Route;
 
-/**
- * Rutas del modulo SII. Cargadas por SiiServiceProvider con prefix 'api/sii' y
- * middleware ['api', 'auth:sanctum', 'throttle:sii-empresa']. permiso:* valida
- * autorizacion granular por endpoint; ping queda solo autenticado.
- */
+/** Rutas del modulo SII, cargadas por SiiServiceProvider con prefix 'api/sii' y middleware ['api', 'auth:sanctum', 'throttle:sii-empresa']; permiso:* valida autorizacion granular por endpoint, ping queda solo autenticado. */
 
 Route::get('ping', function () {
     $payload = [

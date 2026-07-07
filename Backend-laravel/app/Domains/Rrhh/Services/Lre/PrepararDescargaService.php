@@ -5,10 +5,7 @@ namespace App\Domains\Rrhh\Services\Lre;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\LreEnvio;
 
-/**
- * Prepara los metadatos necesarios para la descarga del archivo LRE.
- * Retorna ['ruta' => string, 'nombre_archivo' => string].
- */
+/** Prepara los metadatos necesarios para la descarga del archivo LRE; retorna ['ruta' => string, 'nombre_archivo' => string]. */
 class PrepararDescargaService
 {
     public function prepararDescarga(LreEnvio $lre): array

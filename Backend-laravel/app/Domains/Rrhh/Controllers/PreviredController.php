@@ -8,22 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- * R6 — Descarga del archivo previsional mensual para Previred.
- *
- * El archivo CSV se genera al vuelo desde las liquidaciones EMITIDAS del
- * período. No se persiste en disco: se descarga directo desde la BD.
- */
+/** R6 — Descarga del archivo previsional mensual para Previred: se genera al vuelo desde las liquidaciones EMITIDAS del período, no se persiste en disco. */
 class PreviredController extends Controller
 {
     public function __construct(
         private readonly PreviredService $service,
     ) {}
 
-    /**
-     * GET /api/rrhh/previred/{anio}/{mes}/archivo
-     * Genera y descarga el archivo previsional del período.
-     */
+    /** Genera y descarga el archivo previsional del período. */
     public function archivo(Request $request, int $anio, int $mes): StreamedResponse|Response
     {
         if ($mes < 1 || $mes > 12 || $anio < 2000 || $anio > 2100) {
@@ -46,13 +38,7 @@ class PreviredController extends Controller
         ]);
     }
 
-    /**
-     * GET /api/rrhh/previred/{anio}/{mes}/preview
-     * Retorna el contenido del archivo como JSON para previsualización en el SPA.
-     *
-     * El formato de 105 campos NO tiene encabezado; cada línea es una fila de datos.
-     * El JSON devuelto incluye un array posicional de 105 elementos por trabajador.
-     */
+    /** Retorna el contenido del archivo como JSON para previsualización en el SPA; el formato de 105 campos no tiene encabezado, cada línea es una fila de datos. */
     public function preview(Request $request, int $anio, int $mes): Response|\Illuminate\Http\JsonResponse
     {
         if ($mes < 1 || $mes > 12 || $anio < 2000 || $anio > 2100) {
@@ -65,7 +51,6 @@ class PreviredController extends Controller
             $mes
         );
 
-        // El archivo no tiene encabezado: cada línea es directamente una fila de datos
         $lineas = array_values(array_filter(explode("\r\n", $contenido)));
         $filas  = array_map(fn($l) => explode(';', $l), $lineas);
 

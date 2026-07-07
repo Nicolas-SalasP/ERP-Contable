@@ -213,7 +213,6 @@ const FiniquitosRrhh = () => {
                 </div>
             </EstadoCarga>
 
-            {/* Modal calcular */}
             <PanelModal abierto={modalCalc} titulo="Calcular finiquito" icono="fas fa-calculator" onClose={() => setModalCalc(false)}>
                 <form onSubmit={calcular} className="grid sm:grid-cols-2 gap-3">
                     <div>
@@ -272,7 +271,6 @@ const FiniquitosRrhh = () => {
                 </form>
             </PanelModal>
 
-            {/* Modal detalle */}
             <PanelModal abierto={!!detalle} titulo="Detalle de finiquito" icono="fas fa-file-contract" onClose={() => setDetalle(null)}>
                 {detalle && (
                     <div className="space-y-4">

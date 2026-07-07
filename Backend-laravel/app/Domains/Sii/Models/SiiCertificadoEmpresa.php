@@ -11,10 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Certificado digital .pfx por empresa.
- *
- * SEGURIDAD: pfx_cifrado y password_cifrada NUNCA deben aparecer en JSON.
- * El $hidden de Eloquent los excluye automaticamente de toJson()/toArray().
+ * Certificado digital .pfx por empresa; SEGURIDAD: pfx_cifrado y password_cifrada nunca deben aparecer en JSON ($hidden de Eloquent los excluye automaticamente de toJson()/toArray()).
  *
  * @property int $id
  * @property int $empresa_id
@@ -102,11 +99,7 @@ class SiiCertificadoEmpresa extends Model
         return $this->valido_hasta->isFuture();
     }
 
-    /**
-     * Dias restantes hasta el vencimiento. Positivo = futuro, negativo = pasado.
-     * Calculo basado en epoch para evitar ambiguedades de signo entre versiones
-     * de Carbon.
-     */
+    /** Dias restantes hasta el vencimiento (positivo=futuro, negativo=pasado); calculo basado en epoch para evitar ambiguedades de signo entre versiones de Carbon. */
     public function diasParaVencer(): int
     {
         $diffSegundos = $this->valido_hasta->getTimestamp() - now()->getTimestamp();
@@ -114,9 +107,7 @@ class SiiCertificadoEmpresa extends Model
         return (int) floor($diffSegundos / 86400);
     }
 
-    /**
-     * Nivel de alerta segun la matriz definida en OT-F2.3 (7 niveles).
-     */
+    /** Nivel de alerta segun la matriz definida en OT-F2.3 (7 niveles). */
     public function nivelAlerta(): string
     {
         $dias = $this->diasParaVencer();
@@ -131,10 +122,7 @@ class SiiCertificadoEmpresa extends Model
         return self::ALERTA_SIN_ALERTA;
     }
 
-    /**
-     * Existe ALGUNA notificacion enviada con este nivel para este cert?
-     * Para niveles one-shot (BAJA_T60, MEDIA_T30, ALTA_T15).
-     */
+    /** Existe alguna notificacion enviada con este nivel para este cert? Para niveles one-shot (BAJA_T60, MEDIA_T30, ALTA_T15). */
     public function haEnviadoNivel(string $nivel): bool
     {
         return $this->notificaciones()
@@ -143,10 +131,7 @@ class SiiCertificadoEmpresa extends Model
             ->exists();
     }
 
-    /**
-     * Existe notificacion enviada HOY con este nivel?
-     * Para niveles diarios (CRITICA_T7, CRITICA_T1, VENCIDO).
-     */
+    /** Existe notificacion enviada hoy con este nivel? Para niveles diarios (CRITICA_T7, CRITICA_T1, VENCIDO). */
     public function haEnviadoNivelHoy(string $nivel): bool
     {
         return $this->notificaciones()

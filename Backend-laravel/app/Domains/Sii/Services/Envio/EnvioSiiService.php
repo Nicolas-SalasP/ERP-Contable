@@ -17,9 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Orquestador del envio de un DTE firmado al WS DTEUpload del SII.
- */
+/** Orquestador del envio de un DTE firmado al WS DTEUpload del SII. */
 class EnvioSiiService
 {
     /** ERROR del SII que indica token expirado. Sugiere reintento con sesion nueva. */
@@ -173,10 +171,7 @@ class EnvioSiiService
             throw EnvioSiiException::yaEnviado($dte->id, (string) $envioPrevio->track_id);
         }
 
-        // DTE quedo en ENVIADO_SII porque un envio anterior fallo por transporte/
-        // timeout/error permanente (marcarTimeout() en PollearEstadoSiiService no
-        // toca dte->estado, solo el envio) y ningun envio fue exitoso todavia --
-        // es reintentable, no un DTE "no firmado".
+        // DTE quedo en ENVIADO_SII porque un envio anterior fallo por transporte/timeout/error permanente (marcarTimeout() en PollearEstadoSiiService no toca dte->estado, solo el envio) y ningun envio fue exitoso todavia -- es reintentable, no un DTE "no firmado".
         if ($dte->estado === SiiDteEmitido::ESTADO_ENVIADO_SII) {
             $ultimoEnvio = SiiEnvioDte::query()
                 ->where('dte_emitido_id', $dte->id)
@@ -192,8 +187,7 @@ class EnvioSiiService
     }
 
     /**
-     * Postea al SII; si responde ERROR=99 (token expirado) regenera la sesion
-     * y reintenta UNA vez. Incrementa intentos_envio en cada intento HTTP.
+     * Postea al SII; si responde ERROR=99 (token expirado) regenera la sesion y reintenta UNA vez; incrementa intentos_envio en cada intento HTTP.
      *
      * @return array{
      *   track_id: string|null, error_code: int, glosa: string|null,
@@ -295,9 +289,7 @@ class EnvioSiiService
     }
 
     /**
-     * El RUT del FIRMANTE (sender) viene del subject del certificado digital.
-     * Puede diferir del RUT de la empresa en escenarios de delegacion
-     * (operador contable firma para varias empresas).
+     * El RUT del FIRMANTE (sender) viene del subject del certificado digital; puede diferir del RUT de la empresa en escenarios de delegacion (operador contable firma para varias empresas).
      *
      * @return array{0: string, 1: string} [rutSinDv, dv]
      */
@@ -312,7 +304,6 @@ class EnvioSiiService
 
     /**
      * RUT de la EMPRESA emisora (company), separado en numero + DV.
-     *
      * @return array{0: string, 1: string} [rutSinDv, dv]
      */
     private function extraerRutCompany(Empresa $empresa): array

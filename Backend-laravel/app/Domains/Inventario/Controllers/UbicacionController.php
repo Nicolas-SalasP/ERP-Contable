@@ -14,12 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Ubicaciones físicas de inventario: CRUD + stock de una ubicación concreta. Extraído
- * de InventarioController (H7 sprint 11a). Concern separado de StockUbicación (que mueve
- * stock entre ubicaciones). stockUbicacion va aquí porque usa InventarioUbicacionService
- * y es un sub-recurso de una ubicación, pese a tener "stock" en el nombre. Solo trait.
- */
+/** stockUbicacion va aquí (no en StockUbicacionController) porque usa InventarioUbicacionService y es sub-recurso de una ubicación, pese a tener "stock" en el nombre. */
 class UbicacionController
 {
     use RespondeInventario;

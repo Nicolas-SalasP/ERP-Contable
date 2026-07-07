@@ -9,8 +9,7 @@ class InventarioAdaptadorInternoService implements InventarioAdaptadorInternoInt
 {
     public function manejar(InventarioEventoIntegracion $evento): void
     {
-        // No-op deliberado Fase 18.
-        // Otros módulos podrán registrar adaptadores propios sin que Inventario dependa de ellos.
+        // No-op deliberado Fase 18: otros módulos podrán registrar adaptadores propios sin que Inventario dependa de ellos.
     }
 
     public function soporta(InventarioEventoIntegracion $evento): bool

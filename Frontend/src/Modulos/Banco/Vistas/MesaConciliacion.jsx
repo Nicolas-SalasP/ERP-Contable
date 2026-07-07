@@ -173,8 +173,7 @@ const MesaConciliacion = () => {
         const tipo = esEgreso ? 'COMPRA' : 'VENTA';
         
         try {
-            // Filtramos server-side por tipo + entidad para no depender de traer
-            // todas las facturas de la empresa (el endpoint ahora pagina).
+            // Filtramos server-side por tipo + entidad para no traer todas las facturas de la empresa (el endpoint pagina).
             const res = await api.get('/facturas', {
                 params: { tipo, proveedor_id: selected.value, limit: 500 }
             });

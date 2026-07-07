@@ -4,17 +4,7 @@ namespace App\Domains\Sii\Exceptions;
 
 use DomainException;
 
-/**
- * F6.4 — El estado actual del DTE/envio no permite reintento manual.
- *
- * Casos:
- *   - estado_terminal: DTE en ACEPTADO/ACEPTADO_CON_REPAROS/RECHAZADO.
- *   - ya_en_proceso:   ultimo envio en PENDIENTE/ENVIANDO/ENVIADO (el polling
- *                      de F5.3 esta trabajandolo).
- *   - dte_no_reintentable: estado no contemplado (defensa).
- *
- * El controller la traduce a HTTP 422 con shape estructurado.
- */
+/** F6.4 — el estado actual del DTE/envio no permite reintento manual (estado_terminal: ACEPTADO/ACEPTADO_CON_REPAROS/RECHAZADO; ya_en_proceso: envio en PENDIENTE/ENVIANDO/ENVIADO bajo polling F5.3; dte_no_reintentable: defensa); el controller la traduce a HTTP 422 con shape estructurado. */
 class ReintentoNoAplicableException extends DomainException
 {
     public const RAZON_ESTADO_TERMINAL      = 'estado_terminal';

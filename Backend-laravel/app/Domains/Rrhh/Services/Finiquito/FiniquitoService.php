@@ -10,15 +10,7 @@ use App\Domains\Rrhh\Exceptions\RrhhException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Cálculo de finiquito según Código del Trabajo chileno.
- *
- * Art. 161: necesidades de empresa / desahucio → derecho a indemnización por años de servicio (Art. 163)
- * Art. 163: 30 días × años completos (fracción > 6 meses = 1 año), máximo 11 años.
- *           Tope por mes: 90 UF (calculada al último día del mes ANTERIOR al término, Art. 172).
- * Art. 161: aviso previo 30 días o pago sustitutivo (1 mes de última remuneración).
- * Art. 70: vacaciones proporcionales al término de cualquier contrato.
- */
+/** Cálculo de finiquito según Código del Trabajo chileno: Art. 161 indemnización por necesidades de empresa/desahucio, Art. 163 30 días × años (fracción >6 meses = 1 año, máx 11 años, tope 90 UF del mes anterior al término Art. 172), Art. 161 aviso previo sustitutivo, Art. 70 vacaciones proporcionales. */
 class FiniquitoService
 {
     // Causales que dan derecho a indemnización por años de servicio y aviso previo (Art. 161 inc. 1 y 2)
@@ -160,11 +152,7 @@ class FiniquitoService
         });
     }
 
-    /**
-     * Revierte un finiquito FIRMADO por error: reactiva el contrato asociado
-     * si sigue terminado por este mismo finiquito. No hay asiento contable que
-     * reversar (Finiquito.comprobante_contable nunca se setea en este servicio).
-     */
+    /** Revierte un finiquito FIRMADO por error: reactiva el contrato asociado si sigue terminado por este mismo finiquito; no hay asiento contable que reversar (Finiquito.comprobante_contable nunca se setea en este servicio). */
     public function anular(int $empresaId, int $finiquitoId, string $motivo): Finiquito
     {
         return DB::transaction(function () use ($empresaId, $finiquitoId, $motivo) {
@@ -185,9 +173,7 @@ class FiniquitoService
                 'observaciones' => trim(($finiquito->observaciones ?? '') . "\n[ANULADO] {$motivo}"),
             ]);
 
-            // Reactiva el contrato solo si sigue terminado por ESTE finiquito
-            // (mismo causal + fecha que firmar() escribio) -- si algo mas lo
-            // modifico despues, no lo tocamos para no pisar otro estado.
+            // Reactiva el contrato solo si sigue terminado por ESTE finiquito (mismo causal + fecha que firmar() escribió) -- si algo más lo modificó después, no lo tocamos para no pisar otro estado.
             $contrato = Contrato::find($finiquito->contrato_id);
             if ($contrato
                 && $contrato->estado === 'TERMINADO'

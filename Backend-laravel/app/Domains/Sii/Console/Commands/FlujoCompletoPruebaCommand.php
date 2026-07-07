@@ -18,12 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
-/**
- * Comando demo del flujo completo SII (BORRADOR → resolucion terminal).
- *
- * Por default usa Http::fake() para NO tocar el SII real; --no-fake habilita
- * peticiones reales y requiere confirmacion interactiva.
- */
+/** Comando demo del flujo completo SII (BORRADOR → resolucion terminal); por default usa Http::fake() para no tocar el SII real, --no-fake habilita peticiones reales y requiere confirmacion interactiva. */
 class FlujoCompletoPruebaCommand extends Command
 {
     protected $signature = 'sii:flujo-completo-prueba

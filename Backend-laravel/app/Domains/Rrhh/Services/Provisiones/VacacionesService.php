@@ -10,13 +10,7 @@ use App\Domains\Rrhh\Models\SolicitudVacaciones;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Devengo mensual de vacaciones (Art. 67 Código del Trabajo).
- *
- * Por cada mes trabajado, el empleado devenga 1,25 días hábiles de feriado
- * (15 días hábiles anuales ÷ 12 meses). Las vacaciones progresivas (Art. 68)
- * aplican cuando el empleado acumula 10+ años de servicios.
- */
+/** Devengo mensual de vacaciones (Art. 67 CdT): 1,25 días hábiles/mes (15 anuales ÷ 12); vacaciones progresivas (Art. 68) aplican con 10+ años de servicio. */
 class VacacionesService
 {
     // Días hábiles de vacaciones por año según ley (base Art. 67)
@@ -100,9 +94,7 @@ class VacacionesService
             ->sum('dias_habiles');
     }
 
-    /**
-     * Cuenta dias habiles (lunes a viernes) entre dos fechas, ambas incluidas.
-     */
+    /** Cuenta días hábiles (lunes a viernes) entre dos fechas, ambas incluidas. */
     public function diasHabilesEntre(Carbon $desde, Carbon $hasta): int
     {
         if ($hasta->lt($desde)) {
@@ -121,12 +113,7 @@ class VacacionesService
         return $dias;
     }
 
-    /**
-     * Crea una solicitud de vacaciones en estado PENDIENTE. No descuenta saldo
-     * todavia -- el descuento ocurre al aprobar (saldoActual solo suma
-     * solicitudes APROBADA), asi que dos solicitudes simultaneas del mismo
-     * empleado no se bloquean entre si hasta que una se aprueba.
-     */
+    /** Crea una solicitud PENDIENTE; no descuenta saldo aún (el descuento ocurre al aprobar, saldoActual solo suma APROBADA), así que solicitudes simultáneas del mismo empleado no se bloquean entre sí hasta que una se aprueba. */
     public function solicitar(int $empresaId, int $empleadoId, string $fechaDesde, string $fechaHasta, int $userId, ?string $observacion = null): SolicitudVacaciones
     {
         return DB::transaction(function () use ($empresaId, $empleadoId, $fechaDesde, $fechaHasta, $userId, $observacion) {
@@ -185,11 +172,7 @@ class VacacionesService
         });
     }
 
-    /**
-     * Aprueba una solicitud PENDIENTE. Revalida el saldo con lock para evitar
-     * que dos solicitudes del mismo empleado se aprueben en paralelo y dejen
-     * el saldo en negativo.
-     */
+    /** Aprueba una solicitud PENDIENTE, revalidando el saldo con lock para evitar que dos solicitudes del mismo empleado se aprueben en paralelo y dejen el saldo en negativo. */
     public function aprobar(int $empresaId, int $solicitudId, int $userId): SolicitudVacaciones
     {
         return DB::transaction(function () use ($empresaId, $solicitudId, $userId) {
@@ -205,13 +188,7 @@ class VacacionesService
                 throw RrhhException::regla("La solicitud ya fue resuelta (estado {$solicitud->estado}).");
             }
 
-            // lockForUpdate() de arriba solo bloquea ESTA solicitud. Dos
-            // solicitudes PENDIENTE distintas del mismo empleado pueden
-            // aprobarse en paralelo y leer el mismo saldo antes de que
-            // cualquiera comitee. Se bloquea ademas la fila del empleado
-            // como mutex compartido para serializar cualquier aprobacion
-            // concurrente del mismo empleado, sin importar que solicitud
-            // esten tocando.
+            // lockForUpdate() de arriba solo bloquea ESTA solicitud; se bloquea además la fila del empleado como mutex compartido para serializar cualquier aprobación concurrente del mismo empleado, sin importar qué solicitud estén tocando.
             Empleado::where('empresa_id', $empresaId)->where('id', $solicitud->empleado_id)->lockForUpdate()->first();
 
             $saldo = $this->saldoActual($empresaId, $solicitud->empleado_id);
@@ -258,10 +235,7 @@ class VacacionesService
         });
     }
 
-    /**
-     * Anula una solicitud APROBADA por error (repone el saldo, ya que
-     * saldoActual solo suma solicitudes en estado APROBADA).
-     */
+    /** Anula una solicitud APROBADA por error (repone el saldo, ya que saldoActual solo suma solicitudes en estado APROBADA). */
     public function anular(int $empresaId, int $solicitudId, int $userId, string $motivo): SolicitudVacaciones
     {
         return DB::transaction(function () use ($empresaId, $solicitudId, $userId, $motivo) {
@@ -304,14 +278,7 @@ class VacacionesService
         return $query->paginate(30);
     }
 
-    /**
-     * Calcula días proporcionales y monto de feriado al término del contrato (Art. 70).
-     *
-     * Fix #1: usa $fechaTermino como referencia del aniversario, no now().
-     * Fix #6: convierte días hábiles ganados a días corridos para la valorización.
-     *         Limitación: la base sigue siendo sueldo_base/30; ampliar a remuneración
-     *         íntegra (Art. 71) queda fuera del alcance de este fix.
-     */
+    /** Calcula días proporcionales y monto de feriado al término del contrato (Art. 70): usa $fechaTermino como referencia del aniversario (no now()) y convierte días hábiles a corridos para la valorización; la base sigue siendo sueldo_base/30, ampliar a remuneración íntegra (Art. 71) queda fuera de alcance. */
     public function calcularVacacionesProporcionales(Contrato $contrato, string $fechaTermino): array
     {
         $fechaInicio = $contrato->fecha_inicio;
@@ -341,11 +308,7 @@ class VacacionesService
         ];
     }
 
-    /**
-     * Convierte N días hábiles a días corridos, contando hacia adelante desde
-     * el día siguiente a $fechaBase y saltando sábados y domingos.
-     * Los fines de semana intercalados quedan incluidos en el conteo corrido.
-     */
+    /** Convierte N días hábiles a días corridos, contando hacia adelante desde el día siguiente a $fechaBase y saltando sábados y domingos (los fines de semana intercalados quedan incluidos en el conteo corrido). */
     public function habilesACorridos(int $diasHabiles, Carbon $fechaBase): int
     {
         if ($diasHabiles <= 0) {

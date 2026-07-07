@@ -65,7 +65,6 @@ const LibroRemuneraciones = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-6 md:p-8">
-            {/* Encabezado */}
             <header className="mb-6">
                 <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex flex-wrap items-center gap-3">
                     <i className="fas fa-book-open text-emerald-600" />
@@ -76,7 +75,6 @@ const LibroRemuneraciones = () => {
                 </p>
             </header>
 
-            {/* Mensaje de estado */}
             {mensaje && (
                 <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2 ${
                     mensaje.tipo === 'error'
@@ -94,7 +92,6 @@ const LibroRemuneraciones = () => {
                 </div>
             )}
 
-            {/* Selector de período y botón previsualizar */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Período</h2>
                 <div className="flex flex-wrap items-end gap-3">
@@ -131,10 +128,8 @@ const LibroRemuneraciones = () => {
                 </div>
             </div>
 
-            {/* Resultados */}
             {datos !== null && (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
-                    {/* Barra de resumen y exportación */}
                     <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <span className="font-bold text-slate-900 dark:text-slate-100">
@@ -170,7 +165,6 @@ const LibroRemuneraciones = () => {
                         )}
                     </div>
 
-                    {/* Tabla */}
                     {filas.length === 0 ? (
                         <div className="py-12 text-center text-slate-400">
                             <i className="fas fa-inbox text-3xl mb-3 block" />
@@ -214,7 +208,6 @@ const LibroRemuneraciones = () => {
                                     ))}
                                 </tbody>
 
-                                {/* Fila de totales */}
                                 {totales && (
                                     <tfoot>
                                         <tr className="bg-slate-900 dark:bg-slate-950 text-white">
@@ -236,7 +229,6 @@ const LibroRemuneraciones = () => {
                 </div>
             )}
 
-            {/* Estado inicial: guía al usuario */}
             {datos === null && !cargando && (
                 <div className="bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl py-12 text-center text-slate-400">
                     <i className="fas fa-book-open text-4xl mb-3 block" />

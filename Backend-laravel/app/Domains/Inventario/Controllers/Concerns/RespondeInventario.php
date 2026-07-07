@@ -7,11 +7,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Capa de respuesta JSON compartida por los controllers de Inventario. Extraída del
- * monolito InventarioController (H7) para ser la única fuente de paginación y manejo
- * de errores que reutilizan los controllers que se van separando.
- */
+/** Única fuente de paginación y manejo de errores reutilizada por los controllers de Inventario que se van separando del monolito. */
 trait RespondeInventario
 {
     protected function respuestaPaginada(LengthAwarePaginator $paginador): array

@@ -48,11 +48,7 @@ class ImpuestosController
         }
     }
 
-    /**
-     * GET /api/impuestos/cierre-f29/descargar/{mes}/{anio}?formato=excel|pdf
-     *
-     * Descarga el F29 del período indicado en formato Excel (HTML-as-XLS) o PDF.
-     */
+    /** Descarga el F29 del período en Excel (HTML-as-XLS) o PDF según ?formato=. */
     public function descargarF29(Request $request, int $mes, int $anio): Response
     {
         if ($mes < 1 || $mes > 12) {

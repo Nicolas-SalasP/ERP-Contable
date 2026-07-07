@@ -10,12 +10,7 @@ use DOMElement;
 use DOMXPath;
 use RobRichards\XMLSecLibs\XMLSecurityDSig;
 
-/**
- * Firma el <Documento ID="D{folio}"> de un XML de DTE producido por DteXmlBuilder.
- *
- * Primero elimina el <ds:Signature> placeholder (hijo directo de <DTE>) porque
- * contaminaria el digest enveloped del <Documento>, luego aplica XmlDsigSigner.
- */
+/** Firma el <Documento ID="D{folio}"> de un XML de DTE producido por DteXmlBuilder; primero elimina el <ds:Signature> placeholder (hijo directo de <DTE>) porque contaminaria el digest enveloped del <Documento>, luego aplica XmlDsigSigner. */
 class DteSigner
 {
     public function __construct(
@@ -25,8 +20,7 @@ class DteSigner
     }
 
     /**
-     * @param string $xmlDteConTed XML del DTE (output de DteXmlBuilder::build,
-     *                              con o sin TED firmado de F4.2).
+     * @param string $xmlDteConTed XML del DTE (output de DteXmlBuilder::build, con o sin TED firmado de F4.2).
      *
      * @return string XML con <Documento> firmado XMLDSig en bytes ISO-8859-1.
      *
@@ -102,11 +96,7 @@ class DteSigner
         return $nodo;
     }
 
-    /**
-     * Quita los <ds:Signature> que son hijos directos de <DTE> (placeholder de
-     * F4.1). Conserva firmas anidadas en otros bloques (no las hay en F4.x,
-     * pero esta defensividad evita borrar firmas legitimas futuras).
-     */
+    /** Quita los <ds:Signature> que son hijos directos de <DTE> (placeholder de F4.1); conserva firmas anidadas en otros bloques (no las hay en F4.x, pero esta defensividad evita borrar firmas legitimas futuras). */
     private function eliminarSignaturePlaceholderHijoDeDTE(DOMDocument $dom, DOMElement $dte): void
     {
         $xpath = new DOMXPath($dom);

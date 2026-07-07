@@ -18,9 +18,7 @@ const BuscadorCuentaContable = ({
     const activeOnChange = onChange || setCuentaSeleccionada;
     const activeCuentas = cuentas.length > 0 ? cuentas : localCuentas;
 
-    // Refs con el ultimo valor/callback: el effect de carga corre solo cuando
-    // cambia cuentas.length, pero debe usar el activeValue/activeOnChange MAS
-    // reciente (no la version capturada cuando se monto) para evitar stale closures.
+    // Refs para leer el valor/callback más reciente dentro del effect (evita stale closures).
     const activeValueRef = useRef(activeValue);
     const activeOnChangeRef = useRef(activeOnChange);
     useEffect(() => {

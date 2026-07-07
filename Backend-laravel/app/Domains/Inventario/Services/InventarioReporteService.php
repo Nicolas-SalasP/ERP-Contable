@@ -14,14 +14,7 @@ use App\Domains\Inventario\Services\Reportes\ReporteTomasFisicasService;
 use App\Domains\Inventario\Services\Reportes\ReporteValorizacionService;
 use Illuminate\Support\Collection;
 
-/**
- * Fachada de reportes de Inventario: mantiene el contrato publico usado por
- * ReporteInventarioController y delega cada reporte a su propio servicio en
- * Services/Reportes/. Antes este archivo concentraba los 7 reportes + export
- * CSV en un solo servicio de ~780 lineas; se dividio por caso de uso porque
- * cada metodo es de solo lectura (sin DB::transaction ni lockForUpdate), asi
- * que separarlos no cruza ningun limite transaccional.
- */
+/** Fachada de reportes de Inventario que delega cada reporte a su propio servicio en Services/Reportes/ (antes ~780 líneas en un solo servicio; se separó por caso de uso porque cada método es de solo lectura, sin cruzar límites transaccionales). */
 class InventarioReporteService
 {
     private const MAX_LIMIT = 1000;

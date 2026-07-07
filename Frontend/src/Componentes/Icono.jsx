@@ -1,19 +1,10 @@
 import * as Icons from 'lucide-react';
 
-// Tamaños estándar del sistema de iconos Tenri ERP.
-// strokeWidth único: 1.75 en todo el sistema.
+// Tamaños y strokeWidth (1.75) estándar del sistema de iconos Tenri ERP.
 const TAMANIOS = { sm: 16, md: 20, lg: 24, xl: 32 };
 const STROKE = 1.75;
 
-/**
- * Envoltorio de lucide-react con tamaños y strokeWidth estandarizados.
- *
- * Uso:
- *   <Icono nombre="Search" tamanio="md" className="text-slate-600" />
- *
- * Si se necesita un icono directamente:
- *   import { Search, Trash2, Pencil } from 'lucide-react';
- */
+/** Envoltorio de lucide-react con tamaños y strokeWidth estandarizados: <Icono nombre="Search" tamanio="md" />. */
 export function Icono({ nombre, tamanio = 'md', className = '', ...props }) {
     const IconoComponente = Icons[nombre];
     if (!IconoComponente) return null;

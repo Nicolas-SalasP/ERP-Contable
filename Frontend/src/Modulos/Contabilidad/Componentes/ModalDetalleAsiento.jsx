@@ -83,7 +83,6 @@ const ModalDetalleAsiento = ({ isOpen, asientoId, onClose }) => {
                 className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-3xl max-h-[90vh] flex flex-col animate-fade-in"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Cabecera del modal */}
                 <div className="bg-slate-50 dark:bg-slate-900 p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-start rounded-t-xl">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
@@ -119,7 +118,6 @@ const ModalDetalleAsiento = ({ isOpen, asientoId, onClose }) => {
                     </div>
                 </div>
 
-                {/* Cuerpo scrolleable */}
                 <div className="overflow-y-auto flex-1">
                     {cargando && (
                         <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -142,7 +140,6 @@ const ModalDetalleAsiento = ({ isOpen, asientoId, onClose }) => {
 
                     {asiento && !cargando && (
                         <>
-                            {/* Glosa */}
                             {cabecera.glosa && (
                                 <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">
@@ -154,7 +151,6 @@ const ModalDetalleAsiento = ({ isOpen, asientoId, onClose }) => {
                                 </div>
                             )}
 
-                            {/* Tabla de líneas */}
                             <table className="w-full text-left">
                                 <thead className="bg-slate-100 dark:bg-slate-900 text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
@@ -213,7 +209,6 @@ const ModalDetalleAsiento = ({ isOpen, asientoId, onClose }) => {
                     )}
                 </div>
 
-                {/* Pie del modal */}
                 <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end bg-slate-50 dark:bg-slate-900 rounded-b-xl">
                     <button
                         onClick={onClose}

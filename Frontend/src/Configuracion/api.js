@@ -377,9 +377,7 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     });
 }
 
-// Estado de suscripción en memoria del módulo.
-// AuthContext lo actualiza después de cada /auth/me vía setSubscriptionStatus().
-// No se lee localStorage: la fuente de verdad es el contexto React.
+// Estado de suscripción en memoria (no localStorage): AuthContext lo actualiza tras cada /auth/me.
 let _subscriptionStatus = null;
 
 export const setSubscriptionStatus = (status) => {
@@ -396,8 +394,7 @@ const request = async (endpoint, method, body, options = {}) => {
         await ensureTokenFresh();
     }
 
-    // Guard de solo-lectura: el backend es la garantia; esto evita el viaje de red
-    // y avisa al usuario cuando su suscripcion esta vencida o en solo lectura.
+    // Guard de solo-lectura: evita el viaje de red y avisa al usuario si su suscripcion esta vencida (el backend es la garantia real).
     const esEscritura = ['POST', 'PUT', 'PATCH', 'DELETE'].includes((method || '').toUpperCase());
     if (esEscritura && !esEndpointAuth && esSuscripcionSoloLectura()) {
         if (typeof window !== 'undefined') {
@@ -431,8 +428,7 @@ const request = async (endpoint, method, body, options = {}) => {
         init.body = isFormData ? body : JSON.stringify(body);
     }
 
-    // Solo GET/HEAD son idempotentes: reintentar POST/PUT/PATCH/DELETE puede duplicar
-    // facturas, asientos o liquidaciones si el servidor procesó pero la respuesta se perdió.
+    // Solo GET/HEAD son idempotentes: reintentar POST/PUT/PATCH/DELETE puede duplicar registros si el servidor procesó pero la respuesta se perdió.
     const esIdempotente = ['GET', 'HEAD'].includes((method || '').toUpperCase());
     const maxReintentos = esIdempotente ? MAX_RETRIES : 0;
 
@@ -552,11 +548,7 @@ const downloadBlob = async (endpoint, filename, options = {}) => {
     }
 };
 
-/**
- * Trae un endpoint autenticado como blob y devuelve una Object URL para
- * previsualizar inline (ej. <img>), sin disparar la descarga como downloadBlob.
- * El caller es responsable de hacer URL.revokeObjectURL cuando ya no la use.
- */
+/** Trae un endpoint autenticado como blob y devuelve una Object URL para previsualizar inline (sin descargar como downloadBlob); el caller debe revokeObjectURL luego. */
 const obtenerBlobUrl = async (endpoint, options = {}) => {
     await ensureTokenFresh();
 

@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Datos especificos de Guia de Despacho 52 (1:1 con SiiDteEmitido).
- *
  * @property int $id
  * @property int $dte_emitido_id
  * @property int $indicador_traslado

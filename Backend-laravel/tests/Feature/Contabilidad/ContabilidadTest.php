@@ -786,6 +786,56 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
         ]);
     }
 
+    // PRUEBA: /api/anulacion/anular libera de vuelta a PENDIENTE cualquier
+    // movimiento_bancario que estuviera conciliado contra el asiento anulado --
+    // antes quedaba CONCILIADO para siempre apuntando a un asiento ya ANULADO,
+    // invisible en Mesa de Conciliación y sin forma de reprocesarlo.
+    public function test_anulacion_documento_libera_movimiento_bancario_conciliado_a_pendiente()
+    {
+        $cuenta = PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '1006', 'nombre' => 'Banco Anulacion', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+
+        $asientoOriginal = AsientoContable::create([
+            'empresa_id' => $this->empresaA->id,
+            'numero_comprobante' => 'C-ANULAR-02',
+            'fecha' => now()->format('Y-m-d'),
+            'glosa' => 'Pago conciliado a anular',
+            'estado' => 'MAYORIZADO'
+        ]);
+        DetalleAsiento::create(['asiento_id' => $asientoOriginal->id, 'cuenta_contable' => $cuenta->codigo, 'debe' => 5000, 'haber' => 0, 'fecha' => now()->format('Y-m-d'), 'tipo_operacion' => 'DEBE']);
+        DetalleAsiento::create(['asiento_id' => $asientoOriginal->id, 'cuenta_contable' => $cuenta->codigo, 'debe' => 0, 'haber' => 5000, 'fecha' => now()->format('Y-m-d'), 'tipo_operacion' => 'HABER']);
+
+        $cuentaBancaria = \App\Domains\Tesoreria\Models\CuentaBancariaEmpresa::create([
+            'empresa_id' => $this->empresaA->id, 'banco' => 'Banco Test', 'tipo_cuenta' => 'CORRIENTE',
+            'numero_cuenta' => '999-888', 'titular' => 'Empresa Test', 'rut_titular' => '1-9',
+        ]);
+        $movimientoId = \Illuminate\Support\Facades\DB::table('movimientos_bancarios')->insertGetId([
+            'empresa_id' => $this->empresaA->id,
+            'cuenta_bancaria_id' => $cuentaBancaria->id,
+            'fecha' => now()->format('Y-m-d'),
+            'descripcion' => 'Movimiento conciliado',
+            'cargo' => 5000,
+            'abono' => 0,
+            'estado' => 'CONCILIADO',
+            'asiento_id' => $asientoOriginal->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->usuarioContador)->postJson('/api/anulacion/anular', [
+            'tipo_documento'  => 'ASIENTO',
+            'documento_id'    => $asientoOriginal->id,
+            'motivo'          => 'Fecha errónea',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('movimientos_bancarios', [
+            'id' => $movimientoId,
+            'estado' => 'PENDIENTE',
+            'asiento_id' => null,
+        ]);
+    }
+
     // PRUEBA: RECHAZA INGRESO DE LETRAS O CARACTERES ESPECIALES EN MONTOS FINANCIEROS
     public function test_rechaza_letras_en_montos_financieros()
     {

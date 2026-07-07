@@ -10,10 +10,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Listado y creación de bodegas. Extraído de InventarioController (H7 sprint 2)
- * sin cambiar contratos: mismos paths, mismo middleware, mismo servicio.
- */
+/** Extraído de InventarioController sin cambiar contratos: mismos paths, mismo middleware, mismo servicio. */
 class BodegaController
 {
     public function __construct(

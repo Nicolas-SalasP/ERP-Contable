@@ -11,12 +11,7 @@ const formatearTamano = (bytes) => {
     return `${(kb / 1024).toFixed(1)} MB`;
 };
 
-/**
- * Modal de documentos adjuntos de una factura: varios archivos (PDF o imagen),
- * subida múltiple, borrado real en servidor y visor con zoom para imágenes.
- * Compartido entre VisorProveedor y VisorCliente -- ambos apuntan a la misma
- * factura de compra/venta.
- */
+/** Modal de documentos adjuntos de una factura (varios, PDF/imagen, zoom); compartido entre VisorProveedor y VisorCliente. */
 const ModalDocumentosFactura = ({ facturaId, etiqueta, onCerrar, onCambio }) => {
     const [documentos, setDocumentos] = useState([]);
     const [cargando, setCargando] = useState(true);

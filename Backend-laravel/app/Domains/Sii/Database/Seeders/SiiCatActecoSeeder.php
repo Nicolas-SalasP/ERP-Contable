@@ -11,9 +11,7 @@ class SiiCatActecoSeeder extends Seeder
     {
         $actividades = [
 
-            // -----------------------------------------------
             // SECCIÓN A — AGRICULTURA, GANADERÍA, SILVICULTURA Y PESCA
-            // -----------------------------------------------
             ['codigo' => 1110,  'nombre' => 'CULTIVO DE CEREALES (EXC. ARROZ), LEGUMBRES Y SEMILLAS OLEAGINOSAS',                          'categoria' => 'A', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 1120,  'nombre' => 'CULTIVO DE ARROZ',                                                                             'categoria' => 'A', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 1130,  'nombre' => 'CULTIVO DE HORTALIZAS Y MELONES Y RAÍCES Y TUBÉRCULOS',                                       'categoria' => 'A', 'afecto_iva' => true,  'activo' => true],
@@ -53,9 +51,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 3210,  'nombre' => 'ACUICULTURA MARÍTIMA',                                                                        'categoria' => 'A', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 3220,  'nombre' => 'ACUICULTURA EN AGUA DULCE',                                                                   'categoria' => 'A', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN B — EXPLOTACIÓN DE MINAS Y CANTERAS
-            // -----------------------------------------------
             ['codigo' => 5100,  'nombre' => 'EXTRACCIÓN DE CARBÓN DE PIEDRA',                                                              'categoria' => 'B', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 6100,  'nombre' => 'EXTRACCIÓN DE PETRÓLEO CRUDO',                                                                'categoria' => 'B', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 6200,  'nombre' => 'EXTRACCIÓN DE GAS NATURAL',                                                                   'categoria' => 'B', 'afecto_iva' => true,  'activo' => true],
@@ -70,9 +66,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 9100,  'nombre' => 'ACTIVIDADES DE APOYO PARA LA EXTRACCIÓN DE PETRÓLEO Y GAS NATURAL',                           'categoria' => 'B', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 9900,  'nombre' => 'ACTIVIDADES DE APOYO PARA OTRAS ACTIVIDADES DE EXTRACCIÓN DE MINAS Y CANTERAS',               'categoria' => 'B', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN C — INDUSTRIAS MANUFACTURERAS
-            // -----------------------------------------------
             ['codigo' => 10100, 'nombre' => 'ELABORACIÓN Y CONSERVACIÓN DE CARNE',                                                         'categoria' => 'C', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 10200, 'nombre' => 'ELABORACIÓN Y CONSERVACIÓN DE PESCADO, CRUSTÁCEOS Y MOLUSCOS',                                'categoria' => 'C', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 10300, 'nombre' => 'ELABORACIÓN Y CONSERVACIÓN DE FRUTAS, LEGUMBRES Y HORTALIZAS',                                'categoria' => 'C', 'afecto_iva' => true,  'activo' => true],
@@ -245,16 +239,12 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 33190, 'nombre' => 'REPARACIÓN DE OTROS TIPOS DE EQUIPO',                                                         'categoria' => 'C', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 33200, 'nombre' => 'INSTALACIÓN DE MAQUINARIA Y EQUIPO INDUSTRIALES',                                             'categoria' => 'C', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN D — SUMINISTRO DE ELECTRICIDAD, GAS, VAPOR Y AIRE ACONDICIONADO
-            // -----------------------------------------------
             ['codigo' => 35100, 'nombre' => 'GENERACIÓN, TRANSMISIÓN Y DISTRIBUCIÓN DE ENERGÍA ELÉCTRICA',                                 'categoria' => 'D', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 35200, 'nombre' => 'FABRICACIÓN DE GAS Y DISTRIBUCIÓN DE COMBUSTIBLES GASEOSOS POR TUBERÍAS',                     'categoria' => 'D', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 35300, 'nombre' => 'SUMINISTRO DE VAPOR Y DE AIRE ACONDICIONADO',                                                 'categoria' => 'D', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN E — SUMINISTRO DE AGUA; EVACUACIÓN DE AGUAS RESIDUALES, GESTIÓN DE DESECHOS
-            // -----------------------------------------------
             ['codigo' => 36000, 'nombre' => 'CAPTACIÓN, TRATAMIENTO Y DISTRIBUCIÓN DE AGUA',                                               'categoria' => 'E', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 37000, 'nombre' => 'EVACUACIÓN DE AGUAS RESIDUALES',                                                              'categoria' => 'E', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 38110, 'nombre' => 'RECOGIDA DE DESECHOS NO PELIGROSOS',                                                          'categoria' => 'E', 'afecto_iva' => true,  'activo' => true],
@@ -264,9 +254,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 38300, 'nombre' => 'RECUPERACIÓN DE MATERIALES',                                                                  'categoria' => 'E', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 39000, 'nombre' => 'ACTIVIDADES DE DESCONTAMINACIÓN Y OTROS SERVICIOS DE GESTIÓN DE DESECHOS',                    'categoria' => 'E', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN F — CONSTRUCCIÓN
-            // -----------------------------------------------
             ['codigo' => 41001, 'nombre' => 'CONSTRUCCIÓN DE EDIFICIOS RESIDENCIALES',                                                     'categoria' => 'F', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 41002, 'nombre' => 'CONSTRUCCIÓN DE EDIFICIOS NO RESIDENCIALES',                                                  'categoria' => 'F', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 42100, 'nombre' => 'CONSTRUCCIÓN DE CARRETERAS Y LÍNEAS DE FERROCARRIL',                                          'categoria' => 'F', 'afecto_iva' => true,  'activo' => true],
@@ -281,9 +269,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 43300, 'nombre' => 'TERMINACIÓN Y ACABADO DE EDIFICIOS',                                                          'categoria' => 'F', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 43900, 'nombre' => 'OTRAS ACTIVIDADES ESPECIALIZADAS DE CONSTRUCCIÓN',                                            'categoria' => 'F', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN G — COMERCIO AL POR MAYOR Y AL POR MENOR
-            // -----------------------------------------------
             ['codigo' => 45110, 'nombre' => 'VENTA DE AUTOMÓVILES Y VEHÍCULOS AUTOMOTORES LIVIANOS',                                       'categoria' => 'G', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 45120, 'nombre' => 'VENTA DE OTROS TIPOS DE VEHÍCULOS AUTOMOTORES',                                               'categoria' => 'G', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 45200, 'nombre' => 'MANTENIMIENTO Y REPARACIÓN DE VEHÍCULOS AUTOMOTORES',                                         'categoria' => 'G', 'afecto_iva' => true,  'activo' => true],
@@ -340,9 +326,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 47910, 'nombre' => 'VENTA AL POR MENOR POR CORREO Y POR INTERNET',                                                'categoria' => 'G', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 47990, 'nombre' => 'OTRAS ACTIVIDADES DE VENTA AL POR MENOR NO REALIZADAS EN COMERCIOS',                          'categoria' => 'G', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN H — TRANSPORTE Y ALMACENAMIENTO
-            // -----------------------------------------------
             ['codigo' => 49100, 'nombre' => 'TRANSPORTE POR FERROCARRIL INTERURBANO',                                                      'categoria' => 'H', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 49200, 'nombre' => 'TRANSPORTE DE CARGA POR FERROCARRIL',                                                         'categoria' => 'H', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 49310, 'nombre' => 'TRANSPORTE URBANO Y SUBURBANO DE PASAJEROS POR VÍA TERRESTRE',                                'categoria' => 'H', 'afecto_iva' => true,  'activo' => true],
@@ -364,9 +348,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 53100, 'nombre' => 'ACTIVIDADES POSTALES',                                                                        'categoria' => 'H', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 53200, 'nombre' => 'ACTIVIDADES DE MENSAJERÍA',                                                                   'categoria' => 'H', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN I — ALOJAMIENTO Y SERVICIOS DE COMIDA
-            // -----------------------------------------------
             ['codigo' => 55100, 'nombre' => 'ACTIVIDADES DE HOTELES Y ALOJAMIENTOS SIMILARES',                                             'categoria' => 'I', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 55200, 'nombre' => 'ACTIVIDADES DE CAMPING Y PARQUES PARA CASAS RODANTES Y REMOLQUES',                            'categoria' => 'I', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 55900, 'nombre' => 'OTRAS ACTIVIDADES DE ALOJAMIENTO',                                                            'categoria' => 'I', 'afecto_iva' => true,  'activo' => true],
@@ -375,9 +357,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 56290, 'nombre' => 'OTRAS ACTIVIDADES DE SERVICIO DE COMIDAS',                                                    'categoria' => 'I', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 56300, 'nombre' => 'ELABORACIÓN Y SERVICIO DE BEBIDAS',                                                           'categoria' => 'I', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN J — INFORMACIÓN Y COMUNICACIONES
-            // -----------------------------------------------
             ['codigo' => 58110, 'nombre' => 'EDICIÓN DE LIBROS',                                                                           'categoria' => 'J', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 58120, 'nombre' => 'EDICIÓN DE DIRECTORIOS Y LISTAS DE CORREO',                                                   'categoria' => 'J', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 58130, 'nombre' => 'EDICIÓN DE PERIÓDICOS',                                                                       'categoria' => 'J', 'afecto_iva' => true,  'activo' => true],
@@ -403,9 +383,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 63910, 'nombre' => 'ACTIVIDADES DE AGENCIAS DE NOTICIAS',                                                         'categoria' => 'J', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 63990, 'nombre' => 'OTRAS ACTIVIDADES DE SERVICIOS DE INFORMACIÓN N.C.P.',                                        'categoria' => 'J', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN K — ACTIVIDADES FINANCIERAS Y DE SEGUROS
-            // -----------------------------------------------
             ['codigo' => 64110, 'nombre' => 'BANCA CENTRAL',                                                                               'categoria' => 'K', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 64190, 'nombre' => 'OTROS TIPOS DE INTERMEDIACIÓN MONETARIA',                                                     'categoria' => 'K', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 64200, 'nombre' => 'ACTIVIDADES DE SOCIEDADES DE CARTERA',                                                        'categoria' => 'K', 'afecto_iva' => false, 'activo' => true],
@@ -424,16 +402,12 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 66290, 'nombre' => 'OTRAS ACTIVIDADES AUXILIARES DE LAS ACTIVIDADES DE SEGUROS Y FONDOS DE PENSIONES',            'categoria' => 'K', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 66300, 'nombre' => 'ACTIVIDADES DE GESTIÓN DE FONDOS',                                                            'categoria' => 'K', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN L — ACTIVIDADES INMOBILIARIAS
-            // -----------------------------------------------
             ['codigo' => 68100, 'nombre' => 'ACTIVIDADES INMOBILIARIAS REALIZADAS CON BIENES PROPIOS O ARRENDADOS',                        'categoria' => 'L', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 68200, 'nombre' => 'ACTIVIDADES INMOBILIARIAS REALIZADAS A CAMBIO DE UNA RETRIBUCIÓN O POR CONTRATA',             'categoria' => 'L', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 68209, 'nombre' => 'OTRAS ACTIVIDADES INMOBILIARIAS REALIZADAS A CAMBIO DE UNA RETRIBUCIÓN O POR CONTRATA',       'categoria' => 'L', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN M — ACTIVIDADES PROFESIONALES, CIENTÍFICAS Y TÉCNICAS
-            // -----------------------------------------------
             ['codigo' => 69100, 'nombre' => 'ACTIVIDADES JURÍDICAS',                                                                       'categoria' => 'M', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 69200, 'nombre' => 'ACTIVIDADES DE CONTABILIDAD, TENEDURÍA DE LIBROS Y AUDITORÍA',                                'categoria' => 'M', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 70100, 'nombre' => 'ACTIVIDADES DE ADMINISTRACIÓN EMPRESARIAL',                                                   'categoria' => 'M', 'afecto_iva' => true,  'activo' => true],
@@ -449,9 +423,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 74900, 'nombre' => 'OTRAS ACTIVIDADES PROFESIONALES, CIENTÍFICAS Y TÉCNICAS N.C.P.',                              'categoria' => 'M', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 75000, 'nombre' => 'ACTIVIDADES VETERINARIAS',                                                                    'categoria' => 'M', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN N — ACTIVIDADES DE SERVICIOS ADMINISTRATIVOS Y DE APOYO
-            // -----------------------------------------------
             ['codigo' => 77100, 'nombre' => 'ALQUILER Y ARRENDAMIENTO DE VEHÍCULOS AUTOMOTORES',                                           'categoria' => 'N', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 77210, 'nombre' => 'ALQUILER Y ARRENDAMIENTO DE EQUIPO RECREATIVO Y DEPORTIVO',                                   'categoria' => 'N', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 77220, 'nombre' => 'ALQUILER DE CINTAS DE VÍDEO Y DISCOS',                                                        'categoria' => 'N', 'afecto_iva' => true,  'activo' => true],
@@ -480,9 +452,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 82920, 'nombre' => 'ACTIVIDADES DE ENVASADO Y EMPAQUETADO',                                                       'categoria' => 'N', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 82990, 'nombre' => 'OTRAS ACTIVIDADES DE SERVICIOS DE APOYO A LAS EMPRESAS N.C.P.',                               'categoria' => 'N', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN O — ADMINISTRACIÓN PÚBLICA
-            // -----------------------------------------------
             ['codigo' => 84110, 'nombre' => 'ACTIVIDADES DE LA ADMINISTRACIÓN PÚBLICA EN GENERAL',                                         'categoria' => 'O', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 84120, 'nombre' => 'REGULACIÓN DE LAS ACTIVIDADES DE ORGANISMOS QUE PRESTAN SERVICIOS SANITARIOS, EDUCATIVOS, CULTURALES Y OTROS SERVICIOS SOCIALES', 'categoria' => 'O', 'afecto_iva' => true, 'activo' => true],
             ['codigo' => 84130, 'nombre' => 'REGULACIÓN Y FACILITACIÓN DE LA ACTIVIDAD ECONÓMICA',                                         'categoria' => 'O', 'afecto_iva' => true,  'activo' => true],
@@ -493,9 +463,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 84250, 'nombre' => 'ACTIVIDADES DE JUSTICIA Y DE LOS TRIBUNALES',                                                 'categoria' => 'O', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 84300, 'nombre' => 'ACTIVIDADES DE LOS PLANES DE SEGURIDAD SOCIAL DE AFILIACIÓN OBLIGATORIA',                     'categoria' => 'O', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN P — ENSEÑANZA
-            // -----------------------------------------------
             ['codigo' => 85100, 'nombre' => 'ENSEÑANZA PREESCOLAR',                                                                        'categoria' => 'P', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 85200, 'nombre' => 'ENSEÑANZA PRIMARIA',                                                                          'categoria' => 'P', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 85310, 'nombre' => 'ENSEÑANZA SECUNDARIA DE FORMACIÓN GENERAL',                                                   'categoria' => 'P', 'afecto_iva' => false, 'activo' => true],
@@ -506,9 +474,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 85499, 'nombre' => 'OTROS TIPOS DE ENSEÑANZA N.C.P.',                                                             'categoria' => 'P', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 85500, 'nombre' => 'ACTIVIDADES DE APOYO A LA ENSEÑANZA',                                                         'categoria' => 'P', 'afecto_iva' => false, 'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN Q — ACTIVIDADES DE ATENCIÓN DE LA SALUD HUMANA Y DE ASISTENCIA SOCIAL
-            // -----------------------------------------------
             ['codigo' => 86100, 'nombre' => 'ACTIVIDADES DE HOSPITALES',                                                                   'categoria' => 'Q', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 86200, 'nombre' => 'ACTIVIDADES DE MÉDICOS Y ODONTÓLOGOS',                                                        'categoria' => 'Q', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 86901, 'nombre' => 'LABORATORIOS CLÍNICOS',                                                                       'categoria' => 'Q', 'afecto_iva' => false, 'activo' => true],
@@ -522,9 +488,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 88100, 'nombre' => 'ACTIVIDADES DE ASISTENCIA SOCIAL SIN ALOJAMIENTO PARA PERSONAS MAYORES Y CON DISCAPACIDAD',   'categoria' => 'Q', 'afecto_iva' => false, 'activo' => true],
             ['codigo' => 88900, 'nombre' => 'OTRAS ACTIVIDADES DE ASISTENCIA SOCIAL SIN ALOJAMIENTO',                                     'categoria' => 'Q', 'afecto_iva' => false, 'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN R — ARTES, ENTRETENIMIENTO Y RECREACIÓN
-            // -----------------------------------------------
             ['codigo' => 90000, 'nombre' => 'ACTIVIDADES CREATIVAS, ARTÍSTICAS Y DE ENTRETENIMIENTO',                                      'categoria' => 'R', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 91010, 'nombre' => 'ACTIVIDADES DE BIBLIOTECAS Y ARCHIVOS',                                                       'categoria' => 'R', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 91020, 'nombre' => 'ACTIVIDADES DE MUSEOS Y GESTIÓN DE LUGARES Y EDIFICIOS HISTÓRICOS',                           'categoria' => 'R', 'afecto_iva' => true,  'activo' => true],
@@ -537,9 +501,7 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 93210, 'nombre' => 'ACTIVIDADES DE PARQUES DE ATRACCIONES Y PARQUES TEMÁTICOS',                                   'categoria' => 'R', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 93290, 'nombre' => 'OTRAS ACTIVIDADES DE ESPARCIMIENTO Y RECREACIÓN N.C.P.',                                      'categoria' => 'R', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN S — OTRAS ACTIVIDADES DE SERVICIOS
-            // -----------------------------------------------
             ['codigo' => 94110, 'nombre' => 'ACTIVIDADES DE ASOCIACIONES EMPRESARIALES Y DE EMPLEADORES',                                  'categoria' => 'S', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 94120, 'nombre' => 'ACTIVIDADES DE ASOCIACIONES PROFESIONALES',                                                   'categoria' => 'S', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 94200, 'nombre' => 'ACTIVIDADES DE SINDICATOS',                                                                   'categoria' => 'S', 'afecto_iva' => true,  'activo' => true],
@@ -559,14 +521,10 @@ class SiiCatActecoSeeder extends Seeder
             ['codigo' => 96040, 'nombre' => 'ACTIVIDADES DE MANTENIMIENTO FÍSICO',                                                         'categoria' => 'S', 'afecto_iva' => true,  'activo' => true],
             ['codigo' => 96090, 'nombre' => 'OTRAS ACTIVIDADES DE SERVICIOS PERSONALES N.C.P.',                                            'categoria' => 'S', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN T — ACTIVIDADES DE HOGARES COMO EMPLEADORES
-            // -----------------------------------------------
             ['codigo' => 97000, 'nombre' => 'ACTIVIDADES DE HOGARES COMO EMPLEADORES DE PERSONAL DOMÉSTICO',                               'categoria' => 'T', 'afecto_iva' => true,  'activo' => true],
 
-            // -----------------------------------------------
             // SECCIÓN U — ACTIVIDADES DE ORGANIZACIONES EXTRATERRITORIALES
-            // -----------------------------------------------
             ['codigo' => 99000, 'nombre' => 'ACTIVIDADES DE ORGANIZACIONES Y ÓRGANOS EXTRATERRITORIALES',                                  'categoria' => 'U', 'afecto_iva' => true,  'activo' => true],
         ];
 

@@ -11,10 +11,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Dashboard de inventario (agregados/métricas del módulo). Extraído de
- * InventarioController (H7 sprint 13a). Un único servicio, solo trait.
- */
+/** Un único servicio, solo trait. */
 class DashboardController
 {
     use RespondeInventario;

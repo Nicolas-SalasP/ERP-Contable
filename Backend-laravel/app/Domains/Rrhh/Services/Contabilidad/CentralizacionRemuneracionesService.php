@@ -14,42 +14,14 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-/**
- * R5 — Centralización contable de remuneraciones.
- *
- * Genera un único asiento contable mensual que consolida todas las
- * liquidaciones EMITIDAS y PAGADAS del período. El asiento sigue el esquema
- * estándar chileno:
- *
- *   DEBE:  Gasto Remuneraciones  (total haberes imponibles + no imponibles)
- *          Gasto Leyes Sociales   (SIS + AFC empleador + mutual)
- *          Gasto Provisión Vac.   (opcional, si está configurado)
- *
- *   HABER: Remuneraciones por Pagar  (líquido a pagar a trabajadores)
- *          Retenciones Previsionales  (AFP + salud + AFC trabajador)
- *          Impuesto Único Retenido    (2ª categoría)
- *          Leyes Sociales por Pagar   (aportes empleador)
- *          Descuentos Voluntarios     (APV, préstamos, etc. — opcional)
- *          Provisión Vacaciones       (opcional, par con GASTO)
- *
- * La partida doble cuadra siempre porque:
- *   DEBE = total_haberes + leyes_soc + vac
- *   HABER = liquido + (AFP+salud+AFC_trab) + IUSC + desc_vol + leyes_soc + vac
- *         = total_haberes + leyes_soc + vac  ✓
- *
- * Prerequisito: las cuentas del Plan se configuran en rrhh_mapeo_contable
- * (ver RrhhMapeoContable::TIPOS_REQUERIDOS).
- */
+/** R5 — Genera un único asiento mensual (esquema chileno estándar DEBE gastos/HABER pasivos) que consolida las liquidaciones EMITIDAS/PAGADAS del período; la partida doble cuadra porque DEBE = total_haberes+leyes_soc+vac = HABER; prerequisito: cuentas configuradas en rrhh_mapeo_contable (ver RrhhMapeoContable::TIPOS_REQUERIDOS). */
 class CentralizacionRemuneracionesService
 {
     public function __construct(
         private readonly AsientoContableService $asientoService,
     ) {}
 
-    /**
-     * Centraliza todas las liquidaciones EMITIDAS o PAGADAS del período en un asiento.
-     * Idempotente: lanza excepción si el período ya fue centralizado.
-     */
+    /** Centraliza todas las liquidaciones EMITIDAS o PAGADAS del período en un asiento; idempotente, lanza excepción si el período ya fue centralizado. */
     public function centralizar(
         int $empresaId,
         int $anio,

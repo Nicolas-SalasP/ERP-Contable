@@ -12,11 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Administración de la parametrización legal (tasas previsionales, indicadores
- * mensuales UF/UTM y tabla del impuesto único). Estos valores cambian
- * periódicamente y NUNCA están hardcodeados en el motor de cálculo.
- */
+/** Administración de la parametrización legal (tasas previsionales, indicadores UF/UTM, impuesto único); estos valores cambian periódicamente y nunca están hardcodeados en el motor de cálculo. */
 class ParametroPrevisionalController extends Controller
 {
     public function indexParametros(): JsonResponse
@@ -55,7 +51,6 @@ class ParametroPrevisionalController extends Controller
             'fuente' => 'nullable|string',
         ]);
 
-        // Validar solapamiento: vigente_desde debe ser posterior al del parámetro actual
         $actual = ParametroPrevisional::whereNull('vigente_hasta')
             ->orderByDesc('vigente_desde')
             ->first();
@@ -68,7 +63,6 @@ class ParametroPrevisionalController extends Controller
         }
 
         $parametro = DB::transaction(function () use ($datos, $actual): ParametroPrevisional {
-            // Cerrar vigencia del parámetro anterior
             if ($actual) {
                 $actual->update([
                     'vigente_hasta' => Carbon::parse($datos['vigente_desde'])
@@ -113,18 +107,11 @@ class ParametroPrevisionalController extends Controller
 
         $datos['uta_valor'] = $datos['uta_valor'] ?? ($datos['utm_valor'] * 12);
 
-        // Si ya existen liquidaciones EMITIDAS/PAGADAS de este período, fueron
-        // calculadas con el valor UF/UTM anterior -- sobrescribirlo las
-        // desincroniza en silencio. Solo staff interno llega aquí (jerarquia
-        // 100), asi que no bloqueamos (pueden ser correcciones legitimas del
-        // SII), pero avisamos con cuántas liquidaciones quedarían desfasadas.
+        // No bloqueamos sobrescritura aunque existan liquidaciones EMITIDA/PAGADA ya calculadas con el valor anterior (pueden ser correcciones legítimas del SII); solo avisamos cuántas quedarían desfasadas.
         $existente = IndicadorMensual::where('anio', $datos['anio'])->where('mes', $datos['mes'])->first();
         $liquidacionesAfectadas = 0;
         if ($existente && ((float) $existente->uf_valor !== (float) $datos['uf_valor'] || (float) $existente->utm_valor !== (float) $datos['utm_valor'])) {
-            // IndicadorMensual es global (sin empresa_id): el cambio afecta a
-            // TODAS las empresas que ya calcularon liquidaciones con el valor
-            // anterior, no solo a la empresa del usuario staff que edita esto
-            // -- por eso se bypassea el scope en vez de agregarlo.
+            // IndicadorMensual es global (sin empresa_id): se bypassea el EmpresaScope porque el cambio afecta a todas las empresas, no solo la del usuario staff que edita.
             $liquidacionesAfectadas = \App\Domains\Rrhh\Models\Liquidacion::withoutGlobalScope(\App\Domains\Core\Scopes\EmpresaScope::class)
                 ->where('anio', $datos['anio'])
                 ->where('mes', $datos['mes'])

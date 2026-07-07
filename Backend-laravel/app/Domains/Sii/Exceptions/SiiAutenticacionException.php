@@ -4,9 +4,7 @@ namespace App\Domains\Sii\Exceptions;
 
 use RuntimeException;
 
-/**
- * F5.1 — Fallos del flujo de autenticacion con el SII (getSeed / getToken).
- */
+/** F5.1 — fallos del flujo de autenticacion con el SII (getSeed / getToken). */
 class SiiAutenticacionException extends RuntimeException
 {
     public const MOTIVO_SEMILLA_NO_OBTENIDA = 'semilla_no_obtenida';

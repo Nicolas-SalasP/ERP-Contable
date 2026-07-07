@@ -50,9 +50,7 @@ class PlanCuentaService
                 throw new Exception("El código contable ya está en uso por otra cuenta.");
         }
 
-        // detalles_asiento no tiene empresa_id propio -- sin el whereHas, el
-        // codigo de cuenta (compartido entre empresas por convencion chilena,
-        // ej. 110101 Caja) bloqueaba a esta empresa por movimientos de OTRA.
+        // detalles_asiento no tiene empresa_id propio; sin el whereHas, un codigo compartido entre empresas (convencion chilena, ej. 110101 Caja) bloqueaba por movimientos de OTRA empresa.
         $tieneMovimientos = DetalleAsiento::where('cuenta_contable', $cuenta->codigo)
             ->whereHas('asiento', fn ($q) => $q->where('empresa_id', $empresa_id))
             ->exists();

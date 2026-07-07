@@ -108,7 +108,6 @@ export default function Manuales() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-6">
-      {/* Encabezado */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
@@ -128,7 +127,6 @@ export default function Manuales() {
         </div>
       </div>
 
-      {/* Grid de manuales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {MANUALES.map((m) => (
           <div
@@ -143,12 +141,10 @@ export default function Manuales() {
                 : 'border-slate-700/60'}
             `}
           >
-            {/* Número badge */}
             <div className="absolute top-3 right-3 text-xs font-mono font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">
               #{m.num}
             </div>
 
-            {/* Ícono y título */}
             <div className="p-5 pb-3 flex-1">
               <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3">
                 <i className={`${m.icono} text-emerald-400`}></i>
@@ -158,7 +154,6 @@ export default function Manuales() {
               <p className="text-slate-400 text-sm mt-2 leading-relaxed">{m.desc}</p>
             </div>
 
-            {/* Acciones */}
             <div className="px-5 pb-4 flex gap-2">
               <a
                 href={pdfUrl(m.num)}
@@ -182,7 +177,6 @@ export default function Manuales() {
         ))}
       </div>
 
-      {/* Pie */}
       <div className="mt-8 text-center text-xs text-slate-600">
         14 manuales disponibles · Tenri ERP Cloud
       </div>

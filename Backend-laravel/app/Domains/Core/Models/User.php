@@ -73,8 +73,7 @@ class User extends Authenticatable
 
     public function empresa()
     {
-        // Apunta a empresa_activa_id para que $user->empresa devuelva siempre
-        // la empresa activa actual (igual a empresa_id en usuarios de una sola empresa).
+        // Apunta a empresa_activa_id: $user->empresa siempre devuelve la activa (igual a empresa_id en usuarios de una sola empresa).
         return $this->belongsTo(Empresa::class, 'empresa_activa_id');
     }
 

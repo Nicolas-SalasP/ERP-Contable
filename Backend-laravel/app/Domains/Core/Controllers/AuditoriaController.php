@@ -7,17 +7,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Endpoint DPO — Consulta de auditoria PII (Ley 21.719 — Fase 3).
- *
- * Solo devuelve filas de la empresa del solicitante (multi-tenant por
- * referencia_cruzada). Requiere permiso usuarios.gestionar (admin >= 80).
- */
+/** Endpoint DPO de consulta de auditoría PII (Ley 21.719); filtra por empresa del solicitante vía referencia_cruzada, requiere permiso usuarios.gestionar. */
 class AuditoriaController extends Controller
 {
-    /**
-     * Alias de clase corta a FQCN para el filtro auditable_type.
-     */
+    /** Alias de clase corta a FQCN para el filtro auditable_type. */
     private const ALIAS_TIPOS = [
         'empleado'                => \App\Domains\Rrhh\Models\Empleado::class,
         'contrato'                => \App\Domains\Rrhh\Models\Contrato::class,

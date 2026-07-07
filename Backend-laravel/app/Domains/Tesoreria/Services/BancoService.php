@@ -34,8 +34,7 @@ class BancoService
 
     public function registrarCuentaPropia(array $datos): CuentaBancariaEmpresa
     {
-        // numero_cuenta está cifrado con IV aleatorio; no se puede comparar con WHERE.
-        // Se carga el subconjunto empresa+banco y se compara el valor descifrado en PHP.
+        // numero_cuenta está cifrado con IV aleatorio: se compara descifrado en PHP, no con WHERE.
         $existe = CuentaBancariaEmpresa::where('empresa_id', $datos['empresa_id'])
             ->where('banco', $datos['banco'])
             ->get()
@@ -128,8 +127,7 @@ class BancoService
 
             $asiento = $this->asientoService->registrarAsiento($datosAsiento, $datosAsiento['detalles']);
 
-            // Vincula el asiento de pago a las facturas para que una anulación posterior
-            // (Anulación General) pueda revertir su estado automáticamente.
+            // Vincula el asiento a las facturas para que una anulación posterior revierta su estado.
             Factura::whereIn('id', $ids)->where('empresa_id', $empresaId)->update(['asiento_pago_id' => $asiento->id]);
 
             return [
@@ -179,32 +177,21 @@ class BancoService
 
     public function procesarCartola(int $empresaId, int $usuarioId, int $cuentaBancariaId, $archivo): array
     {
-        // Precondición FUERA de la transacción: valida pertenencia de la cuenta.
-        // Ya no exige cuenta contable configurada acá -- el import solo deja los
-        // movimientos PENDIENTE, la contabilización (con su cuenta contrapartida
-        // elegida por movimiento) ocurre despues en Mesa de Conciliación.
+        // Ya no exige cuenta contable: el import solo deja movimientos PENDIENTE, se contabiliza en Mesa de Conciliación.
         $this->obtenerCuentaBancaria($empresaId, $cuentaBancariaId);
 
         try {
-            // DB::transaction garantiza el rollback ante cualquier excepción (antes se
-            // usaba beginTransaction()/commit() con un catch que no capturaba las
-            // TesoreriaException por falta del import, dejando la transacción abierta).
+            // DB::transaction asegura rollback ante excepción (antes quedaba abierta con begin/commit manual).
             return DB::transaction(function () use (
                 $empresaId, $cuentaBancariaId, $archivo
             ): array {
-                // IOFactory detecta el formato real por contenido (CSV, XLS o XLSX),
-                // no por la extensión del archivo -> soporta la cartola tal cual la
-                // exporta el banco sin pedirle al usuario que la convierta a CSV.
+                // IOFactory detecta el formato real (CSV/XLS/XLSX) por contenido, no por extensión.
                 $hoja = IOFactory::load($archivo->getRealPath())->getActiveSheet();
                 $importados = 0;
                 $ignorados = 0;
                 $ultimaFila = $hoja->getHighestDataRow();
 
-                // Cartolas reales (ej. Scotiabank) traen un bloque de metadata (Nombre
-                // Empresa, Número Línea, Saldo Disponible, etc.) ANTES del encabezado
-                // real de la tabla, y separan Cargos/Abonos en dos columnas en vez de
-                // un solo monto con signo -- asumir fila 1 = encabezado y columna C =
-                // monto (como antes) hacía que todo el archivo importara 0 filas.
+                // Cartolas reales traen metadata antes del encabezado real y Cargos/Abonos en columnas separadas.
                 $encabezado = $this->localizarEncabezadoCartola($hoja, $ultimaFila);
 
                 for ($numeroFila = $encabezado['fila'] + 1; $numeroFila <= $ultimaFila; $numeroFila++) {
@@ -226,9 +213,7 @@ class BancoService
                             ? (float) $hoja->getCell($encabezado['colAbono'] . $numeroFila)->getCalculatedValue()
                             : 0.0;
 
-                        // Cargos/Abonos vienen en columnas separadas; se normaliza el
-                        // signo acá en vez de confiar en como cada banco los exporte
-                        // (algunos traen el Cargo ya negativo, otros en positivo).
+                        // Se normaliza el signo acá: cada banco exporta Cargos/Abonos con convención distinta.
                         $monto = $montoCargo != 0 ? -abs($montoCargo) : ($montoAbono != 0 ? abs($montoAbono) : 0.0);
                     }
 
@@ -249,9 +234,7 @@ class BancoService
                         continue;
                     }
 
-                    // Se deja PENDIENTE con la fecha real del movimiento (no la de hoy):
-                    // la contabilización recien ocurre en Mesa de Conciliación, y esa
-                    // fecha es la que debe quedar en el asiento cuando eso pase.
+                    // Fecha real del movimiento, no la de hoy: se contabiliza recién en Mesa de Conciliación.
                     DB::table('movimientos_bancarios')->insert([
                         'empresa_id' => $empresaId,
                         'cuenta_bancaria_id' => $cuentaBancariaId,
@@ -279,13 +262,7 @@ class BancoService
         }
     }
 
-    /**
-     * Un mismo N° de documento del banco identifica un movimiento de forma
-     * unica -- se usa como clave de dedup cuando el archivo lo trae, porque
-     * fecha+descripcion NO alcanza: es comun tener dos transacciones reales
-     * el mismo dia, con la misma glosa y el mismo monto (ej. dos TEF de
-     * $50.000 al mismo destinatario en fechas distintas de una nomina).
-     */
+    /** N° de documento como clave de dedup cuando está disponible: fecha+descripción no alcanza (transacciones idénticas el mismo día). */
     private function existeMovimientoDuplicado(
         int $empresaId,
         int $cuentaBancariaId,
@@ -311,11 +288,7 @@ class BancoService
     }
 
     /**
-     * Encuentra la fila de encabezado real de la cartola y mapea sus columnas por
-     * nombre (no por posición fija) -- los bancos exportan con bloques de metadata
-     * antes de la tabla (Nombre Empresa, Saldo Disponible, etc.) y algunos separan
-     * Cargos/Abonos en dos columnas en vez de un solo monto con signo.
-     *
+     * Ubica el encabezado real por nombre de columna (no posición fija): los bancos exportan metadata antes de la tabla.
      * @return array{fila:int, colFecha:string, colDescripcion:string, colMonto:?string, colCargo:?string, colAbono:?string, colDocumento:?string}
      */
     private function localizarEncabezadoCartola(Worksheet $hoja, int $ultimaFila): array
@@ -406,14 +379,7 @@ class BancoService
         return $mov;
     }
 
-    /**
-     * Obtiene un movimiento para conciliarlo, bloqueandolo (lockForUpdate) y
-     * rechazandolo si ya fue conciliado. DEBE llamarse dentro de una transaccion.
-     *
-     * Evita la doble conciliacion: sin el lock + guard de estado, un doble click
-     * o reintento podia reprocesar un movimiento CONCILIADO y generar un segundo
-     * asiento de banco (doble cargo/abono) y re-pagar facturas.
-     */
+    /** Bloquea (lockForUpdate) y rechaza si ya está CONCILIADO -- evita doble conciliación en carrera. Llamar dentro de una transacción. */
     public function obtenerMovimientoParaConciliar(int $empresaId, int $id)
     {
         $mov = DB::table('movimientos_bancarios')

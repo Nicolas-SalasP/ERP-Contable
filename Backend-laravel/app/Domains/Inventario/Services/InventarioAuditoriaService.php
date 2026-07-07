@@ -35,11 +35,7 @@ class InventarioAuditoriaService
         '.env',
     ];
 
-    /**
-     * Inventario opera como WMS/logística. Estas claves se bloquean en la
-     * auditoría para evitar que payloads externos ensucien la separación con
-     * DTE/SII o documentos tributarios.
-     */
+    /** Bloquea claves tributarias para que payloads externos no ensucien la separación de Inventario (WMS) con DTE/SII. */
     private const CLAVES_TRIBUTARIAS_BLOQUEADAS = [
         'codigo_dte',
         'codigo_sii',

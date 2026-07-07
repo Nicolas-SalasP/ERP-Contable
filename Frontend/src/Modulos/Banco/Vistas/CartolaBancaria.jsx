@@ -89,19 +89,8 @@ const CartolaBancaria = () => {
         Swal.fire({ title: 'Procesando Cartola...', text: 'Analizando ingresos y egresos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         try {
-            // api.upload() (no api.post con Content-Type manual): fijar el header a
-            // mano sin boundary hace que el body llegue vacio al servidor -- los 3
-            // campos requeridos fallaban validacion aunque el FormData los tuviera bien.
-            //
-            // request() en Configuracion/api.js devuelve el body JSON tal cual (no
-            // envuelto en {data:...} como axios) -- destructurar "{ data }" tomaba el
-            // campo interno data:{importados,ignorados} en vez del body completo, asi
-            // que data.success siempre daba undefined y una importacion EXITOSA caia
-            // igual al catch con "Error de Importación".
-            //
-            // El import ya no pide cuenta de contrapartida: solo deja los movimientos
-            // PENDIENTE (con la fecha real del banco), se contabilizan uno por uno en
-            // Mesa de Conciliación eligiendo ahí la cuenta que corresponda a cada uno.
+            // api.upload() (no api.post con Content-Type manual, que rompe el boundary y vacía el body); request() ya
+            // devuelve el body JSON tal cual, no destructurar "{ data }" o se pierde el envelope real de la respuesta.
             const data = await api.upload('/banco/importar', formData);
 
             Swal.fire({

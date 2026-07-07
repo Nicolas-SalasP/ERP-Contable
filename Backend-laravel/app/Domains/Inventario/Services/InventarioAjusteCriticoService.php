@@ -247,14 +247,7 @@ class InventarioAjusteCriticoService
         });
     }
 
-    /**
-     * Revierte un ajuste crítico registrado por error: crea un movimiento
-     * compensatorio (opuesto al original) en vez de editar/borrar el ajuste
-     * o el movimiento original -- mismo criterio que AsientoContableService::
-     * procesarReversa. Reusa registrarMovimiento() para que la valorización
-     * y las capas FIFO/lote se calculen con la misma lógica probada que
-     * cualquier otro movimiento, no con aritmética manual sobre el stock.
-     */
+    /** Revierte con un movimiento compensatorio (no edita/borra el original) y reusa registrarMovimiento() para que valorización y capas FIFO/lote usen la misma lógica probada, no aritmética manual sobre el stock. */
     public function anularAjusteCritico(User $usuario, int $ajusteCriticoId, string $motivoAnulacion): AjusteCriticoInventario
     {
         $this->permisos->exigir($usuario, 'inventario.ajustes_criticos.crear');
@@ -306,8 +299,7 @@ class InventarioAjusteCriticoService
                 $datosReversa['tipo'] = MovimientoInventario::TIPO_AJUSTE_NEGATIVO;
                 $datosReversa['bodega_origen_id'] = $ajuste->bodega_id;
             } else {
-                // Original restó stock en bodega_origen -> reversa suma en la misma bodega,
-                // preservando el costo unitario original para no distorsionar el promedio.
+                // Original restó stock en bodega_origen -> reversa suma en la misma bodega, preservando el costo unitario original para no distorsionar el promedio.
                 $datosReversa['tipo'] = MovimientoInventario::TIPO_AJUSTE_POSITIVO;
                 $datosReversa['bodega_destino_id'] = $ajuste->bodega_id;
                 $datosReversa['costo_unitario'] = (float) $ajuste->costo_unitario;

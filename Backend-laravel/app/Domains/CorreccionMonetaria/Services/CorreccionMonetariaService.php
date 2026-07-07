@@ -463,8 +463,7 @@ class CorreccionMonetariaService
             ->join('asientos_contables as ac', 'da.asiento_id', '=', 'ac.id')
             ->where('ac.empresa_id', $empresaId)
             ->whereIn('da.cuenta_contable', $codigos)
-            // Mismo criterio que ReporteContableService: excluye anulados y
-            // reclasificados (antes solo incluia 'MAYORIZADO', inconsistente).
+            // Mismo criterio que ReporteContableService: excluye anulados/reclasificados.
             ->whereNotIn('ac.estado', ['ANULADO', 'RECLASIFICADO'])
             ->where('ac.fecha', '<=', $fechaHasta)
             ->groupBy('da.cuenta_contable')
@@ -502,10 +501,7 @@ class CorreccionMonetariaService
         $periodoActual = sprintf('%04d-%02d', $anio, $mes);
 
         foreach ($activos as $activo) {
-            // Proporcionalidad por meses de tenencia: un bien adquirido DURANTE (o
-            // despues de) el periodo corregido no se corrige ese mes; se corrige
-            // desde el periodo siguiente. Antes se aplicaba el factor completo a
-            // todos los activos, sobrevaluando los recien adquiridos.
+            // Proporcionalidad por meses de tenencia: un bien adquirido en/después del período no se corrige ese mes.
             $mesAdquisicion = $activo->fecha_adquisicion
                 ? \Illuminate\Support\Carbon::parse($activo->fecha_adquisicion)->format('Y-m')
                 : null;

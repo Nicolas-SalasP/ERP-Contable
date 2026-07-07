@@ -3,10 +3,7 @@
 namespace App\Domains\Sii\Concerns;
 
 /**
- * Extiende Empresa con los campos exigidos por XSD del SII.
- *
- * Auto-aplicado por Eloquent via initialize<Trait>() en cada instancia.
- * NO sobrescribe $fillable ni $casts existentes: merge aditivo.
+ * Extiende Empresa con los campos exigidos por XSD del SII; auto-aplicado por Eloquent via initialize<Trait>(), merge aditivo (no sobrescribe $fillable/$casts existentes).
  *
  * @property string|null $giro_emisor
  * @property int|null $codigo_actividad_sii

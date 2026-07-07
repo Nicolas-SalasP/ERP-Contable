@@ -13,10 +13,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Orquesta la autenticacion con el WS SII y persiste la sesion en sii_token_sesion.
- * Reutiliza tokens activos para minimizar autenticaciones contra el SII.
- */
+/** Orquesta la autenticacion con el WS SII y persiste la sesion en sii_token_sesion; reutiliza tokens activos para minimizar autenticaciones contra el SII. */
 class SiiTokenService
 {
     /** Margen de seguridad: SII dice ~60 min, persistimos con 50 para no usar token expirando. */
@@ -61,9 +58,7 @@ class SiiTokenService
         return $this->generarSesionNueva($empresa);
     }
 
-    /**
-     * Fuerza la generacion de una nueva sesion (ignora el cache).
-     */
+    /** Fuerza la generacion de una nueva sesion (ignora el cache). */
     public function generarSesionNueva(Empresa $empresa): SiiTokenSesion
     {
         $this->validarConfiguracion($empresa);
@@ -109,14 +104,11 @@ class SiiTokenService
             throw SiiConfiguracionIncompletaException::ambienteProdSinResolucion($empresa->id);
         }
 
-        // Verifica cert activo upfront: lanza CertificadoInvalidoException si no hay.
-        // Asi fallamos antes de pegarle al SII si la empresa no tiene cert.
+        // Verifica cert activo upfront (lanza CertificadoInvalidoException si no hay), asi fallamos antes de pegarle al SII si la empresa no tiene cert.
         $this->certificadoService->extraerParPemDeEmpresa($empresa);
     }
 
-    /**
-     * Envia el XML getToken firmado al WS y extrae el TOKEN.
-     */
+    /** Envia el XML getToken firmado al WS y extrae el TOKEN. */
     private function postGetToken(string $xmlFirmado, string $ambiente): string
     {
         $url = config("sii.urls.{$ambiente}.token");
@@ -151,14 +143,10 @@ class SiiTokenService
         return $this->extraerTokenDeRespuesta($response->body());
     }
 
-    /**
-     * SOAP envelope para getToken. El xmlFirmado va embebido como string
-     * dentro de <pszXml><![CDATA[...]]></pszXml>.
-     */
+    /** SOAP envelope para getToken; el xmlFirmado va embebido como string dentro de <pszXml><![CDATA[...]]></pszXml>. */
     private function construirSoapGetToken(string $xmlFirmado): string
     {
-        // Escapamos CDATA-terminators por seguridad (defensive). El xmlFirmado
-        // no debe contener "]]>" pero blindamos.
+        // Escapamos CDATA-terminators por seguridad (defensive); el xmlFirmado no debe contener "]]>" pero blindamos.
         $payload = str_replace(']]>', ']]]]><![CDATA[>', $xmlFirmado);
 
         return <<<XML

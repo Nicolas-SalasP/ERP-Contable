@@ -7,12 +7,7 @@ use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-/**
- * Evento que desencadena la emision SII async para una Factura del Comercial.
- *
- * ShouldDispatchAfterCommit: dentro de una DB::transaction encola tras el commit,
- * evitando encolar jobs para facturas que luego se rollback.
- */
+/** Evento que desencadena la emision SII async para una Factura del Comercial; ShouldDispatchAfterCommit encola tras el commit de la transaccion, evitando encolar jobs para facturas que luego se rollback. */
 class FacturaListaParaEmitirEvent implements ShouldDispatchAfterCommit
 {
     use Dispatchable;

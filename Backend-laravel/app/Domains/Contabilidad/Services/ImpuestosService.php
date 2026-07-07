@@ -10,15 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class ImpuestosService
 {
-    /**
-     * Resumen de ventas afectas reales de un periodo para fines tributarios.
-     *
-     * Fuente: documentos tributarios electronicos efectivamente emitidos
-     * (sii_dte_emitido), NO cotizaciones. Una cotizacion es solo una oferta y
-     * NO constituye una venta ni genera IVA debito; usarla inflaba el F29 y la
-     * base de renta. Suma facturas/boletas/notas de debito y RESTA notas de
-     * credito; excluye borradores, rechazados y anulados.
-     */
+    /** Ventas afectas reales del periodo desde DTEs emitidos (no cotizaciones, que inflaban el F29): suma facturas/boletas/ND y resta NC, excluyendo borradores/rechazados/anulados. */
     private function resumenVentasAfectas(int $empresaId, string $fechaInicio, string $fechaFin): array
     {
         $estadosEmitidos = [
@@ -83,9 +75,7 @@ class ImpuestosService
         $totalComprasNeto = $compras->sum('monto_neto');
         $ivaCreditoFacturas = (float) $compras->sum('monto_iva');
 
-        // Remanente IVA acumulado del mes anterior: si el F29 del mes previo fue
-        // mayorizado, el DEBE sobre cuenta 152542 representa el remanente generado
-        // ese mes. Se suma al crédito fiscal del periodo actual (art. 26 Ley IVA).
+        // Remanente IVA del mes anterior (DEBE en cuenta 152542 si el F29 previo fue mayorizado) se suma al crédito fiscal actual (art. 26 Ley IVA).
         $mesPrev  = $mes === 1 ? 12 : $mes - 1;
         $anioPrev = $mes === 1 ? $anio - 1 : $anio;
         $glosaPrev = "Centralización F29 - " . str_pad((string) $mesPrev, 2, '0', STR_PAD_LEFT) . "/$anioPrev";
@@ -99,8 +89,7 @@ class ImpuestosService
             ->where('detalles_asiento.cuenta_contable', '152542')
             ->sum('detalles_asiento.debe');
 
-        // Las líneas HABER en 152542 (consumo de remanente anterior) tienen debe=0,
-        // por lo que sum('debe') devuelve exclusivamente el remanente nuevo generado.
+        // Las líneas HABER en 152542 tienen debe=0, por lo que sum('debe') devuelve solo el remanente nuevo generado.
         $ivaCredito = $ivaCreditoFacturas + $remanenteMesAnterior;
 
         $retencionHonorarios = (int) \Illuminate\Support\Facades\DB::table('honorarios_recibidos')
@@ -115,8 +104,7 @@ class ImpuestosService
         if (($empresaRow->regimen_tributario ?? '') === '14_D8') {
             $tasaTabla = DB::table('tasas_ppm_propyme')->where('anio', $anio)->first();
             if ($tasaTabla) {
-                // Ingresos del año anterior para determinar si supera umbral 50.000 UF
-                // Umbral aproximado en pesos (50.000 UF × ~$38.000 = $1.900.000.000)
+                // Umbral de 50.000 UF aproximado en pesos (50.000 × ~$38.000 = $1.900.000.000).
                 $ingresosAnioAnterior = (float) DB::table('sii_dte_emitido')
                     ->where('empresa_id', $empresaId)
                     ->whereYear('fecha_emision', $anio - 1)
@@ -177,12 +165,7 @@ class ImpuestosService
     }
 
     /**
-     * Mapea los datos ya calculados de simularF29 a las líneas del Formulario 29 del SII.
-     *
-     * Invariantes garantizados:
-     *   - L27 = L24 + L26 (crédito facturas + remanente anterior)
-     *   - L28 y L36 son mutuamente excluyentes: solo uno puede ser > 0
-     *   - L89 = L91 = resumen.total_a_pagar
+     * Mapea los datos de simularF29 a las líneas del Formulario 29 SII (invariantes: L27=L24+L26; L28/L36 mutuamente excluyentes; L89=L91=total_a_pagar).
      *
      * @param array<string, mixed> $sim
      * @return array<string, array{desc: string, valor: int|float}>
@@ -269,8 +252,7 @@ class ImpuestosService
             if ($simulacion['compras']['iva_credito_facturas'] > 0) {
                 $detalles[] = ['cuenta_contable' => '152540', 'debe' => 0, 'haber' => $simulacion['compras']['iva_credito_facturas'], 'glosa_detalle' => 'Reversa IVA Crédito'];
             }
-            // Aplicar remanente del mes anterior: HABER en 152542 cancela el activo
-            // generado en el asiento F29 del mes previo (mantiene partida doble).
+            // HABER en 152542 cancela el activo generado en el asiento F29 del mes previo (mantiene partida doble).
             if ($simulacion['compras']['remanente_mes_anterior'] > 0) {
                 $detalles[] = ['cuenta_contable' => '152542', 'debe' => 0, 'haber' => $simulacion['compras']['remanente_mes_anterior'], 'glosa_detalle' => 'Aplicación remanente IVA mes anterior'];
             }

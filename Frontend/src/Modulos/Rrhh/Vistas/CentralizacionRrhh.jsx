@@ -54,8 +54,7 @@ const CentralizacionRrhh = () => {
 
     useEffect(() => { cargar(); }, [cargar]);
 
-    // Plan de cuentas para el buscador. Si el usuario no tiene acceso a contabilidad,
-    // queda vacío y se usa el ingreso manual de código como respaldo.
+    // Si el usuario no tiene acceso a contabilidad, queda vacío y se usa el ingreso manual como respaldo.
     useEffect(() => {
         (async () => {
             try {
@@ -128,7 +127,6 @@ const CentralizacionRrhh = () => {
             </header>
 
             <EstadoCarga cargando={cargando} mensajeCargando="Cargando configuración..." color="emerald" tamano="compacto">
-                {/* Ejecutar centralización */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                     <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><i className="fas fa-play-circle text-emerald-600" /> Ejecutar centralización</h3>
                     {faltantes.length > 0 && (
@@ -159,7 +157,6 @@ const CentralizacionRrhh = () => {
                     </div>
                 </div>
 
-                {/* Mapeo de cuentas */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
                         <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><i className="fas fa-sitemap text-emerald-600" /> Mapeo contable</h3>

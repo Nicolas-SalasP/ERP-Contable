@@ -10,10 +10,7 @@ use Illuminate\Http\Request;
 
 class PrivacidadController extends Controller
 {
-    /**
-     * GET /api/privacidad/politica
-     * Devuelve la política de privacidad activa o 404 si no existe ninguna.
-     */
+    /** GET /api/privacidad/politica — devuelve la política activa o 404 si no existe ninguna. */
     public function politicaActiva(): JsonResponse
     {
         $politica = PoliticaPrivacidad::where('activa', true)->first();
@@ -31,10 +28,7 @@ class PrivacidadController extends Controller
         ]);
     }
 
-    /**
-     * GET /api/privacidad/mi-consentimiento
-     * Indica si el usuario autenticado ha aceptado la versión activa de la política.
-     */
+    /** GET /api/privacidad/mi-consentimiento — indica si el usuario autenticado aceptó la versión activa de la política. */
     public function miConsentimiento(Request $request): JsonResponse
     {
         $user    = $request->user();
@@ -62,11 +56,7 @@ class PrivacidadController extends Controller
         ]);
     }
 
-    /**
-     * POST /api/privacidad/consentimiento
-     * Registra la aceptación de la política activa por parte del usuario autenticado.
-     * Es idempotente: si ya existe el registro, lo devuelve sin duplicar.
-     */
+    /** POST /api/privacidad/consentimiento — registra aceptación de la política activa; idempotente, no duplica si ya existe. */
     public function aceptar(Request $request): JsonResponse
     {
         $user    = $request->user();
@@ -92,7 +82,7 @@ class PrivacidadController extends Controller
         }
 
         if ($existente) {
-            // Existía pero había sido revocado; reactiva
+            // Existía pero había sido revocado; se reactiva.
             $existente->update([
                 'otorgado'    => true,
                 'otorgado_at' => now(),
@@ -125,10 +115,7 @@ class PrivacidadController extends Controller
         ]);
     }
 
-    /**
-     * DELETE /api/privacidad/consentimiento
-     * Revoca el consentimiento del usuario autenticado para la versión activa.
-     */
+    /** DELETE /api/privacidad/consentimiento — revoca el consentimiento del usuario autenticado para la versión activa. */
     public function revocar(Request $request): JsonResponse
     {
         $user    = $request->user();
@@ -148,10 +135,7 @@ class PrivacidadController extends Controller
         return response()->json(['success' => true]);
     }
 
-    /**
-     * POST /api/privacidad/politica  (requiere permiso:usuarios.gestionar)
-     * Crea una nueva versión de la política y desactiva la anterior.
-     */
+    /** POST /api/privacidad/politica (requiere permiso:usuarios.gestionar) — crea nueva versión de la política y desactiva la anterior. */
     public function crearPolitica(Request $request): JsonResponse
     {
         $datos = $request->validate([
@@ -160,7 +144,6 @@ class PrivacidadController extends Controller
             'contenido' => 'required|string',
         ]);
 
-        // Desactivar la política actual
         PoliticaPrivacidad::where('activa', true)->update(['activa' => false]);
 
         $politica = PoliticaPrivacidad::create([

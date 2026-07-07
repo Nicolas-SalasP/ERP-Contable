@@ -14,13 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- * R7 — Libro de Remuneraciones Electrónico (LRE).
- *
- * Flujo: Generar → Validar → (Descargar) → Confirmar envío manual a Mi DT.
- * El archivo NO se transmite al SII/DT desde aquí; el empleador lo sube
- * directamente al portal Mi DT y registra el número de confirmación.
- */
+/** R7 — Libro de Remuneraciones Electrónico (LRE): el archivo NO se transmite al SII/DT desde aquí, el empleador lo sube manualmente al portal Mi DT y registra el número de confirmación. */
 class LreController extends Controller
 {
     public function __construct(
@@ -30,10 +24,7 @@ class LreController extends Controller
         private readonly ConfirmarDtService     $confirmarService,
     ) {}
 
-    /**
-     * POST /api/rrhh/lre/generar
-     * Genera el archivo LRE del período indicado y persiste el registro.
-     */
+    /** Genera el archivo LRE del período indicado y persiste el registro. */
     public function generar(Request $request): JsonResponse
     {
         $datos = $request->validate([
@@ -53,10 +44,7 @@ class LreController extends Controller
         return response()->json($lre);
     }
 
-    /**
-     * POST /api/rrhh/lre/{id}/validar
-     * Valida el archivo LRE y actualiza su estado.
-     */
+    /** Valida el archivo LRE y actualiza su estado. */
     public function validar(Request $request, int $id): JsonResponse
     {
         $lre = LreEnvio::where('empresa_id', $request->user()->empresa_activa_id)
@@ -92,10 +80,7 @@ class LreController extends Controller
         ], 422);
     }
 
-    /**
-     * POST /api/rrhh/lre/{id}/confirmar-dt
-     * Registra el número de confirmación del portal Mi DT.
-     */
+    /** Registra el número de confirmación del portal Mi DT. */
     public function confirmarDt(Request $request, int $id): JsonResponse
     {
         $datos = $request->validate([
@@ -118,10 +103,7 @@ class LreController extends Controller
         return response()->json($lre);
     }
 
-    /**
-     * GET /api/rrhh/lre
-     * Lista los registros LRE de la empresa con filtros opcionales por período.
-     */
+    /** Lista los registros LRE de la empresa con filtros opcionales por período. */
     public function index(Request $request): JsonResponse
     {
         $query = LreEnvio::where('empresa_id', $request->user()->empresa_activa_id)
@@ -139,10 +121,7 @@ class LreController extends Controller
         return response()->json($query->get());
     }
 
-    /**
-     * GET /api/rrhh/lre/{id}/descargar
-     * Descarga el archivo .txt del LRE.
-     */
+    /** Descarga el archivo .txt del LRE. */
     public function descargar(Request $request, int $id): StreamedResponse|JsonResponse
     {
         $lre = LreEnvio::where('empresa_id', $request->user()->empresa_activa_id)

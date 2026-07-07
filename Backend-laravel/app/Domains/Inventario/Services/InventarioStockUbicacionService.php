@@ -278,13 +278,7 @@ class InventarioStockUbicacionService
     }
 
     /**
-     * Libera una ReservaDetalleInventario (cantidad_liberada + stock_reservado
-     * de la ubicacion), validando que producto/bodega/ubicacion/lote coincidan.
-     * Fuente de verdad unica compartida por Picking/Packing/Despacho para no
-     * triplicar esta logica financiera -- antes vivia duplicada e inline en
-     * InventarioPickingService::cancelar() y como metodo privado en
-     * InventarioDespachoService::liberarReservaDetalle().
-     *
+     * Libera una ReservaDetalleInventario validando que producto/bodega/ubicacion/lote coincidan; fuente única compartida por Picking/Packing/Despacho (antes vivía duplicada e inline en cada servicio).
      * @return float cantidad realmente liberada (0 si no habia nada pendiente).
      */
     public function liberarReservaDetalle(

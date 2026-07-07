@@ -12,11 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Alertas de inventario (stock bajo, vencimientos) con severidad y resumen. Extraído
- * de InventarioController (H7 sprint 10b). Concern separado de Reposición: distinto
- * servicio (InventarioAlertaService) y distinta responsabilidad. Solo trait.
- */
+/** Concern separado de Reposición: distinto servicio (InventarioAlertaService) y distinta responsabilidad. */
 class AlertaController
 {
     use RespondeInventario;

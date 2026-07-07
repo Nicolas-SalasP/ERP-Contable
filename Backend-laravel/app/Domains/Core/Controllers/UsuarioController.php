@@ -88,8 +88,7 @@ class UsuarioController
             $miRol = $request->user()->load('rol')->rol;
             $empresaId = $request->user()->empresa_activa_id;
 
-            // Scope multitenant: el usuario y el rol destino deben pertenecer a
-            // la empresa del solicitante (el rol puede ser de sistema). Evita IDOR.
+            // Scope multitenant: usuario y rol destino deben pertenecer a la empresa del solicitante (el rol puede ser de sistema). Evita IDOR.
             $usuarioDestino = User::with('rol')->where('empresa_id', $empresaId)->findOrFail($id);
             $rolDestino = Rol::visiblesPara($empresaId)->findOrFail($datos['rol_id']);
 
@@ -103,8 +102,7 @@ class UsuarioController
 
             $this->service->actualizarRol($request->user()->empresa_activa_id, $id, $datos['rol_id']);
 
-            // Invalidar cache de permisos del usuario afectado para que el nuevo rol
-            // surta efecto inmediatamente en el siguiente request.
+            // Invalidar cache de permisos del usuario afectado para que el nuevo rol surta efecto en el siguiente request.
             Cache::forget(EnsureUserHasPermission::cacheKeyPermisos(
                 (int) $usuarioDestino->id,
                 (int) ($usuarioDestino->empresa_activa_id ?? 0)
@@ -188,8 +186,7 @@ class UsuarioController
                 return $errorAutorizacion;
             }
 
-            // El servicio solo permite editar roles propios de la empresa
-            // (nunca de sistema ni de otra empresa).
+            // El servicio solo permite editar roles propios de la empresa (nunca de sistema ni de otra empresa).
             $rol = $this->service->actualizarRolPermisos($request->user()->empresa_activa_id, $id, $datos);
             return response()->json(['success' => true, 'data' => $rol]);
         } catch (ValidationException $e) {
@@ -202,11 +199,7 @@ class UsuarioController
     }
 
     /**
-     * Evita la escalada de privilegios al crear/editar un rol:
-     *  - No se puede crear un rol de jerarquia igual o superior a la propia
-     *    (salvo Super Admin, jerarquia >= 100).
-     *  - No se pueden asignar permisos que el solicitante no posee
-     *    (salvo Super Admin, que los tiene todos).
+     * Evita escalada de privilegios al crear/editar un rol: no permite jerarquia >= la propia ni permisos que el solicitante no posea (salvo Super Admin).
      *
      * @return \Illuminate\Http\JsonResponse|null  Respuesta 403 si no autorizado, null si OK.
      */

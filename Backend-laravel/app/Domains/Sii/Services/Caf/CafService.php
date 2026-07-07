@@ -20,8 +20,7 @@ class CafService
     }
 
     /**
-     * Carga y persiste un CAF para una empresa. La RSA privada y el XML
-     * quedan cifrados con APP_KEY.
+     * Carga y persiste un CAF para una empresa; la RSA privada y el XML quedan cifrados con APP_KEY.
      *
      * @throws CafInvalidoException
      * @throws ModelNotFoundException
@@ -82,24 +81,13 @@ class CafService
     }
 
     /**
-     * Reserva el siguiente folio disponible para un tipo de DTE.
-     * Atomico via DB::transaction + lockForUpdate (SQLite ignora el lock; la
-     * logica es correcta en MySQL/PostgreSQL para evitar race conditions).
+     * Reserva el siguiente folio disponible para un tipo de DTE; atomico via DB::transaction + lockForUpdate (SQLite ignora el lock, la logica es correcta en MySQL/PostgreSQL para evitar race conditions).
      *
      * @throws SinFoliosDisponiblesException
      */
     public function reservarSiguienteFolio(int $empresaId, int $tipoDte, ?int $usuarioId = null): SiiCafFolioUso
     {
-        // Paso separado y confirmado ANTES de la transaccion de reserva: antes la
-        // query de reserva solo miraba estado=ACTIVO y folios disponibles, sin
-        // chequear fecha_vencimiento (SiiCaf::estaVencido()) -- un CAF vencido
-        // seguia reservando folios indefinidamente hasta que alguien lo revocara a
-        // mano, generando DTEs invalidos ante el SII (el CAF solo autoriza folios
-        // hasta su fecha de vencimiento). Si esta transicion se hiciera dentro de
-        // la misma DB::transaction() de la reserva, un rollback por "sin folios
-        // disponibles" tambien deshace el cambio de estado a VENCIDO -- por eso va
-        // separado, para que quede persistido incluso si despues no hay otro CAF
-        // vigente y se lanza la excepcion.
+        // Paso separado y confirmado ANTES de la transaccion de reserva: sin este chequeo un CAF vencido seguia reservando folios indefinidamente (generando DTEs invalidos ante el SII) hasta revocarlo a mano; y si viviera dentro de la misma DB::transaction() de la reserva, un rollback por "sin folios disponibles" deshacia tambien el cambio de estado a VENCIDO.
         $huboVencido = $this->marcarCafsVencidos($empresaId, $tipoDte);
 
         return DB::transaction(function () use ($empresaId, $tipoDte, $usuarioId, $huboVencido) {
@@ -138,11 +126,7 @@ class CafService
         });
     }
 
-    /**
-     * Transiciona a VENCIDO cualquier CAF ACTIVO cuya fecha_vencimiento ya paso,
-     * para la empresa+tipo dado. Devuelve true si transiciono al menos uno
-     * (usado solo para dar un mensaje de error mas claro al caller).
-     */
+    /** Transiciona a VENCIDO cualquier CAF ACTIVO cuya fecha_vencimiento ya paso, para la empresa+tipo dado; retorna true si transiciono al menos uno (solo para un mensaje de error mas claro al caller). */
     private function marcarCafsVencidos(int $empresaId, int $tipoDte): bool
     {
         $afectados = SiiCaf::query()
@@ -241,18 +225,14 @@ class CafService
         ];
     }
 
-    /**
-     * Descifra y retorna la clave privada RSA en PEM. NUNCA persistir lo retornado.
-     * Usado por F4 al firmar el TED de un DTE.
-     */
+    /** Descifra y retorna la clave privada RSA en PEM (nunca persistir lo retornado); usado por F4 al firmar el TED de un DTE. */
     public function extraerRsaSk(SiiCaf $caf): string
     {
         return Crypt::decryptString($caf->rsa_sk_cifrada);
     }
 
     /**
-     * Revoca un CAF, liberando los folios RESERVADOS como HUERFANO. Los folios
-     * USADO permanecen intactos (regla SII: lo emitido es legalmente inmutable).
+     * Revoca un CAF, liberando los folios RESERVADOS como HUERFANO; los folios USADO permanecen intactos (regla SII: lo emitido es legalmente inmutable).
      *
      * @throws \LogicException si el CAF ya estaba revocado
      */
@@ -297,8 +277,7 @@ class CafService
         try {
             return RutHelper::normalizar($rut);
         } catch (\InvalidArgumentException) {
-            // Si el rut de la empresa esta mal formado en BD, retornar el original
-            // para que el match con el CAF falle de forma evidente.
+            // Si el rut de la empresa esta mal formado en BD, retornar el original para que el match con el CAF falle de forma evidente.
             return $rut;
         }
     }

@@ -9,13 +9,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Throwable;
 
-/**
- * F5.2 — Comando de validacion manual del flujo de envio del DTE al SII.
- *
- * IMPORTANTE: en operacion real este comando pega al WS REAL del SII. NO
- * ejecutar contra produccion sin autorizacion explicita. Para testing
- * usar Http::fake() o entornos dummy.
- */
+/** F5.2 — comando de validacion manual del flujo de envio del DTE al SII; IMPORTANTE: pega al WS REAL del SII, no ejecutar contra produccion sin autorizacion explicita (usar Http::fake() o entornos dummy para testing). */
 class EnviarDtePruebaCommand extends Command
 {
     protected $signature = 'sii:enviar-dte-prueba

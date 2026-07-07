@@ -13,9 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * CAF (Codigo de Autorizacion de Folios) por empresa y tipo DTE.
- *
- * SEGURIDAD: rsa_sk_cifrada y xml_completo_cifrado NUNCA en JSON.
+ * CAF (Codigo de Autorizacion de Folios) por empresa y tipo DTE; SEGURIDAD: rsa_sk_cifrada y xml_completo_cifrado NUNCA en JSON.
  *
  * @property int $id
  * @property int $empresa_id

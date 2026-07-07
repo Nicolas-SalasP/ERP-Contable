@@ -145,11 +145,7 @@ class SiiDteEmitido extends Model
         'usuario_emisor_id',
     ];
 
-    /**
-     * SEGURIDAD: xml_completo_cifrado contiene el EnvioDTE firmado cifrado con
-     * APP_KEY. No debe aparecer en respuestas JSON (defensa en profundidad,
-     * aunque ya esta cifrado el contenido).
-     */
+    /** SEGURIDAD: xml_completo_cifrado contiene el EnvioDTE firmado cifrado con APP_KEY; no debe aparecer en respuestas JSON (defensa en profundidad, aunque el contenido ya esta cifrado). */
     protected $hidden = [
         'xml_completo_cifrado',
     ];
@@ -182,14 +178,7 @@ class SiiDteEmitido extends Model
         return SiiDteEmitidoFactory::new();
     }
 
-    /**
-     * HARDENING-1 R1 — Inmutabilidad tecnica del snapshot DTE post-firma.
-     *
-     * Solo estos campos pueden modificarse cuando el DTE esta en un estado
-     * "post-firma" (FIRMADO, ENVIADO_SII, ACEPTADO, etc.). Cualquier intento
-     * de modificar otros campos lanza LogicException, preservando el snapshot
-     * legal del documento (exigencia SII: el DTE emitido es inmutable).
-     */
+    /** HARDENING-1 R1 — inmutabilidad tecnica del snapshot DTE post-firma: solo estos campos pueden modificarse en estado "post-firma" (FIRMADO, ENVIADO_SII, ACEPTADO, etc.), cualquier otro campo lanza LogicException (exigencia SII: el DTE emitido es inmutable). */
     private const CAMPOS_PERMITIDOS_POST_FIRMADO = [
         'estado',
         'fecha_firma',
@@ -243,10 +232,7 @@ class SiiDteEmitido extends Model
         });
     }
 
-    /**
-     * Mapea el codigo numerico de tipo DTE a su nombre humano.
-     * Centralizado aqui para no duplicar en controllers, vistas y reportes.
-     */
+    /** Mapea el codigo numerico de tipo DTE a su nombre humano; centralizado aqui para no duplicar en controllers, vistas y reportes. */
     public static function nombreTipo(int $tipo): string
     {
         return match ($tipo) {
@@ -313,11 +299,7 @@ class SiiDteEmitido extends Model
             ->orderBy('created_at');
     }
 
-    /**
-     * F6.3: envios al WS DTEUpload. Un DTE puede tener varios envios si
-     * hubo reintentos manuales (uno por intento). El mas reciente se
-     * obtiene con ->envios->last() o ->envios()->latest()->first().
-     */
+    /** F6.3 — envios al WS DTEUpload; un DTE puede tener varios si hubo reintentos manuales (uno por intento), el mas reciente se obtiene con ->envios->last() o ->envios()->latest()->first(). */
     public function envios(): HasMany
     {
         return $this->hasMany(SiiEnvioDte::class, 'dte_emitido_id')

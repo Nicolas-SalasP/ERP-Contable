@@ -251,8 +251,7 @@ export const InventarioDataProvider = ({ children }) => {
 
             unsubscribe = cleanup;
         }).catch(() => {
-            // El realtime es progresivo: si Reverb/Pusher no está configurado,
-            // el módulo sigue funcionando con lectura HTTP tradicional.
+            // El realtime es progresivo: si Reverb/Pusher no está configurado, sigue funcionando con lectura HTTP.
         });
 
         return () => {

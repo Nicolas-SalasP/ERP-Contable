@@ -11,13 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * F5.2 — Registro auditable de cada intento de subida del EnvioDTE al WS
- * DTEUpload del SII. Una fila por intento (no por DTE): si el mismo DTE
- * requiere reintento manual, se crean filas separadas con el mismo
- * dte_emitido_id pero distinto track_id.
- *
- * SEGURIDAD: request_body_completo_cifrado y respuesta_body_completo_cifrado
- * NUNCA en JSON. El $hidden los excluye automaticamente.
+ * F5.2 — registro auditable de cada intento de subida del EnvioDTE al WS DTEUpload del SII: una fila por intento (no por DTE), si el mismo DTE requiere reintento manual se crean filas separadas con el mismo dte_emitido_id pero distinto track_id. SEGURIDAD: request_body_completo_cifrado y respuesta_body_completo_cifrado nunca en JSON, el $hidden los excluye automaticamente.
  *
  * @property int $id
  * @property int $empresa_id
@@ -106,9 +100,7 @@ class SiiEnvioDte extends Model
         return $this->belongsTo(SiiTokenSesion::class, 'token_sesion_id');
     }
 
-    /**
-     * F5.3: audit log inmutable de transiciones del envio.
-     */
+    /** F5.3 — audit log inmutable de transiciones del envio. */
     public function eventos(): HasMany
     {
         return $this->hasMany(SiiEnvioDteEvento::class, 'envio_dte_id')

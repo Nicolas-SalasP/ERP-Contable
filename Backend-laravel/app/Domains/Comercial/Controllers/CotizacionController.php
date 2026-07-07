@@ -32,9 +32,7 @@ class CotizacionController
 
         $paginado = $this->service->obtenerPorEmpresa($request->user()->empresa_activa_id, $perPage);
 
-        // 'data' se mantiene como arreglo plano (compatibilidad con el frontend
-        // actual, que no implementa aun controles de paginacion); 'meta' expone
-        // la info de paginacion para que un futuro consumidor pueda usarla.
+        // 'data' se mantiene como arreglo plano por compatibilidad (el frontend actual no pagina); 'meta' queda disponible para un futuro consumidor.
         return response()->json([
             'success' => true,
             'data' => $paginado->items(),

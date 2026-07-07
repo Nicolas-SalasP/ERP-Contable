@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\Log;
 class CertificadoService
 {
     /**
-     * Carga y persiste un nuevo certificado para la empresa. El anterior activo
-     * pasa a 'cuarentena' (rollback disponible 30d).
+     * Carga y persiste un nuevo certificado para la empresa; el anterior activo pasa a 'cuarentena' (rollback disponible 30d).
      *
      * @throws CertificadoInvalidoException si el .pfx no se puede leer o la passphrase es incorrecta.
      */
@@ -75,10 +74,7 @@ class CertificadoService
     }
 
     /**
-     * Devuelve el .pfx y la passphrase descifrados en memoria. Tambien expone
-     * el cert PEM y la llave privada PEM, listos para firmar XMLDSig (F4).
-     *
-     * NUNCA persistir lo retornado por este metodo.
+     * Devuelve el .pfx y la passphrase descifrados en memoria, mas el cert PEM y la llave privada PEM listos para firmar XMLDSig (F4); nunca persistir lo retornado por este metodo.
      *
      * @return array{pfx: string, password: string, cert_pem: string, private_key_pem: string}
      */
@@ -113,11 +109,7 @@ class CertificadoService
         }
     }
 
-    /**
-     * Detecta openssl.cnf accesible para operaciones que lo requieren en
-     * OpenSSL 3 (openssl_pkey_export, openssl_csr_*, etc.). Si no se
-     * encuentra, retorna [] y deja que OpenSSL use sus defaults.
-     */
+    /** Detecta openssl.cnf accesible para operaciones que lo requieren en OpenSSL 3 (openssl_pkey_export, openssl_csr_*, etc.); si no se encuentra, retorna [] y deja que OpenSSL use sus defaults. */
     private function opcionesOpenssl(): array
     {
         $env = getenv('OPENSSL_CONF');
@@ -149,15 +141,11 @@ class CertificadoService
     }
 
     /**
-     * Conveniencia para F4.3: localiza el cert activo de la empresa y retorna
-     * el par PEM listo para firmar XMLDSig (cert X.509 + privKey RSA).
-     *
-     * NUNCA persistir lo retornado por este metodo.
+     * Conveniencia para F4.3: localiza el cert activo de la empresa y retorna el par PEM listo para firmar XMLDSig (cert X.509 + privKey RSA); nunca persistir lo retornado por este metodo.
      *
      * @return array{cert: string, privKey: string}
      *
-     * @throws CertificadoInvalidoException si la empresa no tiene cert activo
-     *         o si el .pfx no se puede descifrar.
+     * @throws CertificadoInvalidoException si la empresa no tiene cert activo o si el .pfx no se puede descifrar.
      */
     public function extraerParPemDeEmpresa(Empresa $empresa): array
     {
@@ -179,12 +167,9 @@ class CertificadoService
     }
 
     /**
-     * Conveniencia para F4.3 (Caratula.RutEnvia): retorna el RUT extraido del
-     * subject del certificado activo de la empresa, parseando CN/serialNumber
-     * en formato chileno (12345678-9).
+     * Conveniencia para F4.3 (Caratula.RutEnvia): retorna el RUT extraido del subject del certificado activo de la empresa, parseando CN/serialNumber en formato chileno (12345678-9).
      *
-     * @throws CertificadoInvalidoException si no hay cert activo o si el
-     *         subject no contiene un RUT parseable.
+     * @throws CertificadoInvalidoException si no hay cert activo o si el subject no contiene un RUT parseable.
      */
     public function extraerRutDelSujeto(Empresa $empresa): string
     {
@@ -213,10 +198,7 @@ class CertificadoService
         return $rut;
     }
 
-    /**
-     * Re-descifra y re-lee el .pfx con APP_KEY actual. Util tras rotacion
-     * de APP_KEY o ante sospecha de corrupcion del registro.
-     */
+    /** Re-descifra y re-lee el .pfx con APP_KEY actual; util tras rotacion de APP_KEY o ante sospecha de corrupcion del registro. */
     public function verificarIntegridad(SiiCertificadoEmpresa $cert): bool
     {
         try {
@@ -250,8 +232,7 @@ class CertificadoService
             }
             $errorTexto = implode(' | ', $errores);
 
-            // Heuristica: si menciona "mac verify", "PKCS12 routines" + "mac",
-            // o si simplemente falla la lectura con password no vacia, es passphrase mala.
+            // Heuristica: si menciona "mac verify"/"PKCS12 routines"+"mac", o simplemente falla con password no vacia, es passphrase mala.
             $esPasswordMala = $errorTexto === ''
                 || stripos($errorTexto, 'mac verify') !== false
                 || stripos($errorTexto, 'maccheck') !== false
@@ -271,11 +252,7 @@ class CertificadoService
         return $info;
     }
 
-    /**
-     * Extrae el RUT del subject del certificado. Best-effort:
-     * busca en subject.serialNumber, subject.CN y la cadena del DN.
-     * Retorna null si no encuentra (no es error: certs sin RUT son validos).
-     */
+    /** Extrae el RUT del subject del certificado (best-effort: busca en subject.serialNumber, subject.CN y la cadena del DN); retorna null si no encuentra (no es error, certs sin RUT son validos). */
     private function extraerRut(array $parsed): ?string
     {
         $candidatos = [

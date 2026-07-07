@@ -33,18 +33,13 @@ class Rol extends Model
         return $this->hasMany(User::class);
     }
 
-    /**
-     * Indica si es un rol de sistema (compartido por todas las empresas).
-     */
+    /** Indica si es un rol de sistema (compartido por todas las empresas). */
     public function esDeSistema(): bool
     {
         return $this->empresa_id === null;
     }
 
-    /**
-     * Roles visibles para una empresa: los de sistema (empresa_id null) mas
-     * los personalizados de la propia empresa.
-     */
+    /** Roles visibles para una empresa: los de sistema (empresa_id null) más los personalizados de la propia empresa. */
     public function scopeVisiblesPara($query, int $empresaId)
     {
         return $query->where(function ($q) use ($empresaId) {

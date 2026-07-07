@@ -5,14 +5,7 @@ namespace App\Domains\Sii\Services\Xml;
 use App\Domains\Sii\Exceptions\DteXmlInvalidException;
 use DOMDocument;
 
-/**
- * Valida el sobre <EnvioDTE> (Caratula + SetDTE firmado) contra el XSD oficial
- * EnvioDTE_v10.xsd -- el payload completo que realmente se envia al SII.
- *
- * DteXsdValidator valida solo el <Documento> interno antes de envolverlo; este
- * validador cubre el sobre final, incluyendo boletas (39/41), que SetDteBuilder
- * construye igualmente como <EnvioDTE> (mismo elemento raiz para todos los tipos).
- */
+/** Valida el sobre <EnvioDTE> (Caratula + SetDTE firmado) contra el XSD oficial EnvioDTE_v10.xsd -- el payload completo que realmente se envia al SII; DteXsdValidator valida solo el <Documento> interno antes de envolverlo, este validador cubre el sobre final, incluyendo boletas (39/41), que SetDteBuilder construye igualmente como <EnvioDTE> (mismo elemento raiz para todos los tipos). */
 class EnvioDteXsdValidator
 {
     private const XSD_PATH = __DIR__ . '/../../Resources/xsd/EnvioDTE_v10.xsd';

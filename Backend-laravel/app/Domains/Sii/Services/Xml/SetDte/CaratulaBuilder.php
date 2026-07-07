@@ -9,15 +9,7 @@ use App\Domains\Sii\Services\Certificado\CertificadoService;
 use DOMDocument;
 use DOMElement;
 
-/**
- * Construye el bloque <Caratula version="1.0"> del SetDTE.
- *
- * Orden xs:sequence del XSD EnvioDTE_v10.xsd:
- *   RutEmisor, RutEnvia, RutReceptor, FchResol, NroResol, TmstFirmaEnv, SubTotDTE+
- *
- * RutReceptor es siempre 60803000-K (SII Chile), mismo valor para cert y prod.
- * RutEnvia se obtiene del subject del certificado digital activo de la empresa.
- */
+/** Construye el bloque <Caratula version="1.0"> del SetDTE; orden xs:sequence del XSD EnvioDTE_v10.xsd: RutEmisor, RutEnvia, RutReceptor, FchResol, NroResol, TmstFirmaEnv, SubTotDTE+. RutReceptor es siempre 60803000-K (SII Chile, mismo valor para cert y prod); RutEnvia se obtiene del subject del certificado digital activo de la empresa. */
 class CaratulaBuilder
 {
     /** RUT receptor para envios al SII (cert y prod). */

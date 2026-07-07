@@ -15,17 +15,12 @@ if (activo) {
     });
 }
 
-/**
- * Reporta una excepción a Sentry. No-op si VITE_SENTRY_DSN no está configurada
- * o si la app está corriendo en modo desarrollo.
- */
+/** Reporta una excepción a Sentry; no-op si VITE_SENTRY_DSN no está configurada o en modo desarrollo. */
 export const captureException = (error, contexto) => {
     if (activo) Sentry.captureException(error, contexto);
 };
 
-/**
- * Reporta un mensaje informativo/warning a Sentry.
- */
+/** Reporta un mensaje informativo/warning a Sentry. */
 export const captureMessage = (mensaje, nivel = 'info') => {
     if (activo) Sentry.captureMessage(mensaje, nivel);
 };

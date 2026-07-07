@@ -9,16 +9,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
-/**
- * Health check operativo en /api/health. Verifica los servicios de los que depende
- * el ERP (BD, cache, queue, storage) sin requerir SSH ni autenticación, para que el
- * equipo confirme "el sistema funciona" como hecho verificable. 200 si todo OK,
- * 503 si algún componente falla.
- *
- * En entornos no-local (staging, producción) la respuesta omite el detalle de cada
- * check para no exponer versiones, nombres de bases de datos ni mensajes de error
- * internos. Solo se retorna status + código HTTP.
- */
+/** Health check en /api/health (BD, cache, queue, storage) sin SSH ni auth; en staging/producción omite el detalle para no exponer versiones ni errores internos. */
 class HealthController
 {
     public function __invoke(): JsonResponse
@@ -47,8 +38,7 @@ class HealthController
 
         $saludable = collect($checks)->every(fn ($check) => $check['ok'] === true);
 
-        // En producción/staging no exponemos detalle: solo status + HTTP code.
-        // En local el detalle completo ayuda a diagnosticar problemas de configuración.
+        // En producción/staging no se expone detalle, solo status + HTTP code; en local ayuda a diagnosticar.
         $detalle = app()->environment('local') ? $checks : [];
 
         $cuerpo = ['status' => $saludable ? 'ok' : 'degraded'];

@@ -12,13 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * F5.3 — Job programado cada 5 min. Recorre envios en ENVIADO y, para cada
- * uno que ya toca pollear segun backoff, hace HTTP al SII.
- *
- * R7 (HARDENING-1): try/catch por envio garantiza que una excepcion en un
- * envio NO aborta el procesamiento de los demas.
- */
+/** F5.3 — job programado cada 5 min: recorre envios en ENVIADO y hace HTTP al SII para los que ya tocan pollear segun backoff; R7 (HARDENING-1) try/catch por envio evita que una excepcion aborte el procesamiento de los demas. */
 class PollearEnviosPendientesJob implements ShouldQueue
 {
     use Dispatchable;
@@ -83,11 +77,7 @@ class PollearEnviosPendientesJob implements ShouldQueue
         ]);
     }
 
-    /**
-     * Los errores por-envio ya se aislan y loguean dentro de handle(); esto
-     * solo dispara si el job entero revienta antes de llegar al loop (ej.
-     * la query inicial falla). Mismo nivel critical que los demas jobs de Sii.
-     */
+    /** Los errores por-envio ya se aislan y loguean en handle(); esto solo dispara si el job entero revienta antes del loop (ej. falla la query inicial). */
     public function failed(Throwable $exception): void
     {
         Log::channel('sii')->critical('PollearEnviosPendientesJob fallo antes de completar.', [

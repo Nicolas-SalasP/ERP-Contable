@@ -77,11 +77,7 @@ final class ModuloPermisos
         'soporte.tickets'    => ['soporte.ver', 'soporte.crear'],
     ];
 
-    /**
-     * Metadatos de presentacion por modulo: [label, categoria]. Solo es una capa
-     * visual sobre las keys de MAP (la fuente real). Una key sin entrada aqui
-     * igual aparece en el catalogo con un label humanizado y categoria 'General'.
-     */
+    /** Metadatos de presentación por módulo [label, categoria], capa visual sobre MAP (la fuente real); sin entrada acá usa label humanizado y categoria 'General'. */
     private const META = [
         'dashboard' => ['Dashboard principal', 'General'],
         'dashboard.ejecutivo' => ['Dashboard ejecutivo', 'General'],
@@ -152,10 +148,7 @@ final class ModuloPermisos
         'soporte.tickets'    => ['Tickets de soporte', 'Soporte'],
     ];
 
-    /**
-     * Catalogo de modulos asignables a un plan: [{key, label, categoria}].
-     * Derivado de MAP (la fuente de verdad), por lo que nunca se desincroniza.
-     */
+    /** Catálogo de módulos asignables a un plan [{key, label, categoria}], derivado de MAP por lo que nunca se desincroniza. */
     public static function catalogo(): array
     {
         return array_map(static fn (string $key): array => [
@@ -188,9 +181,7 @@ final class ModuloPermisos
 
         $base = self::normalizarLista($base);
 
-        // Plan como techo: si el usuario proviene de un plan (module_keys no vacio),
-        // sus permisos efectivos se limitan a los que el plan habilita, sin importar
-        // cuanto conceda el rol. Usuarios sin plan (admins locales) no se ven afectados.
+        // Plan como techo: si el usuario viene de un plan (module_keys no vacio), sus permisos se limitan a los del plan sin importar lo que conceda el rol.
         if (!empty($moduleKeys)) {
             $base = array_values(array_intersect($base, $permisosModulos));
         }
@@ -253,11 +244,7 @@ final class ModuloPermisos
             return false;
         }
 
-        // Solo la jerarquia real habilita el set de permisos de administrador.
-        // Antes tambien bastaba con que el ROL se llamara "administrador"/"admin",
-        // lo que permitia escalar privilegios creando un rol con ese nombre y
-        // jerarquia baja (un usuario con usuarios.gestionar podia crearlo y
-        // autoasignarselo sin pasar por el guard de jerarquia de storeRol/updateRol).
+        // Solo la jerarquia real habilita el set de administrador; antes bastaba el ROL llamarse "administrador"/"admin", permitiendo escalar privilegios con un rol de jerarquia baja autoasignado.
         return (int) ($rol->jerarquia ?? 0) >= 80;
     }
 }

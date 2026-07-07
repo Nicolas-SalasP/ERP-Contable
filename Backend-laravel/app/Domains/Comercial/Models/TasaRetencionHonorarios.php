@@ -15,10 +15,6 @@ class TasaRetencionHonorarios extends Model
         'tasa_pct' => 'decimal:2',
     ];
 
-    /**
-     * Devuelve la tasa de retención para un año exacto.
-     * Lanza ComercialException si no existe configuración para ese año.
-     */
     public static function porAnio(int $anio): self
     {
         $tasa = static::where('anio', $anio)->first();
