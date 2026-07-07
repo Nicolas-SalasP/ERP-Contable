@@ -5,24 +5,13 @@ namespace App\Domains\Core\Models;
 use App\Domains\Core\Traits\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * Fase 6 — Registro de incidentes de seguridad y brechas de datos personales.
- *
- * Ley 21.663: alerta temprana 3h / reporte 72h al CSIRT.
- * Ley 21.719: notificación a la Agencia de Protección de Datos + titulares.
- *
- * El campo categorias_datos_afectados almacena SOLO categorías tipológicas
- * (ej. "datos de salud, RUT") — NUNCA datos personales reales (ver Ley 21.719).
- */
+/** Incidentes de seguridad (Ley 21.663/21.719): categorias_datos_afectados guarda SOLO categorías tipológicas, NUNCA datos personales reales. */
 class IncidenteSeguridad extends Model
 {
     use HasEmpresaScope;
 
     protected $table = 'incidentes_seguridad';
 
-    // -------------------------------------------------------------------------
-    // Valores permitidos para severidad
-    // -------------------------------------------------------------------------
     public const SEVERIDAD_BAJA    = 'BAJA';
     public const SEVERIDAD_MEDIA   = 'MEDIA';
     public const SEVERIDAD_ALTA    = 'ALTA';
@@ -35,9 +24,6 @@ class IncidenteSeguridad extends Model
         self::SEVERIDAD_CRITICA,
     ];
 
-    // -------------------------------------------------------------------------
-    // Valores permitidos para estado
-    // -------------------------------------------------------------------------
     public const ESTADO_ABIERTO   = 'ABIERTO';
     public const ESTADO_CONTENIDO = 'CONTENIDO';
     public const ESTADO_CERRADO   = 'CERRADO';

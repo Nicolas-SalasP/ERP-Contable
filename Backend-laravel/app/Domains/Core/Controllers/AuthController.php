@@ -33,8 +33,7 @@ class AuthController
 
             $credencialesLocalesValidas = $user && Hash::check($request->password, $user->password);
 
-            // Si las credenciales locales fallan, intentar contra el web page
-            // (el usuario puede existir en la web pero no haber sido provisionado aún).
+            // Si fallan las credenciales locales, se intenta contra la web (puede existir ahí sin haber sido provisionado aún).
             if (!$credencialesLocalesValidas) {
                 $webResult = $this->webClient->validateLogin($request->email, $request->password);
 
@@ -61,8 +60,7 @@ class AuthController
                 $user->load(['rol', 'estadoSuscripcion']);
             }
 
-            // Credenciales locales validas pero cache de suscripcion viejo (>1h):
-            // re-sincroniza el estado del plan contra la web antes de los guards.
+            // Credenciales locales validas pero cache de suscripcion viejo (>1h): re-sincroniza antes de los guards.
             if ($credencialesLocalesValidas
                 && (!$user->tenri_synced_at || Carbon::parse($user->tenri_synced_at)->diffInHours(now()) >= 1)) {
                 $webResult = $this->webClient->validateLogin($request->email, $request->password);
@@ -72,8 +70,7 @@ class AuthController
                 }
             }
 
-            // Validar contra el nombre del estado (no contra id hardcodeado).
-            // Razon: el id no es estable entre entornos / seeders y puede cambiar.
+            // Se valida por nombre del estado, no por id hardcodeado (el id no es estable entre entornos/seeders).
             if (!$user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
                 return response()->json([
                     'success' => false,
@@ -140,11 +137,7 @@ class AuthController
         }
     }
 
-    /**
-     * Acceso por token SSO de un solo uso emitido por la web Tenri.
-     * Valida el token contra la web, provisiona/actualiza el usuario y entrega
-     * un token de sesion del ERP (mismo flujo de guardas que el login normal).
-     */
+    /** Acceso por token SSO de un solo uso: valida contra la web, provisiona/actualiza el usuario y entrega token ERP (mismos guards que login normal). */
     public function tokenLogin(Request $request)
     {
         try {
@@ -276,8 +269,7 @@ class AuthController
 
         $permisos = ModuloPermisos::permisosUsuario($user);
 
-        // Whitelist (misma forma que el login): no se expone toArray() completo
-        // del usuario (tenri_user_id, module_keys, bloqueado_hasta, etc.).
+        // Whitelist (misma forma que el login): no se expone toArray() completo del usuario.
         return response()->json([
             'id'                   => $user->id,
             'nombre'               => $user->nombre,

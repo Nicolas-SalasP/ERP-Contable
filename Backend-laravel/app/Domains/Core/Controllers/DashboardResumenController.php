@@ -17,9 +17,7 @@ class DashboardResumenController
     ) {}
 
     /**
-     * Retorna el resumen agregado del dashboard: KPIs, serie de ventas y compras 12 meses,
-     * top clientes, facturas urgentes y secciones gateadas por permiso
-     * (inventario, rrhh, alertas_pendientes).
+     * Resumen agregado del dashboard: KPIs, series 12 meses, top clientes, facturas urgentes y secciones gateadas por permiso.
      *
      * @param Request $request
      * @return JsonResponse

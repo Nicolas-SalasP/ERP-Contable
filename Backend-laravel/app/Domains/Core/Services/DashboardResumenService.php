@@ -15,16 +15,11 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardResumenService
 {
-    // TTL corto: el dashboard debe verse razonablemente fresco (facturas/pagos
-    // nuevos) pero no necesita recalcular ~30 queries en cada request. No hay
-    // invalidación activa (no hay un hook limpio y único de "algo cambió" que
-    // cubra facturas/pagos/inventario/rrhh a la vez): un TTL corto es la
-    // estrategia correcta acá.
+    // TTL corto en vez de invalidación activa: no hay un hook único de "algo cambió" que cubra facturas/pagos/inventario/rrhh a la vez.
     private const TTL_SEGUNDOS = 90;
 
     /**
-     * Retorna el resumen de KPIs, serie de ventas, top clientes, facturas urgentes
-     * y secciones gateadas por permiso: compras_12m, inventario, rrhh, alertas_pendientes.
+     * Resumen de KPIs, serie de ventas, top clientes, facturas urgentes y secciones gateadas por permiso.
      *
      * @param  int    $empresaId  ID de la empresa activa del usuario
      * @param  string $periodo    'mes' | 'trimestre' | 'año'
@@ -32,9 +27,7 @@ class DashboardResumenService
      */
     public function obtener(int $empresaId, string $periodo = 'mes', array $permisos = []): array
     {
-        // La clave incluye empresa_id (aislamiento multitenant obligatorio) +
-        // periodo + los permisos que efectivamente cambian el resultado (las
-        // secciones "inventario"/"rrhh"/"alertas.dj" son condicionales).
+        // La clave incluye empresa_id (aislamiento multitenant obligatorio) + periodo + los permisos que efectivamente cambian el resultado.
         $permisosRelevantes = array_values(array_intersect($permisos, [
             'inventario.productos.ver',
             'rrhh.remuneraciones.ver',
@@ -92,10 +85,6 @@ class DashboardResumenService
 
         return $resultado;
     }
-
-    // -------------------------------------------------------------------------
-    // KPIs
-    // -------------------------------------------------------------------------
 
     private function calcularKpis(
         int $empresaId,
@@ -166,10 +155,6 @@ class DashboardResumenService
         ];
     }
 
-    // -------------------------------------------------------------------------
-    // Serie de ventas 12 meses (agrupado en PHP para compatibilidad SQLite/MySQL)
-    // -------------------------------------------------------------------------
-
     private function serieVentas12m(int $empresaId): array
     {
         $desde = Carbon::now()->startOfMonth()->subMonths(11);
@@ -201,10 +186,6 @@ class DashboardResumenService
             array_values($meses)
         );
     }
-
-    // -------------------------------------------------------------------------
-    // Serie de compras 12 meses (agrupado en PHP para compatibilidad SQLite/MySQL)
-    // -------------------------------------------------------------------------
 
     private function serieCompras12m(int $empresaId): array
     {
@@ -238,10 +219,6 @@ class DashboardResumenService
         );
     }
 
-    // -------------------------------------------------------------------------
-    // AR Aging: facturas VENTA pendientes por tramos de antigüedad
-    // -------------------------------------------------------------------------
-
     private function agingAR(int $empresaId): array
     {
         $hoy = Carbon::now()->toDateString();
@@ -271,10 +248,6 @@ class DashboardResumenService
             array_values($tramos)
         );
     }
-
-    // -------------------------------------------------------------------------
-    // AP Aging: facturas COMPRA pendientes por tramos de antigüedad
-    // -------------------------------------------------------------------------
 
     private function agingAP(int $empresaId): array
     {
@@ -306,10 +279,6 @@ class DashboardResumenService
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Proyección flujo de caja próximos 30 días
-    // -------------------------------------------------------------------------
-
     private function flujoCaja30d(int $empresaId): array
     {
         $hoy  = Carbon::now();
@@ -338,10 +307,6 @@ class DashboardResumenService
         ];
     }
 
-    // -------------------------------------------------------------------------
-    // Órdenes de compra en estados no terminales
-    // -------------------------------------------------------------------------
-
     private function ordenesCompraPendientes(int $empresaId): array
     {
         $estados = ['BORRADOR', 'ENVIADA', 'RECIBIDA_PARCIAL'];
@@ -359,10 +324,6 @@ class DashboardResumenService
             'monto_total' => round((float) $monto, 2),
         ];
     }
-
-    // -------------------------------------------------------------------------
-    // Resumen de inventario (solo si tiene permiso inventario.productos.ver)
-    // -------------------------------------------------------------------------
 
     private function resumenInventario(int $empresaId): array
     {
@@ -401,10 +362,6 @@ class DashboardResumenService
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Resumen RRHH (solo si tiene permiso rrhh.remuneraciones.ver)
-    // -------------------------------------------------------------------------
-
     private function resumenRrhh(int $empresaId): array
     {
         $anio = (int) Carbon::now()->format('Y');
@@ -422,10 +379,6 @@ class DashboardResumenService
             'mes_referencia'           => Carbon::now()->format('Y-m'),
         ];
     }
-
-    // -------------------------------------------------------------------------
-    // Alertas pendientes (DJ, F29 calendario, RRHH)
-    // -------------------------------------------------------------------------
 
     private function alertasPendientes(int $empresaId, array $permisos): array
     {
@@ -462,8 +415,7 @@ class DashboardResumenService
             }
         }
 
-        // Alerta F29: basada en calendario, sin consulta a BD (no existe modelo F29)
-        // Ventana de pago: entre día 10 y día 20 de cualquier mes
+        // Alerta F29 por calendario (no hay modelo F29): ventana de pago entre día 10 y 20
         if ($dia >= 10 && $dia <= 20) {
             $alertas[] = [
                 'tipo'        => 'f29',
@@ -494,16 +446,11 @@ class DashboardResumenService
         return $alertas;
     }
 
-    // -------------------------------------------------------------------------
-    // Top 5 clientes por monto facturado en los últimos 12 meses
-    // -------------------------------------------------------------------------
-
     private function topClientes(int $empresaId): array
     {
         $desde = Carbon::now()->subMonths(12)->toDateString();
 
-        // Para facturas de VENTA, el nombre del cliente está en proveedor.razon_social
-        // (el campo proveedor_id apunta al cliente cuando tipo=VENTA)
+        // Para facturas VENTA, el nombre del cliente está en proveedor.razon_social (proveedor_id apunta al cliente cuando tipo=VENTA).
         $filas = DB::table('facturas')
             ->where('facturas.empresa_id', $empresaId)
             ->where('facturas.tipo', 'VENTA')
@@ -526,10 +473,6 @@ class DashboardResumenService
         })->all();
     }
 
-    // -------------------------------------------------------------------------
-    // Top 5 facturas urgentes (pendientes de cobro, las más antiguas)
-    // -------------------------------------------------------------------------
-
     private function facturasUrgentes(int $empresaId): array
     {
         $filas = Factura::where('empresa_id', $empresaId)
@@ -548,10 +491,6 @@ class DashboardResumenService
             'estado'           => $f->estado,
         ])->all();
     }
-
-    // -------------------------------------------------------------------------
-    // Distribución de facturas VENTA por estado simplificado
-    // -------------------------------------------------------------------------
 
     private function distribucionFacturas(int $empresaId): array
     {
@@ -592,10 +531,6 @@ class DashboardResumenService
         return $dist;
     }
 
-    // -------------------------------------------------------------------------
-    // Pipeline de cotizaciones por estado (últimos 12 meses) + tasa de conversión
-    // -------------------------------------------------------------------------
-
     private function pipelineCotizaciones(int $empresaId): array
     {
         $desde = Carbon::now()->startOfMonth()->subMonths(11)->toDateString();
@@ -632,10 +567,6 @@ class DashboardResumenService
         ];
     }
 
-    // -------------------------------------------------------------------------
-    // Clientes nuevos en los últimos 6 meses, agrupados por mes
-    // -------------------------------------------------------------------------
-
     private function clientesNuevos6m(int $empresaId): array
     {
         $desde = Carbon::now()->startOfMonth()->subMonths(5)->toDateString();
@@ -664,10 +595,6 @@ class DashboardResumenService
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Days Sales Outstanding (DSO): rotación de cuentas por cobrar
-    // -------------------------------------------------------------------------
-
     private function dso(int $empresaId): ?float
     {
         $desde = Carbon::now()->startOfMonth()->subMonths(11)->toDateString();
@@ -689,10 +616,6 @@ class DashboardResumenService
 
         return round(($cuentasCobrar / $ventas12m) * 365, 1);
     }
-
-    // -------------------------------------------------------------------------
-    // Facturas VENTA pendientes que vencen en los próximos $dias días
-    // -------------------------------------------------------------------------
 
     private function proximasVencer(int $empresaId, int $dias = 7): array
     {
@@ -717,10 +640,6 @@ class DashboardResumenService
             'dias_restantes'   => (int) Carbon::now()->diffInDays($f->fecha_vencimiento, false),
         ])->all();
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers de rango de fechas
-    // -------------------------------------------------------------------------
 
     private function rangoPeriodo(string $periodo): array
     {

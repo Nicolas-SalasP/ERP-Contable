@@ -47,9 +47,7 @@ class EmpresaController extends Controller
     public function actualizarPerfil(Request $request)
     {
         try {
-            // Whitelist explicita de campos editables del perfil. Antes se usaba
-            // $request->except(...), que permitia mass-assignment de campos sensibles
-            // como 'activa' (reactivar una empresa suspendida) o 'tasa_impuesto'.
+            // Whitelist explicita de campos editables; antes se usaba $request->except(...), que permitia mass-assignment de 'activa'/'tasa_impuesto'.
             $datos = $request->validate([
                 'razon_social' => 'nullable|string|max:150',
                 'direccion' => 'nullable|string|max:255',
@@ -247,9 +245,7 @@ class EmpresaController extends Controller
             return response()->json(['success' => false, 'message' => 'Este usuario ya tiene una empresa asignada.'], 422);
         }
 
-        // Normalizar RUT antes de validar: el sistema almacena sin puntos (p.ej. "12345678-9").
-        // La normalización se hace aquí para que la regla de unicidad compare contra
-        // el formato real almacenado en la BD.
+        // Se normaliza el RUT antes de validar para que la unicidad compare contra el formato real almacenado en BD (sin puntos).
         $rutNormalizado = null;
         try {
             $rutNormalizado = RutHelper::normalizar((string) $request->empresa_rut);
@@ -291,11 +287,7 @@ class EmpresaController extends Controller
                 'regimen_tributario' => $request->regimen_tributario ?? '14_D3',
             ]);
 
-            // User::booted() solo copia empresa_id -> empresa_activa_id en el evento
-            // "creating" (usuario nuevo). Este usuario ya existe (vino de SSO/provisioning
-            // sin empresa), así que hay que setear ambos explícitamente: si solo se
-            // asigna empresa_id, EmpresaScope (que filtra por empresa_activa_id) deja al
-            // usuario recién onboardeado sin ver ningún dato de la empresa que acaba de crear.
+            // User::booted() solo copia empresa_id -> empresa_activa_id en "creating"; este usuario ya existe, así que hay que setear ambos o EmpresaScope lo deja sin ver la empresa recién creada.
             $user->empresa_id = $empresa->id;
             $user->empresa_activa_id = $empresa->id;
             $user->save();

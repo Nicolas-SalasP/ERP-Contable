@@ -8,10 +8,7 @@ use App\Domains\Core\Support\ModuloPermisos;
 
 class EmpresaCambioController
 {
-    /**
-     * Lista las empresas a las que pertenece el usuario autenticado,
-     * indicando cuál es la empresa activa actualmente.
-     */
+    /** Lista las empresas del usuario autenticado, indicando cuál es la activa actualmente. */
     public function misEmpresas(Request $request)
     {
         /** @var \App\Domains\Core\Models\User $user */
@@ -40,10 +37,7 @@ class EmpresaCambioController
         return response()->json(['data' => $empresas]);
     }
 
-    /**
-     * Cambia la empresa activa del usuario autenticado.
-     * Requiere plan multitenant y que el usuario pertenezca a la empresa destino.
-     */
+    /** Cambia la empresa activa del usuario autenticado; requiere plan multitenant y pertenencia a la empresa destino. */
     public function cambiar(Request $request)
     {
         $request->validate([

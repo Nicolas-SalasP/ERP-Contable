@@ -54,11 +54,7 @@ class WebProvisioningController
 
     public function syncPlan(Request $request): JsonResponse
     {
-        // SEGURIDAD MULTITENANT: el sync debe apuntar a un usuario concreto
-        // (tenri_user_id), no a todos los usuarios que comparten un plan_slug.
-        // Antes, sincronizar el plan de una empresa sobrescribia los module_keys
-        // de TODAS las empresas con el mismo plan (fuga entre tenants). El cambio
-        // de plan a nivel de empresa se hace por AdminEmpresasController::cambiarPlan.
+        // SEGURIDAD MULTITENANT: debe apuntar a un tenri_user_id concreto; antes sincronizaba por plan_slug y sobrescribia module_keys de TODAS las empresas con ese plan.
         $data = $request->validate([
             'tenri_user_id' => ['required', 'integer'],
             'plan_slug' => ['required', 'string'],

@@ -52,10 +52,7 @@ class AnulacionService
 
         if ($tipoStr === 'ASIENTO' || $tipoStr === 'COMPROBANTE') {
             return DB::transaction(function () use ($empresaId, $id, $motivo, $usuarioId, $fechaAnulacion) {
-                // lockForUpdate() para que dos anulaciones concurrentes del mismo
-                // asiento (doble clic/doble pestaña) no pasen ambas el guard de estado
-                // antes de que la primera confirme el UPDATE a ANULADO -- sin esto se
-                // podian generar dos asientos de reverso duplicados.
+                // lockForUpdate(): evita que dos anulaciones concurrentes (doble clic) generen dos asientos de reverso duplicados.
                 $asientoOriginal = AsientoContable::with('detalles')
                     ->where('empresa_id', $empresaId)
                     ->lockForUpdate()
@@ -71,12 +68,7 @@ class AnulacionService
 
                 $tempNum = 'T' . time() . rand(10, 99);
 
-                // El asiento de reverso queda MAYORIZADO (no ANULADO): antes quedaba
-                // ANULADO, lo que lo excluía de ReporteContableService::aplicarFiltroEstado
-                // -- la reversa quedaba invisible en Libro Diario/Mayor bajo el filtro
-                // estándar, a diferencia del mismo mecanismo en AsientoContableService::
-                // procesarReversa (que sí usa MAYORIZADO, el estado estándar de todo
-                // asiento activo en el resto del sistema).
+                // El reverso queda MAYORIZADO (no ANULADO): antes quedaba ANULADO y ReporteContableService::aplicarFiltroEstado lo excluía, invisible en Libro Diario/Mayor.
                 $asientoReverso = AsientoContable::create([
                     'empresa_id' => $empresaId,
                     'usuario_id' => $usuarioId,
@@ -105,19 +97,12 @@ class AnulacionService
                     ]);
                 }
 
-                // Si este era el asiento de pago de una o más facturas (Nómina de Pagos,
-                // Mesa de Conciliación), revierte su estado a REGISTRADA para que puedan
-                // volver a pagarse. Sin esto la factura quedaba "PAGADA" para siempre
-                // aunque el asiento de pago ya estuviera anulado.
+                // Si era el asiento de pago de facturas, revierte su estado a REGISTRADA para que puedan volver a pagarse (si no, quedaban "PAGADA" para siempre).
                 Factura::where('empresa_id', $empresaId)
                     ->where('asiento_pago_id', $asientoOriginal->id)
                     ->update(['estado' => 'REGISTRADA', 'asiento_pago_id' => null]);
 
-                // Si este asiento venia de conciliar un movimiento bancario (Mesa de
-                // Conciliacion), libera el movimiento de vuelta a PENDIENTE. Sin esto
-                // quedaba CONCILIADO para siempre apuntando a un asiento ya ANULADO --
-                // invisible en Mesa de Conciliacion y sin forma de volver a procesarlo
-                // con la fecha/cuenta correcta.
+                // Si venia de conciliar un movimiento bancario, lo libera a PENDIENTE (si no, quedaba CONCILIADO apuntando a un asiento ya ANULADO, sin forma de reprocesar).
                 DB::table('movimientos_bancarios')
                     ->where('empresa_id', $empresaId)
                     ->where('asiento_id', $asientoOriginal->id)
