@@ -9,12 +9,27 @@ use Exception;
 
 class ReporteContableService
 {
-    private function aplicarFiltroEstado($query, int $filtro, string $columnaEstado = 'estado')
+    /**
+     * filtro=1 (Válidos) excluye además el asiento de reverso de un ANULADO: sin esto,
+     * el original quedaba afuera pero su reverso (MAYORIZADO) seguía adentro -- mostrando
+     * solo la mitad de un par que neteaba a cero y distorsionando el saldo de la cuenta
+     * (ej. una CxP ya pagada volvía a verse "impaga" por el reverso de un segundo intento
+     * de pago erróneo ya anulado). No existe columna de vínculo original->reverso; se usa
+     * el mismo patrón de glosa "REVERSO N° ..." que generan AnulacionService y
+     * AsientoContableService::procesarReversa.
+     */
+    private function aplicarFiltroEstado($query, int $filtro, string $columnaEstado = 'estado', string $columnaGlosa = 'glosa')
     {
         if ($filtro === 1) {
             $query->whereNotIn($columnaEstado, ['ANULADO', 'RECLASIFICADO']);
+            $query->where(function ($q) use ($columnaGlosa) {
+                $q->whereNull($columnaGlosa)->orWhere($columnaGlosa, 'not like', 'REVERSO N°%');
+            });
         } elseif ($filtro === 2) {
-            $query->whereIn($columnaEstado, ['ANULADO', 'RECLASIFICADO']);
+            $query->where(function ($q) use ($columnaEstado, $columnaGlosa) {
+                $q->whereIn($columnaEstado, ['ANULADO', 'RECLASIFICADO'])
+                    ->orWhere($columnaGlosa, 'like', 'REVERSO N°%');
+            });
         }
 
         return $query;
@@ -37,7 +52,7 @@ class ReporteContableService
             ->where('asientos_contables.fecha', '<', $fechaInicio)
             ->where('detalles_asiento.cuenta_contable', $cuentaCodigo);
 
-        $queryAnteriores = $this->aplicarFiltroEstado($queryAnteriores, $filtro, 'asientos_contables.estado');
+        $queryAnteriores = $this->aplicarFiltroEstado($queryAnteriores, $filtro, 'asientos_contables.estado', 'asientos_contables.glosa');
 
         $totalesAnteriores = $queryAnteriores->selectRaw('COALESCE(SUM(debe), 0) as total_debe, COALESCE(SUM(haber), 0) as total_haber')->first();
 
@@ -54,7 +69,7 @@ class ReporteContableService
             ->orderBy('asientos_contables.id', 'asc')
             ->select('detalles_asiento.*');
 
-        $queryMovimientos = $this->aplicarFiltroEstado($queryMovimientos, $filtro, 'asientos_contables.estado');
+        $queryMovimientos = $this->aplicarFiltroEstado($queryMovimientos, $filtro, 'asientos_contables.estado', 'asientos_contables.glosa');
         $movimientos = $queryMovimientos->get();
 
         $saldoAcumulado = $saldoInicial;
@@ -185,7 +200,7 @@ class ReporteContableService
             ->where('asientos_contables.empresa_id', $empresaId)
             ->whereBetween('asientos_contables.fecha', [$fechaDesde, $fechaHasta]);
 
-        $query = $this->aplicarFiltroEstado($query, $filtro, 'asientos_contables.estado');
+        $query = $this->aplicarFiltroEstado($query, $filtro, 'asientos_contables.estado', 'asientos_contables.glosa');
 
         $filas = $query
             ->groupBy('detalles_asiento.cuenta_contable', 'plan_cuentas.nombre', 'plan_cuentas.tipo')
