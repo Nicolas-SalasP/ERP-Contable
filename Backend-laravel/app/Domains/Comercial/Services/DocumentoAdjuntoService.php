@@ -8,12 +8,7 @@ use App\Domains\Comercial\Models\Factura;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * Adjuntos de una factura (guías de despacho, comprobantes, etc.) -- a
- * diferencia del `archivo_pdf` original (un solo documento por factura),
- * esto permite varios documentos por factura, con imágenes recomprimidas
- * para no acumular espacio y borrado físico real al eliminar.
- */
+/** A diferencia del `archivo_pdf` original (un solo documento), permite varios adjuntos por factura con imágenes recomprimidas. */
 class DocumentoAdjuntoService
 {
     private const DISCO = 'local';
@@ -73,9 +68,7 @@ class DocumentoAdjuntoService
             throw ComercialException::noEncontrado('El documento adjunto no existe.');
         }
 
-        // Borra el archivo físico primero: si la fila se hubiera borrado antes y
-        // esto fallara, quedaría un adjunto "fantasma" imposible de limpiar desde
-        // la UI (sin fila, sin referencia a la ruta).
+        // Borra el archivo físico primero: si se borrara la fila antes y esto fallara, quedaría un adjunto "fantasma" sin referencia a la ruta.
         Storage::disk(self::DISCO)->delete($adjunto->ruta);
         $adjunto->delete();
     }
@@ -104,11 +97,7 @@ class DocumentoAdjuntoService
         return $factura;
     }
 
-    /**
-     * Redimensiona (ancho máximo) y recomprime en el disco -- las fotos de guías
-     * de despacho tomadas con el celular suelen pesar varios MB sin necesidad.
-     * Best-effort: si GD no puede leer el archivo, se deja el original tal cual.
-     */
+    /** Best-effort: si GD no puede leer el archivo, se deja el original tal cual (las fotos de celular pesan varios MB sin necesidad). */
     private function comprimirImagen(string $rutaAbsoluta, string $mime): void
     {
         try {
@@ -149,8 +138,7 @@ class DocumentoAdjuntoService
 
             imagedestroy($imagen);
         } catch (\Throwable $e) {
-            // No bloquea la subida por un problema de compresión; el archivo
-            // original ya quedó guardado.
+            // No bloquea la subida por un problema de compresión; el archivo original ya quedó guardado.
         }
     }
 }

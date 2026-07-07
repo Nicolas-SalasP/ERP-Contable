@@ -71,15 +71,15 @@ class ClienteService
         if (isset($datos['rut']) && $datos['rut'] !== $cliente->rut) {
             $existe = Cliente::where('empresa_id', $cliente->empresa_id)
                 ->where('rut', $datos['rut'])
-                ->exists(); //
+                ->exists();
 
             if ($existe) {
-                throw ComercialException::regla("El RUT ingresado ya está registrado para otro cliente en esta empresa."); //
+                throw ComercialException::regla("El RUT ingresado ya está registrado para otro cliente en esta empresa.");
             }
         }
 
         return DB::transaction(function () use ($cliente, $datos) {
-            $cliente->update($datos); //
+            $cliente->update($datos);
             return $cliente;
         });
     }

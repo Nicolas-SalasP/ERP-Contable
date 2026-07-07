@@ -121,8 +121,7 @@ class ProveedorService
         return AnticipoProveedor::create([
             'empresa_id' => $empresaId,
             'proveedor_id' => $proveedor->id,
-            // Quitamos el campo 'fecha' en caso de que no exista en tu migración real
-            // Laravel usará created_at automáticamente.
+            // No se envía 'fecha': Laravel usa created_at automáticamente.
             'monto' => $datos['monto'],
             'saldo_disponible' => $datos['monto'],
             'referencia' => $datos['referencia'] ?? null,
@@ -155,9 +154,7 @@ class ProveedorService
                 throw ComercialException::regla("Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.");
             }
 
-            // Lock pesimista sobre facturas/NC/anticipos involucrados: sin esto, dos
-            // compensaciones concurrentes que comparten un mismo anticipo/NC podian
-            // leer ambas el saldo disponible antes de comitear y aplicarlo dos veces.
+            // Lock pesimista: evita que dos compensaciones concurrentes lean el mismo saldo disponible y lo apliquen dos veces.
             $totalDeuda = DB::table('facturas')
                 ->where('empresa_id', $empresaId)
                 ->where('proveedor_id', $proveedorId)

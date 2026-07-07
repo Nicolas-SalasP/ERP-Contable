@@ -24,10 +24,6 @@ class FacturaController
         $this->service = $service;
     }
 
-    /**
-     * Lista facturas de la empresa, paginado (filtrable por ?estado, ?tipo,
-     * ?proveedor_id, ?num, ?search, ?fecha_desde, ?fecha_hasta, ?limit).
-     */
     public function index(Request $request)
     {
         $filtros = $request->only(['estado', 'tipo', 'proveedor_id', 'search', 'num', 'limit', 'fecha_desde', 'fecha_hasta']);
@@ -447,10 +443,7 @@ class FacturaController
         }
     }
 
-    /**
-     * Resumen de retenciones Art. 59 LIR para el Formulario 50.
-     * GET /facturas/f50?periodo=YYYY-MM
-     */
+    /** Resumen de retenciones Art. 59 LIR para el Formulario 50. GET /facturas/f50?periodo=YYYY-MM */
     public function f50(Request $request)
     {
         $empresaId = $request->user()->empresa_activa_id;
@@ -502,10 +495,7 @@ class FacturaController
         ]);
     }
 
-    /**
-     * Emite una Nota de Crédito sobre una factura de VENTA.
-     * POST /facturas/{id}/nota-credito
-     */
+    /** Emite una Nota de Crédito sobre una factura de VENTA. POST /facturas/{id}/nota-credito */
     public function notaCredito(Request $request, int $id)
     {
         try {
@@ -560,8 +550,7 @@ class FacturaController
                 if ($factura->archivo_pdf) {
                     Storage::disk('local')->delete($factura->archivo_pdf);
                 }
-                // Disco 'local' (privado): un PDF de factura tiene RUT/montos/proveedor,
-                // no debe quedar servible por URL directa sin autenticación (ver descargarPdf()).
+                // Disco 'local' (privado): un PDF de factura tiene RUT/montos/proveedor, no debe quedar servible por URL directa sin autenticación (ver descargarPdf()).
                 $rutaPdf = $request->file('pdf')->store('facturas/pdfs', 'local');
             }
 
@@ -590,10 +579,7 @@ class FacturaController
         return Storage::disk('local')->response($factura->archivo_pdf, "Factura-{$factura->numero_factura}.pdf");
     }
 
-    /**
-     * Emite una Nota de Débito sobre una factura de VENTA.
-     * POST /facturas/{id}/nota-debito
-     */
+    /** Emite una Nota de Débito sobre una factura de VENTA. POST /facturas/{id}/nota-debito */
     public function notaDebito(Request $request, int $id)
     {
         try {
