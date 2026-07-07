@@ -4,15 +4,7 @@ namespace App\Domains\Sii\Exceptions;
 
 use DomainException;
 
-/**
- * F6.1 — Falla de validacion pre-mapeo de una Factura del Comercial al
- * snapshot SiiDteEmitido. Lanzada por FacturaAComercialDteMapper ANTES
- * de cualquier persistencia, de modo que no consuma folio CAF (D5).
- *
- * El operador corrige el dato faltante en la Factura y reintenta. Mientras
- * el mapper no haya completado exitosamente, no hay efectos secundarios:
- * cero folios reservados, cero filas SiiDteEmitido, cero requests al SII.
- */
+/** F6.1 — falla de validacion pre-mapeo de una Factura al snapshot SiiDteEmitido, lanzada por FacturaAComercialDteMapper ANTES de cualquier persistencia para no consumir folio CAF (D5): cero efectos secundarios mientras el mapper no complete exitosamente. */
 class FacturaIncompletaParaSii extends DomainException
 {
     public const TIPO_DTE_FALTANTE              = 'tipo_dte_faltante';

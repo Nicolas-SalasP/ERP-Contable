@@ -14,10 +14,7 @@ class SubirCafRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 'extensions' valida la extension del archivo subido (Laravel 11+).
-            // Mas predecible que 'mimes:xml' porque PHP a veces reporta XML
-            // como text/xml y otras como application/xml segun OS/finfo.
-            // max:100 = 100 KB (CAFs reales pesan 5-15 KB).
+            // 'extensions' (no 'mimes:xml') porque PHP reporta XML como text/xml u application/xml segun OS/finfo; max:100 KB cubre CAFs reales (5-15 KB).
             'archivo' => ['required', 'file', 'extensions:xml', 'max:100'],
         ];
     }

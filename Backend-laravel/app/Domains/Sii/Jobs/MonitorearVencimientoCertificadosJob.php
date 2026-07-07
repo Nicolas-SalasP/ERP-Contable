@@ -14,14 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Throwable;
 
-/**
- * Recorre los certificados activos y dispara alertas de vencimiento segun
- * la matriz de niveles definida en SiiCertificadoEmpresa.
- *
- * Frecuencia por nivel:
- *   - BAJA_T60, MEDIA_T30, ALTA_T15  => ONE-SHOT (una sola vez por nivel)
- *   - CRITICA_T7, CRITICA_T1, VENCIDO => DIARIO (uno por dia mientras dure)
- */
+/** Recorre los certificados activos y dispara alertas de vencimiento segun la matriz de niveles de SiiCertificadoEmpresa: BAJA_T60/MEDIA_T30/ALTA_T15 son one-shot, CRITICA_T7/CRITICA_T1/VENCIDO son diarios mientras dure. */
 class MonitorearVencimientoCertificadosJob implements ShouldQueue
 {
     use Dispatchable;
@@ -52,9 +45,7 @@ class MonitorearVencimientoCertificadosJob implements ShouldQueue
             ->get();
 
         foreach ($certificados as $cert) {
-            // HARDENING-1 R7: aislamiento cross-tenant. Una empresa con cert
-            // corrupto o cualquier excepcion inesperada NO debe abortar el
-            // procesamiento de las demas empresas. Capturamos por certificado.
+            // HARDENING-1 R7: aislamiento cross-tenant; un cert corrupto o excepcion inesperada no debe abortar el procesamiento de las demas empresas.
             try {
                 $resultado = $this->procesarCertificado($cert);
                 $contador[$resultado]++;
@@ -86,8 +77,7 @@ class MonitorearVencimientoCertificadosJob implements ShouldQueue
     }
 
     /**
-     * Procesa un certificado individual. Aislado de otros certificados via
-     * try/catch en handle() para garantizar que una falla no aborte el loop.
+     * Procesa un certificado individual; aislado de otros via try/catch en handle() para que una falla no aborte el loop.
      *
      * @return 'enviadas'|'fallidas'|'skipped'
      */

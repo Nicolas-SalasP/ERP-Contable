@@ -11,9 +11,7 @@ use RobRichards\XMLSecLibs\XMLSecurityDSig;
 use RobRichards\XMLSecLibs\XMLSecurityKey;
 use RuntimeException;
 
-/**
- * Servicio generico para firma XMLDSig SHA1+RSA+C14N1.0+enveloped.
- */
+/** Servicio generico para firma XMLDSig SHA1+RSA+C14N1.0+enveloped. */
 class XmlDsigSigner
 {
     /** Transform enveloped-signature: xmlseclibs no expone una constante. */
@@ -47,19 +45,13 @@ class XmlDsigSigner
             );
         }
 
-        // setIdAttribute le dice al DOM que 'ID' es de tipo xs:ID. Sin esto,
-        // xmlseclibs no resuelve la Reference URI="#D123" durante el verify.
+        // setIdAttribute le dice al DOM que 'ID' es de tipo xs:ID; sin esto, xmlseclibs no resuelve la Reference URI="#D123" durante el verify.
         $nodoFirmar->setIdAttribute('ID', true);
 
         $dsig = new XMLSecurityDSig();
         $dsig->setCanonicalMethod(XMLSecurityDSig::C14N);
 
-        // Reference con UN solo transform: enveloped-signature. El XSD oficial
-        // del SII (xmldsignature_v10.xsd) limita el Transforms.Transform a 1
-        // ocurrencia, por lo que NO agregamos C14N como transform adicional —
-        // la canonicalizacion se aplica via CanonicalizationMethod del SignedInfo.
-        //
-        // overwrite=false + id_name=ID -> NO genera GUID, usa el atributo existente.
+        // Reference con UN solo transform: enveloped-signature; el XSD oficial del SII (xmldsignature_v10.xsd) limita Transforms.Transform a 1 ocurrencia, por lo que NO agregamos C14N como transform adicional (la canonicalizacion se aplica via CanonicalizationMethod del SignedInfo). overwrite=false + id_name=ID -> NO genera GUID, usa el atributo existente.
         $dsig->addReference(
             $nodoFirmar, // @phpstan-ignore argument.type
             XMLSecurityDSig::SHA1,
@@ -70,31 +62,20 @@ class XmlDsigSigner
         $key = new XMLSecurityKey(XMLSecurityKey::RSA_SHA1, ['type' => 'private']);
         $key->loadKey($privKeyPem, false);
 
-        // CRITICO: pasar $signatureParent a sign() para que xmlseclibs inserte
-        // la sigNode en el DOM destino ANTES de canonilizar el SignedInfo. Sin
-        // esto, el SignedInfo se canoliza en su DOM aislado (sin namespaces
-        // heredados) y firma con bytes distintos a los que ve el verify
-        // despues del importNode. Documentado en sign(): "If we have a parent
-        // node append it now so C14N properly works".
+        // CRITICO: pasar $signatureParent a sign() para que xmlseclibs inserte la sigNode en el DOM destino ANTES de canonicalizar el SignedInfo; sin esto, el SignedInfo se canonicaliza en su DOM aislado (sin namespaces heredados) y firma con bytes distintos a los que ve el verify despues del importNode (documentado en sign(): "If we have a parent node append it now so C14N properly works").
         $dsig->sign($key, $signatureParent);
 
-        // KeyInfo del SII requiere KeyValue (RSAKeyValue: Modulus + Exponent)
-        // ANTES de X509Data, en ese orden. xmlseclibs::add509Cert solo agrega
-        // X509Data, asi que construimos KeyValue manualmente. Sin esto, el
-        // XSD oficial (xmldsignature_v10.xsd) rechaza el XML.
+        // KeyInfo del SII requiere KeyValue (RSAKeyValue: Modulus + Exponent) ANTES de X509Data, en ese orden; xmlseclibs::add509Cert solo agrega X509Data, asi que construimos KeyValue manualmente (sin esto, el XSD oficial xmldsignature_v10.xsd rechaza el XML).
         $this->agregarKeyValueRsa($dsig, $key);
         $dsig->add509Cert($certPem, true);
 
-        // Reposicionamiento opcional: sign() hizo appendChild al final del
-        // padre. Si necesitabamos otro orden (signatureSibling), mover.
+        // Reposicionamiento opcional: sign() hizo appendChild al final del padre; si necesitabamos otro orden (signatureSibling), mover.
         $signatureNode = $dsig->sigNode;
         if ($signatureSibling !== null && $signatureNode->nextSibling !== $signatureSibling) {
             $signatureParent->insertBefore($signatureNode, $signatureSibling);
         }
 
-        // Verificacion round-trip: re-parsear el XML emitido y re-validar la
-        // firma contra la clave publica. Detecta regresiones de bit-exactness
-        // en la canonicalizacion entre sign() y verify().
+        // Verificacion round-trip: re-parsear el XML emitido y re-validar la firma contra la clave publica; detecta regresiones de bit-exactness en la canonicalizacion entre sign() y verify().
         $this->verificarRoundTrip($dom, $certPem, $signatureNode);
     }
 
@@ -103,8 +84,7 @@ class XmlDsigSigner
      */
     private function verificarRoundTrip(DOMDocument $dom, string $certPem, DOMNode $signatureNode): void
     {
-        // Re-parseamos el XML emitido para verificar en condiciones de "fresh load",
-        // sin estado interno de xmlseclibs que pudiera enmascarar errores.
+        // Re-parseamos el XML emitido para verificar en condiciones de "fresh load", sin estado interno de xmlseclibs que pudiera enmascarar errores.
         $xmlEmitido = $dom->saveXML();
         if ($xmlEmitido === false) {
             throw DteXmlInvalidException::estructuraIncoherente(
@@ -120,18 +100,14 @@ class XmlDsigSigner
             );
         }
 
-        // Marcar todos los atributos ID como tipo ID en el DOM nuevo, para que
-        // la Reference URI="#..." resuelva durante verify.
+        // Marcar todos los atributos ID como tipo ID en el DOM nuevo, para que la Reference URI="#..." resuelva durante verify.
         $this->marcarAtributosIdComoId($domVerificar);
 
-        // Localizar EXACTAMENTE la misma signature por su posicion ordinal en
-        // el documento (cuando hay multiples, ej. Documento + ds:Signature de F4.1).
+        // Localizar EXACTAMENTE la misma signature por su posicion ordinal en el documento (cuando hay multiples, ej. Documento + ds:Signature de F4.1).
         $posicion = $this->posicionDeSignatureEnDocumento($dom, $signatureNode);
 
         $dsigVerify = new XMLSecurityDSig();
-        // xmlseclibs busca @Id por default en processRefNode. Como nuestro
-        // atributo es @ID (XSD del SII), tenemos que poblarlo aqui o
-        // validateReference no encontrara el nodo via URI="#xxx".
+        // xmlseclibs busca @Id por default en processRefNode; como nuestro atributo es @ID (XSD del SII), tenemos que poblarlo aqui o validateReference no encontrara el nodo via URI="#xxx".
         $dsigVerify->idKeys = ['ID'];
         $sigEncontrada = $dsigVerify->locateSignature($domVerificar, $posicion);
         if ($sigEncontrada === null) {
@@ -159,8 +135,7 @@ class XmlDsigSigner
     }
 
     /**
-     * Firma el documento entero con Reference URI="" (firma envelope "root-wrap"),
-     * usado por el protocolo de getToken del SII Chile.
+     * Firma el documento entero con Reference URI="" (firma envelope "root-wrap"), usado por el protocolo de getToken del SII Chile.
      *
      * @throws DteXmlInvalidException si el round-trip de verificacion falla.
      */
@@ -177,8 +152,7 @@ class XmlDsigSigner
         $dsig = new XMLSecurityDSig();
         $dsig->setCanonicalMethod(XMLSecurityDSig::C14N);
 
-        // Pasamos $dom (DOMDocument) en lugar de un nodo, con force_uri=true:
-        // xmlseclibs setea URI="" en la Reference (firma documento completo).
+        // Pasamos $dom (DOMDocument) en lugar de un nodo, con force_uri=true: xmlseclibs setea URI="" en la Reference (firma documento completo).
         $dsig->addReference(
             $dom,
             XMLSecurityDSig::SHA1,
@@ -189,16 +163,11 @@ class XmlDsigSigner
         $key = new XMLSecurityKey(XMLSecurityKey::RSA_SHA1, ['type' => 'private']);
         $key->loadKey($privKeyPem, false);
 
-        // sign($key, $root) inserta la Signature como ultimo hijo del root
-        // ANTES de canonicalizar SignedInfo (necesario para que xmlns
-        // heredados queden en el contexto correcto — mismo bug que F4.3).
+        // sign($key, $root) inserta la Signature como ultimo hijo del root ANTES de canonicalizar SignedInfo (necesario para que xmlns heredados queden en el contexto correcto — mismo bug que F4.3).
         $dsig->sign($key, $root);
         $dsig->add509Cert($certPem, true);
 
-        // El round-trip de verify es costoso y, mas importante, no aplica
-        // limpiamente al caso URI="" donde el SII espera estructura especifica.
-        // El test de SiiSeedSignerTest verifica externamente que la firma
-        // valida contra el cert publico de la empresa.
+        // El round-trip de verify es costoso y, mas importante, no aplica limpiamente al caso URI="" donde el SII espera estructura especifica; el test de SiiSeedSignerTest verifica externamente que la firma valida contra el cert publico de la empresa.
     }
 
     /**
@@ -206,14 +175,11 @@ class XmlDsigSigner
      */
     private function agregarKeyValueRsa(XMLSecurityDSig $dsig, XMLSecurityKey $key): void
     {
-        // XMLSecurityKey expone la clave como recurso/string. Re-leerla con
-        // openssl_pkey_get_private/public para acceder a modulus/exponent.
+        // XMLSecurityKey expone la clave como recurso/string; re-leerla con openssl_pkey_get_private/public para acceder a modulus/exponent.
         $pem = $key->key;
         $res = @openssl_pkey_get_private($pem) ?: @openssl_pkey_get_public($pem);
         if ($res === false) {
-            // ds:KeyValue es exigido por el XSD oficial del sobre EnvioDTE
-            // (EnvioDteXsdValidator ya lo valida) -- omitirlo en silencio solo
-            // pospone el fallo a un error de XSD confuso rio abajo.
+            // ds:KeyValue es exigido por el XSD oficial del sobre EnvioDTE (EnvioDteXsdValidator ya lo valida) -- omitirlo en silencio solo pospone el fallo a un error de XSD confuso rio abajo.
             throw new RuntimeException('No se pudo leer la clave RSA para construir ds:KeyValue: certificado invalido o corrupto.');
         }
         $detalles = openssl_pkey_get_details($res);
@@ -261,10 +227,7 @@ class XmlDsigSigner
         return null;
     }
 
-    /**
-     * Recorre todo el DOM marcando atributos ID como tipo ID. Necesario para
-     * que xmlseclibs::validateReference resuelva URI="#xxx" correctamente.
-     */
+    /** Recorre todo el DOM marcando atributos ID como tipo ID; necesario para que xmlseclibs::validateReference resuelva URI="#xxx" correctamente. */
     private function marcarAtributosIdComoId(DOMDocument $dom): void
     {
         $xpath = new DOMXPath($dom);
@@ -279,11 +242,7 @@ class XmlDsigSigner
         }
     }
 
-    /**
-     * Cuenta cuantas signatures ds:Signature hay antes (en orden documental)
-     * de la signature recien insertada. Usado para que locateSignature
-     * encuentre exactamente la misma en el re-parse.
-     */
+    /** Cuenta cuantas signatures ds:Signature hay antes (en orden documental) de la signature recien insertada; usado para que locateSignature encuentre exactamente la misma en el re-parse. */
     private function posicionDeSignatureEnDocumento(DOMDocument $dom, DOMNode $signatureNode): int
     {
         $xpath = new DOMXPath($dom);

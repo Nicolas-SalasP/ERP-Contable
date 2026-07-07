@@ -8,10 +8,7 @@ use App\Domains\Sii\Jobs\ReintentarEmisionDteJob;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Models\SiiEnvioDte;
 
-/**
- * Decide la accion de reintento segun el estado actual del DTE/envio y la
- * encola asincronamente. NO ejecuta nada sincronamente.
- */
+/** Decide la accion de reintento segun el estado actual del DTE/envio y la encola asincronamente; no ejecuta nada sincronamente. */
 class ReintentarEmisionFacturaService
 {
     /** Estados del DTE donde el flujo ya no admite reintento. */
@@ -37,14 +34,10 @@ class ReintentarEmisionFacturaService
     }
 
     /**
-     * @return string  Una de:
-     *   - 'redispatch_evento'  (factura sin DTE)
-     *   - 'reanudar_firma'
-     *   - 'reanudar_envio'
+     * @return string Una de: 'redispatch_evento' (factura sin DTE), 'reanudar_firma', 'reanudar_envio'.
      *
      * @throws ReintentoNoAplicableException
-     * @throws \App\Domains\Sii\Exceptions\FacturaNoEmisibleException  (propagada
-     *         desde EmitirDteDesdeFacturaService cuando es redispatch).
+     * @throws \App\Domains\Sii\Exceptions\FacturaNoEmisibleException propagada desde EmitirDteDesdeFacturaService cuando es redispatch.
      */
     public function reintentar(
         Factura $factura,
@@ -92,8 +85,7 @@ class ReintentarEmisionFacturaService
             $ultimoEnvio = $dte->envios->last();
 
             if ($ultimoEnvio === null) {
-                // Estado inconsistente: encolar y delegar al servicio interno
-                // la decision de aceptar o rechazar.
+                // Estado inconsistente: encolar y delegar al servicio interno la decision de aceptar o rechazar.
                 ReintentarEmisionDteJob::dispatch(
                     $dte->id,
                     ReintentarEmisionDteJob::ACCION_REANUDAR_ENVIO,

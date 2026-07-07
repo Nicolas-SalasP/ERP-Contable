@@ -21,13 +21,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
-/**
- * Orquestador del flujo de emision de un DTE: deja el DTE en estado FIRMADO. No envia al SII.
- *
- * El metodo emitir() NO envuelve todo en una unica transaccion: la reserva de folio
- * se commitea por separado para que un fallo posterior deje el folio como HUERFANO
- * (auditado) en lugar de desaparecer.
- */
+/** Orquestador del flujo de emision de un DTE: deja el DTE en estado FIRMADO, no envia al SII; emitir() no envuelve todo en una unica transaccion, la reserva de folio se commitea por separado para que un fallo posterior deje el folio como HUERFANO (auditado) en lugar de desaparecer. */
 class EmitirDteService
 {
     public function __construct(
@@ -63,8 +57,7 @@ class EmitirDteService
 
             $this->validarPrecondiciones($dte);
 
-            // Verifica cert activo upfront: si no hay, lanzamos antes de
-            // reservar folio (evita generar folios HUERFANOS por config faltante).
+            // Verifica cert activo upfront: si no hay, lanzamos antes de reservar folio (evita generar folios HUERFANOS por config faltante).
             $this->certificadoService->extraerParPemDeEmpresa($dte->empresa);
         });
 
@@ -80,8 +73,7 @@ class EmitirDteService
         $disk    = config('sii.storage.disk', 'sii_xml');
         $xmlPath = null;
 
-        // A partir de aqui el folio ya esta reservado (tx committed). Cualquier
-        // excepcion posterior debe marcar el folio como HUERFANO y loguear.
+        // A partir de aqui el folio ya esta reservado (tx committed); cualquier excepcion posterior debe marcar el folio como HUERFANO y loguear.
         try {
             // Asignar folio reservado en memoria, sin save todavia.
             $dte->folio  = $folioUso->folio;
@@ -92,16 +84,13 @@ class EmitirDteService
             $setSinFirma   = $this->setDteBuilder->build($dte->empresa, [['dte' => $dte, 'xml' => $xmlDteFirmado]]);
             $envioFirmado  = $this->setDteSigner->firmar($setSinFirma, $dte->empresa);
 
-            // Valida el sobre EnvioDTE final (Caratula + SetDTE firmado) contra el
-            // XSD oficial -- antes solo se validaba el <Documento> interno, nunca
-            // el payload completo que realmente se envia al SII.
+            // Valida el sobre EnvioDTE final (Caratula + SetDTE firmado) contra el XSD oficial -- antes solo se validaba el <Documento> interno, nunca el payload completo que realmente se envia al SII.
             $this->envioXsdValidator->validar($envioFirmado);
 
             // Hash SHA256 sobre XML EN CLARO (antes de cifrar).
             $hashSha256 = hash('sha256', $envioFirmado);
 
-            // Persistir en disco PRIMERO: si falla por filesystem, la tx final
-            // ni siquiera abre y no hay que rollback de BD.
+            // Persistir en disco PRIMERO: si falla por filesystem, la tx final ni siquiera abre y no hay que rollback de BD.
             $xmlPath = $this->construirPathDeDisco($dte);
             Storage::disk($disk)->put($xmlPath, $envioFirmado);
 
@@ -113,8 +102,7 @@ class EmitirDteService
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                // Re-chequeo defensivo: si otro worker firmo entre fase 1 y aqui,
-                // abortamos sin sobreescribir (el catch lo hara HUERFANO).
+                // Re-chequeo defensivo: si otro worker firmo entre fase 1 y aqui, abortamos sin sobreescribir (el catch lo hara HUERFANO).
                 if ($dteLock->estado !== SiiDteEmitido::ESTADO_BORRADOR) {
                     throw DteEstadoInvalidoException::noEsBorrador($dteLock->id, $dteLock->estado);
                 }
@@ -130,8 +118,7 @@ class EmitirDteService
 
                 $this->cafService->marcarFolioUsado($folioUso->id, $dteLock->id);
 
-                // R4 (HARDENING-1): persistir evento BORRADOR -> FIRMADO en
-                // la misma transaccion para garantizar atomicidad event-sourcing.
+                // R4 (HARDENING-1): persistir evento BORRADOR -> FIRMADO en la misma transaccion para garantizar atomicidad event-sourcing.
                 SiiDteEmitidoEvento::registrarFirma($dteLock, (int) $folioUso->folio, $hashSha256);
 
                 return $dteLock;
@@ -160,9 +147,7 @@ class EmitirDteService
                 }
             }
 
-            // Marcar folio como HUERFANO: el row existe en BD (lo creo la
-            // tx de reservarSiguienteFolio que ya commiteo); ahora lo
-            // anotamos para auditoria y para no reusarlo.
+            // Marcar folio como HUERFANO: el row existe en BD (lo creo la tx de reservarSiguienteFolio que ya commiteo); lo anotamos para auditoria y para no reusarlo.
             try {
                 $this->cafService->liberarFolioHuerfano(
                     $folioUso->id,
@@ -197,18 +182,11 @@ class EmitirDteService
             );
         }
 
-        // R3 (HARDENING-1): cuadratura aritmetica de montos al centavo ANTES
-        // de reservar folio CAF. Si la suma de detalles no coincide con los
-        // totales del DTE, fallar duro sin consumir folio.
+        // R3 (HARDENING-1): cuadratura aritmetica de montos al centavo ANTES de reservar folio CAF; si la suma de detalles no coincide con los totales del DTE, fallar duro sin consumir folio.
         $this->cuadraturaValidator->validar($dte);
     }
 
-    /**
-     * Path estructurado por empresa/anio/mes/tipo_folio. La separacion por
-     * mes previene colisiones intra-empresa entre folios de distintos meses
-     * (aunque tipo+folio sea unico por empresa). El sufijo "_envio" deja
-     * espacio para variantes futuras (ej. "_aec.xml" para AEC en F6).
-     */
+    /** Path estructurado por empresa/anio/mes/tipo_folio; la separacion por mes previene colisiones intra-empresa entre folios de distintos meses (aunque tipo+folio sea unico por empresa), y el sufijo "_envio" deja espacio para variantes futuras (ej. "_aec.xml" para AEC en F6). */
     private function construirPathDeDisco(SiiDteEmitido $dte): string
     {
         $fecha = $dte->fecha_emision;

@@ -7,12 +7,7 @@ use App\Domains\Sii\Services\Certificado\CertificadoService;
 use App\Domains\Sii\Services\Xml\XmlDsigSigner;
 use DOMDocument;
 
-/**
- * Construye y firma el XML <getToken> que se envia al WS GetTokenFromSeed del SII.
- *
- * El SII espera firma XMLDSig SHA1+RSA+C14N1.0+enveloped con Reference URI=""
- * (firma del documento completo).
- */
+/** Construye y firma el XML <getToken> que se envia al WS GetTokenFromSeed del SII; el SII espera firma XMLDSig SHA1+RSA+C14N1.0+enveloped con Reference URI="" (firma del documento completo). */
 class SiiSeedSigner
 {
     public function __construct(
@@ -24,8 +19,7 @@ class SiiSeedSigner
     /**
      * @return string XML firmado, listo para enviar al WS getToken del SII.
      *
-     * @throws \App\Domains\Sii\Exceptions\CertificadoInvalidoException
-     *         si la empresa no tiene cert activo o el .pfx no se puede descifrar.
+     * @throws \App\Domains\Sii\Exceptions\CertificadoInvalidoException si la empresa no tiene cert activo o el .pfx no se puede descifrar.
      */
     public function firmar(string $semilla, Empresa $empresa): string
     {
@@ -35,8 +29,7 @@ class SiiSeedSigner
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput       = false;
 
-        // Estructura del payload getToken segun spec SII:
-        //   <getToken><item><Semilla>{semilla}</Semilla></item></getToken>
+        // Estructura del payload getToken segun spec SII: <getToken><item><Semilla>{semilla}</Semilla></item></getToken>
         $root = $dom->createElement('getToken');
         $item = $dom->createElement('item');
         $item->appendChild($dom->createElement('Semilla', $semilla));
@@ -47,8 +40,7 @@ class SiiSeedSigner
 
         $xml = $dom->saveXML();
         if ($xml === false) {
-            // Practicamente imposible — saveXML solo retorna false si el DOM
-            // esta corrupto, lo cual lo habriamos detectado en firmarDocumentoEnvelope.
+            // Practicamente imposible — saveXML solo retorna false si el DOM esta corrupto, lo cual lo habriamos detectado en firmarDocumentoEnvelope.
             throw new \RuntimeException('saveXML retorno false al serializar getToken firmado.');
         }
 

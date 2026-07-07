@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Orquestador del polling individual de UN envio SII.
- */
+/** Orquestador del polling individual de UN envio SII. */
 class PollearEstadoSiiService
 {
     /** Delays (minutos) por intento (1-indexed, clamped al ultimo). */
@@ -29,16 +27,7 @@ class PollearEstadoSiiService
     /** Jitter ±20% sobre el delay calculado, para evitar thundering herd. */
     private const JITTER_PCT = 20;
 
-    /**
-     * Codigos SII oficiales mapeados a acciones locales. Cualquier codigo
-     * fuera de esta tabla → 'DESCONOCIDO' y el envio se marca ERROR_PERMANENTE
-     * preservando la glosa SII.
-     *
-     * SOK/CRT/EPR: aun procesando, seguir polleando.
-     * EOK/LOK:     aceptado.
-     * LOC:         aceptado con reparos.
-     * RPR/RCT/RCH/RFR/RSC: rechazado.
-     */
+    /** Codigos SII oficiales mapeados a acciones locales (fuera de esta tabla → 'DESCONOCIDO', ERROR_PERMANENTE preservando la glosa SII): SOK/CRT/EPR aun procesando; EOK/LOK aceptado; LOC aceptado con reparos; RPR/RCT/RCH/RFR/RSC rechazado. */
     private const MAPEO_ESTADO_SII = [
         'SOK' => 'CONTINUAR',
         'CRT' => 'CONTINUAR',
@@ -62,9 +51,7 @@ class PollearEstadoSiiService
     ) {
     }
 
-    /**
-     * Pollea UN envio. Idempotente: si ya esta resuelto, retorna sin tocar SII.
-     */
+    /** Pollea UN envio; idempotente: si ya esta resuelto, retorna sin tocar SII. */
     public function pollear(SiiEnvioDte $envio): SiiEnvioDte
     {
         if ($envio->estado_envio !== SiiEnvioDte::ESTADO_ENVIADO) {
@@ -229,10 +216,7 @@ class PollearEstadoSiiService
         });
     }
 
-    /**
-     * Determina si un envio YA toca pollear segun backoff + jitter.
-     * Falso si el envio no esta en ENVIADO (no pollear envios resueltos).
-     */
+    /** Determina si un envio YA toca pollear segun backoff + jitter; falso si el envio no esta en ENVIADO (no pollear envios resueltos). */
     public function yaTocaPollear(SiiEnvioDte $envio): bool
     {
         if ($envio->estado_envio !== SiiEnvioDte::ESTADO_ENVIADO) {
@@ -253,9 +237,7 @@ class PollearEstadoSiiService
     }
 
     /**
-     * Retorna [delayMinimo, delayMaximo] aplicando ±JITTER_PCT al delay
-     * base del intento dado. Util para tests que necesitan verificar
-     * el rango sin depender del jitter aleatorio.
+     * Retorna [delayMinimo, delayMaximo] aplicando ±JITTER_PCT al delay base del intento dado; util para tests que necesitan verificar el rango sin depender del jitter aleatorio.
      *
      * @return array{0: int, 1: int}
      */
@@ -300,10 +282,7 @@ class PollearEstadoSiiService
         });
     }
 
-    /**
-     * Registra un fallo de transporte/red SIN cambiar estado_envio.
-     * El envio sigue en ENVIADO esperando el proximo ciclo del job.
-     */
+    /** Registra un fallo de transporte/red SIN cambiar estado_envio; el envio sigue en ENVIADO esperando el proximo ciclo del job. */
     private function registrarErrorTransporteSinTransicion(
         SiiEnvioDte $envio,
         int $httpStatus,

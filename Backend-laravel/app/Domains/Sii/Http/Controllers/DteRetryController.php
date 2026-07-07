@@ -7,22 +7,10 @@ use App\Domains\Sii\Jobs\ReintentarEmisionDteJob;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use Illuminate\Http\JsonResponse;
 
-/**
- * Endpoint de reintento directo sobre un SiiDteEmitido.
- * Multi-tenant seguro: where('empresa_id') + findOrFail (IDOR → 404).
- */
+/** Endpoint de reintento directo sobre un SiiDteEmitido; multi-tenant seguro via where('empresa_id') + findOrFail (IDOR → 404). */
 class DteRetryController
 {
-    /**
-     * Estados del DTE que admiten reintento manual directo.
-     *
-     * RECHAZADO y ANULADO_FALLO_INTERNO NO son reintentables por esta via:
-     * en ambos el folio CAF ya fue consumido o liberado como HUERFANO (no
-     * reusable), y EmitirDteService::emitir() exige estado===BORRADOR --
-     * reintentarlos aqui siempre lanzaba una excepcion interna no controlada.
-     * Recuperar esos casos requiere emitir un DTE nuevo con folio nuevo
-     * (mismo criterio que ReintentarEmisionFacturaService::ESTADOS_TERMINALES_DTE).
-     */
+    /** Estados que admiten reintento manual directo; RECHAZADO y ANULADO_FALLO_INTERNO quedan fuera porque el folio CAF ya fue consumido o liberado como HUERFANO y EmitirDteService::emitir() exige estado===BORRADOR (recuperarlos requiere emitir un DTE nuevo, mismo criterio que ReintentarEmisionFacturaService::ESTADOS_TERMINALES_DTE). */
     private const ESTADOS_REINTENTABLES = [
         SiiDteEmitido::ESTADO_BORRADOR,
         SiiDteEmitido::ESTADO_FOLIO_RESERVADO,
@@ -35,12 +23,7 @@ class DteRetryController
         SiiDteEmitido::ESTADO_FIRMADO,
     ];
 
-    /**
-     * POST /api/sii/dte/{siiDteEmitido}/reintentar
-     *
-     * Encola la accion correcta segun el estado del DTE y retorna 202.
-     * No ejecuta nada sincronamente.
-     */
+    /** POST /api/sii/dte/{siiDteEmitido}/reintentar — encola la accion correcta segun el estado del DTE y retorna 202, sin ejecutar nada sincronamente. */
     public function reintentar(ReintentarRequest $request, int $siiDteEmitido): JsonResponse
     {
         $empresaId = (int) $request->user()->empresa_activa_id;

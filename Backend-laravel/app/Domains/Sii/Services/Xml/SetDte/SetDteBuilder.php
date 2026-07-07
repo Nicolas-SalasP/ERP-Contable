@@ -8,12 +8,7 @@ use App\Domains\Sii\Models\SiiDteEmitido;
 use DOMDocument;
 use LogicException;
 
-/**
- * Construye <EnvioDTE><SetDTE><Caratula/><DTE>... agrupando uno o mas DTE ya
- * firmados. La <ds:Signature> sobre SetDTE la inserta SetDteSigner despues.
- *
- * Todos los DTE deben tener el mismo emisor_rut; receptor variable permitido.
- */
+/** Construye <EnvioDTE><SetDTE><Caratula/><DTE>... agrupando uno o mas DTE ya firmados (la <ds:Signature> sobre SetDTE la inserta SetDteSigner despues); todos los DTE deben tener el mismo emisor_rut, receptor variable permitido. */
 class SetDteBuilder
 {
     private const NS_SII   = 'http://www.sii.cl/SiiDte';

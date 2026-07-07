@@ -5,11 +5,7 @@ namespace App\Domains\Sii\Console\Commands;
 use App\Domains\Sii\Models\SiiEnvioDte;
 use Illuminate\Console\Command;
 
-/**
- * F5.3 — Lista envios SII en estado de error (ERROR_TRANSPORTE / ERROR_PERMANENTE
- * / ERROR_TIMEOUT / RECHAZADO) para revision e intervencion manual del
- * operador. Esta es la cola de "necesita atencion humana".
- */
+/** F5.3 — lista envios SII en error (ERROR_TRANSPORTE/ERROR_PERMANENTE/ERROR_TIMEOUT/RECHAZADO) para revision manual del operador: la cola de "necesita atencion humana". */
 class ListarEnviosFallidosCommand extends Command
 {
     protected $signature = 'sii:listar-envios-fallidos

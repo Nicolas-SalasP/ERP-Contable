@@ -9,18 +9,9 @@ use App\Domains\Sii\Models\SiiDteEmitidoDetalle;
 /**
  * Valida la cuadratura aritmetica de los montos del DTE al centavo.
  *
- * Reglas (sobre afectos vs exentos):
- *   - Σ(monto_item de detalles AFECTOS) === monto_neto
- *   - Σ(monto_item de detalles EXENTOS) === monto_exento
- *   - monto_neto × (tasa_iva / 100) === iva   (tolerancia ±1 peso por redondeo)
- *   - monto_neto + iva + monto_exento === monto_total  (tolerancia 0)
+ * Reglas (afectos vs exentos): Σ(monto_item AFECTOS) === monto_neto; Σ(monto_item EXENTOS) === monto_exento; monto_neto × (tasa_iva/100) === iva (tolerancia ±1 peso por redondeo); monto_neto + iva + monto_exento === monto_total (tolerancia 0). Tipos exentos (34, 41): monto_neto e iva = 0, monto_exento === monto_total.
  *
- * Tipos exentos (34, 41): monto_neto e iva = 0; monto_exento === monto_total.
- *
- * TOLERANCIA: 1 peso CLP en el calculo de IVA. Esto cubre el caso tipico
- * de una factura con varias lineas donde cada precio_unitario produce un
- * iva con decimales y la suma redondeada difiere en 1 peso del calculo
- * global monto_neto * tasa. Otras igualdades se exigen exactas (entero).
+ * TOLERANCIA de 1 peso CLP solo en IVA: cubre el caso de una factura con varias lineas donde cada precio_unitario produce un iva con decimales y la suma redondeada difiere en 1 peso del calculo global monto_neto*tasa; el resto de igualdades se exige exacto (entero).
  */
 class CuadraturaMontosValidator
 {
@@ -90,9 +81,7 @@ class CuadraturaMontosValidator
                 $discrepancias['iva'] = ['esperado' => $ivaEsperado, 'real' => $ivaDte];
             }
 
-            // Total: suma EXACTA (tolerancia 0). El residuo de tolerancia de
-            // IVA se traslada al total, asi que si IVA quedo ±1, total tambien
-            // refleja ese delta — y aqui exigimos coherencia interna del DTE.
+            // Total: suma EXACTA (tolerancia 0); el residuo de tolerancia de IVA se traslada al total (si IVA quedo ±1, total tambien refleja ese delta) -- aqui exigimos coherencia interna del DTE.
             $totalEsperado = $mntNetoDte + $ivaDte + $mntExeDte;
             if ($totalEsperado !== $totalDte) {
                 $discrepancias['monto_total'] = ['esperado' => $totalEsperado, 'real' => $totalDte];

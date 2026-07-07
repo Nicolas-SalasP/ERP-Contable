@@ -12,15 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Job de reintento manual de emision sobre un DTE existente (no crea DTEs nuevos).
- * Acciones: 'reanudar_firma' (DTE en BORRADOR) y 'reanudar_envio' (FIRMADO o
- * ultimo envio fallido).
- *
- * Idempotencia: los servicios internos hacen lockForUpdate; si un job paralelo
- * ya transiciono el estado, el segundo recibe excepcion de estado invalido.
- * tries=2 porque el operador ya decidio manualmente (no queremos cascada automatica).
- */
+/** Job de reintento manual de emision sobre un DTE existente (no crea DTEs nuevos): 'reanudar_firma' (BORRADOR) o 'reanudar_envio' (FIRMADO o ultimo envio fallido); idempotente via lockForUpdate en los servicios internos, tries=2 porque el operador ya decidio manualmente (sin cascada automatica). */
 class ReintentarEmisionDteJob implements ShouldQueue
 {
     use Dispatchable;

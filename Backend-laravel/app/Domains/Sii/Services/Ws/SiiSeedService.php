@@ -9,13 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Obtiene una semilla del WS de autenticacion del SII via SOAP getSeed.
- *
- * El SII envuelve su XML en CDATA dentro de <getSeedReturn>: parseamos el SOAP
- * con DOMDocument, extraemos el textContent y lo re-parseamos para navegar a
- * <SEMILLA> (SimpleXML no maneja bien los namespaces multi-prefijo).
- */
+/** Obtiene una semilla del WS de autenticacion del SII via SOAP getSeed; el SII envuelve su XML en CDATA dentro de <getSeedReturn>, por eso parseamos el SOAP con DOMDocument, extraemos el textContent y lo re-parseamos para navegar a <SEMILLA> (SimpleXML no maneja bien los namespaces multi-prefijo). */
 class SiiSeedService
 {
     private const HTTP_TIMEOUT_SEGUNDOS = 30;
@@ -66,9 +60,7 @@ class SiiSeedService
         return $url;
     }
 
-    /**
-     * SOAP envelope para getSeed. SOAPAction='""' (segun WSDL del SII Chile).
-     */
+    /** SOAP envelope para getSeed; SOAPAction='""' (segun WSDL del SII Chile). */
     private function construirSoapGetSeed(): string
     {
         return <<<XML
@@ -83,8 +75,7 @@ XML;
     }
 
     /**
-     * Parsea SOAP envelope → extrae CDATA con el XML SII → valida ESTADO=00
-     * → retorna el contenido de <SEMILLA>.
+     * Parsea SOAP envelope → extrae CDATA con el XML SII → valida ESTADO=00 → retorna el contenido de <SEMILLA>.
      *
      * @throws SiiAutenticacionException si la estructura no es la esperada.
      */
@@ -99,8 +90,7 @@ XML;
                 throw SiiAutenticacionException::semillaInvalida('respuesta no es XML parseable');
             }
 
-            // Navegar a getSeedReturn (en cualquier namespace) y extraer su
-            // textContent, que es el XML del SII en claro (CDATA-unwrapped por DOMDocument).
+            // Navegar a getSeedReturn (en cualquier namespace) y extraer su textContent, que es el XML del SII en claro (CDATA-unwrapped por DOMDocument).
             $returns = $dom->getElementsByTagName('getSeedReturn');
             if ($returns->length === 0) {
                 throw SiiAutenticacionException::semillaInvalida(

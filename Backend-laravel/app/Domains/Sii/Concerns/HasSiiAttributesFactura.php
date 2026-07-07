@@ -55,34 +55,19 @@ trait HasSiiAttributesFactura
         return $this->hasMany(FacturaDetalle::class);
     }
 
-    /**
-     * F6.1 — Relacion al Cliente via cliente_id.
-     * El modelo Factura del Comercial no declara esta relacion (auditoria F6.0
-     * R2); la agregamos aqui para que mapper y UI puedan acceder a
-     * $factura->cliente sin tocar app/Domains/Comercial/.
-     */
+    /** F6.1 — relacion agregada aqui (no en el modelo Factura de Comercial) para que mapper/UI accedan a $factura->cliente sin tocar app/Domains/Comercial/. */
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
     }
 
-    /**
-     * F6.1 — Vinculo 1:1 opcional con el snapshot SiiDteEmitido (nullable hasta
-     * que se completa el mapeo). Cuando esta seteado indica que la factura ya
-     * tiene DTE emitido y NO puede re-emitirse (idempotencia enforce en mapper).
-     */
+    /** F6.1 — vinculo 1:1 opcional con el snapshot SiiDteEmitido; si esta seteado la factura ya tiene DTE emitido y no puede re-emitirse (idempotencia enforce en mapper). */
     public function dteEmitido(): BelongsTo
     {
         return $this->belongsTo(SiiDteEmitido::class, 'sii_dte_emitido_id');
     }
 
-    /**
-     * F6.1 — Pre-check ligero para UI/endpoints: ¿esta factura puede emitirse?
-     *
-     * NO valida cuadratura de montos (delegada al mapper que invoca
-     * CuadraturaMontosValidator). Util para decidir si mostrar el boton
-     * "Emitir DTE" en la tabla de facturas.
-     */
+    /** F6.1 — pre-check ligero para UI/endpoints; no valida cuadratura de montos (delegada al mapper via CuadraturaMontosValidator). */
     public function puedeEmitirDte(): bool
     {
         return $this->tipo_dte !== null
