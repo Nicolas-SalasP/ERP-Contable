@@ -6,13 +6,7 @@ use App\Domains\Comercial\Models\Factura;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Sii\Models\SiiDteEmitido;
 
-/**
- * Genera el Libro de Compras y Ventas (LCV) electrónico.
- * Res. Ex. SII N°45/2003 (modificada 2022 para DTEs).
- *
- * Ventas: fuente oficial es sii_dte_emitido (excluye BORRADOR, RECHAZADO, ANULADO_FALLO_INTERNO).
- * Compras: fuente es facturas tipo=COMPRA (excluye documentos del exterior).
- */
+/** Genera el Libro de Compras y Ventas (LCV) electrónico (Res. Ex. SII N°45/2003): ventas desde sii_dte_emitido, compras desde facturas tipo=COMPRA. */
 class LibroComprasVentasService
 {
     /** @var array<int, string> */
@@ -122,8 +116,7 @@ class LibroComprasVentasService
     }
 
     /**
-     * Genera el Libro de Compras del período indicado desde facturas tipo=COMPRA.
-     * Excluye documentos del exterior (es_documento_exterior=true).
+     * Genera el Libro de Compras del período indicado desde facturas tipo=COMPRA, excluyendo documentos del exterior.
      *
      * @return array{
      *   periodo: string,

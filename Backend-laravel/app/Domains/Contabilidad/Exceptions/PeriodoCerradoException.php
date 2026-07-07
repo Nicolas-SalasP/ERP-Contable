@@ -5,10 +5,7 @@ namespace App\Domains\Contabilidad\Exceptions;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
 
-/**
- * Se lanza cuando se intenta crear, modificar, reclasificar o eliminar un hecho
- * contable cuya fecha cae dentro de un periodo contable cerrado.
- */
+/** Se lanza al crear, modificar, reclasificar o eliminar un hecho contable con fecha dentro de un periodo cerrado. */
 class PeriodoCerradoException extends RuntimeException
 {
     public function __construct(
@@ -24,10 +21,7 @@ class PeriodoCerradoException extends RuntimeException
         );
     }
 
-    /**
-     * Render automatico (Laravel lo invoca si la excepcion no es capturada):
-     * respuesta JSON 409 con codigo estable para el frontend.
-     */
+    /** Laravel invoca esto automaticamente si la excepcion no es capturada: responde 409 con codigo estable para el frontend. */
     public function render(): JsonResponse
     {
         return response()->json([

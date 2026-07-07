@@ -5,11 +5,7 @@ namespace App\Domains\Contabilidad\Observers;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\PeriodoContableService;
 
-/**
- * Garantia central de inmutabilidad: ningun camino de codigo puede crear, modificar
- * o eliminar un asiento cuya fecha caiga en un periodo contable cerrado, aunque el
- * llamador olvide invocar el guard explicito. Cierra F-1/F-2 de la auditoria.
- */
+/** Garantia central de inmutabilidad: bloquea crear/modificar/eliminar asientos en un periodo cerrado aunque el llamador olvide invocar el guard explicito (cierra F-1/F-2 de la auditoria). */
 class AsientoContableObserver
 {
     public function __construct(private readonly PeriodoContableService $periodos)

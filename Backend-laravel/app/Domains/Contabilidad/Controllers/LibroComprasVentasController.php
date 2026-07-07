@@ -9,10 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- * LCV — Libro de Compras y Ventas electrónico.
- * Res. Ex. SII N°45/2003.
- */
+/** LCV: Libro de Compras y Ventas electrónico (Res. Ex. SII N°45/2003). */
 class LibroComprasVentasController extends Controller
 {
     public function __construct(

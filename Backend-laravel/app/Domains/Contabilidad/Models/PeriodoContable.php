@@ -7,10 +7,7 @@ use App\Domains\Core\Models\User;
 use App\Domains\Core\Traits\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * Periodo contable cerrado (empresa + anio + mes). Solo se persisten los CERRADOS;
- * la ausencia de fila significa que el periodo esta ABIERTO.
- */
+/** Solo se persisten los periodos CERRADOS; la ausencia de fila significa que el periodo esta ABIERTO. */
 class PeriodoContable extends Model
 {
     use HasEmpresaScope;

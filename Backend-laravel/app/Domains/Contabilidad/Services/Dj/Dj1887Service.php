@@ -53,8 +53,7 @@ class Dj1887Service implements DeclaracionJuradaContract
                 $iuscRetenido += (int) $iuscDetalle;
             }
 
-            // Detalle mensual: horas semanales se resuelven por liquidación individual
-            // para capturar cambios de jornada durante el año.
+            // Horas semanales se resuelven por liquidación individual para capturar cambios de jornada durante el año.
             $mesesDetalle = [];
             foreach ($liqsEmpleado as $liq) {
                 $contratoMes = $liq->contrato;
@@ -136,7 +135,6 @@ class Dj1887Service implements DeclaracionJuradaContract
     {
         $lineas = [];
 
-        // Cabecera del archivo
         $lineas[] = implode(';', [
             'A',
             $data->cabecera['rut_empresa'],
@@ -146,11 +144,9 @@ class Dj1887Service implements DeclaracionJuradaContract
             $data->cabecera['telefono'],
         ]);
 
-        // Detalle por trabajador
         foreach ($data->lineas as $linea) {
             $c = $linea->campos;
 
-            // Registro anual del trabajador
             $lineas[] = implode(';', [
                 'D',
                 $c['rut_trabajador'],
@@ -165,7 +161,6 @@ class Dj1887Service implements DeclaracionJuradaContract
                 $c['num_certificado'],
             ]);
 
-            // Registros mensuales
             foreach ($c['meses'] as $mes) {
                 $lineas[] = implode(';', [
                     'M',
@@ -179,7 +174,6 @@ class Dj1887Service implements DeclaracionJuradaContract
             }
         }
 
-        // Totalizador global
         $totalRenta = array_sum(array_column(array_map(fn ($l) => $l->campos, $data->lineas), 'renta_total_neta'));
         $totalIusc  = array_sum(array_column(array_map(fn ($l) => $l->campos, $data->lineas), 'iusc_retenido'));
         $totalCasos = count($data->lineas);
@@ -189,13 +183,7 @@ class Dj1887Service implements DeclaracionJuradaContract
         return implode("\n", $lineas) . "\n";
     }
 
-    /**
-     * Determina el código de período SII para una liquidación:
-     *  C  → contrato completo (normal)
-     *  P  → jornada parcial
-     *  G  → gerente / jornada exceptuada
-     *  F  → finiquitado en ese mes
-     */
+    /** Código de período SII de la liquidación: C completo, P parcial, G gerente/jornada exceptuada, F finiquitado en el mes. */
     private function resolverCodigoPeriodo(Liquidacion $liq): string
     {
         /** @var \App\Domains\Rrhh\Models\Contrato|null $contrato */

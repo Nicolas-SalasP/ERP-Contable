@@ -130,7 +130,6 @@ class Dj1947Service implements DeclaracionJuradaContract
 
         $lineas = [];
 
-        // Registro A — Cabecera empresa
         $lineas[] = implode(';', [
             'A',
             $sanitizar((string) ($data->cabecera['rut_empresa'] ?? '')),
@@ -140,7 +139,6 @@ class Dj1947Service implements DeclaracionJuradaContract
             (string) ($data->cabecera['ppm_total'] ?? 0),
         ]);
 
-        // Registros D — Un registro por propietario
         foreach ($data->lineas as $linea) {
             $lineas[] = implode(';', [
                 'D',
@@ -153,7 +151,6 @@ class Dj1947Service implements DeclaracionJuradaContract
             ]);
         }
 
-        // Registro T — Totales
         $sumaBase = array_sum(array_column(array_map(fn ($l) => $l->campos, $data->lineas), 'base_atribuida'));
         $sumaPpm  = array_sum(array_column(array_map(fn ($l) => $l->campos, $data->lineas), 'ppm_atribuido'));
 

@@ -10,11 +10,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
-/**
- * Gestion de bloqueo de periodos contables (inmutabilidad). El cierre es una accion
- * MANUAL y explicita; un periodo cerrado rechaza toda escritura contable con fecha
- * dentro de el. La reapertura es privilegiada (jerarquia >= 80) y queda auditada.
- */
+/** Gestion de bloqueo de periodos contables: el cierre es manual y explicito, rechaza toda escritura con fecha dentro de el; la reapertura es privilegiada (jerarquia >= 80) y queda auditada. */
 class PeriodoContableService
 {
     /** Jerarquia minima de rol para reabrir un periodo cerrado. */
@@ -32,10 +28,7 @@ class PeriodoContableService
             ->exists();
     }
 
-    /**
-     * Garantia central: lanza PeriodoCerradoException (HTTP 409) si la fecha cae en
-     * un periodo cerrado. Invocado por el observer y por los guards de servicio.
-     */
+    /** Garantia central: lanza PeriodoCerradoException (HTTP 409) si la fecha cae en un periodo cerrado; invocado por el observer y los guards de servicio. */
     public function assertAbierto(int $empresaId, string|Carbon $fecha): void
     {
         if ($this->estaCerrado($empresaId, $fecha)) {

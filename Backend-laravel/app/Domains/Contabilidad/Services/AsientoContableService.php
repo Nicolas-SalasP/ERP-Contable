@@ -37,10 +37,7 @@ class AsientoContableService
 
     private function validarMesAbierto(int $empresaId, string $fecha)
     {
-        // El bloqueo de periodo es ahora una accion MANUAL y explicita gestionada por
-        // PeriodoContableService (tabla periodos_contables). El observer de
-        // AsientoContable aplica la misma garantia a nivel de modelo; este guard a
-        // nivel de servicio se conserva para un mensaje temprano y claro.
+        // El observer de AsientoContable ya aplica esta misma garantia a nivel de modelo; este guard se conserva para un mensaje de error temprano y claro.
         app(\App\Domains\Contabilidad\Services\PeriodoContableService::class)
             ->assertAbierto($empresaId, $fecha);
     }
@@ -144,11 +141,7 @@ class AsientoContableService
         });
     }
 
-    /**
-     * Crea un asiento manual delegando en registrarAsiento para garantizar
-     * partida doble, existencia/pertenencia/imputabilidad de cuentas y
-     * validación de mes abierto (mismas reglas que cualquier asiento del sistema).
-     */
+    /** Delega en registrarAsiento para que un asiento manual respete las mismas reglas (partida doble, cuentas válidas, mes abierto) que cualquier otro. */
     public function crearAsientoManual(array $datos): AsientoContable
     {
         $cabecera = [
@@ -227,11 +220,7 @@ class AsientoContableService
         }
 
         return DB::transaction(function () use ($asientoOriginal, $userId, $fechaReversa, $motivo) {
-            // Re-lee con lockForUpdate() DENTRO de la transaccion: el chequeo de estado
-            // de arriba lee sin bloquear la fila, asi que dos reversas concurrentes
-            // (doble clic/doble pestaña) podian pasar el guard antes de que la primera
-            // confirmara el update a ANULADO, generando dos asientos de reverso
-            // duplicados para el mismo comprobante original.
+            // Re-lee con lockForUpdate() dentro de la transaccion: el chequeo de estado de arriba no bloquea la fila, y dos reversas concurrentes podian duplicar el asiento de reverso.
             $asientoOriginal = AsientoContable::where('id', $asientoOriginal->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -272,15 +261,12 @@ class AsientoContableService
 
             $this->generarNumeroComprobante($nuevoAsiento);
 
-            // Si el asiento reversado era el pago de una o más facturas, libera su
-            // estado para que puedan volver a pagarse (mismo fix que AnulacionService).
+            // Si el asiento reversado era el pago de facturas, las libera para que puedan volver a pagarse (mismo fix que AnulacionService).
             Factura::where('empresa_id', $asientoOriginal->empresa_id)
                 ->where('asiento_pago_id', $asientoOriginal->id)
                 ->update(['estado' => 'REGISTRADA', 'asiento_pago_id' => null]);
 
-            // Si venia de conciliar un movimiento bancario (Mesa de Conciliación),
-            // libera el movimiento de vuelta a PENDIENTE -- mismo fix que
-            // AnulacionService::anularDocumento (ver comentario ahí).
+            // Si venia de conciliar un movimiento bancario, lo libera de vuelta a PENDIENTE (mismo fix que AnulacionService::anularDocumento).
             DB::table('movimientos_bancarios')
                 ->where('empresa_id', $asientoOriginal->empresa_id)
                 ->where('asiento_id', $asientoOriginal->id)
