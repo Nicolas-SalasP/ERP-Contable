@@ -21,9 +21,6 @@ import GraficoPipelineCotizaciones from './componentes/GraficoPipelineCotizacion
 import GraficoClientesNuevos from './componentes/GraficoClientesNuevos';
 import TablaProximasVencer from './componentes/TablaProximasVencer';
 
-/* ------------------------------------------------------------------ */
-/* Utilidades de formato                                                */
-/* ------------------------------------------------------------------ */
 import { formatearMoneda } from '../../Utilidades/formato';
 const formatMoneda = formatearMoneda;
 
@@ -36,18 +33,12 @@ const formatFecha = (fecha) => {
     });
 };
 
-/* ------------------------------------------------------------------ */
-/* Selector de período                                                  */
-/* ------------------------------------------------------------------ */
 const PERIODOS = [
     { valor: 'mes', etiqueta: 'Este mes' },
     { valor: 'trimestre', etiqueta: 'Trimestre' },
     { valor: 'año', etiqueta: 'Este año' },
 ];
 
-/* ------------------------------------------------------------------ */
-/* Badge de variación de ventas                                         */
-/* ------------------------------------------------------------------ */
 const BadgeVariacion = ({ pct }) => {
     if (pct === null || pct === undefined) return null;
 
@@ -74,9 +65,6 @@ const BadgeVariacion = ({ pct }) => {
     );
 };
 
-/* ------------------------------------------------------------------ */
-/* Tarjeta KPI genérica                                                 */
-/* ------------------------------------------------------------------ */
 const TarjetaKpi = ({ icono, etiqueta, valor, colorIcono = 'text-slate-400', bgIcono = 'bg-slate-100', children }) => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col gap-3 hover:shadow-md transition-shadow">
         <div className="flex items-center justify-between">
@@ -92,9 +80,6 @@ const TarjetaKpi = ({ icono, etiqueta, valor, colorIcono = 'text-slate-400', bgI
     </div>
 );
 
-/* ================================================================== */
-/* Componente principal                                                 */
-/* ================================================================== */
 const Dashboard = () => {
     const [periodo, setPeriodo] = useState('mes');
     const [resumen, setResumen] = useState(null);
@@ -127,7 +112,6 @@ const Dashboard = () => {
         cargarResumen();
     }, [cargarResumen]);
 
-    /* ---- Estado de carga ---- */
     if (cargando) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-slate-500">
@@ -137,7 +121,6 @@ const Dashboard = () => {
         );
     }
 
-    /* ---- Estado de error ---- */
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -159,11 +142,9 @@ const Dashboard = () => {
     const kpis = resumen?.kpis ?? {};
     const facturasUrgentes = resumen?.facturas_urgentes ?? [];
 
-    /* ---- Render principal ---- */
     return (
         <div className="w-full max-w-full xl:max-w-[90rem] mx-auto px-2 sm:px-4 py-4 md:py-6 lg:py-8 font-sans text-slate-800 dark:text-slate-200 pb-12">
 
-            {/* ---- Encabezado con selector de período ---- */}
             <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100">Resumen Ejecutivo</h1>
@@ -187,7 +168,6 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* ---- Tarjetas KPI ---- */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
 
                 <TarjetaKpi
@@ -245,7 +225,6 @@ const Dashboard = () => {
                     </div>
                 )}
 
-                {/* Acceso rápido — columna extra en grilla de 3 */}
                 <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
                     <p className="text-xs font-bold text-emerald-100 uppercase tracking-widest">Acciones rápidas</p>
                     <div className="flex flex-col gap-2 mt-3">
@@ -262,7 +241,6 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* ---- Gráficos ---- */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
                     <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
@@ -281,17 +259,13 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* ---- Exportación ---- */}
             <div className="mb-8">
                 <ExportacionDashboard resumen={resumen} periodo={periodo} />
             </div>
 
-            {/* ---- Alertas pendientes (DJ, F29, RRHH) ---- */}
             <AlertasPendientes alertas={resumen?.alertas_pendientes} />
 
-            {/* ---- Ventas vs Compras ---- */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-                {/* Gráfico ventas vs compras — siempre visible */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 xl:col-span-1">
                     <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
                         <i className="fas fa-chart-bar text-blue-500" />
@@ -304,35 +278,29 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* ---- Margen bruto (ventas vs compras + línea margen) ---- */}
             <div className="mb-8">
                 <GraficoMargenBruto ventas={resumen?.serie_ventas_12m} compras={resumen?.compras_12m} />
             </div>
 
-            {/* ---- Distribución de facturas + Pipeline cotizaciones ---- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <GraficoDistribucionFacturas datos={resumen?.distribucion_facturas} />
                 <GraficoPipelineCotizaciones datos={resumen?.pipeline_cotizaciones} />
             </div>
 
-            {/* ---- Clientes nuevos + Próximas a vencer ---- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <GraficoClientesNuevos datos={resumen?.clientes_nuevos_6m} />
                 <TablaProximasVencer datos={resumen?.proximas_vencer_7d} />
             </div>
 
-            {/* ---- Flujo de caja 30 días ---- */}
             <div className="mb-8">
                 <GraficoFlujoCaja datos={resumen?.flujo_caja_30d} />
             </div>
 
-            {/* ---- Aging AR + AP ---- */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
                 <GraficoAgingAR datos={resumen?.aging_ar ?? []} />
                 <GraficoAgingAP datos={resumen?.aging_ap ?? []} />
             </div>
 
-            {/* ---- Stock + Órdenes de compra pendientes ---- */}
             {(tieneInventario && resumen?.inventario) || resumen?.ordenes_compra_pendientes ? (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
                     {tieneInventario && resumen?.inventario && (
@@ -348,14 +316,12 @@ const Dashboard = () => {
                 </div>
             ) : null}
 
-            {/* ---- RRHH — solo si tiene permiso ---- */}
             {tieneRrhh && resumen?.rrhh && (
                 <div className="mb-8">
                     <RhrrhResumen datos={resumen.rrhh} />
                 </div>
             )}
 
-            {/* ---- Facturas urgentes ---- */}
             <div>
                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-5 flex items-center gap-2">
                     <AlertTriangle size={24} strokeWidth={1.75} className="text-amber-500" />

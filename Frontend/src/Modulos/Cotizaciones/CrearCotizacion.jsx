@@ -12,8 +12,7 @@ const CrearCotizacion = () => {
     const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
     const [busquedaCliente, setBusquedaCliente] = useState('');
     const [mostrarDropdown, setMostrarDropdown] = useState(false);
-    // Cada item lleva un id estable para usarlo como key de React: con key={index},
-    // al borrar una linea intermedia los inputs se "corrian" a la fila equivocada.
+    // Cada item lleva un id estable como key de React: con key={index}, al borrar una línea los inputs se corrían de fila.
     const idItemRef = useRef(1);
     const [items, setItems] = useState([{ id: 0, productoNombre: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
@@ -200,7 +199,6 @@ const CrearCotizacion = () => {
                     )}
                 </div>
 
-                {/* Condiciones comerciales */}
                 <div className="mb-8 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-700">
                     <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-4">Condiciones Comerciales</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

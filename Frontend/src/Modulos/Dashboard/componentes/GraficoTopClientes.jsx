@@ -19,7 +19,6 @@ const COLORES_ESMERALDA = [
   '#a7f3d0', // emerald-200
 ];
 
-// Formatea monto abreviado para los ticks del eje X
 const formatAbreviado = (v) => {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
   if (v >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
@@ -28,7 +27,6 @@ const formatAbreviado = (v) => {
 
 const formatCLP = { format: formatearMoneda };
 
-// Tooltip personalizado con monto completo en CLP
 const TooltipPersonalizado = ({ active, payload }) => {
   if (!active || !payload || payload.length === 0) return null;
   const { nombre, monto } = payload[0].payload;
@@ -40,17 +38,11 @@ const TooltipPersonalizado = ({ active, payload }) => {
   );
 };
 
-// Trunca el nombre del cliente para que quepa en el eje Y
 const tickNombre = (valor) => {
   if (!valor) return '';
   return valor.length > 16 ? `${valor.slice(0, 15)}…` : valor;
 };
 
-/**
- * Gráfico de barras horizontales: top clientes por monto facturado.
- *
- * @param {{ datos: Array<{nombre: string, monto: number}> }} props
- */
 export default function GraficoTopClientes({ datos = [] }) {
   const oscuro = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const sinDatos =

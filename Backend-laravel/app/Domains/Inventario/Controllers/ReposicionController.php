@@ -12,11 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Reglas de reposición (CRUD) y sugerencias de reposición. Extraído de
- * InventarioController (H7 sprint 10) sin cambiar contratos. Concern separado de
- * Alertas (servicio y responsabilidad distintos). Un único servicio, solo trait.
- */
+/** Concern separado de Alertas: servicio y responsabilidad distintos. */
 class ReposicionController
 {
     use RespondeInventario;

@@ -15,11 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Reservas de inventario: listado, creación y transiciones (cancelar/liberar/consumir).
- * Extraído de InventarioController (H7 sprint 7) sin cambiar contratos. La máquina de
- * estados vive en InventarioReservaService; el controller solo valida y delega.
- */
+/** La máquina de estados vive en InventarioReservaService; el controller solo valida y delega. */
 class ReservaController
 {
     use RespondeInventario;

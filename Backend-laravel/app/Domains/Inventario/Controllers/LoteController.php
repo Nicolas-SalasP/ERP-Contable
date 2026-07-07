@@ -12,11 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Gestión de lotes de inventario (CRUD + stock por lote + lotes por producto).
- * Extraído de InventarioController (H7 sprint 6) sin cambiar contratos. Depende de
- * un único servicio y reutiliza la capa de respuesta compartida; sin helpers propios.
- */
+/** Depende de un único servicio y reutiliza la capa de respuesta compartida; sin helpers propios. */
 class LoteController
 {
     use RespondeInventario;

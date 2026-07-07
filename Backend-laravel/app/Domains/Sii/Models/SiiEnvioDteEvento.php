@@ -6,13 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * F5.3 — Registro INMUTABLE de un cambio de estado del envio SII.
- *
- * Espejo de SiiDteEmitidoEvento (HARDENING-1 R4) pero scoped al envio.
- * Cada polling + cada transicion terminal insertan una fila aqui dentro
- * de la misma DB::transaction que actualiza el envio (event-sourcing).
- *
- * Sin updated_at: los registros NO se sobreescriben jamas.
+ * F5.3 — registro INMUTABLE de un cambio de estado del envio SII; espejo de SiiDteEmitidoEvento (HARDENING-1 R4) pero scoped al envio: cada polling y cada transicion terminal insertan una fila dentro de la misma DB::transaction que actualiza el envio (event-sourcing), sin updated_at.
  *
  * @property int $id
  * @property int $envio_dte_id
@@ -53,7 +47,6 @@ class SiiEnvioDteEvento extends Model
 
     /**
      * Factory generica para cualquier transicion.
-     *
      * @param array<string, mixed> $payloadExtra
      */
     public static function registrarTransicion(
@@ -79,10 +72,7 @@ class SiiEnvioDteEvento extends Model
         ]);
     }
 
-    /**
-     * Registra un fallo de transporte durante polling sin alterar
-     * estado_envio (el envio sigue en ENVIADO esperando el proximo ciclo).
-     */
+    /** Registra un fallo de transporte durante polling sin alterar estado_envio (el envio sigue en ENVIADO esperando el proximo ciclo). */
     public static function registrarErrorTransporte(SiiEnvioDte $envio, int $httpStatus, string $detalle): self
     {
         return self::create([
@@ -99,10 +89,7 @@ class SiiEnvioDteEvento extends Model
         ]);
     }
 
-    /**
-     * Registra la transicion automatica a ERROR_TIMEOUT tras exceder el
-     * timeout acumulado de polling.
-     */
+    /** Registra la transicion automatica a ERROR_TIMEOUT tras exceder el timeout acumulado de polling. */
     public static function registrarTimeout(SiiEnvioDte $envio, int $intentos): self
     {
         return self::create([

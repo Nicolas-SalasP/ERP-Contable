@@ -10,29 +10,10 @@ use App\Domains\Rrhh\Models\Empleado;
 use App\Domains\Rrhh\Models\Liquidacion;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Fase 5 — Ley 21.719: ejercicio de derechos ARCO+ (Acceso, Rectificación,
- * Cancelación/Supresión, Oposición/Bloqueo y Portabilidad) sobre titulares
- * empleados.
- *
- * El derecho de supresión convive con la obligación legal de retención de los
- * registros de remuneraciones/tributarios (~6 años, ver config/arco.php):
- *
- *  - Bajo retención: NO se elimina la identidad. Se bloquea el tratamiento y se
- *    eliminan únicamente los datos NO esenciales (contacto). La supresión total
- *    queda pendiente hasta el vencimiento del plazo.
- *  - Vencido el plazo: anonimización total + soft delete del empleado. Las
- *    liquidaciones/contratos se conservan pero ya no portan identidad
- *    descifrable.
- */
+/** Fase 5 — Ley 21.719: derechos ARCO+ sobre titulares empleados; la supresión convive con la retención legal (~6 años, ver config/arco.php) — bajo retención solo se bloquea y se borran datos no esenciales, vencido el plazo se anonimiza totalmente + soft delete. */
 class ArcoService
 {
-    /**
-     * Exporta los datos personales del empleado (derecho de acceso/portabilidad).
-     * Devuelve un arreglo estructurado con la identidad y contacto descifrados,
-     * los datos bancarios enmascarados (sólo últimos 4 dígitos), contratos,
-     * cargas familiares y resumen de liquidaciones.
-     */
+    /** Exporta los datos personales del empleado (derecho de acceso/portabilidad): identidad/contacto descifrados, datos bancarios enmascarados (últimos 4 dígitos), contratos, cargas familiares y resumen de liquidaciones. */
     public function exportarEmpleado(int $empresaId, int $id): array
     {
         $empleado = $this->resolver($empresaId, $id);
@@ -123,9 +104,7 @@ class ArcoService
         return $datos;
     }
 
-    /**
-     * Bloquea el tratamiento de los datos del empleado (derecho de oposición/bloqueo).
-     */
+    /** Bloquea el tratamiento de los datos del empleado (derecho de oposición/bloqueo). */
     public function bloquearEmpleado(int $empresaId, int $id, ?string $motivo): Empleado
     {
         return DB::transaction(function () use ($empresaId, $id, $motivo) {
@@ -147,11 +126,7 @@ class ArcoService
     }
 
     /**
-     * Suprime/anonimiza los datos del empleado (derecho de supresión/cancelación).
-     *
-     * Si el titular está bajo retención legal, ejecuta una supresión PARCIAL
-     * (bloqueo + borrado de datos no esenciales, conservando la identidad mínima).
-     * Vencido el plazo, ejecuta la anonimización TOTAL + soft delete.
+     * Suprime/anonimiza los datos del empleado: supresión PARCIAL si está bajo retención legal (bloqueo + borrado de datos no esenciales), TOTAL (anonimización + soft delete) si venció el plazo.
      *
      * @return array{modo: 'parcial'|'total', mensaje: string}
      */
@@ -168,23 +143,12 @@ class ArcoService
         });
     }
 
-    /**
-     * Determina si el titular está bajo retención legal obligatoria.
-     *
-     * Está bajo retención si se cumple CUALQUIERA de:
-     *  - tiene un contrato activo (es_contrato_activo, estado VIGENTE/SUSPENDIDO,
-     *    o sin fecha_termino_real);
-     *  - tiene una liquidación cuyo período (anio, mes) cae dentro de la ventana
-     *    de retención;
-     *  - tiene un contrato cuya fecha_termino o fecha_termino_real cae dentro de
-     *    la ventana de retención.
-     */
+    /** Bajo retención si tiene contrato activo, o una liquidación o terminación de contrato dentro de la ventana de retención legal. */
     public function estaBajoRetencion(Empleado $empleado): bool
     {
         $anios = (int) config('arco.retencion_anios', 6);
         $limite = now()->copy()->subYears($anios);
 
-        // Contrato activo
         $contratoActivo = $empleado->contratos()
             ->where(function ($q) {
                 $q->where('es_contrato_activo', true)
@@ -197,12 +161,10 @@ class ArcoService
             return true;
         }
 
-        // Empleado en estado activo
         if (in_array($empleado->estado, ['ACTIVO', 'LICENCIA'], true)) {
             return true;
         }
 
-        // Liquidación dentro de la ventana de retención
         $liquidacionReciente = $empleado->liquidaciones()
             ->where(function ($q) use ($limite) {
                 $q->where('anio', '>', $limite->year)
@@ -217,7 +179,6 @@ class ArcoService
             return true;
         }
 
-        // Contrato cuya terminación cae dentro de la ventana de retención
         $contratoReciente = $empleado->contratos()
             ->where(function ($q) use ($limite) {
                 $q->where('fecha_termino', '>=', $limite->toDateString())
@@ -229,8 +190,7 @@ class ArcoService
     }
 
     /**
-     * Supresión parcial bajo retención: bloquea el tratamiento y borra los datos
-     * NO esenciales (contacto), conservando la identidad mínima exigida por ley.
+     * Supresión parcial bajo retención: bloquea el tratamiento y borra los datos NO esenciales (contacto), conservando la identidad mínima exigida por ley.
      *
      * @return array{modo: 'parcial', mensaje: string}
      */
@@ -262,16 +222,13 @@ class ArcoService
     }
 
     /**
-     * Supresión total vencido el plazo: anonimización irreversible de la identidad
-     * y datos del titular + soft delete. Las liquidaciones/contratos se conservan
-     * pero ya no portan identidad descifrable.
+     * Supresión total vencido el plazo: anonimización irreversible de la identidad y datos del titular + soft delete; las liquidaciones/contratos se conservan pero ya no portan identidad descifrable.
      *
      * @return array{modo: 'total', mensaje: string}
      */
     private function suprimirTotal(Empleado $empleado, ?string $motivo): array
     {
-        // El token ANON-{id} es único por empleado: preserva la unicidad del
-        // blind index del RUT tras la anonimización (CipherSweet).
+        // El token ANON-{id} es único por empleado: preserva la unicidad del blind index del RUT tras la anonimización (CipherSweet).
         $empleado->rut = 'ANON-' . $empleado->id;
         $empleado->nombres = 'ANONIMIZADO';
         $empleado->apellido_paterno = null;
@@ -313,9 +270,7 @@ class ArcoService
         ];
     }
 
-    /**
-     * Resuelve el empleado dentro del alcance de la empresa o lanza 404.
-     */
+    /** Resuelve el empleado dentro del alcance de la empresa o lanza 404. */
     private function resolver(int $empresaId, int $id): Empleado
     {
         $empleado = Empleado::where('empresa_id', $empresaId)
@@ -329,9 +284,7 @@ class ArcoService
         return $empleado;
     }
 
-    /**
-     * Registra la solicitud ARCO+ para trazabilidad ante la autoridad.
-     */
+    /** Registra la solicitud ARCO+ para trazabilidad ante la autoridad. */
     private function registrar(
         Empleado $empleado,
         string $tipo,
@@ -351,9 +304,7 @@ class ArcoService
         ]);
     }
 
-    /**
-     * Enmascara un número de cuenta dejando visibles sólo los últimos 4 dígitos.
-     */
+    /** Enmascara un número de cuenta dejando visibles sólo los últimos 4 dígitos. */
     private function enmascararCuenta(?string $numero): ?string
     {
         if (empty($numero)) {

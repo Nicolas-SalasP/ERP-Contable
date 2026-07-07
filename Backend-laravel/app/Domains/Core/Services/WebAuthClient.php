@@ -17,13 +17,7 @@ class WebAuthClient
         ], ['email' => $email]);
     }
 
-    /**
-     * Valida un token SSO de un solo uso emitido por la web Tenri y devuelve
-     * los datos de provisionamiento del usuario (mismo contrato que validateLogin).
-     *
-     * Contrato esperado en la web: POST {base}/api/internal/erp/validate-sso-token
-     * con { sso_token } -> { success, user{...}, plan{...} }.
-     */
+    /** Valida un token SSO de un solo uso emitido por la web Tenri; mismo contrato de respuesta que validateLogin. */
     public function validateSsoToken(string $ssoToken): ?array
     {
         return $this->postValidacion('/api/internal/erp/validate-sso-token', [
@@ -32,8 +26,7 @@ class WebAuthClient
     }
 
     /**
-     * Realiza el POST de validacion contra la web y normaliza la respuesta al
-     * contrato comun usado por el login y el SSO.
+     * Realiza el POST de validación contra la web y normaliza la respuesta al contrato común usado por login y SSO.
      *
      * @param  array  $payload    Cuerpo enviado a la web.
      * @param  array  $logContext Datos no sensibles para los logs.

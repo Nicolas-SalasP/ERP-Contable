@@ -7,10 +7,7 @@ use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\LreEnvio;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * Valida el archivo LRE generado verificando estructura y campos obligatorios.
- * Retorna un array de errores descriptivos; vacío = sin errores (VALIDADO).
- */
+/** Valida el archivo LRE generado verificando estructura y campos obligatorios; retorna un array de errores descriptivos, vacío = sin errores (VALIDADO). */
 class ValidarLreService
 {
     public function validar(LreEnvio $lre): array
@@ -64,12 +61,7 @@ class ValidarLreService
             $errores[] = 'El archivo no contiene registros de trabajadores.';
         }
 
-        // El archivo generado codifica AFP/ISAPRE no reconocida con el mismo '99' que
-        // usa IPS para AFP (código real, ver GenerarLreService::AFP_CODIGOS) -- no se
-        // puede distinguir "no reconocida" de "IPS" solo leyendo el texto ya generado.
-        // Por eso se vuelve a mirar el dato fuente (afp/isapre_nombre del empleado) en
-        // vez de re-parsear el archivo: antes este validador nunca detectaba una
-        // institución previsional corrupta y dejaba el LRE en VALIDADO igual.
+        // El archivo codifica AFP/ISAPRE no reconocida con el mismo '99' que usa IPS (código real) -- ambiguo desde el texto ya generado, por eso se vuelve a mirar el dato fuente (afp/isapre_nombre) en vez de re-parsear el archivo; antes este validador nunca detectaba una institución previsional corrupta.
         foreach ($this->erroresInstitucionPrevisional($lre) as $error) {
             $errores[] = $error;
         }

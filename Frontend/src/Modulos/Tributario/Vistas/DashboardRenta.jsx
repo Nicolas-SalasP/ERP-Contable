@@ -202,9 +202,7 @@ const DashboardRenta = () => {
         );
     }
 
-    // Resguardo: mientras no haya datos cargados (por ejemplo, durante la
-    // recarga tras abortar la petición inicial en el montaje), mostramos el
-    // estado de carga en lugar de intentar desestructurar un valor nulo.
+    // Resguardo: evita desestructurar un valor nulo mientras no haya datos cargados (p.ej. tras abortar la petición inicial).
     if (!datosRenta) {
         return (
             <EstadoCarga

@@ -9,17 +9,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
-/**
- * Lee el XML completo del EnvioDTE con verificacion de integridad (SHA256) y
- * fallback al backup cifrado en BD si el disco falla. Usa hash_equals() contra timing attacks.
- */
+/** Lee el XML completo del EnvioDTE con verificacion de integridad (SHA256) y fallback al backup cifrado en BD si el disco falla; usa hash_equals() contra timing attacks. */
 class XmlDteIntegrityService
 {
     /**
      * @return string EnvioDTE en claro, byte-identico al firmado.
      *
-     * @throws IntegridadXmlException si ambas fuentes estan corruptas
-     *         o si el DTE aun no fue firmado.
+     * @throws IntegridadXmlException si ambas fuentes estan corruptas o si el DTE aun no fue firmado.
      */
     public function leerVerificado(int $dteId): string
     {

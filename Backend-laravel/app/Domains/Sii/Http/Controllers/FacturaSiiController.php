@@ -12,10 +12,7 @@ use App\Domains\Sii\Services\Integracion\ReintentarEmisionFacturaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Endpoints REST del estado SII de facturas. Multi-tenant safe via
- * where('empresa_id', $userEmpresaId) + findOrFail (IDOR retorna 404).
- */
+/** Endpoints REST del estado SII de facturas; multi-tenant safe via where('empresa_id', $userEmpresaId) + findOrFail (IDOR retorna 404). */
 class FacturaSiiController
 {
     /** Estados donde el flujo SII ya esta resuelto (no toca polleo). */
@@ -37,10 +34,7 @@ class FacturaSiiController
         SiiDteEmitido::ESTADO_EN_PROCESO_SII,
     ];
 
-    /**
-     * F6.4 — Estados del ultimo envio que el frontend interpreta como
-     * "error reintentable" para mostrar el boton condicional.
-     */
+    /** F6.4 — estados del ultimo envio que el frontend interpreta como "error reintentable" para mostrar el boton condicional. */
     private const ESTADOS_ENVIO_ERROR_REINTENTABLES = [
         SiiEnvioDte::ESTADO_ERROR_TRANSPORTE,
         SiiEnvioDte::ESTADO_ERROR_TIMEOUT,
@@ -63,9 +57,7 @@ class FacturaSiiController
         SiiDteEmitido::ESTADO_ANULADO_FALLO_INTERNO => 'Anulado por fallo interno',
     ];
 
-    /**
-     * GET /api/sii/facturas
-     */
+    /** GET /api/sii/facturas */
     public function index(Request $request): JsonResponse
     {
         $empresaId = (int) $request->user()->empresa_activa_id;
@@ -93,10 +85,7 @@ class FacturaSiiController
         ]);
     }
 
-    /**
-     * GET /api/sii/facturas/{facturaId}/estado
-     * Payload liviano para polling.
-     */
+    /** GET /api/sii/facturas/{facturaId}/estado — payload liviano para polling. */
     public function estado(Request $request, int $facturaId): JsonResponse
     {
         $empresaId = (int) $request->user()->empresa_activa_id;
@@ -117,11 +106,7 @@ class FacturaSiiController
         return response()->json(['data' => $this->formatoEstado($factura)]);
     }
 
-    /**
-     * POST /api/sii/facturas/{facturaId}/reintentar
-     *
-     * Encola la accion correcta segun el estado actual y retorna 202. NO ejecuta nada sincronamente.
-     */
+    /** POST /api/sii/facturas/{facturaId}/reintentar — encola la accion correcta segun el estado actual y retorna 202, no ejecuta nada sincronamente. */
     public function reintentar(
         ReintentarRequest $request,
         int $facturaId,
@@ -165,9 +150,7 @@ class FacturaSiiController
         }
     }
 
-    /**
-     * GET /api/sii/facturas/{facturaId}
-     */
+    /** GET /api/sii/facturas/{facturaId} */
     public function mostrar(Request $request, int $facturaId): JsonResponse
     {
         $empresaId = (int) $request->user()->empresa_activa_id;

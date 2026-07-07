@@ -51,24 +51,11 @@ class Contrato extends Model implements CipherSweetEncrypted
 
     public static function configureCipherSweet(EncryptedRow $encryptedRow): void
     {
-        // Fase 2c: sueldo_base cifrado en reposo.
-        // El cast 'decimal:2' sigue activo: CipherSweet desencripta el string almacenado
-        // y Eloquent lo re-tipifica como string numérico con precisión decimal al acceder.
+        // Fase 2c: sueldo_base cifrado en reposo; el cast 'decimal:2' sigue activo porque CipherSweet desencripta el string y Eloquent lo re-tipifica al acceder.
         $encryptedRow->addOptionalTextField('sueldo_base');
     }
 
-    /**
-     * Compara atributos para determinar si están sucios.
-     *
-     * Override necesario para campos cifrados con CipherSweet que también tienen un
-     * cast primitivo (decimal:2). Sin este override, Eloquent llama a castAttribute()
-     * sobre el ciphertext durante getDirty() → syncChanges() → MathException.
-     *
-     * Para los campos gestionados por CipherSweet usamos comparación de string cruda:
-     * son equivalentes si el valor sin castear es igual (decrypted == decrypted),
-     * o si ambos son null. El ciphertext per-se siempre difiere del plaintext original
-     * pero eso ya lo maneja excludeNonChangedEncryptedAttributesFromChanges().
-     */
+    /** Override necesario para campos cifrados con cast primitivo (decimal:2): sin esto, Eloquent llama a castAttribute() sobre el ciphertext durante getDirty() → syncChanges() → MathException. */
     public function originalIsEquivalent($key): bool
     {
         $encryptedFields = static::getCipherSweetEncryptedRow()->listEncryptedFields();
@@ -77,10 +64,7 @@ class Contrato extends Model implements CipherSweetEncrypted
             if (! array_key_exists($key, $this->original)) {
                 return false;
             }
-            // Comparación raw: ambos son strings (plaintext o null).
-            // Cuando saving acaba de cifrar, el attribute es ciphertext y el original
-            // es plaintext → siempre distintos, lo cual es correcto (el campo fue "tocado").
-            // La limpieza final la hace excludeNonChangedEncryptedAttributesFromChanges().
+            // Comparación raw: si saving ya cifró el attribute, difiere del original (plaintext) y eso es correcto -- excludeNonChangedEncryptedAttributesFromChanges() hace la limpieza final.
             return $this->attributes[$key] === $this->original[$key];
         }
 

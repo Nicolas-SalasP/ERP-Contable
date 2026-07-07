@@ -15,11 +15,7 @@ class RegistrarEventoInventarioListener implements ShouldQueue
 
     public int $timeout = 60;
 
-    /**
-     * Fuerza que todos los eventos de dominio de Inventario
-     * se procesen en la cola dedicada "inventario",
-     * evitando que caigan en la cola default.
-     */
+    /** Fuerza cola dedicada "inventario" para evitar que estos eventos caigan en la cola default. */
     public function viaQueue(): string
     {
         return 'inventario';

@@ -15,10 +15,7 @@ use App\Domains\Sii\Support\Iso88591Helper;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Mapper Factura (Comercial) → SiiDteEmitido (Sii) en BORRADOR. Snapshot inmutable;
- * lockForUpdate sobre la factura previene doble emision concurrente.
- */
+/** Mapper Factura (Comercial) → SiiDteEmitido (Sii) en BORRADOR; snapshot inmutable, lockForUpdate sobre la factura previene doble emision concurrente. */
 class FacturaAComercialDteMapper
 {
     /** Tipos DTE nacionales soportados en F6.1. */
@@ -33,10 +30,7 @@ class FacturaAComercialDteMapper
     /** Tasa IVA Chile (constante por ley). */
     private const TASA_IVA = 19.00;
 
-    /**
-     * Coherencia tipo_documento (Comercial) ↔ tipo_dte (SII).
-     * El default del modelo Factura es 'FACTURA' (migracion 130005).
-     */
+    /** Coherencia tipo_documento (Comercial) ↔ tipo_dte (SII); el default del modelo Factura es 'FACTURA' (migracion 130005). */
     private const COHERENCIA_TIPO_DOCUMENTO_DTE = [
         'FACTURA'      => [33, 34],
         'BOLETA'       => [39, 41],
@@ -138,10 +132,7 @@ class FacturaAComercialDteMapper
         }
     }
 
-    /**
-     * Construye un SiiDteEmitido + detalles in-memory (NO persistido) y delega
-     * a CuadraturaMontosValidator. Si lanza, traducimos a FacturaIncompletaParaSii.
-     */
+    /** Construye un SiiDteEmitido + detalles in-memory (no persistido) y delega a CuadraturaMontosValidator; si lanza, traducimos a FacturaIncompletaParaSii. */
     private function validarCuadratura(Factura $factura): void
     {
         $dteVirtual = new SiiDteEmitido([
@@ -238,8 +229,7 @@ class FacturaAComercialDteMapper
             'iva'                     => $esExento ? 0 : (float) $factura->monto_iva,
             'monto_total'             => (float) $factura->monto_bruto,
 
-            // Descuento global (encabezado, no satelite). Solo monto: el porcentaje
-            // del Comercial es informativo y el SII espera el monto absoluto en DR.
+            // Descuento global (encabezado, no satelite); solo monto: el porcentaje del Comercial es informativo y el SII espera el monto absoluto en DR.
             'descuento_global_monto'  => (float) ($factura->descuento_global_monto ?? 0),
 
             'es_cedible'              => true,
@@ -299,10 +289,7 @@ class FacturaAComercialDteMapper
         }
     }
 
-    /**
-     * Resolucion del correo del receptor: prioriza contacto_email; fallback a email
-     * general; null si el cliente no tiene ninguno.
-     */
+    /** Resolucion del correo del receptor: prioriza contacto_email, fallback a email general, null si el cliente no tiene ninguno. */
     private function resolverCorreoReceptor(Cliente $cliente): ?string
     {
         $correo = $cliente->contacto_email ?? $cliente->email ?? null;

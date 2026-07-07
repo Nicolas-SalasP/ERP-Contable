@@ -14,11 +14,7 @@ class SubirCertificadoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 'extensions' valida la extension del archivo subido (Laravel 11+).
-            // No usamos 'mimes' porque los .pfx/.p12 no tienen un MIME estandar
-            // reconocido por la libreria de mime types de Laravel.
-            // max:50 = 50 KB (regla file de Laravel mide en kilobytes).
-            // Cubre certs reales del SII (~3-5 KB) con margen para algoritmos largos.
+            // 'extensions' (no 'mimes') porque .pfx/.p12 no tienen MIME estandar reconocido por Laravel; max:50 KB cubre certs reales del SII (~3-5 KB) con margen.
             'archivo'  => ['required', 'file', 'extensions:p12,pfx', 'max:50'],
             'password' => ['required', 'string', 'min:1', 'max:256'],
         ];

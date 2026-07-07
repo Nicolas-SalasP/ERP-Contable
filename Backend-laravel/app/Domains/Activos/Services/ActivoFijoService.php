@@ -189,10 +189,7 @@ class ActivoFijoService
                 $saldoPorDepreciar = $montoDepreciable - $activo->depreciacion_acumulada;
                 $cuotaMensual = round($montoDepreciable / $activo->vida_util_meses, 0);
 
-                // Ultima cuota: en el ultimo mes programado (meses depreciados + 1 >=
-                // vida util) o cuando el saldo cabe en una cuota, se deprecia EXACTAMENTE
-                // el saldo pendiente, absorbiendo el residuo por redondeo para llegar al
-                // valor residual sin dejar saldos colgados (antes habia un umbral magico de 10).
+                // Última cuota: deprecia EXACTAMENTE el saldo pendiente, sin dejar residuo por redondeo.
                 $mesesDepreciados = $cuotaMensual > 0
                     ? (int) floor($activo->depreciacion_acumulada / $cuotaMensual)
                     : 0;

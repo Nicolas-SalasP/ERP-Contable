@@ -10,12 +10,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * CRUD de productos de inventario. Extraído de InventarioController (H7) sin cambiar
- * contratos: mismos paths, mismo middleware, mismo servicio. Solo CRUD de la entidad
- * Producto — disponibilidad, reposición y los anidados (kardex/valorización/lotes)
- * son concerns separados que viven en sus propios controllers.
- */
+/** Solo CRUD de la entidad Producto: disponibilidad, reposición y los anidados (kardex/valorización/lotes) viven en sus propios controllers. */
 class ProductoController
 {
     public function __construct(

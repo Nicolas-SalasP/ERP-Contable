@@ -6,14 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * HARDENING-1 R4 — Registro INMUTABLE de un cambio de estado del DTE.
- *
- * Se crea siempre dentro de la misma DB::transaction que la transicion de
- * estado, garantizando atomicidad event-sourcing-like. Si el rollback se
- * dispara, el evento desaparece junto con la transicion fallida.
- *
- * Por diseño NO tiene updated_at: los registros no se sobreescriben nunca.
- * Para corregir errores se crea un nuevo evento (compensating event).
+ * HARDENING-1 R4 — registro INMUTABLE de un cambio de estado del DTE, creado siempre dentro de la misma DB::transaction que la transicion (event-sourcing-like: si hay rollback, el evento desaparece junto con la transicion fallida); sin updated_at, para corregir errores se crea un nuevo evento (compensating event).
  *
  * @property int $id
  * @property int $dte_emitido_id
@@ -51,7 +44,7 @@ class SiiDteEmitidoEvento extends Model
     /**
      * Registra la transicion BORRADOR -> FIRMADO en F4.4.
      *
-     * @param SiiDteEmitido $dte         DTE recien firmado (folio ya asignado).
+     * @param SiiDteEmitido $dte DTE recien firmado (folio ya asignado).
      * @param int           $folio       Folio CAF reservado para este DTE.
      * @param string        $hashSha256  Hash SHA256 del XML EnvioDTE firmado.
      */
@@ -73,11 +66,9 @@ class SiiDteEmitidoEvento extends Model
     }
 
     /**
-     * Registra el envio al SII (F5.2). Se invoca cuando DTEUpload acepta el
-     * archivo y devuelve un track_id.
+     * Registra el envio al SII (F5.2); se invoca cuando DTEUpload acepta el archivo y devuelve un track_id.
      *
-     * @param array<string, mixed> $payloadExtra contexto adicional del envio
-     *        (envio_id, ambiente, sesion_id, intentos_envio, etc.)
+     * @param array<string, mixed> $payloadExtra contexto adicional del envio (envio_id, ambiente, sesion_id, intentos_envio, etc.)
      */
     public static function registrarEnvio(SiiDteEmitido $dte, string $trackId, array $payloadExtra = []): self
     {
@@ -93,9 +84,7 @@ class SiiDteEmitidoEvento extends Model
         ]);
     }
 
-    /**
-     * Registra aceptacion por el SII (uso futuro F5).
-     */
+    /** Registra aceptacion por el SII (uso futuro F5). */
     public static function registrarAceptacion(SiiDteEmitido $dte, ?string $glosa = null): self
     {
         return self::create([
@@ -110,9 +99,7 @@ class SiiDteEmitidoEvento extends Model
         ]);
     }
 
-    /**
-     * Registra rechazo por el SII (uso futuro F5).
-     */
+    /** Registra rechazo por el SII (uso futuro F5). */
     public static function registrarRechazo(SiiDteEmitido $dte, ?string $glosa = null): self
     {
         return self::create([

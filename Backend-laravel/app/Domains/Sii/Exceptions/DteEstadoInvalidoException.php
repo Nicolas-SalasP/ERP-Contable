@@ -5,13 +5,7 @@ namespace App\Domains\Sii\Exceptions;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use RuntimeException;
 
-/**
- * Se lanza cuando una operacion (emision, anulacion, reenvio) se intenta
- * sobre un DTE cuyo estado no la permite.
- *
- * F4.4: solo DTE en BORRADOR pueden emitirse. Llamar emitir() sobre un
- * DTE ya FIRMADO o ENVIADO_SII lanza esto, garantizando idempotencia.
- */
+/** F4.4 — se lanza cuando una operacion (emision, anulacion, reenvio) se intenta sobre un DTE cuyo estado no la permite: solo DTE en BORRADOR pueden emitirse, garantizando idempotencia. */
 class DteEstadoInvalidoException extends RuntimeException
 {
     public const MOTIVO_NO_ES_BORRADOR = 'no_es_borrador';

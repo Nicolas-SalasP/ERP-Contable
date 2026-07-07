@@ -6,28 +6,14 @@ use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
-/**
- * Servicio de Cuentas por Pagar por Antigüedad (AP Aging).
- *
- * Calcula el saldo pendiente de pago agrupado por proveedor y
- * clasificado en tramos de vencimiento: corriente, 1-30, 31-60,
- * 61-90 y más de 90 días. El aislamiento multitenant lo garantiza
- * EmpresaScope sobre el modelo Factura.
- */
+/** Saldo pendiente de pago por proveedor, en tramos de vencimiento (corriente, 1-30, 31-60, 61-90, +90 días); aislamiento multitenant vía EmpresaScope sobre Factura. */
 class ApAgingService
 {
-    // Mismo TTL que DashboardResumenService (que calcula este mismo aging
-    // internamente): sin este cache, /ap-aging repite el mismo trabajo sin
-    // aprovechar nada de lo ya cacheado por el dashboard.
+    /** Mismo TTL que DashboardResumenService: sin este cache, /ap-aging repite el trabajo ya cacheado por el dashboard. */
     private const TTL_SEGUNDOS = 90;
 
     /**
-     * Genera el reporte de Cuentas por Pagar por Antigüedad.
-     *
-     * Sólo incluye facturas de COMPRA con estado pendiente de pago
-     * (excluye PAGADA y ANULADA). Agrupa por proveedor (proveedor_id)
-     * y suma monto_bruto en el tramo correspondiente según días desde
-     * el vencimiento.
+     * Incluye solo facturas de COMPRA pendientes de pago (excluye PAGADA y ANULADA), agrupadas por proveedor.
      *
      * @return array{resumen: array<string, float>, detalle: list<array<string, mixed>>}
      */
@@ -53,7 +39,6 @@ class ApAgingService
     {
         $hoy = Carbon::today();
 
-        // EmpresaScope filtra automáticamente por empresa_activa_id del usuario.
         $facturas = Factura::with('proveedor')
             ->where('tipo', 'COMPRA')
             ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
@@ -126,8 +111,6 @@ class ApAgingService
     }
 
     /**
-     * Clasifica los días desde el vencimiento en un tramo de aging.
-     *
      * @param int|null $diasVencido Días desde el vencimiento (positivo = atrasado).
      * @return string corriente | d30 | d60 | d90 | d90plus
      */

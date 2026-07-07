@@ -54,9 +54,7 @@ class GenerarEmrclService
             // Cuadro 1 — cantidad de trabajadores
             $cuadro1[$grupo]++;
 
-            // Cuadro 2 — remuneraciones brutas y aportes patronales
-            // Remuneraciones ordinarias = total_haberes de la liquidación mensual
-            // (los finiquitos son modelos separados — Finiquito, no Liquidacion)
+            // Cuadro 2 — remuneraciones ordinarias = total_haberes de la liquidación mensual (los finiquitos son modelos separados — Finiquito, no Liquidacion).
             $cuadro2[$grupo]['remuneraciones_ordinarias'] += (int) $liq->total_haberes;
             $cuadro2[$grupo]['aportes_patronales']        += (int) (
                 ($liq->aporte_empleador_afc    ?? 0)

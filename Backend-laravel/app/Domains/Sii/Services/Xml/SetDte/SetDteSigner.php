@@ -9,15 +9,7 @@ use App\Domains\Sii\Services\Xml\XmlDsigSigner;
 use DOMDocument;
 use DOMElement;
 
-/**
- * Firma el <SetDTE ID="SetDocDTE"> dentro del <EnvioDTE> producido por
- * SetDteBuilder. La <ds:Signature> resultante se inserta como hermano de
- * <SetDTE> dentro de <EnvioDTE>, cumpliendo el XSD oficial EnvioDTE_v10.xsd
- * (sequence: SetDTE, ds:Signature).
- *
- * Estructuralmente analogo a DteSigner pero opera sobre SetDTE y NO necesita
- * eliminar placeholders previos (SetDteBuilder no inserta firmas placeholder).
- */
+/** Firma el <SetDTE ID="SetDocDTE"> dentro del <EnvioDTE> producido por SetDteBuilder; la <ds:Signature> resultante se inserta como hermano de <SetDTE> dentro de <EnvioDTE>, cumpliendo el XSD oficial EnvioDTE_v10.xsd (sequence: SetDTE, ds:Signature). Estructuralmente analogo a DteSigner pero opera sobre SetDTE y no necesita eliminar placeholders previos (SetDteBuilder no inserta firmas placeholder). */
 class SetDteSigner
 {
     public function __construct(

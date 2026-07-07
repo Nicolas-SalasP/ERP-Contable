@@ -12,11 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Consulta de disponibilidad de inventario (general y por producto). Extraído de
- * InventarioController (H7 sprint 9) sin cambiar contratos. Un único servicio y solo
- * la capa de respuesta compartida; sin helpers propios.
- */
+/** Un único servicio y solo la capa de respuesta compartida; sin helpers propios. */
 class DisponibilidadController
 {
     use RespondeInventario;

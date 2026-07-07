@@ -7,11 +7,7 @@ use App\Domains\Sii\Support\RutHelper;
 use Carbon\Carbon;
 use SimpleXMLElement;
 
-/**
- * Parser del XML del CAF emitido por el SII. Devuelve un array asociativo
- * con los campos canonicos del CAF. NO firma ni verifica criptograficamente
- * (validacion contra cert raiz SII queda diferida al backlog).
- */
+/** Parser del XML del CAF emitido por el SII; devuelve un array asociativo con los campos canonicos, no firma ni verifica criptograficamente (validacion contra cert raiz SII queda diferida al backlog). */
 class CafXmlParser
 {
     /**
@@ -73,9 +69,7 @@ class CafXmlParser
 
         $fechaAutorizacion = Carbon::parse($fechaAutoraw);
 
-        // Calculo de vencimiento: Res. Ex. SII N°154/2025 fija vigencia de
-        // 6 meses para CAFs nuevos. Para CAFs antiguos sin nodo explicito
-        // tomamos esta aproximacion conservadora.
+        // Calculo de vencimiento: Res. Ex. SII N°154/2025 fija vigencia de 6 meses para CAFs nuevos; para CAFs antiguos sin nodo explicito tomamos esta aproximacion conservadora.
         $fechaVencimiento = $fechaAutorizacion->copy()->addMonths(6);
 
         return [
@@ -120,7 +114,7 @@ class CafXmlParser
     }
 
     /**
-     * Extrae el valor de un nodo hijo obligatorio. Lanza si no existe.
+     * Extrae el valor de un nodo hijo obligatorio; lanza si no existe.
      *
      * @param SimpleXMLElement|null $nodo
      */

@@ -13,18 +13,7 @@ use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Motor de liquidación de remuneraciones según legislación laboral chilena.
- *
- * Componentes legales (Código del Trabajo + DL 3500/3501 + Ley 19.728 + LIR Art. 42-43):
- *
- *   Haberes imponibles: sueldo_base, gratificación Art.50, horas_extra, bonos_imponibles
- *   Haberes no imponibles: colación, movilización, asignación_familiar
- *   Descuentos legales: AFP (10% + comisión), salud (7%), AFC (0,6% indef.), impuesto_único
- *   Aportes empleador: SIS (1,62%), AFC empleador, cotización adicional Ley 21.735
- *
- * Los valores NUNCA son hardcodeados: se leen de ParametroPrevisional e IndicadorMensual.
- */
+/** Motor de liquidación de remuneraciones según legislación laboral chilena (Código del Trabajo + DL 3500/3501 + Ley 19.728 + LIR Art. 42-43); los valores nunca son hardcodeados, se leen de ParametroPrevisional e IndicadorMensual. */
 class LiquidacionService
 {
     // Orden de presentación en el documento de liquidación
@@ -33,8 +22,7 @@ class LiquidacionService
     private const ORDEN_DESCUENTOS_LEGALES = 300;
     private const ORDEN_DESCUENTOS_VOLUNTARIOS = 400;
 
-    // Art. 42 bis LIR, Régimen A: tope de deducción de APV de la base tributable
-    // mensual del Impuesto Único. Constante legal, no varía por empresa.
+    // Art. 42 bis LIR, Régimen A: tope de deducción de APV de la base tributable mensual del Impuesto Único; constante legal, no varía por empresa.
     private const APV_TOPE_UF_MENSUAL = 50.0;
 
     public function calcular(int $empresaId, int $empleadoId, int $anio, int $mes, array $extras = []): Liquidacion
@@ -249,9 +237,7 @@ class LiquidacionService
             $totalDescLegalesPreImpuesto = $afpCotizacion + $afpComision + $saludLegalMonto + $afcMonto;
             $baseTributable = $totalImponible - $totalDescLegalesPreImpuesto;
 
-            // APV voluntario reduce base tributable (Art. 42 bis LIR), topado a
-            // 50 UF mensuales -- sin este tope se podría declarar una base
-            // tributable arbitrariamente baja (riesgo de fiscalización SII).
+            // APV voluntario reduce base tributable (Art. 42 bis LIR), topado a 50 UF mensuales -- sin este tope se podría declarar una base tributable arbitrariamente baja (riesgo de fiscalización SII).
             $apv = (float) ($extras['apv_voluntario'] ?? 0);
             if ($apv > 0) {
                 $apvTopado = min($apv, self::APV_TOPE_UF_MENSUAL * $uf);
@@ -368,9 +354,7 @@ class LiquidacionService
         if ($liq->estado === Liquidacion::ESTADO_PAGADA) {
             throw RrhhException::regla('No se puede anular una liquidación ya pagada. Genere una nota de corrección.');
         }
-        // Bloquear anulación si el período ya fue centralizado en contabilidad.
-        // Mismo criterio de idempotencia que CentralizacionRemuneracionesService:
-        // origen_modulo='rrhh', origen_id=anio*100+mes, empresa_id.
+        // Bloquear anulación si el período ya fue centralizado en contabilidad (mismo criterio de idempotencia que CentralizacionRemuneracionesService: origen_modulo='rrhh', origen_id=anio*100+mes, empresa_id).
         $periodoId = $liq->anio * 100 + $liq->mes;
         $asiento = AsientoContable::where('empresa_id', $empresaId)
             ->where('origen_modulo', 'rrhh')

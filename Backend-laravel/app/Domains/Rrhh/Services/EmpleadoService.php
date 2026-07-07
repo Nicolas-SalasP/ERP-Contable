@@ -10,10 +10,7 @@ use InvalidArgumentException;
 
 class EmpleadoService
 {
-    /**
-     * Normaliza un RUT para almacenamiento y consulta de blind index.
-     * Devuelve null si la cadena no es un RUT parseable (p. ej. búsquedas por nombre).
-     */
+    /** Normaliza un RUT para almacenamiento y consulta de blind index; devuelve null si la cadena no es un RUT parseable (p. ej. búsquedas por nombre). */
     private function normalizarRut(string $valor): ?string
     {
         try {
@@ -42,8 +39,7 @@ class EmpleadoService
                     ->orWhere('apellido_paterno', 'like', "%{$buscar}%")
                     ->orWhere('apellido_materno', 'like', "%{$buscar}%");
 
-                // Búsqueda por RUT: sólo si el término es un RUT parseable (búsqueda exacta
-                // vía blind index). La búsqueda parcial ya no es posible con RUT cifrado.
+                // Búsqueda por RUT: sólo si el término es un RUT parseable (búsqueda exacta vía blind index); la búsqueda parcial ya no es posible con RUT cifrado.
                 if ($rutNormalizado !== null) {
                     $q->orWhereBlind('rut', 'empleado_rut_index', $rutNormalizado);
                 }
@@ -94,9 +90,7 @@ class EmpleadoService
                 $empleado->save();
             }
 
-            // Registro de base jurídica para tratamiento de datos laborales (Ley 21.719 — Fase 4)
-            // La base de licitud es ejecución del contrato/obligación legal, NO consentimiento.
-            // Envuelto defensivamente para que un fallo aquí nunca bloquee la creación del empleado.
+            // Registro de base jurídica para tratamiento de datos laborales (Ley 21.719 — Fase 4): base de licitud es ejecución del contrato/obligación legal, NO consentimiento; envuelto defensivamente para que un fallo aquí nunca bloquee la creación del empleado.
             try {
                 $politicaVersion = \App\Domains\Core\Models\PoliticaPrivacidad::where('activa', true)
                     ->value('version');

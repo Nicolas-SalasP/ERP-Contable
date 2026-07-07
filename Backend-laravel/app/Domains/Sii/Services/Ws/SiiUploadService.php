@@ -5,13 +5,7 @@ namespace App\Domains\Sii\Services\Ws;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
-/**
- * Cliente HTTP del endpoint DTEUpload (CGI legacy) del SII Chile.
- *
- * DTEUpload recibe POST multipart/form-data con el token en una cookie HTTP
- * "TOKEN". La respuesta no es XML: texto/HTML con campos TRACKID/ERROR/GLOSA
- * que extraemos con regex. La orquestacion vive en EnvioSiiService.
- */
+/** Cliente HTTP del endpoint DTEUpload (CGI legacy) del SII Chile; recibe POST multipart/form-data con el token en una cookie HTTP "TOKEN", y la respuesta no es XML sino texto/HTML con campos TRACKID/ERROR/GLOSA que extraemos con regex (la orquestacion vive en EnvioSiiService). */
 class SiiUploadService
 {
     private const USER_AGENT_DEFAULT = 'Mozilla/4.0 (compatible; PROG 1.0; Windows NT 5.0; YComp 5.0.2.4)';
@@ -98,8 +92,7 @@ class SiiUploadService
     }
 
     /**
-     * Extrae TRACKID, ERROR, GLOSA de la respuesta texto/HTML del SII.
-     * Regex case-insensitive, multilinea para tolerar HTML embebido.
+     * Extrae TRACKID, ERROR, GLOSA de la respuesta texto/HTML del SII con regex case-insensitive, multilinea para tolerar HTML embebido.
      *
      * @return array{track_id: string|null, error_code: int, glosa: string|null}
      */
@@ -109,10 +102,7 @@ class SiiUploadService
         $errorCode  = -1;
         $glosa      = null;
 
-        // Usamos \h* (horizontal whitespace: solo espacio/tab, NO newline)
-        // entre el label y el valor para no consumir saltos de linea y capturar
-        // accidentalmente el label siguiente. Permitimos alfanumerico+guiones/_
-        // por defensividad (track_id real es numerico).
+        // Usamos \h* (horizontal whitespace: solo espacio/tab, NO newline) entre label y valor para no consumir saltos de linea y capturar accidentalmente el label siguiente; permitimos alfanumerico+guiones/_ por defensividad (track_id real es numerico).
         if (preg_match('/TRACKID:\h*([A-Za-z0-9_\-]+)/i', $body, $m)) {
             $trackId = $m[1];
         }
@@ -130,12 +120,7 @@ class SiiUploadService
         ];
     }
 
-    /**
-     * Reconstruye una representacion textual del request para persistir como
-     * auditoria. IMPORTANTE: NO incluimos el XML del archivo (ya esta en
-     * sii_dte_emitido.xml_completo_cifrado, no duplicamos GB de XML aqui).
-     * El TOKEN se redacta para no exponerlo en backups de BD.
-     */
+    /** Reconstruye una representacion textual del request para persistir como auditoria; IMPORTANTE: no incluimos el XML del archivo (ya esta en sii_dte_emitido.xml_completo_cifrado, no duplicamos GB de XML aqui) y el TOKEN se redacta para no exponerlo en backups de BD. */
     private function reconstruirRequestParaAuditoria(
         string $url,
         string $userAgent,

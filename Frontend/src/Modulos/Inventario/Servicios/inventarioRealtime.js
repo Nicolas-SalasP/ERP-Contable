@@ -20,8 +20,7 @@ export const getEchoInventario = async () => {
         return null;
     }
 
-    // Sin token no tiene sentido autenticar canales privados: antes se creaba
-    // un Echo con "Bearer " vacio que fallaba la auth en silencio.
+    // Sin token, antes se creaba un Echo con "Bearer " vacío que fallaba la auth de canales privados en silencio.
     const token = getToken();
     if (!token) {
         return null;

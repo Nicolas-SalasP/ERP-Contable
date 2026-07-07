@@ -15,9 +15,7 @@ use DOMDocument;
 use DOMElement;
 use LogicException;
 
-/**
- * Construye el XML del DTE (bloque <DTE>) conforme al XSD oficial DTE_v10.xsd.
- */
+/** Construye el XML del DTE (bloque <DTE>) conforme al XSD oficial DTE_v10.xsd. */
 class DteXmlBuilder
 {
     private const NS_SII   = 'http://www.sii.cl/SiiDte';
@@ -58,10 +56,7 @@ class DteXmlBuilder
 
             $root = $dom->createElementNS(self::NS_SII, 'DTE');
             $root->setAttribute('version', '1.0');
-            // NO declaramos xmlns:ds aqui: la <ds:Signature> (placeholder F4.1 o
-            // real F4.3) lo declara en su propio elemento, evitando que la
-            // canonicalizacion inclusiva la incluya como atributo heredado y
-            // rompa la verificacion round-trip de xmlseclibs.
+            // NO declaramos xmlns:ds aqui: la <ds:Signature> (placeholder F4.1 o real F4.3) lo declara en su propio elemento, evitando que la canonicalizacion inclusiva la incluya como atributo heredado y rompa la verificacion round-trip de xmlseclibs.
             $dom->appendChild($root);
 
             $documento = $dom->createElement('Documento');
@@ -84,11 +79,7 @@ class DteXmlBuilder
                 $documento->appendChild($this->buildReferencia($dom, $referencia));
             }
 
-            // Estrategia para preservar bit-exactitud del TED firmado:
-            //   - Sin $caf: insertamos el TED estructural completo (F4.1) con DOM.
-            //   - Con $caf: insertamos un placeholder con marcador unico, luego
-            //     reemplazamos a nivel string para que el TED real (construido por
-            //     TedBuilder como bytes ISO-8859-1) llegue inalterado al XML final.
+            // Estrategia para preservar bit-exactitud del TED firmado: sin $caf insertamos el TED estructural completo (F4.1) con DOM; con $caf insertamos un placeholder con marcador unico y luego reemplazamos a nivel string para que el TED real (construido por TedBuilder como bytes ISO-8859-1) llegue inalterado al XML final.
             $placeholderMarker = null;
             if ($caf !== null) {
                 $placeholderMarker = '__TED_PLACEHOLDER_' . bin2hex(random_bytes(8)) . '__';
@@ -101,8 +92,7 @@ class DteXmlBuilder
             $tmstFirma = $dom->createElement('TmstFirma', now()->format('Y-m-d\TH:i:s'));
             $documento->appendChild($tmstFirma);
 
-            // <ds:Signature> placeholder al final de <DTE> (NO de <Documento>).
-            // F4.3 reemplaza el contenido con la firma real sobre <Documento ID="...">.
+            // <ds:Signature> placeholder al final de <DTE> (NO de <Documento>); F4.3 reemplaza el contenido con la firma real sobre <Documento ID="...">.
             $root->appendChild($this->buildDsSignaturePlaceholder($dom, $dte));
 
             $xml = $dom->saveXML();
@@ -110,8 +100,7 @@ class DteXmlBuilder
                 throw DteIncompletoException::campoFaltante('DOMDocument::saveXML retorno false');
             }
 
-            // Reemplazo del TED placeholder por el TED real firmado, a nivel de
-            // bytes. Esto preserva exactamente lo que TedBuilder firmo.
+            // Reemplazo del TED placeholder por el TED real firmado, a nivel de bytes: esto preserva exactamente lo que TedBuilder firmo.
             if ($caf !== null) {
                 $tedReal  = $this->tedBuilder->buildFirmado($dte, $caf);
                 $busqueda = '<TED>' . $placeholderMarker . '</TED>';
@@ -446,10 +435,7 @@ class DteXmlBuilder
         return $ted;
     }
 
-    /**
-     * CAF placeholder con estructura valida XSD. F4.2 reemplaza este nodo
-     * con el CAF real cargado desde sii_caf (rsa_pubk + firma_caf descifrada).
-     */
+    /** CAF placeholder con estructura valida XSD; F4.2 reemplaza este nodo con el CAF real cargado desde sii_caf (rsa_pubk + firma_caf descifrada). */
     private function buildCafPlaceholder(DOMDocument $dom, SiiDteEmitido $dte): DOMElement
     {
         $caf = $dom->createElement('CAF');

@@ -10,24 +10,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
-/**
- * Libro de Remuneraciones Digital — DFL-1 Art. 62 Código del Trabajo.
- *
- * Endpoints:
- *   GET /rrhh/libro-remuneraciones/{anio}/{mes}             → JSON (previsualización)
- *   GET /rrhh/libro-remuneraciones/{anio}/{mes}/descargar   → Excel o PDF
- */
+/** Libro de Remuneraciones Digital — DFL-1 Art. 62 Código del Trabajo. */
 class LibroRemuneracionesController extends Controller
 {
     public function __construct(
         private readonly LibroRemuneracionesService $servicio,
     ) {}
 
-    /**
-     * GET /api/rrhh/libro-remuneraciones/{anio}/{mes}
-     *
-     * Retorna los datos del libro de remuneraciones en formato JSON.
-     */
+    /** Retorna los datos del libro de remuneraciones en formato JSON. */
     public function simular(Request $request, int $anio, int $mes): JsonResponse
     {
         if (! $this->periodoValido($anio, $mes)) {
@@ -42,12 +32,7 @@ class LibroRemuneracionesController extends Controller
         return response()->json($datos);
     }
 
-    /**
-     * GET /api/rrhh/libro-remuneraciones/{anio}/{mes}/descargar?formato=excel|pdf
-     *
-     * Descarga el libro en formato Excel (HTML-as-XLS) o PDF.
-     * Si no se especifica formato, usa Excel por defecto.
-     */
+    /** Descarga el libro en Excel (HTML-as-XLS) o PDF; sin formato especificado usa Excel por defecto. */
     public function descargar(Request $request, int $anio, int $mes): Response
     {
         if (! $this->periodoValido($anio, $mes)) {

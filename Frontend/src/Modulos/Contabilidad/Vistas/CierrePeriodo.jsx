@@ -20,7 +20,6 @@ export default function CierrePeriodo() {
     const [cerrados, setCerrados] = useState([]);
     const [cargando, setCargando] = useState(false);
 
-    // Modal cierre/reapertura
     const [modal, setModal] = useState(null); // { tipo: 'cerrar'|'reabrir', mes, anio }
     const [motivo, setMotivo] = useState('');
     const [procesando, setProcesando] = useState(false);
@@ -84,7 +83,6 @@ export default function CierrePeriodo() {
                 </p>
             </div>
 
-            {/* Selector de año */}
             <div className="flex items-center gap-3 mb-6">
                 <button
                     onClick={() => setAnioSeleccionado(a => a - 1)}
@@ -103,7 +101,6 @@ export default function CierrePeriodo() {
                 </button>
             </div>
 
-            {/* Grilla de meses */}
             {cargando ? (
                 <div className="text-center py-12 text-slate-400">
                     <i className="fas fa-spinner fa-spin text-2xl" />
@@ -165,13 +162,11 @@ export default function CierrePeriodo() {
                 </div>
             )}
 
-            {/* Leyenda */}
             <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-400">
                 <strong>Efectos del cierre:</strong> ningún asiento contable puede crearse, modificarse ni eliminarse
                 en un período cerrado. La reapertura requiere jerarquía de Administrador y motivo obligatorio.
             </div>
 
-            {/* Historial de períodos cerrados */}
             {cerrados.length > 0 && (
                 <div className="mt-8">
                     <h2 className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-3 uppercase tracking-wide">
@@ -225,7 +220,6 @@ export default function CierrePeriodo() {
                 </div>
             )}
 
-            {/* Modal confirmación */}
             {modal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6">

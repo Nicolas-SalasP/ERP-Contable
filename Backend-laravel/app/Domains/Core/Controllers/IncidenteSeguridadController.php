@@ -7,22 +7,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Fase 6 — Registro de incidentes de seguridad y brechas de datos personales.
- *
- * Ley 21.663: alerta temprana 3h / reporte 72h al CSIRT.
- * Ley 21.719: notificación a la Agencia de Protección de Datos + titulares.
- *
- * Todos los endpoints requieren permiso:usuarios.gestionar (administrador >= 80).
- * El aislamiento multitenant se garantiza vía EmpresaScope sobre el modelo.
- */
+/** Registro de incidentes de seguridad (Ley 21.663: alerta 3h/reporte 72h CSIRT; Ley 21.719: notificación Agencia+titulares); requiere permiso:usuarios.gestionar, aislado por EmpresaScope. */
 class IncidenteSeguridadController extends Controller
 {
-    /**
-     * GET /api/incidentes
-     * Lista paginada de incidentes de la empresa del solicitante, más recientes primero.
-     * Filtros opcionales: severidad, estado.
-     */
+    /** GET /api/incidentes — lista paginada de la empresa del solicitante, más recientes primero, con filtros opcionales severidad/estado. */
     public function index(Request $request): JsonResponse
     {
         $datos = $request->validate([
@@ -46,13 +34,7 @@ class IncidenteSeguridadController extends Controller
         ]);
     }
 
-    /**
-     * POST /api/incidentes
-     * Crea un nuevo incidente de seguridad para la empresa del solicitante.
-     * registrado_por se fija desde el nombre del usuario autenticado.
-     * empresa_id se fija desde la empresa del usuario autenticado.
-     * estado inicial: ABIERTO.
-     */
+    /** POST /api/incidentes — crea el incidente con empresa_id/registrado_por del usuario autenticado y estado inicial ABIERTO. */
     public function store(Request $request): JsonResponse
     {
         $datos = $request->validate([
@@ -79,11 +61,7 @@ class IncidenteSeguridadController extends Controller
         ], 201);
     }
 
-    /**
-     * PUT /api/incidentes/{id}
-     * Actualiza la línea de tiempo legal del incidente y/o el estado.
-     * Solo se pueden actualizar incidentes de la empresa del solicitante (EmpresaScope lo garantiza).
-     */
+    /** PUT /api/incidentes/{id} — actualiza línea de tiempo legal y/o estado; EmpresaScope garantiza que solo sean incidentes propios. */
     public function update(Request $request, int $id): JsonResponse
     {
         $datos = $request->validate([
@@ -94,8 +72,7 @@ class IncidenteSeguridadController extends Controller
             'estado'                     => 'nullable|string|in:' . implode(',', IncidenteSeguridad::ESTADOS),
         ]);
 
-        // EmpresaScope garantiza aislamiento multitenant: si el incidente
-        // pertenece a otra empresa, findOrFail lanza 404.
+        // EmpresaScope garantiza aislamiento: si el incidente es de otra empresa, findOrFail lanza 404.
         $incidente = IncidenteSeguridad::findOrFail($id);
 
         $incidente->update(array_filter($datos, fn ($v) => $v !== null));

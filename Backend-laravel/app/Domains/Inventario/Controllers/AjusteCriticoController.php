@@ -8,13 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
-/**
- * Ajustes críticos de inventario: tipos, listado, registro y detalle. Extraído de
- * InventarioController (H7 sprint 12). No usa el trait RespondeInventario: su contrato
- * de respuesta difiere (mensaje = primer error de validación, paginación con shape
- * propio, captura Throwable). Su helper mensajeValidacionAjusteCritico es exclusivo de
- * este concern y viaja como método privado.
- */
+/** No usa el trait RespondeInventario: su contrato de respuesta difiere (mensaje = primer error de validación, paginación con shape propio, captura Throwable). */
 class AjusteCriticoController
 {
     public function __construct(

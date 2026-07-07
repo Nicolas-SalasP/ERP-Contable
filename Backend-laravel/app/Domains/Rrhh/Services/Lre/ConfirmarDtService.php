@@ -5,10 +5,7 @@ namespace App\Domains\Rrhh\Services\Lre;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\LreEnvio;
 
-/**
- * Registra la confirmación manual del LRE en el portal Mi DT.
- * Transiciona el estado a CONFIRMADO_DT y persiste el número de confirmación.
- */
+/** Registra la confirmación manual del LRE en el portal Mi DT; transiciona el estado a CONFIRMADO_DT y persiste el número de confirmación. */
 class ConfirmarDtService
 {
     public function confirmar(LreEnvio $lre, ?string $numeroConfirmacion): LreEnvio

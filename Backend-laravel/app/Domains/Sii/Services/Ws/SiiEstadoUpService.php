@@ -9,13 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Cliente HTTP del WS QueryEstUp.jws (SOAP) del SII.
- *
- * Retorna en RESP_HDR el ESTADO de control (00=OK, 99=token expirado) y en
- * RESP_BODY el ESTADO real del envio. El reintento por token expirado vive
- * en PollearEstadoSiiService.
- */
+/** Cliente HTTP del WS QueryEstUp.jws (SOAP) del SII; retorna en RESP_HDR el ESTADO de control (00=OK, 99=token expirado) y en RESP_BODY el ESTADO real del envio (el reintento por token expirado vive en PollearEstadoSiiService). */
 class SiiEstadoUpService
 {
     private const HTTP_TIMEOUT_SEGUNDOS_DEFAULT = 30;
@@ -127,10 +121,7 @@ XML;
     }
 
     /**
-     * Parsea SOAP envelope con CDATA. Extrae:
-     *  - RESP_HDR.ESTADO (control: 00=OK, 99=token expirado).
-     *  - RESP_BODY.ESTADO (estado real: EPR/EOK/RPR/etc).
-     *  - GLOSA (mensaje del SII).
+     * Parsea SOAP envelope con CDATA; extrae RESP_HDR.ESTADO (control: 00=OK, 99=token expirado), RESP_BODY.ESTADO (estado real: EPR/EOK/RPR/etc) y GLOSA (mensaje del SII).
      *
      * @return array{estado_hdr: string, estado_sii: string|null, glosa: string|null}
      */
@@ -177,9 +168,7 @@ XML;
         }
     }
 
-    /**
-     * Busca <$childTag> dentro del primer <$parentTag> del DOM.
-     */
+    /** Busca <$childTag> dentro del primer <$parentTag> del DOM. */
     private function extraerTextoDe(DOMDocument $dom, string $parentTag, string $childTag): ?string
     {
         $parents = $dom->getElementsByTagName($parentTag);

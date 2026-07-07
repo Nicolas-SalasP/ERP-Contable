@@ -4,19 +4,11 @@ namespace App\Domains\Sii\Support;
 
 use InvalidArgumentException;
 
-/**
- * Utilidades para manejo de RUT chileno.
- *
- * Las entradas se normalizan al formato canonico "12345678-K":
- * sin puntos, con guion, DV en mayuscula. La parte numerica admite
- * desde 1 digito (ej "1-9") y no impone limite superior (suficiente
- * para personas naturales y juridicas en Chile).
- */
+/** Utilidades para manejo de RUT chileno; las entradas se normalizan al formato canonico "12345678-K" (sin puntos, con guion, DV en mayuscula), admite desde 1 digito y sin limite superior (personas naturales y juridicas en Chile). */
 class RutHelper
 {
     /**
      * Normaliza un RUT a "12345678-K" (sin puntos, con guion, DV en mayuscula).
-     *
      * @throws InvalidArgumentException si la entrada no contiene digitos suficientes.
      */
     public static function normalizar(string $rut): string
@@ -51,11 +43,7 @@ class RutHelper
         return $numero . '-' . $dv;
     }
 
-    /**
-     * Valida un RUT completo (formato libre): normaliza y compara DV calculado.
-     *
-     * Retorna false ante cualquier entrada no parseable, no lanza excepcion.
-     */
+    /** Valida un RUT completo (formato libre): normaliza y compara DV calculado; retorna false ante cualquier entrada no parseable, no lanza excepcion. */
     public static function validar(string $rut): bool
     {
         try {
@@ -77,7 +65,6 @@ class RutHelper
 
     /**
      * Calcula el DV de un RUT (modulo 11 chileno).
-     *
      * @return string "0"-"9" o "K"
      */
     public static function calcularDv(int $rutSinDv): string
@@ -106,9 +93,7 @@ class RutHelper
         return (string) $dvCalculado;
     }
 
-    /**
-     * Retorna la parte numerica del RUT (sin DV).
-     */
+    /** Retorna la parte numerica del RUT (sin DV). */
     public static function extraerNumero(string $rut): int
     {
         $normalizado = self::normalizar($rut);
@@ -117,9 +102,7 @@ class RutHelper
         return (int) $numero;
     }
 
-    /**
-     * Retorna el DV del RUT en mayuscula.
-     */
+    /** Retorna el DV del RUT en mayuscula. */
     public static function extraerDv(string $rut): string
     {
         $normalizado = self::normalizar($rut);
@@ -127,9 +110,7 @@ class RutHelper
         return substr($normalizado, -1);
     }
 
-    /**
-     * Formatea un RUT para presentacion: "12.345.678-5" o "12345678-5".
-     */
+    /** Formatea un RUT para presentacion: "12.345.678-5" o "12345678-5". */
     public static function formatear(string $rut, bool $conPuntos = true): string
     {
         $numero = self::extraerNumero($rut);

@@ -82,7 +82,6 @@ const ApAging = () => {
     return (
         <div className="max-w-full mx-auto p-6 font-sans text-slate-800 dark:text-slate-200">
 
-            {/* Encabezado */}
             <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
@@ -109,7 +108,6 @@ const ApAging = () => {
                 </div>
             </div>
 
-            {/* Tarjetas resumen */}
             {(cargando || resumen) && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
                     {TARJETAS.map(t => (
@@ -132,7 +130,6 @@ const ApAging = () => {
                 </div>
             )}
 
-            {/* Total general */}
             {!cargando && resumen && (
                 <div className="mb-6 bg-slate-100 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 p-4 flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Total General</span>
@@ -142,7 +139,6 @@ const ApAging = () => {
                 </div>
             )}
 
-            {/* Tabla detalle */}
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">

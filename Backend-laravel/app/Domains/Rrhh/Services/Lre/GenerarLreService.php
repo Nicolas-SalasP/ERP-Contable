@@ -34,13 +34,7 @@ class GenerarLreService
         'Esencial'    => '13',
     ];
 
-    // ADVERTENCIA (hallazgo pendiente de validar con contador/experto RRHH, no
-    // corregido a ciegas): el manual oficial LRE (docs/rrhh-leyes/suplemento_manual_lre.md,
-    // campo 1107) define códigos de 3 dígitos -- 101 ORDINARIA, 201 PARCIAL, 601
-    // JORNADA EXCEPCIONAL, etc -- que no coinciden con este mapeo (1/2/3). Además
-    // 'TURNO' (valor válido de contratos.tipo_jornada) no tiene código aquí y el
-    // campo se omite en silencio para esos contratos. Verificar contra la tabla
-    // oficial antes de corregir: un código legal incorrecto es peor que omitirlo.
+    // ADVERTENCIA (hallazgo pendiente de validar con contador/experto RRHH, no corregido a ciegas): el manual oficial LRE (campo 1107, docs/rrhh-leyes/suplemento_manual_lre.md) usa códigos de 3 dígitos (101/201/601...) que no coinciden con este mapeo 1/2/3, y 'TURNO' no tiene código aquí; verificar contra la tabla oficial antes de corregir, un código legal incorrecto es peor que omitirlo.
     private const JORNADA_CODIGOS = [
         'COMPLETA'   => 1,
         'PARCIAL'    => 2,
@@ -62,10 +56,7 @@ class GenerarLreService
             );
         }
 
-        // Regenerar sobrescribia el archivo y forzaba estado GENERADO incondicionalmente,
-        // incluso si ya estaba CONFIRMADO_DT -- perdiendo la confirmación previa en
-        // silencio. Bloquea; si de verdad hay que corregir un LRE ya confirmado, debe
-        // hacerse explícitamente (no como efecto colateral de volver a generar).
+        // Regenerar sobrescribía el archivo y forzaba GENERADO incondicionalmente, perdiendo en silencio una confirmación CONFIRMADO_DT previa; bloquea, corregir un LRE confirmado debe ser explícito.
         $envioExistente = LreEnvio::where('empresa_id', $empresaId)
             ->where('anio', $anio)
             ->where('mes', $mes)
@@ -110,10 +101,7 @@ class GenerarLreService
         return $envio->fresh();
     }
 
-    /**
-     * true si el nombre de AFP existe en el catalogo (o esta vacio/null, caso en que
-     * construirLinea() usa el default 'Capital' -- no es un dato corrupto).
-     */
+    /** true si el nombre de AFP existe en el catálogo (o está vacío/null, caso en que construirLinea() usa el default 'Capital' -- no es un dato corrupto). */
     public static function afpReconocida(?string $afpNombre): bool
     {
         if ($afpNombre === null || trim($afpNombre) === '') {
@@ -123,10 +111,7 @@ class GenerarLreService
         return array_key_exists($afpNombre, self::AFP_CODIGOS);
     }
 
-    /**
-     * true si el nombre de ISAPRE existe en el catalogo. Solo aplica cuando
-     * tipo_salud=ISAPRE; FONASA siempre usa el codigo fijo '07' (no pasa por este catalogo).
-     */
+    /** true si el nombre de ISAPRE existe en el catálogo; solo aplica cuando tipo_salud=ISAPRE, FONASA siempre usa el código fijo '07' (no pasa por este catálogo). */
     public static function isapreReconocida(?string $isapreNombre): bool
     {
         if ($isapreNombre === null || trim($isapreNombre) === '') {
@@ -180,10 +165,7 @@ class GenerarLreService
             $codigoSalud = '07';
         }
 
-        // '99' es un codigo real (IPS, ver AFP_CODIGOS) pero TAMBIEN el fallback cuando
-        // el nombre no matchea el catalogo -- ambiguo para detectar desde el archivo ya
-        // generado. ValidarLreService::validar() por eso vuelve a mirar el dato fuente
-        // (afp/isapre_nombre del empleado) en vez de tratar de inferirlo del texto.
+        // '99' es un código real (IPS, ver AFP_CODIGOS) pero también el fallback cuando el nombre no matchea el catálogo -- ambiguo desde el archivo generado, por eso ValidarLreService::validar() vuelve a mirar el dato fuente (afp/isapre_nombre) en vez de inferirlo del texto.
 
         // AFC según tipo contrato
         $codigoAfc = $contrato->tipo === 'INDEFINIDO' ? '1' : '2';

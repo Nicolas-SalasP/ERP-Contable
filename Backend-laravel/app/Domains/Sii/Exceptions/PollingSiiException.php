@@ -4,9 +4,7 @@ namespace App\Domains\Sii\Exceptions;
 
 use RuntimeException;
 
-/**
- * F5.3 — Errores del flujo de polling del estado contra QueryEstUp del SII.
- */
+/** F5.3 — errores del flujo de polling del estado contra QueryEstUp del SII. */
 class PollingSiiException extends RuntimeException
 {
     public const MOTIVO_RESPUESTA_SIN_ESTADO   = 'respuesta_sin_estado';

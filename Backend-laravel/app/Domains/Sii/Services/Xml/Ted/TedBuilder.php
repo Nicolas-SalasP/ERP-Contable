@@ -9,13 +9,7 @@ use App\Domains\Sii\Services\Caf\CafSerializerService;
 use App\Domains\Sii\Support\Iso88591Helper;
 use LogicException;
 
-/**
- * Construye el TED firmado completo.
- *
- * El byte-exact del DD que se firma debe ser identico al del DD en el XML final;
- * por eso construimos el TED como string puro (sin DOMDocument intermedio) y lo
- * inyectamos via reemplazo de placeholder, preservando bytes.
- */
+/** Construye el TED firmado completo; el byte-exact del DD que se firma debe ser identico al del DD en el XML final, por eso construimos el TED como string puro (sin DOMDocument intermedio) y lo inyectamos via reemplazo de placeholder, preservando bytes. */
 class TedBuilder
 {
     public function __construct(
@@ -68,17 +62,10 @@ class TedBuilder
             . '</TED>';
     }
 
-    /**
-     * Helper interno: arma un elemento XML simple con valor escapado.
-     * Trabaja en UTF-8; la conversion a ISO ocurre al final del build.
-     */
+    /** Helper interno: arma un elemento XML simple con valor escapado; trabaja en UTF-8, la conversion a ISO ocurre al final del build. */
     private function elemento(string $tag, string $valor): string
     {
-        // Los valores van como texto de elemento, no como atributos.
-        // Escapar comillas/apostrofes con &quot;/&apos; hace que DOMDocument pueda
-        // reserializarlas luego como caracteres literales, cambiando los bytes
-        // del <DD> y rompiendo la verificacion RSA-SHA1 del FRMT en el TED.
-        // Por eso solo escapamos caracteres obligatorios en texto XML: &, < y >.
+        // Los valores van como texto de elemento, no como atributos; escapar comillas/apostrofes con &quot;/&apos; haria que DOMDocument las reserialice luego como caracteres literales, cambiando los bytes del <DD> y rompiendo la verificacion RSA-SHA1 del FRMT en el TED -- por eso solo escapamos caracteres obligatorios en texto XML: &, < y >.
         $escaped = htmlspecialchars($valor, ENT_XML1 | ENT_NOQUOTES, 'UTF-8');
 
         return "<{$tag}>{$escaped}</{$tag}>";

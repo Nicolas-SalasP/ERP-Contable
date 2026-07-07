@@ -218,8 +218,7 @@ class AdminEmpresasController
 
             DB::table('empresas')->where('id', $id)->update(['activa' => $activa]);
 
-            // Al suspender, revocar todos los tokens activos de la empresa para
-            // que el acceso cese de inmediato (sin esperar expiración).
+            // Al suspender, se revocan todos los tokens activos para que el acceso cese de inmediato.
             if (!$activa) {
                 User::where('empresa_id', $id)->each(fn($u) => $u->tokens()->delete());
             }

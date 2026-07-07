@@ -1,9 +1,4 @@
-// Excel/Sheets interpreta como fórmula cualquier celda que empiece con =, +, -, @,
-// tab o retorno de carro. Un dato de texto libre ingresado por un usuario (razón
-// social, glosa, descripción) puede contener esos caracteres sin que sea intencional
-// -- si se exporta tal cual, se ejecuta como fórmula al abrir el archivo en Excel.
-// Mismo patrón que FacturaService::escaparCampoCsv() en el backend (PHP), replicado
-// aquí porque las exportaciones xlsx del frontend no pasan por ese sanitizador.
+// Excel interpreta como fórmula cualquier celda que empiece con =,+,-,@,tab o retorno de carro (CSV injection); mismo patrón que FacturaService::escaparCampoCsv() del backend, replicado acá porque el export xlsx del frontend no pasa por ese sanitizador.
 const CARACTERES_PELIGROSOS = ['=', '+', '-', '@', '\t', '\r'];
 
 export const sanitizarCeldaExcel = (valor) => {

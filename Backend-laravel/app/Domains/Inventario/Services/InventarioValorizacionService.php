@@ -99,14 +99,7 @@ class InventarioValorizacionService
         return $this->fifoStrategy ??= app(FifoValorizacionStrategy::class);
     }
 
-    /**
-     * Calcula entrada valorizada con PMP.
-     *
-     * Fórmula:
-     * nuevo_stock = stock_actual + cantidad
-     * nuevo_valor_total = valor_total_actual + (cantidad * costo_unitario)
-     * nuevo_costo_promedio = nuevo_valor_total / nuevo_stock
-     */
+    /** Calcula entrada valorizada con PMP: nuevo_stock = stock_actual + cantidad; nuevo_valor_total = valor_total_actual + (cantidad * costo_unitario); nuevo_costo_promedio = nuevo_valor_total / nuevo_stock. */
     public function calcularEntradaPmp(
         StockProducto $stock,
         Producto $producto,
@@ -167,12 +160,7 @@ class InventarioValorizacionService
         ];
     }
 
-    /**
-     * Calcula salida valorizada con PMP.
-     *
-     * La salida NO recalcula el costo promedio hacia arriba o abajo.
-     * Usa el PMP actual de la bodega.
-     */
+    /** Calcula salida valorizada con PMP: usa el PMP actual de la bodega y no lo recalcula hacia arriba o abajo. */
     public function calcularSalidaPmp(
         StockProducto $stock,
         Producto $producto,
@@ -234,12 +222,7 @@ class InventarioValorizacionService
         ];
     }
 
-    /**
-     * Calcula traspaso valorizado.
-     *
-     * La bodega origen descuenta usando su PMP.
-     * La bodega destino recibe usando el costo PMP de origen.
-     */
+    /** Calcula traspaso valorizado: la bodega origen descuenta usando su PMP y la bodega destino recibe usando el costo PMP de origen. */
     public function calcularTraspasoPmp(
         StockProducto $stockOrigen,
         StockProducto $stockDestino,
@@ -281,15 +264,7 @@ class InventarioValorizacionService
         ];
     }
 
-    /**
-     * Obtiene costo de entrada.
-     *
-     * Prioridad:
-     * 1. costo_unitario recibido.
-     * 2. costo_promedio del stock de la bodega.
-     * 3. costo_promedio consolidado del producto.
-     * 4. 0.
-     */
+    /** Obtiene costo de entrada con prioridad: costo_unitario recibido, costo_promedio del stock de la bodega, costo_promedio consolidado del producto, o 0. */
     public function obtenerCostoUnitarioEntrada(
         StockProducto $stock,
         Producto $producto,
@@ -318,14 +293,7 @@ class InventarioValorizacionService
         return 0.0000;
     }
 
-    /**
-     * Obtiene costo de salida usando PMP.
-     *
-     * Prioridad:
-     * 1. costo_promedio del stock de la bodega.
-     * 2. costo_promedio consolidado del producto.
-     * 3. 0.
-     */
+    /** Obtiene costo de salida usando PMP con prioridad: costo_promedio del stock de la bodega, costo_promedio consolidado del producto, o 0. */
     public function obtenerCostoUnitarioSalida(
         StockProducto $stock,
         Producto $producto
@@ -345,12 +313,7 @@ class InventarioValorizacionService
         return 0.0000;
     }
 
-    /**
-     * Actualiza el PMP consolidado del producto.
-     *
-     * producto.costo_promedio =
-     * SUM(valor_total) / SUM(stock_actual)
-     */
+    /** Actualiza el PMP consolidado del producto: producto.costo_promedio = SUM(valor_total) / SUM(stock_actual). */
     public function actualizarCostoPromedioProducto(int $empresaId, int $productoId): float
     {
         $resumen = StockProducto::query()
@@ -378,13 +341,7 @@ class InventarioValorizacionService
         return $costoPromedio;
     }
 
-    /**
-     * Obtiene o crea stock de producto/bodega.
-     *
-     * Importante:
-     * Este método debe usarse dentro de una transacción cuando se llame
-     * desde movimientos, porque aplica lockForUpdate().
-     */
+    /** Obtiene o crea stock de producto/bodega; debe usarse dentro de una transacción cuando se llame desde movimientos, porque aplica lockForUpdate(). */
     public function obtenerOCrearStock(
         int $empresaId,
         int $productoId,
@@ -418,9 +375,7 @@ class InventarioValorizacionService
             ->firstOrFail();
     }
 
-    /**
-     * Lista stock valorizado por producto/bodega.
-     */
+    /** Lista stock valorizado por producto/bodega. */
     public function listarValorizacion(int $empresaId, array $filtros = []): LengthAwarePaginator
     {
         $page = max((int) ($filtros['page'] ?? 1), 1);
@@ -489,9 +444,7 @@ class InventarioValorizacionService
         return $paginado;
     }
 
-    /**
-     * Resumen valorizado según filtros.
-     */
+    /** Resumen valorizado según filtros. */
     public function resumenValorizacion(int $empresaId, array $filtros = []): array
     {
         $query = DB::table('inventario_stock as s')
@@ -526,9 +479,7 @@ class InventarioValorizacionService
         ];
     }
 
-    /**
-     * Aplica filtros comunes para listado/resumen.
-     */
+    /** Aplica filtros comunes para listado/resumen. */
     private function aplicarFiltrosValorizacion($query, array $filtros): void
     {
         if (!empty($filtros['producto_id'])) {

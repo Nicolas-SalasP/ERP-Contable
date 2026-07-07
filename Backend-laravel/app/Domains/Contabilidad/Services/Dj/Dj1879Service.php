@@ -99,7 +99,6 @@ class Dj1879Service implements DeclaracionJuradaContract
     {
         $lineas = [];
 
-        // Registro cabecera
         $lineas[] = implode(';', [
             'A',
             $data->cabecera['rut_empresa'],
@@ -107,7 +106,6 @@ class Dj1879Service implements DeclaracionJuradaContract
             $data->anio,
         ]);
 
-        // Registro por prestador
         foreach ($data->lineas as $linea) {
             $c = $linea->campos;
             $lineas[] = implode(';', [
@@ -120,7 +118,6 @@ class Dj1879Service implements DeclaracionJuradaContract
             ]);
         }
 
-        // Totales globales
         $totalBruto     = array_sum(array_column(array_map(fn ($l) => $l->campos, $data->lineas), 'monto_bruto_total'));
         $totalRetencion = array_sum(array_column(array_map(fn ($l) => $l->campos, $data->lineas), 'retencion_total'));
         $totalCasos     = count($data->lineas);

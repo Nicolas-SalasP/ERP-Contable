@@ -209,7 +209,6 @@ const LiquidacionesRrhh = () => {
                 </div>
             </EstadoCarga>
 
-            {/* Modal calcular */}
             <PanelModal abierto={modalCalc} titulo="Calcular liquidación" icono="fas fa-calculator" onClose={() => setModalCalc(false)}>
                 <form onSubmit={calcular} className="grid sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2">
@@ -252,7 +251,6 @@ const LiquidacionesRrhh = () => {
                 </form>
             </PanelModal>
 
-            {/* Modal detalle */}
             <PanelModal abierto={!!detalle} titulo="Detalle de liquidación" icono="fas fa-receipt" ancho="max-w-3xl" onClose={() => setDetalle(null)}>
                 {detalle && (
                     <div className="space-y-4">

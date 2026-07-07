@@ -33,8 +33,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(false);
     const [misEmpresas, setMisEmpresas] = useState([]);
 
-    // Re-sincroniza el usuario (incluidos sus permisos) contra el backend para que
-    // los cambios de rol/permisos surtan efecto sin necesidad de re-login.
+    // Re-sincroniza el usuario y permisos contra el backend, sin necesidad de re-login.
     const refrescarSesion = useCallback(async () => {
         const storage = getSessionStorage();
         if (!storage) return;
@@ -62,8 +61,7 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // Cambia la empresa activa del usuario en el servidor y refresca sesion y lista.
-    // Devuelve true si el cambio fue exitoso, false si hubo error (403 u otro).
+    // Cambia la empresa activa en el servidor y refresca sesion y lista; true si funcionó, false si hubo error (403 u otro).
     const cambiarEmpresa = useCallback(async (empresaId) => {
         try {
             await api.post('/empresa/cambiar', { empresa_id: empresaId });
@@ -75,8 +73,7 @@ export const AuthProvider = ({ children }) => {
         }
     }, [refrescarSesion, cargarMisEmpresas]);
 
-    // Refresco periodico y al recuperar el foco de la pestaña.
-    // También carga la lista de empresas del usuario al iniciar sesión.
+    // Refresco periodico y al recuperar el foco de la pestaña; también carga las empresas al iniciar sesión.
     useEffect(() => {
         if (!user?.id) return;
         refrescarSesion();
@@ -90,8 +87,7 @@ export const AuthProvider = ({ children }) => {
         };
     }, [user?.id, refrescarSesion, cargarMisEmpresas]);
 
-    // Si otra pestaña cierra sesion (erp_token pasa a null), invalidamos el
-    // usuario en memoria de inmediato, sin esperar la recarga del navegador.
+    // Si otra pestaña cierra sesion (erp_token pasa a null), invalida el usuario en memoria sin esperar recarga.
     useEffect(() => {
         const onStorage = (e) => {
             if (e.key === 'erp_token' && e.newValue === null) {
@@ -115,8 +111,7 @@ export const AuthProvider = ({ children }) => {
                 const otherStorage = remember ? sessionStorage : localStorage;
 
                 storage.setItem('erp_token', tokenRecibido);
-                // Limpia el otro storage por completo (incluido issued_at) para no
-                // dejar restos de una sesion anterior con distinto "Recordarme".
+                // Limpia el otro storage por completo para no dejar restos de una sesion con distinto "Recordarme".
                 otherStorage.removeItem('erp_token');
                 otherStorage.removeItem('erp_user');
                 otherStorage.removeItem('erp_token_issued_at');

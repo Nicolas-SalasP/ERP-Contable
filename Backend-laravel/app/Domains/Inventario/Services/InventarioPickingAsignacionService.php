@@ -9,10 +9,7 @@ use Illuminate\Validation\ValidationException;
 
 class InventarioPickingAsignacionService
 {
-    /**
-     * Devuelve candidatos bloqueados y ordenados para sugerir picking desde stock disponible.
-     * La operación de persistencia debe ejecutarse dentro de una transacción externa.
-     */
+    /** Devuelve candidatos bloqueados y ordenados para sugerir picking desde stock disponible; la persistencia debe ejecutarse dentro de una transacción externa. */
     public function candidatosDisponibles(
         int $empresaId,
         int $productoId,
@@ -64,10 +61,7 @@ class InventarioPickingAsignacionService
             ->values();
     }
 
-    /**
-     * Construye una asignación multiubicación/multilote respetando FEFO/FIFO/código de ubicación.
-     * Retorna filas con el stock sugerido y la cantidad parcial a reservar por cada ubicación/lote.
-     */
+    /** Construye una asignación multiubicación/multilote respetando FEFO/FIFO/código de ubicación, con el stock sugerido y la cantidad parcial a reservar por cada ubicación/lote. */
     public function construirAsignaciones(
         int $empresaId,
         Producto $producto,
@@ -116,9 +110,7 @@ class InventarioPickingAsignacionService
         return $asignaciones;
     }
 
-    /**
-     * Compatibilidad con Fase 14 base. Fase 14.1 usa construirAsignaciones().
-     */
+    /** Compatibilidad con Fase 14 base; Fase 14.1 usa construirAsignaciones(). */
     public function sugerirPrimeraUbicacion(
         int $empresaId,
         Producto $producto,

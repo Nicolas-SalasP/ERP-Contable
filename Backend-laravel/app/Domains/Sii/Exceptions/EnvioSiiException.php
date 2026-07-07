@@ -4,9 +4,7 @@ namespace App\Domains\Sii\Exceptions;
 
 use RuntimeException;
 
-/**
- * F5.2 — Errores del flujo de envio del XML EnvioDTE al WS DTEUpload del SII.
- */
+/** F5.2 — errores del flujo de envio del XML EnvioDTE al WS DTEUpload del SII. */
 class EnvioSiiException extends RuntimeException
 {
     public const MOTIVO_YA_ENVIADO            = 'ya_enviado';

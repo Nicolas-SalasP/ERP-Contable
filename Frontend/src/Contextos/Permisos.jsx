@@ -21,17 +21,7 @@ export const usePermisos = () => {
         return arregloPermisos.some(permiso => permisosUsuario.includes(permiso));
     };
 
-    // Verifica si el plan del usuario incluye un modulo. Vacio o '*' = sin restriccion
-    // de plan (admins locales sin SSO ven todo).
-    //
-    // ModuloPermisos::MAP (backend) casi nunca define una clave "bare" para
-    // dominios grandes -- solo subclaves granulares (rrhh.empleados,
-    // inventario.dashboard, sii.dte, etc). RutaPorModulo en App.jsx protege
-    // rutas enteras con modulo="rrhh"/"inventario"/"sii" (la clave del
-    // dominio, no de una subclave puntual), asi que ademas del match exacto
-    // se acepta cualquier subclave "key.algo" -- si no, cualquier usuario con
-    // module_keys real de plan (no vacio) queda bloqueado de esas rutas por
-    // completo pese a tener todos los permisos correctos.
+    // Vacio o '*' = sin restriccion de plan; además del match exacto acepta subclave "key.algo" porque el backend casi nunca define la clave "bare" de un dominio grande, solo subclaves (rrhh.empleados, etc.) -- sin esto, RutaPorModulo bloqueaba rutas enteras a usuarios con permisos correctos.
     const tieneModulo = (key) => {
         if (!modulosUsuario.length || modulosUsuario.includes('*')) return true;
         if (modulosUsuario.includes(key)) return true;

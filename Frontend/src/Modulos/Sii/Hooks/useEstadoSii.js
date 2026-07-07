@@ -49,9 +49,7 @@ export function useEstadoSii(facturaId) {
         }
 
         let cancelled = false;
-        // Interval LOCAL a esta corrida del effect (no un useRef compartido): su
-        // cleanup limpia exactamente este interval, evitando fugas cuando facturaId
-        // cambia y se pisaba la referencia compartida.
+        // Interval local (no useRef compartido) para que el cleanup no pise el de otra corrida cuando cambia facturaId.
         let intervalId = null;
 
         const iniciar = async () => {

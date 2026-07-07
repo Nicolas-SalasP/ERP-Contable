@@ -10,10 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Sesion autenticada contra el WS SII (F5.1).
- *
- * SEGURIDAD: token NUNCA debe aparecer en JSON. El $hidden lo excluye
- * automaticamente de toJson()/toArray().
+ * Sesion autenticada contra el WS SII (F5.1); SEGURIDAD: token nunca debe aparecer en JSON, el $hidden lo excluye automaticamente de toJson()/toArray().
  *
  * @property int $id
  * @property int $empresa_id
@@ -76,10 +73,7 @@ class SiiTokenSesion extends Model
         return $query->where('ambiente', $ambiente);
     }
 
-    /**
-     * Incrementa el contador de usos y actualiza ultimo_uso_en a now.
-     * Util para auditoria de cuanto se reusa una sesion.
-     */
+    /** Incrementa el contador de usos y actualiza ultimo_uso_en a now; util para auditoria de cuanto se reusa una sesion. */
     public function registrarUso(): void
     {
         $this->increment('intentos_uso');

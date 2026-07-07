@@ -17,10 +17,7 @@ class CotizacionService
 {
     public function obtenerPorEmpresa(int $empresaId, int $perPage = 100)
     {
-        // Antes hacia ->get() sin limite: en empresas con historico grande esto
-        // cargaba TODAS las cotizaciones en memoria en cada llamada al listado.
-        // Se pagina server-side; el controller expone ademas un bloque "meta"
-        // para que el frontend pueda incorporar paginacion incremental.
+        // Paginado server-side: ->get() sin límite cargaba TODAS las cotizaciones en memoria en empresas con histórico grande.
         return Cotizacion::where('empresa_id', $empresaId)
             ->with(['cliente', 'estado'])
             ->orderBy('created_at', 'desc')
@@ -31,8 +28,7 @@ class CotizacionService
     {
         return DB::transaction(function () use ($datos, $detalles) {
 
-            // Defensa en profundidad: ademas del EmpresaScope, filtramos explicitamente
-            // por la empresa del documento para no depender solo del scope global.
+            // Defensa en profundidad: no depender solo del EmpresaScope global.
             $cliente = Cliente::where('empresa_id', $datos['empresa_id'])
                 ->find($datos['cliente_id']);
 
@@ -202,9 +198,7 @@ class CotizacionService
     {
         return DB::transaction(function () use ($empresaId, $cotizacionId, $fechaEmision) {
             $fecha = $fechaEmision ?? date('Y-m-d');
-            // Lock pesimista: sin esto, doble clic o reintento de red podia leer
-            // la cotizacion como "Aceptada" dos veces antes de que la primera
-            // transaccion comiteara, duplicando la factura de venta generada.
+            // Lock pesimista: evita que doble clic o reintento de red dupliquen la factura de venta generada.
             $cotizacion = Cotizacion::where('empresa_id', $empresaId)
                 ->with('estado', 'cliente')
                 ->lockForUpdate()
@@ -248,13 +242,7 @@ class CotizacionService
                 'empresa_id' => $empresaId,
                 'codigo_unico' => $codigoUnico,
                 'proveedor_id' => $proveedor->id,
-                // cliente_id es la relacion real usada por el mapeo a DTE SII
-                // (FacturaAComercialDteMapper lee $factura->cliente para
-                // receptor_rut/razon_social) y por ArAgingService. Sin esto,
-                // toda factura de venta emitia DTE con datos del receptor
-                // vacios -- proveedor_id es una entidad espejo aparte (para
-                // que el modulo de Compras trate al mismo tercero de forma
-                // uniforme), no reemplaza esta relacion.
+                // cliente_id es la relación real usada por el mapeo a DTE SII (FacturaAComercialDteMapper) y ArAgingService; proveedor_id es solo una entidad espejo, no la reemplaza.
                 'cliente_id' => $cliente->id,
                 'numero_factura' => 'FV-' . $cotizacion->numero_cotizacion,
                 'tipo' => 'VENTA',
@@ -267,9 +255,7 @@ class CotizacionService
                 'cotizacion_id' => $cotizacion->id,
             ]);
 
-            // Centralización contable de la VENTA (antes la factura de venta no
-            // impactaba el mayor): DEBE Cuentas por Cobrar al cliente; HABER
-            // Ingresos por Venta + IVA Débito Fiscal.
+            // Centralización contable de la VENTA: DEBE Cuentas por Cobrar al cliente; HABER Ingresos por Venta + IVA Débito Fiscal.
             $neto = (float) $cotizacion->monto_neto;
             $iva = (float) $cotizacion->monto_iva;
             $totalCxC = $neto + $iva;

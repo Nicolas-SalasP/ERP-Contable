@@ -4,14 +4,7 @@ namespace App\Domains\Sii\Exceptions;
 
 use RuntimeException;
 
-/**
- * F5.1 — Se lanza cuando la empresa no tiene configuracion suficiente para
- * operar contra el SII en el ambiente solicitado.
- *
- * Caso paradigmatico: empresa.ambiente_sii='produccion' sin resolucion_sii_numero.
- * Bloquearlo upfront previene autenticaciones contra el WS de produccion
- * con DTEs que el SII rechazara por falta de resolucion (decision D6=A).
- */
+/** F5.1 — se lanza cuando la empresa no tiene configuracion suficiente para operar contra el SII en el ambiente solicitado; caso paradigmatico: ambiente_sii='produccion' sin resolucion_sii_numero (bloquearlo upfront evita autenticar contra el WS de produccion con DTEs que el SII rechazara, decision D6=A). */
 class SiiConfiguracionIncompletaException extends RuntimeException
 {
     public const MOTIVO_PROD_SIN_RESOLUCION = 'prod_sin_resolucion';

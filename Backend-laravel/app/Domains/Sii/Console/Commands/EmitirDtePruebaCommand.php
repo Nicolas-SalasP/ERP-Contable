@@ -17,10 +17,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-/**
- * Comando de validacion manual del flujo de emision: crea un SiiDteEmitido
- * fixture en BORRADOR, invoca el orquestador y reporta resultado.
- */
+/** Comando de validacion manual del flujo de emision: crea un SiiDteEmitido fixture en BORRADOR, invoca el orquestador y reporta resultado. */
 class EmitirDtePruebaCommand extends Command
 {
     protected $signature = 'sii:emitir-dte-prueba
@@ -87,11 +84,7 @@ class EmitirDtePruebaCommand extends Command
         return self::SUCCESS;
     }
 
-    /**
-     * Crea un DTE en BORRADOR con datos minimos para que pase XSD: snapshot
-     * del emisor desde la empresa, receptor generico 66666666-6 y un detalle
-     * "Servicio de prueba" a CLP 1000.
-     */
+    /** Crea un DTE en BORRADOR con datos minimos para pasar XSD: snapshot del emisor, receptor generico 66666666-6 y un detalle "Servicio de prueba" a CLP 1000. */
     private function crearDteFixture(Empresa $empresa, int $tipoDte): SiiDteEmitido
     {
         return DB::transaction(function () use ($empresa, $tipoDte) {
@@ -99,9 +92,7 @@ class EmitirDtePruebaCommand extends Command
             $iva   = (int) round($neto * config('fiscal.tasa_iva'));
             $total = $neto + $iva;
 
-            // Folio placeholder alto para no colisionar con el unique
-            // (empresa_id, tipo_dte, folio) cuando el CAF reasigne un folio
-            // bajo del rango. EmitirDteService::emitir lo sobreescribe.
+            // Folio placeholder alto para no colisionar con el unique (empresa_id, tipo_dte, folio); EmitirDteService::emitir lo sobreescribe.
             $folioPlaceholder = random_int(900_000, 999_999);
 
             $dte = SiiDteEmitido::create([

@@ -69,8 +69,7 @@ class AnticipoProveedorService
             }
             $anticipo->save();
 
-            // Registra a qué factura se aplicó este monto. Permite que anular esa
-            // factura despues (FacturaService::anularFactura) libere el saldo.
+            // Registra la factura vinculada para que anularla despues (FacturaService::anularFactura) libere el saldo.
             DB::table('anticipo_aplicaciones')->insert([
                 'empresa_id' => $empresaId,
                 'anticipo_id' => $anticipo->id,
@@ -84,11 +83,7 @@ class AnticipoProveedorService
         });
     }
 
-    /**
-     * Revierte todas las aplicaciones de anticipo vigentes sobre una factura
-     * anulada: repone el saldo disponible del anticipo y marca la aplicación
-     * como revertida para no volver a liberarla dos veces.
-     */
+    /** Marca cada aplicación como revertida (revertido_at) para no volver a liberar el mismo saldo dos veces. */
     public function revertirAplicacionesDeFactura(int $empresaId, int $facturaId): void
     {
         $aplicaciones = DB::table('anticipo_aplicaciones')

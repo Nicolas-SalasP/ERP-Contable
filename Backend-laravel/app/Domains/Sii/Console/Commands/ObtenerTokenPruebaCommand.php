@@ -11,14 +11,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Throwable;
 
-/**
- * F5.1 — Comando de validacion manual del flujo de autenticacion SII.
- *
- * IMPORTANTE: en operacion local este comando pegaria al WS REAL del SII
- * (maullin.sii.cl o palena.sii.cl). NO ejecutar contra entornos productivos
- * sin autorizacion explicita. Para testing local usar Http::fake() o entornos
- * dummy.
- */
+/** F5.1 — comando de validacion manual del flujo de autenticacion SII; IMPORTANTE: pega al WS REAL del SII (maullin.sii.cl o palena.sii.cl), no ejecutar contra entornos productivos sin autorizacion explicita (usar Http::fake() o entornos dummy para testing local). */
 class ObtenerTokenPruebaCommand extends Command
 {
     protected $signature = 'sii:obtener-token-prueba
