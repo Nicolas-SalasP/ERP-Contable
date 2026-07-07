@@ -80,4 +80,41 @@ class ReversaAsientoTest extends TestCase
             $this->empresa->id, $this->usuario->id, $asiento->id, now()->toDateString(), 'Segunda reversa'
         );
     }
+
+    public function test_reversar_asiento_libera_el_movimiento_bancario_conciliado_a_pendiente()
+    {
+        // Antes del fix: reversarAsientoPorId liberaba la Factura (asiento_pago_id)
+        // pero nunca el movimiento_bancario que se hubiera conciliado contra este
+        // mismo asiento (Mesa de Conciliación) -- quedaba CONCILIADO para siempre
+        // apuntando a un asiento ya ANULADO, invisible en Mesa de Conciliación.
+        $asiento = $this->crearAsientoBase();
+
+        $cuentaBancaria = \App\Domains\Tesoreria\Models\CuentaBancariaEmpresa::create([
+            'empresa_id' => $this->empresa->id, 'banco' => 'Banco Test', 'tipo_cuenta' => 'CORRIENTE',
+            'numero_cuenta' => '111-222', 'titular' => 'Empresa Test', 'rut_titular' => '1-9',
+        ]);
+
+        $movimientoId = \Illuminate\Support\Facades\DB::table('movimientos_bancarios')->insertGetId([
+            'empresa_id' => $this->empresa->id,
+            'cuenta_bancaria_id' => $cuentaBancaria->id,
+            'fecha' => now()->toDateString(),
+            'descripcion' => 'Movimiento conciliado',
+            'cargo' => 0,
+            'abono' => 1000,
+            'estado' => 'CONCILIADO',
+            'asiento_id' => $asiento->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->service->reversarAsientoPorId(
+            $this->empresa->id, $this->usuario->id, $asiento->id, now()->toDateString(), 'Fecha errónea'
+        );
+
+        $this->assertDatabaseHas('movimientos_bancarios', [
+            'id' => $movimientoId,
+            'estado' => 'PENDIENTE',
+            'asiento_id' => null,
+        ]);
+    }
 }

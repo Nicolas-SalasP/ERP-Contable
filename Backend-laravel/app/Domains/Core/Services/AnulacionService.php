@@ -113,6 +113,16 @@ class AnulacionService
                     ->where('asiento_pago_id', $asientoOriginal->id)
                     ->update(['estado' => 'REGISTRADA', 'asiento_pago_id' => null]);
 
+                // Si este asiento venia de conciliar un movimiento bancario (Mesa de
+                // Conciliacion), libera el movimiento de vuelta a PENDIENTE. Sin esto
+                // quedaba CONCILIADO para siempre apuntando a un asiento ya ANULADO --
+                // invisible en Mesa de Conciliacion y sin forma de volver a procesarlo
+                // con la fecha/cuenta correcta.
+                DB::table('movimientos_bancarios')
+                    ->where('empresa_id', $empresaId)
+                    ->where('asiento_id', $asientoOriginal->id)
+                    ->update(['estado' => 'PENDIENTE', 'asiento_id' => null]);
+
                 return [
                     'nuevo_asiento_id' => $asientoReverso->numero_comprobante
                 ];

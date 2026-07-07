@@ -278,6 +278,14 @@ class AsientoContableService
                 ->where('asiento_pago_id', $asientoOriginal->id)
                 ->update(['estado' => 'REGISTRADA', 'asiento_pago_id' => null]);
 
+            // Si venia de conciliar un movimiento bancario (Mesa de Conciliación),
+            // libera el movimiento de vuelta a PENDIENTE -- mismo fix que
+            // AnulacionService::anularDocumento (ver comentario ahí).
+            DB::table('movimientos_bancarios')
+                ->where('empresa_id', $asientoOriginal->empresa_id)
+                ->where('asiento_id', $asientoOriginal->id)
+                ->update(['estado' => 'PENDIENTE', 'asiento_id' => null]);
+
             return $nuevoAsiento;
         });
     }
