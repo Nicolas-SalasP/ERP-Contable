@@ -75,29 +75,18 @@ class Empleado extends Model implements CipherSweetEncrypted
     public static function configureCipherSweet(EncryptedRow $encryptedRow): void
     {
         $encryptedRow
-            // Fase 2b: RUT cifrado con blind index para búsqueda exacta y control de unicidad
+            // Fase 2b: RUT cifrado con blind index para búsqueda exacta y control de unicidad.
             ->addTextField('rut')
             ->addBlindIndex('rut', new BlindIndex('empleado_rut_index'))
-            // Fase 2a: campos de contacto
+            // Fase 2a: campos de contacto.
             ->addOptionalTextField('email')
             ->addOptionalTextField('telefono')
             ->addOptionalTextField('direccion')
-            // Fase 2c: fecha de nacimiento (dato sensible Ley 21.719)
-            // El cast 'date' sigue activo: CipherSweet desencripta el string y
-            // Eloquent lo re-tipifica como Carbon al acceder al atributo.
+            // Fase 2c: fecha de nacimiento cifrada (dato sensible Ley 21.719); el cast 'date' sigue activo porque CipherSweet desencripta el string y Eloquent lo re-tipifica como Carbon al acceder.
             ->addOptionalTextField('fecha_nacimiento');
     }
 
-    /**
-     * Compara atributos para determinar si están sucios.
-     *
-     * Override necesario para campos cifrados con CipherSweet que también tienen un
-     * cast primitivo (date). Sin este override, Eloquent llama a fromDateTime() sobre
-     * el ciphertext durante getDirty() → comparación incorrecta (no crash, pero
-     * marcaría siempre como dirty cuando en realidad no lo está).
-     *
-     * Para los campos gestionados por CipherSweet usamos comparación de string cruda.
-     */
+    /** Override necesario para campos cifrados con cast primitivo (date): sin esto, Eloquent llama a fromDateTime() sobre el ciphertext durante getDirty() y marcaría siempre como dirty aunque no lo esté. */
     public function originalIsEquivalent($key): bool
     {
         $encryptedFields = static::getCipherSweetEncryptedRow()->listEncryptedFields();

@@ -12,29 +12,7 @@ use App\Domains\Rrhh\Models\LiquidacionDetalle;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
-/**
- * R6 — Generación del archivo previsional mensual para Previred.
- *
- * Produce un archivo de texto UTF-8 CRLF con UNA línea por trabajador,
- * 105 campos separados por ";", SIN línea de encabezado, siguiendo el
- * "Archivo de 105 posiciones" del sistema Previred (previred.com).
- *
- * IMPORTANTE: Verificar los campos y códigos de institución contra la
- * documentación oficial de Previred antes de envío a producción.
- * Fuente: https://www.previred.com/web/previred/ayuda-planilla
- *
- * Tipos de movimiento:
- *   0 = Sin movimiento (mes completo)
- *   1 = Contratación (contrato inicia dentro del período)
- *   2 = Retiro       (contrato termina dentro del período)
- *   3 = Subsidio licencia médica
- *   4 = Permiso sin goce de sueldo
- *   5 = Incorporación nuevo lugar de trabajo
- *   6 = Accidente del trabajo
- *   7 = Reliquidación
- *   8 = Subsidio maternal
- *  11 = Otros
- */
+/** R6 — Genera el archivo previsional Previred: texto UTF-8 CRLF, una línea por trabajador, 105 campos separados por ";", sin encabezado, "Archivo de 105 posiciones" (previred.com); verificar campos/códigos contra la doc oficial antes de producción (https://www.previred.com/web/previred/ayuda-planilla); solo se implementan los tipos de movimiento 0=sin movimiento, 1=contratación y 2=retiro, el resto del estándar (licencia médica, permiso, accidente, etc.) no está soportado. */
 class PreviredService
 {
     // ── Tablas de códigos institucionales ────────────────────────────────────
@@ -118,22 +96,7 @@ class PreviredService
         return implode("\r\n", $lineas) . "\r\n";
     }
 
-    /**
-     * Construye el array de 105 campos para una línea del archivo Previred.
-     * Los campos no poblados por el ERP llevan '' (alfanumérico) o '0' (numérico)
-     * según la convención oficial.
-     *
-     * Referencia de posiciones (1-indexado):
-     *   1–13  Identificación trabajador
-     *  14–24  Bloque AFP
-     *  25–29  Bloque Seguro de Cesantía (AFC)
-     *  30–34  Bloque IPS/ISL
-     *  35–51  Bloque Salud
-     *  52–58  Bloque CCAF
-     *  59–69  Bloque Mutualidad / Seguro de Accidentes
-     *  70–80  Datos empleador
-     *  81–105 Campos complementarios / reservados
-     */
+    /** Construye el array de 105 campos (1-13 identificación, 14-24 AFP, 25-29 AFC, 30-34 IPS/ISL, 35-51 salud, 52-58 CCAF, 59-69 mutualidad, 70-80 empleador, 81-105 complementarios); campos no poblados por el ERP llevan '' o '0' según convención oficial. */
     private function construirFila105(
         Liquidacion $liq,
         Collection  $detalles,
@@ -202,16 +165,13 @@ class PreviredService
         $afpCodigo   = $this->codigoAfp($empleado->afp ?? '');
         $saludCodigo = $this->codigoSalud($empleado->tipo_salud ?? '', $empleado->isapre_nombre ?? '');
 
-        // Cotización adicional ISAPRE: max(0, plan_pesos − 7% imponible)
-        // Si es FONASA o no hay plan UF el adicional es 0
+        // Cotización adicional ISAPRE: max(0, plan_pesos − 7% imponible); 0 si es FONASA o no hay plan UF.
         $cotAdicionalIsapre = $this->calcularAdicionalIsapre(
             $empleado,
             $saludBase,
             $liq
         );
-        // La cotización obligatoria salud (7%) y el adicional ISAPRE son dos campos distintos:
-        // saludCot ya representa el 7% de la remuneración imponible calculado en LiquidacionService.
-        // El adicional se informa aparte.
+        // saludCot (7% obligatorio, calculado en LiquidacionService) y el adicional ISAPRE son campos distintos informados por separado.
 
         // Código mutualidad del parámetro previsional de la liquidación (01=ACHS, 02=ISL, 03=Mutual)
         $mutualCodigo = $liq->parametro->mutual_codigo ?? self::MUTUALIDAD_CODIGO_DEFAULT;
@@ -219,9 +179,7 @@ class PreviredService
         // Datos empleador (RUT separado)
         [$rutEmp, $dvEmp] = $empresa ? $this->separarRut($empresa->rut) : ['', ''];
 
-        // ── Ensamblado de los 105 campos ─────────────────────────────────────
-        // Campos no disponibles en el ERP se marcan con '' o '0' según tipo.
-        // Ver FORMATO-PREVIRED.md para lista completa de campos sin poblar.
+        // ── Ensamblado de los 105 campos: no disponibles en el ERP se marcan con '' o '0' según tipo (ver FORMATO-PREVIRED.md para lista completa) ──
 
         return [
             // === BLOQUE 1: Identificación trabajador (campos 1-13) ===
@@ -353,13 +311,7 @@ class PreviredService
 
     // ── Lógica de negocio ─────────────────────────────────────────────────────
 
-    /**
-     * Calcula los días trabajados en el período:
-     * - Si el contrato inicia dentro del mes: días desde inicio hasta fin del mes.
-     * - Si el contrato termina dentro del mes: días desde inicio del mes hasta término.
-     * - Si ambos ocurren dentro del mes: días entre inicio y término.
-     * - En caso contrario: días del mes (28/29/30/31 según mes).
-     */
+    /** Días trabajados en el período: recorta al rango [inicio, término] del contrato si cae dentro del mes, o el mes completo (28-31 días) en caso contrario. */
     private function calcularDiasTrabajados(
         ?Contrato $contrato,
         Carbon    $primerDiaMes,
@@ -391,12 +343,7 @@ class PreviredService
         return max(1, min($dias, $diasEnMes));
     }
 
-    /**
-     * Determina el tipo de movimiento:
-     *   0 = sin movimiento (mes completo)
-     *   1 = contratación (inicio en el período)
-     *   2 = retiro       (término en el período)
-     */
+    /** Tipo de movimiento: 0 = sin movimiento (mes completo), 1 = contratación (inicio en el período), 2 = retiro (término en el período). */
     private function calcularTipoMovimiento(
         ?Contrato $contrato,
         Carbon    $primerDiaMes,
@@ -420,11 +367,7 @@ class PreviredService
         return '0';
     }
 
-    /**
-     * Cotización adicional ISAPRE = max(0, plan_pesos − cotización_obligatoria_7%).
-     * Si es FONASA o el empleado no tiene plan en UF, retorna 0.
-     * La UF requerida se obtiene desde el indicador mensual de la liquidación.
-     */
+    /** Cotización adicional ISAPRE = max(0, plan_pesos − cotización_obligatoria_7%); retorna 0 si es FONASA o sin plan UF; la UF se obtiene del indicador mensual de la liquidación. */
     private function calcularAdicionalIsapre(
         Empleado    $empleado,
         float       $saludBase,

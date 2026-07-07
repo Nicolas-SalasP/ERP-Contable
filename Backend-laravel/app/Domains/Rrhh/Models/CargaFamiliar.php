@@ -10,10 +10,7 @@ use ParagonIE\CipherSweet\EncryptedRow;
 use Spatie\LaravelCipherSweet\Concerns\UsesCipherSweet;
 use Spatie\LaravelCipherSweet\Contracts\CipherSweetEncrypted;
 
-/**
- * Fase 2b — Ley 21.719: el RUT de cargas familiares se cifra en reposo con
- * CipherSweet. No requiere blind index porque el campo no se usa en búsquedas.
- */
+/** Fase 2b — Ley 21.719: el RUT de cargas familiares se cifra en reposo con CipherSweet; no requiere blind index porque el campo no se usa en búsquedas. */
 class CargaFamiliar extends Model implements CipherSweetEncrypted
 {
     use HasEmpresaScope, UsesCipherSweet;

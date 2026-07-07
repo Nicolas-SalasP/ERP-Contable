@@ -8,14 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Gestión del mapeo contable RRHH y centralización mensual (R5).
- *
- * Flujo típico:
- *  1. Admin configura las cuentas → POST /api/rrhh/mapeo-contable
- *  2. Fin de mes: emitir liquidaciones → POST /api/rrhh/liquidaciones/{id}/emitir
- *  3. Centralizar → POST /api/rrhh/centralizacion/{anio}/{mes}
- */
+/** Gestión del mapeo contable RRHH y centralización mensual (R5): configurar cuentas → emitir liquidaciones → centralizar. */
 class CentralizacionController extends Controller
 {
     public function __construct(

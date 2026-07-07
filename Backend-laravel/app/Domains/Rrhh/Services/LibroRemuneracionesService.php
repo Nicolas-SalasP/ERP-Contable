@@ -8,14 +8,7 @@ use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\LiquidacionDetalle;
 use Illuminate\Support\Collection;
 
-/**
- * Genera los datos del Libro de Remuneraciones Digital.
- *
- * DFL-1 Art. 62 Código del Trabajo — obligatorio para empresas con 5+ trabajadores.
- * Desde 2022 el formato digital es requerido (Resolución Exenta N° 738 DT).
- *
- * Incluye liquidaciones en estado EMITIDA o PAGADA del período solicitado.
- */
+/** Genera los datos del Libro de Remuneraciones Digital (DFL-1 Art. 62 Código del Trabajo, obligatorio para empresas con 5+ trabajadores; formato digital requerido desde 2022 por Resolución Exenta N° 738 DT); incluye liquidaciones EMITIDA o PAGADA del período solicitado. */
 class LibroRemuneracionesService
 {
     /**

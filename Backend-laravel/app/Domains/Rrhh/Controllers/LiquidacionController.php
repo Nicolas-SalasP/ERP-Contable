@@ -51,8 +51,7 @@ class LiquidacionController extends Controller
             ->with(['detalles', 'empleado', 'contrato', 'parametro', 'indicador'])
             ->findOrFail($id);
 
-        // Auditoria de lectura PII (Ley 21.719 — Fase 3).
-        // Solo registra el ID del empleado, NUNCA nombre, RUT u otros datos PII.
+        // Auditoria de lectura PII (Ley 21.719 — Fase 3): solo registra el ID del empleado, nunca nombre/RUT/otros datos PII.
         if (config('auditoria.lectura_pii')) {
             try {
                 Auditoria::create([

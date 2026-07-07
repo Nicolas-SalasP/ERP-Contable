@@ -5,14 +5,7 @@ namespace App\Domains\Rrhh\Models;
 use App\Domains\Core\Traits\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * Mapeo de categorías RRHH a cuentas del Plan de Cuentas por empresa.
- * El administrador configura este mapeo una vez antes de usar R5.
- *
- * Tipos requeridos: deben estar configurados para que la centralización funcione.
- * Tipos opcionales de vacaciones: se incluyen en el asiento solo si están
- * configurados en par (GASTO + PASIVO) y el monto devengado es > 0.
- */
+/** Mapeo de categorías RRHH a cuentas del Plan de Cuentas por empresa, configurado una vez por el administrador antes de usar R5; los tipos opcionales de vacaciones solo entran al asiento si están configurados en par (GASTO + PASIVO) y el monto devengado es > 0. */
 class RrhhMapeoContable extends Model
 {
     use HasEmpresaScope;
@@ -34,9 +27,7 @@ class RrhhMapeoContable extends Model
     public const PASIVO_DESCUENTOS_VOLUNTARIOS     = 'PASIVO_DESCUENTOS_VOLUNTARIOS'; // APV, préstamos, etc.
     public const PASIVO_PROVISION_VACACIONES       = 'PASIVO_PROVISION_VACACIONES'; // opcional
 
-    /**
-     * Deben estar configurados para que la centralización se pueda ejecutar.
-     */
+    /** Deben estar configurados para que la centralización se pueda ejecutar. */
     public const TIPOS_REQUERIDOS = [
         self::GASTO_REMUNERACIONES,
         self::GASTO_LEYES_SOCIALES,
@@ -46,10 +37,7 @@ class RrhhMapeoContable extends Model
         self::PASIVO_LEYES_SOCIALES,
     ];
 
-    /**
-     * Opcionales: se incluyen en el asiento solo si el monto del período es > 0
-     * y están configurados. Las cuentas de vacaciones deben configurarse en par.
-     */
+    /** Opcionales: se incluyen en el asiento solo si el monto del período es > 0 y están configurados; las cuentas de vacaciones deben configurarse en par. */
     public const TIPOS_OPCIONALES = [
         self::GASTO_PROVISION_VACACIONES,
         self::PASIVO_PROVISION_VACACIONES,
