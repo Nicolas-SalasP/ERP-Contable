@@ -42,11 +42,9 @@ const GestionOrdenes = () => {
     const [enviando, setEnviando] = useState(false);
     const [mensaje, setMensaje] = useState(null);
 
-    // Filtros
     const [filtroEstado, setFiltroEstado] = useState('');
     const [filtroProveedor, setFiltroProveedor] = useState('');
 
-    // Modal creación
     const [modalCrear, setModalCrear] = useState(false);
     const [form, setForm] = useState({
         fecha_emision: new Date().toISOString().split('T')[0],
@@ -56,7 +54,6 @@ const GestionOrdenes = () => {
         detalles: [DETALLE_VACIO()],
     });
 
-    // Modal detalle/recepción
     const [ocSeleccionada, setOcSeleccionada] = useState(null);
     const [modalDetalle, setModalDetalle] = useState(false);
     const [cargandoDetalle, setCargandoDetalle] = useState(false);
@@ -241,7 +238,6 @@ const GestionOrdenes = () => {
                 </div>
             )}
 
-            {/* Filtros */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
                 <div className="flex flex-wrap gap-3">
                     <div>
@@ -278,7 +274,6 @@ const GestionOrdenes = () => {
                 </div>
             </div>
 
-            {/* Tabla OCs */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h2 className="font-bold text-slate-900 dark:text-slate-100">Órdenes de compra</h2>
@@ -339,7 +334,6 @@ const GestionOrdenes = () => {
                 </div>
             </div>
 
-            {/* Modal Crear OC */}
             {modalCrear && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -402,7 +396,6 @@ const GestionOrdenes = () => {
                                 </div>
                             </div>
 
-                            {/* Detalles */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Ítems</h3>
@@ -490,7 +483,6 @@ const GestionOrdenes = () => {
                                     ))}
                                 </div>
 
-                                {/* Totales */}
                                 <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-sm space-y-1">
                                     <div className="flex justify-between text-slate-700 dark:text-slate-300">
                                         <span>Subtotal neto</span>
@@ -531,7 +523,6 @@ const GestionOrdenes = () => {
                 </div>
             )}
 
-            {/* Modal Detalle / Recepción */}
             {modalDetalle && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -558,7 +549,6 @@ const GestionOrdenes = () => {
                             <div className="p-8 text-center text-slate-500">Cargando...</div>
                         ) : ocSeleccionada ? (
                             <div className="p-6 space-y-5">
-                                {/* Info cabecera */}
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-xs text-slate-500 font-semibold">Proveedor</p>
@@ -592,7 +582,6 @@ const GestionOrdenes = () => {
                                     )}
                                 </div>
 
-                                {/* Detalles */}
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-2">Ítems</h3>
                                     <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
@@ -648,7 +637,6 @@ const GestionOrdenes = () => {
                                     </div>
                                 </div>
 
-                                {/* Acciones */}
                                 <div className="flex justify-between gap-3 pt-2">
                                     <div>
                                         {ocSeleccionada.estado !== 'ANULADA' && (

@@ -16,12 +16,10 @@ const PropietariosEmpresa = () => {
     const [enviando, setEnviando]   = useState(false);
     const [mensaje, setMensaje]     = useState(null);
 
-    // Formulario agregar
     const [rut, setRut]             = useState('');
     const [nombre, setNombre]       = useState('');
     const [porcentaje, setPorcentaje] = useState('');
 
-    // Edición en línea
     const [editandoId, setEditandoId] = useState(null);
     const [editNombre, setEditNombre] = useState('');
     const [editPorcentaje, setEditPorcentaje] = useState('');
@@ -146,7 +144,6 @@ const PropietariosEmpresa = () => {
                 </div>
             )}
 
-            {/* Formulario agregar */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 uppercase tracking-wide">Agregar propietario</h2>
                 <form onSubmit={handleAgregar}>
@@ -209,7 +206,6 @@ const PropietariosEmpresa = () => {
                 </form>
             </div>
 
-            {/* Tabla propietarios */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h2 className="font-bold text-slate-900 dark:text-slate-100">Propietarios registrados</h2>

@@ -9,14 +9,12 @@ import {
 } from 'recharts';
 import { formatearMoneda } from '../../../Utilidades/formato';
 
-// Formatea monto abreviado para los ticks del eje Y
 const formatAbreviado = (v) => {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
   if (v >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
   return `$${v}`;
 };
 
-// Formatea el nombre del mes "2025-07" → "Jul 25"
 const formatMes = (valor) => {
   if (!valor) return '';
   const [anio, mes] = valor.split('-');
@@ -25,13 +23,11 @@ const formatMes = (valor) => {
     month: 'short',
     year: '2-digit',
   });
-  // Capitalizar primera letra
   return etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1);
 };
 
 const formatCLP = { format: formatearMoneda };
 
-// Tooltip personalizado con monto completo en CLP
 const TooltipPersonalizado = ({ active, payload, label }) => {
   if (!active || !payload || payload.length === 0) return null;
   return (
@@ -42,11 +38,6 @@ const TooltipPersonalizado = ({ active, payload, label }) => {
   );
 };
 
-/**
- * Gráfico de línea: ventas de los últimos 12 meses.
- *
- * @param {{ datos: Array<{mes: string, monto: number}> }} props
- */
 export default function GraficoVentas({ datos = [] }) {
   const oscuro = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const sinDatos =

@@ -28,7 +28,6 @@ const TablaAmortizacion = ({ activoId, activoNombre, onCerrar }) => {
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl my-8 overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in">
-                {/* Header */}
                 <div className="bg-gradient-to-br from-indigo-600 to-violet-700 px-6 py-4 flex justify-between items-center">
                     <div>
                         <h3 className="font-black text-xl text-white">Tabla de Amortización</h3>
@@ -59,7 +58,6 @@ const TablaAmortizacion = ({ activoId, activoNombre, onCerrar }) => {
 
                     {datos && !cargando && (
                         <>
-                            {/* Tarjetas resumen */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                                 <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Valor Adquisición</p>
@@ -84,7 +82,6 @@ const TablaAmortizacion = ({ activoId, activoNombre, onCerrar }) => {
                                 </div>
                             </div>
 
-                            {/* Tabla */}
                             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full text-left border-collapse">

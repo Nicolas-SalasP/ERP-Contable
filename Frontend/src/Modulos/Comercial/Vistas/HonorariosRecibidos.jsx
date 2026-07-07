@@ -40,18 +40,15 @@ const HonorariosRecibidos = () => {
     const [enviando, setEnviando]     = useState(false);
     const [mensaje, setMensaje]       = useState(null);
 
-    // Filtros
     const [filtromes, setFiltroMes]   = useState(mesActual);
     const [filtroAnio, setFiltroAnio] = useState(anioActual);
 
-    // Formulario
     const [rut, setRut]               = useState('');
     const [nombre, setNombre]         = useState('');
     const [noBoleta, setNoBoleta]     = useState('');
     const [monto, setMonto]           = useState('');
     const [fecha, setFecha]           = useState('');
 
-    // Cálculo en vivo
     const anioFecha = fecha ? new Date(fecha).getFullYear() : null;
     const tasa      = TASAS[anioFecha] ?? null;
     const montoParsed = monto ? parseInt(monto, 10) : 0;
@@ -149,7 +146,6 @@ const HonorariosRecibidos = () => {
                 </div>
             )}
 
-            {/* Formulario de registro */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 uppercase tracking-wide">Registrar honorario</h2>
                 <form onSubmit={handleRegistrar}>
@@ -220,7 +216,6 @@ const HonorariosRecibidos = () => {
                         </div>
                     </div>
 
-                    {/* Cálculo en vivo */}
                     {montoParsed > 0 && fecha && (
                         <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-sm">
                             {tasa !== null ? (
@@ -256,7 +251,6 @@ const HonorariosRecibidos = () => {
                 </form>
             </div>
 
-            {/* Filtros de período */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Filtrar período</h2>
                 <div className="flex flex-wrap gap-3">
@@ -287,7 +281,6 @@ const HonorariosRecibidos = () => {
                 </div>
             </div>
 
-            {/* Tabla */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h2 className="font-bold text-slate-900 dark:text-slate-100">Honorarios del período</h2>

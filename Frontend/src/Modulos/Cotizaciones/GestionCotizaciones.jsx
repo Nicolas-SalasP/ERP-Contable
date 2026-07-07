@@ -95,8 +95,7 @@ const GestionCotizaciones = () => {
             const clienteSeguro = nombreCliente ? nombreCliente.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim() : 'Cliente';
             const nombreArchivo = `Cotizacion_${id} - ${clienteSeguro}.pdf`;
 
-            // api.download maneja auth, errores y dispara la descarga en el browser.
-            // { silent: true } porque ya manejamos el error a mano con Swal.
+            // silent: true porque el error ya se maneja a mano con Swal más abajo.
             await api.download(`/cotizaciones/pdf/${id}`, nombreArchivo, { silent: true });
 
         } catch (error) {

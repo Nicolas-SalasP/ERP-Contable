@@ -10,14 +10,12 @@ import {
 } from 'recharts';
 import { formatearMoneda } from '../../../Utilidades/formato';
 
-// Formatea monto abreviado para los ticks del eje Y
 const formatAbreviado = (v) => {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
   if (v >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
   return `$${v}`;
 };
 
-// Formatea el nombre del mes "2025-07" → "Jul 25"
 const formatMes = (valor) => {
   if (!valor) return '';
   const [anio, mes] = valor.split('-');
@@ -31,7 +29,6 @@ const formatMes = (valor) => {
 
 const formatCLP = { format: formatearMoneda };
 
-// Tooltip personalizado con ambos valores en CLP completo
 const TooltipPersonalizado = ({ active, payload, label }) => {
   if (!active || !payload || payload.length === 0) return null;
   return (
@@ -46,17 +43,8 @@ const TooltipPersonalizado = ({ active, payload, label }) => {
   );
 };
 
-/**
- * Gráfico de doble línea: ventas vs compras de los últimos 12 meses.
- *
- * @param {{
- *   ventas:  Array<{mes: string, monto: number}>,
- *   compras: Array<{mes: string, monto: number}>,
- * }} props
- */
 export default function GraficoComprasVsVentas({ ventas = [], compras = [] }) {
   const oscuro = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-  // Combinar ambos arrays por clave "mes"
   const mapaCompras = Object.fromEntries(
     compras.map((c) => [c.mes, c.monto])
   );

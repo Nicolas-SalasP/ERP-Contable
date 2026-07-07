@@ -55,7 +55,6 @@ const LreRrhh = () => {
             setHistorial(items);
             setHistCargado(true);
 
-            // Buscar el LRE del período seleccionado
             const actual = items.find(
                 (l) => l.anio === periodo.anio && l.mes === periodo.mes
             );
@@ -65,12 +64,10 @@ const LreRrhh = () => {
         }
     }, [puedeVer, periodo.anio, periodo.mes]);
 
-    // Carga historial al montar el componente
     React.useEffect(() => {
         cargarHistorial();
     }, []);
 
-    // Actualiza el LRE actual cuando cambia el período
     React.useEffect(() => {
         const actual = historial.find(
             (l) => l.anio === periodo.anio && l.mes === periodo.mes
@@ -87,7 +84,6 @@ const LreRrhh = () => {
             const resp = await rrhhApi.lre.generar(periodo.anio, periodo.mes);
             const lre = resp?.data ?? resp;
             setLreActual(lre);
-            // Actualizar historial
             setHistorial((prev) => {
                 const sinActual = prev.filter((l) => !(l.anio === lre.anio && l.mes === lre.mes));
                 return [lre, ...sinActual].sort((a, b) => b.anio - a.anio || b.mes - a.mes);
@@ -173,7 +169,6 @@ const LreRrhh = () => {
                 </p>
             </header>
 
-            {/* Mensaje de estado */}
             {mensaje && (
                 <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2 ${
                     mensaje.tipo === 'exito'
@@ -185,7 +180,6 @@ const LreRrhh = () => {
                 </div>
             )}
 
-            {/* Selector de período y acción generar */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Período</h2>
                 <div className="flex flex-wrap items-end gap-3">
@@ -224,7 +218,6 @@ const LreRrhh = () => {
                 </div>
             </div>
 
-            {/* Panel del LRE del período actual */}
             {lreActual ? (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                     <div className="flex items-center justify-between mb-4">
@@ -253,7 +246,6 @@ const LreRrhh = () => {
                         </div>
                     </div>
 
-                    {/* Acciones */}
                     <div className="flex flex-wrap gap-2">
                         {puedeProcesar && lreActual.estado !== 'CONFIRMADO_DT' && (
                             <button
@@ -280,7 +272,6 @@ const LreRrhh = () => {
                         </button>
                     </div>
 
-                    {/* Errores de validación */}
                     {erroresValidacion.length > 0 && (
                         <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
                             <h3 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
@@ -298,7 +289,6 @@ const LreRrhh = () => {
                         </div>
                     )}
 
-                    {/* Formulario confirmar envío a DT */}
                     {puedeProcesar && lreActual.estado === 'VALIDADO' && (
                         <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                             <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">
@@ -343,7 +333,6 @@ const LreRrhh = () => {
                 </div>
             )}
 
-            {/* Historial */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h2 className="font-bold text-slate-900 dark:text-slate-100">Historial de LRE</h2>

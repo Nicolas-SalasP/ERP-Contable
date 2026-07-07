@@ -1,6 +1,5 @@
 import React from 'react';
 
-/* Mapas de estilo por urgencia y por tipo */
 const ESTILO_URGENCIA = {
     alta: {
         borde: 'border-l-rose-500',
@@ -30,7 +29,6 @@ const AlertasPendientes = ({ alertas }) => {
 
     return (
         <div className="mb-8">
-            {/* Título con divisor */}
             <div className="flex items-center gap-3 mb-4">
                 <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap flex items-center gap-2">
                     <i className="fas fa-exclamation-triangle text-amber-500" />
@@ -42,7 +40,6 @@ const AlertasPendientes = ({ alertas }) => {
                 </span>
             </div>
 
-            {/* Tarjetas de alertas en fila con scroll horizontal en móvil */}
             <div className="flex flex-wrap gap-3">
                 {alertas.map((alerta, idx) => {
                     const urgencia = alerta.urgencia ?? 'baja';

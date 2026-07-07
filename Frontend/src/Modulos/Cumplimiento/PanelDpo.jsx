@@ -3,8 +3,6 @@ import EstadoCarga from '../../Componentes/EstadoCarga';
 import { usePermisos } from '../../Contextos/Permisos';
 import cumplimientoApi from './cumplimientoApi';
 
-// ── Constantes ────────────────────────────────────────────────────────────────
-
 const OPERACIONES = ['CREAR', 'ACTUALIZAR', 'ELIMINAR', 'LECTURA'];
 const TIPOS_AUDITORIA = [
     { value: '', label: 'Todos los tipos' },
@@ -48,8 +46,6 @@ const fmtFecha = (iso) => {
 
 const tipoCorto = (fqcn) => (fqcn ? String(fqcn).split('\\').pop() : '—');
 
-// ── Hito de la línea de tiempo legal ─────────────────────────────────────────
-
 const HitoTimeline = ({ label, plazo, valor, onRegistrar }) => {
     const cumplido = Boolean(valor);
     return (
@@ -82,8 +78,6 @@ const HitoTimeline = ({ label, plazo, valor, onRegistrar }) => {
         </div>
     );
 };
-
-// ── Tarjeta de incidente ──────────────────────────────────────────────────────
 
 const TarjetaIncidente = ({ incidente, onActualizar }) => {
     const [expandido, setExpandido] = useState(false);
@@ -120,7 +114,6 @@ const TarjetaIncidente = ({ incidente, onActualizar }) => {
 
     return (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
-            {/* Cabecera (siempre visible) */}
             <button
                 type="button"
                 aria-expanded={expandido}
@@ -142,7 +135,6 @@ const TarjetaIncidente = ({ incidente, onActualizar }) => {
                 </div>
             </button>
 
-            {/* Detalle expandible */}
             {expandido && (
                 <div className="border-t border-slate-100 dark:border-slate-700 px-4 py-4 space-y-4">
                     <p className="text-sm text-slate-700 dark:text-slate-300">{incidente.descripcion}</p>
@@ -165,7 +157,6 @@ const TarjetaIncidente = ({ incidente, onActualizar }) => {
                         )}
                     </div>
 
-                    {/* Línea de tiempo legal 3h / 72h */}
                     <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
                         <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
                             Línea de tiempo legal
@@ -196,7 +187,6 @@ const TarjetaIncidente = ({ incidente, onActualizar }) => {
                         />
                     </div>
 
-                    {/* Botón avanzar estado */}
                     {incidente.estado !== 'CERRADO' && (
                         <div className="flex justify-end">
                             <button
@@ -218,8 +208,6 @@ const TarjetaIncidente = ({ incidente, onActualizar }) => {
         </div>
     );
 };
-
-// ── Formulario nuevo incidente ────────────────────────────────────────────────
 
 const FORM_VACIO = {
     titulo: '',
@@ -409,8 +397,6 @@ const FormularioIncidente = ({ onGuardado, onCancelar }) => {
     );
 };
 
-// ── Tab Auditoría ─────────────────────────────────────────────────────────────
-
 const TabAuditoria = () => {
     const [registros, setRegistros] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -448,7 +434,6 @@ const TabAuditoria = () => {
 
     return (
         <div className="space-y-4">
-            {/* Filtros */}
             <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
                 <select
                     value={filtros.operacion}
@@ -545,7 +530,6 @@ const TabAuditoria = () => {
                     </table>
                 </div>
 
-                {/* Paginación */}
                 {meta && meta.last_page > 1 && (
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 text-xs text-slate-500">
                         <span className="text-slate-500 dark:text-slate-400">
@@ -576,8 +560,6 @@ const TabAuditoria = () => {
     );
 };
 
-// ── Tab Incidentes ────────────────────────────────────────────────────────────
-
 const TabIncidentes = () => {
     const [incidentes, setIncidentes] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -606,7 +588,6 @@ const TabIncidentes = () => {
 
     return (
         <div className="space-y-4">
-            {/* Aviso legal */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-900 space-y-1">
                 <p className="font-bold">Plazos legales obligatorios (Leyes 21.663 / 21.719)</p>
                 <ul className="list-disc list-inside space-y-0.5">
@@ -617,7 +598,6 @@ const TabIncidentes = () => {
                 </ul>
             </div>
 
-            {/* Botón nuevo incidente */}
             <div className="flex justify-end">
                 <button
                     type="button"
@@ -628,7 +608,6 @@ const TabIncidentes = () => {
                 </button>
             </div>
 
-            {/* Formulario de alta */}
             {mostrarFormulario && (
                 <FormularioIncidente
                     onGuardado={onGuardado}
@@ -636,7 +615,6 @@ const TabIncidentes = () => {
                 />
             )}
 
-            {/* Lista de incidentes */}
             <EstadoCarga
                 cargando={cargando}
                 error={error}
@@ -657,8 +635,6 @@ const TabIncidentes = () => {
         </div>
     );
 };
-
-// ── Panel principal DPO ───────────────────────────────────────────────────────
 
 const PanelDpo = () => {
     const { tienePermiso } = usePermisos();
@@ -686,7 +662,6 @@ const PanelDpo = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-            {/* Cabecera */}
             <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-2xl px-6 py-5 shadow">
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                     <div className="text-3xl" aria-hidden="true">🛡️</div>
@@ -706,7 +681,6 @@ const PanelDpo = () => {
                 </div>
             </div>
 
-            {/* Tabs */}
             <div className="border-b border-slate-200 dark:border-slate-700">
                 <nav className="flex gap-1" aria-label="Secciones del panel DPO">
                     {TABS.map((t) => (
@@ -728,7 +702,6 @@ const PanelDpo = () => {
                 </nav>
             </div>
 
-            {/* Contenido activo */}
             {tab === 'auditoria' && <TabAuditoria />}
             {tab === 'incidentes' && <TabIncidentes />}
         </div>

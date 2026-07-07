@@ -12,9 +12,6 @@ const fechaHoy = () => new Date().toISOString().slice(0, 10);
 const nombreArchivo = (tipo, periodo, ext) =>
     `Dashboard_${tipo}_${periodo}_${fechaHoy()}.${ext}`;
 
-/**
- * Exporta un workbook Excel multi-hoja con todos los datos del dashboard.
- */
 const exportarExcelCompleto = (datos, _periodo) => {
     const wb = XLSX.utils.book_new();
 
@@ -75,9 +72,6 @@ const exportarExcelCompleto = (datos, _periodo) => {
     XLSX.writeFile(wb, `dashboard-${fechaHoy()}.xlsx`);
 };
 
-/**
- * Exporta la serie de ventas de 12 meses a Excel.
- */
 const exportarVentas12mExcel = (serieVentas, periodo) => {
     const filas = (serieVentas ?? []).map((item) => ({
         Mes: item.mes,
@@ -93,9 +87,6 @@ const exportarVentas12mExcel = (serieVentas, periodo) => {
     XLSX.writeFile(wb, nombreArchivo('Ventas12m', periodo, 'xlsx'));
 };
 
-/**
- * Exporta el top de clientes a Excel.
- */
 const exportarTopClientesExcel = (topClientes, periodo) => {
     const filas = (topClientes ?? []).map((item) => ({
         Cliente: item.nombre,
@@ -111,9 +102,6 @@ const exportarTopClientesExcel = (topClientes, periodo) => {
     XLSX.writeFile(wb, nombreArchivo('TopClientes', periodo, 'xlsx'));
 };
 
-/**
- * Exporta las facturas urgentes a Excel.
- */
 const exportarFacturasUrgentesExcel = (facturas, periodo) => {
     const filas = (facturas ?? []).map((f) => ({
         'N° Factura': f.numero_factura,
@@ -138,9 +126,6 @@ const exportarFacturasUrgentesExcel = (facturas, periodo) => {
     XLSX.writeFile(wb, nombreArchivo('FacturasUrgentes', periodo, 'xlsx'));
 };
 
-/**
- * Exporta un resumen ejecutivo de KPIs como PDF (con aging y flujo de caja).
- */
 const exportarResumenPDF = (datos, periodo) => {
     const kpis = datos?.kpis ?? {};
     const doc = new jsPDF();
@@ -212,13 +197,6 @@ const exportarResumenPDF = (datos, periodo) => {
     doc.save(nombreArchivo('ResumenEjecutivo', periodo, 'pdf'));
 };
 
-/**
- * Fila de botones de exportación para el Dashboard.
- *
- * Props:
- *   resumen  — objeto completo del endpoint /api/dashboard/resumen
- *   periodo  — string: 'mes' | 'trimestre' | 'año'
- */
 const ExportacionDashboard = ({ resumen, periodo = 'mes' }) => {
     const serieVentas = resumen?.serie_ventas_12m ?? [];
     const topClientes = resumen?.top_clientes ?? [];
@@ -226,7 +204,6 @@ const ExportacionDashboard = ({ resumen, periodo = 'mes' }) => {
 
     return (
         <div className="flex flex-wrap items-center gap-2 mt-2">
-            {/* Botón principal: reporte completo multi-hoja */}
             <button
                 type="button"
                 onClick={() => exportarExcelCompleto(resumen, periodo)}
@@ -237,7 +214,6 @@ const ExportacionDashboard = ({ resumen, periodo = 'mes' }) => {
                 Reporte Completo Excel
             </button>
 
-            {/* Botón PDF mejorado */}
             <button
                 type="button"
                 onClick={() => exportarResumenPDF(resumen, periodo)}
@@ -248,10 +224,8 @@ const ExportacionDashboard = ({ resumen, periodo = 'mes' }) => {
                 Resumen Ejecutivo PDF
             </button>
 
-            {/* Separador visual */}
             <span className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1" />
 
-            {/* Botones individuales secundarios */}
             <button
                 type="button"
                 onClick={() => exportarVentas12mExcel(serieVentas, periodo)}
