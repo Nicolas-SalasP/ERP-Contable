@@ -6,7 +6,7 @@ import { usePermisos } from '../../../Contextos/Permisos';
 import rrhhApi from '../Servicios/rrhhApi';
 import { colorEstado, formatFecha } from '../Utilidades/formato';
 import PanelModal from '../Componentes/PanelModal';
-import { enmascararIdentificador } from '../../../Utilidades/identificadores';
+import { enmascararIdentificador, formatearIdentificador, validarIdentificador } from '../../../Utilidades/identificadores';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 
@@ -89,9 +89,13 @@ const EmpleadosRrhh = () => {
     };
 
     const setCampo = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+    const handleRutChange = (e) => setCampo('rut', formatearIdentificador(e.target.value, 'CL'));
 
     const guardar = async (e) => {
         e.preventDefault();
+        if (form.rut && !validarIdentificador(form.rut, 'CL')) {
+            return Swal.fire('RUT inválido', 'Revisa el dígito verificador.', 'warning');
+        }
         setGuardando(true);
         try {
             // Limpia campos vacíos para no enviar strings vacíos donde el backend espera null.
@@ -215,8 +219,8 @@ const EmpleadosRrhh = () => {
                         <legend className="text-xs font-bold uppercase text-emerald-700 mb-2">Identificación</legend>
                         <div className="grid sm:grid-cols-2 gap-3">
                             <Campo label="RUT *">
-                                <input required value={form.rut} onChange={(e) => setCampo('rut', e.target.value)}
-                                    placeholder="12.345.678-9" className={inputCls} />
+                                <input required value={form.rut} onChange={handleRutChange} maxLength={12}
+                                    placeholder="12.345.678-9" className={`${inputCls} font-mono`} />
                             </Campo>
                             <Campo label="Nombres *">
                                 <input required value={form.nombres} onChange={(e) => setCampo('nombres', e.target.value)} className={inputCls} />
