@@ -33,9 +33,7 @@ class ConciliacionService
         return DB::transaction(function () use ($datos) {
             $cuentaBanco = $this->bancoService->obtenerCuentaBancaria($datos['empresa_id'], $datos['cuenta_bancaria_id']);
 
-            // Lock pesimista: sin esto, dos conciliaciones casi simultaneas sobre la
-            // misma factura (doble clic) podian leer ambas "no pagada" antes de que
-            // cualquiera comiteara y generar dos asientos de egreso duplicados.
+            // Lock pesimista: evita que dos conciliaciones casi simultáneas dupliquen el asiento de egreso.
             $factura = Factura::where('empresa_id', $datos['empresa_id'])
                 ->where('id', $datos['factura_id'])
                 ->lockForUpdate()
@@ -231,9 +229,7 @@ class ConciliacionService
                     $glosaAsiento .= ($glosaAsiento ? " | " : "") . "Anticipo Generado";
                     
                     if ($entidadId) {
-                        // Valida que el proveedor pertenezca a la empresa antes de
-                        // crear el anticipo (evita referenciar un proveedor de otra
-                        // empresa: corrupcion de datos cross-tenant).
+                        // Valida que el proveedor sea de esta empresa: evita corrupción cross-tenant.
                         $proveedorValido = DB::table('proveedores')
                             ->where('id', $entidadId)
                             ->where('empresa_id', $empresaId)
@@ -273,8 +269,7 @@ class ConciliacionService
 
             $this->bancoService->vincularAsientoAMovimiento($empresaId, $movimiento->id, $asiento->id);
 
-            // Vincula el asiento de pago a las facturas afectadas para que una
-            // anulación posterior (Anulación General) pueda revertir su estado.
+            // Vincula el asiento a las facturas afectadas para que una anulación posterior revierta su estado.
             $idsAfectadas = array_filter(array_merge($idsPagadas, [$idAbonada]));
             if (!empty($idsAfectadas)) {
                 Factura::whereIn('id', $idsAfectadas)->where('empresa_id', $empresaId)->update(['asiento_pago_id' => $asiento->id]);
