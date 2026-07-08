@@ -6,6 +6,7 @@ use App\Domains\Comercial\Exceptions\ComercialException;
 
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\AnticipoCliente;
 use Illuminate\Support\Facades\DB;
 
 class ClienteService
@@ -24,9 +25,15 @@ class ClienteService
             ->orderBy('fecha_emision', 'desc')
             ->get();
 
+        $anticipos = AnticipoCliente::where('empresa_id', $empresaId)
+            ->where('cliente_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return [
             'cliente' => $cliente,
             'facturas' => $facturas,
+            'anticipos' => $anticipos,
         ];
     }
 

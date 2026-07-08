@@ -216,6 +216,29 @@ class ConciliacionService
                 if ($diferencia > 0) {
                     $detallesAsiento[] = ['cuenta_contable' => $cuentaAnticipo, 'debe' => 0, 'haber' => $diferencia, 'glosa_detalle' => 'Anticipo de Cliente'];
                     $glosaAsiento .= ($glosaAsiento ? " | " : "") . "Anticipo Registrado";
+
+                    if ($entidadId) {
+                        // Valida que el cliente sea de esta empresa: evita corrupción cross-tenant.
+                        $clienteValido = DB::table('clientes')
+                            ->where('id', $entidadId)
+                            ->where('empresa_id', $empresaId)
+                            ->exists();
+
+                        if (!$clienteValido) {
+                            throw TesoreriaException::regla("El cliente indicado no pertenece a la empresa.");
+                        }
+
+                        DB::table('anticipos_clientes')->insert([
+                            'empresa_id' => $empresaId,
+                            'cliente_id' => $entidadId,
+                            'monto' => $diferencia,
+                            'estado' => 'PAGADO',
+                            'movimiento_id' => $movimiento->id,
+                            'referencia' => 'Autogenerado en Conciliación',
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
                 }
             } else {
                 if ($facturas->count() > 0) {
