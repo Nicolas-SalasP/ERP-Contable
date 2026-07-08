@@ -54,7 +54,7 @@ class ActivoFijoAsientosContablesTest extends TestCase
 
         $this->actingAs($this->usuario)->postJson('/api/activos/depreciar-mes', ['mes_anio' => now()->format('Y-m')]);
 
-        $asiento = AsientoContable::where('empresa_id', $this->empresa->id)->where('origen_modulo', 'activos')->latest()->first();
+        $asiento = AsientoContable::where('empresa_id', $this->empresa->id)->where('origen_modulo', 'activos_depreciacion')->latest()->first();
 
         $this->assertNotNull($asiento);
         $this->assertEquals('MAYORIZADO', $asiento->estado);
@@ -95,7 +95,7 @@ class ActivoFijoAsientosContablesTest extends TestCase
 
         $this->actingAs($this->usuario)->postJson('/api/activos/depreciar-mes', ['mes_anio' => now()->format('Y-m')]);
 
-        $cantidadAsientos = AsientoContable::where('empresa_id', $this->empresa->id)->where('origen_modulo', 'activos')->count();
+        $cantidadAsientos = AsientoContable::where('empresa_id', $this->empresa->id)->where('origen_modulo', 'activos_depreciacion')->count();
         $this->assertEquals(1, $cantidadAsientos, "Se debió crear un único asiento consolidado, pero se crearon $cantidadAsientos.");
 
         $asiento = AsientoContable::where('empresa_id', $this->empresa->id)->first();

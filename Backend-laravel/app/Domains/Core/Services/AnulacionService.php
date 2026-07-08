@@ -177,6 +177,21 @@ class AnulacionService
                     }
                 }
 
+                // Si era el asiento de una depreciación mensual, resta a cada activo exactamente
+                // la cuota guardada -- sin esto depreciacion_acumulada quedaba desincronizada del
+                // balance ya reversado y, al no volver a su valor anterior, re-ejecutar el mismo
+                // mes duplicaba la cuota sobre un acumulado nunca revertido.
+                if ($asientoOriginal->origen_modulo === 'activos_depreciacion') {
+                    $cuotas = DB::table('depreciacion_ejecucion_activos')
+                        ->where('asiento_id', $asientoOriginal->id)
+                        ->get();
+                    foreach ($cuotas as $cuota) {
+                        DB::table('activos_fijos')
+                            ->where('id', $cuota->activo_id)
+                            ->decrement('depreciacion_acumulada', (float) $cuota->monto_cuota);
+                    }
+                }
+
                 return [
                     'nuevo_asiento_id' => $asientoReverso->numero_comprobante
                 ];

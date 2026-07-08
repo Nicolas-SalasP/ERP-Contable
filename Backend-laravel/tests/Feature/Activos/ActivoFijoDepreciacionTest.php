@@ -104,4 +104,68 @@ class ActivoFijoDepreciacionTest extends TestCase
         $response->assertStatus(200);
         $this->assertEquals('DADO_DE_BAJA', $activo->fresh()->estado);
     }
+
+    public function test_reversar_asiento_de_depreciacion_revierte_acumulada_y_permite_reejecutar_sin_duplicar()
+    {
+        // Regresión (auditoría 2026-07-07, alto): reversar el asiento de depreciarMes() no
+        // revertía depreciacion_acumulada (quedaba huérfano) y, como el chequeo "ya ejecutado"
+        // se basa en el asiento MAYORIZADO, tras la reversa (asiento -> ANULADO) se podía volver
+        // a ejecutar la depreciación del mismo mes duplicando la cuota sobre un acumulado nunca
+        // revertido.
+        PlanCuenta::create(['empresa_id' => $this->empresa->id, 'codigo' => '410102', 'nombre' => 'Gasto Depreciacion', 'tipo' => 'GASTO', 'imputable' => true, 'activo' => true]);
+        PlanCuenta::create(['empresa_id' => $this->empresa->id, 'codigo' => '120103', 'nombre' => 'Depreciacion Acum', 'tipo' => 'ACTIVO', 'imputable' => true, 'activo' => true]);
+
+        $activo = ActivoFijo::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'AF-REV-1',
+            'nombre' => 'Equipo Reversa',
+            'valor_adquisicion' => 120000,
+            'vida_util_meses' => 12,
+            'fecha_adquisicion' => now()->startOfMonth(),
+            'valor_residual' => 0,
+            'depreciacion_acumulada' => 0,
+            'estado' => 'ACTIVO',
+            'cuenta_gasto_codigo' => '410102',
+            'cuenta_depreciacion_codigo' => '120103'
+        ]);
+
+        $mesAnio = now()->format('Y-m');
+
+        $this->actingAs($this->usuario)
+            ->postJson('/api/activos/depreciar-mes', ['mes_anio' => $mesAnio])
+            ->assertOk();
+
+        $activo->refresh();
+        $this->assertEquals(10000, $activo->depreciacion_acumulada);
+
+        // No se puede volver a ejecutar el mismo mes mientras el asiento siga vigente.
+        $this->actingAs($this->usuario)
+            ->postJson('/api/activos/depreciar-mes', ['mes_anio' => $mesAnio])
+            ->assertStatus(422);
+
+        $asiento = \App\Domains\Contabilidad\Models\AsientoContable::where('empresa_id', $this->empresa->id)
+            ->where('origen_modulo', 'activos_depreciacion')
+            ->latest()
+            ->first();
+        $this->assertNotNull($asiento);
+
+        $this->actingAs($this->usuario)->postJson('/api/anulacion/anular', [
+            'tipo_documento' => 'ASIENTO',
+            'documento_id' => $asiento->id,
+            'motivo' => 'Prueba de regresión',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ])->assertOk();
+
+        // La reversa debe restaurar exactamente el valor previo, no huérfano.
+        $activo->refresh();
+        $this->assertEquals(0, (float) $activo->depreciacion_acumulada);
+
+        // El mismo mes puede volver a ejecutarse sin duplicar la cuota.
+        $this->actingAs($this->usuario)
+            ->postJson('/api/activos/depreciar-mes', ['mes_anio' => $mesAnio])
+            ->assertOk();
+
+        $activo->refresh();
+        $this->assertEquals(10000, (float) $activo->depreciacion_acumulada);
+    }
 }

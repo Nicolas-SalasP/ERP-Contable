@@ -320,6 +320,18 @@ class AsientoContableService
                 }
             }
 
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahi).
+            if ($asientoOriginal->origen_modulo === 'activos_depreciacion') {
+                $cuotas = DB::table('depreciacion_ejecucion_activos')
+                    ->where('asiento_id', $asientoOriginal->id)
+                    ->get();
+                foreach ($cuotas as $cuota) {
+                    DB::table('activos_fijos')
+                        ->where('id', $cuota->activo_id)
+                        ->decrement('depreciacion_acumulada', (float) $cuota->monto_cuota);
+                }
+            }
+
             return $nuevoAsiento;
         });
     }

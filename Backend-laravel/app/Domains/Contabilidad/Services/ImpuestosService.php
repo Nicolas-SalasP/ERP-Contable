@@ -304,10 +304,13 @@ class ImpuestosService
 
         $totalCostosGastos = (float) $queryCompras->sum('monto_neto');
 
+        // 'activos_depreciacion' (depreciación mensual) y 'activos' (bajas) usan origen_modulo
+        // distinto desde el fix de reversa (ver ActivoFijoService::depreciarMes); se incluyen
+        // ambos aquí para no perder cobertura de la que ya existía antes del fix.
         $totalDepreciacion = (float) DB::table('asientos_contables')
             ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
             ->where('asientos_contables.empresa_id', $empresaId)
-            ->where('asientos_contables.origen_modulo', 'activos')
+            ->whereIn('asientos_contables.origen_modulo', ['activos', 'activos_depreciacion'])
             ->whereBetween('asientos_contables.fecha', [$fechaInicio, $fechaFin])
             ->where('detalles_asiento.tipo_operacion', 'DEBE')
             ->sum('detalles_asiento.debe');
