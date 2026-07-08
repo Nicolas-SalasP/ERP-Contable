@@ -279,7 +279,7 @@ class FacturaController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al obtener auditoría: ' . MensajeErrorGenerico::desde($e)
+                'message' => 'Error al obtener auditoría: ' . MensajeErrorGenerico::desde($e)
             ], 404);
         }
     }

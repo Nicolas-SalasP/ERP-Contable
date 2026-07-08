@@ -141,7 +141,7 @@ const VisorProveedor = () => {
                 cargarFicha(id);
             }
         } catch (error) {
-            Swal.fire('Error', error.message || error.response?.data?.mensaje || 'Error al guardar.', 'error');
+            Swal.fire('Error', error.response?.data?.message || error.response?.data?.mensaje || 'Error al guardar.', 'error');
         }
     };
 

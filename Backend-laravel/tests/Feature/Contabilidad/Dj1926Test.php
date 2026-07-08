@@ -244,7 +244,7 @@ class Dj1926Test extends TestCase
             ->postJson('/api/dj/1926/generar', ['anio' => 2026]);
 
         $response->assertStatus(422)
-            ->assertJsonStructure(['mensaje']);
+            ->assertJsonStructure(['message']);
     }
 
     public function test_http_generar_con_gastos_rechazados_devuelve_201(): void

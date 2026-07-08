@@ -219,7 +219,7 @@ const HistorialFacturas = () => {
                     });
                     setVistaActual(1);
                 } catch (error) {
-                    let msg = error.response?.data?.mensaje || 'Hubo un error al actualizar el asiento.';
+                    let msg = error.response?.data?.message || error.response?.data?.mensaje || 'Hubo un error al actualizar el asiento.';
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',

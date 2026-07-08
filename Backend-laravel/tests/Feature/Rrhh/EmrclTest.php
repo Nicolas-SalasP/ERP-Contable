@@ -193,7 +193,7 @@ class EmrclTest extends TestCase
             ->getJson('/api/rrhh/emrcl/2026/6');
 
         $response->assertStatus(422);
-        $response->assertJsonFragment(['mensaje' => 'No hay liquidaciones emitidas para el período 6/2026.']);
+        $response->assertJsonFragment(['message' => 'No hay liquidaciones emitidas para el período 6/2026.']);
     }
 
     public function test_solo_incluye_datos_de_la_empresa_del_usuario(): void

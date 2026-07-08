@@ -99,7 +99,7 @@ class BancoController
             throw $e;
         } catch (Exception $e) {
             Log::error('BancoController (importarCartola): ' . $e->getMessage());
-            return response()->json(['success' => false, 'mensaje' => 'Error interno del servidor.'], 500);
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor.'], 500);
         }
     }
 

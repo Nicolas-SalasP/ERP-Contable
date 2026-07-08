@@ -113,7 +113,7 @@ class SiiCertificadoControllerTest extends TestCase
         );
 
         $response->assertStatus(422)
-            ->assertJsonStructure(['mensaje', 'motivo'])
+            ->assertJsonStructure(['message', 'motivo'])
             ->assertJson(['motivo' => 'password_incorrecta']);
     }
 

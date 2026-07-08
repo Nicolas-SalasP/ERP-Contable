@@ -22,10 +22,10 @@ class EmrclController extends Controller
         $mes  = (int) $mes;
 
         if ($anio < 2000 || $anio > 2100) {
-            return response()->json(['mensaje' => 'Año fuera de rango válido.'], 422);
+            return response()->json(['message' => 'Año fuera de rango válido.'], 422);
         }
         if ($mes < 1 || $mes > 12) {
-            return response()->json(['mensaje' => 'Mes debe estar entre 1 y 12.'], 422);
+            return response()->json(['message' => 'Mes debe estar entre 1 y 12.'], 422);
         }
 
         try {
@@ -39,7 +39,7 @@ class EmrclController extends Controller
 
             return response()->json($reporte);
         } catch (RrhhException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 }

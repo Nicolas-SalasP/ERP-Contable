@@ -120,7 +120,7 @@ XML;
 
         $this->post('/api/sii/caf', ['archivo' => $archivo], ['Accept' => 'application/json'])
             ->assertStatus(422)
-            ->assertJsonStructure(['mensaje', 'error_code'])
+            ->assertJsonStructure(['message', 'error_code'])
             ->assertJson(['error_code' => 'xml_malformado']);
     }
 
