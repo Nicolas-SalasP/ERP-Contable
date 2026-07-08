@@ -172,6 +172,7 @@ class InventarioReservaService
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
             $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
             $this->validarReservaOperable($reserva, 'cancelar');
+            $this->validarSinCicloDeVidaPropio($reserva, 'cancelar');
 
             $detalles = ReservaDetalleInventario::where('empresa_id', $reserva->empresa_id)
                 ->where('reserva_id', $reserva->id)
@@ -181,14 +182,16 @@ class InventarioReservaService
             foreach ($detalles as $detalle) {
                 $pendiente = $detalle->cantidadPendiente();
 
-                if ($pendiente > 0 && $detalle->ubicacion_id !== null) {
-                    $this->stockUbicacionService->liberarReserva(
+                if ($pendiente > 0) {
+                    $this->stockUbicacionService->liberarReservaDetalle(
                         empresaId: (int) $detalle->empresa_id,
                         productoId: (int) $detalle->producto_id,
                         bodegaId: (int) $detalle->bodega_id,
-                        ubicacionId: (int) $detalle->ubicacion_id,
+                        ubicacionId: $detalle->ubicacion_id ? (int) $detalle->ubicacion_id : null,
                         loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
-                        cantidad: $pendiente
+                        reservaDetalleId: (int) $detalle->id,
+                        cantidadSolicitada: $pendiente,
+                        campo: 'reserva'
                     );
                 }
             }
@@ -216,6 +219,7 @@ class InventarioReservaService
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
             $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
             $this->validarReservaOperable($reserva, 'liberar');
+            $this->validarSinCicloDeVidaPropio($reserva, 'liberar');
 
             $liberaciones = $this->normalizarDetallesOperacion(
                 reserva: $reserva,
@@ -362,14 +366,16 @@ class InventarioReservaService
                 foreach ($detalles as $detalle) {
                     $pendiente = $detalle->cantidadPendiente();
 
-                    if ($pendiente > 0 && $detalle->ubicacion_id !== null) {
-                        $this->stockUbicacionService->liberarReserva(
+                    if ($pendiente > 0) {
+                        $this->stockUbicacionService->liberarReservaDetalle(
                             empresaId: (int) $detalle->empresa_id,
                             productoId: (int) $detalle->producto_id,
                             bodegaId: (int) $detalle->bodega_id,
-                            ubicacionId: (int) $detalle->ubicacion_id,
+                            ubicacionId: $detalle->ubicacion_id ? (int) $detalle->ubicacion_id : null,
                             loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
-                            cantidad: $pendiente
+                            reservaDetalleId: (int) $detalle->id,
+                            cantidadSolicitada: $pendiente,
+                            campo: 'reserva'
                         );
                     }
                 }
@@ -681,6 +687,29 @@ class InventarioReservaService
         if (!$reserva->comprometeDisponibilidad()) {
             throw ValidationException::withMessages([
                 'reserva' => 'No se puede ' . $accion . ' una reserva en estado ' . $reserva->estado . '.',
+            ]);
+        }
+    }
+
+    /**
+     * Módulos cuyas reservas tienen ciclo de vida propio (picking/packing/despacho) y no deben
+     * cancelarse/expirar directo por el endpoint genérico de reservas: sin esto, cancelar acá
+     * libera el stock físico pero deja huérfanas las tablas propias del módulo (ej.
+     * InventarioPickingAsignacion/Detalle), y una segunda liberación posterior desde ese módulo
+     * (InventarioPickingService::cancelar) intenta liberar stock ya liberado -- falla, o peor,
+     * libera stock de otra reserva legítima que compite por el mismo bucket físico.
+     */
+    private const MODULOS_CON_CICLO_DE_VIDA_PROPIO = [
+        'INVENTARIO_PICKING',
+        'INVENTARIO_PACKING',
+        'INVENTARIO_DESPACHO',
+    ];
+
+    private function validarSinCicloDeVidaPropio(ReservaInventario $reserva, string $accion): void
+    {
+        if (in_array($reserva->origen_modulo, self::MODULOS_CON_CICLO_DE_VIDA_PROPIO, true)) {
+            throw ValidationException::withMessages([
+                'reserva' => "Esta reserva pertenece a {$reserva->origen_modulo} y no puede {$accion}rse desde acá. Use el flujo propio de ese módulo.",
             ]);
         }
     }
