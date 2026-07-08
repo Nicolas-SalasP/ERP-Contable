@@ -4,6 +4,7 @@ namespace App\Domains\Sii\Services\Emision;
 
 use App\Domains\Sii\Exceptions\DteEstadoInvalidoException;
 use App\Domains\Sii\Exceptions\DteIncompletoException;
+use App\Domains\Sii\Exceptions\FolioUsoEstadoInvalidoException;
 use App\Domains\Sii\Models\SiiCaf;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Models\SiiDteEmitidoEvento;
@@ -44,6 +45,7 @@ class EmitirDteService
      * @throws \App\Domains\Sii\Exceptions\CertificadoInvalidoException si la empresa no tiene cert activo.
      * @throws \App\Domains\Sii\Exceptions\SinFoliosDisponiblesException si no hay CAF disponible.
      * @throws \App\Domains\Sii\Exceptions\CafInvalidoException si el CAF reservado es inutilizable.
+     * @throws FolioUsoEstadoInvalidoException si el folio reservado ya no esta RESERVADO al marcarlo USADO (ej. CAF revocado concurrentemente).
      * @throws \App\Domains\Sii\Exceptions\DteXmlInvalidException si el XML resultante no valida XSD.
      */
     public function emitir(int $dteEmitidoId): SiiDteEmitido
@@ -137,6 +139,29 @@ class EmitirDteService
             ]);
 
             return $dteFresh->fresh();
+        } catch (FolioUsoEstadoInvalidoException $e) {
+            // El folio ya NO estaba RESERVADO al momento de marcarlo USADO (ej. un admin revoco el CAF a mitad
+            // de la firma y el folio ya paso a HUERFANO). NO volver a liberarlo aqui: hacerlo duplicaria el
+            // conteo de folios_huerfanos del CAF, ya que revocar()/liberarFolioHuerfano() ya lo contabilizo.
+            // $xmlPath ya fue asignado en esta rama (esta excepcion solo se lanza dentro de la tx final,
+            // que corre despues de persistir el XML en disco).
+            try {
+                Storage::disk($disk)->delete($xmlPath);
+            } catch (Throwable) {
+                // ignore — el log de abajo capturara contexto general.
+            }
+
+            Log::channel('sii')->error('Emision de DTE fallida: el folio reservado ya no estaba RESERVADO (posible revocacion concurrente del CAF).', [
+                'dte_id'         => $dteEmitidoId,
+                'folio_uso_id'   => $folioUso->id,
+                'caf_id'         => $folioUso->caf_id,
+                'estado_actual'  => $e->estadoActual,
+                'xml_path'       => $xmlPath,
+                'exception'      => $e::class,
+                'message'        => $e->getMessage(),
+            ]);
+
+            throw $e;
         } catch (Throwable $e) {
             // Cleanup best-effort: borrar archivo si fue persistido.
             if ($xmlPath !== null) {

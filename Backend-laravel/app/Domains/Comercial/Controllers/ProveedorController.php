@@ -157,7 +157,7 @@ class ProveedorController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e)
             ], 400);
         }
     }
@@ -200,6 +200,26 @@ class ProveedorController
         }
 
         return Storage::disk('local')->response($anticipo->archivo_pdf, "Anticipo-{$anticipo->id}.pdf");
+    }
+
+    /** Inactiva (bloquea) un proveedor. */
+    public function destroy(Request $request, $id)
+    {
+        $this->service->inactivarProveedor($request->user()->empresa_activa_id, $id);
+        return response()->json(['success' => true]);
+    }
+
+    /** Marca un proveedor como activo (desbloquea). */
+    public function activar(Request $request, $id)
+    {
+        try {
+            $this->service->activarProveedor($request->user()->empresa_activa_id, $id);
+            return response()->json(['success' => true, 'message' => 'Proveedor activado']);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
+        }
     }
 
     public function cruzarDocumentos(Request $request, $id)

@@ -21,7 +21,7 @@ class LibroRemuneracionesController extends Controller
     public function simular(Request $request, int $anio, int $mes): JsonResponse
     {
         if (! $this->periodoValido($anio, $mes)) {
-            return response()->json(['mensaje' => 'Período inválido.'], 422);
+            return response()->json(['message' => 'Período inválido.'], 422);
         }
 
         /** @var User $usuario */

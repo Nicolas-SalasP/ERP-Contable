@@ -24,7 +24,7 @@ class InventarioUbicacionService
         $this->permisos->exigir($usuario, 'inventario.ubicaciones.ver');
 
         return InventarioUbicacion::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with(['bodega:id,empresa_id,codigo,nombre,estado', 'padre:id,empresa_id,bodega_id,codigo,nombre,tipo'])
             ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
             ->when(isset($filtros['activo']) && $filtros['activo'] !== '', fn (Builder $query) => $query->where('activo', filter_var($filtros['activo'], FILTER_VALIDATE_BOOLEAN)))
@@ -47,7 +47,7 @@ class InventarioUbicacionService
         $this->permisos->exigir($usuario, 'inventario.ubicaciones.ver');
 
         $ubicacion = InventarioUbicacion::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with(['bodega:id,empresa_id,codigo,nombre,estado', 'padre:id,empresa_id,bodega_id,codigo,nombre,tipo', 'hijos:id,empresa_id,bodega_id,ubicacion_padre_id,codigo,nombre,tipo,activo'])
             ->find($ubicacionId);
 
@@ -65,7 +65,7 @@ class InventarioUbicacionService
         $this->permisos->exigir($usuario, 'inventario.ubicaciones.crear');
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $bodega = $this->obtenerBodegaActivaEmpresa((int) $datos['bodega_id'], $empresaId, 'bodega_id');
             $padre = $this->resolverPadre($datos['ubicacion_padre_id'] ?? null, $empresaId, (int) $bodega->id);
 
@@ -93,7 +93,7 @@ class InventarioUbicacionService
         $this->permisos->exigir($usuario, 'inventario.ubicaciones.editar');
 
         return DB::transaction(function () use ($usuario, $ubicacionId, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $ubicacion = InventarioUbicacion::query()
                 ->where('empresa_id', $empresaId)
                 ->lockForUpdate()

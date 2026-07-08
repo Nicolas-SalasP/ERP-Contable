@@ -40,12 +40,12 @@ class ValorizacionController
             ]);
 
             $paginador = $this->valorizacionService->listarValorizacion(
-                (int) $usuario->empresa_id,
+                (int) $usuario->empresa_activa_id,
                 $filtros
             );
 
             $resumen = $this->valorizacionService->resumenValorizacion(
-                (int) $usuario->empresa_id,
+                (int) $usuario->empresa_activa_id,
                 $filtros
             );
 
@@ -78,12 +78,12 @@ class ValorizacionController
             $filtros['producto_id'] = (int) $id;
 
             $paginador = $this->valorizacionService->listarValorizacion(
-                (int) $usuario->empresa_id,
+                (int) $usuario->empresa_activa_id,
                 $filtros
             );
 
             $resumen = $this->valorizacionService->resumenValorizacion(
-                (int) $usuario->empresa_id,
+                (int) $usuario->empresa_activa_id,
                 $filtros
             );
 

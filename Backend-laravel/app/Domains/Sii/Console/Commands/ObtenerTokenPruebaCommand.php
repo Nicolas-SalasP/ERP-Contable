@@ -6,6 +6,7 @@ use App\Domains\Core\Models\Empresa;
 use App\Domains\Sii\Exceptions\CertificadoInvalidoException;
 use App\Domains\Sii\Exceptions\SiiAutenticacionException;
 use App\Domains\Sii\Exceptions\SiiConfiguracionIncompletaException;
+use App\Domains\Sii\Console\Commands\Concerns\BloqueaEnProduccion;
 use App\Domains\Sii\Services\Ws\SiiTokenService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -14,6 +15,8 @@ use Throwable;
 /** F5.1 — comando de validacion manual del flujo de autenticacion SII; IMPORTANTE: pega al WS REAL del SII (maullin.sii.cl o palena.sii.cl), no ejecutar contra entornos productivos sin autorizacion explicita (usar Http::fake() o entornos dummy para testing local). */
 class ObtenerTokenPruebaCommand extends Command
 {
+    use BloqueaEnProduccion;
+
     protected $signature = 'sii:obtener-token-prueba
                             {empresa_id : ID de la empresa}
                             {--force : Forzar nueva sesion ignorando cache de sesion activa}';
@@ -22,6 +25,10 @@ class ObtenerTokenPruebaCommand extends Command
 
     public function handle(SiiTokenService $service): int
     {
+        if ($this->abortarSiProduccion()) {
+            return self::FAILURE;
+        }
+
         $empresaId = (int) $this->argument('empresa_id');
 
         try {

@@ -30,7 +30,7 @@ class InventarioPackingService
         $this->permisos->exigir($usuario, 'inventario.packing.ver');
 
         return InventarioPackingOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'bodega:id,empresa_id,codigo,nombre,estado',
                 'pickingOrden:id,empresa_id,bodega_id,codigo,estado,referencia',
@@ -59,7 +59,7 @@ class InventarioPackingService
         $this->permisos->exigir($usuario, 'inventario.packing.ver');
 
         $orden = InventarioPackingOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->find($id);
 
         if (!$orden) {
@@ -74,7 +74,7 @@ class InventarioPackingService
         $this->permisos->exigir($usuario, 'inventario.packing.crear');
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $picking = InventarioPickingOrden::query()
                 ->where('empresa_id', $empresaId)
                 ->lockForUpdate()
@@ -153,7 +153,7 @@ class InventarioPackingService
         $this->permisos->exigir($usuario, 'inventario.packing.editar');
 
         return DB::transaction(function () use ($usuario, $id) {
-            $orden = InventarioPackingOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
+            $orden = InventarioPackingOrden::where('empresa_id', $usuario->empresa_activa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
                 throw InventarioException::noEncontrado('La orden de packing no existe o no pertenece a la empresa.');
@@ -177,7 +177,7 @@ class InventarioPackingService
         $this->permisos->exigir($usuario, 'inventario.packing.confirmar');
 
         return DB::transaction(function () use ($usuario, $id, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioPackingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
             if (!$orden) {
@@ -251,7 +251,7 @@ class InventarioPackingService
         $this->permisos->exigir($usuario, 'inventario.packing.cancelar');
 
         return DB::transaction(function () use ($usuario, $id, $datos) {
-            $orden = InventarioPackingOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
+            $orden = InventarioPackingOrden::where('empresa_id', $usuario->empresa_activa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
                 throw InventarioException::noEncontrado('La orden de packing no existe o no pertenece a la empresa.');
@@ -261,7 +261,7 @@ class InventarioPackingService
                 throw InventarioException::regla('La orden de packing no puede cancelarse en su estado actual.');
             }
 
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
 
             // puedeCancelarse() excluye EMPACADO y un despacho solo se crea desde packing EMPACADO, por lo que aquí siempre es seguro liberar la cantidad_pickeada completa.
             $detalles = InventarioPackingDetalle::where('empresa_id', $empresaId)
@@ -316,7 +316,7 @@ class InventarioPackingService
     {
         $this->permisos->exigirAlguno($usuario, ['inventario.reportes.packing', 'inventario.packing.ver']);
 
-        $query = InventarioPackingOrden::query()->where('empresa_id', $usuario->empresa_id);
+        $query = InventarioPackingOrden::query()->where('empresa_id', $usuario->empresa_activa_id);
 
         if (!empty($filtros['bodega_id'])) {
             $query->where('bodega_id', (int) $filtros['bodega_id']);

@@ -48,7 +48,7 @@ class Dj1837Controller extends Controller
                 'data'    => $envio,
             ], 201);
         } catch (DjException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -64,7 +64,7 @@ class Dj1837Controller extends Controller
                 'errores' => $errores,
             ]);
         } catch (DjException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -73,13 +73,13 @@ class Dj1837Controller extends Controller
         abort_unless((int) $djEnvio->empresa_id === (int) $request->user()->empresa_activa_id, 403);
 
         if (! $djEnvio->archivo_path) {
-            return response()->json(['mensaje' => 'No hay archivo generado.'], 422);
+            return response()->json(['message' => 'No hay archivo generado.'], 422);
         }
 
         $disco = config('sii.storage.disk', 'sii_xml');
 
         if (! Storage::disk($disco)->exists($djEnvio->archivo_path)) {
-            return response()->json(['mensaje' => 'Archivo no encontrado en disco.'], 404);
+            return response()->json(['message' => 'Archivo no encontrado en disco.'], 404);
         }
 
         return Storage::disk($disco)->download($djEnvio->archivo_path, "DJ1837_{$djEnvio->anio}.txt");
@@ -94,7 +94,7 @@ class Dj1837Controller extends Controller
         ]);
 
         if (! in_array($djEnvio->estado, [DjEnvio::ESTADO_VALIDADO, DjEnvio::ESTADO_GENERADO])) {
-            return response()->json(['mensaje' => 'El envío debe estar en estado VALIDADO o GENERADO para confirmar.'], 422);
+            return response()->json(['message' => 'El envío debe estar en estado VALIDADO o GENERADO para confirmar.'], 422);
         }
 
         $djEnvio->update([

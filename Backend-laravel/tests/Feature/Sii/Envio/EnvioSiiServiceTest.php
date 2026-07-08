@@ -311,6 +311,32 @@ class EnvioSiiServiceTest extends TestCase
         $this->assertStringContainsString('persistido en sii_dte_emitido', $reqPlain);
     }
 
+    public function test_lanza_EnvioSiiException_envioEnCurso_si_ya_existe_envio_ENVIANDO_huerfano(): void
+    {
+        $dte = $this->dteFirmado();
+        $envioHuerfano = SiiEnvioDte::create([
+            'empresa_id'     => $dte->empresa_id,
+            'dte_emitido_id' => $dte->id,
+            'ambiente_sii'   => 'certificacion',
+            'estado_envio'   => SiiEnvioDte::ESTADO_ENVIANDO,
+            'intentos_envio' => 1,
+        ]);
+
+        // Sin rutas definidas: si el service llegara a intentar la llamada HTTP al SII, fallaria el fake.
+        Http::fake();
+
+        try {
+            $this->service->enviar($dte->id);
+            $this->fail('Debio lanzar EnvioSiiException::envioEnCursoOHuerfano');
+        } catch (EnvioSiiException $e) {
+            $this->assertSame(EnvioSiiException::MOTIVO_ENVIO_EN_CURSO, $e->motivo);
+            $this->assertSame($dte->id, $e->contexto['dte_id']);
+            $this->assertSame($envioHuerfano->id, $e->contexto['envio_id_en_curso']);
+        }
+
+        Http::assertNothingSent();
+    }
+
     public function test_integridad_xml_verificada_antes_de_enviar_via_XmlDteIntegrityService(): void
     {
         $dte = $this->dteFirmado();

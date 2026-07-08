@@ -219,6 +219,58 @@ class CentralizacionContableTest extends TestCase
         $this->service->centralizar($empresa->id, 2026, 6, $admin->id);
     }
 
+    public function test_reversar_asiento_de_centralizacion_permite_re_centralizar(): void
+    {
+        // Regresión (auditoría 2026-07-07, hallazgo #12): el reverso de un asiento de
+        // centralización copia origen_modulo/origen_id del original anulado, así que sin
+        // el filtro de glosa el chequeo de idempotencia veía el reverso y bloqueaba la
+        // re-centralización del período para siempre.
+        [$empresa, $admin] = $this->crearEmpresaConAdmin();
+        $cuentas = $this->crearCuentas($empresa->id);
+        $this->configurarMapeo($empresa->id, $cuentas);
+        $liq = $this->crearYEmitirLiquidacion($empresa->id);
+
+        $asiento = $this->service->centralizar($empresa->id, 2026, 6, $admin->id);
+
+        \Laravel\Sanctum\Sanctum::actingAs($admin);
+        $this->postJson('/api/anulacion/anular', [
+            'tipo_documento' => 'ASIENTO',
+            'documento_id' => $asiento->id,
+            'motivo' => 'Prueba de regresión',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ])->assertOk();
+
+        $this->assertDatabaseHas('liquidaciones', [
+            'id' => $liq->id,
+            'comprobante_contable' => null,
+        ]);
+
+        $nuevoAsiento = $this->service->centralizar($empresa->id, 2026, 6, $admin->id);
+        $this->assertNotNull($nuevoAsiento);
+        $this->assertEquals('rrhh', $nuevoAsiento->origen_modulo);
+    }
+
+    public function test_reversar_asiento_de_centralizacion_permite_anular_liquidacion(): void
+    {
+        [$empresa, $admin] = $this->crearEmpresaConAdmin();
+        $cuentas = $this->crearCuentas($empresa->id);
+        $this->configurarMapeo($empresa->id, $cuentas);
+        $liq = $this->crearYEmitirLiquidacion($empresa->id);
+
+        $asiento = $this->service->centralizar($empresa->id, 2026, 6, $admin->id);
+
+        \Laravel\Sanctum\Sanctum::actingAs($admin);
+        $this->postJson('/api/anulacion/anular', [
+            'tipo_documento' => 'ASIENTO',
+            'documento_id' => $asiento->id,
+            'motivo' => 'Prueba de regresión',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ])->assertOk();
+
+        $anulada = $this->liquidacionService->anular($empresa->id, $liq->id);
+        $this->assertEquals(Liquidacion::ESTADO_ANULADA, $anulada->estado);
+    }
+
     public function test_falla_con_mapeo_incompleto(): void
     {
         [$empresa, $admin] = $this->crearEmpresaConAdmin();

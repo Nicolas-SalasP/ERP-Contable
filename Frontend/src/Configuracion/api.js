@@ -134,9 +134,12 @@ const buildError = (status, payload, statusText = '') => {
     const errors = payload?.errors || null;
     let message;
     if (status === 422 && errors) {
-        message = formatValidationErrors(errors) || payload?.message || defaultMessage(status, code);
+        message = formatValidationErrors(errors) || payload?.message || payload?.mensaje || defaultMessage(status, code);
     } else if (payload?.message) {
         message = payload.message;
+    } else if (payload?.mensaje) {
+        // Compatibilidad: algunos catches genericos del backend aun devuelven 'mensaje' en vez de 'message'.
+        message = payload.mensaje;
     } else if (statusText && !isGenericHttpStatusText(statusText)) {
         message = statusText;
     } else {

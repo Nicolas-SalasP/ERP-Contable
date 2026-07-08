@@ -256,7 +256,7 @@ class CorreccionMonetariaService
                 'estado'        => 'MAYORIZADO',
             ], $detalles);
 
-            $this->actualizarActivosFijos($empresaId, $factor, $mes, $anio);
+            $ajustesPorActivo = $this->actualizarActivosFijos($empresaId, $factor, $mes, $anio);
 
             $ejecucion = CmEjecucion::create([
                 'empresa_id'                => $empresaId,
@@ -275,6 +275,17 @@ class CorreccionMonetariaService
                 'asiento_id'                => $asiento->id,
                 'usuario_id'               => $usuarioId,
             ]);
+
+            foreach ($ajustesPorActivo as $activoId => $ajuste) {
+                DB::table('cm_ejecucion_activos')->insert([
+                    'cm_ejecucion_id'      => $ejecucion->id,
+                    'activo_id'            => $activoId,
+                    'ajuste_activo'        => $ajuste['activo'],
+                    'ajuste_depreciacion'  => $ajuste['depreciacion'],
+                    'created_at'           => now(),
+                    'updated_at'           => now(),
+                ]);
+            }
 
             return [
                 'ejecucion_id'        => $ejecucion->id,
@@ -494,11 +505,13 @@ class CorreccionMonetariaService
         return array_values($agrupados);
     }
 
-    private function actualizarActivosFijos(int $empresaId, float $factor, int $mes, int $anio): void
+    /** @return array<int, array{activo: float, depreciacion: float}> ajuste aplicado por activo_id -- usado para poder revertirlo exactamente si se reversa el asiento (ver AnulacionService/AsientoContableService). */
+    private function actualizarActivosFijos(int $empresaId, float $factor, int $mes, int $anio): array
     {
-        $activos = ActivoFijo::where('empresa_id', $empresaId)->where('estado', 'ACTIVO')->lockForUpdate()->get();
+        $activos = ActivoFijo::where('empresa_id', $empresaId)->whereIn('estado', ['ACTIVO', 'REACTIVADO'])->lockForUpdate()->get();
 
         $periodoActual = sprintf('%04d-%02d', $anio, $mes);
+        $ajustesPorActivo = [];
 
         foreach ($activos as $activo) {
             // Proporcionalidad por meses de tenencia: un bien adquirido en/después del período no se corrige ese mes.
@@ -510,13 +523,20 @@ class CorreccionMonetariaService
                 continue;
             }
 
+            $ajusteActivo = round((float)$activo->valor_adquisicion * ($factor - 1), 2);
+            $ajusteDepreciacion = round((float)$activo->depreciacion_acumulada * ($factor - 1), 2);
+
             $activo->update([
-                'cm_ajuste_acumulado'              => (float)$activo->cm_ajuste_acumulado + round((float)$activo->valor_adquisicion * ($factor - 1), 2),
-                'cm_depreciacion_ajuste_acumulado' => (float)$activo->cm_depreciacion_ajuste_acumulado + round((float)$activo->depreciacion_acumulada * ($factor - 1), 2),
+                'cm_ajuste_acumulado'              => (float)$activo->cm_ajuste_acumulado + $ajusteActivo,
+                'cm_depreciacion_ajuste_acumulado' => (float)$activo->cm_depreciacion_ajuste_acumulado + $ajusteDepreciacion,
                 'ultimo_periodo_cm_mes'            => $mes,
                 'ultimo_periodo_cm_anio'           => $anio,
             ]);
+
+            $ajustesPorActivo[$activo->id] = ['activo' => $ajusteActivo, 'depreciacion' => $ajusteDepreciacion];
         }
+
+        return $ajustesPorActivo;
     }
 
     private function recalcularAcumuladosAnio(int $anio): void

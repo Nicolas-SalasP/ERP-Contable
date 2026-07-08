@@ -3,40 +3,133 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\DocumentoAdjunto;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\OrdenCompra;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-/** A diferencia del `archivo_pdf` original (un solo documento), permite varios adjuntos por factura con imágenes recomprimidas. */
+/**
+ * A diferencia del `archivo_pdf` original (un solo documento), permite varios adjuntos
+ * (con imágenes recomprimidas) para Factura, Cotizacion u OrdenCompra.
+ */
 class DocumentoAdjuntoService
 {
     private const DISCO = 'local';
-    private const CARPETA = 'facturas/adjuntos';
     private const ANCHO_MAXIMO_IMAGEN = 1600;
     private const CALIDAD_JPEG = 75;
 
+    /** Config por tipo de documento padre: columna FK, modelo, carpeta de storage y mensaje de error. */
+    private const TIPOS = [
+        'factura' => [
+            'columna' => 'factura_id',
+            'modelo' => Factura::class,
+            'carpeta' => 'facturas/adjuntos',
+            'mensaje' => 'La factura no existe.',
+        ],
+        'cotizacion' => [
+            'columna' => 'cotizacion_id',
+            'modelo' => Cotizacion::class,
+            'carpeta' => 'cotizaciones/adjuntos',
+            'mensaje' => 'La cotización no existe.',
+        ],
+        'orden_compra' => [
+            'columna' => 'orden_compra_id',
+            'modelo' => OrdenCompra::class,
+            'carpeta' => 'ordenes-compra/adjuntos',
+            'mensaje' => 'La orden de compra no existe.',
+        ],
+    ];
+
     public function listar(int $empresaId, int $facturaId)
     {
-        $this->obtenerFactura($empresaId, $facturaId);
+        return $this->listarPorTipo('factura', $empresaId, $facturaId);
+    }
+
+    public function listarCotizacion(int $empresaId, int $cotizacionId)
+    {
+        return $this->listarPorTipo('cotizacion', $empresaId, $cotizacionId);
+    }
+
+    public function listarOrdenCompra(int $empresaId, int $ordenCompraId)
+    {
+        return $this->listarPorTipo('orden_compra', $empresaId, $ordenCompraId);
+    }
+
+    /** @param  UploadedFile[]  $archivos
+     * @return DocumentoAdjunto[] */
+    public function subir(int $empresaId, int $usuarioId, int $facturaId, array $archivos): array
+    {
+        return $this->subirPorTipo('factura', $empresaId, $usuarioId, $facturaId, $archivos);
+    }
+
+    /** @param  UploadedFile[]  $archivos
+     * @return DocumentoAdjunto[] */
+    public function subirCotizacion(int $empresaId, int $usuarioId, int $cotizacionId, array $archivos): array
+    {
+        return $this->subirPorTipo('cotizacion', $empresaId, $usuarioId, $cotizacionId, $archivos);
+    }
+
+    /** @param  UploadedFile[]  $archivos
+     * @return DocumentoAdjunto[] */
+    public function subirOrdenCompra(int $empresaId, int $usuarioId, int $ordenCompraId, array $archivos): array
+    {
+        return $this->subirPorTipo('orden_compra', $empresaId, $usuarioId, $ordenCompraId, $archivos);
+    }
+
+    public function eliminar(int $empresaId, int $facturaId, int $adjuntoId): void
+    {
+        $this->eliminarPorTipo('factura', $empresaId, $facturaId, $adjuntoId);
+    }
+
+    public function eliminarCotizacion(int $empresaId, int $cotizacionId, int $adjuntoId): void
+    {
+        $this->eliminarPorTipo('cotizacion', $empresaId, $cotizacionId, $adjuntoId);
+    }
+
+    public function eliminarOrdenCompra(int $empresaId, int $ordenCompraId, int $adjuntoId): void
+    {
+        $this->eliminarPorTipo('orden_compra', $empresaId, $ordenCompraId, $adjuntoId);
+    }
+
+    public function obtenerParaDescarga(int $empresaId, int $facturaId, int $adjuntoId): DocumentoAdjunto
+    {
+        return $this->obtenerParaDescargaPorTipo('factura', $empresaId, $facturaId, $adjuntoId);
+    }
+
+    public function obtenerParaDescargaCotizacion(int $empresaId, int $cotizacionId, int $adjuntoId): DocumentoAdjunto
+    {
+        return $this->obtenerParaDescargaPorTipo('cotizacion', $empresaId, $cotizacionId, $adjuntoId);
+    }
+
+    public function obtenerParaDescargaOrdenCompra(int $empresaId, int $ordenCompraId, int $adjuntoId): DocumentoAdjunto
+    {
+        return $this->obtenerParaDescargaPorTipo('orden_compra', $empresaId, $ordenCompraId, $adjuntoId);
+    }
+
+    private function listarPorTipo(string $tipo, int $empresaId, int $padreId)
+    {
+        $this->obtenerPadre($tipo, $empresaId, $padreId);
 
         return DocumentoAdjunto::where('empresa_id', $empresaId)
-            ->where('factura_id', $facturaId)
+            ->where(self::TIPOS[$tipo]['columna'], $padreId)
             ->orderBy('created_at', 'desc')
             ->get();
     }
 
-    /**
-     * @param  UploadedFile[]  $archivos
-     * @return DocumentoAdjunto[]
-     */
-    public function subir(int $empresaId, int $usuarioId, int $facturaId, array $archivos): array
+    /** @param  UploadedFile[]  $archivos
+     * @return DocumentoAdjunto[] */
+    private function subirPorTipo(string $tipo, int $empresaId, int $usuarioId, int $padreId, array $archivos): array
     {
-        $this->obtenerFactura($empresaId, $facturaId);
+        $this->obtenerPadre($tipo, $empresaId, $padreId);
+        $columna = self::TIPOS[$tipo]['columna'];
+        $carpeta = self::TIPOS[$tipo]['carpeta'];
 
         $creados = [];
         foreach ($archivos as $archivo) {
-            $rutaGuardada = $archivo->store(self::CARPETA . '/' . $facturaId, self::DISCO);
+            $rutaGuardada = $archivo->store($carpeta . '/' . $padreId, self::DISCO);
             $rutaAbsoluta = Storage::disk(self::DISCO)->path($rutaGuardada);
 
             $mime = $archivo->getMimeType();
@@ -46,7 +139,7 @@ class DocumentoAdjuntoService
 
             $creados[] = DocumentoAdjunto::create([
                 'empresa_id' => $empresaId,
-                'factura_id' => $facturaId,
+                $columna => $padreId,
                 'nombre_original' => substr($archivo->getClientOriginalName(), 0, 255),
                 'ruta' => $rutaGuardada,
                 'mime_type' => $mime,
@@ -58,10 +151,10 @@ class DocumentoAdjuntoService
         return $creados;
     }
 
-    public function eliminar(int $empresaId, int $facturaId, int $adjuntoId): void
+    private function eliminarPorTipo(string $tipo, int $empresaId, int $padreId, int $adjuntoId): void
     {
         $adjunto = DocumentoAdjunto::where('empresa_id', $empresaId)
-            ->where('factura_id', $facturaId)
+            ->where(self::TIPOS[$tipo]['columna'], $padreId)
             ->find($adjuntoId);
 
         if (!$adjunto) {
@@ -73,10 +166,10 @@ class DocumentoAdjuntoService
         $adjunto->delete();
     }
 
-    public function obtenerParaDescarga(int $empresaId, int $facturaId, int $adjuntoId): DocumentoAdjunto
+    private function obtenerParaDescargaPorTipo(string $tipo, int $empresaId, int $padreId, int $adjuntoId): DocumentoAdjunto
     {
         $adjunto = DocumentoAdjunto::where('empresa_id', $empresaId)
-            ->where('factura_id', $facturaId)
+            ->where(self::TIPOS[$tipo]['columna'], $padreId)
             ->find($adjuntoId);
 
         if (!$adjunto || !Storage::disk(self::DISCO)->exists($adjunto->ruta)) {
@@ -86,15 +179,19 @@ class DocumentoAdjuntoService
         return $adjunto;
     }
 
-    private function obtenerFactura(int $empresaId, int $facturaId): Factura
+    private function obtenerPadre(string $tipo, int $empresaId, int $padreId): Model
     {
-        $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
+        $config = self::TIPOS[$tipo];
+        $modelo = $config['modelo'];
 
-        if (!$factura) {
-            throw ComercialException::noEncontrado('La factura no existe.');
+        /** @var Model|null $padre */
+        $padre = $modelo::where('empresa_id', $empresaId)->find($padreId);
+
+        if (!$padre) {
+            throw ComercialException::noEncontrado($config['mensaje']);
         }
 
-        return $factura;
+        return $padre;
     }
 
     /** Best-effort: si GD no puede leer el archivo, se deja el original tal cual (las fotos de celular pesan varios MB sin necesidad). */

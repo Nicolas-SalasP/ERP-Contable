@@ -10,6 +10,7 @@ use App\Domains\Sii\Notifications\CertificadoVencimientoNotification;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
@@ -229,5 +230,50 @@ class MonitorearVencimientoCertificadosJobTest extends TestCase
         dispatch_sync(new MonitorearVencimientoCertificadosJob());
 
         Notification::assertNothingSent();
+    }
+
+    /**
+     * Regresion condicion de carrera: si otra ejecucion concurrente (cron + comando manual,
+     * o dos workers) ya tiene el lock de esta combinacion cert+nivel, esta ejecucion debe
+     * omitir el envio en vez de duplicar el email al cliente. Se simula la concurrencia
+     * pre-adquiriendo el mismo lock que usa el job (Cache::add) antes de despachar el job en
+     * este mismo proceso PHP; no requiere multiproceso real para observar el comportamiento.
+     *
+     * Limitacion: en tests el cache store es 'array' (en memoria, un solo proceso), por lo que
+     * no reproduce contencion real entre procesos/conexiones distintas (p.ej. Cache::lock con
+     * driver 'database' bajo SQLite en memoria tampoco seria representativo de esa concurrencia).
+     * Lo que si se verifica aqui es el comportamiento observable correcto: con el lock ya tomado,
+     * el job NO envia la notificacion ni la registra, evitando el duplicado.
+     */
+    public function test_lock_evita_envio_duplicado_si_otra_ejecucion_ya_tiene_el_lock(): void
+    {
+        Notification::fake();
+
+        $empresa = $this->crearEmpresaConEmail('alertas@empresa.cl');
+        $cert    = $this->crearCertDeEmpresa($empresa, 45); // BAJA_T60, one-shot
+
+        // Simula que otra ejecucion concurrente ya entro a la seccion critica de esta
+        // combinacion cert+nivel (mismo formato de clave que usa MonitorearVencimientoCertificadosJob).
+        Cache::add("sii:certificado:notificar:{$cert->id}:BAJA_T60:unico", true, 30);
+
+        dispatch_sync(new MonitorearVencimientoCertificadosJob());
+
+        Notification::assertNothingSent();
+        $this->assertSame(0, SiiCertificadoNotificacion::count());
+    }
+
+    /** Dos "ejecuciones" en rapida sucesion para la misma combinacion deben resultar en un solo envio. */
+    public function test_dos_ejecuciones_seguidas_no_duplican_notificacion(): void
+    {
+        Notification::fake();
+
+        $empresa = $this->crearEmpresaConEmail('alertas@empresa.cl');
+        $this->crearCertDeEmpresa($empresa, 5); // CRITICA_T7
+
+        dispatch_sync(new MonitorearVencimientoCertificadosJob());
+        dispatch_sync(new MonitorearVencimientoCertificadosJob());
+
+        Notification::assertSentOnDemandTimes(CertificadoVencimientoNotification::class, 1);
+        $this->assertSame(1, SiiCertificadoNotificacion::where('nivel', 'CRITICA_T7')->count());
     }
 }

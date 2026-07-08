@@ -5,6 +5,8 @@ namespace App\Domains\Core\Services;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\EstadoSuscripcion;
+use App\Domains\Core\Exceptions\CoreException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Exception;
 
@@ -21,20 +23,39 @@ class UsuarioService
         return Rol::visiblesPara($empresaId)->get();
     }
 
-    public function invitarUsuario(int $empresaId, string $email, int $rolId)
+    public function invitarUsuario(int $empresaId, string $email, int $rolId, array $moduleKeysInvitador = [])
     {
         $usuario = User::where('email', $email)->first();
 
         if ($usuario) {
-            $usuario->update([
-                'empresa_id' => $empresaId,
-                'rol_id' => $rolId
-            ]);
+            $perteneceAOtraEmpresa = $usuario->empresa_id !== null && $usuario->empresa_id !== $empresaId;
+
+            if ($perteneceAOtraEmpresa) {
+                // SEGURIDAD: hallazgo de auditoria (secuestro de cuenta). Si el usuario ya
+                // vive en otra empresa, invitarlo aqui es un ALTA de acceso multiempresa
+                // (via empresa_user), nunca una migracion de "dueno": sobreescribir
+                // empresa_id lo desvincularia silenciosamente de su empresa original sin
+                // que el ni nadie lo autorice, y sin dejar rastro de esa pertenencia.
+                if (!in_array('multitenant', $moduleKeysInvitador, true)) {
+                    throw CoreException::regla(
+                        'La empresa no cuenta con plan multiempresa: no es posible invitar a un usuario que ya pertenece a otra empresa.'
+                    );
+                }
+
+                // No se toca empresa_id ni empresa_activa_id: el usuario sigue "viviendo"
+                // en su empresa original hasta que el mismo elija cambiar de empresa activa
+                // (EmpresaCambioController::cambiar). Solo se le da acceso via el pivote.
+            } else {
+                $usuario->update([
+                    'empresa_id' => $empresaId,
+                    'rol_id' => $rolId
+                ]);
+            }
         } else {
             // Se busca el id del estado 'Activa' en vez de hardcodear 1, para no depender del orden de seeders.
             $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
 
-            User::create([
+            $usuario = User::create([
                 'email' => $email,
                 'nombre' => 'Usuario Invitado',
                 'empresa_id' => $empresaId,
@@ -43,6 +64,14 @@ class UsuarioService
                 'estado_suscripcion_id' => $estadoActiva->id
             ]);
         }
+
+        // Sin esto, empresa_user (usado por EmpresaCambioController para listar/autorizar el
+        // cambio de empresa activa) nunca se entera de esta invitación: el usuario invitado
+        // jamás podría "volver" a esta empresa si su empresa_id cambia más adelante.
+        DB::table('empresa_user')->updateOrInsert(
+            ['user_id' => $usuario->id, 'empresa_id' => $empresaId],
+            ['rol_id' => $rolId, 'created_at' => now()]
+        );
 
         return true;
     }

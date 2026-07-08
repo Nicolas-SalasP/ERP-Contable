@@ -33,7 +33,7 @@ class InventarioDisponibilidadService
         }
 
         $query = StockProducto::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
                 'bodega:id,empresa_id,codigo,nombre,estado',
@@ -50,11 +50,11 @@ class InventarioDisponibilidadService
         $paginador = $query->paginate($this->normalizarPerPage($filtros['per_page'] ?? 15));
 
         $paginador->getCollection()->transform(function (StockProducto $stock) use ($usuario, $filtros) {
-            $disponibilidad = $this->formatearDisponibilidadStock($stock, (int) $usuario->empresa_id);
+            $disponibilidad = $this->formatearDisponibilidadStock($stock, (int) $usuario->empresa_activa_id);
 
             if (!empty($filtros['incluir_lotes']) && $stock->producto?->maneja_lotes) {
                 $disponibilidad['lotes'] = $this->disponibilidadLotesProductoBodega(
-                    empresaId: (int) $usuario->empresa_id,
+                    empresaId: (int) $usuario->empresa_activa_id,
                     productoId: (int) $stock->producto_id,
                     bodegaId: (int) $stock->bodega_id
                 );
@@ -70,14 +70,14 @@ class InventarioDisponibilidadService
     {
         $this->permisos->exigir($usuario, 'inventario.disponibilidad.ver');
 
-        $producto = Producto::where('empresa_id', $usuario->empresa_id)->find($productoId);
+        $producto = Producto::where('empresa_id', $usuario->empresa_activa_id)->find($productoId);
 
         if (!$producto) {
             throw InventarioException::noEncontrado('El producto solicitado no existe o no pertenece a la empresa.');
         }
 
         $stocks = StockProducto::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->where('producto_id', $producto->id)
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
@@ -88,7 +88,7 @@ class InventarioDisponibilidadService
             })
             ->orderBy('bodega_id')
             ->get()
-            ->map(fn (StockProducto $stock) => $this->formatearDisponibilidadStock($stock, (int) $usuario->empresa_id))
+            ->map(fn (StockProducto $stock) => $this->formatearDisponibilidadStock($stock, (int) $usuario->empresa_activa_id))
             ->values();
 
         $totales = [
@@ -113,7 +113,7 @@ class InventarioDisponibilidadService
 
         if (!empty($filtros['incluir_lotes']) && $producto->maneja_lotes) {
             $respuesta['lotes'] = $this->disponibilidadLotesProducto(
-                empresaId: (int) $usuario->empresa_id,
+                empresaId: (int) $usuario->empresa_activa_id,
                 productoId: (int) $producto->id,
                 bodegaId: !empty($filtros['bodega_id']) ? (int) $filtros['bodega_id'] : null
             );
@@ -231,7 +231,7 @@ class InventarioDisponibilidadService
     private function consultarPorUbicacion(User $usuario, array $filtros = []): LengthAwarePaginator
     {
         $query = StockUbicacionInventario::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
                 'bodega:id,empresa_id,codigo,nombre,estado',

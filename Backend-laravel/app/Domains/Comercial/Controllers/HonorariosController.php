@@ -45,7 +45,7 @@ class HonorariosController extends Controller
             $honorario = $this->service->registrar($request->user()->empresa_activa_id, $datos);
             return response()->json(['data' => $honorario], 201);
         } catch (ComercialException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 

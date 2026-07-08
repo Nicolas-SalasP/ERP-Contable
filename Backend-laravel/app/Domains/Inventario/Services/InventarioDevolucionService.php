@@ -33,7 +33,7 @@ class InventarioDevolucionService
         $this->permisos->exigir($usuario, 'inventario.devoluciones.ver');
 
         return InventarioDevolucionOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with($this->relacionesListado())
             ->when(!empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
             ->when(!empty($filtros['tipo']), fn (Builder $query) => $query->where('tipo', $filtros['tipo']))
@@ -58,7 +58,7 @@ class InventarioDevolucionService
         $this->permisos->exigir($usuario, 'inventario.devoluciones.ver');
 
         $orden = InventarioDevolucionOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->find($id);
 
         if (!$orden) {
@@ -73,7 +73,7 @@ class InventarioDevolucionService
         $this->permisos->exigir($usuario, 'inventario.devoluciones.ver');
 
         $despacho = InventarioDespachoOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'bodega:id,empresa_id,codigo,nombre,estado',
                 'detalles.producto:id,empresa_id,sku,nombre,maneja_lotes,costo_promedio',
@@ -125,7 +125,7 @@ class InventarioDevolucionService
         $this->permisos->exigir($usuario, 'inventario.devoluciones.crear');
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $tipo = (string) $datos['tipo'];
             $despacho = InventarioDespachoOrden::query()
                 ->where('empresa_id', $empresaId)
@@ -226,7 +226,7 @@ class InventarioDevolucionService
         $this->permisos->exigir($usuario, 'inventario.devoluciones.confirmar');
 
         return DB::transaction(function () use ($usuario, $id, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioDevolucionOrden::query()
                 ->where('empresa_id', $empresaId)
                 ->lockForUpdate()
@@ -343,7 +343,7 @@ class InventarioDevolucionService
 
         return DB::transaction(function () use ($usuario, $id, $datos) {
             $orden = InventarioDevolucionOrden::query()
-                ->where('empresa_id', $usuario->empresa_id)
+                ->where('empresa_id', $usuario->empresa_activa_id)
                 ->lockForUpdate()
                 ->find($id);
 
@@ -355,7 +355,7 @@ class InventarioDevolucionService
                 throw InventarioException::regla('Solo se pueden cancelar devoluciones/reversas pendientes.');
             }
 
-            InventarioDevolucionDetalle::where('empresa_id', $usuario->empresa_id)
+            InventarioDevolucionDetalle::where('empresa_id', $usuario->empresa_activa_id)
                 ->where('devolucion_orden_id', $orden->id)
                 ->update(['estado' => InventarioDevolucionDetalle::ESTADO_CANCELADO]);
 
@@ -382,7 +382,7 @@ class InventarioDevolucionService
         ]);
 
         $base = InventarioDevolucionOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
             ->when(!empty($filtros['tipo']), fn (Builder $query) => $query->where('tipo', $filtros['tipo']))
             ->when(!empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
@@ -404,7 +404,7 @@ class InventarioDevolucionService
         $ordenIds = (clone $base)->pluck('id');
         /** @var object{cantidad_solicitada: numeric-string, cantidad_aceptada: numeric-string, cantidad_rechazada: numeric-string} $totales */
         $totales = InventarioDevolucionDetalle::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->whereIn('devolucion_orden_id', $ordenIds)
             ->selectRaw('COALESCE(SUM(cantidad_devolver), 0) as cantidad_solicitada')
             ->selectRaw('COALESCE(SUM(cantidad_aceptada), 0) as cantidad_aceptada')
@@ -727,7 +727,7 @@ class InventarioDevolucionService
             )),
             'fecha_movimiento' => now(),
             '_origen_operativo' => 'inventario_devolucion',
-        ], (int) $usuario->empresa_id, (int) $usuario->id);
+        ], (int) $usuario->empresa_activa_id, (int) $usuario->id);
     }
 
     private function resolverEstadoDetalle(float $cantidadAceptada, float $cantidadDevolver): string

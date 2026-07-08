@@ -113,4 +113,54 @@ class ActivoFijoBajaTest extends TestCase
             'haber' => 0
         ]);
     }
+
+    public function test_anular_el_asiento_de_baja_reactiva_el_activo()
+    {
+        // Regresión (auditoría 2026-07-07, crítico): sin esto, un activo dado de baja por
+        // error quedaba DADO_DE_BAJA para siempre pese a anular el asiento contable que lo
+        // originó -- no había forma de deshacer la baja.
+        $activo = ActivoFijo::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'AF-BAJA-4',
+            'nombre' => 'Impresora Dada de Baja por Error',
+            'valor_adquisicion' => 200000,
+            'vida_util_meses' => 36,
+            'fecha_adquisicion' => now()->subYears(1),
+            'valor_residual' => 0,
+            'depreciacion_acumulada' => 0,
+            'estado' => 'ACTIVO',
+            'cuenta_activo_codigo' => '112105',
+            'cuenta_depreciacion_codigo' => '112106'
+        ]);
+
+        $this->actingAs($this->usuario)
+            ->putJson("/api/activos/{$activo->id}/baja", ['motivo_baja' => 'Error de digitación'])
+            ->assertOk();
+
+        $activo->refresh();
+        $this->assertEquals('DADO_DE_BAJA', $activo->estado);
+
+        $asiento = AsientoContable::where('empresa_id', $this->empresa->id)
+            ->where('origen_modulo', 'activos')
+            ->where('origen_id', $activo->id)
+            ->first();
+        $this->assertNotNull($asiento);
+
+        $this->actingAs($this->usuario)->postJson('/api/anulacion/anular', [
+            'tipo_documento' => 'ASIENTO',
+            'documento_id' => $asiento->id,
+            'motivo' => 'Baja registrada por error',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ])->assertOk();
+
+        $activo->refresh();
+        $this->assertEquals('REACTIVADO', $activo->estado);
+
+        // El activo reactivado puede volver a darse de baja normalmente.
+        $this->actingAs($this->usuario)
+            ->putJson("/api/activos/{$activo->id}/baja", ['motivo_baja' => 'Ahora sí, obsoleto'])
+            ->assertOk();
+        $activo->refresh();
+        $this->assertEquals('DADO_DE_BAJA', $activo->estado);
+    }
 }

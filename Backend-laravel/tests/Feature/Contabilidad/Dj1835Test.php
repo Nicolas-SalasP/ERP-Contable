@@ -252,7 +252,7 @@ class Dj1835Test extends TestCase
             ->postJson('/api/dj/1835/generar', ['anio' => 2026]);
 
         $response->assertStatus(422)
-            ->assertJsonStructure(['mensaje']);
+            ->assertJsonStructure(['message']);
     }
 
     public function test_http_generar_con_factura_exterior_devuelve_201(): void

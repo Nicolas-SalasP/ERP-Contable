@@ -10,6 +10,10 @@ use App\Domains\Core\Models\User;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Cotizacion;
+use App\Domains\Comercial\Models\EstadoCotizacion;
+use App\Domains\Comercial\Models\AnticipoCliente;
+use App\Domains\Comercial\Services\AnticipoClienteService;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 
 class ComercialNotasCreditoTest extends TestCase
@@ -129,6 +133,118 @@ class ComercialNotasCreditoTest extends TestCase
             'monto_neto'            => 2000,
             'monto_iva'             => 0,
             'monto_bruto'           => 2000,
+            'cuentaDestino'         => '410101',
+            'cuentaIva'             => '353350',
+            'cuentaProveedor'       => '352105',
+        ]);
+
+        $this->assertNotEquals(201, $response->getStatusCode());
+    }
+
+    public function test_rechaza_segunda_nc_compra_activa_sobre_la_misma_factura(): void
+    {
+        // Regresión (auditoría 2026-07-07, crítico): antes no existía ningún chequeo de NC
+        // duplicada del lado compra (a diferencia de venta) -- se podía sobre-acreditar una
+        // factura registrando varias NC sin límite.
+        $factura = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'proveedor_id'   => $this->prov->id,
+            'numero_factura' => 'F-DUP',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'COMPRA',
+            'monto_bruto'    => 100000,
+            'monto_neto'     => 100000,
+            'monto_iva'      => 0,
+            'fecha_emision'  => now(),
+            'estado'         => 'REGISTRADA',
+            'codigo_unico'   => 20,
+        ]);
+
+        $datosNc = [
+            'proveedor_id'          => $this->prov->id,
+            'fecha_emision'         => now()->format('Y-m-d'),
+            'factura_referencia_id' => $factura->id,
+            'tipo_documento'        => 'NOTA_CREDITO',
+            'monto_neto'            => 80000,
+            'monto_iva'             => 0,
+            'monto_bruto'           => 80000,
+            'cuentaDestino'         => '410101',
+            'cuentaIva'             => '353350',
+            'cuentaProveedor'       => '352105',
+        ];
+
+        $this->actingAs($this->usuario)->postJson('/api/facturas', array_merge($datosNc, ['numero_factura' => 'NC-DUP-1']))
+            ->assertStatus(201);
+
+        $response = $this->actingAs($this->usuario)->postJson('/api/facturas', array_merge($datosNc, ['numero_factura' => 'NC-DUP-2']));
+
+        $this->assertNotEquals(201, $response->getStatusCode());
+        $this->assertDatabaseMissing('facturas', ['numero_factura' => 'NC-DUP-2']);
+    }
+
+    public function test_nc_compra_que_cubre_el_100_por_ciento_anula_la_factura_origen(): void
+    {
+        // Regresión: antes la factura de compra origen nunca se marcaba ANULADA aunque la NC
+        // cubriera el 100% del monto -- quedaba REGISTRADA para siempre sin saldo real.
+        $factura = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'proveedor_id'   => $this->prov->id,
+            'numero_factura' => 'F-TOTAL',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'COMPRA',
+            'monto_bruto'    => 50000,
+            'monto_neto'     => 50000,
+            'monto_iva'      => 0,
+            'fecha_emision'  => now(),
+            'estado'         => 'REGISTRADA',
+            'codigo_unico'   => 21,
+        ]);
+
+        $this->actingAs($this->usuario)->postJson('/api/facturas', [
+            'proveedor_id'          => $this->prov->id,
+            'numero_factura'        => 'NC-TOTAL',
+            'tipo_documento'        => 'NOTA_CREDITO',
+            'factura_referencia_id' => $factura->id,
+            'fecha_emision'         => now()->format('Y-m-d'),
+            'monto_neto'            => 50000,
+            'monto_iva'             => 0,
+            'monto_bruto'           => 50000,
+            'cuentaDestino'         => '410101',
+            'cuentaIva'             => '353350',
+            'cuentaProveedor'       => '352105',
+        ])->assertStatus(201);
+
+        $this->assertDatabaseHas('facturas', [
+            'id'     => $factura->id,
+            'estado' => 'ANULADA',
+        ]);
+    }
+
+    public function test_rechaza_nc_compra_sobre_factura_ya_anulada(): void
+    {
+        $facturaAnulada = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'proveedor_id'   => $this->prov->id,
+            'numero_factura' => 'F-YA-ANULADA',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'COMPRA',
+            'monto_bruto'    => 10000,
+            'monto_neto'     => 10000,
+            'monto_iva'      => 0,
+            'fecha_emision'  => now(),
+            'estado'         => 'ANULADA',
+            'codigo_unico'   => 22,
+        ]);
+
+        $response = $this->actingAs($this->usuario)->postJson('/api/facturas', [
+            'proveedor_id'          => $this->prov->id,
+            'numero_factura'        => 'NC-SOBRE-ANULADA',
+            'tipo_documento'        => 'NOTA_CREDITO',
+            'factura_referencia_id' => $facturaAnulada->id,
+            'fecha_emision'         => now()->format('Y-m-d'),
+            'monto_neto'            => 5000,
+            'monto_iva'             => 0,
+            'monto_bruto'           => 5000,
             'cuentaDestino'         => '410101',
             'cuentaIva'             => '353350',
             'cuentaProveedor'       => '352105',
@@ -328,5 +444,104 @@ class ComercialNotasCreditoTest extends TestCase
 
         $response->assertStatus(422);
         $this->assertDatabaseMissing('facturas', ['numero_factura' => 'NC-CERO']);
+    }
+
+    public function test_nc_venta_100_por_ciento_libera_anticipo_y_revierte_cotizacion(): void
+    {
+        // Regresión (auditoría, hallazgo ALTO): a diferencia de anularFactura(), cuando la NC de venta
+        // cubría el 100% del monto original, el saldo del anticipo de cliente aplicado quedaba
+        // consumido para siempre (dinero atrapado) y la cotización de origen quedaba "Facturada"
+        // fantasma sin poder refacturarse ni editarse.
+        $estadoAceptada  = EstadoCotizacion::create(['nombre' => 'Aceptada']);
+        $estadoFacturada = EstadoCotizacion::create(['nombre' => 'Facturada']);
+
+        $cliente = Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '5.5.5.5-5',
+            'razon_social' => 'Cliente Anticipo NC',
+            'estado'       => 'ACTIVO',
+        ]);
+
+        $cotizacion = Cotizacion::create([
+            'empresa_id'         => $this->empresa->id,
+            'cliente_id'         => $cliente->id,
+            'nombre_cliente'     => $cliente->razon_social,
+            'numero_cotizacion'  => 'COT-NC-01',
+            'fecha_emision'      => now()->format('Y-m-d'),
+            'fecha_validez'      => now()->addDays(30)->format('Y-m-d'),
+            'validez'            => 30,
+            'subtotal'           => 1000,
+            'porcentaje_descuento' => 0,
+            'monto_descuento'    => 0,
+            'monto_neto'         => 1000,
+            'porcentaje_iva'     => 19,
+            'monto_iva'          => 190,
+            'monto_total'        => 1190,
+            'total'              => 1190,
+            'estado_id'          => $estadoFacturada->id,
+            'es_afecta'          => true,
+        ]);
+
+        $facturaVenta = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'cliente_id'     => $cliente->id,
+            'cotizacion_id'  => $cotizacion->id,
+            'numero_factura' => 'FV-ANTICIPO-NC',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'VENTA',
+            'tipo_dte'       => 33,
+            'monto_bruto'    => 1190,
+            'monto_neto'     => 1000,
+            'monto_iva'      => 190,
+            'fecha_emision'  => now(),
+            'estado'         => 'REGISTRADA',
+            'codigo_unico'   => 30,
+        ]);
+
+        $anticipo = AnticipoCliente::create([
+            'empresa_id'       => $this->empresa->id,
+            'cliente_id'       => $cliente->id,
+            'monto'            => 1190,
+            'monto_original'   => 1190,
+            'saldo_disponible' => 1190,
+            'estado'           => 'DISPONIBLE',
+        ]);
+
+        app(AnticipoClienteService::class)->aplicarAFactura(
+            $this->empresa->id,
+            $anticipo->id,
+            $facturaVenta->id,
+            1190
+        );
+
+        // Confirma que el anticipo quedó consumido antes de emitir la NC.
+        $this->assertSame('APLICADO', $anticipo->fresh()->estado);
+        $this->assertEquals(0, (float) $anticipo->fresh()->saldo_disponible);
+
+        $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$facturaVenta->id}/nota-credito", [
+            'numero_nc'   => 'NC-VTA-ANTICIPO',
+            'monto_neto'  => 1000,
+            'monto_iva'   => 190,
+            'monto_bruto' => 1190,
+            'razon'       => 'Anulación total, cliente pagó con anticipo',
+        ]);
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('facturas', [
+            'id'     => $facturaVenta->id,
+            'estado' => 'ANULADA',
+        ]);
+
+        // El anticipo queda liberado con su saldo completo disponible de nuevo.
+        $anticipo->refresh();
+        $this->assertSame('DISPONIBLE', $anticipo->estado);
+        $this->assertEquals(1190.0, (float) $anticipo->saldo_disponible);
+
+        // La cotización vuelve a 'Aceptada' en vez de quedar 'Facturada' fantasma.
+        $this->assertDatabaseHas('cotizaciones', [
+            'id'        => $cotizacion->id,
+            'estado_id' => $estadoAceptada->id,
+        ]);
     }
 }

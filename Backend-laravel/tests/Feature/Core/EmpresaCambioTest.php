@@ -4,6 +4,7 @@ namespace Tests\Feature\Core;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
 
@@ -109,6 +110,56 @@ class EmpresaCambioTest extends TestCase
 
         $response->assertStatus(403);
         $response->assertJsonFragment(['code' => 'PLAN_NO_MULTITENANT']);
+    }
+
+    public function test_onboarding_inserta_fila_en_empresa_user(): void
+    {
+        // Regresión (auditoría 2026-07-07, crítico #1): empresa_user nunca se escribía en
+        // ningún flujo real -- el onboarding dejaba al usuario con acceso "real" vía
+        // empresa_id pero invisible para EmpresaCambioController::misEmpresas, rompiendo
+        // multiempresa para toda empresa creada después de la migración del pivote.
+        $usuario = \App\Domains\Core\Models\User::create([
+            'nombre'                => 'Onboarding Test',
+            'email'                 => 'pivote-onboarding@test.cl',
+            'password'              => bcrypt('password123'),
+            'empresa_id'            => null,
+            'rol_id'                => $this->rolAdministrador->id,
+            'estado_suscripcion_id' => $this->estadoSuscripcionActiva->id,
+        ]);
+
+        $numero = 15222222;
+        $rutValido = $numero . '-' . \App\Domains\Sii\Support\RutHelper::calcularDv($numero);
+
+        Sanctum::actingAs($usuario);
+        $response = $this->postJson('/api/empresas/onboarding', [
+            'empresa_rut'          => $rutValido,
+            'empresa_razon_social' => 'Empresa Pivote Test',
+        ]);
+
+        $response->assertOk();
+        $usuario->refresh();
+
+        $this->assertDatabaseHas('empresa_user', [
+            'user_id'    => $usuario->id,
+            'empresa_id' => $usuario->empresa_id,
+            'rol_id'     => $this->rolAdministrador->id,
+        ]);
+    }
+
+    public function test_invitar_usuario_inserta_fila_en_empresa_user(): void
+    {
+        [$empresaA, $admin] = $this->crearEmpresaConAdmin();
+
+        app(\App\Domains\Core\Services\UsuarioService::class)
+            ->invitarUsuario($empresaA->id, 'invitado-pivote@test.cl', $this->rolContador->id);
+
+        $usuarioInvitado = \App\Domains\Core\Models\User::where('email', 'invitado-pivote@test.cl')->firstOrFail();
+
+        $this->assertDatabaseHas('empresa_user', [
+            'user_id'    => $usuarioInvitado->id,
+            'empresa_id' => $empresaA->id,
+            'rol_id'     => $this->rolContador->id,
+        ]);
     }
 
     public function test_cambiar_empresa_ajena_devuelve_403(): void

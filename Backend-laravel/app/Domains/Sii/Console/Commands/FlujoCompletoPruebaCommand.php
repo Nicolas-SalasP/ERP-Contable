@@ -3,6 +3,7 @@
 namespace App\Domains\Sii\Console\Commands;
 
 use App\Domains\Core\Models\Empresa;
+use App\Domains\Sii\Console\Commands\Concerns\BloqueaEnProduccion;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Models\SiiDteEmitidoDetalle;
 use App\Domains\Sii\Models\SiiDteEmitidoEvento;
@@ -21,6 +22,8 @@ use Throwable;
 /** Comando demo del flujo completo SII (BORRADOR → resolucion terminal); por default usa Http::fake() para no tocar el SII real, --no-fake habilita peticiones reales y requiere confirmacion interactiva. */
 class FlujoCompletoPruebaCommand extends Command
 {
+    use BloqueaEnProduccion;
+
     protected $signature = 'sii:flujo-completo-prueba
                             {empresa_id : ID de la empresa emisora}
                             {--tipo=33 : Tipo DTE (33|34|46|52|56|61)}
@@ -43,6 +46,10 @@ class FlujoCompletoPruebaCommand extends Command
         PollearEstadoSiiService $pollear,
         SiiTokenService $tokenService
     ): int {
+        if ($this->abortarSiProduccion()) {
+            return self::FAILURE;
+        }
+
         $empresaId = (int) $this->argument('empresa_id');
         $tipoDte   = (int) $this->option('tipo');
         $escenario = (string) $this->option('escenario');

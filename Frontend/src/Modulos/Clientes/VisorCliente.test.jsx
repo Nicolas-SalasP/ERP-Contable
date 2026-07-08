@@ -51,6 +51,9 @@ const fichaCliente = {
             { id: 503, numero_factura: '102', tipo_documento: 'NOTA_DEBITO', fecha_emision: '2026-06-06', monto_bruto: 5000, estado: 'VIGENTE', archivo_pdf: null },
             { id: 504, numero_factura: '99', tipo_documento: 'FACTURA', fecha_emision: '2026-05-01', monto_bruto: 50000, estado: 'PAGADA', archivo_pdf: null },
         ],
+        anticipos: [
+            { id: 701, referencia: 'Autogenerado en Conciliación', fecha: '2026-06-10', created_at: '2026-06-10T10:00:00', monto: 30000, saldo_disponible: 30000, estado: 'PAGADO' },
+        ],
     },
 };
 
@@ -72,13 +75,21 @@ describe('VisorCliente', () => {
         expect(screen.getByText(/76.999.888-1/)).toBeTruthy();
     });
 
-    it('muestra el saldo por cobrar calculado (factura + ND vigente - NC vigente)', async () => {
+    it('muestra el saldo por cobrar calculado (factura + ND vigente - NC vigente - anticipo vigente)', async () => {
         setupMocks();
         renderConRuta('9');
         await waitForLoad();
-        // Deuda vigente: factura 119000 + ND 5000 = 124000; a favor: NC 20000 => saldo neto 104000
-        expect(screen.getByText(/104.000|104,000/)).toBeTruthy();
+        // Deuda vigente: factura 119000 + ND 5000 = 124000; a favor: NC 20000 + anticipo 30000 => saldo neto 74000
+        expect(screen.getByText(/74.000|74,000/)).toBeTruthy();
         expect(screen.getAllByText(/Por Cobrar/i).length).toBeGreaterThan(0);
+    });
+
+    it('muestra el anticipo en el historial con badge ANT y sin botón de Documentos', async () => {
+        setupMocks();
+        renderConRuta('9');
+        await waitForLoad();
+        expect(screen.getByText('ANT')).toBeTruthy();
+        expect(screen.getByText(/Anticipo: Autogenerado en Conciliación/i)).toBeTruthy();
     });
 
     it('muestra las 4 filas del historial con sus tipos FAC/NC/ND', async () => {

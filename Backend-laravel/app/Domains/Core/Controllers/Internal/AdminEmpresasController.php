@@ -219,8 +219,12 @@ class AdminEmpresasController
             DB::table('empresas')->where('id', $id)->update(['activa' => $activa]);
 
             // Al suspender, se revocan todos los tokens activos para que el acceso cese de inmediato.
+            // Se incluye tanto la empresa "hogar" (empresa_id) como la empresa "activa" (empresa_activa_id)
+            // para no dejar sesiones vivas en usuarios multiempresa operando en la empresa suspendida.
             if (!$activa) {
-                User::where('empresa_id', $id)->each(fn($u) => $u->tokens()->delete());
+                User::where(function ($q) use ($id) {
+                    $q->where('empresa_id', $id)->orWhere('empresa_activa_id', $id);
+                })->each(fn($u) => $u->tokens()->delete());
             }
 
             return response()->json([
@@ -259,8 +263,12 @@ class AdminEmpresasController
             $moduleKeys = array_values($validated['module_keys']);
 
             $updated = DB::transaction(function () use ($id, $planSlug, $moduleKeys): int {
+                // Se actualiza tanto a los usuarios "hogar" de la empresa como a los que la tienen como empresa activa,
+                // para que el plan no quede desactualizado en escenarios multiempresa.
                 return DB::table('usuarios')
-                    ->where('empresa_id', $id)
+                    ->where(function ($q) use ($id) {
+                        $q->where('empresa_id', $id)->orWhere('empresa_activa_id', $id);
+                    })
                     ->update([
                         'plan_slug' => $planSlug,
                         'module_keys' => json_encode($moduleKeys),

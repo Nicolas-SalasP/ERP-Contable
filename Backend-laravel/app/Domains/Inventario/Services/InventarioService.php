@@ -37,7 +37,7 @@ class InventarioService
     {
         $this->permisos->exigir($usuario, 'inventario.productos.ver');
 
-        $query = Producto::where('empresa_id', $usuario->empresa_id)
+        $query = Producto::where('empresa_id', $usuario->empresa_activa_id)
             ->with(['unidadMedida', 'bodegaDefecto'])
             ->withSum('stocks as stock_actual_total', 'stock_actual')
             ->withSum('stocks as valor_total_stock', 'valor_total');
@@ -63,7 +63,7 @@ class InventarioService
     {
         $this->permisos->exigir($usuario, 'inventario.productos.ver');
 
-        $producto = Producto::where('empresa_id', $usuario->empresa_id)
+        $producto = Producto::where('empresa_id', $usuario->empresa_activa_id)
             ->with(['unidadMedida', 'bodegaDefecto', 'stocks.bodega'])
             ->find($id);
 
@@ -77,11 +77,11 @@ class InventarioService
     public function crearProducto(User $usuario, array $datos): Producto
     {
         $this->permisos->exigir($usuario, 'inventario.productos.crear');
-        $this->validarProducto($usuario->empresa_id, $datos);
+        $this->validarProducto($usuario->empresa_activa_id, $datos);
 
         return DB::transaction(function () use ($usuario, $datos) {
             $producto = Producto::create([
-                'empresa_id' => $usuario->empresa_id,
+                'empresa_id' => $usuario->empresa_activa_id,
                 'sku' => strtoupper(trim($datos['sku'])),
                 'nombre' => trim($datos['nombre']),
                 'descripcion' => $datos['descripcion'] ?? null,
@@ -103,7 +103,7 @@ class InventarioService
             if (!empty($datos['bodega_defecto_id'])) {
                 StockProducto::firstOrCreate(
                     [
-                        'empresa_id' => $usuario->empresa_id,
+                        'empresa_id' => $usuario->empresa_activa_id,
                         'producto_id' => $producto->id,
                         'bodega_id' => $datos['bodega_defecto_id'],
                     ],
@@ -125,13 +125,13 @@ class InventarioService
     {
         $this->permisos->exigir($usuario, 'inventario.productos.editar');
 
-        $producto = Producto::where('empresa_id', $usuario->empresa_id)->find($id);
+        $producto = Producto::where('empresa_id', $usuario->empresa_activa_id)->find($id);
 
         if (!$producto) {
             throw InventarioException::noEncontrado('El producto solicitado no existe o no pertenece a la empresa.');
         }
 
-        $this->validarProducto($usuario->empresa_id, $datos, $id);
+        $this->validarProducto($usuario->empresa_activa_id, $datos, $id);
 
         $antes = $producto->only([
             'sku', 'nombre', 'descripcion', 'tipo_producto', 'unidad_medida_id', 'metodo_valorizacion',
@@ -173,7 +173,7 @@ class InventarioService
     {
         $this->permisos->exigir($usuario, 'inventario.bodegas.ver');
 
-        return Bodega::where('empresa_id', $usuario->empresa_id)
+        return Bodega::where('empresa_id', $usuario->empresa_activa_id)
             ->orderBy('nombre')
             ->get();
     }
@@ -184,7 +184,7 @@ class InventarioService
 
         $codigo = strtoupper(trim((string) $datos['codigo']));
 
-        $existe = Bodega::where('empresa_id', $usuario->empresa_id)
+        $existe = Bodega::where('empresa_id', $usuario->empresa_activa_id)
             ->where('codigo', $codigo)
             ->exists();
 
@@ -193,7 +193,7 @@ class InventarioService
         }
 
         return Bodega::create([
-            'empresa_id' => $usuario->empresa_id,
+            'empresa_id' => $usuario->empresa_activa_id,
             'codigo' => $codigo,
             'nombre' => trim($datos['nombre']),
             'direccion' => $datos['direccion'] ?? null,

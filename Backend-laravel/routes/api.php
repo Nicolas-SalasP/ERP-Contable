@@ -17,6 +17,7 @@ use App\Domains\Comercial\Controllers\FacturaController;
 use App\Domains\Comercial\Controllers\DocumentoAdjuntoController;
 use App\Domains\Comercial\Controllers\CotizacionController;
 use App\Domains\Comercial\Controllers\AnticipoProveedorController;
+use App\Domains\Comercial\Controllers\AnticipoClienteController;
 use App\Domains\Comercial\Controllers\OrdenCompraController;
 use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
@@ -209,6 +210,12 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->middleware('permiso:clientes.crear');
     Route::put('/clientes/{id}/activar', [ClienteController::class, 'activar'])->middleware('permiso:clientes.crear');
     Route::patch('/clientes/{id}/reactivar', [ClienteController::class, 'reactivar'])->middleware('permiso:clientes.crear');
+    Route::post('/clientes/{id}/cruzar-documentos', [ClienteController::class, 'cruzarDocumentos'])->middleware('permiso:clientes.crear');
+
+    // Endpoints dedicados de anticipos de clientes (con saldo disponible) -- mirror de anticipos-proveedores
+    Route::get('/anticipos-clientes', [AnticipoClienteController::class, 'index'])->middleware('permiso:clientes.ver,ventas.ver');
+    Route::post('/anticipos-clientes', [AnticipoClienteController::class, 'store'])->middleware('permiso:clientes.crear,ventas.crear');
+    Route::post('/anticipos-clientes/{id}/aplicar', [AnticipoClienteController::class, 'aplicar'])->middleware('permiso:clientes.crear,ventas.crear');
 
     // ---------------------------------------------------------------------
     // Comercial - Proveedores
@@ -222,6 +229,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/anticipos-proveedores', [AnticipoProveedorController::class, 'store'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::post('/anticipos-proveedores/{id}/aplicar', [AnticipoProveedorController::class, 'aplicar'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::post('/proveedores/{id}/cruzar-documentos', [ProveedorController::class, 'cruzarDocumentos'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::put('/proveedores/{id}/activar', [ProveedorController::class, 'activar'])->middleware('permiso:proveedores.crear,compras.crear');
 
     // Resource de proveedores (index/store/update; show y destroy excluidos)
     Route::get('/proveedores', [ProveedorController::class, 'index'])->middleware('permiso:proveedores.ver,compras.ver');
@@ -261,6 +270,16 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/facturas/{facturaId}/adjuntos', [DocumentoAdjuntoController::class, 'store'])->middleware('permiso:compras.crear,ventas.crear');
     Route::get('/facturas/{facturaId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'show'])->middleware('permiso:compras.ver,ventas.ver');
     Route::delete('/facturas/{facturaId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'destroy'])->middleware('permiso:compras.crear,ventas.crear');
+
+    // Documentos adjuntos de Cotizacion y Orden de Compra (mismo mecanismo que Factura)
+    Route::get('/cotizaciones/{cotizacionId}/adjuntos', [DocumentoAdjuntoController::class, 'indexCotizacion'])->middleware('permiso:ventas.ver');
+    Route::post('/cotizaciones/{cotizacionId}/adjuntos', [DocumentoAdjuntoController::class, 'storeCotizacion'])->middleware('permiso:ventas.crear');
+    Route::get('/cotizaciones/{cotizacionId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'showCotizacion'])->middleware('permiso:ventas.ver');
+    Route::delete('/cotizaciones/{cotizacionId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'destroyCotizacion'])->middleware('permiso:ventas.crear');
+    Route::get('/comercial/ordenes-compra/{ordenCompraId}/adjuntos', [DocumentoAdjuntoController::class, 'indexOrdenCompra'])->middleware('permiso:compras.ver');
+    Route::post('/comercial/ordenes-compra/{ordenCompraId}/adjuntos', [DocumentoAdjuntoController::class, 'storeOrdenCompra'])->middleware('permiso:compras.crear');
+    Route::get('/comercial/ordenes-compra/{ordenCompraId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'showOrdenCompra'])->middleware('permiso:compras.ver');
+    Route::delete('/comercial/ordenes-compra/{ordenCompraId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'destroyOrdenCompra'])->middleware('permiso:compras.crear');
 
     // ---------------------------------------------------------------------
     // Comercial - Cotizaciones
@@ -674,11 +693,11 @@ Route::prefix('dj/1926')->middleware(['auth:sanctum', 'check.subscription'])->gr
 });
 
 // Propietarios de la empresa (para DJ 1947 / Propyme)
-Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription', 'permiso:contabilidad.ver'])->group(function () {
-    Route::get('/',                    [PropietariosController::class, 'index']);
-    Route::post('/',                   [PropietariosController::class, 'store'])->middleware('subscription.writable');
-    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware('subscription.writable');
-    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware('subscription.writable');
+Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                    [PropietariosController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::post('/',                   [PropietariosController::class, 'store'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
 });
 
 // Honorarios recibidos
@@ -693,7 +712,7 @@ Route::prefix('soporte/tickets')->middleware(['auth:sanctum', 'check.subscriptio
     Route::get('/',          [SoporteController::class, 'index'])->middleware('permiso:soporte.ver');
     Route::post('/',         [SoporteController::class, 'store'])->middleware(['permiso:soporte.crear', 'subscription.writable']);
     Route::get('/{id}',      [SoporteController::class, 'show'])->middleware('permiso:soporte.ver')->whereNumber('id');
-    Route::post('/{id}/reply', [SoporteController::class, 'reply'])->middleware(['permiso:soporte.ver', 'subscription.writable'])->whereNumber('id');
+    Route::post('/{id}/reply', [SoporteController::class, 'reply'])->middleware(['permiso:soporte.crear', 'subscription.writable'])->whereNumber('id');
 });
 
 Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {

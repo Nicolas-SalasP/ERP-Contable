@@ -165,6 +165,52 @@ class AdminEmpresasControllerTest extends TestCase
         $response->assertStatus(404);
     }
 
+    /**
+     * Regresion multiempresa: un usuario con empresa_id=A y empresa_activa_id=B
+     * debe perder el token al suspender B, aunque B no sea su empresa "hogar".
+     */
+    public function test_suspender_empresa_revoca_token_de_usuario_con_empresa_activa_distinta_de_empresa_hogar(): void
+    {
+        [$empresaA] = $this->crearEmpresaConAdmin();
+        [$empresaB] = $this->crearEmpresaConAdmin();
+
+        $usuario = $this->crearUsuario($empresaA, null, ['empresa_activa_id' => $empresaB->id]);
+        $usuario->createToken('test');
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+
+        $response = $this->postJson(
+            "/api/internal/web/empresas/{$empresaB->id}/suspender",
+            [],
+            $this->firmarConCuerpo([])
+        );
+
+        $response->assertStatus(200)->assertJsonPath('empresa.activa', false);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    /**
+     * Simetrico: suspender la empresa "hogar" (A) tambien debe revocar el token
+     * del usuario aunque este operando activamente en otra empresa (B).
+     */
+    public function test_suspender_empresa_hogar_revoca_token_aunque_empresa_activa_sea_otra(): void
+    {
+        [$empresaA] = $this->crearEmpresaConAdmin();
+        [$empresaB] = $this->crearEmpresaConAdmin();
+
+        $usuario = $this->crearUsuario($empresaA, null, ['empresa_activa_id' => $empresaB->id]);
+        $usuario->createToken('test');
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+
+        $response = $this->postJson(
+            "/api/internal/web/empresas/{$empresaA->id}/suspender",
+            [],
+            $this->firmarConCuerpo([])
+        );
+
+        $response->assertStatus(200)->assertJsonPath('empresa.activa', false);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
     // -------------------------------------------------------------------
     // Cambiar plan
     // -------------------------------------------------------------------
@@ -185,6 +231,29 @@ class AdminEmpresasControllerTest extends TestCase
         $response->assertStatus(200)->assertJsonPath('updated', 2);
         $this->assertDatabaseHas('usuarios', ['id' => $adminUno->id, 'plan_slug' => 'erp-pyme-pro']);
         $this->assertDatabaseHas('usuarios', ['id' => $otroUsuario->id, 'plan_slug' => 'erp-pyme-pro']);
+    }
+
+    /**
+     * Regresion multiempresa: cambiar el plan de la empresa B tambien debe
+     * actualizar a un usuario cuya empresa "hogar" es A pero opera en B.
+     */
+    public function test_cambiar_plan_actualiza_usuario_con_empresa_activa_distinta_de_empresa_hogar(): void
+    {
+        [$empresaA] = $this->crearEmpresaConAdmin();
+        [$empresaB] = $this->crearEmpresaConAdmin();
+
+        $usuario = $this->crearUsuario($empresaA, null, ['empresa_activa_id' => $empresaB->id]);
+
+        $payload = ['plan_slug' => 'erp-pyme-pro', 'module_keys' => ['clientes', 'rrhh']];
+
+        $response = $this->putJson(
+            "/api/internal/web/empresas/{$empresaB->id}/plan",
+            $payload,
+            $this->firmarConCuerpo($payload)
+        );
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('usuarios', ['id' => $usuario->id, 'plan_slug' => 'erp-pyme-pro']);
     }
 
     public function test_cambiar_plan_sin_module_keys_es_rechazado(): void

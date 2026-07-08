@@ -76,6 +76,11 @@ class Cotizacion extends Model
         return $this->hasMany(CotizacionDetalle::class);
     }
 
+    public function documentosAdjuntos(): HasMany
+    {
+        return $this->hasMany(DocumentoAdjunto::class);
+    }
+
     protected static function boot(): void
     {
         parent::boot();

@@ -123,7 +123,7 @@ class ImpuestosController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e)
             ], 422);
         }
     }

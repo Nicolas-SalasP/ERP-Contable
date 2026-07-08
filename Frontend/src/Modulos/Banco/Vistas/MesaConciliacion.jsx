@@ -255,7 +255,7 @@ const MesaConciliacion = () => {
                     cerrarModalYRecargar();
                 }
             } catch (error) {
-                Swal.fire('Error', error.response?.data?.mensaje || 'Error al contabilizar.', 'error');
+                Swal.fire('Error', error.response?.data?.message || error.response?.data?.mensaje || 'Error al contabilizar.', 'error');
             }
         } 
         else if (tipoConciliacion === 'ANTICIPO') {
@@ -273,7 +273,7 @@ const MesaConciliacion = () => {
                     cerrarModalYRecargar();
                 }
             } catch (error) {
-                Swal.fire('Error', error.response?.data?.mensaje || 'Error al cruzar el anticipo.', 'error');
+                Swal.fire('Error', error.response?.data?.message || error.response?.data?.mensaje || 'Error al cruzar el anticipo.', 'error');
             }
         }
     };

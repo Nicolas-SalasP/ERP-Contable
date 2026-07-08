@@ -336,8 +336,9 @@ class CoreTest extends TestCase
         $this->assertTrue(in_array($response->getStatusCode(), [404, 422, 500]));
     }
 
-    // PRUEBA: Invitar a un usuario que ya existe lo reasigna al tenant
-    public function test_invitar_usuario_existente_lo_reasigna_a_mi_empresa()
+    // PRUEBA: Invitar a un usuario de OTRA empresa sin plan multiempresa se rechaza
+    // (auditoria: antes reasignaba empresa_id silenciosamente, secuestrando la cuenta)
+    public function test_invitar_usuario_de_otra_empresa_sin_plan_multitenant_se_rechaza()
     {
         Sanctum::actingAs($this->adminEmpresaA);
 
@@ -346,11 +347,42 @@ class CoreTest extends TestCase
             'rol_id' => $this->rolIntermedio->id
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(422);
+        // El usuario invitado NO pierde su empresa original ni su rol.
         $this->assertDatabaseHas('usuarios', [
             'email' => 'adminB@test.com',
-            'empresa_id' => $this->empresaA->id,
+            'empresa_id' => $this->empresaB->id,
+            'rol_id' => $this->rolAdmin->id
+        ]);
+    }
+
+    // PRUEBA: Invitar a un usuario de OTRA empresa CON plan multiempresa da acceso
+    // adicional (via empresa_user) sin tocar su empresa_id/empresa_activa_id original
+    public function test_invitar_usuario_de_otra_empresa_con_plan_multitenant_agrega_acceso_sin_reasignar()
+    {
+        $this->adminEmpresaA->update(['module_keys' => ['multitenant']]);
+        Sanctum::actingAs($this->adminEmpresaA->fresh());
+
+        $response = $this->postJson('/api/usuarios/invitar', [
+            'email' => 'adminB@test.com',
             'rol_id' => $this->rolIntermedio->id
+        ]);
+
+        $response->assertStatus(200);
+
+        // Sigue perteneciendo a su empresa original: no hubo migracion de "dueno".
+        $this->assertDatabaseHas('usuarios', [
+            'email' => 'adminB@test.com',
+            'empresa_id' => $this->empresaB->id,
+            'rol_id' => $this->rolAdmin->id
+        ]);
+
+        // Pero ahora tiene acceso adicional a la empresa A via el pivote.
+        $adminB = User::where('email', 'adminB@test.com')->firstOrFail();
+        $this->assertDatabaseHas('empresa_user', [
+            'user_id' => $adminB->id,
+            'empresa_id' => $this->empresaA->id,
+            'rol_id' => $this->rolIntermedio->id,
         ]);
     }
 

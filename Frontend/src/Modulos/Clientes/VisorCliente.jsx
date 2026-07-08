@@ -148,29 +148,43 @@ const VisorCliente = () => {
 
     const cliente = datos?.cliente || {};
     const facturas = datos?.facturas || [];
+    const anticipos = datos?.anticipos || [];
 
-    const historialCombinado = facturas.map(f => {
-        const esNC = f.tipo_documento === 'NOTA_CREDITO';
-        const esND = f.tipo_documento === 'NOTA_DEBITO';
-        const prefijo = esNC ? 'NC' : esND ? 'ND' : 'Factura';
-        return {
-            ...f,
-            _tipo: esNC ? 'NOTA_CREDITO' : esND ? 'NOTA_DEBITO' : 'FACTURA',
-            _fechaOrden: new Date(f.fecha_emision),
-            _documento: f.numero_factura ? `${prefijo} #${f.numero_factura}` : `${prefijo} S/N`,
-            // NC reduce lo que el cliente debe (abono); Factura y ND lo aumentan (cargo).
-            _cargo: esNC ? 0 : parseFloat(f.monto_bruto || 0),
-            _abono: esNC ? parseFloat(f.monto_bruto || 0) : 0,
-            _estado: f.estado,
-            _cantidadDocumentos: f.documentos_adjuntos_count || 0
-        };
-    }).sort((a, b) => b._fechaOrden - a._fechaOrden);
+    const historialCombinado = [
+        ...facturas.map(f => {
+            const esNC = f.tipo_documento === 'NOTA_CREDITO';
+            const esND = f.tipo_documento === 'NOTA_DEBITO';
+            const prefijo = esNC ? 'NC' : esND ? 'ND' : 'Factura';
+            return {
+                ...f,
+                _tipo: esNC ? 'NOTA_CREDITO' : esND ? 'NOTA_DEBITO' : 'FACTURA',
+                _fechaOrden: new Date(f.fecha_emision),
+                _documento: f.numero_factura ? `${prefijo} #${f.numero_factura}` : `${prefijo} S/N`,
+                // NC reduce lo que el cliente debe (abono); Factura y ND lo aumentan (cargo).
+                _cargo: esNC ? 0 : parseFloat(f.monto_bruto || 0),
+                _abono: esNC ? parseFloat(f.monto_bruto || 0) : 0,
+                _estado: f.estado,
+                _cantidadDocumentos: f.documentos_adjuntos_count || 0
+            };
+        }),
+        ...anticipos.map(a => ({
+            ...a,
+            _tipo: 'ANTICIPO',
+            _fechaOrden: new Date(a.fecha || a.created_at),
+            _documento: a.referencia ? `Anticipo: ${a.referencia}` : 'Anticipo S/R',
+            _cargo: 0,
+            _abono: parseFloat(a.saldo_disponible ?? a.monto ?? 0),
+            _estado: a.estado,
+        }))
+    ].sort((a, b) => b._fechaOrden - a._fechaOrden);
 
     const facturasDeuda = facturas.filter(f => f.estado !== 'PAGADA' && f.estado !== 'ANULADA' && f.tipo_documento !== 'NOTA_CREDITO');
     const ncVigentes = facturas.filter(f => f.estado !== 'APLICADA' && f.estado !== 'ANULADA' && f.tipo_documento === 'NOTA_CREDITO');
+    const anticiposVigentes = anticipos.filter(a => a.estado !== 'APLICADO' && a.estado !== 'ANULADO');
 
     const totalDeuda = facturasDeuda.reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
-    const totalActivos = ncVigentes.reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0);
+    const totalActivos = ncVigentes.reduce((sum, f) => sum + parseFloat(f.monto_bruto), 0)
+        + anticiposVigentes.reduce((sum, a) => sum + parseFloat(a.saldo_disponible ?? a.monto ?? 0), 0);
 
     const saldoNeto = totalDeuda - totalActivos;
     const esDeudorCliente = saldoNeto > 0;
@@ -185,13 +199,15 @@ const VisorCliente = () => {
             if (filtroEstado === 'VIGENTES') {
                 pasaEstado =
                     ((item._tipo === 'FACTURA' || item._tipo === 'NOTA_DEBITO') && item._estado !== 'PAGADA' && item._estado !== 'ANULADA') ||
-                    (item._tipo === 'NOTA_CREDITO' && item._estado !== 'APLICADA' && item._estado !== 'ANULADA');
+                    (item._tipo === 'NOTA_CREDITO' && item._estado !== 'APLICADA' && item._estado !== 'ANULADA') ||
+                    (item._tipo === 'ANTICIPO' && item._estado !== 'APLICADO' && item._estado !== 'ANULADO');
             } else if (filtroEstado === 'CERRADOS') {
                 pasaEstado =
                     ((item._tipo === 'FACTURA' || item._tipo === 'NOTA_DEBITO') && item._estado === 'PAGADA') ||
-                    (item._tipo === 'NOTA_CREDITO' && item._estado === 'APLICADA');
+                    (item._tipo === 'NOTA_CREDITO' && item._estado === 'APLICADA') ||
+                    (item._tipo === 'ANTICIPO' && item._estado === 'APLICADO');
             } else if (filtroEstado === 'ANULADOS') {
-                pasaEstado = item._estado === 'ANULADA';
+                pasaEstado = item._estado === 'ANULADA' || item._estado === 'ANULADO';
             }
         }
         return pasaTipo && pasaNumero && pasaEstado;
@@ -292,6 +308,7 @@ const VisorCliente = () => {
                         <option value="FACTURA">Solo Facturas</option>
                         <option value="NOTA_CREDITO">Solo Notas de Crédito</option>
                         <option value="NOTA_DEBITO">Solo Notas de Débito</option>
+                        <option value="ANTICIPO">Solo Anticipos</option>
                     </select>
                     <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="w-48 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded text-sm text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 bg-white dark:bg-slate-700">
                         <option value="">Todos los Estados</option>
@@ -331,7 +348,9 @@ const VisorCliente = () => {
                                                     ? <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-bold px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">FAC</span>
                                                     : item._tipo === 'NOTA_CREDITO'
                                                     ? <span className="bg-purple-50 text-purple-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-purple-200">NC</span>
-                                                    : <span className="bg-amber-50 text-amber-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-amber-200">ND</span>
+                                                    : item._tipo === 'NOTA_DEBITO'
+                                                    ? <span className="bg-amber-50 text-amber-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-amber-200">ND</span>
+                                                    : <span className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-200">ANT</span>
                                                 }
                                                 <span className="font-bold text-slate-800 dark:text-slate-200">
                                                     {item._documento}
@@ -345,22 +364,24 @@ const VisorCliente = () => {
                                             {item._abono > 0 ? formatCurrency(item._abono) : '-'}
                                         </td>
                                         <td className="px-6 py-3 text-center">
-                                            {item._estado === 'PAGADA' || item._estado === 'APLICADA' ? (
+                                            {item._estado === 'PAGADA' || item._estado === 'APLICADA' || item._estado === 'APLICADO' ? (
                                                 <span className="text-slate-400 font-bold text-[10px] uppercase">Cerrado</span>
-                                            ) : item._estado === 'ANULADA' ? (
+                                            ) : item._estado === 'ANULADA' || item._estado === 'ANULADO' ? (
                                                 <span className="text-slate-300 font-bold text-[10px] uppercase line-through">Anulado</span>
                                             ) : (
                                                 <span className="text-blue-600 font-bold text-[10px] uppercase">Vigente</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-3 text-center">
-                                            <button
-                                                type="button"
-                                                onClick={() => setFacturaDocumentos(item)}
-                                                className="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors"
-                                            >
-                                                Documentos{item._cantidadDocumentos > 0 ? ` (${item._cantidadDocumentos})` : ''}
-                                            </button>
+                                            {item._tipo !== 'ANTICIPO' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFacturaDocumentos(item)}
+                                                    className="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors"
+                                                >
+                                                    Documentos{item._cantidadDocumentos > 0 ? ` (${item._cantidadDocumentos})` : ''}
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

@@ -24,6 +24,7 @@ class Proveedor extends Model
         'razon_social',
         'pais_iso',
         'moneda_defecto',
+        'estado',
         'region',
         'comuna',
         'direccion',

@@ -6,11 +6,13 @@ use App\Domains\Core\Models\Empresa;
 use App\Domains\Sii\Exceptions\CertificadoInvalidoException;
 use App\Domains\Sii\Exceptions\DteEstadoInvalidoException;
 use App\Domains\Sii\Exceptions\DteIncompletoException;
+use App\Domains\Sii\Exceptions\FolioUsoEstadoInvalidoException;
 use App\Domains\Sii\Exceptions\SinFoliosDisponiblesException;
 use App\Domains\Sii\Models\SiiCaf;
 use App\Domains\Sii\Models\SiiCafFolioUso;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Models\SiiDteEmitidoDetalle;
+use App\Domains\Sii\Services\Caf\CafService;
 use App\Domains\Sii\Services\Emision\EmitirDteService;
 use App\Domains\Sii\Services\Xml\SetDte\SetDteSigner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -279,6 +281,60 @@ class EmitirDteServiceTest extends TestCase
             ->get();
         $this->assertCount(1, $huerfanos, 'Debe existir 1 folio HUERFANO post-fallo.');
         $this->assertStringContainsString('Fallo en EmitirDteService', $huerfanos->first()->razon_liberacion);
+    }
+
+    /**
+     * Regresion (bug de auditoria, severidad MEDIA): si el CAF se revoca (admin) MIENTRAS el DTE se
+     * esta firmando -folio ya RESERVADO, XML aun en construccion, sin locks de BD tomados en ese tramo-,
+     * marcarFolioUsado() debe detectar que el folio ya no esta RESERVADO (paso a HUERFANO) y abortar
+     * en vez de sobreescribirlo silenciosamente a USADO. Antes del fix esto emitia el DTE igual sobre
+     * un folio invalido ante el SII.
+     */
+    public function test_lanza_FolioUsoEstadoInvalidoException_si_caf_es_revocado_durante_la_firma(): void
+    {
+        $e = $this->escenarioCompleto();
+
+        $realSigner = app(SetDteSigner::class);
+        $cafService = app(CafService::class);
+
+        // El mock firma normalmente (comportamiento real) pero simula, como efecto secundario, la
+        // revocacion concurrente del CAF que ocurriria en produccion via un admin en otro request.
+        $this->app->instance(SetDteSigner::class, Mockery::mock(SetDteSigner::class)
+            ->shouldReceive('firmar')
+            ->andReturnUsing(function (...$args) use ($realSigner, $cafService, $e) {
+                $envioFirmado = $realSigner->firmar(...$args);
+                $cafService->revocar($e['caf'], 'Revocado concurrentemente durante la firma (simulado en test)');
+
+                return $envioFirmado;
+            })
+            ->getMock());
+
+        $service = app(EmitirDteService::class);
+
+        try {
+            $service->emitir($e['dte']->id);
+            $this->fail('Debio lanzar FolioUsoEstadoInvalidoException.');
+        } catch (FolioUsoEstadoInvalidoException $ex) {
+            $this->assertSame(SiiCafFolioUso::ESTADO_HUERFANO, $ex->estadoActual);
+            $this->assertSame(SiiCafFolioUso::ESTADO_RESERVADO, $ex->estadoEsperado);
+        }
+
+        // El DTE no debe haber quedado emitido/firmado sobre un folio revocado.
+        $dteFresh = $e['dte']->fresh();
+        $this->assertSame(SiiDteEmitido::ESTADO_BORRADOR, $dteFresh->estado);
+        $this->assertNull($dteFresh->xml_path);
+        $this->assertNull($dteFresh->fecha_firma);
+
+        // El folio debe permanecer HUERFANO (motivo de la revocacion), NO sobreescrito a USADO.
+        $folioUso = SiiCafFolioUso::where('caf_id', $e['caf']->id)->firstOrFail();
+        $this->assertSame(SiiCafFolioUso::ESTADO_HUERFANO, $folioUso->estado);
+        $this->assertNull($folioUso->dte_emitido_id);
+
+        // Sin doble conteo: folios_usados no debe incrementarse y folios_huerfanos no debe duplicarse
+        // (el catch de FolioUsoEstadoInvalidoException en emitir() no debe re-liberar el folio).
+        $cafFresh = $e['caf']->fresh();
+        $this->assertSame(0, $cafFresh->folios_usados);
+        $this->assertSame(1, $cafFresh->folios_huerfanos);
     }
 
     public function test_log_canal_sii_incluye_dte_id_folio_y_hash(): void

@@ -15,6 +15,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $caf_id
  * @property int $folio
+ * @property int|null $dte_emitido_id
+ * @property string $estado
+ * @property \Illuminate\Support\Carbon|null $reservado_at
+ * @property \Illuminate\Support\Carbon|null $usado_at
+ * @property \Illuminate\Support\Carbon|null $liberado_at
+ * @property string|null $razon_liberacion
+ * @property int|null $usuario_reservo_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */

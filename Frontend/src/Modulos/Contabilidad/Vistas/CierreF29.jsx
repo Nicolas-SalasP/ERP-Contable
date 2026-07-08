@@ -96,7 +96,7 @@ const CierreF29 = () => {
                 }
             } catch (error) {
                 Swal.fire({
-                    icon: 'error', title: 'Error', text: error.response?.data?.mensaje || 'Error al centralizar.',
+                    icon: 'error', title: 'Error', text: error.response?.data?.message || error.response?.data?.mensaje || 'Error al centralizar.',
                     buttonsStyling: false, customClass: { confirmButton: 'bg-slate-900 text-white font-bold py-2 px-6 rounded-lg' }
                 });
             }

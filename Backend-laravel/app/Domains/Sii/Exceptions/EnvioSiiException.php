@@ -12,6 +12,7 @@ class EnvioSiiException extends RuntimeException
     public const MOTIVO_RESPUESTA_SIN_TRACKID = 'respuesta_sin_trackid';
     public const MOTIVO_ERROR_PERMANENTE_SII  = 'error_permanente_sii';
     public const MOTIVO_ERROR_TRANSPORTE      = 'error_transporte';
+    public const MOTIVO_ENVIO_EN_CURSO        = 'envio_en_curso';
 
     public readonly string $motivo;
 
@@ -68,6 +69,15 @@ class EnvioSiiException extends RuntimeException
             "Fallo de transporte al subir DTE tras {$intentos} intentos. HTTP {$httpStatus}. Body[0..200]: {$muestra}",
             self::MOTIVO_ERROR_TRANSPORTE,
             ['http_status' => $httpStatus, 'intentos' => $intentos]
+        );
+    }
+
+    public static function envioEnCursoOHuerfano(int $dteId, int $envioIdEnCurso): self
+    {
+        return new self(
+            "DTE {$dteId} ya tiene un envio en estado ENVIANDO (envio_id={$envioIdEnCurso}); puede estar en curso o ser un envio huerfano por un proceso interrumpido a mitad de la llamada al SII. Verifique su estado real antes de reintentar, para evitar un doble envio del mismo folio.",
+            self::MOTIVO_ENVIO_EN_CURSO,
+            ['dte_id' => $dteId, 'envio_id_en_curso' => $envioIdEnCurso]
         );
     }
 }

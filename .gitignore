@@ -60,3 +60,6 @@ CLAUDE.md
 Frontend/.env.e2e
 Frontend/.env.e2e.local
 !Frontend/.env.e2e.example
+
+# Snapshots/artefactos locales de Playwright MCP
+.playwright-mcp/

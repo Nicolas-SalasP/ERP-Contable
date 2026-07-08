@@ -5,12 +5,12 @@ namespace App\Domains\Sii\Console\Commands;
 use App\Domains\Sii\Models\SiiEnvioDte;
 use Illuminate\Console\Command;
 
-/** F5.3 — lista envios SII en error (ERROR_TRANSPORTE/ERROR_PERMANENTE/ERROR_TIMEOUT/RECHAZADO) para revision manual del operador: la cola de "necesita atencion humana". */
+/** F5.3 — lista envios SII en error (ERROR_TRANSPORTE/ERROR_PERMANENTE/ERROR_TIMEOUT/RECHAZADO) para revision manual del operador: la cola de "necesita atencion humana". Tambien incluye envios ENVIANDO huerfanos (>15 min sin resolver), candidatos a revision manual por posible proceso interrumpido. */
 class ListarEnviosFallidosCommand extends Command
 {
     protected $signature = 'sii:listar-envios-fallidos
                             {--empresa= : Filtrar por ID de empresa}
-                            {--dias=30 : Mostrar ultimos N dias (segun fecha_envio)}
+                            {--dias=30 : Mostrar ultimos N dias (segun created_at)}
                             {--ambiente= : certificacion|produccion}';
 
     protected $description = 'Lista envios al SII en estado de error o rechazo, con filtros y resumen por categoria.';
@@ -22,7 +22,9 @@ class ListarEnviosFallidosCommand extends Command
         $ambiente  = $this->option('ambiente');
 
         $query = SiiEnvioDte::query()
-            ->fallidos()
+            ->where(function ($q) {
+                $q->fallidos()->orWhere(fn ($q2) => $q2->enviandoHuerfanos());
+            })
             ->where('created_at', '>=', now()->subDays($dias))
             ->with('dteEmitido')
             ->orderByDesc('created_at');

@@ -115,7 +115,7 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
         $this->permisos->exigir($usuario, 'inventario.eventos_integracion.detalle');
 
         $evento = InventarioEventoIntegracion::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with('usuario:id,nombre,email,empresa_id,rol_id')
             ->find($id);
 
@@ -244,7 +244,7 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
     private function obtenerGestionable(User $usuario, int $id): InventarioEventoIntegracion
     {
         $evento = InventarioEventoIntegracion::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->find($id);
 
         if (!$evento) {
@@ -257,7 +257,7 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
     private function queryFiltrada(User $usuario, array $filtros = []): Builder
     {
         return InventarioEventoIntegracion::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->when(!empty($filtros['evento']), fn (Builder $query) => $query->where('evento', $filtros['evento']))
             ->when(!empty($filtros['entidad_tipo']), fn (Builder $query) => $query->where('entidad_tipo', $filtros['entidad_tipo']))
             ->when(!empty($filtros['entidad_id']), fn (Builder $query) => $query->where('entidad_id', (int) $filtros['entidad_id']))
@@ -274,7 +274,7 @@ class InventarioEventoIntegracionService implements InventarioEventoIntegracionC
 
     private function normalizarPayload(?User $usuario, array $datos): array
     {
-        $empresaId = $datos['empresa_id'] ?? $usuario?->empresa_id;
+        $empresaId = $datos['empresa_id'] ?? $usuario?->empresa_activa_id;
 
         if ($empresaId === null) {
             throw ValidationException::withMessages(['empresa_id' => 'La empresa es obligatoria para publicar eventos internos de inventario.']);

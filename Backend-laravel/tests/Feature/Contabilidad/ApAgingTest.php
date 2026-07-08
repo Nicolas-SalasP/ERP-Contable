@@ -5,6 +5,7 @@ namespace Tests\Feature\Contabilidad;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Proveedor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
 
@@ -230,6 +231,84 @@ class ApAgingTest extends TestCase
         $response->assertStatus(200);
         $this->assertEqualsWithDelta(0.0, $response->json('data.resumen.total'), 0.01);
         $this->assertEmpty($response->json('data.detalle'));
+    }
+
+    // ------------------------------------------------------------------
+    // Tests: regresión saldo real en facturas ABONADA (pago/NC parcial)
+    // ------------------------------------------------------------------
+
+    public function test_factura_abonada_con_anticipo_aplicado_usa_saldo_real_no_monto_bruto(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $factura = $this->crearFacturaCompra($empresa->id, 500000, now()->subDays(5)->toDateString(), 'ABONADA');
+
+        // Anticipo ya aplicado y no revertido contra la factura (AnticipoProveedorService::aplicarAFactura): reduce el saldo pendiente en 200000.
+        $anticipoId = DB::table('anticipos_proveedores')->insertGetId([
+            'empresa_id'   => $empresa->id,
+            'proveedor_id' => $factura->proveedor_id,
+            'monto'        => 200000,
+            'estado'       => 'APLICADO',
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ]);
+
+        DB::table('anticipo_aplicaciones')->insert([
+            'empresa_id'  => $empresa->id,
+            'anticipo_id' => $anticipoId,
+            'factura_id'  => $factura->id,
+            'monto'       => 200000,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+
+        $response = $this->actingAs($usuario)
+            ->getJson('/api/contabilidad/ap-aging');
+
+        $response->assertStatus(200);
+        // Saldo real: 500000 - 200000 aplicado = 300000. Antes del fix, sumaba el monto bruto completo (500000).
+        $this->assertEqualsWithDelta(300000.0, $response->json('data.resumen.total'), 0.01);
+    }
+
+    public function test_factura_abonada_con_nota_credito_aplicada_usa_saldo_real_no_monto_bruto(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $factura = $this->crearFacturaCompra($empresa->id, 400000, now()->subDays(5)->toDateString(), 'ABONADA');
+
+        // NC aplicada contra la factura (mismo criterio de ProveedorService::compensarPartidas): reduce el saldo pendiente en 150000.
+        Factura::withoutGlobalScopes()->create([
+            'empresa_id'             => $empresa->id,
+            'codigo_unico'           => Factura::generarCodigoUnico(),
+            'proveedor_id'           => $factura->proveedor_id,
+            'numero_factura'         => 'NC-' . uniqid(),
+            'tipo'                   => 'COMPRA',
+            'tipo_documento'         => 'NOTA_CREDITO',
+            'fecha_emision'          => now()->toDateString(),
+            'monto_neto'             => round(150000 / 1.19, 2),
+            'monto_iva'              => 150000 - round(150000 / 1.19, 2),
+            'monto_bruto'            => 150000,
+            'estado'                 => 'APLICADA',
+            'factura_referencia_id'  => $factura->id,
+        ]);
+
+        $response = $this->actingAs($usuario)
+            ->getJson('/api/contabilidad/ap-aging');
+
+        $response->assertStatus(200);
+        // Saldo real: 400000 - 150000 de NC aplicada = 250000.
+        $this->assertEqualsWithDelta(250000.0, $response->json('data.resumen.total'), 0.01);
+    }
+
+    public function test_factura_abonada_sin_ajustes_aparece_con_monto_bruto(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $this->crearFacturaCompra($empresa->id, 250000, now()->subDays(5)->toDateString(), 'ABONADA');
+
+        $response = $this->actingAs($usuario)
+            ->getJson('/api/contabilidad/ap-aging');
+
+        $response->assertStatus(200);
+        // ABONADA sin anticipos/NC registrados: se incluye igual, sin sobreestimar ni excluir.
+        $this->assertEqualsWithDelta(250000.0, $response->json('data.resumen.total'), 0.01);
     }
 
     // ------------------------------------------------------------------
