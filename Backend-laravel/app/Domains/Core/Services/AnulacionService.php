@@ -151,6 +151,32 @@ class AnulacionService
                         ->update(['estado' => 'REACTIVADO']);
                 }
 
+                // Si era el asiento de una ejecucion de Corrección Monetaria, la marca 'anulada'
+                // (desbloquea el período para re-ejecutar) y resta a cada activo exactamente el
+                // ajuste que le aplicó -- sin esto CmEjecucion.estado quedaba 'ejecutada' para
+                // siempre (período bloqueado permanentemente) y cm_ajuste_acumulado desincronizado
+                // del balance ya reversado.
+                if ($asientoOriginal->origen_modulo === 'correccion_monetaria') {
+                    $ejecucion = DB::table('cm_ejecuciones')
+                        ->where('empresa_id', $empresaId)
+                        ->where('asiento_id', $asientoOriginal->id)
+                        ->where('estado', 'ejecutada')
+                        ->first();
+
+                    if ($ejecucion) {
+                        $detalles = DB::table('cm_ejecucion_activos')->where('cm_ejecucion_id', $ejecucion->id)->get();
+                        foreach ($detalles as $detalle) {
+                            DB::table('activos_fijos')
+                                ->where('id', $detalle->activo_id)
+                                ->decrement('cm_ajuste_acumulado', (float) $detalle->ajuste_activo);
+                            DB::table('activos_fijos')
+                                ->where('id', $detalle->activo_id)
+                                ->decrement('cm_depreciacion_ajuste_acumulado', (float) $detalle->ajuste_depreciacion);
+                        }
+                        DB::table('cm_ejecuciones')->where('id', $ejecucion->id)->update(['estado' => 'anulada']);
+                    }
+                }
+
                 return [
                     'nuevo_asiento_id' => $asientoReverso->numero_comprobante
                 ];
