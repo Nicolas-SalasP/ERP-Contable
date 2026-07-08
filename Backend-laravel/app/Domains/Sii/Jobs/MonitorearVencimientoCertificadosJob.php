@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Throwable;
@@ -99,11 +100,25 @@ class MonitorearVencimientoCertificadosJob implements ShouldQueue
             return 'skipped';
         }
 
+        // Lock atomico: sin esto, dos ejecuciones concurrentes (cron + comando manual, o dos
+        // workers) pueden leer "no enviado" ambas antes de registrar el envio y duplicar el
+        // email al cliente real. Solo quien adquiere el lock evalua y envia.
+        if (! Cache::add($this->lockKeyNotificacion($cert, $nivel), true, 30)) {
+            return 'skipped';
+        }
+
         if (! $this->debeEnviar($cert, $nivel)) {
             return 'skipped';
         }
 
         return $this->enviar($cert, $nivel, $destinatario);
+    }
+
+    private function lockKeyNotificacion(SiiCertificadoEmpresa $cert, string $nivel): string
+    {
+        $sufijo = in_array($nivel, self::NIVELES_DIARIOS, true) ? now()->toDateString() : 'unico';
+
+        return "sii:certificado:notificar:{$cert->id}:{$nivel}:{$sufijo}";
     }
 
     private function resolverDestinatario(SiiCertificadoEmpresa $cert): ?string
