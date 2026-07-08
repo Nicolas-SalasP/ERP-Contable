@@ -10,6 +10,10 @@ use App\Domains\Core\Models\User;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Cotizacion;
+use App\Domains\Comercial\Models\EstadoCotizacion;
+use App\Domains\Comercial\Models\AnticipoCliente;
+use App\Domains\Comercial\Services\AnticipoClienteService;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 
 class ComercialNotasCreditoTest extends TestCase
@@ -440,5 +444,104 @@ class ComercialNotasCreditoTest extends TestCase
 
         $response->assertStatus(422);
         $this->assertDatabaseMissing('facturas', ['numero_factura' => 'NC-CERO']);
+    }
+
+    public function test_nc_venta_100_por_ciento_libera_anticipo_y_revierte_cotizacion(): void
+    {
+        // Regresión (auditoría, hallazgo ALTO): a diferencia de anularFactura(), cuando la NC de venta
+        // cubría el 100% del monto original, el saldo del anticipo de cliente aplicado quedaba
+        // consumido para siempre (dinero atrapado) y la cotización de origen quedaba "Facturada"
+        // fantasma sin poder refacturarse ni editarse.
+        $estadoAceptada  = EstadoCotizacion::create(['nombre' => 'Aceptada']);
+        $estadoFacturada = EstadoCotizacion::create(['nombre' => 'Facturada']);
+
+        $cliente = Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '5.5.5.5-5',
+            'razon_social' => 'Cliente Anticipo NC',
+            'estado'       => 'ACTIVO',
+        ]);
+
+        $cotizacion = Cotizacion::create([
+            'empresa_id'         => $this->empresa->id,
+            'cliente_id'         => $cliente->id,
+            'nombre_cliente'     => $cliente->razon_social,
+            'numero_cotizacion'  => 'COT-NC-01',
+            'fecha_emision'      => now()->format('Y-m-d'),
+            'fecha_validez'      => now()->addDays(30)->format('Y-m-d'),
+            'validez'            => 30,
+            'subtotal'           => 1000,
+            'porcentaje_descuento' => 0,
+            'monto_descuento'    => 0,
+            'monto_neto'         => 1000,
+            'porcentaje_iva'     => 19,
+            'monto_iva'          => 190,
+            'monto_total'        => 1190,
+            'total'              => 1190,
+            'estado_id'          => $estadoFacturada->id,
+            'es_afecta'          => true,
+        ]);
+
+        $facturaVenta = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'cliente_id'     => $cliente->id,
+            'cotizacion_id'  => $cotizacion->id,
+            'numero_factura' => 'FV-ANTICIPO-NC',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'VENTA',
+            'tipo_dte'       => 33,
+            'monto_bruto'    => 1190,
+            'monto_neto'     => 1000,
+            'monto_iva'      => 190,
+            'fecha_emision'  => now(),
+            'estado'         => 'REGISTRADA',
+            'codigo_unico'   => 30,
+        ]);
+
+        $anticipo = AnticipoCliente::create([
+            'empresa_id'       => $this->empresa->id,
+            'cliente_id'       => $cliente->id,
+            'monto'            => 1190,
+            'monto_original'   => 1190,
+            'saldo_disponible' => 1190,
+            'estado'           => 'DISPONIBLE',
+        ]);
+
+        app(AnticipoClienteService::class)->aplicarAFactura(
+            $this->empresa->id,
+            $anticipo->id,
+            $facturaVenta->id,
+            1190
+        );
+
+        // Confirma que el anticipo quedó consumido antes de emitir la NC.
+        $this->assertSame('APLICADO', $anticipo->fresh()->estado);
+        $this->assertEquals(0, (float) $anticipo->fresh()->saldo_disponible);
+
+        $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$facturaVenta->id}/nota-credito", [
+            'numero_nc'   => 'NC-VTA-ANTICIPO',
+            'monto_neto'  => 1000,
+            'monto_iva'   => 190,
+            'monto_bruto' => 1190,
+            'razon'       => 'Anulación total, cliente pagó con anticipo',
+        ]);
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('facturas', [
+            'id'     => $facturaVenta->id,
+            'estado' => 'ANULADA',
+        ]);
+
+        // El anticipo queda liberado con su saldo completo disponible de nuevo.
+        $anticipo->refresh();
+        $this->assertSame('DISPONIBLE', $anticipo->estado);
+        $this->assertEquals(1190.0, (float) $anticipo->saldo_disponible);
+
+        // La cotización vuelve a 'Aceptada' en vez de quedar 'Facturada' fantasma.
+        $this->assertDatabaseHas('cotizaciones', [
+            'id'        => $cotizacion->id,
+            'estado_id' => $estadoAceptada->id,
+        ]);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
 
+use App\Domains\Activos\Models\ProyectoActivo;
+use App\Domains\Activos\Services\ActivoFijoService;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Cotizacion;
@@ -482,6 +484,10 @@ class FacturaService
                     $origen->fecha_emision,
                     "Anulación por Nota de Crédito N° {$datos['numero_nc']} de factura N° {$origen->numero_factura}."
                 );
+
+                // Igual que anularFactura(): al dejar la factura ANULADA hay que liberar anticipos y desbloquear la cotización,
+                // si no el saldo del anticipo queda atrapado y la cotización queda "Facturada" fantasma para siempre.
+                $this->liberarAnticipoYCotizacionDeFactura($empresaId, $origen);
             }
 
             if (!empty($datos['emitir_dte']) && $origen->sii_dte_emitido_id) {
@@ -893,6 +899,22 @@ class FacturaService
                 throw ComercialException::regla("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.");
             }
 
+            // Si la factura capitalizó un proyecto de activo fijo, verificar su estado ANTES de tocar nada:
+            // si ya está ACTIVO_OPERATIVO, el Activo Fijo generado seguiría depreciando un costo que, al
+            // anular esta factura (y reversar su asiento), ya no existe contablemente.
+            $proyecto = null;
+            if ($factura->proyecto_activo_id) {
+                $proyecto = ProyectoActivo::where('empresa_id', $empresaId)
+                    ->lockForUpdate()
+                    ->find($factura->proyecto_activo_id);
+
+                if ($proyecto && $proyecto->estado !== 'EN_CONSTRUCCION') {
+                    throw ComercialException::regla(
+                        "No se puede anular esta factura: el proyecto de activo fijo asociado ya fue capitalizado (ACTIVO_OPERATIVO). Debe resolver el ajuste manualmente en Contabilidad/Activos antes de anular la factura."
+                    );
+                }
+            }
+
             if ($factura->comprobante_contable) {
                 $this->asientoService->reversarAsiento(
                     $empresaId,
@@ -902,14 +924,14 @@ class FacturaService
                     $fechaAnulacion
                 );
             }
-            
+
             $factura->estado = 'ANULADA';
-
-            if ($factura->proyecto_activo_id) {
-                $factura->proyecto_activo_id = null;
-            }
-
             $factura->save();
+
+            if ($proyecto) {
+                // Reutiliza la misma lógica que desvincular manual: descuenta el neto de valor_total_original y limpia el vínculo.
+                app(ActivoFijoService::class)->desvincularFacturaDeProyecto($empresaId, $proyecto->id_proyecto, $factura->id);
+            }
 
             // Si el F29 del mes de esta factura ya fue centralizado, marca la alerta de desactualización (no lo relanza solo).
             app(F29DriftService::class)->marcarSiPeriodoCentralizado(
@@ -918,27 +940,35 @@ class FacturaService
                 "Anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}"
             );
 
-            // Libera anticipos aplicados a esta factura (antes quedaban consumidos permanentemente aunque la deuda ya no existiera).
-            // Compra revierte contra anticipos de proveedor, venta contra anticipos de cliente: anticipo_aplicaciones
-            // es una tabla compartida y no deben cruzarse (ver hallazgo de auditoria #11).
-            if ($factura->tipo === 'VENTA') {
-                $this->anticipoClienteService->revertirAplicacionesDeFactura($empresaId, $facturaId);
-            } else {
-                $this->anticipoService->revertirAplicacionesDeFactura($empresaId, $facturaId);
-            }
-
-            // Si la factura vino de convertir una cotización, esta quedaba "Facturada" para siempre al anularla, sin poder refacturarse.
-            if ($factura->cotizacion_id) {
-                $estadoAceptada = EstadoCotizacion::where('nombre', 'Aceptada')->first();
-                if ($estadoAceptada) {
-                    Cotizacion::where('empresa_id', $empresaId)
-                        ->where('id', $factura->cotizacion_id)
-                        ->update(['estado_id' => $estadoAceptada->id]);
-                }
-            }
+            $this->liberarAnticipoYCotizacionDeFactura($empresaId, $factura);
 
             return $factura;
         });
+    }
+
+    /**
+     * Libera anticipos aplicados a una factura que quedó ANULADA y, si venía de una cotización, la vuelve a 'Aceptada'.
+     * Compartido entre anularFactura() y emitirNotaCreditoVenta() (cuando la NC cubre el 100% del monto): en ambos casos
+     * la factura queda ANULADA y sin este paso el anticipo queda consumido para siempre y la cotización "Facturada" fantasma.
+     */
+    private function liberarAnticipoYCotizacionDeFactura(int $empresaId, Factura $factura): void
+    {
+        // Compra revierte contra anticipos de proveedor, venta contra anticipos de cliente: anticipo_aplicaciones
+        // es una tabla compartida y no deben cruzarse (ver hallazgo de auditoria #11).
+        if ($factura->tipo === 'VENTA') {
+            $this->anticipoClienteService->revertirAplicacionesDeFactura($empresaId, $factura->id);
+        } else {
+            $this->anticipoService->revertirAplicacionesDeFactura($empresaId, $factura->id);
+        }
+
+        if ($factura->cotizacion_id) {
+            $estadoAceptada = EstadoCotizacion::where('nombre', 'Aceptada')->first();
+            if ($estadoAceptada) {
+                Cotizacion::where('empresa_id', $empresaId)
+                    ->where('id', $factura->cotizacion_id)
+                    ->update(['estado_id' => $estadoAceptada->id]);
+            }
+        }
     }
 
     public function obtenerVencidas(int $empresaId)

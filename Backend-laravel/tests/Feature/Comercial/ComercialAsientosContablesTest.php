@@ -59,19 +59,17 @@ class ComercialAsientosContablesTest extends TestCase
 
     public function test_anular_factura_libera_proyecto_activo()
     {
-        // FIX: Insertamos el proyecto fantasma dinámico para calmar a SQLite
-        $tablaProyectos = \Illuminate\Support\Facades\Schema::hasTable('proyectos_activos') ? 'proyectos_activos' : 'proyectos';
-        $columnas = \Illuminate\Support\Facades\Schema::getColumnListing($tablaProyectos);
-        $pk = in_array('id', $columnas) ? 'id' : (in_array('proyecto_id', $columnas) ? 'proyecto_id' : $columnas[0]);
-        
-        $datosProyecto = [$pk => 999];
-        if (in_array('empresa_id', $columnas)) $datosProyecto['empresa_id'] = $this->empresa->id;
-        if (in_array('nombre', $columnas)) $datosProyecto['nombre'] = 'Proyecto Test';
-        if (in_array('estado', $columnas)) $datosProyecto['estado'] = 'ACTIVO';
-        
-        \Illuminate\Support\Facades\DB::table($tablaProyectos)->insert($datosProyecto);
+        // Proyecto EN_CONSTRUCCION: la anulación debe desvincular y descontar el neto de valor_total_original,
+        // igual que una desvinculación manual (ver ActivoFijoService::desvincularFacturaDeProyecto).
+        $proyecto = \App\Domains\Activos\Models\ProyectoActivo::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'Proyecto Test',
+            'estado' => 'EN_CONSTRUCCION',
+            'valor_total_original' => 100,
+            'vida_util_meses' => 60,
+        ]);
 
-        $factura = new Factura(); $factura->empresa_id = $this->empresa->id; $factura->proveedor_id = $this->prov->id; $factura->numero_factura = 'F-ANULAR-PROY'; $factura->monto_bruto = 100; $factura->monto_neto = 100; $factura->monto_iva = 0; $factura->tipo = 'COMPRA'; $factura->codigo_unico = 102; $factura->fecha_emision = now(); $factura->estado = 'REGISTRADA'; $factura->proyecto_activo_id = 999; $factura->save();
+        $factura = new Factura(); $factura->empresa_id = $this->empresa->id; $factura->proveedor_id = $this->prov->id; $factura->numero_factura = 'F-ANULAR-PROY'; $factura->monto_bruto = 100; $factura->monto_neto = 100; $factura->monto_iva = 0; $factura->tipo = 'COMPRA'; $factura->codigo_unico = 102; $factura->fecha_emision = now(); $factura->estado = 'REGISTRADA'; $factura->proyecto_activo_id = $proyecto->id_proyecto; $factura->save();
 
         $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/anular", [
             'motivo' => 'Me equivoque de proyecto'
@@ -79,5 +77,49 @@ class ComercialAsientosContablesTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertNull($factura->fresh()->proyecto_activo_id);
+        $this->assertEquals(0, (float) $proyecto->fresh()->valor_total_original);
+    }
+
+    public function test_bloquea_anular_factura_de_proyecto_ya_capitalizado()
+    {
+        // Regresión (auditoría): si el proyecto ya pasó a ACTIVO_OPERATIVO (capitalizado en un Activo Fijo real),
+        // anular la factura que lo originó dejaría al Activo Fijo depreciando un costo inexistente contablemente.
+        $proyecto = \App\Domains\Activos\Models\ProyectoActivo::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'Proyecto Capitalizado',
+            'estado' => 'ACTIVO_OPERATIVO',
+            'valor_total_original' => 100,
+            'vida_util_meses' => 60,
+        ]);
+
+        $activo = \App\Domains\Activos\Models\ActivoFijo::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo' => 'AF-00099',
+            'nombre' => 'Proyecto Capitalizado',
+            'cuenta_activo_codigo' => '1010101',
+            'cuenta_depreciacion_codigo' => '1010102',
+            'cuenta_gasto_codigo' => '5010101',
+            'valor_adquisicion' => 100,
+            'fecha_adquisicion' => now()->toDateString(),
+            'vida_util_meses' => 60,
+            'valor_residual' => 1,
+            'estado' => 'ACTIVO',
+        ]);
+
+        $factura = new Factura(); $factura->empresa_id = $this->empresa->id; $factura->proveedor_id = $this->prov->id; $factura->numero_factura = 'F-ANULAR-CAPITALIZADO'; $factura->monto_bruto = 100; $factura->monto_neto = 100; $factura->monto_iva = 0; $factura->tipo = 'COMPRA'; $factura->codigo_unico = 103; $factura->fecha_emision = now(); $factura->estado = 'REGISTRADA'; $factura->proyecto_activo_id = $proyecto->id_proyecto; $factura->save();
+
+        $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/anular", [
+            'motivo' => 'Intento de anular factura de proyecto ya capitalizado'
+        ]);
+
+        $response->assertStatus(422);
+
+        // Nada debe haber cambiado: la factura sigue vigente y el proyecto/activo quedan intactos.
+        $this->assertEquals('REGISTRADA', $factura->fresh()->estado);
+        $this->assertEquals($proyecto->id_proyecto, $factura->fresh()->proyecto_activo_id);
+        $this->assertEquals(100, (float) $proyecto->fresh()->valor_total_original);
+        $this->assertEquals('ACTIVO_OPERATIVO', $proyecto->fresh()->estado);
+        $this->assertEquals(100, (float) $activo->fresh()->valor_adquisicion);
+        $this->assertEquals('ACTIVO', $activo->fresh()->estado);
     }
 }
