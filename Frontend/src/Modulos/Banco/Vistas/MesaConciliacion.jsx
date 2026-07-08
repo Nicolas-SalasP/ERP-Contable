@@ -208,6 +208,10 @@ const MesaConciliacion = () => {
                 return Swal.fire('Atención', 'Selecciona al menos una factura o un proveedor/cliente para generar un anticipo.', 'warning');
             }
 
+            if (totalSugerido < montoMovimiento && !entidadSel) {
+                return Swal.fire('Atención', 'El pago supera el total de las facturas seleccionadas (sobrepago). Selecciona el cliente/proveedor del excedente antes de continuar, o quedará como anticipo sin vincular.', 'warning');
+            }
+
             try {
                 Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
@@ -475,6 +479,14 @@ const MesaConciliacion = () => {
                                                     </tbody>
                                                 </table>
                                                 </div>
+                                                {totalSugerido < montoMovimiento && (
+                                                    <div className="p-4 border-t border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 text-center">
+                                                        <p className="text-xs text-amber-700 dark:text-amber-400 font-bold mb-2">El pago supera el total de estas facturas. Selecciona el cliente/proveedor del excedente para que quede como anticipo vinculado.</p>
+                                                        <button onClick={() => handleCambioModo('MANUAL')} className="bg-amber-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-amber-700 shadow-md transition-all">
+                                                            Seleccionar Cliente/Proveedor del Excedente
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="py-10 text-center border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
