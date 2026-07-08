@@ -17,6 +17,7 @@ use App\Domains\Comercial\Controllers\FacturaController;
 use App\Domains\Comercial\Controllers\DocumentoAdjuntoController;
 use App\Domains\Comercial\Controllers\CotizacionController;
 use App\Domains\Comercial\Controllers\AnticipoProveedorController;
+use App\Domains\Comercial\Controllers\AnticipoClienteController;
 use App\Domains\Comercial\Controllers\OrdenCompraController;
 use App\Domains\Contabilidad\Controllers\PlanCuentaController;
 use App\Domains\Contabilidad\Controllers\AsientoContableController;
@@ -209,6 +210,12 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->middleware('permiso:clientes.crear');
     Route::put('/clientes/{id}/activar', [ClienteController::class, 'activar'])->middleware('permiso:clientes.crear');
     Route::patch('/clientes/{id}/reactivar', [ClienteController::class, 'reactivar'])->middleware('permiso:clientes.crear');
+    Route::post('/clientes/{id}/cruzar-documentos', [ClienteController::class, 'cruzarDocumentos'])->middleware('permiso:clientes.crear');
+
+    // Endpoints dedicados de anticipos de clientes (con saldo disponible) -- mirror de anticipos-proveedores
+    Route::get('/anticipos-clientes', [AnticipoClienteController::class, 'index'])->middleware('permiso:clientes.ver,ventas.ver');
+    Route::post('/anticipos-clientes', [AnticipoClienteController::class, 'store'])->middleware('permiso:clientes.crear,ventas.crear');
+    Route::post('/anticipos-clientes/{id}/aplicar', [AnticipoClienteController::class, 'aplicar'])->middleware('permiso:clientes.crear,ventas.crear');
 
     // ---------------------------------------------------------------------
     // Comercial - Proveedores
@@ -222,6 +229,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/anticipos-proveedores', [AnticipoProveedorController::class, 'store'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::post('/anticipos-proveedores/{id}/aplicar', [AnticipoProveedorController::class, 'aplicar'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::post('/proveedores/{id}/cruzar-documentos', [ProveedorController::class, 'cruzarDocumentos'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::put('/proveedores/{id}/activar', [ProveedorController::class, 'activar'])->middleware('permiso:proveedores.crear,compras.crear');
 
     // Resource de proveedores (index/store/update; show y destroy excluidos)
     Route::get('/proveedores', [ProveedorController::class, 'index'])->middleware('permiso:proveedores.ver,compras.ver');

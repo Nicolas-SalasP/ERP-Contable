@@ -9,6 +9,7 @@ use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Comercial\Services\AnticipoProveedorService;
+use App\Domains\Comercial\Services\AnticipoClienteService;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\AsientoContableService;
@@ -22,11 +23,16 @@ class FacturaService
 {
     protected $asientoService;
     protected AnticipoProveedorService $anticipoService;
+    protected AnticipoClienteService $anticipoClienteService;
 
-    public function __construct(AsientoContableService $asientoService, AnticipoProveedorService $anticipoService)
-    {
+    public function __construct(
+        AsientoContableService $asientoService,
+        AnticipoProveedorService $anticipoService,
+        AnticipoClienteService $anticipoClienteService
+    ) {
         $this->asientoService = $asientoService;
         $this->anticipoService = $anticipoService;
+        $this->anticipoClienteService = $anticipoClienteService;
     }
 
     public function obtenerFacturasPaginadas(int $empresaId, array $filtros)
@@ -143,11 +149,14 @@ class FacturaService
 
         // Validar pertenencia antes de abrir la transacción (fail-fast).
         if (!empty($datos['proveedor_id'])) {
-            $proveedorValido = Proveedor::where('empresa_id', $datos['empresa_id'])
+            $proveedor = Proveedor::where('empresa_id', $datos['empresa_id'])
                 ->where('id', $datos['proveedor_id'])
-                ->exists();
-            if (!$proveedorValido) {
+                ->first();
+            if (!$proveedor) {
                 throw ComercialException::regla("El proveedor indicado no pertenece a esta empresa.");
+            }
+            if ($proveedor->estado === 'INACTIVO') {
+                throw ComercialException::regla("No se puede registrar una factura de compra a un proveedor inactivo.");
             }
         }
 
@@ -895,7 +904,13 @@ class FacturaService
             $factura->save();
 
             // Libera anticipos aplicados a esta factura (antes quedaban consumidos permanentemente aunque la deuda ya no existiera).
-            $this->anticipoService->revertirAplicacionesDeFactura($empresaId, $facturaId);
+            // Compra revierte contra anticipos de proveedor, venta contra anticipos de cliente: anticipo_aplicaciones
+            // es una tabla compartida y no deben cruzarse (ver hallazgo de auditoria #11).
+            if ($factura->tipo === 'VENTA') {
+                $this->anticipoClienteService->revertirAplicacionesDeFactura($empresaId, $facturaId);
+            } else {
+                $this->anticipoService->revertirAplicacionesDeFactura($empresaId, $facturaId);
+            }
 
             // Si la factura vino de convertir una cotización, esta quedaba "Facturada" para siempre al anularla, sin poder refacturarse.
             if ($factura->cotizacion_id) {

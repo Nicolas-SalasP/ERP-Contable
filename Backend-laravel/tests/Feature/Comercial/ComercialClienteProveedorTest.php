@@ -90,4 +90,38 @@ class ComercialClienteProveedorTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    public function test_inactivar_proveedor_cambia_su_estado_sin_eliminarlo_de_bd()
+    {
+        $proveedor = Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'PR-2', 'rut' => '33.333.333-3', 'razon_social' => 'Proveedor A Bloquear', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP', 'estado' => 'ACTIVO']);
+        $this->actingAs($this->usuario)->deleteJson("/api/proveedores/{$proveedor->id}")->assertStatus(200);
+        $this->assertDatabaseHas('proveedores', ['id' => $proveedor->id, 'estado' => 'INACTIVO']);
+    }
+
+    public function test_activar_proveedor_inactivo_vuelve_a_estado_activo()
+    {
+        $proveedor = Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'PR-3', 'rut' => '22.222.222-2', 'razon_social' => 'Proveedor Bloqueado', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP', 'estado' => 'INACTIVO']);
+        $response = $this->actingAs($this->usuario)->putJson("/api/proveedores/{$proveedor->id}/activar");
+
+        $response->assertStatus(200);
+        $this->assertEquals('ACTIVO', $proveedor->fresh()->estado);
+    }
+
+    public function test_proveedor_bloqueado_no_puede_usarse_para_registrar_factura_de_compra()
+    {
+        $proveedor = Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'PR-4', 'rut' => '11.111.111-1', 'razon_social' => 'Proveedor Inactivo', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP', 'estado' => 'INACTIVO']);
+
+        $response = $this->actingAs($this->usuario)->postJson('/api/facturas', [
+            'proveedor_id' => $proveedor->id,
+            'numero_factura' => 'C-001',
+            'tipo_documento' => 'FACTURA',
+            'fecha_emision' => now()->toDateString(),
+            'monto_neto' => 10000,
+            'monto_iva' => 1900,
+            'monto_bruto' => 11900,
+            'cuentaDestino' => '600100',
+        ]);
+
+        $response->assertStatus(422)->assertSee('proveedor inactivo');
+    }
 }

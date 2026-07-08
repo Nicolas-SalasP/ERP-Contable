@@ -4,25 +4,31 @@ namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
 
-use App\Domains\Comercial\Models\AnticipoProveedor;
-use App\Domains\Comercial\Models\Proveedor;
+use App\Domains\Comercial\Models\AnticipoCliente;
+use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Facades\DB;
 
-class AnticipoProveedorService
+/**
+ * Mirror de AnticipoProveedorService para el lado venta. anticipo_aplicaciones
+ * es una tabla compartida con proveedor: todas las escrituras/lecturas fijan
+ * tipo='cliente' explicitamente para no colisionar con IDs de anticipos de
+ * proveedor (ver hallazgo de auditoria #11).
+ */
+class AnticipoClienteService
 {
-    public function registrar(int $empresaId, array $datos): AnticipoProveedor
+    public function registrar(int $empresaId, array $datos): AnticipoCliente
     {
-        $proveedor = Proveedor::where('empresa_id', $empresaId)
-            ->find($datos['proveedor_id']);
+        $cliente = Cliente::where('empresa_id', $empresaId)
+            ->find($datos['cliente_id']);
 
-        if (!$proveedor) {
-            throw ComercialException::noEncontrado("Proveedor no encontrado o no pertenece a tu empresa.");
+        if (!$cliente) {
+            throw ComercialException::noEncontrado("Cliente no encontrado o no pertenece a tu empresa.");
         }
 
-        return AnticipoProveedor::create([
+        return AnticipoCliente::create([
             'empresa_id' => $empresaId,
-            'proveedor_id' => $datos['proveedor_id'],
+            'cliente_id' => $datos['cliente_id'],
             'monto' => $datos['monto'],
             'monto_original' => $datos['monto'],
             'saldo_disponible' => $datos['monto'],
@@ -32,15 +38,23 @@ class AnticipoProveedorService
         ]);
     }
 
-    public function aplicarAFactura(int $empresaId, int $anticipoId, int $facturaId, float $montoAplicar): AnticipoProveedor
+    public function aplicarAFactura(int $empresaId, int $anticipoId, int $facturaId, float $montoAplicar): AnticipoCliente
     {
         return DB::transaction(function () use ($empresaId, $anticipoId, $facturaId, $montoAplicar) {
-            $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)
+            $anticipo = AnticipoCliente::where('empresa_id', $empresaId)
                 ->lockForUpdate()
                 ->find($anticipoId);
 
             if (!$anticipo) {
                 throw ComercialException::noEncontrado("Anticipo no encontrado.");
+            }
+
+            $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
+            if (!$factura) {
+                throw ComercialException::noEncontrado("Factura no encontrada.");
+            }
+            if ($factura->tipo !== 'VENTA') {
+                throw ComercialException::regla("Un anticipo de cliente solo puede aplicarse a una factura de venta.");
             }
 
             $saldoActual = (float) $anticipo->getRawOriginal('saldo_disponible');
@@ -73,7 +87,7 @@ class AnticipoProveedorService
             DB::table('anticipo_aplicaciones')->insert([
                 'empresa_id' => $empresaId,
                 'anticipo_id' => $anticipo->id,
-                'tipo' => 'proveedor',
+                'tipo' => 'cliente',
                 'factura_id' => $facturaId,
                 'monto' => $montoAplicar,
                 'created_at' => now(),
@@ -90,12 +104,12 @@ class AnticipoProveedorService
         $aplicaciones = DB::table('anticipo_aplicaciones')
             ->where('empresa_id', $empresaId)
             ->where('factura_id', $facturaId)
-            ->where('tipo', 'proveedor')
+            ->where('tipo', 'cliente')
             ->whereNull('revertido_at')
             ->get();
 
         foreach ($aplicaciones as $aplicacion) {
-            $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)
+            $anticipo = AnticipoCliente::where('empresa_id', $empresaId)
                 ->lockForUpdate()
                 ->find($aplicacion->anticipo_id);
 
@@ -111,18 +125,18 @@ class AnticipoProveedorService
 
             DB::table('anticipo_aplicaciones')
                 ->where('id', $aplicacion->id)
-                ->where('tipo', 'proveedor')
+                ->where('tipo', 'cliente')
                 ->update(['revertido_at' => now()]);
         }
     }
 
-    public function listar(int $empresaId, ?int $proveedorId = null)
+    public function listar(int $empresaId, ?int $clienteId = null)
     {
-        $query = AnticipoProveedor::where('empresa_id', $empresaId)
-            ->with('proveedor');
+        $query = AnticipoCliente::where('empresa_id', $empresaId)
+            ->with('cliente');
 
-        if ($proveedorId) {
-            $query->where('proveedor_id', $proveedorId);
+        if ($clienteId) {
+            $query->where('cliente_id', $clienteId);
         }
 
         return $query->orderBy('created_at', 'desc')->get();

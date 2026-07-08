@@ -238,6 +238,15 @@ class ProveedorService
                     'origen_modulo' => 'compras',
                     'estado' => 'MAYORIZADO'
                 ], $detallesAsiento);
+
+                // Vincula el asiento de traspaso a las facturas compensadas: sin esto, al
+                // reversar este asiento (AnulacionService/AsientoContableService) no había
+                // forma de encontrar la Factura para revertir su estado, quedaba huérfana.
+                DB::table('facturas')
+                    ->where('empresa_id', $empresaId)
+                    ->where('proveedor_id', $proveedorId)
+                    ->whereIn('id', $facturasIds)
+                    ->update(['asiento_pago_id' => $asiento->id]);
             }
 
             return [
@@ -254,5 +263,21 @@ class ProveedorService
         return Proveedor::where('empresa_id', $empresaId)
             ->orderBy('created_at', 'desc')
             ->paginate($limit);
+    }
+
+    /** Inactiva (bloquea) un proveedor: no elimina el registro, solo cambia su estado. */
+    public function inactivarProveedor(int $empresaId, int $id): Proveedor
+    {
+        $proveedor = Proveedor::where('empresa_id', $empresaId)->findOrFail($id);
+        $proveedor->update(['estado' => 'INACTIVO']);
+        return $proveedor;
+    }
+
+    /** Marca un proveedor como activo (desbloquea). */
+    public function activarProveedor(int $empresaId, int $id): Proveedor
+    {
+        $proveedor = Proveedor::where('empresa_id', $empresaId)->findOrFail($id);
+        $proveedor->update(['estado' => 'ACTIVO']);
+        return $proveedor;
     }
 }
