@@ -4,6 +4,7 @@ namespace App\Domains\Sii\Services\Caf;
 
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Sii\Exceptions\CafInvalidoException;
+use App\Domains\Sii\Exceptions\FolioUsoEstadoInvalidoException;
 use App\Domains\Sii\Exceptions\SinFoliosDisponiblesException;
 use App\Domains\Sii\Models\SiiCaf;
 use App\Domains\Sii\Models\SiiCafFolioUso;
@@ -140,11 +141,22 @@ class CafService
         return $afectados > 0;
     }
 
+    /** @throws FolioUsoEstadoInvalidoException si el folio ya no esta RESERVADO bajo el lock (ej. revocado a HUERFANO por otro proceso mientras se firmaba el DTE) */
     public function marcarFolioUsado(int $folioUsoId, int $dteEmitidoId): void
     {
         DB::transaction(function () use ($folioUsoId, $dteEmitidoId) {
             /** @var SiiCafFolioUso $folioUso */
             $folioUso = SiiCafFolioUso::query()->lockForUpdate()->findOrFail($folioUsoId);
+
+            // Re-chequeo bajo lock: sin esto, un folio revocado (HUERFANO) mientras se firmaba el DTE quedaba
+            // sobreescrito de vuelta a USADO, emitiendo un DTE valido sobre un folio invalido ante el SII.
+            if ($folioUso->estado !== SiiCafFolioUso::ESTADO_RESERVADO) {
+                throw FolioUsoEstadoInvalidoException::alMarcarUsado(
+                    $folioUso->id,
+                    $folioUso->estado,
+                    SiiCafFolioUso::ESTADO_RESERVADO
+                );
+            }
 
             $folioUso->update([
                 'estado'         => SiiCafFolioUso::ESTADO_USADO,
