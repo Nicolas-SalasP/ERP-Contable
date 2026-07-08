@@ -32,6 +32,7 @@ import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
 const CierreF29 = lazy(() => import('./Modulos/Contabilidad/Vistas/CierreF29'));
 const CierrePeriodo = lazy(() => import('./Modulos/Contabilidad/Vistas/CierrePeriodo'));
 const AsientoManual = lazy(() => import('./Modulos/Contabilidad/Vistas/AsientoManual'));
+const ExportarReportes = lazy(() => import('./Modulos/Contabilidad/Vistas/ExportarReportes'));
 import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
 import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
 import GestionUsuarios from './Modulos/Administrador/GestionUsuarios';
@@ -454,6 +455,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.crear">
                 <LayoutPrincipal><AsientoManual /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/exportar-reportes" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><ExportarReportes /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />

@@ -360,6 +360,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario'])->middleware('permiso:contabilidad.ver');
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor'])->middleware('permiso:contabilidad.ver');
     Route::get('/contabilidad/reportes/balance-comprobacion', [ReporteController::class, 'balanceComprobacion'])->middleware('permiso:contabilidad.ver');
+    Route::post('/contabilidad/reportes/exportar', [ReporteController::class, 'solicitarExportacion'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/reportes/exportar/{id}', [ReporteController::class, 'estadoExportacion'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/reportes/exportar', [ReporteController::class, 'historialExportaciones'])->middleware('permiso:contabilidad.ver');
 
     // Contabilidad - Formularios 29 y 22 (Renta)
     Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29'])->middleware('permiso:tributario.ver');
