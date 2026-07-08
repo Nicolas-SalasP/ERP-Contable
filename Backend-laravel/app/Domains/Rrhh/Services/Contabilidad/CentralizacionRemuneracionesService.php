@@ -55,10 +55,17 @@ class CentralizacionRemuneracionesService
         }
 
         try {
+            // glosa NOT LIKE reverso: el reverso de un asiento de centralizacion anulado copia
+            // origen_modulo/origen_id del original, asi que sin este filtro el reverso mismo
+            // bloqueaba para siempre la re-centralizacion del periodo (mismo patron que
+            // ReporteContableService::aplicarFiltroEstado).
             if (AsientoContable::where('empresa_id', $empresaId)
                 ->where('origen_modulo', 'rrhh')
                 ->where('origen_id', $periodoId)
                 ->where('estado', '!=', 'ANULADO')
+                ->where(function ($q) {
+                    $q->whereNull('glosa')->orWhere('glosa', 'not like', 'REVERSO N°%');
+                })
                 ->exists()
             ) {
                 throw RrhhException::regla(

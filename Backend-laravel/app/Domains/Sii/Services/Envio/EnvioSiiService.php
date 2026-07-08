@@ -157,6 +157,16 @@ class EnvioSiiService
 
     private function validarDtePuedeEnviarse(SiiDteEmitido $dte): void
     {
+        // Bloquear si ya existe un envio en ENVIANDO (en curso o huerfano): previene doble envio del mismo folio si el envio huerfano SI llego al SII pero se perdio la respuesta antes de poder marcarlo.
+        $envioEnCurso = SiiEnvioDte::query()
+            ->where('dte_emitido_id', $dte->id)
+            ->where('estado_envio', SiiEnvioDte::ESTADO_ENVIANDO)
+            ->first();
+
+        if ($envioEnCurso !== null) {
+            throw EnvioSiiException::envioEnCursoOHuerfano($dte->id, $envioEnCurso->id);
+        }
+
         if ($dte->estado === SiiDteEmitido::ESTADO_FIRMADO) {
             return;
         }

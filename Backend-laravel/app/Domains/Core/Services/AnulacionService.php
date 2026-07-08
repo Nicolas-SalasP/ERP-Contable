@@ -3,12 +3,18 @@
 namespace App\Domains\Core\Services;
 
 use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Contabilidad\Services\F29DriftService;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class AnulacionService
 {
+    public function __construct(private ContadorEmpresaService $contadorService)
+    {
+    }
+
     public function buscarDocumento(int $empresaId, string $tipo, string $numero)
     {
         $tipoStr = strtoupper($tipo);
@@ -66,6 +72,15 @@ class AnulacionService
 
                 $asientoOriginal->update(['estado' => 'ANULADO']);
 
+                // Mismo fix que AsientoContableService::procesarReversa: si el asiento es de una factura (ventas/compras) y su mes ya tiene F29 centralizado, marca la alerta de desactualización.
+                if (in_array($asientoOriginal->origen_modulo, ['ventas', 'compras'], true)) {
+                    app(F29DriftService::class)->marcarSiPeriodoCentralizado(
+                        $empresaId,
+                        $asientoOriginal->fecha,
+                        "Anulación del asiento N° {$asientoOriginal->numero_comprobante}. Motivo: {$motivo}"
+                    );
+                }
+
                 $tempNum = 'T' . time() . rand(10, 99);
 
                 // El reverso queda MAYORIZADO (no ANULADO): antes quedaba ANULADO y ReporteContableService::aplicarFiltroEstado lo excluía, invisible en Libro Diario/Mayor.
@@ -81,9 +96,13 @@ class AnulacionService
                     'origen_id' => $asientoOriginal->origen_id,
                 ]);
 
+                // Antes usaba el id de la fila como secuencia -- desincronizado del contador
+                // real (ContadorEmpresaService), lo que producía colisiones con números
+                // generados después por registrarAsiento/generarNumeroComprobante.
                 $anio = date('y', strtotime($asientoReverso->fecha));
                 $tipoCode = '10';
-                $secuencia = str_pad((string) $asientoReverso->id, 6, '0', STR_PAD_LEFT);
+                $correlativo = $this->contadorService->siguienteNumero($empresaId, 'asiento_comprobante');
+                $secuencia = str_pad((string) $correlativo, 6, '0', STR_PAD_LEFT);
                 $asientoReverso->update(['numero_comprobante' => $anio . $tipoCode . $secuencia]);
 
                 foreach ($asientoOriginal->detalles as $det) {
@@ -107,6 +126,81 @@ class AnulacionService
                     ->where('empresa_id', $empresaId)
                     ->where('asiento_id', $asientoOriginal->id)
                     ->update(['estado' => 'PENDIENTE', 'asiento_id' => null]);
+
+                // Si el asiento generó un anticipo autogenerado (sobrepago en Mesa de
+                // Conciliación), lo anula: sin esto quedaba PAGADO para siempre con el
+                // movimiento ya liberado arriba, permitiendo re-conciliarlo por duplicado.
+                foreach (['anticipos_proveedores', 'anticipos_clientes'] as $tablaAnticipo) {
+                    DB::table($tablaAnticipo)
+                        ->where('empresa_id', $empresaId)
+                        ->where('asiento_id', $asientoOriginal->id)
+                        ->update(['estado' => 'ANULADO', 'asiento_id' => null, 'movimiento_id' => null]);
+                }
+
+                // Si era el asiento de centralizacion de remuneraciones, limpia comprobante_contable
+                // en las liquidaciones que lo referenciaban -- sin esto quedaban apuntando a un
+                // comprobante ya ANULADO y CentralizacionRemuneracionesService::centralizar (ya
+                // corregido para no bloquearse con el reverso) las re-centralizaba sin que la
+                // liquidacion mostrara el nuevo comprobante.
+                if ($asientoOriginal->origen_modulo === 'rrhh') {
+                    DB::table('liquidaciones')
+                        ->where('empresa_id', $empresaId)
+                        ->where('comprobante_contable', $asientoOriginal->numero_comprobante)
+                        ->update(['comprobante_contable' => null]);
+                }
+
+                // Si era el asiento de baja de un activo fijo, lo reactiva -- sin esto quedaba
+                // DADO_DE_BAJA para siempre pese a que el asiento contable que lo dio de baja
+                // ya no existe (fue reversado). REACTIVADO (no ACTIVO) para dejar rastro de que
+                // el activo pasó por una baja corregida.
+                if ($asientoOriginal->origen_modulo === 'activos' && $asientoOriginal->origen_id) {
+                    DB::table('activos_fijos')
+                        ->where('empresa_id', $empresaId)
+                        ->where('id', $asientoOriginal->origen_id)
+                        ->where('estado', 'DADO_DE_BAJA')
+                        ->update(['estado' => 'REACTIVADO']);
+                }
+
+                // Si era el asiento de una ejecucion de Corrección Monetaria, la marca 'anulada'
+                // (desbloquea el período para re-ejecutar) y resta a cada activo exactamente el
+                // ajuste que le aplicó -- sin esto CmEjecucion.estado quedaba 'ejecutada' para
+                // siempre (período bloqueado permanentemente) y cm_ajuste_acumulado desincronizado
+                // del balance ya reversado.
+                if ($asientoOriginal->origen_modulo === 'correccion_monetaria') {
+                    $ejecucion = DB::table('cm_ejecuciones')
+                        ->where('empresa_id', $empresaId)
+                        ->where('asiento_id', $asientoOriginal->id)
+                        ->where('estado', 'ejecutada')
+                        ->first();
+
+                    if ($ejecucion) {
+                        $detalles = DB::table('cm_ejecucion_activos')->where('cm_ejecucion_id', $ejecucion->id)->get();
+                        foreach ($detalles as $detalle) {
+                            DB::table('activos_fijos')
+                                ->where('id', $detalle->activo_id)
+                                ->decrement('cm_ajuste_acumulado', (float) $detalle->ajuste_activo);
+                            DB::table('activos_fijos')
+                                ->where('id', $detalle->activo_id)
+                                ->decrement('cm_depreciacion_ajuste_acumulado', (float) $detalle->ajuste_depreciacion);
+                        }
+                        DB::table('cm_ejecuciones')->where('id', $ejecucion->id)->update(['estado' => 'anulada']);
+                    }
+                }
+
+                // Si era el asiento de una depreciación mensual, resta a cada activo exactamente
+                // la cuota guardada -- sin esto depreciacion_acumulada quedaba desincronizada del
+                // balance ya reversado y, al no volver a su valor anterior, re-ejecutar el mismo
+                // mes duplicaba la cuota sobre un acumulado nunca revertido.
+                if ($asientoOriginal->origen_modulo === 'activos_depreciacion') {
+                    $cuotas = DB::table('depreciacion_ejecucion_activos')
+                        ->where('asiento_id', $asientoOriginal->id)
+                        ->get();
+                    foreach ($cuotas as $cuota) {
+                        DB::table('activos_fijos')
+                            ->where('id', $cuota->activo_id)
+                            ->decrement('depreciacion_acumulada', (float) $cuota->monto_cuota);
+                    }
+                }
 
                 return [
                     'nuevo_asiento_id' => $asientoReverso->numero_comprobante

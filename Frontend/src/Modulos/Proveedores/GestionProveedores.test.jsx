@@ -31,6 +31,15 @@ const proveedorExtranjero = {
     telefono: '+1 555 0100',
     direccion: '123 Main St',
     cuenta_contable_id: null,
+    estado: 'ACTIVO',
+};
+
+const proveedorBloqueado = {
+    id: 11,
+    razon_social: 'Distribuidora Bloqueada SpA',
+    rut: '76.333.333-3',
+    pais_iso: 'CL',
+    estado: 'INACTIVO',
 };
 
 const listaProveedores = {
@@ -136,5 +145,81 @@ describe('GestionProveedores — validación RUT por país', () => {
             // Solo verificamos que el campo procesó el input sin lanzar excepción
             expect(typeof errorVisible).toBe('boolean');
         });
+    });
+});
+
+describe('GestionProveedores — acciones de estado', () => {
+    it('muestra badge ACTIVO/BLOQUEADO según el estado del proveedor', async () => {
+        setupFetchRouter({
+            'GET /proveedores': () => mockJsonResponse(200, { success: true, data: [proveedorExtranjero, proveedorBloqueado] }),
+            'GET /paises': () => mockJsonResponse(200, paises),
+        });
+        renderGestion();
+
+        await waitFor(() => {
+            expect(screen.getAllByText('ACTIVO').length).toBeGreaterThan(0);
+            expect(screen.getAllByText('BLOQUEADO').length).toBeGreaterThan(0);
+        });
+    });
+
+    it('llama DELETE al confirmar bloqueo de proveedor ACTIVO', async () => {
+        swalMock.fire.mockResolvedValue({ isConfirmed: true });
+        let deleteUrl = null;
+        setupFetchRouter({
+            'GET /proveedores': () => mockJsonResponse(200, { success: true, data: [proveedorExtranjero] }),
+            'GET /paises': () => mockJsonResponse(200, paises),
+            'DELETE /proveedores/10': (_, url) => {
+                deleteUrl = url;
+                return mockJsonResponse(200, { success: true });
+            },
+        });
+        renderGestion();
+        await waitForLoad();
+
+        const btnBloquear = screen.getAllByRole('button', { name: /bloquear proveedor/i })[0];
+        fireEvent.click(btnBloquear);
+
+        await waitFor(() => expect(deleteUrl).not.toBeNull(), { timeout: 2000 });
+    });
+
+    it('llama PUT /activar al confirmar activación de proveedor BLOQUEADO', async () => {
+        swalMock.fire.mockResolvedValue({ isConfirmed: true });
+        let activarLlamado = false;
+        setupFetchRouter({
+            'GET /proveedores': () => mockJsonResponse(200, { success: true, data: [proveedorBloqueado] }),
+            'GET /paises': () => mockJsonResponse(200, paises),
+            'PUT /proveedores/11/activar': () => {
+                activarLlamado = true;
+                return mockJsonResponse(200, { success: true });
+            },
+        });
+        renderGestion();
+        await waitFor(() => expect(screen.queryAllByText(/Distribuidora Bloqueada/i).length).toBeGreaterThan(0));
+
+        const btnActivar = screen.getAllByRole('button', { name: /activar proveedor/i })[0];
+        fireEvent.click(btnActivar);
+
+        await waitFor(() => expect(activarLlamado).toBe(true), { timeout: 2000 });
+    });
+
+    it('no llama DELETE si el usuario cancela el Swal', async () => {
+        swalMock.fire.mockResolvedValue({ isConfirmed: false });
+        let deleteLlamado = false;
+        setupFetchRouter({
+            'GET /proveedores': () => mockJsonResponse(200, { success: true, data: [proveedorExtranjero] }),
+            'GET /paises': () => mockJsonResponse(200, paises),
+            'DELETE /proveedores/10': () => {
+                deleteLlamado = true;
+                return mockJsonResponse(200, { success: true });
+            },
+        });
+        renderGestion();
+        await waitForLoad();
+
+        const btnBloquear = screen.getAllByRole('button', { name: /bloquear proveedor/i })[0];
+        fireEvent.click(btnBloquear);
+
+        await waitFor(() => expect(swalMock.fire).toHaveBeenCalled());
+        expect(deleteLlamado).toBe(false);
     });
 });

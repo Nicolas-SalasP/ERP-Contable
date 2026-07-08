@@ -131,6 +131,44 @@ XML;
         $this->service->cargar(99_999, $this->xmlCaf());
     }
 
+    /**
+     * Simula la condicion de carrera de una carga duplicada de CAF: dos requests concurrentes pasan
+     * ambas el exists() (lectura obsoleta) antes de que la primera confirme el create(). Se fuerza el
+     * escenario con un servicio de prueba cuyo existeCaf() siempre retorna false (el "stale read" real
+     * que produciria una carrera sin el fix), dejando que sea el UNIQUE(empresa_id, sii_idk) de la BD
+     * el que detenga el segundo insert. La aserción clave: NUNCA debe quedar un segundo SiiCaf duplicado
+     * en la BD, y el error debe ser el CafInvalidoException de dominio (no una QueryException cruda).
+     */
+    public function test_carga_concurrente_del_mismo_caf_no_duplica_el_registro(): void
+    {
+        $empresa = $this->crearEmpresa();
+
+        // Primera carga "gana la carrera" y persiste normalmente.
+        $primero = $this->service->cargar($empresa->id, $this->xmlCaf(null, '300'));
+        $this->assertNotNull($primero->id);
+
+        // Segunda carga concurrente: su exists() ya habria leido "no existe" antes del commit de la
+        // primera (stale read), por eso se fuerza con el double de prueba en vez de depender del timing.
+        $serviceConLecturaObsoleta = new class(new CafXmlParser()) extends CafService {
+            protected function existeCaf(int $empresaId, string $siiIdk): bool
+            {
+                return false;
+            }
+        };
+
+        $this->expectException(CafInvalidoException::class);
+
+        try {
+            $serviceConLecturaObsoleta->cargar($empresa->id, $this->xmlCaf(null, '300', 33, 500, 600));
+        } finally {
+            $this->assertSame(
+                1,
+                SiiCaf::query()->where('empresa_id', $empresa->id)->where('sii_idk', '300')->count(),
+                'La condicion de carrera NO debe dejar un CAF duplicado con el mismo sii_idk (folios timbrados duplicados ante el SII).'
+            );
+        }
+    }
+
     public function test_hidden_no_expone_rsa_ni_xml_en_json(): void
     {
         $empresa = $this->crearEmpresa();

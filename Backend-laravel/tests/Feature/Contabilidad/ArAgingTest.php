@@ -199,6 +199,52 @@ class ArAgingTest extends TestCase
     }
 
     // ------------------------------------------------------------------
+    // Tests: regresión saldo real en facturas ABONADA (NC parcial)
+    // ------------------------------------------------------------------
+
+    public function test_factura_abonada_con_nota_credito_aplicada_usa_saldo_real_no_monto_bruto(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $factura = $this->crearFacturaVenta($empresa->id, 400000, now()->subDays(5)->toDateString(), 'ABONADA');
+
+        // NC aplicada contra la factura (mismo criterio de ProveedorService::compensarPartidas, equivalente en ventas): reduce el saldo pendiente en 150000.
+        Factura::withoutGlobalScopes()->create([
+            'empresa_id'            => $empresa->id,
+            'codigo_unico'          => Factura::generarCodigoUnico(),
+            'cliente_id'            => $factura->cliente_id,
+            'numero_factura'        => 'NC-' . uniqid(),
+            'tipo'                  => 'VENTA',
+            'tipo_documento'        => 'NOTA_CREDITO',
+            'fecha_emision'         => now()->toDateString(),
+            'monto_neto'            => round(150000 / 1.19, 2),
+            'monto_iva'             => 150000 - round(150000 / 1.19, 2),
+            'monto_bruto'           => 150000,
+            'estado'                => 'APLICADA',
+            'factura_referencia_id' => $factura->id,
+        ]);
+
+        $response = $this->actingAs($usuario)
+            ->getJson('/api/contabilidad/ar-aging');
+
+        $response->assertStatus(200);
+        // Saldo real: 400000 - 150000 de NC aplicada = 250000. Antes del fix, sumaba el monto bruto completo (400000).
+        $this->assertEqualsWithDelta(250000.0, $response->json('data.resumen.total'), 0.01);
+    }
+
+    public function test_factura_abonada_sin_ajustes_aparece_con_monto_bruto(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $this->crearFacturaVenta($empresa->id, 250000, now()->subDays(5)->toDateString(), 'ABONADA');
+
+        $response = $this->actingAs($usuario)
+            ->getJson('/api/contabilidad/ar-aging');
+
+        $response->assertStatus(200);
+        // ABONADA sin NC registrada: se incluye igual, sin sobreestimar ni excluir.
+        $this->assertEqualsWithDelta(250000.0, $response->json('data.resumen.total'), 0.01);
+    }
+
+    // ------------------------------------------------------------------
     // Test: aislamiento multitenant
     // ------------------------------------------------------------------
 

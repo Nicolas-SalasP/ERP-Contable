@@ -24,7 +24,7 @@ class InventarioLoteService
     {
         $this->permisos->exigir($usuario, 'inventario.lotes.ver');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
         $perPage = $this->normalizarPerPage($filtros['per_page'] ?? 15);
 
         return LoteInventario::query()
@@ -75,7 +75,7 @@ class InventarioLoteService
                 'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
                 'stocks.bodega:id,empresa_id,codigo,nombre,estado',
             ])
-            ->where('empresa_id', (int) $usuario->empresa_id)
+            ->where('empresa_id', (int) $usuario->empresa_activa_id)
             ->find($loteId);
 
         if (!$lote) {
@@ -91,13 +91,13 @@ class InventarioLoteService
     {
         $this->permisos->exigir($usuario, 'inventario.lotes.ver');
 
-        $producto = $this->obtenerProductoEmpresa($productoId, (int) $usuario->empresa_id);
+        $producto = $this->obtenerProductoEmpresa($productoId, (int) $usuario->empresa_activa_id);
 
         return LoteInventario::query()
             ->with([
                 'stocks.bodega:id,empresa_id,codigo,nombre,estado',
             ])
-            ->where('empresa_id', (int) $usuario->empresa_id)
+            ->where('empresa_id', (int) $usuario->empresa_activa_id)
             ->where('producto_id', $producto->id)
             ->when(array_key_exists('activo', $filtros) && $filtros['activo'] !== null && $filtros['activo'] !== '', function ($query) use ($filtros) {
                 $query->where('activo', filter_var($filtros['activo'], FILTER_VALIDATE_BOOLEAN));
@@ -123,7 +123,7 @@ class InventarioLoteService
             ->with([
                 'bodega:id,empresa_id,codigo,nombre,estado',
             ])
-            ->where('empresa_id', (int) $usuario->empresa_id)
+            ->where('empresa_id', (int) $usuario->empresa_activa_id)
             ->where('lote_id', $lote->id)
             ->orderBy('bodega_id')
             ->get();
@@ -139,7 +139,7 @@ class InventarioLoteService
     {
         $this->permisos->exigir($usuario, 'inventario.lotes.crear');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
 
         $producto = $this->obtenerProductoActivoEmpresa(
             (int) ($datos['producto_id'] ?? 0),
@@ -173,7 +173,7 @@ class InventarioLoteService
     {
         $this->permisos->exigir($usuario, 'inventario.lotes.editar');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
 
         $lote = LoteInventario::query()
             ->with('producto')

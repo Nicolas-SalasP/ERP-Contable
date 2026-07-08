@@ -38,7 +38,7 @@ class LreController extends Controller
         try {
             $lre = $this->generarService->generar($request->user()->empresa_activa_id, $anio, $mes);
         } catch (RrhhException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         return response()->json($lre);
@@ -51,13 +51,13 @@ class LreController extends Controller
             ->find($id);
 
         if (! $lre) {
-            return response()->json(['mensaje' => 'El LRE no existe o no pertenece a la empresa.'], 404);
+            return response()->json(['message' => 'El LRE no existe o no pertenece a la empresa.'], 404);
         }
 
         try {
             $errores = $this->validarService->validar($lre);
         } catch (RrhhException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         if (empty($errores)) {
@@ -91,13 +91,13 @@ class LreController extends Controller
             ->find($id);
 
         if (! $lre) {
-            return response()->json(['mensaje' => 'El LRE no existe o no pertenece a la empresa.'], 404);
+            return response()->json(['message' => 'El LRE no existe o no pertenece a la empresa.'], 404);
         }
 
         try {
             $lre = $this->confirmarService->confirmar($lre, $datos['numero_confirmacion'] ?? null);
         } catch (RrhhException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         return response()->json($lre);
@@ -128,13 +128,13 @@ class LreController extends Controller
             ->find($id);
 
         if (! $lre) {
-            return response()->json(['mensaje' => 'El LRE no existe o no pertenece a la empresa.'], 404);
+            return response()->json(['message' => 'El LRE no existe o no pertenece a la empresa.'], 404);
         }
 
         try {
             $meta = $this->descargaService->prepararDescarga($lre);
         } catch (RrhhException $e) {
-            return response()->json(['mensaje' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         return Storage::disk('sii_xml')->download($meta['ruta'], $meta['nombre_archivo']);

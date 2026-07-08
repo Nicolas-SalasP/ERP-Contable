@@ -53,6 +53,12 @@ class ContratoService
                 'es_contrato_activo' => true,
             ]));
 
+            // Recontratación: si el empleado quedó INACTIVO por un finiquito/término anterior,
+            // el nuevo contrato lo reactiva (afecta filtro de listado y derechos ARCO en ArcoService).
+            if ($empleado->estado === 'INACTIVO') {
+                $empleado->update(['estado' => 'ACTIVO']);
+            }
+
             foreach ($haberes as $haber) {
                 HaberDescuentoContrato::create(array_merge($haber, [
                     'empresa_id' => $empresaId,

@@ -33,7 +33,7 @@ class ActivoFijoService
     {
         return ActivoFijo::where('empresa_id', $empresaId)
             ->with(['cuenta'])
-            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA'])
+            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA', 'REACTIVADO'])
             ->get();
     }
 
@@ -43,7 +43,7 @@ class ActivoFijoService
 
         $query = ActivoFijo::where('empresa_id', $empresaId)
             ->with(['cuenta'])
-            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA']);
+            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA', 'REACTIVADO']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -150,11 +150,16 @@ class ActivoFijoService
 
         $fechaCalculoFecha = $fechaCalculo->toDateString();
         $glosaMes = "Centralización Depreciación Activos Fijos - " . $periodo->format('m/Y');
+        $periodoMes = $periodo->month;
+        $periodoAnio = $periodo->year;
 
-        return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculoFecha, $glosaMes) {
+        return DB::transaction(function () use ($empresaId, $usuarioId, $fechaCalculoFecha, $glosaMes, $periodoMes, $periodoAnio) {
+            // origen_modulo 'activos_depreciacion' (distinto de 'activos', usado por darDeBaja) para
+            // que el reversor pueda distinguir qué revertir: aquí se resta la cuota guardada en
+            // depreciacion_ejecucion_activos, no se reactiva ningún activo.
             $yaEjecutado = DB::table('asientos_contables')
                 ->where('empresa_id', $empresaId)
-                ->where('origen_modulo', 'activos')
+                ->where('origen_modulo', 'activos_depreciacion')
                 ->where('glosa', $glosaMes)
                 ->where('estado', 'MAYORIZADO')
                 ->exists();
@@ -164,7 +169,7 @@ class ActivoFijoService
             }
 
             $activosOperativos = ActivoFijo::where('empresa_id', $empresaId)
-                ->where('estado', 'ACTIVO')
+                ->whereIn('estado', ['ACTIVO', 'REACTIVADO'])
                 ->count();
 
             if ($activosOperativos === 0) {
@@ -172,7 +177,7 @@ class ActivoFijoService
             }
 
             $activos = ActivoFijo::where('empresa_id', $empresaId)
-                ->where('estado', 'ACTIVO')
+                ->whereIn('estado', ['ACTIVO', 'REACTIVADO'])
                 ->whereRaw('depreciacion_acumulada < (valor_adquisicion - valor_residual)')
                 ->whereDate('fecha_adquisicion', '<=', $fechaCalculoFecha)
                 ->lockForUpdate()
@@ -183,6 +188,7 @@ class ActivoFijoService
             $sqlCases = [];
             $sqlBindings = [];
             $idsActivos = [];
+            $cuotasPorActivo = [];
 
             foreach ($activos as $activo) {
                 $montoDepreciable = $activo->valor_adquisicion - $activo->valor_residual;
@@ -207,6 +213,7 @@ class ActivoFijoService
                     $sqlBindings[] = $activo->id;
                     $sqlBindings[] = $cuotaMensual;
                     $idsActivos[] = $activo->id;
+                    $cuotasPorActivo[$activo->id] = $cuotaMensual;
 
                     $detallesAsiento[] = [
                         'cuenta_contable' => $activo->cuenta_gasto_codigo,
@@ -244,13 +251,28 @@ class ActivoFijoService
                 'fecha' => $fechaCalculoFecha,
                 'glosa' => $glosaMes,
                 'tipo_asiento' => 'traspaso',
-                'origen_modulo' => 'activos',
+                'origen_modulo' => 'activos_depreciacion',
                 'estado' => 'MAYORIZADO'
             ];
 
             $asiento = $asientoService->registrarAsiento($cabecera, $detallesAsiento);
             $comprobante = $asiento->numero_comprobante;
             $mensaje = "Depreciación calculada correctamente. Total mes: $" . number_format($totalDepreciacionMes, 0, ',', '.');
+
+            // Guarda la cuota exacta por activo -- permite al reversor restarla con precisión
+            // si este asiento se anula (ver AnulacionService/AsientoContableService).
+            foreach ($cuotasPorActivo as $activoId => $cuota) {
+                DB::table('depreciacion_ejecucion_activos')->insert([
+                    'empresa_id' => $empresaId,
+                    'asiento_id' => $asiento->id,
+                    'activo_id' => $activoId,
+                    'periodo_mes' => $periodoMes,
+                    'periodo_anio' => $periodoAnio,
+                    'monto_cuota' => $cuota,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             return [
                 'mensaje' => $mensaje,
@@ -438,7 +460,7 @@ class ActivoFijoService
         return DB::transaction(function () use ($empresaId, $usuarioId, $activoId, $datos) {
             $activo = ActivoFijo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($activoId);
 
-            if ($activo->estado !== 'ACTIVO') {
+            if (!in_array($activo->estado, ['ACTIVO', 'REACTIVADO'], true)) {
                 throw new Exception("Solo se pueden dar de baja activos que se encuentren operativos.");
             }
 
@@ -487,6 +509,7 @@ class ActivoFijoService
                 'glosa' => "Baja de Activo Fijo {$activo->codigo} - {$activo->nombre}",
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'activos',
+                'origen_id' => $activo->id,
                 'estado' => 'MAYORIZADO'
             ];
 

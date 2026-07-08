@@ -5,6 +5,7 @@ namespace App\Domains\Contabilidad\Services;
 use App\Domains\Comercial\Models\Factura;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /** Saldo pendiente de pago por proveedor, en tramos de vencimiento (corriente, 1-30, 31-60, 61-90, +90 días); aislamiento multitenant vía EmpresaScope sobre Factura. */
 class ApAgingService
@@ -39,10 +40,23 @@ class ApAgingService
     {
         $hoy = Carbon::today();
 
-        $facturas = Factura::with('proveedor')
+        // notasCredito con estado APLICADA: mismo criterio de descuento de deuda que ProveedorService::compensarPartidas.
+        $facturas = Factura::with(['proveedor', 'notasCredito' => function ($q) {
+                $q->where('estado', 'APLICADA');
+            }])
             ->where('tipo', 'COMPRA')
             ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            // La NC ya se descuenta como ajuste de su factura de origen (ver abajo); si no se excluye acá, se contaría dos veces.
+            ->whereNotIn('tipo_documento', ['NOTA_CREDITO', 'NOTA_CREDITO_EXPORTACION'])
             ->get();
+
+        // Anticipos ya aplicados y no revertidos (AnticipoProveedorService::aplicarAFactura), agrupados por factura, en una sola query para evitar N+1.
+        $anticiposAplicados = DB::table('anticipo_aplicaciones')
+            ->whereIn('factura_id', $facturas->pluck('id'))
+            ->whereNull('revertido_at')
+            ->groupBy('factura_id')
+            ->selectRaw('factura_id, SUM(monto) as total')
+            ->pluck('total', 'factura_id');
 
         /** @var array<int, array<string, mixed>> $porProveedor */
         $porProveedor = [];
@@ -51,7 +65,11 @@ class ApAgingService
             $proveedorId = (int) ($factura->proveedor_id ?? 0);
             $razonSocial = (string) ($factura->proveedor->razon_social ?? 'Sin nombre');
             $rut         = (string) ($factura->proveedor->rut ?? '');
-            $monto       = (float)  ($factura->monto_bruto ?? 0);
+
+            // Saldo real pendiente: bruto menos NC aplicadas y anticipos ya consumidos contra esta factura (evita sobreestimar facturas ABONADA).
+            $montoNc        = (float) $factura->notasCredito->sum('monto_bruto');
+            $montoAnticipos = (float) ($anticiposAplicados[$factura->id] ?? 0);
+            $monto          = max(0.0, (float) ($factura->monto_bruto ?? 0) - $montoNc - $montoAnticipos);
 
             // dias_vencido positivo = atrasado; negativo o null = corriente
             $vcto        = $factura->fecha_vencimiento;

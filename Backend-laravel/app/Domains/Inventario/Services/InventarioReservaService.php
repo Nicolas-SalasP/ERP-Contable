@@ -36,10 +36,10 @@ class InventarioReservaService
     public function listarReservas(User $usuario, array $filtros = []): LengthAwarePaginator
     {
         $this->permisos->exigir($usuario, 'inventario.reservas.ver');
-        $this->marcarReservasExpiradas((int) $usuario->empresa_id);
+        $this->marcarReservasExpiradas((int) $usuario->empresa_activa_id);
 
         return ReservaInventario::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'reservadoPor:id,nombre,email',
                 'detalles.producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
@@ -93,9 +93,9 @@ class InventarioReservaService
     public function obtenerReserva(User $usuario, int $reservaId): ReservaInventario
     {
         $this->permisos->exigir($usuario, 'inventario.reservas.ver');
-        $this->marcarReservasExpiradas((int) $usuario->empresa_id);
+        $this->marcarReservasExpiradas((int) $usuario->empresa_activa_id);
 
-        $reserva = ReservaInventario::where('empresa_id', $usuario->empresa_id)
+        $reserva = ReservaInventario::where('empresa_id', $usuario->empresa_activa_id)
             ->find($reservaId);
 
         if (!$reserva) {
@@ -110,7 +110,7 @@ class InventarioReservaService
         $this->permisos->exigir($usuario, 'inventario.reservas.crear');
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $detallesNormalizados = $this->normalizarDetallesReserva($datos['detalles'] ?? [], $empresaId);
 
             $this->validarDisponibilidadDetallesAgrupados($detallesNormalizados, $empresaId);
@@ -170,8 +170,9 @@ class InventarioReservaService
         $this->permisos->exigir($usuario, 'inventario.reservas.cancelar');
 
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
-            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
+            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_activa_id);
             $this->validarReservaOperable($reserva, 'cancelar');
+            $this->validarSinCicloDeVidaPropio($reserva, 'cancelar');
 
             $detalles = ReservaDetalleInventario::where('empresa_id', $reserva->empresa_id)
                 ->where('reserva_id', $reserva->id)
@@ -181,14 +182,16 @@ class InventarioReservaService
             foreach ($detalles as $detalle) {
                 $pendiente = $detalle->cantidadPendiente();
 
-                if ($pendiente > 0 && $detalle->ubicacion_id !== null) {
-                    $this->stockUbicacionService->liberarReserva(
+                if ($pendiente > 0) {
+                    $this->stockUbicacionService->liberarReservaDetalle(
                         empresaId: (int) $detalle->empresa_id,
                         productoId: (int) $detalle->producto_id,
                         bodegaId: (int) $detalle->bodega_id,
-                        ubicacionId: (int) $detalle->ubicacion_id,
+                        ubicacionId: $detalle->ubicacion_id ? (int) $detalle->ubicacion_id : null,
                         loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
-                        cantidad: $pendiente
+                        reservaDetalleId: (int) $detalle->id,
+                        cantidadSolicitada: $pendiente,
+                        campo: 'reserva'
                     );
                 }
             }
@@ -214,8 +217,9 @@ class InventarioReservaService
         $this->permisos->exigir($usuario, 'inventario.reservas.liberar');
 
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
-            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
+            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_activa_id);
             $this->validarReservaOperable($reserva, 'liberar');
+            $this->validarSinCicloDeVidaPropio($reserva, 'liberar');
 
             $liberaciones = $this->normalizarDetallesOperacion(
                 reserva: $reserva,
@@ -273,7 +277,7 @@ class InventarioReservaService
         $this->permisos->exigir($usuario, 'inventario.reservas.consumir');
 
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
-            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
+            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_activa_id);
             $this->validarReservaOperable($reserva, 'consumir');
 
             $consumos = $this->normalizarConsumosSolicitados($reserva, $datos['detalles'] ?? null);
@@ -291,7 +295,7 @@ class InventarioReservaService
 
                 $movimiento = $this->movimientoService->registrarMovimiento(
                     $this->payloadSalidaDesdeReserva($reserva, $detalle, $cantidad, $datos),
-                    (int) $usuario->empresa_id,
+                    (int) $usuario->empresa_activa_id,
                     (int) $usuario->id
                 );
 
@@ -311,7 +315,7 @@ class InventarioReservaService
                 }
 
                 ReservaConsumoInventario::create([
-                    'empresa_id' => (int) $usuario->empresa_id,
+                    'empresa_id' => (int) $usuario->empresa_activa_id,
                     'reserva_id' => $reserva->id,
                     'reserva_detalle_id' => $detalle->id,
                     'movimiento_inventario_id' => $movimiento->id,
@@ -362,14 +366,16 @@ class InventarioReservaService
                 foreach ($detalles as $detalle) {
                     $pendiente = $detalle->cantidadPendiente();
 
-                    if ($pendiente > 0 && $detalle->ubicacion_id !== null) {
-                        $this->stockUbicacionService->liberarReserva(
+                    if ($pendiente > 0) {
+                        $this->stockUbicacionService->liberarReservaDetalle(
                             empresaId: (int) $detalle->empresa_id,
                             productoId: (int) $detalle->producto_id,
                             bodegaId: (int) $detalle->bodega_id,
-                            ubicacionId: (int) $detalle->ubicacion_id,
+                            ubicacionId: $detalle->ubicacion_id ? (int) $detalle->ubicacion_id : null,
                             loteId: $detalle->lote_id ? (int) $detalle->lote_id : null,
-                            cantidad: $pendiente
+                            reservaDetalleId: (int) $detalle->id,
+                            cantidadSolicitada: $pendiente,
+                            campo: 'reserva'
                         );
                     }
                 }
@@ -681,6 +687,29 @@ class InventarioReservaService
         if (!$reserva->comprometeDisponibilidad()) {
             throw ValidationException::withMessages([
                 'reserva' => 'No se puede ' . $accion . ' una reserva en estado ' . $reserva->estado . '.',
+            ]);
+        }
+    }
+
+    /**
+     * Módulos cuyas reservas tienen ciclo de vida propio (picking/packing/despacho) y no deben
+     * cancelarse/expirar directo por el endpoint genérico de reservas: sin esto, cancelar acá
+     * libera el stock físico pero deja huérfanas las tablas propias del módulo (ej.
+     * InventarioPickingAsignacion/Detalle), y una segunda liberación posterior desde ese módulo
+     * (InventarioPickingService::cancelar) intenta liberar stock ya liberado -- falla, o peor,
+     * libera stock de otra reserva legítima que compite por el mismo bucket físico.
+     */
+    private const MODULOS_CON_CICLO_DE_VIDA_PROPIO = [
+        'INVENTARIO_PICKING',
+        'INVENTARIO_PACKING',
+        'INVENTARIO_DESPACHO',
+    ];
+
+    private function validarSinCicloDeVidaPropio(ReservaInventario $reserva, string $accion): void
+    {
+        if (in_array($reserva->origen_modulo, self::MODULOS_CON_CICLO_DE_VIDA_PROPIO, true)) {
+            throw ValidationException::withMessages([
+                'reserva' => "Esta reserva pertenece a {$reserva->origen_modulo} y no puede {$accion}rse desde acá. Use el flujo propio de ese módulo.",
             ]);
         }
     }

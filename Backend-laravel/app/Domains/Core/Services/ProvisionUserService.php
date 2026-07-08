@@ -63,6 +63,18 @@ class ProvisionUserService
                 ->where('id', $user->id)
                 ->update(['password' => $payload['password_hash']]);
 
+            // Sin esto, un usuario Tenri ya asociado a una empresa (onboarding previo) nunca
+            // aparece en empresa_user si esa fila no se creó en su momento -- lo deja invisible
+            // para EmpresaCambioController::misEmpresas/cambiar.
+            if ($user->empresa_id !== null) {
+                DB::table('empresa_user')->insertOrIgnore([
+                    'user_id'    => $user->id,
+                    'empresa_id' => $user->empresa_id,
+                    'rol_id'     => $user->rol_id,
+                    'created_at' => now(),
+                ]);
+            }
+
             return $user->fresh();
         });
     }

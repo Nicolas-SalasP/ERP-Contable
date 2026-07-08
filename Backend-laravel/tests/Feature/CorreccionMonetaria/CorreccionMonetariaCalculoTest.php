@@ -314,6 +314,57 @@ class CorreccionMonetariaCalculoTest extends TestCase
         $this->assertEquals(2026, $activo->ultimo_periodo_cm_anio);
     }
 
+    public function test_reversar_asiento_de_cm_revierte_ejecucion_y_ajuste_de_activos()
+    {
+        // Regresión (auditoría 2026-07-07, crítico #20): reversar el asiento de una ejecución
+        // de CM dejaba CmEjecucion.estado = 'ejecutada' para siempre (período bloqueado sin
+        // remedio) y el ajuste acumulado en activos_fijos desincronizado del balance ya
+        // reversado.
+        $this->cargarIpc(2026, 12, 5.0);
+        $this->crearAsientoConSaldo('112005', 10000000, 'DEBE');
+
+        $activo = ActivoFijo::create([
+            'empresa_id'             => $this->empresa->id,
+            'codigo'                 => 'ACT-TEST-REV',
+            'nombre'                 => 'Edificio Test Reversa',
+            'fecha_adquisicion'      => '2020-01-01',
+            'valor_adquisicion'      => 10000000,
+            'vida_util_meses'        => 480,
+            'estado'                 => 'ACTIVO',
+            'depreciacion_acumulada' => 0,
+        ]);
+
+        $res = $this->actingAs($this->usuario)
+            ->postJson('/api/correccion-monetaria/ejecutar', ['mes' => 12, 'anio' => 2026])
+            ->assertOk();
+
+        $activo->refresh();
+        $ajusteAplicado = (float) $activo->cm_ajuste_acumulado;
+        $this->assertGreaterThan(0, $ajusteAplicado);
+
+        $asiento = AsientoContable::where('origen_modulo', 'correccion_monetaria')
+            ->where('numero_comprobante', $res->json('data.asiento_comprobante'))
+            ->firstOrFail();
+
+        $this->actingAs($this->usuario)->postJson('/api/anulacion/anular', [
+            'tipo_documento' => 'ASIENTO',
+            'documento_id' => $asiento->id,
+            'motivo' => 'Prueba de regresión',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ])->assertOk();
+
+        $ejecucion = CmEjecucion::where('empresa_id', $this->empresa->id)->first();
+        $this->assertEquals('anulada', $ejecucion->estado);
+
+        $activo->refresh();
+        $this->assertEqualsWithDelta(0.0, (float) $activo->cm_ajuste_acumulado, 0.01);
+
+        // El período queda desbloqueado: puede volver a ejecutarse.
+        $this->actingAs($this->usuario)
+            ->postJson('/api/correccion-monetaria/ejecutar', ['mes' => 12, 'anio' => 2026])
+            ->assertOk();
+    }
+
     public function test_ejecutar_empresa_14d8_rechaza_ejecucion()
     {
         $this->empresa->update(['regimen_tributario' => '14_D8']);

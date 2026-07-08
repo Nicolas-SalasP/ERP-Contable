@@ -26,7 +26,7 @@ class ReporteLotesService
     {
         $this->permisos->exigir($usuario, 'inventario.reportes.ver');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
         $limit = $this->normalizarLimit($filtros['limit'] ?? self::DEFAULT_LIMIT);
         $diasVencimiento = (int) ($filtros['dias_vencimiento'] ?? self::DEFAULT_DIAS_VENCIMIENTO);
         $hoy = CarbonImmutable::today();

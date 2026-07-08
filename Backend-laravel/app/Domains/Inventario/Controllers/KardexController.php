@@ -46,7 +46,7 @@ class KardexController
 
             $paginador = $this->movimientoService->kardexGeneral(
                 $filtros,
-                (int) $usuario->empresa_id
+                (int) $usuario->empresa_activa_id
             );
 
             return response()->json($this->respuestaPaginada($paginador));
@@ -78,7 +78,7 @@ class KardexController
             $paginador = $this->movimientoService->kardexProducto(
                 (int) $id,
                 $filtros,
-                (int) $usuario->empresa_id
+                (int) $usuario->empresa_activa_id
             );
 
             return response()->json($this->respuestaPaginada($paginador));

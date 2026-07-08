@@ -7,7 +7,7 @@ import { api } from '../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { formatearIdentificador, validarIdentificador, enmascararIdentificador } from '../../Utilidades/identificadores';
 import { logger } from '../../Configuracion/logger';
-import { CreditCard, AlertCircle, Trash2, Plus, Settings, Building2, Search } from 'lucide-react';
+import { CreditCard, AlertCircle, Trash2, Plus, Settings, Building2, Search, Ban, Check } from 'lucide-react';
 
 const MONEDAS_LABELS = {
     CLP: 'Peso Chileno', USD: 'Dólar Americano', EUR: 'Euro',
@@ -361,6 +361,52 @@ const GestionProveedores = () => {
         }
     };
 
+    const handleToggleEstado = async (proveedor) => {
+        const isActivo = proveedor.estado !== 'INACTIVO';
+
+        const confirm = await Swal.fire({
+            title: isActivo ? '¿Bloquear Proveedor?' : '¿Activar Proveedor?',
+            html: isActivo
+                ? `¿Estás seguro de bloquear a <br/><strong class="text-slate-800 text-lg">${proveedor.razon_social}</strong>?<br/>No se podrán registrar nuevas facturas de compra a su nombre.`
+                : `¿Estás seguro de reactivar a <br/><strong class="text-slate-800 text-lg">${proveedor.razon_social}</strong>?<br/>Podrá volver a operar normalmente.`,
+            icon: isActivo ? 'warning' : 'info',
+            showCancelButton: true,
+            confirmButtonText: isActivo ? 'Sí, bloquear' : 'Sí, activar',
+            cancelButtonText: 'Cancelar',
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: isActivo
+                    ? 'bg-red-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-red-700 mx-2 transition-colors'
+                    : 'bg-emerald-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-emerald-700 mx-2 transition-colors',
+                cancelButton: 'bg-slate-500 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm hover:bg-slate-600 mx-2 transition-colors',
+                popup: 'rounded-2xl'
+            }
+        });
+
+        if (confirm.isConfirmed) {
+            try {
+                let res;
+                if (isActivo) {
+                    res = await api.delete(`/proveedores/${proveedor.id}`);
+                } else {
+                    res = await api.put(`/proveedores/${proveedor.id}/activar`);
+                }
+
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: isActivo ? 'Proveedor Bloqueado' : 'Proveedor Activado',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    loadData();
+                }
+            } catch (error) {
+                Swal.fire('Error', error.message || 'Error al cambiar el estado del proveedor', 'error');
+            }
+        }
+    };
+
     const handleSaveInfo = async () => {
         if (idError) {
             return Swal.fire({
@@ -468,15 +514,20 @@ const GestionProveedores = () => {
                         <div className="grid grid-cols-1 gap-4 p-4 md:hidden bg-slate-50 dark:bg-slate-900">
                             {proveedores.map(prov => (
                                 <div key={prov.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm relative">
-                                    <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-xl bg-slate-400"></div>
+                                    <div className={`absolute top-0 left-0 w-1.5 h-full rounded-l-xl ${prov.estado === 'INACTIVO' ? 'bg-red-400' : 'bg-emerald-500'}`}></div>
                                     <div className="flex justify-between items-start mb-2 pl-2">
                                         <div>
                                             <div className="text-xs font-bold text-emerald-600 font-mono mb-0.5">{prov.codigo_interno}</div>
                                             <h3 className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{prov.razon_social}</h3>
                                         </div>
-                                        <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 uppercase">
-                                            {prov.pais_iso}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 uppercase">
+                                                {prov.pais_iso}
+                                            </span>
+                                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full uppercase border ${prov.estado === 'INACTIVO' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                                                {prov.estado === 'INACTIVO' ? 'BLOQUEADO' : 'ACTIVO'}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className="space-y-1.5 mb-4 pl-2 mt-3">
                                         <div className="text-sm font-mono text-slate-600 dark:text-slate-400 flex items-center gap-2">
@@ -487,10 +538,22 @@ const GestionProveedores = () => {
                                             <span className="truncate">{prov.nombre_contacto || 'Sin contacto'}</span>
                                         </div>
                                     </div>
-                                    <div className="border-t border-slate-100 dark:border-slate-700 pt-3 pl-2">
-                                        <button onClick={() => openEdit(prov)} className="w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-sm py-2 rounded-lg transition-colors border border-emerald-100 flex items-center justify-center gap-2">
+                                    <div className="border-t border-slate-100 dark:border-slate-700 pt-3 pl-2 flex gap-2">
+                                        <button onClick={() => openEdit(prov)} className="flex-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-sm py-2 rounded-lg transition-colors border border-emerald-100 flex items-center justify-center gap-2">
                                             <Settings size={16} strokeWidth={1.75} />
                                             Gestionar
+                                        </button>
+                                        <button
+                                            onClick={() => handleToggleEstado(prov)}
+                                            className={`px-4 rounded-lg transition-colors border flex items-center justify-center ${prov.estado === 'INACTIVO' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-100'}`}
+                                            title={prov.estado === 'INACTIVO' ? 'Activar' : 'Bloquear'}
+                                            aria-label={prov.estado === 'INACTIVO' ? 'Activar proveedor' : 'Bloquear proveedor'}
+                                        >
+                                            {prov.estado === 'INACTIVO' ? (
+                                                <Check size={20} strokeWidth={1.75} />
+                                            ) : (
+                                                <Ban size={20} strokeWidth={1.75} />
+                                            )}
                                         </button>
                                     </div>
                                 </div>
@@ -505,6 +568,7 @@ const GestionProveedores = () => {
                                         <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Empresa / Razón Social</th>
                                         <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Identificador Fiscal</th>
                                         <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">País</th>
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Estado</th>
                                         <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
@@ -522,11 +586,30 @@ const GestionProveedores = () => {
                                                     {prov.pais_iso}
                                                 </span>
                                             </td>
+                                            <td className="px-6 py-4 text-center whitespace-nowrap">
+                                                <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full uppercase border ${prov.estado === 'INACTIVO' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                                                    {prov.estado === 'INACTIVO' ? 'BLOQUEADO' : 'ACTIVO'}
+                                                </span>
+                                            </td>
                                             <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                <button onClick={() => openEdit(prov)} className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 font-bold text-sm px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 ml-auto shadow-sm">
-                                                    <Settings size={16} strokeWidth={1.75} />
-                                                    Gestionar
-                                                </button>
+                                                <div className="flex justify-end gap-2 items-center">
+                                                    <button onClick={() => openEdit(prov)} className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 font-bold text-sm px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                                        <Settings size={16} strokeWidth={1.75} />
+                                                        Gestionar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleToggleEstado(prov)}
+                                                        className={`p-2 rounded transition-colors border ${prov.estado === 'INACTIVO' ? 'text-emerald-500 hover:text-emerald-700 bg-emerald-50 border-emerald-100 hover:bg-emerald-100' : 'text-red-500 hover:text-red-700 bg-red-50 border-red-100 hover:bg-red-100'}`}
+                                                        title={prov.estado === 'INACTIVO' ? 'Activar Proveedor' : 'Bloquear Proveedor'}
+                                                        aria-label={prov.estado === 'INACTIVO' ? 'Activar proveedor' : 'Bloquear proveedor'}
+                                                    >
+                                                        {prov.estado === 'INACTIVO' ? (
+                                                            <Check size={20} strokeWidth={1.75} />
+                                                        ) : (
+                                                            <Ban size={20} strokeWidth={1.75} />
+                                                        )}
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

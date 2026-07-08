@@ -93,7 +93,7 @@ class InventarioAuditoriaService
     ): ?InventarioAuditoriaEvento {
         return $this->registrarEvento($usuario, [
             'accion' => $accion,
-            'empresa_id' => $modelo->getAttribute('empresa_id') ?? $usuario?->empresa_id,
+            'empresa_id' => $modelo->getAttribute('empresa_id') ?? $usuario?->empresa_activa_id,
             'entidad_tipo' => $modelo::class,
             'entidad_id' => $modelo->getKey(),
             'descripcion' => 'Cambio auditado en ' . class_basename($modelo::class),
@@ -119,7 +119,7 @@ class InventarioAuditoriaService
         $this->permisos->exigir($usuario, 'inventario.auditoria.detalle');
 
         $evento = InventarioAuditoriaEvento::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with('usuario:id,nombre,email,empresa_id,rol_id')
             ->find($id);
 
@@ -169,7 +169,7 @@ class InventarioAuditoriaService
     private function queryFiltrada(User $usuario, array $filtros = []): Builder
     {
         return InventarioAuditoriaEvento::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->when(!empty($filtros['accion']), fn (Builder $query) => $query->where('accion', $filtros['accion']))
             ->when(!empty($filtros['entidad_tipo']), fn (Builder $query) => $query->where('entidad_tipo', $filtros['entidad_tipo']))
             ->when(!empty($filtros['entidad_id']), fn (Builder $query) => $query->where('entidad_id', (int) $filtros['entidad_id']))
@@ -184,7 +184,7 @@ class InventarioAuditoriaService
 
     private function normalizarPayload(?User $usuario, array $datos): array
     {
-        $empresaId = $datos['empresa_id'] ?? $usuario?->empresa_id;
+        $empresaId = $datos['empresa_id'] ?? $usuario?->empresa_activa_id;
 
         if ($empresaId === null) {
             throw ValidationException::withMessages(['empresa_id' => 'La empresa es obligatoria para auditar eventos de inventario.']);

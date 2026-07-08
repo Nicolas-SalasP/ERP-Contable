@@ -217,24 +217,23 @@ const PropietariosEmpresa = () => {
                     </button>
                 </div>
 
-                {cargando ? (
-                    <TablaSkeleton filas={6} columnas={4} />
-                ) : lista.length === 0 ? (
-                    <EstadoVacio mensaje="Sin propietarios registrados." />
-                ) : (
-                    <>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left font-semibold">RUT</th>
-                                        <th className="px-4 py-3 text-left font-semibold">Nombre</th>
-                                        <th className="px-4 py-3 text-right font-semibold">% Participación</th>
-                                        <th className="px-4 py-3 text-center font-semibold">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {lista.map((p) => (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                            <tr>
+                                <th className="px-4 py-3 text-left font-semibold">RUT</th>
+                                <th className="px-4 py-3 text-left font-semibold">Nombre</th>
+                                <th className="px-4 py-3 text-right font-semibold">% Participación</th>
+                                <th className="px-4 py-3 text-center font-semibold">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                            {cargando ? (
+                                <TablaSkeleton filas={6} columnas={4} />
+                            ) : lista.length === 0 ? (
+                                <EstadoVacio mensaje="Sin propietarios registrados." />
+                            ) : (
+                                lista.map((p) => (
                                         <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                                             <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">{p.rut}</td>
                                             <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
@@ -294,26 +293,27 @@ const PropietariosEmpresa = () => {
                                                 )}
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr className={`border-t-2 ${sumaOk ? 'border-emerald-300 bg-emerald-50' : 'border-red-300 bg-red-50'}`}>
-                                        <td colSpan={2} className={`px-4 py-3 text-sm font-bold ${sumaOk ? 'text-emerald-800' : 'text-red-800'}`}>
-                                            {sumaOk
-                                                ? <><i className="fas fa-check-circle mr-1" /> Participación total verificada</>
-                                                : <><i className="fas fa-exclamation-triangle mr-1" /> La suma de participaciones no es 100%. Corrija antes de generar la DJ 1947.</>
-                                            }
-                                        </td>
-                                        <td className={`px-4 py-3 text-right font-mono font-bold text-base ${sumaOk ? 'text-emerald-900' : 'text-red-900'}`}>
-                                            {sumaParticipacion.toFixed(2)}%
-                                        </td>
-                                        <td />
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </>
-                )}
+                                ))
+                            )}
+                        </tbody>
+                        {!cargando && lista.length > 0 && (
+                            <tfoot>
+                                <tr className={`border-t-2 ${sumaOk ? 'border-emerald-300 bg-emerald-50' : 'border-red-300 bg-red-50'}`}>
+                                    <td colSpan={2} className={`px-4 py-3 text-sm font-bold ${sumaOk ? 'text-emerald-800' : 'text-red-800'}`}>
+                                        {sumaOk
+                                            ? <><i className="fas fa-check-circle mr-1" /> Participación total verificada</>
+                                            : <><i className="fas fa-exclamation-triangle mr-1" /> La suma de participaciones no es 100%. Corrija antes de generar la DJ 1947.</>
+                                        }
+                                    </td>
+                                    <td className={`px-4 py-3 text-right font-mono font-bold text-base ${sumaOk ? 'text-emerald-900' : 'text-red-900'}`}>
+                                        {sumaParticipacion.toFixed(2)}%
+                                    </td>
+                                    <td />
+                                </tr>
+                            </tfoot>
+                        )}
+                    </table>
+                </div>
             </div>
         </div>
     );

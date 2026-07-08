@@ -294,6 +294,38 @@ class InventarioReservaApiTest extends TestCase
             ->assertJsonPath('data.0.stock_disponible', 10);
     }
 
+    public function test_cancelar_reserva_de_picking_es_rechazada(): void
+    {
+        // Regresión (auditoría 2026-07-07, crítico): el endpoint genérico de reservas no
+        // validaba origen_modulo -- cualquier usuario con permiso de reservas podía cancelar
+        // directo la reserva interna de un picking en curso, dejando huérfanas sus
+        // asignaciones/detalles y bloqueando InventarioPickingService::cancelar() al no
+        // encontrar ya el stock reservado que esperaba liberar.
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos($this->permisosReservasCompleto());
+
+        $producto = $this->crearProducto($empresa);
+        $bodega = $this->crearBodega($empresa);
+
+        Sanctum::actingAs($usuario);
+
+        $this->registrarEntrada($producto, $bodega, 10, 'ENT-PICKING-RES');
+
+        $reservaId = $this->crearReservaApi($producto, $bodega, 4, null, 'PED-PICKING')
+            ->assertCreated()
+            ->json('data.id');
+
+        ReservaInventario::where('id', $reservaId)->update(['origen_modulo' => 'INVENTARIO_PICKING']);
+
+        $this->postJson("/api/inventario/reservas/{$reservaId}/cancelar", [
+            'observacion' => 'Intento directo, no autorizado',
+        ])->assertStatus(422);
+
+        $this->assertDatabaseHas('inventario_reservas', [
+            'id' => $reservaId,
+            'estado' => ReservaInventario::ESTADO_ACTIVA,
+        ]);
+    }
+
     public function test_liberar_parcialmente_reserva_actualiza_disponibilidad(): void
     {
         [$empresa, $usuario] = $this->usuarioContadorConPermisos($this->permisosReservasCompleto());

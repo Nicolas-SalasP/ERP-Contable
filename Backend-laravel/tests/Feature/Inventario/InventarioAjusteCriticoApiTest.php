@@ -5,8 +5,10 @@ namespace Tests\Feature\Inventario;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
+use App\Domains\Inventario\Models\StockLoteInventario;
 use App\Domains\Inventario\Models\StockProducto;
 use App\Domains\Inventario\Models\TipoAjusteCritico;
 use App\Domains\Inventario\Models\UnidadMedida;
@@ -265,6 +267,97 @@ class InventarioAjusteCriticoApiTest extends TestCase
                 'success' => false,
                 'message' => 'Este ajuste crítico ya fue anulado anteriormente.',
             ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ajuste crítico + lotes
+    |--------------------------------------------------------------------------
+    |
+    | Test dirigido: verifica si un ajuste crítico de salida (ej. merma) sobre
+    | un producto que maneja lotes exige lote_id, dado que el payload de
+    | registrarAjusteCritico() nunca declaraba esa clave hacia registrarMovimiento().
+    */
+    public function test_ajuste_critico_de_merma_sin_lote_id_falla_si_producto_maneja_lotes(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa, [
+            'maneja_lotes' => true,
+        ]);
+        $bodega = $this->crearBodega($empresa);
+        $lote = $this->crearLote($empresa, $producto);
+        $this->crearStockConLote($empresa, $producto, $bodega, $lote, 10, 100);
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_MERMA_OPERACIONAL);
+
+        $response = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 2,
+            'motivo' => 'Merma detectada en bodega',
+            'observacion' => 'Detectado durante control físico de inventario',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
+
+        $this->assertDatabaseMissing('inventario_ajustes_criticos', [
+            'empresa_id' => $empresa->id,
+            'producto_id' => $producto->id,
+        ]);
+    }
+
+    public function test_ajuste_critico_de_merma_con_lote_id_explicito_funciona(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa, [
+            'maneja_lotes' => true,
+        ]);
+        $bodega = $this->crearBodega($empresa);
+        $lote = $this->crearLote($empresa, $producto);
+        $this->crearStockConLote($empresa, $producto, $bodega, $lote, 10, 100);
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_MERMA_OPERACIONAL);
+
+        $response = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 2,
+            'motivo' => 'Merma detectada en bodega',
+            'observacion' => 'Detectado durante control físico de inventario',
+            'lote_id' => $lote->id,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+            ]);
+
+        $stock = $this->stock($empresa, $producto, $bodega);
+        $this->assertEquals(8.0, (float) $stock->stock_actual);
+
+        $this->assertDatabaseHas('inventario_ajustes_criticos', [
+            'empresa_id' => $empresa->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'tipo_ajuste_critico_id' => $tipo->id,
+        ]);
     }
 
     public function test_auditor_puede_listar_ajustes_criticos_pero_no_registrar(): void
@@ -580,6 +673,45 @@ class InventarioAjusteCriticoApiTest extends TestCase
             'stock_actual' => $stockActual,
             'costo_promedio' => $costoPromedio,
             'valor_total' => $stockActual * $costoPromedio,
+        ]);
+    }
+
+    private function crearLote(Empresa $empresa, Producto $producto, array $overrides = []): LoteInventario
+    {
+        return LoteInventario::create(array_merge([
+            'empresa_id' => $empresa->id,
+            'producto_id' => $producto->id,
+            'codigo_lote' => 'LOT-' . strtoupper(substr(uniqid(), -8)),
+            'fecha_fabricacion' => now()->subMonth()->toDateString(),
+            'fecha_vencimiento' => now()->addMonth()->toDateString(),
+            'activo' => true,
+            'estado_operativo' => LoteInventario::ESTADO_DISPONIBLE,
+        ], $overrides));
+    }
+
+    private function crearStockConLote(
+        Empresa $empresa,
+        Producto $producto,
+        Bodega $bodega,
+        LoteInventario $lote,
+        float $cantidad,
+        float $costoUnitario
+    ): void {
+        StockProducto::create([
+            'empresa_id' => $empresa->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'stock_actual' => $cantidad,
+            'costo_promedio' => $costoUnitario,
+            'valor_total' => $cantidad * $costoUnitario,
+        ]);
+
+        StockLoteInventario::create([
+            'empresa_id' => $empresa->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'lote_id' => $lote->id,
+            'stock_actual' => $cantidad,
         ]);
     }
 

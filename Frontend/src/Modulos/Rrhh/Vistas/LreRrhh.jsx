@@ -344,25 +344,25 @@ const LreRrhh = () => {
                     </button>
                 </div>
 
-                {historial.length === 0 ? (
-                    historialCargado
-                        ? <EstadoVacio mensaje="Sin registros LRE aún." />
-                        : <div className="py-8 text-center text-slate-400">Cargando...</div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
-                                <tr>
-                                    <th className="px-4 py-3 text-left font-semibold">Período</th>
-                                    <th className="px-4 py-3 text-left font-semibold">Estado</th>
-                                    <th className="px-4 py-3 text-right font-semibold">Trabajadores</th>
-                                    <th className="px-4 py-3 text-left font-semibold">N° Confirmación DT</th>
-                                    <th className="px-4 py-3 text-left font-semibold">Confirmado</th>
-                                    <th className="px-4 py-3 text-center font-semibold">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                {historial.map((lre) => (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs uppercase">
+                            <tr>
+                                <th className="px-4 py-3 text-left font-semibold">Período</th>
+                                <th className="px-4 py-3 text-left font-semibold">Estado</th>
+                                <th className="px-4 py-3 text-right font-semibold">Trabajadores</th>
+                                <th className="px-4 py-3 text-left font-semibold">N° Confirmación DT</th>
+                                <th className="px-4 py-3 text-left font-semibold">Confirmado</th>
+                                <th className="px-4 py-3 text-center font-semibold">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                            {!historialCargado ? (
+                                <TablaSkeleton filas={5} columnas={6} />
+                            ) : historial.length === 0 ? (
+                                <EstadoVacio mensaje="Sin registros LRE aún." />
+                            ) : (
+                                historial.map((lre) => (
                                     <tr key={lre.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                                         <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                                             {nombreMes(lre.mes)} {lre.anio}
@@ -393,11 +393,11 @@ const LreRrhh = () => {
                                             </button>
                                         </td>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

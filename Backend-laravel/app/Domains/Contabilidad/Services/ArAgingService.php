@@ -39,9 +39,14 @@ class ArAgingService
     {
         $hoy = Carbon::today();
 
-        $facturas = Factura::with('cliente')
+        // notasCredito con estado APLICADA: mismo criterio de descuento de deuda que ProveedorService::compensarPartidas (equivalente en ventas).
+        $facturas = Factura::with(['cliente', 'notasCredito' => function ($q) {
+                $q->where('estado', 'APLICADA');
+            }])
             ->where('tipo', 'VENTA')
             ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            // La NC ya se descuenta como ajuste de su factura de origen (ver abajo); si no se excluye acá, se contaría dos veces.
+            ->whereNotIn('tipo_documento', ['NOTA_CREDITO', 'NOTA_CREDITO_EXPORTACION'])
             ->get();
 
         /** @var array<int, array<string, mixed>> $porCliente */
@@ -51,7 +56,10 @@ class ArAgingService
             $clienteId   = (int) ($factura->cliente_id ?? 0);
             $razonSocial = (string) ($factura->cliente->razon_social ?? 'Sin nombre');
             $rut         = (string) ($factura->cliente->rut ?? '');
-            $monto       = (float)  ($factura->monto_bruto ?? 0);
+
+            // Saldo real pendiente: bruto menos NC aplicadas contra esta factura (evita sobreestimar facturas ABONADA por abono parcial).
+            $montoNc = (float) $factura->notasCredito->sum('monto_bruto');
+            $monto   = max(0.0, (float) ($factura->monto_bruto ?? 0) - $montoNc);
 
             // dias_vencido positivo = atrasado; negativo o null = corriente
             $vcto        = $factura->fecha_vencimiento;

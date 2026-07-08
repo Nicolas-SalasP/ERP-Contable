@@ -73,6 +73,7 @@ class AnticipoProveedorService
             DB::table('anticipo_aplicaciones')->insert([
                 'empresa_id' => $empresaId,
                 'anticipo_id' => $anticipo->id,
+                'tipo' => 'proveedor',
                 'factura_id' => $facturaId,
                 'monto' => $montoAplicar,
                 'created_at' => now(),
@@ -89,6 +90,7 @@ class AnticipoProveedorService
         $aplicaciones = DB::table('anticipo_aplicaciones')
             ->where('empresa_id', $empresaId)
             ->where('factura_id', $facturaId)
+            ->where('tipo', 'proveedor')
             ->whereNull('revertido_at')
             ->get();
 
@@ -107,7 +109,10 @@ class AnticipoProveedorService
                 $anticipo->save();
             }
 
-            DB::table('anticipo_aplicaciones')->where('id', $aplicacion->id)->update(['revertido_at' => now()]);
+            DB::table('anticipo_aplicaciones')
+                ->where('id', $aplicacion->id)
+                ->where('tipo', 'proveedor')
+                ->update(['revertido_at' => now()]);
         }
     }
 

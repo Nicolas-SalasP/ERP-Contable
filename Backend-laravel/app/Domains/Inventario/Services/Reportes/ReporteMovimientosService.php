@@ -24,7 +24,7 @@ class ReporteMovimientosService
     {
         $this->permisos->exigir($usuario, 'inventario.reportes.ver');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
         $limit = $this->normalizarLimit($filtros['limit'] ?? self::DEFAULT_LIMIT);
 
         $query = MovimientoInventario::query()

@@ -218,11 +218,30 @@ class ReintentarEmisionFacturaServiceTest extends TestCase
         Bus::assertNotDispatched(ReintentarEmisionDteJob::class);
     }
 
-    public function test_dte_RECHAZADO_lanza_estadoTerminal(): void
+    public function test_dte_RECHAZADO_se_reemite_marca_reemitido_y_libera_la_factura(): void
     {
+        // Regresión (auditoría 2026-07-07, crítico): ESTADO_REEMITIDO estaba declarado y
+        // referenciado en 3 lugares como estado terminal/documentado en el README
+        // (RECHAZADO -> REEMITIDO) pero nunca se implementaba -- un DTE rechazado quedaba
+        // huérfano para siempre: ni reintento (bloqueado por estado terminal) ni re-emisión
+        // (bloqueada por yaEmitida, que nunca liberaba sii_dte_emitido_id).
+        Event::fake([FacturaListaParaEmitirEvent::class]);
+
         $e = $this->escenario(estadoDte: SiiDteEmitido::ESTADO_RECHAZADO);
-        $this->expectException(ReintentoNoAplicableException::class);
-        $this->service->reintentar($e['factura']);
+
+        $accion = $this->service->reintentar($e['factura'], 'Rechazo por folio, reintentar con nuevo DTE', $e['usuario']->id);
+
+        $this->assertSame('reemitido', $accion);
+
+        $e['dte']->refresh();
+        $this->assertSame(SiiDteEmitido::ESTADO_REEMITIDO, $e['dte']->estado);
+
+        $e['factura']->refresh();
+        $this->assertNull($e['factura']->sii_dte_emitido_id);
+
+        Event::assertDispatched(FacturaListaParaEmitirEvent::class, function ($ev) use ($e) {
+            return $ev->factura->id === $e['factura']->id && $ev->origen === 'reintento';
+        });
     }
 
     public function test_dte_ACEPTADO_CON_REPAROS_lanza_estadoTerminal(): void

@@ -46,6 +46,9 @@ class SiiEnvioDte extends Model
     public const ESTADO_ERROR_PERMANENTE  = 'ERROR_PERMANENTE';
     public const ESTADO_ERROR_TIMEOUT     = 'ERROR_TIMEOUT';
 
+    /** Minutos tras los cuales un envio en ESTADO_ENVIANDO sin resolver se considera huerfano (el proceso PHP probablemente murio a mitad de la llamada HTTP al SII, ver EnvioSiiService::enviar()). No se marca como error automaticamente aqui: falta confirmar via PollearEstadoSiiService si el SII SI llego a recibir el envio, para no arriesgar un doble envio/folio duplicado. */
+    public const MINUTOS_ENVIANDO_HUERFANO = 15;
+
     protected $table = 'sii_envio_dte';
 
     protected $fillable = [
@@ -124,6 +127,12 @@ class SiiEnvioDte extends Model
             self::ESTADO_ERROR_TIMEOUT,
             self::ESTADO_RECHAZADO,
         ]);
+    }
+
+    public function scopeEnviandoHuerfanos(Builder $query, int $minutos = self::MINUTOS_ENVIANDO_HUERFANO): Builder
+    {
+        return $query->where('estado_envio', self::ESTADO_ENVIANDO)
+            ->where('created_at', '<=', now()->subMinutes($minutos));
     }
 
     public function scopePorEmpresa(Builder $query, int $empresaId): Builder

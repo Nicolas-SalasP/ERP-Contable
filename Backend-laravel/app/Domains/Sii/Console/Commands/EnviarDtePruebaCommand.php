@@ -2,6 +2,7 @@
 
 namespace App\Domains\Sii\Console\Commands;
 
+use App\Domains\Sii\Console\Commands\Concerns\BloqueaEnProduccion;
 use App\Domains\Sii\Exceptions\EnvioSiiException;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Envio\EnvioSiiService;
@@ -12,6 +13,8 @@ use Throwable;
 /** F5.2 — comando de validacion manual del flujo de envio del DTE al SII; IMPORTANTE: pega al WS REAL del SII, no ejecutar contra produccion sin autorizacion explicita (usar Http::fake() o entornos dummy para testing). */
 class EnviarDtePruebaCommand extends Command
 {
+    use BloqueaEnProduccion;
+
     protected $signature = 'sii:enviar-dte-prueba
                             {dte_id : ID del SiiDteEmitido a enviar (debe estar FIRMADO)}';
 
@@ -19,6 +22,10 @@ class EnviarDtePruebaCommand extends Command
 
     public function handle(EnvioSiiService $service): int
     {
+        if ($this->abortarSiProduccion()) {
+            return self::FAILURE;
+        }
+
         $dteId = (int) $this->argument('dte_id');
 
         try {

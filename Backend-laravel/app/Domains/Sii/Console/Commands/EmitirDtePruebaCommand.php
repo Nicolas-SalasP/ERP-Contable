@@ -11,6 +11,7 @@ use App\Domains\Sii\Exceptions\DteXmlInvalidException;
 use App\Domains\Sii\Exceptions\SinFoliosDisponiblesException;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Models\SiiDteEmitidoDetalle;
+use App\Domains\Sii\Console\Commands\Concerns\BloqueaEnProduccion;
 use App\Domains\Sii\Services\Emision\EmitirDteService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -20,6 +21,8 @@ use Throwable;
 /** Comando de validacion manual del flujo de emision: crea un SiiDteEmitido fixture en BORRADOR, invoca el orquestador y reporta resultado. */
 class EmitirDtePruebaCommand extends Command
 {
+    use BloqueaEnProduccion;
+
     protected $signature = 'sii:emitir-dte-prueba
                             {empresa_id : ID de la empresa emisora}
                             {--tipo=33 : Tipo DTE (33, 34, 39, 41, 46, 52, 56, 61)}';
@@ -28,6 +31,10 @@ class EmitirDtePruebaCommand extends Command
 
     public function handle(EmitirDteService $service): int
     {
+        if ($this->abortarSiProduccion()) {
+            return self::FAILURE;
+        }
+
         $empresaId = (int) $this->argument('empresa_id');
         $tipoDte   = (int) $this->option('tipo');
 

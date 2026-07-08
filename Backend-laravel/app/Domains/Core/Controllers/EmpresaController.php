@@ -292,6 +292,16 @@ class EmpresaController extends Controller
             $user->empresa_activa_id = $empresa->id;
             $user->save();
 
+            // Sin esto, empresa_user (tabla que EmpresaCambioController::misEmpresas/cambiar usa
+            // para listar y autorizar el cambio de empresa activa) nunca ve esta empresa: el
+            // onboarding queda con acceso "real" vía empresa_id pero invisible para multiempresa.
+            DB::table('empresa_user')->insertOrIgnore([
+                'user_id'    => $user->id,
+                'empresa_id' => $empresa->id,
+                'rol_id'     => $user->rol_id,
+                'created_at' => now(),
+            ]);
+
             $user->currentAccessToken()->delete();
             $token = $user->createToken('react-spa-token')->plainTextToken;
 

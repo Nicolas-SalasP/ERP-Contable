@@ -34,7 +34,7 @@ class PropietariosController extends Controller
             ->exists();
 
         if ($existe) {
-            return response()->json(['mensaje' => 'Ya existe un propietario con ese RUT en la empresa.'], 422);
+            return response()->json(['message' => 'Ya existe un propietario con ese RUT en la empresa.'], 422);
         }
 
         $propietario = Propietario::create(array_merge($datos, ['empresa_id' => $empresaId]));

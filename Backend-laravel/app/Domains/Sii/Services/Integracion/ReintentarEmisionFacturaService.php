@@ -55,6 +55,22 @@ class ReintentarEmisionFacturaService
         $dte       = $factura->dteEmitido;
         $estadoDte = $dte->estado;
 
+        // README del dominio documenta RECHAZADO -> REEMITIDO como flujo esperado, pero nunca
+        // se implementó: el DTE quedaba en un estado terminal sin ninguna vía real de
+        // recuperación (ni reintento -- bloqueado por ESTADOS_TERMINALES_DTE -- ni re-emisión
+        // -- bloqueada por EmitirDteDesdeFacturaService::validarPreEmision::yaEmitida, que
+        // nunca liberaba sii_dte_emitido_id). Una factura rechazada por el SII quedaba
+        // permanentemente huérfana. Aquí se cierra el ciclo: el DTE rechazado se marca
+        // REEMITIDO, se desvincula de la factura, y se dispara la emisión de un DTE nuevo.
+        if ($estadoDte === SiiDteEmitido::ESTADO_RECHAZADO) {
+            $dte->update(['estado' => SiiDteEmitido::ESTADO_REEMITIDO]);
+            $factura->update(['sii_dte_emitido_id' => null]);
+
+            $this->emitirDesdeFactura->dispatch($factura->fresh(), [], 'reintento', $usuarioId);
+
+            return 'reemitido';
+        }
+
         if (in_array($estadoDte, self::ESTADOS_TERMINALES_DTE, true)) {
             throw ReintentoNoAplicableException::estadoTerminal($factura->id, $estadoDte);
         }

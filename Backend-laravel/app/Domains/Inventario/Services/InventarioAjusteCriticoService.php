@@ -41,7 +41,7 @@ class InventarioAjusteCriticoService
     {
         $this->permisos->exigir($usuario, 'inventario.ajustes_criticos.ver');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
         $perPage = $this->normalizarPerPage($filtros['per_page'] ?? 15);
 
         $fechaDesde = $filtros['fecha_desde'] ?? $filtros['desde'] ?? null;
@@ -87,7 +87,7 @@ class InventarioAjusteCriticoService
                 'movimiento:id,empresa_id,producto_id,tipo,bodega_origen_id,bodega_destino_id,cantidad,stock_origen_antes,stock_origen_despues,stock_destino_antes,stock_destino_despues,costo_unitario,costo_total,referencia,motivo,observacion,created_by,fecha_movimiento',
                 'registradoPor:id,nombre,email',
             ])
-            ->empresa((int) $usuario->empresa_id)
+            ->empresa((int) $usuario->empresa_activa_id)
             ->find($ajusteCriticoId);
 
         if (!$ajuste) {
@@ -101,7 +101,7 @@ class InventarioAjusteCriticoService
     {
         $this->permisos->exigir($usuario, 'inventario.ajustes_criticos.crear');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
 
         $tipo = $this->obtenerTipoAjusteCriticoActivo(
             (int) ($datos['tipo_ajuste_critico_id'] ?? 0)
@@ -136,6 +136,7 @@ class InventarioAjusteCriticoService
         $origenModulo = $this->normalizarTextoOpcional($datos['origen_modulo'] ?? null, 'origen_modulo', 80);
         $origenId = $this->normalizarEnteroPositivoNullable($datos['origen_id'] ?? null, 'origen_id');
         $costoUnitario = $this->normalizarDecimalNullable($datos['costo_unitario'] ?? null, 'costo_unitario');
+        $loteId = $this->normalizarEnteroPositivoNullable($datos['lote_id'] ?? null, 'lote_id');
 
         $this->validarProductoPermiteTipoCritico($producto, $tipo);
 
@@ -152,6 +153,7 @@ class InventarioAjusteCriticoService
             $origenModulo,
             $origenId,
             $costoUnitario,
+            $loteId,
             $datos
         ) {
             $datosMovimiento = $this->prepararDatosMovimiento(
@@ -163,7 +165,8 @@ class InventarioAjusteCriticoService
                 observacion: $observacion,
                 referencia: $referencia,
                 costoUnitario: $costoUnitario,
-                fechaMovimiento: $datos['fecha_movimiento'] ?? null
+                fechaMovimiento: $datos['fecha_movimiento'] ?? null,
+                loteId: $loteId
             );
 
             $movimiento = $this->movimientoService->registrarMovimiento(
@@ -252,7 +255,7 @@ class InventarioAjusteCriticoService
     {
         $this->permisos->exigir($usuario, 'inventario.ajustes_criticos.crear');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
 
         $motivoAnulacion = $this->normalizarTextoObligatorio(
             $motivoAnulacion,
@@ -354,7 +357,8 @@ class InventarioAjusteCriticoService
         string $observacion,
         ?string $referencia,
         ?float $costoUnitario,
-        mixed $fechaMovimiento
+        mixed $fechaMovimiento,
+        ?int $loteId = null
     ): array {
         $tipoMovimiento = $tipo->tipo_movimiento;
 
@@ -374,6 +378,10 @@ class InventarioAjusteCriticoService
             'fecha_movimiento' => $fechaMovimiento ?: now(),
             '_origen_operativo' => 'inventario_ajuste_critico',
         ];
+
+        if ($loteId !== null) {
+            $datosMovimiento['lote_id'] = $loteId;
+        }
 
         if ($tipo->esAjustePositivo()) {
             $datosMovimiento['bodega_destino_id'] = $bodega->id;

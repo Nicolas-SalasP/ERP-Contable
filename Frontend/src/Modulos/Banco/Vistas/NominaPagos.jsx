@@ -218,7 +218,7 @@ const NominaPagos = () => {
                         Swal.fire('Error', res.mensaje, 'error');
                     }
                 } catch (err) {
-                    Swal.fire('Error', err.response?.data?.mensaje || 'Error crítico de conexión al contabilizar la nómina.', 'error');
+                    Swal.fire('Error', err.response?.data?.message || err.response?.data?.mensaje || 'Error crítico de conexión al contabilizar la nómina.', 'error');
                 }
             }
         });

@@ -5,6 +5,7 @@ namespace App\Domains\Contabilidad\Services;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Contabilidad\Services\F29DriftService;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
@@ -232,6 +233,15 @@ class AsientoContableService
             $asientoOriginal->load('detalles');
             $asientoOriginal->update(['estado' => 'ANULADO']);
 
+            // Si el asiento reversado es de una factura (ventas/compras) y su mes ya tiene F29 centralizado, marca la alerta de desactualización (no lo relanza solo).
+            if (in_array($asientoOriginal->origen_modulo, ['ventas', 'compras'], true)) {
+                app(F29DriftService::class)->marcarSiPeriodoCentralizado(
+                    $asientoOriginal->empresa_id,
+                    $asientoOriginal->fecha,
+                    "Reversa del asiento N° {$asientoOriginal->numero_comprobante}. Motivo: {$motivo}"
+                );
+            }
+
             $tempNum = 'TMP-' . Str::uuid()->toString();
             $nuevoAsiento = AsientoContable::create([
                 'empresa_id' => $asientoOriginal->empresa_id,
@@ -271,6 +281,66 @@ class AsientoContableService
                 ->where('empresa_id', $asientoOriginal->empresa_id)
                 ->where('asiento_id', $asientoOriginal->id)
                 ->update(['estado' => 'PENDIENTE', 'asiento_id' => null]);
+
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahí): anula
+            // cualquier anticipo autogenerado que quedó apuntando a este asiento.
+            foreach (['anticipos_proveedores', 'anticipos_clientes'] as $tablaAnticipo) {
+                DB::table($tablaAnticipo)
+                    ->where('empresa_id', $asientoOriginal->empresa_id)
+                    ->where('asiento_id', $asientoOriginal->id)
+                    ->update(['estado' => 'ANULADO', 'asiento_id' => null, 'movimiento_id' => null]);
+            }
+
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahi).
+            if ($asientoOriginal->origen_modulo === 'rrhh') {
+                DB::table('liquidaciones')
+                    ->where('empresa_id', $asientoOriginal->empresa_id)
+                    ->where('comprobante_contable', $asientoOriginal->numero_comprobante)
+                    ->update(['comprobante_contable' => null]);
+            }
+
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahi).
+            if ($asientoOriginal->origen_modulo === 'activos' && $asientoOriginal->origen_id) {
+                DB::table('activos_fijos')
+                    ->where('empresa_id', $asientoOriginal->empresa_id)
+                    ->where('id', $asientoOriginal->origen_id)
+                    ->where('estado', 'DADO_DE_BAJA')
+                    ->update(['estado' => 'REACTIVADO']);
+            }
+
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahi).
+            if ($asientoOriginal->origen_modulo === 'correccion_monetaria') {
+                $ejecucion = DB::table('cm_ejecuciones')
+                    ->where('empresa_id', $asientoOriginal->empresa_id)
+                    ->where('asiento_id', $asientoOriginal->id)
+                    ->where('estado', 'ejecutada')
+                    ->first();
+
+                if ($ejecucion) {
+                    $detalles = DB::table('cm_ejecucion_activos')->where('cm_ejecucion_id', $ejecucion->id)->get();
+                    foreach ($detalles as $detalle) {
+                        DB::table('activos_fijos')
+                            ->where('id', $detalle->activo_id)
+                            ->decrement('cm_ajuste_acumulado', (float) $detalle->ajuste_activo);
+                        DB::table('activos_fijos')
+                            ->where('id', $detalle->activo_id)
+                            ->decrement('cm_depreciacion_ajuste_acumulado', (float) $detalle->ajuste_depreciacion);
+                    }
+                    DB::table('cm_ejecuciones')->where('id', $ejecucion->id)->update(['estado' => 'anulada']);
+                }
+            }
+
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahi).
+            if ($asientoOriginal->origen_modulo === 'activos_depreciacion') {
+                $cuotas = DB::table('depreciacion_ejecucion_activos')
+                    ->where('asiento_id', $asientoOriginal->id)
+                    ->get();
+                foreach ($cuotas as $cuota) {
+                    DB::table('activos_fijos')
+                        ->where('id', $cuota->activo_id)
+                        ->decrement('depreciacion_acumulada', (float) $cuota->monto_cuota);
+                }
+            }
 
             return $nuevoAsiento;
         });

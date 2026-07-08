@@ -14,6 +14,8 @@ class DocumentoAdjunto extends Model
     protected $fillable = [
         'empresa_id',
         'factura_id',
+        'cotizacion_id',
+        'orden_compra_id',
         'tipo_documento',
         'nombre_original',
         'ruta',
@@ -25,5 +27,15 @@ class DocumentoAdjunto extends Model
     public function factura()
     {
         return $this->belongsTo(Factura::class);
+    }
+
+    public function cotizacion()
+    {
+        return $this->belongsTo(Cotizacion::class);
+    }
+
+    public function ordenCompra()
+    {
+        return $this->belongsTo(OrdenCompra::class, 'orden_compra_id');
     }
 }

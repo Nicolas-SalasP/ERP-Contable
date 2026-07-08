@@ -74,4 +74,27 @@ describe('EmpleadosRrhh', () => {
         await screen.findByText('Ana Soto');
         expect(screen.getByTestId('ayuda-modulo-boton')).toBeDefined();
     });
+
+    it('formatea el RUT con puntos y guion mientras se escribe', async () => {
+        render(<EmpleadosRrhh />);
+        await screen.findByText('Ana Soto');
+        fireEvent.click(screen.getByText('Nuevo empleado'));
+        const input = await screen.findByPlaceholderText('12.345.678-9');
+
+        fireEvent.change(input, { target: { value: '123456785' } });
+
+        expect(input.value).toBe('12.345.678-5');
+    });
+
+    it('rechaza guardar con RUT de digito verificador invalido', async () => {
+        render(<EmpleadosRrhh />);
+        await screen.findByText('Ana Soto');
+        fireEvent.click(screen.getByText('Nuevo empleado'));
+        const input = await screen.findByPlaceholderText('12.345.678-9');
+
+        fireEvent.change(input, { target: { value: '123456786' } });
+        fireEvent.click(screen.getByText('Crear empleado'));
+
+        await waitFor(() => expect(rrhhApi.empleados.crear).not.toHaveBeenCalled());
+    });
 });

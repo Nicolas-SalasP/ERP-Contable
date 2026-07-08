@@ -3,6 +3,7 @@
 namespace App\Domains\Contabilidad\Services;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Contabilidad\Services\F29DriftService;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Contabilidad\Exceptions\ContabilidadException;
 use Illuminate\Support\Facades\Cache;
@@ -138,6 +139,9 @@ class ImpuestosService
         $glosaCierre = "Centralización F29 - " . str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio";
         $yaCerrado = DB::table('asientos_contables')->where('empresa_id', $empresaId)->where('origen_modulo', 'impuestos')->where('glosa', $glosaCierre)->where('estado', 'MAYORIZADO')->exists();
 
+        // Alerta de drift: si una factura/DTE de este período se anuló después de centralizar el F29, no se relanza solo (ver F29DriftService).
+        $estadoDrift = app(F29DriftService::class)->estado($empresaId, $mes, $anio);
+
         $lineasF29 = $this->lineasFormularioF29([
             'ventas'      => ['neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito, 'cantidad' => $ventasResumen['cantidad']],
             'compras'     => ['neto' => $totalComprasNeto, 'iva_credito_facturas' => $ivaCreditoFacturas, 'remanente_mes_anterior' => $remanenteMesAnterior],
@@ -149,6 +153,8 @@ class ImpuestosService
         return [
             'periodo'     => str_pad((string) $mes, 2, '0', STR_PAD_LEFT) . "/$anio",
             'ya_cerrado'  => $yaCerrado,
+            'desactualizado' => $estadoDrift['desactualizado'],
+            'motivo_desactualizacion' => $estadoDrift['motivo'],
             'ventas'      => ['cantidad' => $ventasResumen['cantidad'], 'neto' => $totalVentasNeto, 'iva_debito' => $ivaDebito],
             'compras'     => [
                 'cantidad'               => $compras->count(),
@@ -304,10 +310,13 @@ class ImpuestosService
 
         $totalCostosGastos = (float) $queryCompras->sum('monto_neto');
 
+        // 'activos_depreciacion' (depreciación mensual) y 'activos' (bajas) usan origen_modulo
+        // distinto desde el fix de reversa (ver ActivoFijoService::depreciarMes); se incluyen
+        // ambos aquí para no perder cobertura de la que ya existía antes del fix.
         $totalDepreciacion = (float) DB::table('asientos_contables')
             ->join('detalles_asiento', 'asientos_contables.id', '=', 'detalles_asiento.asiento_id')
             ->where('asientos_contables.empresa_id', $empresaId)
-            ->where('asientos_contables.origen_modulo', 'activos')
+            ->whereIn('asientos_contables.origen_modulo', ['activos', 'activos_depreciacion'])
             ->whereBetween('asientos_contables.fecha', [$fechaInicio, $fechaFin])
             ->where('detalles_asiento.tipo_operacion', 'DEBE')
             ->sum('detalles_asiento.debe');

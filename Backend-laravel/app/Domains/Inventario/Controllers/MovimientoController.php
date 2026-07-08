@@ -48,7 +48,7 @@ class MovimientoController
 
             $paginador = $this->movimientoService->listarMovimientos(
                 $filtros,
-                (int) $usuario->empresa_id
+                (int) $usuario->empresa_activa_id
             );
 
             return response()->json($this->respuestaPaginada($paginador));
@@ -96,7 +96,7 @@ class MovimientoController
 
             $movimiento = $this->movimientoService->registrarMovimiento(
                 $datos,
-                (int) $usuario->empresa_id,
+                (int) $usuario->empresa_activa_id,
                 (int) $usuario->id
             );
 
