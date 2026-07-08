@@ -167,6 +167,44 @@ class FacturaService
                 throw ComercialException::regla("La factura {$datos['numero_factura']} ya se encuentra registrada para este proveedor.");
             }
 
+            $esNotaCreditoCompra = in_array($datos['tipo_documento'] ?? '', ['NOTA_CREDITO', 'NOTA_CREDITO_EXPORTACION']);
+            $facturaOrigenCompra = null;
+
+            // Mismas validaciones que ya existían para la NC de venta (emitirNotaCreditoVenta):
+            // sin esto se podía sobre-acreditar una factura de compra sin límite (el
+            // factura_referencia_id se aceptaba tal cual venía, sin cruzarlo contra el monto ni
+            // contra otra NC activa), y la factura origen nunca se marcaba ANULADA al cubrirse
+            // 100% (quedaba REGISTRADA para siempre pese a no tener saldo real pendiente).
+            if ($esNotaCreditoCompra && !empty($datos['factura_referencia_id'])) {
+                $facturaOrigenCompra = Factura::where('empresa_id', $datos['empresa_id'])
+                    ->where('id', $datos['factura_referencia_id'])
+                    ->first();
+
+                if (!$facturaOrigenCompra) {
+                    throw ComercialException::regla("La factura de compra de origen no existe o no pertenece a esta empresa.");
+                }
+
+                if ($facturaOrigenCompra->estado === 'ANULADA') {
+                    throw ComercialException::regla("No se puede emitir una NC sobre una factura de compra ya anulada.");
+                }
+
+                if ($bruto > (float) $facturaOrigenCompra->monto_bruto) {
+                    throw ComercialException::regla(
+                        "El monto de la NC ({$bruto}) no puede superar el monto original de la factura ({$facturaOrigenCompra->monto_bruto})."
+                    );
+                }
+
+                $ncCompraExistente = Factura::where('empresa_id', $datos['empresa_id'])
+                    ->where('factura_referencia_id', $facturaOrigenCompra->id)
+                    ->whereIn('tipo_documento', ['NOTA_CREDITO', 'NOTA_CREDITO_EXPORTACION'])
+                    ->where('estado', '!=', 'ANULADA')
+                    ->exists();
+
+                if ($ncCompraExistente) {
+                    throw ComercialException::regla("Esta factura ya tiene una Nota de Crédito activa. Anule la NC anterior antes de registrar una nueva.");
+                }
+            }
+
             $codigoUnico = Factura::generarCodigoUnico();
 
             $factura = Factura::create([
@@ -279,6 +317,14 @@ class FacturaService
                 'codigo_interno' => 'FAC-' . str_pad((string) $factura->id, 5, '0', STR_PAD_LEFT),
                 'comprobante_contable' => $asiento->numero_comprobante
             ]);
+
+            // Mismo comportamiento que la NC de venta: si la NC cubre el 100% del monto
+            // original, la factura de compra origen se marca ANULADA (antes quedaba
+            // REGISTRADA para siempre, sin saldo real pendiente).
+            if ($esNotaCreditoCompra && $facturaOrigenCompra && abs($bruto - (float) $facturaOrigenCompra->monto_bruto) < 0.01) {
+                $facturaOrigenCompra->estado = 'ANULADA';
+                $facturaOrigenCompra->save();
+            }
 
             return $factura;
         });

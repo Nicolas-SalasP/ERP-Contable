@@ -137,6 +137,118 @@ class ComercialNotasCreditoTest extends TestCase
         $this->assertNotEquals(201, $response->getStatusCode());
     }
 
+    public function test_rechaza_segunda_nc_compra_activa_sobre_la_misma_factura(): void
+    {
+        // Regresión (auditoría 2026-07-07, crítico): antes no existía ningún chequeo de NC
+        // duplicada del lado compra (a diferencia de venta) -- se podía sobre-acreditar una
+        // factura registrando varias NC sin límite.
+        $factura = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'proveedor_id'   => $this->prov->id,
+            'numero_factura' => 'F-DUP',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'COMPRA',
+            'monto_bruto'    => 100000,
+            'monto_neto'     => 100000,
+            'monto_iva'      => 0,
+            'fecha_emision'  => now(),
+            'estado'         => 'REGISTRADA',
+            'codigo_unico'   => 20,
+        ]);
+
+        $datosNc = [
+            'proveedor_id'          => $this->prov->id,
+            'fecha_emision'         => now()->format('Y-m-d'),
+            'factura_referencia_id' => $factura->id,
+            'tipo_documento'        => 'NOTA_CREDITO',
+            'monto_neto'            => 80000,
+            'monto_iva'             => 0,
+            'monto_bruto'           => 80000,
+            'cuentaDestino'         => '410101',
+            'cuentaIva'             => '353350',
+            'cuentaProveedor'       => '352105',
+        ];
+
+        $this->actingAs($this->usuario)->postJson('/api/facturas', array_merge($datosNc, ['numero_factura' => 'NC-DUP-1']))
+            ->assertStatus(201);
+
+        $response = $this->actingAs($this->usuario)->postJson('/api/facturas', array_merge($datosNc, ['numero_factura' => 'NC-DUP-2']));
+
+        $this->assertNotEquals(201, $response->getStatusCode());
+        $this->assertDatabaseMissing('facturas', ['numero_factura' => 'NC-DUP-2']);
+    }
+
+    public function test_nc_compra_que_cubre_el_100_por_ciento_anula_la_factura_origen(): void
+    {
+        // Regresión: antes la factura de compra origen nunca se marcaba ANULADA aunque la NC
+        // cubriera el 100% del monto -- quedaba REGISTRADA para siempre sin saldo real.
+        $factura = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'proveedor_id'   => $this->prov->id,
+            'numero_factura' => 'F-TOTAL',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'COMPRA',
+            'monto_bruto'    => 50000,
+            'monto_neto'     => 50000,
+            'monto_iva'      => 0,
+            'fecha_emision'  => now(),
+            'estado'         => 'REGISTRADA',
+            'codigo_unico'   => 21,
+        ]);
+
+        $this->actingAs($this->usuario)->postJson('/api/facturas', [
+            'proveedor_id'          => $this->prov->id,
+            'numero_factura'        => 'NC-TOTAL',
+            'tipo_documento'        => 'NOTA_CREDITO',
+            'factura_referencia_id' => $factura->id,
+            'fecha_emision'         => now()->format('Y-m-d'),
+            'monto_neto'            => 50000,
+            'monto_iva'             => 0,
+            'monto_bruto'           => 50000,
+            'cuentaDestino'         => '410101',
+            'cuentaIva'             => '353350',
+            'cuentaProveedor'       => '352105',
+        ])->assertStatus(201);
+
+        $this->assertDatabaseHas('facturas', [
+            'id'     => $factura->id,
+            'estado' => 'ANULADA',
+        ]);
+    }
+
+    public function test_rechaza_nc_compra_sobre_factura_ya_anulada(): void
+    {
+        $facturaAnulada = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'proveedor_id'   => $this->prov->id,
+            'numero_factura' => 'F-YA-ANULADA',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'COMPRA',
+            'monto_bruto'    => 10000,
+            'monto_neto'     => 10000,
+            'monto_iva'      => 0,
+            'fecha_emision'  => now(),
+            'estado'         => 'ANULADA',
+            'codigo_unico'   => 22,
+        ]);
+
+        $response = $this->actingAs($this->usuario)->postJson('/api/facturas', [
+            'proveedor_id'          => $this->prov->id,
+            'numero_factura'        => 'NC-SOBRE-ANULADA',
+            'tipo_documento'        => 'NOTA_CREDITO',
+            'factura_referencia_id' => $facturaAnulada->id,
+            'fecha_emision'         => now()->format('Y-m-d'),
+            'monto_neto'            => 5000,
+            'monto_iva'             => 0,
+            'monto_bruto'           => 5000,
+            'cuentaDestino'         => '410101',
+            'cuentaIva'             => '353350',
+            'cuentaProveedor'       => '352105',
+        ]);
+
+        $this->assertNotEquals(201, $response->getStatusCode());
+    }
+
     // -------------------------------------------------------------------------
     // NC de VENTA (vía POST /facturas/{id}/nota-credito)
     // -------------------------------------------------------------------------
