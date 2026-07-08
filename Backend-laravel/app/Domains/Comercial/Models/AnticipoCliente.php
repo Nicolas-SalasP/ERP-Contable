@@ -22,7 +22,8 @@ class AnticipoCliente extends Model
         'fecha_real',
         'referencia',
         'estado',
-        'movimiento_id'
+        'movimiento_id',
+        'asiento_id'
     ];
 
     protected $casts = [

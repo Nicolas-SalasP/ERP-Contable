@@ -177,6 +177,8 @@ class ConciliacionService
             /** @var array<int, int> $idsPagadas */
             $idsPagadas = [];
             $idAbonada  = null;
+            $anticipoTabla = null;
+            $anticipoId = null;
 
             if ($facturas->count() > 0) {
                 $saldoRestante = $montoMovimiento;
@@ -228,7 +230,8 @@ class ConciliacionService
                             throw TesoreriaException::regla("El cliente indicado no pertenece a la empresa.");
                         }
 
-                        DB::table('anticipos_clientes')->insert([
+                        $anticipoTabla = 'anticipos_clientes';
+                        $anticipoId = DB::table('anticipos_clientes')->insertGetId([
                             'empresa_id' => $empresaId,
                             'cliente_id' => $entidadId,
                             'monto' => $diferencia,
@@ -262,7 +265,8 @@ class ConciliacionService
                             throw TesoreriaException::regla("El proveedor indicado no pertenece a la empresa.");
                         }
 
-                        DB::table('anticipos_proveedores')->insert([
+                        $anticipoTabla = 'anticipos_proveedores';
+                        $anticipoId = DB::table('anticipos_proveedores')->insertGetId([
                             'empresa_id' => $empresaId,
                             'proveedor_id' => $entidadId,
                             'monto' => $diferencia,
@@ -291,6 +295,13 @@ class ConciliacionService
             ], $detallesAsiento);
 
             $this->bancoService->vincularAsientoAMovimiento($empresaId, $movimiento->id, $asiento->id);
+
+            // Vincula el anticipo autogenerado al asiento que lo originó, para que una
+            // anulación posterior (AnulacionService) pueda encontrarlo y liberarlo -- sin
+            // esto quedaba PAGADO para siempre pese a que el pago que lo originó se anuló.
+            if ($anticipoTabla !== null && $anticipoId !== null) {
+                DB::table($anticipoTabla)->where('id', $anticipoId)->update(['asiento_id' => $asiento->id]);
+            }
 
             // Vincula el asiento a las facturas afectadas para que una anulación posterior revierta su estado.
             $idsAfectadas = array_filter(array_merge($idsPagadas, [$idAbonada]));

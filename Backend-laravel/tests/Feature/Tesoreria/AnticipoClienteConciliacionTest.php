@@ -139,4 +139,58 @@ class AnticipoClienteConciliacionTest extends TestCase
         $this->assertNotContains($response->getStatusCode(), [200, 201]);
         $this->assertDatabaseMissing('anticipos_clientes', ['cliente_id' => $clienteB->id]);
     }
+
+    public function test_anticipo_queda_vinculado_al_asiento_que_lo_origino()
+    {
+        $movId = $this->crearMovimientoIngreso(40000);
+
+        Sanctum::actingAs($this->usuario);
+        $response = $this->postJson('/api/banco/movimientos/conciliar-facturas', [
+            'movimiento_id' => $movId,
+            'facturas_ids' => [],
+            'entidad_id' => $this->cliente->id,
+        ]);
+
+        $response->assertOk();
+        $asientoId = DB::table('asientos_contables')
+            ->where('numero_comprobante', $response->json('asiento.numero_comprobante'))
+            ->value('id');
+
+        $this->assertDatabaseHas('anticipos_clientes', [
+            'cliente_id' => $this->cliente->id,
+            'asiento_id' => $asientoId,
+        ]);
+    }
+
+    public function test_anular_el_asiento_libera_el_anticipo_de_cliente()
+    {
+        // Regresión: antes el anticipo quedaba PAGADO para siempre al anular el asiento que
+        // lo originó, con el movimiento ya liberado y disponible para re-conciliarse.
+        $movId = $this->crearMovimientoIngreso(60000);
+
+        Sanctum::actingAs($this->usuario);
+        $conciliacion = $this->postJson('/api/banco/movimientos/conciliar-facturas', [
+            'movimiento_id' => $movId,
+            'facturas_ids' => [],
+            'entidad_id' => $this->cliente->id,
+        ])->assertOk();
+
+        $asientoId = DB::table('asientos_contables')
+            ->where('numero_comprobante', $conciliacion->json('asiento.numero_comprobante'))
+            ->value('id');
+
+        $this->postJson('/api/anulacion/anular', [
+            'tipo_documento' => 'ASIENTO',
+            'documento_id' => $asientoId,
+            'motivo' => 'Prueba de regresión',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ])->assertOk();
+
+        $this->assertDatabaseHas('anticipos_clientes', [
+            'cliente_id' => $this->cliente->id,
+            'estado' => 'ANULADO',
+            'asiento_id' => null,
+            'movimiento_id' => null,
+        ]);
+    }
 }

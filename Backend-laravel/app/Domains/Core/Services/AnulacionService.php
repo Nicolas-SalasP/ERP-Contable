@@ -108,6 +108,16 @@ class AnulacionService
                     ->where('asiento_id', $asientoOriginal->id)
                     ->update(['estado' => 'PENDIENTE', 'asiento_id' => null]);
 
+                // Si el asiento generó un anticipo autogenerado (sobrepago en Mesa de
+                // Conciliación), lo anula: sin esto quedaba PAGADO para siempre con el
+                // movimiento ya liberado arriba, permitiendo re-conciliarlo por duplicado.
+                foreach (['anticipos_proveedores', 'anticipos_clientes'] as $tablaAnticipo) {
+                    DB::table($tablaAnticipo)
+                        ->where('empresa_id', $empresaId)
+                        ->where('asiento_id', $asientoOriginal->id)
+                        ->update(['estado' => 'ANULADO', 'asiento_id' => null, 'movimiento_id' => null]);
+                }
+
                 return [
                     'nuevo_asiento_id' => $asientoReverso->numero_comprobante
                 ];

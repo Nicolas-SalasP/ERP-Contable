@@ -272,6 +272,15 @@ class AsientoContableService
                 ->where('asiento_id', $asientoOriginal->id)
                 ->update(['estado' => 'PENDIENTE', 'asiento_id' => null]);
 
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahí): anula
+            // cualquier anticipo autogenerado que quedó apuntando a este asiento.
+            foreach (['anticipos_proveedores', 'anticipos_clientes'] as $tablaAnticipo) {
+                DB::table($tablaAnticipo)
+                    ->where('empresa_id', $asientoOriginal->empresa_id)
+                    ->where('asiento_id', $asientoOriginal->id)
+                    ->update(['estado' => 'ANULADO', 'asiento_id' => null, 'movimiento_id' => null]);
+            }
+
             return $nuevoAsiento;
         });
     }
