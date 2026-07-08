@@ -70,6 +70,23 @@ class AnulacionService
                     throw new Exception("Este asiento ya se encontraba anulado o procesado internamente.");
                 }
 
+                // El asiento de registro de una Factura (origen_modulo ventas/compras) solo debe
+                // anularse via FacturaService::anularFactura -- ese flujo también revierte
+                // Factura.estado, libera anticipos/cotización/proyecto de activo asociados. Este
+                // reversor genérico no replica esos efectos (a diferencia del caso de pago, ya
+                // manejado más abajo vía asiento_pago_id), y anular aquí directamente dejaba la
+                // factura huérfana en estado REGISTRADA para siempre pese a tener su asiento reversado.
+                if (in_array($asientoOriginal->origen_modulo, ['ventas', 'compras'], true)) {
+                    $facturaAsociada = Factura::where('empresa_id', $empresaId)
+                        ->where('comprobante_contable', $asientoOriginal->numero_comprobante)
+                        ->whereNotIn('estado', ['ANULADA'])
+                        ->first();
+
+                    if ($facturaAsociada) {
+                        throw new Exception("Este asiento corresponde al registro de la Factura N° {$facturaAsociada->numero_factura}. Anúlela desde el módulo Comercial (Historial de Compras/Ventas) para que se reviertan también su estado, anticipos y cotización asociada.");
+                    }
+                }
+
                 $asientoOriginal->update(['estado' => 'ANULADO']);
 
                 // Mismo fix que AsientoContableService::procesarReversa: si el asiento es de una factura (ventas/compras) y su mes ya tiene F29 centralizado, marca la alerta de desactualización.

@@ -86,7 +86,7 @@ const VisorCliente = () => {
 
     const clientesFiltrados = listaClientes.filter(c => {
         const b = terminoBusqueda.toLowerCase();
-        return c.razon_social?.toLowerCase().includes(b) || (c.rut && c.rut.toLowerCase().includes(b));
+        return c.razon_social?.toLowerCase().includes(b) || (c.rut && c.rut.toLowerCase().includes(b)) || (c.codigo_cliente && c.codigo_cliente.toLowerCase().includes(b));
     });
 
     const modalSpotlightJSX = modalAbierto && (
@@ -94,7 +94,7 @@ const VisorCliente = () => {
             <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] border border-slate-300 dark:border-slate-700" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <i className="fas fa-search text-slate-500 text-xl mr-4"></i>
-                    <input ref={inputBusquedaRef} type="text" className="flex-1 bg-transparent border-none outline-none text-lg font-bold text-slate-800 dark:text-slate-200 placeholder-slate-400" placeholder="Buscar por RUT o Nombre..." value={terminoBusqueda} onChange={(e) => setTerminoBusqueda(e.target.value)} />
+                    <input ref={inputBusquedaRef} type="text" className="flex-1 bg-transparent border-none outline-none text-lg font-bold text-slate-800 dark:text-slate-200 placeholder-slate-400" placeholder="Buscar por RUT, Nombre o Código..." value={terminoBusqueda} onChange={(e) => setTerminoBusqueda(e.target.value)} />
                     <button onClick={() => setModalAbierto(false)} className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600 text-xs font-bold px-3 py-1 rounded transition-colors">ESC</button>
                 </div>
                 <div className="overflow-y-auto p-2">

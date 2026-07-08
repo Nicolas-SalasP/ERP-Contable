@@ -233,8 +233,8 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/tributario/dj-1879', label: 'DJ 1879 — Retenciones Honorarios' },
                 { path: '/tributario/dj-1947', label: 'DJ 1947 — Propyme' },
                 { path: '/tributario/dj-1835', label: 'DJ 1835 — Retenciones Art. 59' },
-                { path: '/tributario/dj-1837', label: 'DJ 1837 — Gastos Rechazados' },
-                { path: '/tributario/dj-1926', label: 'DJ 1926 — Créditos al Exterior' },
+                { path: '/tributario/dj-1837', label: 'DJ 1837 — Honorarios sin Retención' },
+                { path: '/tributario/dj-1926', label: 'DJ 1926 — Gastos Rechazados' },
                 { path: '/tributario/libro-cv', label: 'Libro de Compras y Ventas' },
             ]
         },

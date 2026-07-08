@@ -25,6 +25,8 @@ import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
 import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
 const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
 const AdministradorCuentas = lazy(() => import('./Modulos/Contabilidad/Vistas/AdministradorCuentas'));
+const VisorAsientoCompleto = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAsientoCompleto'));
+const ReclasificadorAsiento = lazy(() => import('./Modulos/Contabilidad/Vistas/ReclasificadorAsiento'));
 import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
 import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
 import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
@@ -407,6 +409,22 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.ver">
                 <LayoutPrincipal><VisorAuditoriaFactura /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/factura/:id/asiento" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><VisorAsientoCompleto /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/factura/:id/reclasificar" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.crear">
+                <LayoutPrincipal><ReclasificadorAsiento /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
