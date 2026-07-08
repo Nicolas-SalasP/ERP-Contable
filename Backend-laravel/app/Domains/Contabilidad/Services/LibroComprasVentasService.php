@@ -58,6 +58,7 @@ class LibroComprasVentasService
             ->whereNotIn('estado', [
                 SiiDteEmitido::ESTADO_BORRADOR,
                 SiiDteEmitido::ESTADO_RECHAZADO,
+                SiiDteEmitido::ESTADO_REEMITIDO,
                 SiiDteEmitido::ESTADO_ANULADO_FALLO_INTERNO,
             ])
             ->orderBy('fecha_emision')
