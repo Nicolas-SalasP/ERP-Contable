@@ -36,10 +36,10 @@ class InventarioReservaService
     public function listarReservas(User $usuario, array $filtros = []): LengthAwarePaginator
     {
         $this->permisos->exigir($usuario, 'inventario.reservas.ver');
-        $this->marcarReservasExpiradas((int) $usuario->empresa_id);
+        $this->marcarReservasExpiradas((int) $usuario->empresa_activa_id);
 
         return ReservaInventario::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'reservadoPor:id,nombre,email',
                 'detalles.producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
@@ -93,9 +93,9 @@ class InventarioReservaService
     public function obtenerReserva(User $usuario, int $reservaId): ReservaInventario
     {
         $this->permisos->exigir($usuario, 'inventario.reservas.ver');
-        $this->marcarReservasExpiradas((int) $usuario->empresa_id);
+        $this->marcarReservasExpiradas((int) $usuario->empresa_activa_id);
 
-        $reserva = ReservaInventario::where('empresa_id', $usuario->empresa_id)
+        $reserva = ReservaInventario::where('empresa_id', $usuario->empresa_activa_id)
             ->find($reservaId);
 
         if (!$reserva) {
@@ -110,7 +110,7 @@ class InventarioReservaService
         $this->permisos->exigir($usuario, 'inventario.reservas.crear');
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $detallesNormalizados = $this->normalizarDetallesReserva($datos['detalles'] ?? [], $empresaId);
 
             $this->validarDisponibilidadDetallesAgrupados($detallesNormalizados, $empresaId);
@@ -170,7 +170,7 @@ class InventarioReservaService
         $this->permisos->exigir($usuario, 'inventario.reservas.cancelar');
 
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
-            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
+            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_activa_id);
             $this->validarReservaOperable($reserva, 'cancelar');
             $this->validarSinCicloDeVidaPropio($reserva, 'cancelar');
 
@@ -217,7 +217,7 @@ class InventarioReservaService
         $this->permisos->exigir($usuario, 'inventario.reservas.liberar');
 
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
-            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
+            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_activa_id);
             $this->validarReservaOperable($reserva, 'liberar');
             $this->validarSinCicloDeVidaPropio($reserva, 'liberar');
 
@@ -277,7 +277,7 @@ class InventarioReservaService
         $this->permisos->exigir($usuario, 'inventario.reservas.consumir');
 
         return DB::transaction(function () use ($usuario, $reservaId, $datos) {
-            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_id);
+            $reserva = $this->obtenerReservaBloqueada($reservaId, (int) $usuario->empresa_activa_id);
             $this->validarReservaOperable($reserva, 'consumir');
 
             $consumos = $this->normalizarConsumosSolicitados($reserva, $datos['detalles'] ?? null);
@@ -295,7 +295,7 @@ class InventarioReservaService
 
                 $movimiento = $this->movimientoService->registrarMovimiento(
                     $this->payloadSalidaDesdeReserva($reserva, $detalle, $cantidad, $datos),
-                    (int) $usuario->empresa_id,
+                    (int) $usuario->empresa_activa_id,
                     (int) $usuario->id
                 );
 
@@ -315,7 +315,7 @@ class InventarioReservaService
                 }
 
                 ReservaConsumoInventario::create([
-                    'empresa_id' => (int) $usuario->empresa_id,
+                    'empresa_id' => (int) $usuario->empresa_activa_id,
                     'reserva_id' => $reserva->id,
                     'reserva_detalle_id' => $detalle->id,
                     'movimiento_inventario_id' => $movimiento->id,

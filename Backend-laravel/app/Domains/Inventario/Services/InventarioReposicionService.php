@@ -26,7 +26,7 @@ class InventarioReposicionService
         $this->permisos->exigir($usuario, 'inventario.reglas_reposicion.ver');
 
         return ReglaReposicion::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,stock_minimo,maneja_lotes,requiere_fecha_vencimiento',
                 'bodega:id,empresa_id,codigo,nombre,estado',
@@ -51,7 +51,7 @@ class InventarioReposicionService
         $this->permisos->exigir($usuario, 'inventario.reglas_reposicion.ver');
 
         $regla = ReglaReposicion::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,stock_minimo,maneja_lotes,requiere_fecha_vencimiento',
                 'bodega:id,empresa_id,codigo,nombre,estado',
@@ -70,7 +70,7 @@ class InventarioReposicionService
         $this->permisos->exigir($usuario, 'inventario.reglas_reposicion.crear');
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $datos = $this->normalizarDatos($datos);
             $this->validarRegla($empresaId, $datos);
 
@@ -94,14 +94,14 @@ class InventarioReposicionService
         $this->permisos->exigir($usuario, 'inventario.reglas_reposicion.editar');
 
         return DB::transaction(function () use ($usuario, $reglaId, $datos) {
-            $regla = ReglaReposicion::where('empresa_id', $usuario->empresa_id)->find($reglaId);
+            $regla = ReglaReposicion::where('empresa_id', $usuario->empresa_activa_id)->find($reglaId);
 
             if (!$regla) {
                 throw InventarioException::noEncontrado('La regla de reposición no existe o no pertenece a la empresa.');
             }
 
             $datos = $this->normalizarDatos($datos);
-            $this->validarRegla((int) $usuario->empresa_id, $datos, $regla->id);
+            $this->validarRegla((int) $usuario->empresa_activa_id, $datos, $regla->id);
 
             $regla->update([
                 'producto_id' => $datos['producto_id'],
@@ -121,7 +121,7 @@ class InventarioReposicionService
     {
         $this->permisos->exigir($usuario, 'inventario.reglas_reposicion.eliminar');
 
-        $regla = ReglaReposicion::where('empresa_id', $usuario->empresa_id)->find($reglaId);
+        $regla = ReglaReposicion::where('empresa_id', $usuario->empresa_activa_id)->find($reglaId);
 
         if (!$regla) {
             throw InventarioException::noEncontrado('La regla de reposición no existe o no pertenece a la empresa.');
@@ -134,7 +134,7 @@ class InventarioReposicionService
     {
         $this->permisos->exigir($usuario, 'inventario.alertas.ver');
 
-        return $this->sugerenciasParaEmpresa((int) $usuario->empresa_id, $filtros);
+        return $this->sugerenciasParaEmpresa((int) $usuario->empresa_activa_id, $filtros);
     }
 
     public function sugerenciasParaEmpresa(int $empresaId, array $filtros = []): array

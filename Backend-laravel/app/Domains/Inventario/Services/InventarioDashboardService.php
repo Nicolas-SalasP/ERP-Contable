@@ -58,7 +58,7 @@ class InventarioDashboardService
             'inventario.reglas_reposicion.ver',
         ]);
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
 
         return Cache::remember(
             "inventario_dashboard:empresa_{$empresaId}",

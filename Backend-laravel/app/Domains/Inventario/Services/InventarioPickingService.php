@@ -36,7 +36,7 @@ class InventarioPickingService
         $this->permisos->exigir($usuario, 'inventario.picking.ver');
 
         return InventarioPickingOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'bodega:id,empresa_id,codigo,nombre,estado',
                 'usuarioCreador:id,nombre,email',
@@ -70,7 +70,7 @@ class InventarioPickingService
         $this->permisos->exigir($usuario, 'inventario.picking.ver');
 
         $orden = InventarioPickingOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->find($id);
 
         if (!$orden) {
@@ -85,7 +85,7 @@ class InventarioPickingService
         $this->permisos->exigir($usuario, 'inventario.picking.crear');
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $bodega = $this->obtenerBodegaActivaEmpresa((int) ($datos['bodega_id'] ?? 0), $empresaId, 'bodega_id');
             $detalles = $this->normalizarDetallesCreacion($datos['detalles'] ?? [], $empresaId, (int) $bodega->id);
 
@@ -136,7 +136,7 @@ class InventarioPickingService
         $this->permisos->exigir($usuario, 'inventario.picking.editar');
 
         return DB::transaction(function () use ($usuario, $id) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
             if (!$orden) {
@@ -272,7 +272,7 @@ class InventarioPickingService
         $this->permisos->exigir($usuario, 'inventario.picking.editar');
 
         return DB::transaction(function () use ($usuario, $id) {
-            $orden = InventarioPickingOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
+            $orden = InventarioPickingOrden::where('empresa_id', $usuario->empresa_activa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
                 throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
@@ -297,7 +297,7 @@ class InventarioPickingService
         $this->permisos->exigir($usuario, 'inventario.picking.confirmar');
 
         return DB::transaction(function () use ($usuario, $id, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
             if (!$orden) {
@@ -404,7 +404,7 @@ class InventarioPickingService
         $this->permisos->exigir($usuario, 'inventario.picking.cancelar');
 
         return DB::transaction(function () use ($usuario, $id, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
             if (!$orden) {
@@ -491,7 +491,7 @@ class InventarioPickingService
     {
         $this->permisos->exigirAlguno($usuario, ['inventario.reportes.picking', 'inventario.picking.ver']);
 
-        $query = InventarioPickingOrden::query()->where('empresa_id', $usuario->empresa_id);
+        $query = InventarioPickingOrden::query()->where('empresa_id', $usuario->empresa_activa_id);
 
         if (!empty($filtros['bodega_id'])) {
             $query->where('bodega_id', (int) $filtros['bodega_id']);

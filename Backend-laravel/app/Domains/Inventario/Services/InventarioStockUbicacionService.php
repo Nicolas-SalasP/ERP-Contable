@@ -33,7 +33,7 @@ class InventarioStockUbicacionService
         ]);
 
         return StockUbicacionInventario::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,maneja_lotes',
                 'bodega:id,empresa_id,codigo,nombre,estado',
@@ -58,7 +58,7 @@ class InventarioStockUbicacionService
         ]);
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $producto = $this->obtenerProductoActivoEmpresa((int) $datos['producto_id'], $empresaId, 'producto_id');
             $bodegaOrigen = $this->obtenerBodegaActivaEmpresa((int) $datos['bodega_origen_id'], $empresaId, 'bodega_origen_id');
             $bodegaDestino = $this->obtenerBodegaActivaEmpresa((int) $datos['bodega_destino_id'], $empresaId, 'bodega_destino_id');

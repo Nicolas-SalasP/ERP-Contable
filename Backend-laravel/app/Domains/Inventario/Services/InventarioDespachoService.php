@@ -39,7 +39,7 @@ class InventarioDespachoService
         $this->permisos->exigir($usuario, 'inventario.despachos.ver');
 
         return InventarioDespachoOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->with([
                 'bodega:id,empresa_id,codigo,nombre,estado',
                 'packingOrden:id,empresa_id,picking_orden_id,bodega_id,codigo,estado,fecha_confirmacion',
@@ -72,7 +72,7 @@ class InventarioDespachoService
         $this->permisos->exigir($usuario, 'inventario.despachos.ver');
 
         $orden = InventarioDespachoOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->find($id);
 
         if (!$orden) {
@@ -87,7 +87,7 @@ class InventarioDespachoService
         $this->permisos->exigir($usuario, 'inventario.despachos.crear');
 
         return DB::transaction(function () use ($usuario, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $packing = InventarioPackingOrden::query()
                 ->where('empresa_id', $empresaId)
                 ->with(['pickingOrden'])
@@ -198,7 +198,7 @@ class InventarioDespachoService
         $this->permisos->exigir($usuario, 'inventario.despachos.editar');
 
         return DB::transaction(function () use ($usuario, $id) {
-            $orden = InventarioDespachoOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
+            $orden = InventarioDespachoOrden::where('empresa_id', $usuario->empresa_activa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
                 throw InventarioException::noEncontrado('La orden de despacho no existe o no pertenece a la empresa.');
@@ -224,7 +224,7 @@ class InventarioDespachoService
         $this->permisos->exigir($usuario, 'inventario.despachos.confirmar');
 
         return DB::transaction(function () use ($usuario, $id, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioDespachoOrden::where('empresa_id', $empresaId)
                 ->with(['packingOrden', 'pickingOrden'])
                 ->lockForUpdate()
@@ -332,7 +332,7 @@ class InventarioDespachoService
         $this->permisos->exigir($usuario, 'inventario.despachos.cancelar');
 
         return DB::transaction(function () use ($usuario, $id, $datos) {
-            $orden = InventarioDespachoOrden::where('empresa_id', $usuario->empresa_id)->lockForUpdate()->find($id);
+            $orden = InventarioDespachoOrden::where('empresa_id', $usuario->empresa_activa_id)->lockForUpdate()->find($id);
 
             if (!$orden) {
                 throw InventarioException::noEncontrado('La orden de despacho no existe o no pertenece a la empresa.');
@@ -342,7 +342,7 @@ class InventarioDespachoService
                 throw InventarioException::regla('La orden de despacho no puede cancelarse en su estado actual.');
             }
 
-            InventarioDespachoDetalle::where('empresa_id', $usuario->empresa_id)
+            InventarioDespachoDetalle::where('empresa_id', $usuario->empresa_activa_id)
                 ->where('despacho_orden_id', $orden->id)
                 ->where('estado', InventarioDespachoDetalle::ESTADO_PENDIENTE)
                 ->update(['estado' => InventarioDespachoDetalle::ESTADO_CANCELADO]);
@@ -368,7 +368,7 @@ class InventarioDespachoService
         $this->permisos->exigir($usuario, 'inventario.reportes.despachos');
 
         $base = InventarioDespachoOrden::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
             ->when(!empty($filtros['desde']), fn (Builder $query) => $query->whereDate('fecha_creacion', '>=', $filtros['desde']))
             ->when(!empty($filtros['hasta']), fn (Builder $query) => $query->whereDate('fecha_creacion', '<=', $filtros['hasta']));
@@ -380,7 +380,7 @@ class InventarioDespachoService
             ->toArray();
 
         $detalles = InventarioDespachoDetalle::query()
-            ->where('empresa_id', $usuario->empresa_id)
+            ->where('empresa_id', $usuario->empresa_activa_id)
             ->whereIn('despacho_orden_id', (clone $base)->pluck('id'));
 
         return [
@@ -427,7 +427,7 @@ class InventarioDespachoService
             }
         }
 
-        return $this->movimientoService->registrarMovimiento($payload, (int) $usuario->empresa_id, (int) $usuario->id);
+        return $this->movimientoService->registrarMovimiento($payload, (int) $usuario->empresa_activa_id, (int) $usuario->id);
     }
 
     private function obtenerReservaDetalleBloqueado(InventarioDespachoDetalle $detalle): ?ReservaDetalleInventario

@@ -29,7 +29,7 @@ class InventarioTomaFisicaService
     {
         $this->permisos->exigir($usuario, 'inventario.tomas_fisicas.ver');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
         $perPage = $this->normalizarPerPage($filtros['per_page'] ?? 15);
 
         return TomaFisicaInventario::query()
@@ -78,7 +78,7 @@ class InventarioTomaFisicaService
 
         return $this->obtenerTomaFisicaEmpresa(
             tomaFisicaId: $tomaFisicaId,
-            empresaId: (int) $usuario->empresa_id,
+            empresaId: (int) $usuario->empresa_activa_id,
             conRelaciones: true
         );
     }
@@ -87,7 +87,7 @@ class InventarioTomaFisicaService
     {
         $this->permisos->exigir($usuario, 'inventario.tomas_fisicas.crear');
 
-        $empresaId = (int) $usuario->empresa_id;
+        $empresaId = (int) $usuario->empresa_activa_id;
         $tipo = $this->normalizarTipo($datos['tipo'] ?? null);
         $bodegaId = $this->resolverBodegaCabecera($tipo, $datos['bodega_id'] ?? null, $empresaId);
 
@@ -129,7 +129,7 @@ class InventarioTomaFisicaService
         return DB::transaction(function () use ($usuario, $tomaFisicaId) {
             $toma = $this->obtenerTomaFisicaEmpresaBloqueada(
                 tomaFisicaId: $tomaFisicaId,
-                empresaId: (int) $usuario->empresa_id
+                empresaId: (int) $usuario->empresa_activa_id
             );
 
             if (!$toma->puedeIniciarse()) {
@@ -166,7 +166,7 @@ class InventarioTomaFisicaService
         }
 
         return DB::transaction(function () use ($usuario, $tomaFisicaId, $detallesPayload) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
 
             $toma = $this->obtenerTomaFisicaEmpresaBloqueada(
                 tomaFisicaId: $tomaFisicaId,
@@ -226,7 +226,7 @@ class InventarioTomaFisicaService
         return DB::transaction(function () use ($usuario, $tomaFisicaId, $datos) {
             $toma = $this->obtenerTomaFisicaEmpresaBloqueada(
                 tomaFisicaId: $tomaFisicaId,
-                empresaId: (int) $usuario->empresa_id
+                empresaId: (int) $usuario->empresa_activa_id
             );
 
             if (!$toma->puedeCerrarse()) {
@@ -257,7 +257,7 @@ class InventarioTomaFisicaService
         $this->permisos->exigir($usuario, 'inventario.tomas_fisicas.ajustar');
 
         return DB::transaction(function () use ($usuario, $tomaFisicaId, $datos) {
-            $empresaId = (int) $usuario->empresa_id;
+            $empresaId = (int) $usuario->empresa_activa_id;
 
             $toma = $this->obtenerTomaFisicaEmpresaBloqueada(
                 tomaFisicaId: $tomaFisicaId,
@@ -365,7 +365,7 @@ class InventarioTomaFisicaService
         return DB::transaction(function () use ($usuario, $tomaFisicaId, $datos) {
             $toma = $this->obtenerTomaFisicaEmpresaBloqueada(
                 tomaFisicaId: $tomaFisicaId,
-                empresaId: (int) $usuario->empresa_id
+                empresaId: (int) $usuario->empresa_activa_id
             );
 
             if (!$toma->puedeCancelarse()) {
@@ -539,18 +539,18 @@ class InventarioTomaFisicaService
     ): MovimientoInventario {
         $producto = $this->obtenerProductoActivoEmpresa(
             productoId: (int) $detalle->producto_id,
-            empresaId: (int) $usuario->empresa_id
+            empresaId: (int) $usuario->empresa_activa_id
         );
 
         $this->validarBodegaActivaEmpresa(
             bodegaId: (int) $detalle->bodega_id,
-            empresaId: (int) $usuario->empresa_id
+            empresaId: (int) $usuario->empresa_activa_id
         );
 
         if ($detalle->tieneDiferenciaPositiva()) {
             return $this->movimientoService->registrarMovimiento(
                 data: $this->payloadAjustePositivo($detalle, $toma, $datos, $producto),
-                empresaId: (int) $usuario->empresa_id,
+                empresaId: (int) $usuario->empresa_activa_id,
                 userId: (int) $usuario->id
             );
         }
@@ -558,7 +558,7 @@ class InventarioTomaFisicaService
         if ($detalle->tieneDiferenciaNegativa()) {
             return $this->movimientoService->registrarMovimiento(
                 data: $this->payloadAjusteNegativo($detalle, $toma, $datos),
-                empresaId: (int) $usuario->empresa_id,
+                empresaId: (int) $usuario->empresa_activa_id,
                 userId: (int) $usuario->id
             );
         }
