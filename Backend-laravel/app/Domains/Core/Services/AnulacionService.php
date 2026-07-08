@@ -4,11 +4,16 @@ namespace App\Domains\Core\Services;
 
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class AnulacionService
 {
+    public function __construct(private ContadorEmpresaService $contadorService)
+    {
+    }
+
     public function buscarDocumento(int $empresaId, string $tipo, string $numero)
     {
         $tipoStr = strtoupper($tipo);
@@ -81,9 +86,13 @@ class AnulacionService
                     'origen_id' => $asientoOriginal->origen_id,
                 ]);
 
+                // Antes usaba el id de la fila como secuencia -- desincronizado del contador
+                // real (ContadorEmpresaService), lo que producía colisiones con números
+                // generados después por registrarAsiento/generarNumeroComprobante.
                 $anio = date('y', strtotime($asientoReverso->fecha));
                 $tipoCode = '10';
-                $secuencia = str_pad((string) $asientoReverso->id, 6, '0', STR_PAD_LEFT);
+                $correlativo = $this->contadorService->siguienteNumero($empresaId, 'asiento_comprobante');
+                $secuencia = str_pad((string) $correlativo, 6, '0', STR_PAD_LEFT);
                 $asientoReverso->update(['numero_comprobante' => $anio . $tipoCode . $secuencia]);
 
                 foreach ($asientoOriginal->detalles as $det) {
@@ -116,6 +125,18 @@ class AnulacionService
                         ->where('empresa_id', $empresaId)
                         ->where('asiento_id', $asientoOriginal->id)
                         ->update(['estado' => 'ANULADO', 'asiento_id' => null, 'movimiento_id' => null]);
+                }
+
+                // Si era el asiento de centralizacion de remuneraciones, limpia comprobante_contable
+                // en las liquidaciones que lo referenciaban -- sin esto quedaban apuntando a un
+                // comprobante ya ANULADO y CentralizacionRemuneracionesService::centralizar (ya
+                // corregido para no bloquearse con el reverso) las re-centralizaba sin que la
+                // liquidacion mostrara el nuevo comprobante.
+                if ($asientoOriginal->origen_modulo === 'rrhh') {
+                    DB::table('liquidaciones')
+                        ->where('empresa_id', $empresaId)
+                        ->where('comprobante_contable', $asientoOriginal->numero_comprobante)
+                        ->update(['comprobante_contable' => null]);
                 }
 
                 return [

@@ -281,6 +281,14 @@ class AsientoContableService
                     ->update(['estado' => 'ANULADO', 'asiento_id' => null, 'movimiento_id' => null]);
             }
 
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahi).
+            if ($asientoOriginal->origen_modulo === 'rrhh') {
+                DB::table('liquidaciones')
+                    ->where('empresa_id', $asientoOriginal->empresa_id)
+                    ->where('comprobante_contable', $asientoOriginal->numero_comprobante)
+                    ->update(['comprobante_contable' => null]);
+            }
+
             return $nuevoAsiento;
         });
     }

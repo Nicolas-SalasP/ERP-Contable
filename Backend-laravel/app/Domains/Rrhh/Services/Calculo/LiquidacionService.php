@@ -356,10 +356,16 @@ class LiquidacionService
         }
         // Bloquear anulación si el período ya fue centralizado en contabilidad (mismo criterio de idempotencia que CentralizacionRemuneracionesService: origen_modulo='rrhh', origen_id=anio*100+mes, empresa_id).
         $periodoId = $liq->anio * 100 + $liq->mes;
+        // Mismo fix que CentralizacionRemuneracionesService::centralizar: excluye el reverso
+        // (copia origen_modulo/origen_id del original anulado) para que anular ese asiento
+        // realmente desbloquee la liquidacion.
         $asiento = AsientoContable::where('empresa_id', $empresaId)
             ->where('origen_modulo', 'rrhh')
             ->where('origen_id', $periodoId)
             ->where('estado', '!=', 'ANULADO')
+            ->where(function ($q) {
+                $q->whereNull('glosa')->orWhere('glosa', 'not like', 'REVERSO N°%');
+            })
             ->first();
         if ($asiento) {
             throw RrhhException::regla(
