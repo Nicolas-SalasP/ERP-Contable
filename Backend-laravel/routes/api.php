@@ -693,11 +693,11 @@ Route::prefix('dj/1926')->middleware(['auth:sanctum', 'check.subscription'])->gr
 });
 
 // Propietarios de la empresa (para DJ 1947 / Propyme)
-Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription', 'permiso:contabilidad.ver'])->group(function () {
-    Route::get('/',                    [PropietariosController::class, 'index']);
-    Route::post('/',                   [PropietariosController::class, 'store'])->middleware('subscription.writable');
-    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware('subscription.writable');
-    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware('subscription.writable');
+Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
+    Route::get('/',                    [PropietariosController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::post('/',                   [PropietariosController::class, 'store'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
 });
 
 // Honorarios recibidos
@@ -712,7 +712,7 @@ Route::prefix('soporte/tickets')->middleware(['auth:sanctum', 'check.subscriptio
     Route::get('/',          [SoporteController::class, 'index'])->middleware('permiso:soporte.ver');
     Route::post('/',         [SoporteController::class, 'store'])->middleware(['permiso:soporte.crear', 'subscription.writable']);
     Route::get('/{id}',      [SoporteController::class, 'show'])->middleware('permiso:soporte.ver')->whereNumber('id');
-    Route::post('/{id}/reply', [SoporteController::class, 'reply'])->middleware(['permiso:soporte.ver', 'subscription.writable'])->whereNumber('id');
+    Route::post('/{id}/reply', [SoporteController::class, 'reply'])->middleware(['permiso:soporte.crear', 'subscription.writable'])->whereNumber('id');
 });
 
 Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Soporte;
 
 use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -243,5 +244,56 @@ class SoporteControllerTest extends TestCase
         $this->postJson('/api/soporte/tickets/501/reply', [
             'message' => 'Sin sesion',
         ])->assertStatus(401);
+    }
+
+    /**
+     * Regresion: reply exigia solo soporte.ver (lectura), permitiendo que un
+     * usuario de solo-lectura escribiera mensajes hacia el sistema externo.
+     * Debe exigir soporte.crear, igual que store.
+     */
+    public function test_reply_rechaza_usuario_con_solo_permiso_de_lectura(): void
+    {
+        $rolSoloLectura = Rol::create([
+            'nombre' => 'Soporte Solo Lectura',
+            'jerarquia' => 10,
+            'permisos' => ['soporte.ver'],
+        ]);
+        $usuarioSoloLectura = $this->crearUsuario($this->empresa, $rolSoloLectura);
+
+        Http::fake();
+
+        Sanctum::actingAs($usuarioSoloLectura);
+
+        $response = $this->postJson('/api/soporte/tickets/501/reply', [
+            'message' => 'No deberia poder enviar esto.',
+        ]);
+
+        $response->assertStatus(403);
+        Http::assertNothingSent();
+    }
+
+    public function test_reply_permite_usuario_con_permiso_de_creacion(): void
+    {
+        $rolCreador = Rol::create([
+            'nombre' => 'Soporte Creador',
+            'jerarquia' => 10,
+            'permisos' => ['soporte.ver', 'soporte.crear'],
+        ]);
+        $usuarioCreador = $this->crearUsuario($this->empresa, $rolCreador);
+
+        Http::fake([
+            'https://web.test/api/internal/erp/tickets/501/reply' => Http::response([
+                'id' => 501,
+                'status' => 'en_proceso',
+            ], 201),
+        ]);
+
+        Sanctum::actingAs($usuarioCreador);
+
+        $response = $this->postJson('/api/soporte/tickets/501/reply', [
+            'message' => 'Respuesta autorizada.',
+        ]);
+
+        $response->assertStatus(201)->assertJson(['id' => 501]);
     }
 }
