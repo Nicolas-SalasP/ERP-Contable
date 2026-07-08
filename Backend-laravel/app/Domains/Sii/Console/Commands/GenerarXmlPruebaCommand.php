@@ -11,12 +11,15 @@ use App\Domains\Sii\Services\Xml\DteSigner;
 use App\Domains\Sii\Services\Xml\DteXmlBuilder;
 use App\Domains\Sii\Services\Xml\SetDte\SetDteBuilder;
 use App\Domains\Sii\Services\Xml\SetDte\SetDteSigner;
+use App\Domains\Sii\Console\Commands\Concerns\BloqueaEnProduccion;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use LogicException;
 
 class GenerarXmlPruebaCommand extends Command
 {
+    use BloqueaEnProduccion;
+
     protected $signature = 'sii:generar-xml-prueba
                             {dte_id : ID de SiiDteEmitido}
                             {--out= : Path opcional para volcar el XML al disco}
@@ -32,6 +35,10 @@ class GenerarXmlPruebaCommand extends Command
         SetDteBuilder $setBuilder,
         SetDteSigner $setSigner
     ): int {
+        if ($this->abortarSiProduccion()) {
+            return self::FAILURE;
+        }
+
         $id = (int) $this->argument('dte_id');
 
         try {
