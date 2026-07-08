@@ -75,4 +75,9 @@ class OrdenCompra extends Model
     {
         return $this->hasMany(DetalleOrdenCompra::class, 'orden_compra_id');
     }
+
+    public function documentosAdjuntos(): HasMany
+    {
+        return $this->hasMany(DocumentoAdjunto::class, 'orden_compra_id');
+    }
 }

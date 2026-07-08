@@ -93,4 +93,150 @@ class DocumentoAdjuntoController
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
         }
     }
+
+    /** Lista los documentos adjuntos de una cotización. */
+    public function indexCotizacion(Request $request, int $cotizacionId)
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => $this->service->listarCotizacion($request->user()->empresa_activa_id, $cotizacionId),
+            ]);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 404);
+        }
+    }
+
+    /** Sube uno o varios documentos (PDF o imagen) a una cotización. */
+    public function storeCotizacion(Request $request, int $cotizacionId)
+    {
+        try {
+            $request->validate([
+                'documentos' => 'required|array|min:1|max:10',
+                'documentos.*' => 'file|mimes:pdf,jpg,jpeg,png,webp|max:15360',
+            ]);
+
+            $creados = $this->service->subirCotizacion(
+                $request->user()->empresa_activa_id,
+                $request->user()->id,
+                $cotizacionId,
+                $request->file('documentos')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => count($creados) === 1 ? 'Documento adjuntado correctamente.' : count($creados) . ' documentos adjuntados correctamente.',
+                'data' => $creados,
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
+        }
+    }
+
+    /** Descarga/muestra un documento adjunto puntual de una cotización. */
+    public function showCotizacion(Request $request, int $cotizacionId, int $adjuntoId)
+    {
+        try {
+            $adjunto = $this->service->obtenerParaDescargaCotizacion($request->user()->empresa_activa_id, $cotizacionId, $adjuntoId);
+            return Storage::disk('local')->response($adjunto->ruta, $adjunto->nombre_original, [
+                'Content-Type' => $adjunto->mime_type,
+            ]);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 404);
+        }
+    }
+
+    /** Elimina un documento adjunto de una cotización: borra la fila y el archivo físico del servidor. */
+    public function destroyCotizacion(Request $request, int $cotizacionId, int $adjuntoId)
+    {
+        try {
+            $this->service->eliminarCotizacion($request->user()->empresa_activa_id, $cotizacionId, $adjuntoId);
+            return response()->json(['success' => true, 'message' => 'Documento eliminado.']);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
+        }
+    }
+
+    /** Lista los documentos adjuntos de una orden de compra. */
+    public function indexOrdenCompra(Request $request, int $ordenCompraId)
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => $this->service->listarOrdenCompra($request->user()->empresa_activa_id, $ordenCompraId),
+            ]);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 404);
+        }
+    }
+
+    /** Sube uno o varios documentos (PDF o imagen) a una orden de compra. */
+    public function storeOrdenCompra(Request $request, int $ordenCompraId)
+    {
+        try {
+            $request->validate([
+                'documentos' => 'required|array|min:1|max:10',
+                'documentos.*' => 'file|mimes:pdf,jpg,jpeg,png,webp|max:15360',
+            ]);
+
+            $creados = $this->service->subirOrdenCompra(
+                $request->user()->empresa_activa_id,
+                $request->user()->id,
+                $ordenCompraId,
+                $request->file('documentos')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => count($creados) === 1 ? 'Documento adjuntado correctamente.' : count($creados) . ' documentos adjuntados correctamente.',
+                'data' => $creados,
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
+        }
+    }
+
+    /** Descarga/muestra un documento adjunto puntual de una orden de compra. */
+    public function showOrdenCompra(Request $request, int $ordenCompraId, int $adjuntoId)
+    {
+        try {
+            $adjunto = $this->service->obtenerParaDescargaOrdenCompra($request->user()->empresa_activa_id, $ordenCompraId, $adjuntoId);
+            return Storage::disk('local')->response($adjunto->ruta, $adjunto->nombre_original, [
+                'Content-Type' => $adjunto->mime_type,
+            ]);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 404);
+        }
+    }
+
+    /** Elimina un documento adjunto de una orden de compra: borra la fila y el archivo físico del servidor. */
+    public function destroyOrdenCompra(Request $request, int $ordenCompraId, int $adjuntoId)
+    {
+        try {
+            $this->service->eliminarOrdenCompra($request->user()->empresa_activa_id, $ordenCompraId, $adjuntoId);
+            return response()->json(['success' => true, 'message' => 'Documento eliminado.']);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 400);
+        }
+    }
 }

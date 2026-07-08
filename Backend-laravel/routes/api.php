@@ -271,6 +271,16 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/facturas/{facturaId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'show'])->middleware('permiso:compras.ver,ventas.ver');
     Route::delete('/facturas/{facturaId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'destroy'])->middleware('permiso:compras.crear,ventas.crear');
 
+    // Documentos adjuntos de Cotizacion y Orden de Compra (mismo mecanismo que Factura)
+    Route::get('/cotizaciones/{cotizacionId}/adjuntos', [DocumentoAdjuntoController::class, 'indexCotizacion'])->middleware('permiso:ventas.ver');
+    Route::post('/cotizaciones/{cotizacionId}/adjuntos', [DocumentoAdjuntoController::class, 'storeCotizacion'])->middleware('permiso:ventas.crear');
+    Route::get('/cotizaciones/{cotizacionId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'showCotizacion'])->middleware('permiso:ventas.ver');
+    Route::delete('/cotizaciones/{cotizacionId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'destroyCotizacion'])->middleware('permiso:ventas.crear');
+    Route::get('/comercial/ordenes-compra/{ordenCompraId}/adjuntos', [DocumentoAdjuntoController::class, 'indexOrdenCompra'])->middleware('permiso:compras.ver');
+    Route::post('/comercial/ordenes-compra/{ordenCompraId}/adjuntos', [DocumentoAdjuntoController::class, 'storeOrdenCompra'])->middleware('permiso:compras.crear');
+    Route::get('/comercial/ordenes-compra/{ordenCompraId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'showOrdenCompra'])->middleware('permiso:compras.ver');
+    Route::delete('/comercial/ordenes-compra/{ordenCompraId}/adjuntos/{adjuntoId}', [DocumentoAdjuntoController::class, 'destroyOrdenCompra'])->middleware('permiso:compras.crear');
+
     // ---------------------------------------------------------------------
     // Comercial - Cotizaciones
     // ---------------------------------------------------------------------
