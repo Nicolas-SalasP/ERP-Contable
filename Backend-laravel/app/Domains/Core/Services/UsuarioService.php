@@ -5,6 +5,7 @@ namespace App\Domains\Core\Services;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\EstadoSuscripcion;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Exception;
 
@@ -34,7 +35,7 @@ class UsuarioService
             // Se busca el id del estado 'Activa' en vez de hardcodear 1, para no depender del orden de seeders.
             $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
 
-            User::create([
+            $usuario = User::create([
                 'email' => $email,
                 'nombre' => 'Usuario Invitado',
                 'empresa_id' => $empresaId,
@@ -43,6 +44,14 @@ class UsuarioService
                 'estado_suscripcion_id' => $estadoActiva->id
             ]);
         }
+
+        // Sin esto, empresa_user (usado por EmpresaCambioController para listar/autorizar el
+        // cambio de empresa activa) nunca se entera de esta invitación: el usuario invitado
+        // jamás podría "volver" a esta empresa si su empresa_id cambia más adelante.
+        DB::table('empresa_user')->updateOrInsert(
+            ['user_id' => $usuario->id, 'empresa_id' => $empresaId],
+            ['rol_id' => $rolId, 'created_at' => now()]
+        );
 
         return true;
     }
