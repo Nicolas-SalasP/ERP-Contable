@@ -59,4 +59,4 @@ CLAUDE.md
 # Entornos E2E locales
 Frontend/.env.e2e
 Frontend/.env.e2e.local
-!Frontend/.env.e2e.example
+!Frontend/.env.e2e.example.playwright-mcp/
