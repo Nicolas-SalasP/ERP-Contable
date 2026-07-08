@@ -33,7 +33,7 @@ class ActivoFijoService
     {
         return ActivoFijo::where('empresa_id', $empresaId)
             ->with(['cuenta'])
-            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA'])
+            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA', 'REACTIVADO'])
             ->get();
     }
 
@@ -43,7 +43,7 @@ class ActivoFijoService
 
         $query = ActivoFijo::where('empresa_id', $empresaId)
             ->with(['cuenta'])
-            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA']);
+            ->whereIn('estado', ['ACTIVO', 'DADO_DE_BAJA', 'REACTIVADO']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -164,7 +164,7 @@ class ActivoFijoService
             }
 
             $activosOperativos = ActivoFijo::where('empresa_id', $empresaId)
-                ->where('estado', 'ACTIVO')
+                ->whereIn('estado', ['ACTIVO', 'REACTIVADO'])
                 ->count();
 
             if ($activosOperativos === 0) {
@@ -172,7 +172,7 @@ class ActivoFijoService
             }
 
             $activos = ActivoFijo::where('empresa_id', $empresaId)
-                ->where('estado', 'ACTIVO')
+                ->whereIn('estado', ['ACTIVO', 'REACTIVADO'])
                 ->whereRaw('depreciacion_acumulada < (valor_adquisicion - valor_residual)')
                 ->whereDate('fecha_adquisicion', '<=', $fechaCalculoFecha)
                 ->lockForUpdate()
@@ -438,7 +438,7 @@ class ActivoFijoService
         return DB::transaction(function () use ($empresaId, $usuarioId, $activoId, $datos) {
             $activo = ActivoFijo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($activoId);
 
-            if ($activo->estado !== 'ACTIVO') {
+            if (!in_array($activo->estado, ['ACTIVO', 'REACTIVADO'], true)) {
                 throw new Exception("Solo se pueden dar de baja activos que se encuentren operativos.");
             }
 
@@ -487,6 +487,7 @@ class ActivoFijoService
                 'glosa' => "Baja de Activo Fijo {$activo->codigo} - {$activo->nombre}",
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'activos',
+                'origen_id' => $activo->id,
                 'estado' => 'MAYORIZADO'
             ];
 

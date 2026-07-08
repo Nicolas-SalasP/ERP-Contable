@@ -139,6 +139,18 @@ class AnulacionService
                         ->update(['comprobante_contable' => null]);
                 }
 
+                // Si era el asiento de baja de un activo fijo, lo reactiva -- sin esto quedaba
+                // DADO_DE_BAJA para siempre pese a que el asiento contable que lo dio de baja
+                // ya no existe (fue reversado). REACTIVADO (no ACTIVO) para dejar rastro de que
+                // el activo pasó por una baja corregida.
+                if ($asientoOriginal->origen_modulo === 'activos' && $asientoOriginal->origen_id) {
+                    DB::table('activos_fijos')
+                        ->where('empresa_id', $empresaId)
+                        ->where('id', $asientoOriginal->origen_id)
+                        ->where('estado', 'DADO_DE_BAJA')
+                        ->update(['estado' => 'REACTIVADO']);
+                }
+
                 return [
                     'nuevo_asiento_id' => $asientoReverso->numero_comprobante
                 ];

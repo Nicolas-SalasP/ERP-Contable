@@ -289,6 +289,15 @@ class AsientoContableService
                     ->update(['comprobante_contable' => null]);
             }
 
+            // Mismo fix que AnulacionService::anularDocumento (ver comentario ahi).
+            if ($asientoOriginal->origen_modulo === 'activos' && $asientoOriginal->origen_id) {
+                DB::table('activos_fijos')
+                    ->where('empresa_id', $asientoOriginal->empresa_id)
+                    ->where('id', $asientoOriginal->origen_id)
+                    ->where('estado', 'DADO_DE_BAJA')
+                    ->update(['estado' => 'REACTIVADO']);
+            }
+
             return $nuevoAsiento;
         });
     }
