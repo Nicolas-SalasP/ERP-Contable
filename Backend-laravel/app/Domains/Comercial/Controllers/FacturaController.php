@@ -3,14 +3,15 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-use App\Support\MensajeErrorGenerico;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\FacturaService;
+use App\Support\MensajeErrorGenerico;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Http\Request;
-use Exception;
 
 /**
  * @tags Facturas
@@ -35,8 +36,8 @@ class FacturaController
             'pagination' => [
                 'total' => $paginador->total(),
                 'totalPages' => $paginador->lastPage(),
-                'page' => $paginador->currentPage()
-            ]
+                'page' => $paginador->currentPage(),
+            ],
         ]);
     }
 
@@ -51,8 +52,8 @@ class FacturaController
             'pagination' => [
                 'total' => $paginador->total(),
                 'totalPages' => $paginador->lastPage(),
-                'page' => $paginador->currentPage()
-            ]
+                'page' => $paginador->currentPage(),
+            ],
         ]);
     }
 
@@ -66,7 +67,7 @@ class FacturaController
 
         return response()->json([
             'success' => true,
-            'exists' => $existe
+            'exists' => $existe,
         ]);
     }
 
@@ -77,14 +78,14 @@ class FacturaController
 
             return response()->json([
                 'success' => true,
-                'data' => $factura
+                'data' => $factura,
             ]);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 404);
         }
     }
@@ -112,7 +113,7 @@ class FacturaController
         $input = $request->all();
 
         foreach ($mapeo as $camel => $snake) {
-            if (isset($input[$camel]) && !isset($input[$snake])) {
+            if (isset($input[$camel]) && ! isset($input[$snake])) {
                 $input[$snake] = $input[$camel];
             }
         }
@@ -143,22 +144,22 @@ class FacturaController
                 'monto_neto.gt' => 'El monto neto debe ser mayor a 0',
             ]);
 
-            if ($input['tipo_documento'] === 'NOTA_CREDITO' && !empty($input['factura_referencia_id'])) {
-                $facturaOriginal = \App\Domains\Comercial\Models\Factura::where('empresa_id', $request->user()->empresa_activa_id)
+            if ($input['tipo_documento'] === 'NOTA_CREDITO' && ! empty($input['factura_referencia_id'])) {
+                $facturaOriginal = Factura::where('empresa_id', $request->user()->empresa_activa_id)
                     ->find($input['factura_referencia_id']);
 
-                if (!$facturaOriginal) {
+                if (! $facturaOriginal) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'La factura referenciada no existe.'
+                        'message' => 'La factura referenciada no existe.',
                     ], 422);
                 }
 
                 if ((float) $input['monto_bruto'] > (float) $facturaOriginal->monto_bruto) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'El monto de la nota de credito no puede ser mayor a la factura original (' .
-                            $facturaOriginal->monto_bruto . ').'
+                        'message' => 'El monto de la nota de credito no puede ser mayor a la factura original ('.
+                            $facturaOriginal->monto_bruto.').',
                     ], 422);
                 }
             }
@@ -171,7 +172,6 @@ class FacturaController
                 'fecha_emision' => $input['fecha_emision'] ?? now()->toDateString(),
                 'fecha_vencimiento' => $input['fecha_vencimiento'] ?? null,
                 'monto_neto' => $input['monto_neto'],
-                'monto_iva' => $input['monto_iva'] ?? 0,
                 'monto_bruto' => $input['monto_bruto'],
                 'tipo_documento' => $input['tipo_documento'],
                 'autorizador_id' => $input['autorizador_id'] ?? null,
@@ -189,24 +189,31 @@ class FacturaController
                 'cuentaRetencion' => $input['cuentaRetencion'] ?? null,
             ];
 
+            // No forzar monto_iva a 0 cuando no viene: registrarFacturaCompra() usa isset()
+            // para decidir si autocalcula el IVA a partir del neto (19%) o valida el que llega.
+            // Forzarlo a 0 aca pisaba ese autocalculo y rechazaba facturas correctas.
+            if (isset($input['monto_iva'])) {
+                $datos['monto_iva'] = $input['monto_iva'];
+            }
+
             $factura = $this->service->registrarFacturaCompra($datos);
 
             return response()->json([
                 'success' => true,
-                'data' => $factura
+                'data' => $factura,
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }
@@ -218,14 +225,14 @@ class FacturaController
 
             return response()->json([
                 'success' => true,
-                'data' => $datosAsiento
+                'data' => $datosAsiento,
             ]);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 404);
         }
     }
@@ -236,7 +243,7 @@ class FacturaController
             $datos = $request->validate([
                 'fecha' => 'required|date',
                 'glosa' => 'required|string',
-                'cambios' => 'required|array'
+                'cambios' => 'required|array',
             ]);
 
             $this->service->reclasificarAsiento(
@@ -248,20 +255,20 @@ class FacturaController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Asiento reclasificado exitosamente.'
+                'message' => 'Asiento reclasificado exitosamente.',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => MensajeErrorGenerico::desde($e),
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 400);
         }
     }
@@ -270,16 +277,17 @@ class FacturaController
     {
         try {
             $data = $this->service->obtenerAuditoriaCompleta($request->user()->empresa_activa_id, $id);
+
             return response()->json([
                 'success' => true,
-                'data' => $data
+                'data' => $data,
             ]);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener auditoría: ' . MensajeErrorGenerico::desde($e)
+                'message' => 'Error al obtener auditoría: '.MensajeErrorGenerico::desde($e),
             ], 404);
         }
     }
@@ -297,14 +305,14 @@ class FacturaController
             return response()->json([
                 'success' => true,
                 'message' => 'Factura pagada correctamente.',
-                'data' => $factura
+                'data' => $factura,
             ]);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 400);
         }
     }
@@ -328,20 +336,20 @@ class FacturaController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Factura anulada con éxito y contabilidad reversada.'
+                'message' => 'Factura anulada con éxito y contabilidad reversada.',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => MensajeErrorGenerico::desde($e),
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 400);
         }
     }
@@ -350,9 +358,10 @@ class FacturaController
     {
         try {
             $vencidas = $this->service->obtenerVencidas($request->user()->empresa_activa_id);
+
             return response()->json([
                 'success' => true,
-                'data' => $vencidas
+                'data' => $vencidas,
             ]);
         } catch (ComercialException $e) {
             throw $e;
@@ -374,10 +383,10 @@ class FacturaController
                 $request->query('fecha_desde'),
                 $request->query('fecha_hasta'),
             );
-            
+
             return response($csvContent, 200, [
                 'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="reporte_facturas_' . date('Y_m_d') . '.csv"',
+                'Content-Disposition' => 'attachment; filename="reporte_facturas_'.date('Y_m_d').'.csv"',
             ]);
         } catch (ValidationException $e) {
             throw $e;
@@ -394,6 +403,7 @@ class FacturaController
             $facturas = $this->service->obtenerFacturasDisponiblesParaProyectos(
                 $request->user()->empresa_activa_id
             );
+
             return response()->json(['success' => true, 'data' => $facturas]);
         } catch (ComercialException $e) {
             throw $e;
@@ -411,11 +421,11 @@ class FacturaController
             ]);
 
             $proyectoId = $datos['proyecto_activo_id'] ?? $datos['proyecto_id'] ?? null;
-            if (!$proyectoId) {
+            if (! $proyectoId) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Debes especificar proyecto_id o proyecto_activo_id.',
-                    'errors' => ['proyecto_id' => ['Campo requerido.']]
+                    'errors' => ['proyecto_id' => ['Campo requerido.']],
                 ], 422);
             }
 
@@ -427,18 +437,19 @@ class FacturaController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Factura vinculada al proyecto exitosamente.'
+                'message' => 'Factura vinculada al proyecto exitosamente.',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => MensajeErrorGenerico::desde($e),
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
+
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }
@@ -469,11 +480,11 @@ class FacturaController
             ->get();
 
         $tasas = [
-            'intereses'          => 4.0,
-            'regalias'           => 30.0,
+            'intereses' => 4.0,
+            'regalias' => 30.0,
             'servicios_tecnicos' => 15.0,
-            'honorarios'         => 15.0,
-            'otros'              => 35.0,
+            'honorarios' => 15.0,
+            'otros' => 35.0,
         ];
 
         $detalle = $retenciones->map(function (object $r) use ($tasas) {
@@ -500,13 +511,13 @@ class FacturaController
     {
         try {
             $datos = $request->validate([
-                'numero_nc'     => 'required|string|max:255',
-                'monto_neto'    => 'required|numeric|gt:0',
-                'monto_iva'     => 'required|numeric|min:0',
-                'monto_bruto'   => 'required|numeric|gt:0',
-                'razon'         => 'required|string|min:5|max:255',
+                'numero_nc' => 'required|string|max:255',
+                'monto_neto' => 'required|numeric|gt:0',
+                'monto_iva' => 'required|numeric|min:0',
+                'monto_bruto' => 'required|numeric|gt:0',
+                'razon' => 'required|string|min:5|max:255',
                 'fecha_emision' => 'nullable|date',
-                'emitir_dte'    => 'nullable|boolean',
+                'emitir_dte' => 'nullable|boolean',
             ]);
 
             $nc = $this->service->emitirNotaCreditoVenta(
@@ -518,13 +529,13 @@ class FacturaController
             return response()->json([
                 'success' => true,
                 'message' => 'Nota de Crédito emitida y contabilidad reversada.',
-                'data'    => $nc,
+                'data' => $nc,
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors'  => $e->errors(),
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
@@ -537,14 +548,14 @@ class FacturaController
     }
 
     /** Adjunta un PDF a una factura. POST /facturas/{id}/pdf */
-    public function subirPdf(Request $request, int $id): \Illuminate\Http\JsonResponse
+    public function subirPdf(Request $request, int $id): JsonResponse
     {
         $rutaPdf = null;
         try {
             $request->validate(['pdf' => 'required|mimes:pdf|max:10240']);
 
             $empresaId = $request->user()->empresa_activa_id;
-            $factura   = Factura::where('empresa_id', $empresaId)->findOrFail($id);
+            $factura = Factura::where('empresa_id', $empresaId)->findOrFail($id);
 
             if ($request->hasFile('pdf')) {
                 if ($factura->archivo_pdf) {
@@ -558,7 +569,7 @@ class FacturaController
             $factura->save();
 
             return response()->json(['success' => true, 'archivo_pdf' => $rutaPdf]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (ComercialException $e) {
             throw $e;
@@ -572,7 +583,7 @@ class FacturaController
     {
         $factura = Factura::where('empresa_id', $request->user()->empresa_activa_id)->findOrFail($id);
 
-        if (!$factura->archivo_pdf || !Storage::disk('local')->exists($factura->archivo_pdf)) {
+        if (! $factura->archivo_pdf || ! Storage::disk('local')->exists($factura->archivo_pdf)) {
             return response()->json(['success' => false, 'message' => 'No hay PDF adjunto para esta factura.'], 404);
         }
 
@@ -584,13 +595,13 @@ class FacturaController
     {
         try {
             $datos = $request->validate([
-                'numero_nd'     => 'required|string|max:255',
-                'monto_neto'    => 'required|numeric|gt:0',
-                'monto_iva'     => 'required|numeric|min:0',
-                'monto_bruto'   => 'required|numeric|gt:0',
-                'razon'         => 'required|string|min:5|max:255',
+                'numero_nd' => 'required|string|max:255',
+                'monto_neto' => 'required|numeric|gt:0',
+                'monto_iva' => 'required|numeric|min:0',
+                'monto_bruto' => 'required|numeric|gt:0',
+                'razon' => 'required|string|min:5|max:255',
                 'fecha_emision' => 'nullable|date',
-                'emitir_dte'    => 'nullable|boolean',
+                'emitir_dte' => 'nullable|boolean',
             ]);
 
             $nd = $this->service->emitirNotaDebitoVenta(
@@ -602,13 +613,13 @@ class FacturaController
             return response()->json([
                 'success' => true,
                 'message' => 'Nota de Débito registrada correctamente.',
-                'data'    => $nd,
+                'data' => $nd,
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors'  => $e->errors(),
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
