@@ -25,7 +25,12 @@ class ListarEnviosFallidosCommandTest extends TestCase
         [$empresa] = $this->crearEmpresaConAdmin();
         $dte = SiiDteEmitido::factory()->create(['empresa_id' => $empresa->id]);
 
-        return SiiEnvioDte::create(array_merge([
+        // 'created_at' no esta en $fillable del modelo, asi que create() lo ignora:
+        // se setea aparte con forceFill/saveQuietly para poder simular envios antiguos.
+        $createdAt = $overrides['created_at'] ?? null;
+        unset($overrides['created_at']);
+
+        $envio = SiiEnvioDte::create(array_merge([
             'empresa_id'     => $empresa->id,
             'dte_emitido_id' => $dte->id,
             'ambiente_sii'   => 'certificacion',
@@ -34,6 +39,12 @@ class ListarEnviosFallidosCommandTest extends TestCase
             'intentos_envio' => 1,
             'fecha_envio'    => now(),
         ], $overrides));
+
+        if ($createdAt !== null) {
+            $envio->forceFill(['created_at' => $createdAt])->saveQuietly();
+        }
+
+        return $envio;
     }
 
     public function test_comando_aparece_en_artisan_list(): void
@@ -74,5 +85,17 @@ class ListarEnviosFallidosCommandTest extends TestCase
         $this->assertStringContainsString('ERROR_PERMANENTE: 1', $output);
         $this->assertStringContainsString('RECHAZADO: 1', $output);
         $this->assertStringContainsString('ERROR_TIMEOUT: 1', $output);
+    }
+
+    public function test_incluye_enviando_huerfanos_pero_no_enviando_reciente(): void
+    {
+        $huerfano = $this->envioConEstado(SiiEnvioDte::ESTADO_ENVIANDO, ['created_at' => now()->subMinutes(20)]);
+        $reciente = $this->envioConEstado(SiiEnvioDte::ESTADO_ENVIANDO, ['created_at' => now()]);
+
+        Artisan::call('sii:listar-envios-fallidos');
+        $output = Artisan::output();
+
+        $this->assertStringContainsString((string) $huerfano->id, $output);
+        $this->assertStringNotContainsString('  ' . $reciente->id . '  ', $output);
     }
 }
