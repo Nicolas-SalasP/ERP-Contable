@@ -13,6 +13,7 @@ use App\Domains\Comercial\Services\AnticipoClienteService;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Contabilidad\Services\F29DriftService;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Integracion\EmitirDteDesdeFacturaService;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
@@ -474,6 +475,13 @@ class FacturaService
                     SiiDteEmitido::where('id', $origen->sii_dte_emitido_id)
                         ->update(['estado' => SiiDteEmitido::ESTADO_ANULADO_CON_NC]);
                 }
+
+                // Mismo fix que FacturaService::anularFactura: si el F29 del mes de la factura original ya fue centralizado, marca la alerta.
+                app(F29DriftService::class)->marcarSiPeriodoCentralizado(
+                    $empresaId,
+                    $origen->fecha_emision,
+                    "Anulación por Nota de Crédito N° {$datos['numero_nc']} de factura N° {$origen->numero_factura}."
+                );
             }
 
             if (!empty($datos['emitir_dte']) && $origen->sii_dte_emitido_id) {
@@ -902,6 +910,13 @@ class FacturaService
             }
 
             $factura->save();
+
+            // Si el F29 del mes de esta factura ya fue centralizado, marca la alerta de desactualización (no lo relanza solo).
+            app(F29DriftService::class)->marcarSiPeriodoCentralizado(
+                $empresaId,
+                $factura->fecha_emision,
+                "Anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}"
+            );
 
             // Libera anticipos aplicados a esta factura (antes quedaban consumidos permanentemente aunque la deuda ya no existiera).
             // Compra revierte contra anticipos de proveedor, venta contra anticipos de cliente: anticipo_aplicaciones

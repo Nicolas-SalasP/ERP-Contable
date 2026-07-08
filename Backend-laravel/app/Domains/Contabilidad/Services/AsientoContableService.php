@@ -5,6 +5,7 @@ namespace App\Domains\Contabilidad\Services;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Contabilidad\Services\F29DriftService;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Support\Facades\DB;
@@ -231,6 +232,15 @@ class AsientoContableService
 
             $asientoOriginal->load('detalles');
             $asientoOriginal->update(['estado' => 'ANULADO']);
+
+            // Si el asiento reversado es de una factura (ventas/compras) y su mes ya tiene F29 centralizado, marca la alerta de desactualización (no lo relanza solo).
+            if (in_array($asientoOriginal->origen_modulo, ['ventas', 'compras'], true)) {
+                app(F29DriftService::class)->marcarSiPeriodoCentralizado(
+                    $asientoOriginal->empresa_id,
+                    $asientoOriginal->fecha,
+                    "Reversa del asiento N° {$asientoOriginal->numero_comprobante}. Motivo: {$motivo}"
+                );
+            }
 
             $tempNum = 'TMP-' . Str::uuid()->toString();
             $nuevoAsiento = AsientoContable::create([
