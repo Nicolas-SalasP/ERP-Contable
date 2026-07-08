@@ -138,7 +138,7 @@ class FiniquitoService
             $finiquito->update(['estado' => 'FIRMADO']);
 
             // Terminar el contrato asociado
-            $contrato = Contrato::find($finiquito->contrato_id);
+            $contrato = Contrato::with('empleado')->find($finiquito->contrato_id);
             if ($contrato && $contrato->estado !== 'TERMINADO') {
                 $contrato->update([
                     'estado' => 'TERMINADO',
@@ -146,6 +146,12 @@ class FiniquitoService
                     'causal_termino' => $finiquito->causal,
                     'fecha_termino_real' => $finiquito->fecha_termino,
                 ]);
+
+                // Simétrico a ContratoService::terminar(): empleado.estado se usa en el filtro de
+                // EmpleadoController::index y en los derechos ARCO (ArcoService), no es cosmético.
+                if ($contrato->empleado) {
+                    $contrato->empleado->update(['estado' => 'INACTIVO']);
+                }
             }
 
             return $finiquito->fresh();
@@ -174,7 +180,7 @@ class FiniquitoService
             ]);
 
             // Reactiva el contrato solo si sigue terminado por ESTE finiquito (mismo causal + fecha que firmar() escribió) -- si algo más lo modificó después, no lo tocamos para no pisar otro estado.
-            $contrato = Contrato::find($finiquito->contrato_id);
+            $contrato = Contrato::with('empleado')->find($finiquito->contrato_id);
             if ($contrato
                 && $contrato->estado === 'TERMINADO'
                 && $contrato->causal_termino === $finiquito->causal
@@ -186,6 +192,14 @@ class FiniquitoService
                     'causal_termino' => null,
                     'fecha_termino_real' => null,
                 ]);
+
+                // Simétrico a firmar(): restaura empleado.estado a ACTIVO (usado en filtro de
+                // EmpleadoController::index y derechos ARCO). Un empleado solo puede tener un
+                // contrato VIGENTE a la vez (ContratoService::crear desactiva el anterior), así
+                // que no hay otro contrato vigente que ya lo hubiera reactivado.
+                if ($contrato->empleado) {
+                    $contrato->empleado->update(['estado' => 'ACTIVO']);
+                }
             }
 
             return $finiquito->fresh();

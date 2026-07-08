@@ -175,6 +175,38 @@ class FiniquitoTest extends TestCase
         $this->assertFalse((bool) $contratoActualizado->es_contrato_activo);
     }
 
+    public function test_firmar_finiquito_deja_inactivo_al_empleado(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $contrato = $this->contratoVigente($empresa->id, 800000, '2022-01-01');
+
+        $finiquito = $this->service->calcular(
+            $empresa->id, $contrato->id, 'NECESIDADES_EMPRESA', '2026-06-01'
+        );
+        $this->service->firmar($empresa->id, $finiquito->id);
+
+        // empleado.estado se usa en el filtro de EmpleadoController::index y en ArcoService
+        // (derechos ARCO): no debe quedar ACTIVO con el contrato ya TERMINADO.
+        $this->assertEquals('INACTIVO', Empleado::find($contrato->empleado_id)->estado);
+    }
+
+    public function test_anular_finiquito_reactiva_al_empleado(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $contrato = $this->contratoVigente($empresa->id, 800000, '2022-01-01');
+
+        $finiquito = $this->service->calcular(
+            $empresa->id, $contrato->id, 'NECESIDADES_EMPRESA', '2026-06-01'
+        );
+        $this->service->firmar($empresa->id, $finiquito->id);
+        $this->assertEquals('INACTIVO', Empleado::find($contrato->empleado_id)->estado);
+
+        $this->service->anular($empresa->id, $finiquito->id, 'Error administrativo');
+
+        $this->assertEquals('VIGENTE', Contrato::find($contrato->id)->estado);
+        $this->assertEquals('ACTIVO', Empleado::find($contrato->empleado_id)->estado);
+    }
+
     public function test_aviso_previo_dado_no_genera_pago_sustitutivo(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();

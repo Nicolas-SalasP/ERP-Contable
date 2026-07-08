@@ -109,6 +109,38 @@ class EmpleadoContratoTest extends TestCase
         $this->assertCount(2, $this->contratos->listarPorEmpleado($empresa->id, $empleado->id));
     }
 
+    public function test_terminar_contrato_deja_inactivo_al_empleado_y_recontratacion_lo_reactiva(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $empleado = $this->empleados->crear($empresa->id, [
+            'rut' => '55.555.555-5',
+            'nombres' => 'Ex',
+            'apellido_paterno' => 'Empleado',
+        ]);
+
+        $contrato = $this->contratos->crear($empresa->id, $empleado->id, [
+            'tipo' => 'INDEFINIDO',
+            'fecha_inicio' => '2025-01-01',
+            'sueldo_base' => 800000,
+        ]);
+
+        $this->contratos->terminar($empresa->id, $contrato->id, [
+            'causal_termino' => 'RENUNCIA',
+            'fecha_termino_real' => '2025-06-30',
+        ]);
+
+        $this->assertEquals('INACTIVO', Empleado::find($empleado->id)->estado);
+
+        // Recontratación: un contrato nuevo debe reactivar al empleado.
+        $this->contratos->crear($empresa->id, $empleado->id, [
+            'tipo' => 'INDEFINIDO',
+            'fecha_inicio' => '2026-01-01',
+            'sueldo_base' => 900000,
+        ]);
+
+        $this->assertEquals('ACTIVO', Empleado::find($empleado->id)->estado);
+    }
+
     public function test_aislamiento_multitenant_empleados(): void
     {
         [$empresaA] = $this->crearEmpresaConAdmin([], ['email' => 'a@test.cl']);
