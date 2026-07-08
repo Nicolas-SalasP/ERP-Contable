@@ -63,7 +63,8 @@ class UsuarioController
             $this->service->invitarUsuario(
                 $request->user()->empresa_activa_id,
                 $datos['email'],
-                $datos['rol_id']
+                $datos['rol_id'],
+                $request->user()->module_keys ?? []
             );
 
             return response()->json(['success' => true, 'message' => 'Invitación enviada.']);
