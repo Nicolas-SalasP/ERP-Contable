@@ -3,7 +3,7 @@
 namespace App\Domains\Inventario\Models;
 
 use App\Domains\Core\Traits\HasEmpresaScope;
-
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,29 +31,42 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $motivo
  * @property string|null $observacion
  * @property int|null $created_by
- * @property \Carbon\Carbon|null $fecha_movimiento
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon|null $fecha_movimiento
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class MovimientoInventario extends Model
 {
     use HasEmpresaScope;
+
     protected $table = 'inventario_movimientos';
 
     public const TIPO_ENTRADA = 'entrada';
+
     public const TIPO_SALIDA = 'salida';
+
     public const TIPO_TRASPASO = 'traspaso';
+
     public const TIPO_AJUSTE_POSITIVO = 'ajuste_positivo';
+
     public const TIPO_AJUSTE_NEGATIVO = 'ajuste_negativo';
 
     public const MOTIVO_COMPRA = 'compra';
+
     public const MOTIVO_VENTA_INTERNA = 'venta_interna';
+
     public const MOTIVO_TRASPASO_BODEGA = 'traspaso_bodega';
+
     public const MOTIVO_CORRECCION_STOCK = 'correccion_stock';
+
     public const MOTIVO_MERMA = 'merma';
+
     public const MOTIVO_PERDIDA = 'perdida';
+
     public const MOTIVO_DEVOLUCION = 'devolucion';
+
     public const MOTIVO_INGRESO_MANUAL = 'ingreso_manual';
+
     public const MOTIVO_EGRESO_MANUAL = 'egreso_manual';
 
     protected $fillable = [
@@ -99,6 +112,14 @@ class MovimientoInventario extends Model
 
         'fecha_movimiento' => 'datetime',
     ];
+
+    /** Saldo resultante del movimiento (bodega principal, ver stockDespuesPrincipal()); expuesto en JSON para el Kardex. */
+    protected $appends = ['saldo'];
+
+    public function getSaldoAttribute(): ?string
+    {
+        return $this->stockDespuesPrincipal();
+    }
 
     /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo

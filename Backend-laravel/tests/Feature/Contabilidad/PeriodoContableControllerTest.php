@@ -19,10 +19,12 @@ use Tests\TestCase;
  */
 class PeriodoContableControllerTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     private Empresa $empresa;
+
     private User $admin;
+
     private User $contador;
 
     protected function setUp(): void
@@ -98,6 +100,20 @@ class PeriodoContableControllerTest extends TestCase
         $data = $respuesta->json('data');
         $this->assertCount(1, $data, 'Solo debe listar el período de la empresa autenticada');
         $this->assertSame(1, $data[0]['mes']);
+    }
+
+    public function test_listar_incluye_nombre_de_quien_cerro_el_periodo(): void
+    {
+        // Regresion: el listado no traia la relacion cerradoPor, el frontend
+        // mostraba "Cerrado por -" pese a que el periodo si tenia autor.
+        $service = app(PeriodoContableService::class);
+        $service->cerrar($this->empresa->id, 2026, 6, $this->admin->load('rol'));
+
+        $respuesta = $this->actingAs($this->admin)
+            ->getJson('/api/contabilidad/periodos')
+            ->assertStatus(200);
+
+        $respuesta->assertJsonPath('data.0.cerrado_por.nombre', 'Admin Cierre');
     }
 
     public function test_listar_filtra_por_anio_cuando_se_pasa_parametro(): void

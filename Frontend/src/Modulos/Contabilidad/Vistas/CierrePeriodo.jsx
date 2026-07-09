@@ -140,7 +140,7 @@ export default function CierrePeriodo() {
 
                                 {esCerrado && periodoData && (
                                     <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
-                                        Por {periodoData.cerrado_por?.name ?? '—'}
+                                        Por {periodoData.cerrado_por?.nombre ?? '—'}
                                     </p>
                                 )}
 
@@ -201,7 +201,7 @@ export default function CierrePeriodo() {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                                            {p.cerrado_por?.name ?? '—'}
+                                            {p.cerrado_por?.nombre ?? '—'}
                                         </td>
                                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                                             {p.cerrado_at ? new Date(p.cerrado_at).toLocaleDateString('es-CL') : '—'}
@@ -210,7 +210,7 @@ export default function CierrePeriodo() {
                                             {p.motivo ?? '—'}
                                         </td>
                                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                                            {p.reabierto_por?.name ?? '—'}
+                                            {p.reabierto_por?.nombre ?? '—'}
                                         </td>
                                     </tr>
                                 ))}
@@ -246,7 +246,7 @@ export default function CierrePeriodo() {
 
                         {periodoData && modal.tipo === 'reabrir' && (
                             <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400">
-                                Cerrado por <strong>{periodoData.cerrado_por?.name ?? '—'}</strong>
+                                Cerrado por <strong>{periodoData.cerrado_por?.nombre ?? '—'}</strong>
                                 {periodoData.cerrado_at && ` el ${new Date(periodoData.cerrado_at).toLocaleDateString('es-CL')}`}
                                 {periodoData.motivo && `. Motivo: "${periodoData.motivo}"`}
                             </div>
