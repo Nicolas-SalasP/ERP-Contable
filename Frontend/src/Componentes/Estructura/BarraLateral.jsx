@@ -20,6 +20,13 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
             path: '/',
         },
         {
+            id: 'alertas',
+            label: 'Alertas',
+            icon: 'fas fa-triangle-exclamation',
+            permisosRequeridos: ['alertas.ver'],
+            path: '/alertas',
+        },
+        {
             id: 'comercial',
             label: 'Ventas y Comercial',
             icon: 'fas fa-store',

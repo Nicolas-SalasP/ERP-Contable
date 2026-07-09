@@ -87,6 +87,7 @@ import Glosario from './Modulos/Glosario/Glosario';
 import Manuales from './Modulos/Manuales/Manuales';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 const SoporteTickets = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTickets'));
+const Alertas = lazy(() => import('./Modulos/Alertas/Vistas/Alertas'));
 const SoporteTicketDetalle = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTicketDetalle'));
 const ArAging = lazy(() => import('./Modulos/Contabilidad/Vistas/ArAging'));
 const ApAging = lazy(() => import('./Modulos/Contabilidad/Vistas/ApAging'));
@@ -891,6 +892,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="usuarios.gestionar">
                 <LayoutPrincipal><PanelDpo /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/alertas" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="alertas.ver">
+                <LayoutPrincipal><Alertas /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
