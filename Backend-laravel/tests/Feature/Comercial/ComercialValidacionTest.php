@@ -2,22 +2,21 @@
 
 namespace Tests\Feature\Comercial;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Tests\Concerns\PreparaEntornoBase;
-use App\Domains\Core\Models\Empresa;
-use App\Domains\Core\Models\User;
-use App\Domains\Core\Models\Rol;
-use App\Domains\Core\Models\EstadoSuscripcion;
-use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Cliente;
+use App\Domains\Comercial\Models\Proveedor;
+use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\Pais;
+use App\Domains\Core\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PreparaEntornoBase;
+use Tests\TestCase;
 
 class ComercialValidacionTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     protected $empresa;
+
     protected $usuario;
 
     protected function setUp(): void
@@ -34,7 +33,7 @@ class ComercialValidacionTest extends TestCase
         $response = $this->actingAs($this->usuario)->postJson('/api/cotizaciones', [
             'cliente_id' => $cliente->id,
             'numero_cotizacion' => 'COT-NEGATIVA',
-            'detalles' => [['producto_nombre' => 'X', 'cantidad' => -5, 'precio_unitario' => -10000, 'subtotal' => 50000]]
+            'detalles' => [['producto_nombre' => 'X', 'cantidad' => -5, 'precio_unitario' => -10000, 'subtotal' => 50000]],
         ]);
         $response->assertStatus(422)->assertJsonValidationErrors(['detalles.0.cantidad', 'detalles.0.precio_unitario']);
     }
@@ -45,7 +44,7 @@ class ComercialValidacionTest extends TestCase
         $response = $this->actingAs($this->usuario)->postJson('/api/cotizaciones', [
             'cliente_id' => $cliente->id,
             'porcentaje_descuento' => 150,
-            'detalles' => [['producto_nombre' => 'A', 'cantidad' => 1, 'precio_unitario' => 1000]]
+            'detalles' => [['producto_nombre' => 'A', 'cantidad' => 1, 'precio_unitario' => 1000]],
         ]);
         $response->assertStatus(422)->assertJsonValidationErrors(['porcentaje_descuento']);
     }
@@ -64,7 +63,7 @@ class ComercialValidacionTest extends TestCase
             'monto_bruto' => 119,
             'cuentaDestino' => '410101',
             'cuentaIva' => '353350',
-            'cuentaProveedor' => '352105'
+            'cuentaProveedor' => '352105',
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['fecha_emision']);
@@ -84,7 +83,7 @@ class ComercialValidacionTest extends TestCase
             'monto_bruto' => 'ciento diecinueve mil',
             'cuentaDestino' => '410101',
             'cuentaIva' => '353350',
-            'cuentaProveedor' => '352105'
+            'cuentaProveedor' => '352105',
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['monto_neto', 'monto_bruto']);
@@ -96,6 +95,46 @@ class ComercialValidacionTest extends TestCase
         $response->assertStatus(422)->assertJsonValidationErrors(['rut', 'razon_social']);
     }
 
+    public function test_rechaza_creacion_de_cliente_con_rut_sin_digito_verificador_valido()
+    {
+        $response = $this->actingAs($this->usuario)->postJson('/api/clientes', [
+            'rut' => '11.111.111-9',
+            'razon_social' => 'Cliente Rut Invalido',
+        ]);
+        $response->assertStatus(422)->assertJsonValidationErrors(['rut']);
+    }
+
+    public function test_rechaza_actualizar_cliente_con_rut_sin_digito_verificador_valido()
+    {
+        $cliente = Cliente::create(['empresa_id' => $this->empresa->id, 'rut' => '99.555.555-5', 'razon_social' => 'Cliente Valido', 'estado' => 'ACTIVO']);
+
+        $response = $this->actingAs($this->usuario)->putJson("/api/clientes/{$cliente->id}", [
+            'rut' => '11.111.111-9',
+        ]);
+        $response->assertStatus(422)->assertJsonValidationErrors(['rut']);
+    }
+
+    public function test_rechaza_creacion_de_proveedor_nacional_con_rut_sin_digito_verificador_valido()
+    {
+        $response = $this->actingAs($this->usuario)->postJson('/api/proveedores', [
+            'rut' => '11.111.111-9',
+            'razon_social' => 'Proveedor Rut Invalido',
+        ]);
+        $response->assertStatus(422)->assertSee('no es un RUT chileno valido');
+    }
+
+    public function test_permite_proveedor_extranjero_con_identificador_no_chileno()
+    {
+        Pais::create(['iso' => 'US', 'nombre' => 'Estados Unidos', 'moneda_defecto' => 'USD', 'etiqueta_id' => 'EIN', 'activo' => true]);
+
+        $response = $this->actingAs($this->usuario)->postJson('/api/proveedores', [
+            'rut' => 'FOREIGN-TAX-ID-123',
+            'razon_social' => 'Proveedor Extranjero',
+            'paisIso' => 'US',
+        ]);
+        $response->assertStatus(201);
+    }
+
     public function test_capa8_rechaza_textos_excesivamente_largos_que_romperian_la_bd()
     {
         $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'PR-LONG', 'rut' => '3.3.3.3-3', 'razon_social' => 'Prov', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
@@ -105,7 +144,7 @@ class ComercialValidacionTest extends TestCase
             'tipo_documento' => 'COMPRA',
             'monto_neto' => 100,
             'monto_iva' => 19,
-            'monto_bruto' => 119
+            'monto_bruto' => 119,
         ]);
         $response->assertStatus(422)->assertJsonValidationErrors(['numero_factura']);
     }
@@ -115,7 +154,7 @@ class ComercialValidacionTest extends TestCase
         $response = $this->actingAs($this->usuario)->postJson('/api/clientes', [
             'rut' => '11.111.111-1',
             'razon_social' => ['Soy un Array', 'Malicioso'],
-            'email' => 'array@hack.cl'
+            'email' => 'array@hack.cl',
         ]);
         $response->assertStatus(422)->assertJsonValidationErrors(['razon_social']);
     }
@@ -127,7 +166,7 @@ class ComercialValidacionTest extends TestCase
             'cliente_id' => $cliente->id,
             'numero_cotizacion' => 'COT-VACIA',
             'monto_neto' => 1000,
-            'detalles' => []
+            'detalles' => [],
         ]);
         $response->assertStatus(422)->assertJsonValidationErrors(['detalles']);
     }

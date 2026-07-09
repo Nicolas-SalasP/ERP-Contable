@@ -3,11 +3,11 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-
-use App\Domains\Comercial\Models\Proveedor;
-use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\AnticipoProveedor;
+use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Sii\Support\RutHelper;
 use Illuminate\Support\Facades\DB;
 
 class ProveedorService
@@ -37,7 +37,15 @@ class ProveedorService
 
     public function registrarProveedor(array $datos): Proveedor
     {
-        if (!empty($datos['rut'])) {
+        $paisIso = $datos['paisIso'] ?? 'CL';
+
+        // Solo se valida formato/DV para proveedores nacionales: uno extranjero
+        // trae un identificador tributario de otro pais, no un RUT chileno.
+        if (! empty($datos['rut']) && $paisIso === 'CL' && ! RutHelper::validar($datos['rut'])) {
+            throw ComercialException::regla("El RUT {$datos['rut']} no es un RUT chileno valido.");
+        }
+
+        if (! empty($datos['rut'])) {
             $rutExiste = Proveedor::where('empresa_id', $datos['empresa_id'])
                 ->where('rut', $datos['rut'])
                 ->exists();
@@ -61,7 +69,7 @@ class ProveedorService
         ]);
 
         $proveedor->update([
-            'codigo_interno' => 'PROV-' . str_pad((string) $proveedor->id, 5, '0', STR_PAD_LEFT)
+            'codigo_interno' => 'PROV-'.str_pad((string) $proveedor->id, 5, '0', STR_PAD_LEFT),
         ]);
 
         return $proveedor;
@@ -73,8 +81,8 @@ class ProveedorService
             ->with(['cuentasBancarias', 'pais'])
             ->find($id);
 
-        if (!$proveedor) {
-            throw ComercialException::noEncontrado("El proveedor solicitado no existe.");
+        if (! $proveedor) {
+            throw ComercialException::noEncontrado('El proveedor solicitado no existe.');
         }
 
         $facturas = Factura::where('empresa_id', $empresaId)
@@ -91,7 +99,7 @@ class ProveedorService
         return [
             'proveedor' => $proveedor,
             'facturas' => $facturas,
-            'anticipos' => $anticipos
+            'anticipos' => $anticipos,
         ];
     }
 
@@ -99,17 +107,23 @@ class ProveedorService
     {
         $proveedor = Proveedor::where('empresa_id', $empresaId)->findOrFail($id);
 
-        if (isset($datos['rut']) && !empty($datos['rut']) && $datos['rut'] !== $proveedor->rut) {
+        if (isset($datos['rut']) && ! empty($datos['rut']) && $datos['rut'] !== $proveedor->rut) {
+            $paisIso = $datos['pais_iso'] ?? $proveedor->pais_iso ?? 'CL';
+            if ($paisIso === 'CL' && ! RutHelper::validar($datos['rut'])) {
+                throw ComercialException::regla("El RUT {$datos['rut']} no es un RUT chileno valido.");
+            }
+
             $existe = Proveedor::where('empresa_id', $empresaId)
                 ->where('rut', $datos['rut'])
                 ->exists();
 
             if ($existe) {
-                throw ComercialException::regla("El Identificador Fiscal ingresado ya pertenece a otro proveedor.");
+                throw ComercialException::regla('El Identificador Fiscal ingresado ya pertenece a otro proveedor.');
             }
         }
 
         $proveedor->update($datos);
+
         return $proveedor;
     }
 
@@ -125,14 +139,14 @@ class ProveedorService
             'monto' => $datos['monto'],
             'saldo_disponible' => $datos['monto'],
             'referencia' => $datos['referencia'] ?? null,
-            'estado' => 'PENDIENTE'
+            'estado' => 'PENDIENTE',
         ]);
     }
 
     public function adjuntarPdfAnticipo(int $empresaId, int $anticipoId, ?string $rutaArchivo)
     {
-        if (!$rutaArchivo) {
-            throw ComercialException::regla("No se pudo procesar el archivo adjunto.");
+        if (! $rutaArchivo) {
+            throw ComercialException::regla('No se pudo procesar el archivo adjunto.');
         }
 
         $anticipo = AnticipoProveedor::where('empresa_id', $empresaId)->findOrFail($anticipoId);
@@ -151,7 +165,7 @@ class ProveedorService
             $anticiposIds = $datos['anticipos_ids'] ?? [];
 
             if (empty($facturasIds) || (empty($ncIds) && empty($anticiposIds))) {
-                throw ComercialException::regla("Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.");
+                throw ComercialException::regla('Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.');
             }
 
             // Lock pesimista: evita que dos compensaciones concurrentes lean el mismo saldo disponible y lo apliquen dos veces.
@@ -181,7 +195,7 @@ class ProveedorService
             $totalAFavor = $totalNC + $totalAnticipos;
 
             if ($totalAFavor > $totalDeuda) {
-                throw ComercialException::regla("El monto a favor seleccionado ($" . number_format($totalAFavor, 0, ',', '.') . ") excede la deuda a compensar ($" . number_format($totalDeuda, 0, ',', '.') . "). Por favor deseleccione algunos documentos a favor.");
+                throw ComercialException::regla('El monto a favor seleccionado ($'.number_format($totalAFavor, 0, ',', '.').') excede la deuda a compensar ($'.number_format($totalDeuda, 0, ',', '.').'). Por favor deseleccione algunos documentos a favor.');
             }
 
             $nuevoEstadoFactura = ($totalAFavor == $totalDeuda) ? 'PAGADA' : 'ABONADA';
@@ -192,7 +206,7 @@ class ProveedorService
                 ->whereIn('id', $facturasIds)
                 ->update(['estado' => $nuevoEstadoFactura]);
 
-            if (!empty($ncIds)) {
+            if (! empty($ncIds)) {
                 DB::table('facturas')
                     ->where('empresa_id', $empresaId)
                     ->where('proveedor_id', $proveedorId)
@@ -200,7 +214,7 @@ class ProveedorService
                     ->update(['estado' => 'APLICADA']);
             }
 
-            if (!empty($anticiposIds)) {
+            if (! empty($anticiposIds)) {
                 DB::table('anticipos_proveedores')
                     ->where('empresa_id', $empresaId)
                     ->where('proveedor_id', $proveedorId)
@@ -212,21 +226,21 @@ class ProveedorService
 
             if ($totalAnticipos > 0) {
                 $proveedor = DB::table('proveedores')->where('id', $proveedorId)->first();
-                $glosa = "Compensación de Anticipos con Facturas - " . ($proveedor->razon_social ?? 'Proveedor');
+                $glosa = 'Compensación de Anticipos con Facturas - '.($proveedor->razon_social ?? 'Proveedor');
 
                 $detallesAsiento = [
                     [
                         'cuenta_contable' => '352105', // Cuenta genérica de Proveedores (Pasivo disminuye al Debe)
                         'debe' => $totalAnticipos,
                         'haber' => 0,
-                        'glosa_detalle' => 'Aplicación de Anticipo'
+                        'glosa_detalle' => 'Aplicación de Anticipo',
                     ],
                     [
                         'cuenta_contable' => '110205', // Cuenta de Anticipos a Proveedores (Activo disminuye al Haber)
                         'debe' => 0,
                         'haber' => $totalAnticipos,
-                        'glosa_detalle' => 'Rebaja de Anticipo'
-                    ]
+                        'glosa_detalle' => 'Rebaja de Anticipo',
+                    ],
                 ];
 
                 $asiento = $this->asientoService->registrarAsiento([
@@ -236,7 +250,7 @@ class ProveedorService
                     'glosa' => substr($glosa, 0, 250),
                     'tipo_asiento' => 'traspaso',
                     'origen_modulo' => 'compras',
-                    'estado' => 'MAYORIZADO'
+                    'estado' => 'MAYORIZADO',
                 ], $detallesAsiento);
 
                 // Vincula el asiento de traspaso a las facturas compensadas: sin esto, al
@@ -253,7 +267,7 @@ class ProveedorService
                 'facturas_afectadas' => count($facturasIds),
                 'anticipos_consumidos' => count($anticiposIds),
                 'notas_credito_aplicadas' => count($ncIds),
-                'comprobante_traspaso' => $asiento ? $asiento->numero_comprobante : null
+                'comprobante_traspaso' => $asiento ? $asiento->numero_comprobante : null,
             ];
         });
     }
@@ -270,6 +284,7 @@ class ProveedorService
     {
         $proveedor = Proveedor::where('empresa_id', $empresaId)->findOrFail($id);
         $proveedor->update(['estado' => 'INACTIVO']);
+
         return $proveedor;
     }
 
@@ -278,6 +293,7 @@ class ProveedorService
     {
         $proveedor = Proveedor::where('empresa_id', $empresaId)->findOrFail($id);
         $proveedor->update(['estado' => 'ACTIVO']);
+
         return $proveedor;
     }
 }
