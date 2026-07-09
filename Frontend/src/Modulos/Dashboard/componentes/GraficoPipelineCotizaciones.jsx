@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { formatearMoneda } from '../../../Utilidades/formato';
 
 const COLORES_ESTADO = {
     'Borrador':  '#94a3b8',
@@ -31,7 +32,12 @@ export default function GraficoPipelineCotizaciones({ datos }) {
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                     <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
                     <YAxis type="category" dataKey="estado" tick={{ fontSize: 12 }} width={75} />
-                    <Tooltip formatter={(v) => [`${v} cotizaciones`, 'Cantidad']} />
+                    <Tooltip
+                        formatter={(v, name, props) => [
+                            `${v} cotizaciones (${formatearMoneda(props.payload.monto)})`,
+                            'Cantidad',
+                        ]}
+                    />
                     <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>
                         {series.map((entry) => (
                             <Cell key={entry.estado} fill={COLORES_ESTADO[entry.estado] || '#6366f1'} />

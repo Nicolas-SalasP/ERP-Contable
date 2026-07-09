@@ -4,7 +4,11 @@ import { render, screen, cleanup } from '@testing-library/react';
 
 vi.mock('recharts', () => ({
     BarChart: ({ children }) => <div data-testid="bar-chart">{children}</div>,
-    Bar: ({ children }) => <div>{children}</div>,
+    Bar: ({ children, onClick }) => (
+        <div data-testid="bar" onClick={() => onClick?.({ id: 42, nombre: 'Empresa XYZ SpA', monto: 4500000 })}>
+            {children}
+        </div>
+    ),
     XAxis: () => null,
     YAxis: () => null,
     CartesianGrid: () => null,
@@ -72,5 +76,24 @@ describe('GraficoTopClientes — con datos', () => {
     it('renderiza el contenedor responsivo', () => {
         render(<GraficoTopClientes datos={datosEjemplo} />);
         expect(screen.getByTestId('responsive-container')).toBeDefined();
+    });
+});
+
+describe('GraficoTopClientes — drill-down', () => {
+    const datosEjemplo = [
+        { id: 42, nombre: 'Empresa XYZ SpA', monto: 4500000 },
+        { id: 43, nombre: 'Comercial ABC Ltda', monto: 3200000 },
+    ];
+
+    it('no muestra la pista de click si no se pasa onClienteClick', () => {
+        render(<GraficoTopClientes datos={datosEjemplo} />);
+        expect(screen.queryByText(/click para ver ficha/i)).toBeNull();
+    });
+
+    it('llama a onClienteClick con el id del cliente al hacer click en la barra', () => {
+        const onClienteClick = vi.fn();
+        render(<GraficoTopClientes datos={datosEjemplo} onClienteClick={onClienteClick} />);
+        screen.getByTestId('bar').click();
+        expect(onClienteClick).toHaveBeenCalledWith(42);
     });
 });
