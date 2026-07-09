@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import siiApi from '../Servicios/siiApi';
 
 /**
@@ -25,9 +25,6 @@ const useSiiCafs = () => {
     const [subiendo, setSubiendo] = useState(false);
     const [revocando, setRevocando] = useState(false);
 
-    const montadoRef = useRef(true);
-    useEffect(() => () => { montadoRef.current = false; }, []);
-
     const cargar = useCallback(async (tipoFiltro = null) => {
         setCargando(true);
         try {
@@ -35,13 +32,12 @@ const useSiiCafs = () => {
                 siiApi.caf.saldos(),
                 siiApi.caf.listar(tipoFiltro),
             ]);
-            if (!montadoRef.current) return;
             setSaldos(respSaldos?.data ?? {});
             setCafs(respLista?.data ?? []);
         } catch (_) {
             // api.js ya notifico al usuario (Swal global).
         } finally {
-            if (montadoRef.current) setCargando(false);
+            setCargando(false);
         }
     }, []);
 
