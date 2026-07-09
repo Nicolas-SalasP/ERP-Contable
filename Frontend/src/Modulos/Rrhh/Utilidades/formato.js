@@ -10,7 +10,11 @@ export const formatNumero = (valor, decimales = 2) =>
 
 export const formatFecha = (iso) => {
     if (!iso) return '—';
-    const d = new Date(iso);
+    // Un string "YYYY-MM-DD" sin hora lo interpreta el motor JS como UTC medianoche;
+    // en timezones detras de UTC (Chile) eso corre la fecha mostrada un dia para atras.
+    // Forzamos hora local agregando T00:00:00 cuando no viene ya con hora.
+    const conHora = iso.includes('T') ? iso : `${iso}T00:00:00`;
+    const d = new Date(conHora);
     if (isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };

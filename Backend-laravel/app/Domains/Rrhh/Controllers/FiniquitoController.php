@@ -26,7 +26,11 @@ class FiniquitoController extends Controller
     {
         $finiquito = Finiquito::where('empresa_id', $request->user()->empresa_activa_id)
             ->with(['empleado', 'contrato'])
-            ->findOrFail($id);
+            ->find($id);
+
+        if (! $finiquito) {
+            return response()->json(['success' => false, 'message' => 'Finiquito no encontrado.'], 404);
+        }
 
         return response()->json(['success' => true, 'data' => $finiquito]);
     }

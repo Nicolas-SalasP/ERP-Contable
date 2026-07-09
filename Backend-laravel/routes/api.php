@@ -240,8 +240,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::put('/proveedores/{id}/activar', [ProveedorController::class, 'activar'])->middleware('permiso:proveedores.crear,compras.crear');
 
-    // Resource de proveedores (index/store/update; show y destroy excluidos)
+    // Resource de proveedores (index/store/update/show; destroy en ruta dedicada arriba)
     Route::get('/proveedores', [ProveedorController::class, 'index'])->middleware('permiso:proveedores.ver,compras.ver');
+    Route::get('/proveedores/{id}', [ProveedorController::class, 'show'])->middleware('permiso:proveedores.ver,compras.ver');
     Route::post('/proveedores', [ProveedorController::class, 'store'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::put('/proveedores/{id}', [ProveedorController::class, 'update'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::patch('/proveedores/{id}', [ProveedorController::class, 'update'])->middleware('permiso:proveedores.crear,compras.crear');

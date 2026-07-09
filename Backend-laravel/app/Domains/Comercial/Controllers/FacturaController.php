@@ -581,7 +581,11 @@ class FacturaController
     /** Descarga el PDF adjunto de una factura, autenticado y acotado a la empresa. GET /facturas/{id}/pdf */
     public function descargarPdf(Request $request, int $id)
     {
-        $factura = Factura::where('empresa_id', $request->user()->empresa_activa_id)->findOrFail($id);
+        $factura = Factura::where('empresa_id', $request->user()->empresa_activa_id)->find($id);
+
+        if (! $factura) {
+            return response()->json(['success' => false, 'message' => 'Factura no encontrada.'], 404);
+        }
 
         if (! $factura->archivo_pdf || ! Storage::disk('local')->exists($factura->archivo_pdf)) {
             return response()->json(['success' => false, 'message' => 'No hay PDF adjunto para esta factura.'], 404);

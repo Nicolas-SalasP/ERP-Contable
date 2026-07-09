@@ -138,6 +138,23 @@ class LiquidacionSueldoTest extends TestCase
         $this->assertMatchesRegularExpression('/^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/', $rutDevuelto);
     }
 
+    public function test_show_liquidacion_de_otra_empresa_devuelve_404_limpio(): void
+    {
+        // Regresion: show() usaba findOrFail() sin try/catch -- una liquidacion ajena
+        // tiraba ModelNotFoundException cruda en vez de un 404 de dominio.
+        [$empresaA] = $this->crearEmpresaConAdmin();
+        [$empresaB, $usuarioB] = $this->crearEmpresaConAdmin();
+
+        $empleado = $this->empleadoConContrato($empresaA->id, 1000000, 'INDEFINIDO', 'Habitat');
+        $liq = $this->service->calcular($empresaA->id, $empleado->id, 2026, 6);
+
+        Sanctum::actingAs($usuarioB);
+        $response = $this->getJson("/api/rrhh/liquidaciones/{$liq->id}");
+
+        $response->assertStatus(404)->assertJsonStructure(['success', 'message']);
+        $this->assertStringNotContainsString('ModelNotFoundException', (string) $response->getContent());
+    }
+
     public function test_calcula_descuentos_previsionales_basicos(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();

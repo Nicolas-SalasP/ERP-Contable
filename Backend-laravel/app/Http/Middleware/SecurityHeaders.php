@@ -12,6 +12,10 @@ class SecurityHeaders
     {
         $response = $next($request);
 
+        // PHP setea este header solo (expose_php en php.ini, fuera de nuestro control en
+        // hosting compartido); lo quitamos aca para no anunciar la version exacta de PHP.
+        $response->headers->remove('X-Powered-By');
+
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

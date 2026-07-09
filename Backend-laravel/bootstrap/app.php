@@ -17,14 +17,18 @@ use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        api: __DIR__ . '/../routes/api.php',
-        commands: __DIR__ . '/../routes/console.php',
-        channels: __DIR__ . '/../routes/channels.php',
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        // API-only: no existe ruta 'login'. Sin esto, Laravel intenta route('login') al
+        // armar el redirect de invitado (requests sin header Accept: application/json)
+        // y explota con RouteNotFoundException -> 500 en vez de un 401 limpio.
+        $middleware->redirectGuestsTo(fn () => null);
         $middleware->append(SecurityHeaders::class);
         $middleware->append(AgregarRequestId::class);
         $middleware->alias([

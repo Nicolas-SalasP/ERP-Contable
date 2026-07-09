@@ -24,6 +24,19 @@ describe('formato RRHH', () => {
         expect(formatFecha('no-es-fecha')).toBe('—');
     });
 
+    it('formatFecha no corre un dia para atras en timezones detras de UTC (regresion)', () => {
+        // "YYYY-MM-DD" sin hora se interpretaba como UTC medianoche; en Chile
+        // (UTC-3/-4) toLocaleDateString mostraba el dia anterior. El separador
+        // exacto (/ vs -) depende del ICU del entorno, por eso se matchea con regex
+        // en vez de comparar el string completo.
+        expect(formatFecha('2026-01-01')).toMatch(/^01.01.2026$/);
+        expect(formatFecha('2026-12-31')).toMatch(/^31.12.2026$/);
+    });
+
+    it('formatFecha sigue funcionando con datetime completo (con hora)', () => {
+        expect(formatFecha('2026-06-15T10:30:00')).toMatch(/^15.06.2026$/);
+    });
+
     it('nombreMes traduce el numero de mes', () => {
         expect(nombreMes(6)).toBe('Junio');
         expect(nombreMes(1)).toBe('Enero');

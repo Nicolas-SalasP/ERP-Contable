@@ -122,4 +122,24 @@ class ComercialClienteProveedorTest extends TestCase
 
         $response->assertStatus(422)->assertSee('proveedor inactivo');
     }
+
+    public function test_get_proveedor_individual_devuelve_el_proveedor_de_la_empresa()
+    {
+        // Regresion: no existia GET /api/proveedores/{id} (show), solo /ficha/{id} (mas pesado).
+        $proveedor = Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'PR-5', 'rut' => '5.5.5.5-5', 'razon_social' => 'Proveedor Show', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        $response = $this->actingAs($this->usuario)->getJson("/api/proveedores/{$proveedor->id}");
+
+        $response->assertStatus(200)->assertJsonPath('data.razon_social', 'Proveedor Show');
+    }
+
+    public function test_get_proveedor_de_otra_empresa_devuelve_404()
+    {
+        $empresaRival = Empresa::create(['rut' => '88.888.888-8', 'razon_social' => 'Rival SpA']);
+        $proveedorRival = Proveedor::create(['empresa_id' => $empresaRival->id, 'codigo_interno' => 'PR-R', 'rut' => '6.6.6.6-6', 'razon_social' => 'Prov Rival', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        $response = $this->actingAs($this->usuario)->getJson("/api/proveedores/{$proveedorRival->id}");
+
+        $response->assertStatus(404);
+    }
 }

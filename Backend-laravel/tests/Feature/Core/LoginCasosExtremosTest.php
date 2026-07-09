@@ -3,14 +3,16 @@
 namespace Tests\Feature\Core;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Illuminate\Support\Carbon;
 use Tests\Concerns\PreparaEntornoBase;
+use Tests\TestCase;
 
 class LoginCasosExtremosTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     protected $empresa;
+
     protected $usuario;
 
     protected function setUp(): void
@@ -102,6 +104,59 @@ class LoginCasosExtremosTest extends TestCase
         $this->assertContains($response->getStatusCode(), [400, 401, 422, 500]);
     }
 
+    public function test_5_intentos_fallidos_bloquea_la_cuenta_15_minutos()
+    {
+        for ($i = 0; $i < 4; $i++) {
+            $this->postJson('/api/auth/login', [
+                'email' => 'login-extremos@test.cl',
+                'password' => 'password-incorrecto',
+            ])->assertStatus(401);
+        }
+
+        $this->usuario->refresh();
+        $this->assertSame(4, $this->usuario->intentos_fallidos);
+        $this->assertNull($this->usuario->bloqueado_hasta);
+
+        // El 5to intento fallido dispara el bloqueo.
+        $this->postJson('/api/auth/login', [
+            'email' => 'login-extremos@test.cl',
+            'password' => 'password-incorrecto',
+        ])->assertStatus(401);
+
+        $this->usuario->refresh();
+        $this->assertSame(0, $this->usuario->intentos_fallidos);
+        $this->assertSame(1, $this->usuario->nivel_bloqueo);
+        $this->assertNotNull($this->usuario->bloqueado_hasta);
+        $this->assertTrue(Carbon::parse($this->usuario->bloqueado_hasta)->isFuture());
+
+        // Con la password correcta, ahora rechaza por bloqueo (403), no por credenciales.
+        $bloqueado = $this->postJson('/api/auth/login', [
+            'email' => 'login-extremos@test.cl',
+            'password' => 'Pass123!',
+        ]);
+        $bloqueado->assertStatus(403);
+    }
+
+    public function test_login_exitoso_resetea_intentos_fallidos()
+    {
+        $this->postJson('/api/auth/login', [
+            'email' => 'login-extremos@test.cl',
+            'password' => 'password-incorrecto',
+        ])->assertStatus(401);
+
+        $this->usuario->refresh();
+        $this->assertSame(1, $this->usuario->intentos_fallidos);
+
+        $this->postJson('/api/auth/login', [
+            'email' => 'login-extremos@test.cl',
+            'password' => 'Pass123!',
+        ])->assertStatus(200);
+
+        $this->usuario->refresh();
+        $this->assertSame(0, $this->usuario->intentos_fallidos);
+        $this->assertNull($this->usuario->bloqueado_hasta);
+    }
+
     public function test_endpoint_me_con_token_de_otra_empresa_devuelve_solo_su_propia_data()
     {
         $empresaB = $this->crearEmpresa(['razon_social' => 'Otra Empresa']);
@@ -117,7 +172,7 @@ class LoginCasosExtremosTest extends TestCase
 
         $tokenB = $r->json('token');
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $tokenB)
+        $response = $this->withHeader('Authorization', 'Bearer '.$tokenB)
             ->getJson('/api/auth/me');
 
         $response->assertStatus(200);

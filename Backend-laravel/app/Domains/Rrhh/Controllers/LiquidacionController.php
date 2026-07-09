@@ -52,7 +52,11 @@ class LiquidacionController extends Controller
     {
         $liq = Liquidacion::where('empresa_id', $request->user()->empresa_activa_id)
             ->with(['detalles', 'empleado', 'contrato', 'parametro', 'indicador'])
-            ->findOrFail($id);
+            ->find($id);
+
+        if (! $liq) {
+            return response()->json(['success' => false, 'message' => 'Liquidación no encontrada.'], 404);
+        }
 
         // Auditoria de lectura PII (Ley 21.719 — Fase 3): solo registra el ID del empleado, nunca nombre/RUT/otros datos PII.
         if (config('auditoria.lectura_pii')) {
