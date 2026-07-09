@@ -39,8 +39,10 @@ export const getBodegaNombre = (item) => {
     return item?.bodega?.nombre
         || item?.bodega_destino?.nombre
         || item?.bodegaDestino?.nombre
+        || item?.bodega_origen?.nombre
+        || item?.bodegaOrigen?.nombre
         || item?.nombre_bodega
-        || `Bodega #${item?.bodega_id ?? item?.bodega_destino_id ?? '-'}`;
+        || `Bodega #${item?.bodega_id ?? item?.bodega_destino_id ?? item?.bodega_origen_id ?? '-'}`;
 };
 
 const toneMap = {

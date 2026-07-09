@@ -10,14 +10,12 @@ use Illuminate\Http\Request;
 
 class FiniquitoController extends Controller
 {
-    public function __construct(private readonly FiniquitoService $service)
-    {
-    }
+    public function __construct(private readonly FiniquitoService $service) {}
 
     public function index(Request $request): JsonResponse
     {
         $finiquitos = Finiquito::where('empresa_id', $request->user()->empresa_activa_id)
-            ->with(['empleado:id,nombres,apellido_paterno,apellido_materno,rut'])
+            ->with('empleado')
             ->orderByDesc('fecha_termino')
             ->paginate(30);
 
@@ -64,6 +62,7 @@ class FiniquitoController extends Controller
     public function firmar(Request $request, int $id): JsonResponse
     {
         $finiquito = $this->service->firmar($request->user()->empresa_activa_id, $id);
+
         return response()->json([
             'success' => true,
             'message' => 'Finiquito firmado. El contrato fue terminado.',

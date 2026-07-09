@@ -16,8 +16,7 @@ class LiquidacionController extends Controller
     public function __construct(
         private readonly LiquidacionService $service,
         private readonly VacacionesService $vacaciones,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -28,17 +27,21 @@ class LiquidacionController extends Controller
         ]);
 
         $query = Liquidacion::where('empresa_id', $request->user()->empresa_activa_id)
-            ->with(['empleado:id,nombres,apellido_paterno,apellido_materno,rut'])
+            // Columnas no restringidas: Empleado.rut esta cifrado con CipherSweet y
+            // ModelObserver::retrieved() traga en silencio (EmptyFieldException) si
+            // falta algun campo cifrado declarado en configureCipherSweet(), dejando
+            // el RUT como ciphertext crudo en la respuesta.
+            ->with('empleado')
             ->orderByDesc('anio')
             ->orderByDesc('mes');
 
-        if (!empty($datos['anio'])) {
+        if (! empty($datos['anio'])) {
             $query->where('anio', $datos['anio']);
         }
-        if (!empty($datos['mes'])) {
+        if (! empty($datos['mes'])) {
             $query->where('mes', $datos['mes']);
         }
-        if (!empty($datos['empleado_id'])) {
+        if (! empty($datos['empleado_id'])) {
             $query->where('empleado_id', $datos['empleado_id']);
         }
 
@@ -55,19 +58,19 @@ class LiquidacionController extends Controller
         if (config('auditoria.lectura_pii')) {
             try {
                 Auditoria::create([
-                    'auditable_type'     => Liquidacion::class,
-                    'auditable_id'       => $liq->id,
-                    'nombre_usuario'     => $request->user()->nombre ?? 'Sistema',
-                    'operacion'          => 'LECTURA',
-                    'estado_anterior'    => null,
-                    'estado_nuevo'       => null,
-                    'detalle'            => 'Consulta de liquidación del empleado id=' . $liq->empleado_id,
+                    'auditable_type' => Liquidacion::class,
+                    'auditable_id' => $liq->id,
+                    'nombre_usuario' => $request->user()->nombre ?? 'Sistema',
+                    'operacion' => 'LECTURA',
+                    'estado_anterior' => null,
+                    'estado_nuevo' => null,
+                    'detalle' => 'Consulta de liquidación del empleado id='.$liq->empleado_id,
                     'referencia_cruzada' => (string) $liq->empresa_id,
                 ]);
             } catch (\Throwable $e) {
                 Log::warning('LiquidacionController: fallo al registrar lectura PII', [
                     'liquidacion_id' => $liq->id,
-                    'error'          => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -107,6 +110,7 @@ class LiquidacionController extends Controller
     public function emitir(Request $request, int $id): JsonResponse
     {
         $liq = $this->service->emitir($request->user()->empresa_activa_id, $id);
+
         return response()->json([
             'success' => true,
             'message' => 'Liquidación emitida.',
@@ -117,6 +121,7 @@ class LiquidacionController extends Controller
     public function anular(Request $request, int $id): JsonResponse
     {
         $liq = $this->service->anular($request->user()->empresa_activa_id, $id);
+
         return response()->json([
             'success' => true,
             'message' => 'Liquidación anulada.',
