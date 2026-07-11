@@ -481,4 +481,29 @@ class DashboardResumenTest extends TestCase
         $response->assertOk();
         $this->assertArrayNotHasKey('comparacion_anio_anterior', $response->json('data'));
     }
+
+    /**
+     * Regresion: topClientes() seleccionaba proveedores.id sin incluirlo en el
+     * groupBy. Bajo SQLite (motor de tests por defecto) no falla, pero bajo MySQL
+     * con ONLY_FULL_GROUP_BY (modo por defecto) lanza SQLSTATE 42000/1055 y el
+     * dashboard completo devolvia 500 en produccion. Este test necesita >1 factura
+     * para el mismo cliente, que es lo que fuerza la agregacion real.
+     */
+    public function test_top_clientes_agrupa_multiples_facturas_del_mismo_cliente(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $cliente = $this->crearProveedor($empresa->id, 'Cliente Top');
+
+        $this->crearFacturaVenta($empresa->id, $cliente->id, 100000);
+        $this->crearFacturaVenta($empresa->id, $cliente->id, 50000);
+
+        $response = $this->actingAs($usuario)->getJson('/api/dashboard/resumen');
+
+        $response->assertOk();
+        $topClientes = $response->json('data.top_clientes');
+
+        $this->assertCount(1, $topClientes);
+        $this->assertEquals('Cliente Top', $topClientes[0]['nombre']);
+        $this->assertEquals(150000.0, (float) $topClientes[0]['monto']);
+    }
 }

@@ -484,7 +484,7 @@ class DashboardResumenService
             ->whereDate('facturas.fecha_emision', '>=', $desde)
             ->whereNull('facturas.deleted_at')
             ->join('proveedores', 'proveedores.id', '=', 'facturas.proveedor_id')
-            ->groupBy('facturas.proveedor_id', 'proveedores.razon_social')
+            ->groupBy('facturas.proveedor_id', 'proveedores.id', 'proveedores.razon_social')
             ->selectRaw('proveedores.id as id, proveedores.razon_social as nombre, SUM(facturas.monto_bruto) as monto')
             ->orderByRaw('SUM(facturas.monto_bruto) DESC')
             ->limit(5)
