@@ -2,25 +2,28 @@
 
 namespace Tests\Feature\Core;
 
+use App\Domains\Contabilidad\Models\CentroCosto;
+use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Models\EstadoSuscripcion;
+use App\Domains\Core\Models\Rol;
+use App\Domains\Core\Models\User;
+use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Tests\TestCase;
-use App\Domains\Core\Models\User;
-use App\Domains\Core\Models\Empresa;
-use App\Domains\Core\Models\Rol;
-use App\Domains\Core\Models\EstadoSuscripcion;
-use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
-use App\Domains\Contabilidad\Models\CentroCosto;
 use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
 
 class EmpresaConfigTest extends TestCase
 {
     use RefreshDatabase;
 
     protected $empresaA;
+
     protected $empresaB;
+
     protected $adminEmpresaA;
+
     protected $adminEmpresaB;
 
     protected function setUp(): void
@@ -39,7 +42,7 @@ class EmpresaConfigTest extends TestCase
             'password' => bcrypt('123'),
             'empresa_id' => $this->empresaA->id,
             'rol_id' => $rolAdmin->id,
-            'estado_suscripcion_id' => $estadoActivo->id
+            'estado_suscripcion_id' => $estadoActivo->id,
         ]);
 
         $this->adminEmpresaB = User::create([
@@ -48,7 +51,7 @@ class EmpresaConfigTest extends TestCase
             'password' => bcrypt('123'),
             'empresa_id' => $this->empresaB->id,
             'rol_id' => $rolAdmin->id,
-            'estado_suscripcion_id' => $estadoActivo->id
+            'estado_suscripcion_id' => $estadoActivo->id,
         ]);
     }
 
@@ -59,7 +62,7 @@ class EmpresaConfigTest extends TestCase
 
         $response = $this->putJson('/api/empresas/perfil', [
             'telefono' => '+56912345678',
-            'direccion' => 'Av. Providencia 1234'
+            'direccion' => 'Av. Providencia 1234',
         ]);
 
         $response->assertStatus(200)->assertJson(['success' => true]);
@@ -67,7 +70,7 @@ class EmpresaConfigTest extends TestCase
         $this->assertDatabaseHas('empresas', [
             'id' => $this->empresaA->id,
             'telefono' => '+56912345678',
-            'direccion' => 'Av. Providencia 1234'
+            'direccion' => 'Av. Providencia 1234',
         ]);
     }
 
@@ -77,7 +80,7 @@ class EmpresaConfigTest extends TestCase
         Sanctum::actingAs($this->adminEmpresaA);
 
         $response = $this->putJson('/api/empresas/perfil', [
-            'email' => 'correo_malo'
+            'email' => 'correo_malo',
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['email']);
@@ -87,10 +90,10 @@ class EmpresaConfigTest extends TestCase
     public function test_actualizar_perfil_con_email_demasiado_largo()
     {
         Sanctum::actingAs($this->adminEmpresaA);
-        $emailLargo = str_repeat('a', 150) . '@test.com';
+        $emailLargo = str_repeat('a', 150).'@test.com';
 
         $response = $this->putJson('/api/empresas/perfil', [
-            'email' => $emailLargo
+            'email' => $emailLargo,
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [422, 500]));
@@ -106,7 +109,7 @@ class EmpresaConfigTest extends TestCase
         $response->assertStatus(200);
         $this->assertDatabaseHas('empresas', [
             'id' => $this->empresaA->id,
-            'razon_social' => 'Empresa A'
+            'razon_social' => 'Empresa A',
         ]);
     }
 
@@ -116,7 +119,7 @@ class EmpresaConfigTest extends TestCase
         Sanctum::actingAs($this->adminEmpresaA);
 
         $response = $this->postJson('/api/empresas/perfil', [
-            'telefono' => '123'
+            'telefono' => '123',
         ]);
 
         $response->assertStatus(405);
@@ -129,13 +132,13 @@ class EmpresaConfigTest extends TestCase
 
         $response = $this->putJson('/api/empresas/perfil', [
             'telefono' => '123456',
-            'empresa_id' => $this->empresaB->id
+            'empresa_id' => $this->empresaB->id,
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('empresas', [
             'id' => $this->empresaA->id,
-            'telefono' => '123456'
+            'telefono' => '123456',
         ]);
         $this->assertEquals($this->empresaA->id, $this->adminEmpresaA->fresh()->empresa_id);
     }
@@ -149,13 +152,13 @@ class EmpresaConfigTest extends TestCase
         $file = UploadedFile::fake()->image('logo.jpg', 500, 500);
 
         $response = $this->postJson('/api/empresas/logo', [
-            'logo' => $file
+            'logo' => $file,
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseMissing('empresas', [
             'id' => $this->empresaA->id,
-            'logo_path' => null
+            'logo_path' => null,
         ]);
     }
 
@@ -168,7 +171,7 @@ class EmpresaConfigTest extends TestCase
         $file = UploadedFile::fake()->create('documento.pdf', 100, 'application/pdf');
 
         $response = $this->postJson('/api/empresas/logo', [
-            'logo' => $file
+            'logo' => $file,
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['logo']);
@@ -183,7 +186,7 @@ class EmpresaConfigTest extends TestCase
         $file = UploadedFile::fake()->create('shell.php', 100, 'application/x-httpd-php');
 
         $response = $this->postJson('/api/empresas/logo', [
-            'logo' => $file
+            'logo' => $file,
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['logo']);
@@ -224,13 +227,13 @@ class EmpresaConfigTest extends TestCase
 
         $response = $this->postJson('/api/empresas/centros-costo', [
             'codigo' => 'CC-Ventas',
-            'nombre' => 'Departamento de Ventas'
+            'nombre' => 'Departamento de Ventas',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('centros_costo', [
             'codigo' => 'CC-Ventas',
-            'empresa_id' => $this->empresaA->id
+            'empresa_id' => $this->empresaA->id,
         ]);
     }
 
@@ -241,13 +244,13 @@ class EmpresaConfigTest extends TestCase
 
         $response = $this->postJson('/api/empresas/centros-costo', [
             'codigo' => 'CC-DEF',
-            'nombre' => 'Defecto'
+            'nombre' => 'Defecto',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('centros_costo', [
             'codigo' => 'CC-DEF',
-            'activo' => 1
+            'activo' => 1,
         ]);
     }
 
@@ -259,7 +262,7 @@ class EmpresaConfigTest extends TestCase
 
         $response = $this->postJson('/api/empresas/centros-costo', [
             'codigo' => $codigoLargo,
-            'nombre' => 'Nombre Valido'
+            'nombre' => 'Nombre Valido',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [422, 500]));
@@ -273,7 +276,7 @@ class EmpresaConfigTest extends TestCase
 
         $response = $this->postJson('/api/empresas/centros-costo', [
             'codigo' => 'CC-VAL',
-            'nombre' => $nombreLargo
+            'nombre' => $nombreLargo,
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [422, 500]));
@@ -285,7 +288,7 @@ class EmpresaConfigTest extends TestCase
         Sanctum::actingAs($this->adminEmpresaA);
 
         $response = $this->postJson('/api/empresas/centros-costo', [
-            'nombre' => 'Solo Nombre'
+            'nombre' => 'Solo Nombre',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [400, 422, 500]));
@@ -299,12 +302,12 @@ class EmpresaConfigTest extends TestCase
         CentroCosto::create([
             'empresa_id' => $this->empresaA->id,
             'codigo' => 'CC-IT',
-            'nombre' => 'Informática'
+            'nombre' => 'Informática',
         ]);
 
         $response = $this->postJson('/api/empresas/centros-costo', [
             'codigo' => 'CC-IT',
-            'nombre' => 'Soporte Técnico'
+            'nombre' => 'Soporte Técnico',
         ]);
 
         $response->assertStatus(400);
@@ -319,12 +322,12 @@ class EmpresaConfigTest extends TestCase
         $centro = CentroCosto::create([
             'empresa_id' => $this->empresaA->id,
             'codigo' => 'CC-OLD',
-            'nombre' => 'Antiguo'
+            'nombre' => 'Antiguo',
         ]);
 
         $response = $this->putJson("/api/empresas/centros-costo/{$centro->id}", [
             'codigo' => 'CC-OLD',
-            'nombre' => 'Solo cambia nombre'
+            'nombre' => 'Solo cambia nombre',
         ]);
 
         $response->assertStatus(200);
@@ -338,18 +341,18 @@ class EmpresaConfigTest extends TestCase
         $centro = CentroCosto::create([
             'empresa_id' => $this->empresaA->id,
             'codigo' => 'CC-OLD',
-            'nombre' => 'Antiguo'
+            'nombre' => 'Antiguo',
         ]);
 
         $response = $this->putJson("/api/empresas/centros-costo/{$centro->id}", [
             'codigo' => 'CC-NEW',
-            'nombre' => 'Nuevo Nombre'
+            'nombre' => 'Nuevo Nombre',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('centros_costo', [
             'id' => $centro->id,
-            'codigo' => 'CC-NEW'
+            'codigo' => 'CC-NEW',
         ]);
     }
 
@@ -358,9 +361,9 @@ class EmpresaConfigTest extends TestCase
     {
         Sanctum::actingAs($this->adminEmpresaA);
 
-        $response = $this->putJson("/api/empresas/centros-costo/9999", [
+        $response = $this->putJson('/api/empresas/centros-costo/9999', [
             'codigo' => 'CC-NEW',
-            'nombre' => 'Nuevo Nombre'
+            'nombre' => 'Nuevo Nombre',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [400, 404, 500]));
@@ -372,14 +375,14 @@ class EmpresaConfigTest extends TestCase
         $centroEmpresaB = CentroCosto::create([
             'empresa_id' => $this->empresaB->id,
             'codigo' => 'CC-B',
-            'nombre' => 'Centro de B'
+            'nombre' => 'Centro de B',
         ]);
 
         Sanctum::actingAs($this->adminEmpresaA);
 
         $response = $this->putJson("/api/empresas/centros-costo/{$centroEmpresaB->id}", [
             'codigo' => 'CC-HACK',
-            'nombre' => 'Hackeado'
+            'nombre' => 'Hackeado',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [400, 403, 404, 500]));
@@ -390,7 +393,7 @@ class EmpresaConfigTest extends TestCase
     {
         Sanctum::actingAs($this->adminEmpresaA);
 
-        $response = $this->deleteJson("/api/empresas/centros-costo/9999");
+        $response = $this->deleteJson('/api/empresas/centros-costo/9999');
 
         $this->assertTrue(in_array($response->getStatusCode(), [404, 500]));
     }
@@ -401,7 +404,7 @@ class EmpresaConfigTest extends TestCase
         $centroEmpresaB = CentroCosto::create([
             'empresa_id' => $this->empresaB->id,
             'codigo' => 'CC-B',
-            'nombre' => 'Centro de B'
+            'nombre' => 'Centro de B',
         ]);
 
         Sanctum::actingAs($this->adminEmpresaA);
@@ -430,7 +433,7 @@ class EmpresaConfigTest extends TestCase
             'tipo_cuenta' => 'Corriente',
             'numero_cuenta' => '123456789',
             'titular' => 'Empresa A Spa',
-            'rut_titular' => '11.111.111-1'
+            'rut_titular' => '11.111.111-1',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [200, 201]));
@@ -452,13 +455,13 @@ class EmpresaConfigTest extends TestCase
             'tipo_cuenta' => 'Corriente',
             'numero_cuenta' => '111',
             'titular' => 'A',
-            'rut_titular' => '1'
+            'rut_titular' => '1',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [200, 201]));
-        
+
         $this->assertDatabaseHas('cuentas_bancarias_empresa', [
-            'banco' => 'Banco Default'
+            'banco' => 'Banco Default',
         ]);
     }
 
@@ -473,7 +476,7 @@ class EmpresaConfigTest extends TestCase
             'numero_cuenta' => '1',
             'titular' => 'T',
             'rut_titular' => 'R',
-            'email_notificacion' => 'correo_malo'
+            'email_notificacion' => 'correo_malo',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [422, 500]));
@@ -490,7 +493,7 @@ class EmpresaConfigTest extends TestCase
             'tipo_cuenta' => 'C',
             'numero_cuenta' => $numLargo,
             'titular' => 'T',
-            'rut_titular' => 'R'
+            'rut_titular' => 'R',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [422, 500]));
@@ -504,7 +507,7 @@ class EmpresaConfigTest extends TestCase
         $response = $this->postJson('/api/empresas/bancos', [
             'banco' => 'Banco Santander',
             'tipo_cuenta' => 'Corriente',
-            'numero_cuenta' => '123456789'
+            'numero_cuenta' => '123456789',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [400, 422, 500]));
@@ -523,7 +526,7 @@ class EmpresaConfigTest extends TestCase
         Sanctum::actingAs($this->adminEmpresaA);
 
         \DB::table('catalogo_bancos')->insert([
-            ['nombre' => 'Banco de Pruebas']
+            ['nombre' => 'Banco de Pruebas'],
         ]);
 
         $response = $this->getJson('/api/empresas/catalogo-bancos');
@@ -543,11 +546,11 @@ class EmpresaConfigTest extends TestCase
             'tipo_cuenta' => 'Vista',
             'numero_cuenta' => '111',
             'titular' => 'Empresa',
-            'rut_titular' => '1.1.1'
+            'rut_titular' => '1.1.1',
         ]);
 
         $response = $this->putJson("/api/empresas/bancos/{$cuenta->id}", [
-            'numero_cuenta' => '999'
+            'numero_cuenta' => '999',
         ]);
 
         $response->assertStatus(200);
@@ -560,8 +563,8 @@ class EmpresaConfigTest extends TestCase
     {
         Sanctum::actingAs($this->adminEmpresaA);
 
-        $response = $this->putJson("/api/empresas/bancos/9999", [
-            'numero_cuenta' => '999'
+        $response = $this->putJson('/api/empresas/bancos/9999', [
+            'numero_cuenta' => '999',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [404, 500]));
@@ -578,18 +581,18 @@ class EmpresaConfigTest extends TestCase
             'tipo_cuenta' => 'Corriente',
             'numero_cuenta' => '111',
             'titular' => 'Empresa',
-            'rut_titular' => '1.1.1'
+            'rut_titular' => '1.1.1',
         ]);
 
         $response = $this->putJson("/api/empresas/bancos/{$cuenta->id}", [
-            'banco' => 'Banco Final'
+            'banco' => 'Banco Final',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('cuentas_bancarias_empresa', [
             'id' => $cuenta->id,
             'banco' => 'Banco Final',
-            'tipo_cuenta' => 'Corriente'
+            'tipo_cuenta' => 'Corriente',
         ]);
     }
 
@@ -602,13 +605,13 @@ class EmpresaConfigTest extends TestCase
             'tipo_cuenta' => 'Corriente',
             'numero_cuenta' => '123',
             'titular' => 'Emp',
-            'rut_titular' => '1'
+            'rut_titular' => '1',
         ]);
 
         Sanctum::actingAs($this->adminEmpresaB);
 
         $response = $this->putJson("/api/empresas/bancos/{$cuenta->id}", [
-            'numero_cuenta' => '000'
+            'numero_cuenta' => '000',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [400, 403, 404, 500]));
@@ -625,7 +628,7 @@ class EmpresaConfigTest extends TestCase
             'tipo_cuenta' => 'Corriente',
             'numero_cuenta' => '123',
             'titular' => 'Emp',
-            'rut_titular' => '1'
+            'rut_titular' => '1',
         ]);
 
         $response = $this->deleteJson("/api/empresas/bancos/{$cuenta->id}");
@@ -639,7 +642,7 @@ class EmpresaConfigTest extends TestCase
     {
         Sanctum::actingAs($this->adminEmpresaA);
 
-        $response = $this->deleteJson("/api/empresas/bancos/99999");
+        $response = $this->deleteJson('/api/empresas/bancos/99999');
 
         $this->assertTrue(in_array($response->getStatusCode(), [400, 403, 404, 500]));
     }
@@ -651,7 +654,7 @@ class EmpresaConfigTest extends TestCase
         $textoLargo = str_repeat('A', 200);
 
         $response = $this->putJson('/api/empresas/perfil', [
-            'razon_social' => $textoLargo
+            'razon_social' => $textoLargo,
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [422, 500]));
@@ -664,13 +667,13 @@ class EmpresaConfigTest extends TestCase
         $rutOriginal = $this->empresaA->rut;
 
         $response = $this->putJson('/api/empresas/perfil', [
-            'rut' => '99.999.999-9'
+            'rut' => '99.999.999-9',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('empresas', [
             'id' => $this->empresaA->id,
-            'rut' => $rutOriginal
+            'rut' => $rutOriginal,
         ]);
     }
 
@@ -682,13 +685,13 @@ class EmpresaConfigTest extends TestCase
 
         $response = $this->postJson('/api/empresas/centros-costo', [
             'codigo' => 'CC-XSS',
-            'nombre' => $payloadXSS
+            'nombre' => $payloadXSS,
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('centros_costo', [
             'codigo' => 'CC-XSS',
-            'nombre' => $payloadXSS
+            'nombre' => $payloadXSS,
         ]);
     }
 
@@ -702,7 +705,7 @@ class EmpresaConfigTest extends TestCase
             'tipo_cuenta' => true,
             'numero_cuenta' => ['array_invalido'],
             'titular' => 'Empresa A Spa',
-            'rut_titular' => '11.111.111-1'
+            'rut_titular' => '11.111.111-1',
         ]);
 
         $this->assertTrue(in_array($response->getStatusCode(), [422, 500]));
@@ -720,8 +723,8 @@ class EmpresaConfigTest extends TestCase
         Sanctum::actingAs($this->adminEmpresaA);
 
         $response = $this->putJson("/api/empresas/centros-costo/{$centro->id}", [
-            'codigo'     => 'CC-ORIG',
-            'nombre'     => 'Nombre Actualizado',
+            'codigo' => 'CC-ORIG',
+            'nombre' => 'Nombre Actualizado',
             'empresa_id' => $this->empresaB->id,
         ]);
 
@@ -732,5 +735,36 @@ class EmpresaConfigTest extends TestCase
             $centro->fresh()->empresa_id,
             'El empresa_id del centro no debe cambiar aunque venga en el request.'
         );
+    }
+
+    // PRUEBA: eliminar cuenta bancaria inexistente responde 404 con mensaje real, no 500 genérico
+    public function test_eliminar_banco_inexistente_responde_404_no_500()
+    {
+        Sanctum::actingAs($this->adminEmpresaA);
+
+        $response = $this->deleteJson('/api/empresas/bancos/999999');
+
+        $response->assertStatus(404);
+        $response->assertJson(['success' => false, 'message' => 'La cuenta bancaria no existe.']);
+    }
+
+    // PRUEBA: eliminar cuenta bancaria de otra empresa responde 404, no 500
+    public function test_eliminar_banco_de_otra_empresa_responde_404_no_500()
+    {
+        $cuenta = CuentaBancariaEmpresa::create([
+            'empresa_id' => $this->empresaB->id,
+            'banco' => 'Banco Estado',
+            'tipo_cuenta' => 'Corriente',
+            'numero_cuenta' => '1234567',
+            'titular' => 'Empresa B',
+            'rut_titular' => '22.222.222-2',
+        ]);
+
+        Sanctum::actingAs($this->adminEmpresaA);
+
+        $response = $this->deleteJson("/api/empresas/bancos/{$cuenta->id}");
+
+        $response->assertStatus(404);
+        $response->assertJson(['success' => false]);
     }
 }

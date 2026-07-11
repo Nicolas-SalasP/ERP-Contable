@@ -231,6 +231,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo'])->middleware('permiso:proveedores.ver,compras.ver');
     Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha'])->middleware('permiso:proveedores.ver,compras.ver');
     Route::post('/proveedores/anticipos', [ProveedorController::class, 'guardarAnticipo'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::post('/proveedores/anticipos/{id}/pdf', [ProveedorController::class, 'subirPdfAnticipo'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::get('/proveedores/anticipos/{id}/pdf', [ProveedorController::class, 'descargarPdfAnticipo'])->middleware('permiso:proveedores.ver,compras.ver');
 
     // Endpoints dedicados de anticipos a proveedores (con saldo disponible)
     Route::get('/anticipos-proveedores', [AnticipoProveedorController::class, 'index'])->middleware('permiso:proveedores.ver,compras.ver');
@@ -257,6 +259,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // acota a 10 req/min para evitar abuso/uso como vector de denegacion de servicio.
     Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel'])->middleware(['permiso:compras.ver', 'throttle:10,1']);
     Route::get('/facturas/disponibles-proyectos', [FacturaController::class, 'disponiblesProyectos'])->middleware('permiso:compras.ver,activos.ver');
+    Route::get('/facturas/f50', [FacturaController::class, 'f50'])->middleware('permiso:compras.ver');
 
     // Resource de facturas (index/store/show; update y destroy no existen)
     Route::get('/facturas', [FacturaController::class, 'index'])->middleware('permiso:compras.ver');

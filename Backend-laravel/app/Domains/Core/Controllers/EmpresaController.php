@@ -2,17 +2,19 @@
 
 namespace App\Domains\Core\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Domains\Contabilidad\Models\CentroCosto;
+use App\Domains\Core\Exceptions\CoreException;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Services\EmpresaService;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Support\MensajeErrorGenerico;
 use App\Domains\Core\Support\ModuloPermisos;
 use App\Domains\Sii\Support\RutHelper;
-use Illuminate\Validation\ValidationException;
+use App\Http\Controllers\Controller;
+use App\Support\MensajeErrorGenerico;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class EmpresaController extends Controller
 {
@@ -27,7 +29,7 @@ class EmpresaController extends Controller
     {
         $empresa = Empresa::with(['centrosCosto', 'cuentasBancarias'])->find($request->user()->empresa_activa_id);
 
-        if (!$empresa) {
+        if (! $empresa) {
             return response()->json(['success' => false, 'message' => 'Empresa no encontrada'], 404);
         }
 
@@ -41,6 +43,7 @@ class EmpresaController extends Controller
     public function catalogoBancos()
     {
         $bancos = DB::table('catalogo_bancos')->orderBy('nombre', 'asc')->get();
+
         return response()->json(['success' => true, 'data' => $bancos]);
     }
 
@@ -67,16 +70,19 @@ class EmpresaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Perfil actualizado.',
-                'data' => $empresa->fresh()
+                'data' => $empresa->fresh(),
             ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
+        } catch (CoreException $e) {
+            throw $e;
         } catch (Exception $e) {
-            Log::error('EmpresaController: ' . $e->getMessage());
+            Log::error('EmpresaController: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
@@ -94,10 +100,13 @@ class EmpresaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
+        } catch (CoreException $e) {
+            throw $e;
         } catch (Exception $e) {
-            Log::error('EmpresaController (logo): ' . $e->getMessage());
+            Log::error('EmpresaController (logo): '.$e->getMessage());
+
             return response()->json(['success' => false, 'error' => 'No se pudo procesar la solicitud.'], 500);
         }
     }
@@ -111,15 +120,19 @@ class EmpresaController extends Controller
                 'numero_cuenta' => 'required|string|max:50',
                 'titular' => 'required|string|max:150',
                 'rut_titular' => 'required|string|max:20',
-                'email_notificacion' => 'nullable|email|max:100'
+                'email_notificacion' => 'nullable|email|max:100',
             ]);
 
             $cuenta = $this->empresaService->agregarBanco($request->user()->empresa_activa_id, $datos);
+
             return response()->json(['success' => true, 'data' => $cuenta], 201);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (CoreException $e) {
+            throw $e;
         } catch (Exception $e) {
-            Log::error('EmpresaController: ' . $e->getMessage());
+            Log::error('EmpresaController: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
@@ -128,9 +141,13 @@ class EmpresaController extends Controller
     {
         try {
             $this->empresaService->eliminarBanco($request->user()->empresa_activa_id, $id);
+
             return response()->json(['success' => true]);
+        } catch (CoreException $e) {
+            throw $e;
         } catch (Exception $e) {
-            Log::error('EmpresaController: ' . $e->getMessage());
+            Log::error('EmpresaController: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
@@ -146,24 +163,28 @@ class EmpresaController extends Controller
             ]);
 
             $cuenta = $this->empresaService->actualizarBanco($request->user()->empresa_activa_id, $id, $datos);
+
             return response()->json(['success' => true, 'data' => $cuenta]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (CoreException $e) {
+            throw $e;
         } catch (Exception $e) {
-            Log::error('EmpresaController: ' . $e->getMessage());
+            Log::error('EmpresaController: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
 
     public function listarCentros(Request $request)
     {
-        $centros = \App\Domains\Contabilidad\Models\CentroCosto::where('empresa_id', $request->user()->empresa_activa_id)
+        $centros = CentroCosto::where('empresa_id', $request->user()->empresa_activa_id)
             ->where('activo', true)
             ->get();
         $centrosFormateados = $centros->map(function ($c) {
             return [
                 'value' => $c->id,
-                'label' => $c->codigo . ' - ' . $c->nombre
+                'label' => $c->codigo.' - '.$c->nombre,
             ];
         });
 
@@ -175,10 +196,11 @@ class EmpresaController extends Controller
         try {
             $datos = $request->validate([
                 'codigo' => 'required|string|max:20',
-                'nombre' => 'required|string|max:100'
+                'nombre' => 'required|string|max:100',
             ]);
 
             $centro = $this->empresaService->agregarCentroCosto($request->user()->empresa_activa_id, $datos);
+
             return response()->json(['success' => true, 'data' => $centro]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
@@ -191,9 +213,13 @@ class EmpresaController extends Controller
     {
         try {
             $this->empresaService->eliminarCentroCosto($request->user()->empresa_activa_id, $id);
+
             return response()->json(['success' => true]);
+        } catch (CoreException $e) {
+            throw $e;
         } catch (Exception $e) {
-            Log::error('EmpresaController: ' . $e->getMessage());
+            Log::error('EmpresaController: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Error interno del servidor. Intentelo mas tarde.'], 500);
         }
     }
@@ -208,6 +234,7 @@ class EmpresaController extends Controller
             ]);
 
             $centro = $this->empresaService->actualizarCentroCosto($request->user()->empresa_activa_id, $id, $datos);
+
             return response()->json(['success' => true, 'data' => $centro]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
@@ -220,7 +247,7 @@ class EmpresaController extends Controller
     {
         $rut = trim($request->query('rut', ''));
 
-        if (!$rut) {
+        if (! $rut) {
             return response()->json(['existe' => false, 'valido' => false]);
         }
 
@@ -237,7 +264,7 @@ class EmpresaController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['success' => false, 'message' => 'No autenticado.'], 401);
         }
 
@@ -249,24 +276,24 @@ class EmpresaController extends Controller
         $rutNormalizado = null;
         try {
             $rutNormalizado = RutHelper::normalizar((string) $request->empresa_rut);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // La validación de formato (RutHelper::validar) se encarga del error.
         }
 
         $request->validate([
-            'empresa_rut'          => [
+            'empresa_rut' => [
                 'required', 'string', 'max:20',
                 function ($attribute, $value, $fail) {
-                    if (!RutHelper::validar($value)) {
+                    if (! RutHelper::validar($value)) {
                         $fail('El RUT ingresado no es valido: revise el digito verificador.');
                     }
                 },
             ],
             'empresa_razon_social' => ['required', 'string', 'max:150'],
-            'giro'                 => ['nullable', 'string', 'max:80'],
-            'direccion'            => ['nullable', 'string', 'max:255'],
-            'telefono'             => ['nullable', 'string', 'max:50'],
-            'regimen_tributario'   => ['nullable', 'in:14_D3,14_D8,14_A'],
+            'giro' => ['nullable', 'string', 'max:80'],
+            'direccion' => ['nullable', 'string', 'max:255'],
+            'telefono' => ['nullable', 'string', 'max:50'],
+            'regimen_tributario' => ['nullable', 'in:14_D3,14_D8,14_A'],
         ]);
 
         // Unicidad server-side sobre el RUT normalizado (sin puntos).
@@ -279,11 +306,11 @@ class EmpresaController extends Controller
 
         return DB::transaction(function () use ($request, $user, $rutParaGuardar) {
             $empresa = Empresa::create([
-                'rut'                => $rutParaGuardar,
-                'razon_social'       => $request->empresa_razon_social,
-                'giro_emisor'        => $request->giro,
-                'direccion'          => $request->direccion,
-                'telefono'           => $request->telefono,
+                'rut' => $rutParaGuardar,
+                'razon_social' => $request->empresa_razon_social,
+                'giro_emisor' => $request->giro,
+                'direccion' => $request->direccion,
+                'telefono' => $request->telefono,
                 'regimen_tributario' => $request->regimen_tributario ?? '14_D3',
             ]);
 
@@ -296,9 +323,9 @@ class EmpresaController extends Controller
             // para listar y autorizar el cambio de empresa activa) nunca ve esta empresa: el
             // onboarding queda con acceso "real" vía empresa_id pero invisible para multiempresa.
             DB::table('empresa_user')->insertOrIgnore([
-                'user_id'    => $user->id,
+                'user_id' => $user->id,
                 'empresa_id' => $empresa->id,
-                'rol_id'     => $user->rol_id,
+                'rol_id' => $user->rol_id,
                 'created_at' => now(),
             ]);
 
@@ -314,15 +341,15 @@ class EmpresaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'token'   => $token,
-                'user'    => [
-                    'id'         => $user->id,
-                    'nombre'     => $user->nombre,
-                    'email'      => $user->email,
+                'token' => $token,
+                'user' => [
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'email' => $user->email,
                     'empresa_id' => $user->empresa_id,
-                    'rol_id'     => $user->rol_id,
-                    'plan_slug'  => $user->plan_slug,
-                    'permisos'   => $permisos,
+                    'rol_id' => $user->rol_id,
+                    'plan_slug' => $user->plan_slug,
+                    'permisos' => $permisos,
                 ],
             ]);
         });
