@@ -2,10 +2,11 @@
 
 namespace App\Domains\Core\Controllers;
 
-use Illuminate\Http\Request;
 use App\Domains\Core\Services\AnulacionService;
 use App\Support\MensajeErrorGenerico;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AnulacionController
 {
@@ -20,8 +21,8 @@ class AnulacionController
     {
         try {
             $datos = $request->validate([
-                'tipo_documento'   => 'required|string',
-                'numero_documento' => 'required|string'
+                'tipo_documento' => 'required|string',
+                'numero_documento' => 'required|string',
             ]);
 
             $documento = $this->service->buscarDocumento(
@@ -32,12 +33,14 @@ class AnulacionController
 
             return response()->json([
                 'success' => true,
-                'data'    => $documento
+                'data' => $documento,
             ]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 404);
         }
     }
@@ -46,10 +49,10 @@ class AnulacionController
     {
         try {
             $datos = $request->validate([
-                'tipo_documento'  => 'required|string',
-                'documento_id'    => 'required|integer',
-                'motivo'          => 'required|string|min:5',
-                'fecha_anulacion' => 'required|date'
+                'tipo_documento' => 'required|string',
+                'documento_id' => 'required|integer',
+                'motivo' => 'required|string|min:5',
+                'fecha_anulacion' => 'required|date',
             ]);
 
             $resultado = $this->service->anularDocumento(
@@ -64,12 +67,14 @@ class AnulacionController
             return response()->json([
                 'success' => true,
                 'message' => 'El documento fue anulado y su reverso generado exitosamente.',
-                'data'    => $resultado
+                'data' => $resultado,
             ]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }
