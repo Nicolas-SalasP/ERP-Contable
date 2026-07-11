@@ -2,15 +2,19 @@
 
 namespace App\Domains\Rrhh\Services\Calculo;
 
+use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Core\Models\Empresa;
+use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\ConceptoRemuneracion;
+use App\Domains\Rrhh\Models\Contrato;
 use App\Domains\Rrhh\Models\Empleado;
+use App\Domains\Rrhh\Models\HaberDescuentoContrato;
 use App\Domains\Rrhh\Models\IndicadorMensual;
 use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\LiquidacionDetalle;
 use App\Domains\Rrhh\Models\ParametroPrevisional;
 use App\Domains\Rrhh\Models\TablaImpuestoUnico;
-use App\Domains\Contabilidad\Models\AsientoContable;
-use App\Domains\Rrhh\Exceptions\RrhhException;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /** Motor de liquidación de remuneraciones según legislación laboral chilena (Código del Trabajo + DL 3500/3501 + Ley 19.728 + LIR Art. 42-43); los valores nunca son hardcodeados, se leen de ParametroPrevisional e IndicadorMensual. */
@@ -18,8 +22,11 @@ class LiquidacionService
 {
     // Orden de presentación en el documento de liquidación
     private const ORDEN_HABERES_IMPONIBLES = 100;
+
     private const ORDEN_HABERES_NO_IMPONIBLES = 200;
+
     private const ORDEN_DESCUENTOS_LEGALES = 300;
+
     private const ORDEN_DESCUENTOS_VOLUNTARIOS = 400;
 
     // Art. 42 bis LIR, Régimen A: tope de deducción de APV de la base tributable mensual del Impuesto Único; constante legal, no varía por empresa.
@@ -29,26 +36,26 @@ class LiquidacionService
     {
         return DB::transaction(function () use ($empresaId, $empleadoId, $anio, $mes, $extras) {
             $empleado = Empleado::where('empresa_id', $empresaId)->with('contratoActivo')->find($empleadoId);
-            if (!$empleado) {
+            if (! $empleado) {
                 throw RrhhException::noEncontrado('El empleado no existe o no pertenece a la empresa.');
             }
 
             $contratos = $empleado->contratoActivo;
-            /** @var \App\Domains\Rrhh\Models\Contrato|null $contrato */
+            /** @var Contrato|null $contrato */
             $contrato = $contratos->first();
-            if (!$contrato) {
+            if (! $contrato) {
                 throw RrhhException::regla("El empleado {$empleado->nombre_completo} no tiene un contrato activo.");
             }
 
             $fechaPeriodo = sprintf('%04d-%02d-01', $anio, $mes);
 
             $parametro = ParametroPrevisional::vigentePara($fechaPeriodo);
-            if (!$parametro) {
+            if (! $parametro) {
                 throw RrhhException::regla("No hay parámetros previsionales cargados para el período {$mes}/{$anio}. Carga los indicadores primero.");
             }
 
             $indicador = IndicadorMensual::paraPeriodo($anio, $mes);
-            if (!$indicador) {
+            if (! $indicador) {
                 throw RrhhException::regla("No hay indicadores mensuales (UF/UTM) cargados para {$mes}/{$anio}.");
             }
 
@@ -122,9 +129,9 @@ class LiquidacionService
             $orden_ni = self::ORDEN_HABERES_NO_IMPONIBLES;
 
             // Fix 1: filtrar solo tipos haber; descuentos del contrato se procesan en sección 10
-            /** @var \App\Domains\Rrhh\Models\HaberDescuentoContrato $haber */
+            /** @var HaberDescuentoContrato $haber */
             foreach ($contrato->haberes->whereIn('tipo', ['HABER_IMPONIBLE', 'HABER_NO_IMPONIBLE']) as $haber) {
-                if (!$haber->activo) {
+                if (! $haber->activo) {
                     continue;
                 }
                 $montoHaber = $haber->modalidad_valor === 'PORCENTAJE_SUELDO_BASE'
@@ -216,7 +223,7 @@ class LiquidacionService
             $afcTrabajadorPct = 0.0;
             if ($contrato->esIndefindo()) {
                 $fechaInicioContrato = $contrato->fecha_inicio;
-                $fechaPeriodoCarbon = \Carbon\Carbon::create($anio, $mes, 1);
+                $fechaPeriodoCarbon = Carbon::create($anio, $mes, 1);
                 $aniosAntiguedad = (int) $fechaInicioContrato->diffInYears($fechaPeriodoCarbon);
                 if ($aniosAntiguedad < 11) {
                     $afcTrabajadorPct = (float) $parametro->afc_indefinido_trabajador_pct;
@@ -256,7 +263,7 @@ class LiquidacionService
             $ordenDV = self::ORDEN_DESCUENTOS_VOLUNTARIOS;
             $totalDescuentosVoluntarios = 0;
 
-            /** @var \App\Domains\Rrhh\Models\HaberDescuentoContrato $desc */
+            /** @var HaberDescuentoContrato $desc */
             foreach ($contrato->haberes->where('tipo', 'DESCUENTO_VOLUNTARIO') as $desc) {
                 $montoDesc = $desc->modalidad_valor === 'PORCENTAJE_SUELDO_BASE'
                     ? round($sueldoBase * ((float) $desc->porcentaje / 100))
@@ -278,7 +285,11 @@ class LiquidacionService
                 ? (float) $parametro->afc_indefinido_empleador_pct
                 : (float) $parametro->afc_plazo_fijo_empleador_pct;
             $afcEmpleadorMonto = round($baseAfc * ($afcEmpleadorPct / 100));
-            $mutualMonto = round($baseImponible * ((float) $parametro->mutual_cotizacion_basica_pct / 100));
+            // Tasa básica (parámetro legal nacional) + tasa adicional diferenciada de la empresa
+            // según su resolución de afiliación (Ley 16.744) — antes solo se aplicaba la básica,
+            // subestimando el costo empresa real para toda empresa con tasa diferenciada > 0.
+            $mutualTasaAdicional = (float) (Empresa::find($empresaId)?->mutual_tasa_adicional_pct ?? 0);
+            $mutualMonto = round($baseImponible * (((float) $parametro->mutual_cotizacion_basica_pct + $mutualTasaAdicional) / 100));
             // Fix 5: cotización adicional Ley 21.735 — cargo patronal puro
             $reformaMonto = round($baseImponible * ((float) $parametro->cotizacion_adicional_empleador_pct / 100));
 
@@ -335,20 +346,21 @@ class LiquidacionService
     public function emitir(int $empresaId, int $liquidacionId): Liquidacion
     {
         $liq = Liquidacion::where('empresa_id', $empresaId)->find($liquidacionId);
-        if (!$liq) {
+        if (! $liq) {
             throw RrhhException::noEncontrado('La liquidación no existe o no pertenece a la empresa.');
         }
         if ($liq->estado !== Liquidacion::ESTADO_BORRADOR) {
             throw RrhhException::regla("No se puede emitir una liquidación en estado {$liq->estado}.");
         }
         $liq->update(['estado' => Liquidacion::ESTADO_EMITIDA]);
+
         return $liq->fresh();
     }
 
     public function anular(int $empresaId, int $liquidacionId): Liquidacion
     {
         $liq = Liquidacion::where('empresa_id', $empresaId)->find($liquidacionId);
-        if (!$liq) {
+        if (! $liq) {
             throw RrhhException::noEncontrado('La liquidación no existe o no pertenece a la empresa.');
         }
         if ($liq->estado === Liquidacion::ESTADO_PAGADA) {
@@ -369,12 +381,13 @@ class LiquidacionService
             ->first();
         if ($asiento) {
             throw RrhhException::regla(
-                "No se puede anular: el período ya fue centralizado en contabilidad " .
-                "(asiento N°{$asiento->numero_comprobante}). " .
-                "Anule primero el asiento de centralización."
+                'No se puede anular: el período ya fue centralizado en contabilidad '.
+                "(asiento N°{$asiento->numero_comprobante}). ".
+                'Anule primero el asiento de centralización.'
             );
         }
         $liq->update(['estado' => Liquidacion::ESTADO_ANULADA]);
+
         return $liq->fresh();
     }
 
