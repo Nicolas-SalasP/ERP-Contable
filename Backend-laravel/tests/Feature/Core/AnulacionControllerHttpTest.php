@@ -30,7 +30,10 @@ class AnulacionControllerHttpTest extends TestCase
             'numero_comprobante' => $numero,
             'fecha' => '2026-06-15',
             'glosa' => 'Asiento de prueba',
-            'tipo_asiento' => 'MANUAL',
+            // 'MANUAL' no es valor valido del enum tipo_asiento (ingreso/egreso/traspaso/''):
+            // SQLite lo tolera (TEXT sin restriccion), pero MySQL con enum estricto trunca/falla
+            // (SQLSTATE 01000/1265). Encontrado corriendo la suite contra MySQL real.
+            'tipo_asiento' => 'traspaso',
             'estado' => 'MAYORIZADO',
         ], $overrides));
 

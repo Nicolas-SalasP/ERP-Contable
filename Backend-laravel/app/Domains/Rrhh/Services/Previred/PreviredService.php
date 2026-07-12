@@ -11,6 +11,7 @@ use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\LiquidacionDetalle;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 /** R6 — Genera el archivo previsional Previred: texto UTF-8 CRLF, una línea por trabajador, 105 campos separados por ";", sin encabezado, "Archivo de 105 posiciones" (previred.com); verificar campos/códigos contra la doc oficial antes de producción (https://www.previred.com/web/previred/ayuda-planilla); solo se implementan los tipos de movimiento 0=sin movimiento, 1=contratación y 2=retiro, el resto del estándar (licencia médica, permiso, accidente, etc.) no está soportado. */
 class PreviredService
@@ -173,12 +174,7 @@ class PreviredService
         );
         // saludCot (7% obligatorio, calculado en LiquidacionService) y el adicional ISAPRE son campos distintos informados por separado.
 
-        // Código mutualidad: fuente unica es empresa->mutualidad (afiliacion es por empresa, no por
-        // trabajador ni parametro legal nacional). Fallback al parametro previsional legacy solo
-        // para empresas aun no migradas a la nueva tabla mutualidades (ver migracion 2026_07_10_000001).
-        $mutualCodigo = $empresa?->mutualidad?->codigo_previred
-            ?? $liq->parametro->mutual_codigo
-            ?? self::MUTUALIDAD_CODIGO_DEFAULT;
+        $mutualCodigo = $this->resolverCodigoMutualPrevired($empresa, $liq);
 
         // Datos empleador (RUT separado)
         [$rutEmp, $dvEmp] = $empresa ? $this->separarRut($empresa->rut) : ['', ''];
@@ -432,6 +428,34 @@ class PreviredService
     private function pesos(float $monto): string
     {
         return (string) (int) round($monto);
+    }
+
+    /**
+     * Resuelve el código de mutualidad (campo 59). Distingue explícitamente "empresa sin
+     * mutualidad asignada" (cae al parámetro previsional legacy, empresa aún no migrada) de
+     * "empresa con mutualidad asignada pero sin código Previred oficial confirmado" (IST/Mutual
+     * CChC, ver migración 2026_07_10_000001) — este segundo caso NO debe caer silenciosamente al
+     * parámetro legacy/global, porque ese valor no representa la elección real de la empresa.
+     */
+    private function resolverCodigoMutualPrevired(?Empresa $empresa, Liquidacion $liq): string
+    {
+        $mutualidad = $empresa?->mutualidad;
+
+        if ($mutualidad === null) {
+            return $liq->parametro->mutual_codigo ?? self::MUTUALIDAD_CODIGO_DEFAULT;
+        }
+
+        if ($mutualidad->codigo_previred !== null) {
+            return $mutualidad->codigo_previred;
+        }
+
+        Log::warning('PreviredService: empresa con mutualidad sin codigo_previred confirmado, se usa default aproximado', [
+            'empresa_id' => $empresa->id,
+            'mutualidad_id' => $mutualidad->id,
+            'mutualidad_nombre' => $mutualidad->nombre,
+        ]);
+
+        return self::MUTUALIDAD_CODIGO_DEFAULT;
     }
 
     private function codigoAfp(string $afp): string

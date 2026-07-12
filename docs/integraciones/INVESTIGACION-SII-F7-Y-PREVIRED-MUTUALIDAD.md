@@ -10,6 +10,15 @@ otra sesión las implemente con contexto sólido y sin adivinar requisitos norma
 > investigación, era un bug de datos real. Ver "Estado del fix" al inicio de la sección 2 para el
 > detalle de qué se implementó y qué sigue pendiente (los códigos Previred oficiales de IST/CChC
 > siguen sin verificar, ver 2.2).
+>
+> **Actualización 2026-07-12:** auditoría de seguimiento sobre el fix anterior encontró y corrigió
+> un bug real más (fallback de código Previred usaba el parámetro legacy global en vez del default
+> documentado para IST/CChC — ver nota en "Qué sigue pendiente" de la sección 2). Ver
+> `docs/qa/PLAYWRIGHT-QA-2026-07-12.md` para el detalle completo de esa sesión, que además corrigió
+> 2 bugs reales encontrados en QA manual (mensaje de error crudo al usuario, fecha off-by-one en 3
+> pantallas) y un hallazgo aparte sin resolver (18 tests de `Dj1835Test`/`LibroComprasVentasTest`/
+> `Ap-ArAgingTest` fallan bajo MySQL real por `emisor_rut` varchar(10) truncado — no relacionado a
+> los fixes de esta sesión, pendiente de investigar).
 
 ---
 
@@ -231,6 +240,12 @@ previsional legal que se declara mensualmente), no una feature nueva.
   **No usar esos dos organismos en producción hasta verificar y actualizar la migración con el
   código correcto** — mientras tanto, `PreviredService` cae al valor por defecto `'01'` si
   `codigo_previred` es null, lo cual es una aproximación, no el valor correcto.
+  > **Actualización 2026-07-12:** una auditoría de seguimiento encontró que el fallback original
+  > (`?? $liq->parametro->mutual_codigo`) no distinguía "empresa sin mutualidad asignada" de "empresa
+  > con mutualidad asignada pero código desconocido" — en el segundo caso caía al parámetro legacy
+  > **global** (de otra empresa), no al default documentado. Corregido: ahora usa
+  > `MUTUALIDAD_CODIGO_DEFAULT` explícito + `Log::warning` cuando esto ocurre, en vez de un valor de
+  > otra empresa. Ver `PreviredService::resolverCodigoMutualPrevired()`. Test de regresión agregado.
 - CCAF (bloque 52-58) y datos extendidos de empleador (72-80) siguen sin modelar — fuera del alcance
   de este fix, tal como recomendó el council (Fase 2 de Previred, no ahora).
 - Formato de `empleados.nacionalidad` (¿ISO 3166-1 alpha-3 real?) sigue sin verificar contra la

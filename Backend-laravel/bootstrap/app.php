@@ -13,7 +13,9 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Validation\ValidationException;
 use Sentry\Laravel\Integration;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -55,5 +57,30 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => MensajeErrorGenerico::desde($e),
                 ], 500);
             }
+        });
+
+        // Red de seguridad final: cualquier excepción sin render() propio ni capturada por un
+        // controller (ej. error de config/libreria de terceros, como CIPHERSWEET_KEY faltante)
+        // no debe filtrar el mensaje crudo del framework/libreria al cliente. Las excepciones de
+        // dominio (CoreException, RrhhException, etc.) tienen su propio render() y Laravel lo usa
+        // ANTES de llegar aqui, asi que este catch-all solo atrapa lo verdaderamente inesperado.
+        // IMPORTANTE: se excluyen explicitamente ValidationException y cualquier
+        // HttpExceptionInterface (404/403/405/429/etc.) porque esas YA traen el status/mensaje
+        // correcto para el cliente — atraparlas aqui convertiria, por ejemplo, todo 422 de
+        // validacion en un 500 generico en toda la API. Con APP_DEBUG=true se deja pasar
+        // (return null) para no estorbar el debug local.
+        $exceptions->render(function (Throwable $e, $request) {
+            if (config('app.debug')
+                || ! $request->expectsJson()
+                || $e instanceof ValidationException
+                || $e instanceof HttpExceptionInterface
+            ) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al procesar la solicitud. Si el problema persiste, contacta a soporte.',
+            ], 500);
         });
     })->create();

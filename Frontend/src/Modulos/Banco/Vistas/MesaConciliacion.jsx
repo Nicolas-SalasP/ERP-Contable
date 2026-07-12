@@ -7,7 +7,7 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import Select from 'react-select';
 import { CreditCard, X, Check } from 'lucide-react';
-import { formatearMoneda } from '../../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../../Utilidades/formato';
 
 const formatCurrency = formatearMoneda;
 
@@ -382,7 +382,7 @@ const MesaConciliacion = () => {
                             <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                 {movimientos.map(mov => (
                                     <tr key={mov.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700 transition-colors group">
-                                        <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-700 dark:text-slate-300">{new Date(mov.fecha).toLocaleDateString('es-CL')}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-700 dark:text-slate-300">{formatFecha(mov.fecha)}</td>
                                         <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{mov.descripcion}</td>
                                         <td className="px-6 py-4 font-black text-rose-500 text-right">{mov.cargo > 0 ? formatCurrency(mov.cargo) : ''}</td>
                                         <td className="px-6 py-4 font-black text-emerald-500 text-right">{mov.abono > 0 ? formatCurrency(mov.abono) : ''}</td>

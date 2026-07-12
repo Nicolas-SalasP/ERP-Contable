@@ -752,6 +752,29 @@ class PreviredTest extends TestCase
         $this->assertEquals('01', $campos[58], 'Campo 59 debe usar el codigo de empresa.mutualidad (01=ACHS), no el legacy (02)');
     }
 
+    // Regresión: empresa afiliada a IST/Mutual CChC (codigo_previred null, sin especificación
+    // oficial confirmada) NO debe caer silenciosamente al parametro previsional legacy/global,
+    // que representa la eleccion de OTRA empresa, no la de esta.
+    public function test_campo_mutualidad_con_codigo_previred_desconocido_no_usa_legacy_de_otra_empresa(): void
+    {
+        // Simula el legacy global apuntando a un codigo que NO corresponde a esta empresa.
+        ParametroPrevisional::query()->update(['mutual_codigo' => '02']);
+
+        $ist = Mutualidad::where('nombre', 'IST')->first();
+        $this->assertNull($ist->codigo_previred, 'Precondicion: IST debe tener codigo_previred null en el seed.');
+
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $empresa->update(['mutualidad_id' => $ist->id]);
+
+        $emp = $this->crearEmpleadoConContrato($empresa->id);
+        $this->calcularYEmitir($empresa->id, $emp->id);
+
+        $campos = $this->parsearPrimeraFila($empresa);
+
+        $this->assertNotEquals('02', $campos[58], 'No debe usar el codigo legacy global (02), que no representa la eleccion de esta empresa.');
+        $this->assertEquals('01', $campos[58], 'Debe caer al default aproximado documentado (01), no a un valor de otra empresa.');
+    }
+
     private function parsearPrimeraFila(object $empresa): array
     {
         $service = app(PreviredService::class);

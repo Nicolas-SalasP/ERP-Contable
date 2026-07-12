@@ -1,5 +1,7 @@
 /** Formateadores compartidos del módulo RRHH (es-CL). */
 
+import { formatFecha } from '../../../Utilidades/formato';
+
 const clp = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 
 export const formatPesos = (valor) => clp.format(Number(valor || 0));
@@ -8,16 +10,10 @@ export const formatNumero = (valor, decimales = 2) =>
     new Intl.NumberFormat('es-CL', { minimumFractionDigits: decimales, maximumFractionDigits: decimales })
         .format(Number(valor || 0));
 
-export const formatFecha = (iso) => {
-    if (!iso) return '—';
-    // Un string "YYYY-MM-DD" sin hora lo interpreta el motor JS como UTC medianoche;
-    // en timezones detras de UTC (Chile) eso corre la fecha mostrada un dia para atras.
-    // Forzamos hora local agregando T00:00:00 cuando no viene ya con hora.
-    const conHora = iso.includes('T') ? iso : `${iso}T00:00:00`;
-    const d = new Date(conHora);
-    if (isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
+// El fix anterior local (agregar T00:00:00 solo si el string no traía hora) no cubría el caso real
+// más común: Eloquent serializa columnas date/datetime como "AAAA-MM-DDT00:00:00.000000Z", que SÍ
+// trae "T" pero sigue siendo UTC — se seguía mostrando un día atrás. Ver Utilidades/formato.js.
+export { formatFecha };
 
 export const MESES = [
     { valor: 1, label: 'Enero' }, { valor: 2, label: 'Febrero' }, { valor: 3, label: 'Marzo' },
