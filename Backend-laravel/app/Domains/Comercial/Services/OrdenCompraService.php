@@ -3,26 +3,31 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-use App\Domains\Comercial\Models\OrdenCompra;
 use App\Domains\Comercial\Models\DetalleOrdenCompra;
+use App\Domains\Comercial\Models\OrdenCompra;
+use App\Domains\Core\Services\ContadorEmpresaService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class OrdenCompraService
 {
+    public function __construct(
+        private readonly ContadorEmpresaService $contadorService
+    ) {}
+
     public function listar(int $empresaId, array $filtros = []): LengthAwarePaginator
     {
         $query = OrdenCompra::with('proveedor')
             ->where('ordenes_compra.empresa_id', $empresaId)
             ->orderByDesc('fecha_emision');
 
-        if (!empty($filtros['estado'])) {
+        if (! empty($filtros['estado'])) {
             $query->where('estado', $filtros['estado']);
         }
 
-        if (!empty($filtros['proveedor'])) {
+        if (! empty($filtros['proveedor'])) {
             $query->whereHas('proveedor', function ($q) use ($filtros) {
-                $q->where('razon_social', 'like', '%' . $filtros['proveedor'] . '%');
+                $q->where('razon_social', 'like', '%'.$filtros['proveedor'].'%');
             });
         }
 
@@ -101,6 +106,7 @@ class OrdenCompraService
             }
 
             $ocLock->update(['estado' => 'ANULADA']);
+
             return $ocLock;
         });
     }
@@ -146,12 +152,21 @@ class OrdenCompraService
     private function generarNumeroOc(int $empresaId): string
     {
         $anio = now()->year;
-        $ultimo = OrdenCompra::withoutGlobalScopes()
-            ->where('empresa_id', $empresaId)
-            ->whereYear('created_at', $anio)
-            ->max(DB::raw("CAST(SUBSTR(numero_oc, -4) AS UNSIGNED)"));
 
-        $siguiente = ($ultimo ?? 0) + 1;
-        return sprintf('OC-%d-%04d', $anio, $siguiente);
+        // El correlativo se codifica en el "tipo" del contador incluyendo el
+        // anio (ej. 'orden_compra_2026') porque ContadorEmpresaService lleva
+        // un contador monotono sin dimension de tiempo, y el formato de OC
+        // reinicia el correlativo cada anio (OC-{anio}-{0001}).
+        //
+        // siguienteNumero() abre su propia DB::transaction, pero como ya
+        // estamos dentro de la transaccion de crear(), Laravel la anida via
+        // savepoint: si crear() hace rollback despues de haber consumido un
+        // correlativo, el contador queda incrementado igual (queda un hueco
+        // en la numeracion). Es una decision deliberada: un hueco es
+        // preferible a arriesgar una colision contra el unique constraint
+        // (empresa_id, numero_oc).
+        $correlativo = $this->contadorService->siguienteNumero($empresaId, "orden_compra_{$anio}");
+
+        return sprintf('OC-%d-%04d', $anio, $correlativo);
     }
 }

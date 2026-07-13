@@ -19,7 +19,8 @@ use Illuminate\Support\Facades\Schema;
  * Uso via ContadorEmpresaService::siguienteNumero() que hace
  * SELECT FOR UPDATE para evitar race conditions en concurrencia.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('contadores_empresa', function (Blueprint $table) {
@@ -27,10 +28,11 @@ return new class extends Migration {
             $table->foreignId('empresa_id')->constrained('empresas')->onDelete('cascade');
 
             // Tipo de contador. Valores conocidos:
-            // - 'asiento_comprobante' (numero correlativo del asiento contable)
-            // - 'activo_codigo'        (codigo correlativo del activo fijo)
-            // - 'cotizacion_numero'    (preparado para futuro uso)
-            // - 'factura_interna'      (preparado para futuro uso)
+            // - 'asiento_comprobante'      (numero correlativo del asiento contable)
+            // - 'activo_codigo'            (codigo correlativo del activo fijo)
+            // - 'cotizacion_numero'        (preparado para futuro uso)
+            // - 'factura_interna'          (preparado para futuro uso)
+            // - 'orden_compra_{anio}'      (correlativo de OC, reinicia cada anio; ej. 'orden_compra_2026')
             $table->string('tipo', 50);
 
             // Ultimo valor asignado. La proxima asignacion sera ultimo_valor + 1.
