@@ -5,6 +5,7 @@ namespace Tests\Feature\Inventario;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioValorizacionCapa;
 use App\Domains\Inventario\Models\LoteInventario;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
@@ -19,8 +20,8 @@ use Tests\TestCase;
 
 class InventarioAjusteCriticoApiTest extends TestCase
 {
-    use RefreshDatabase;
     use PreparaInventarioTrait;
+    use RefreshDatabase;
 
     protected bool $seed = true;
 
@@ -269,6 +270,149 @@ class InventarioAjusteCriticoApiTest extends TestCase
             ]);
     }
 
+    /**
+     * PHPUnit corre en un único proceso, por lo que no se puede forzar una condición de carrera
+     * real entre dos requests concurrentes. Siguiendo el mismo patrón que
+     * FifoValorizacionEdgeCasesTest/PmpValorizacionEdgeCasesTest, este test ejercita el
+     * lockForUpdate() que InventarioMovimientoService::obtenerOCrearStockBloqueado aplica dentro
+     * de cada registrarAjusteCritico(): dos ajustes críticos secuenciales sobre el mismo
+     * producto/bodega deben acumularse correctamente, sin que ninguno pierda la actualización del
+     * otro.
+     */
+    public function test_dos_ajustes_criticos_secuenciales_sobre_el_mismo_stock_no_pierden_actualizaciones(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa);
+        $bodega = $this->crearBodega($empresa);
+        $this->crearStock($empresa, $producto, $bodega, 10, 100);
+
+        $tipoPositivo = $this->tipo(TipoAjusteCritico::CODIGO_AJUSTE_CRITICO_POSITIVO);
+        $tipoNegativo = $this->tipo(TipoAjusteCritico::CODIGO_PERDIDA);
+
+        $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipoPositivo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 5,
+            'costo_unitario' => 50,
+            'motivo' => 'Ajuste concurrente A',
+            'observacion' => 'Primera solicitud sobre el mismo stock',
+        ])->assertStatus(201);
+
+        $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipoNegativo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 3,
+            'motivo' => 'Ajuste concurrente B',
+            'observacion' => 'Segunda solicitud sobre el mismo stock',
+        ])->assertStatus(201);
+
+        // Si el lock no hubiese serializado las dos lecturas-actualizaciones, alguna de las dos
+        // habría partido de un stock_actual desactualizado y el resultado final sería distinto.
+        $stock = $this->stock($empresa, $producto, $bodega);
+        $this->assertEquals(12.0, (float) $stock->stock_actual); // 10 + 5 - 3
+    }
+
+    /**
+     * Hallazgo real, documentado también en HALLAZGOS-COLATERALES.md: anularAjusteCritico()
+     * revierte el ajuste con un movimiento compensatorio (registrarMovimiento reusa la misma
+     * lógica de valorización probada), pero para un producto FIFO ese movimiento compensatorio es
+     * una salida que consume capas en orden FIFO estricto (la más antigua primero) — no
+     * necesariamente la capa que el propio ajuste creó. Si ya existía stock más antiguo antes del
+     * ajuste, la reversa consume ESE stock en su lugar, y la capa que el ajuste crítico anulado
+     * creó queda intacta y huérfana, distorsionando el costo del stock remanente pese a que el
+     * ajuste "erróneo" fue anulado.
+     */
+    public function test_anular_ajuste_critico_positivo_fifo_no_revierte_la_capa_que_el_ajuste_creo(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+            'inventario.movimientos.ver',
+            'inventario.movimientos.entrada',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa, [
+            'metodo_valorizacion' => 'FIFO',
+        ]);
+        $bodega = $this->crearBodega($empresa);
+
+        // Stock inicial real: 10 unidades a $50 (capa más antigua).
+        $this->postJson('/api/inventario/movimientos', [
+            'tipo' => MovimientoInventario::TIPO_ENTRADA,
+            'producto_id' => $producto->id,
+            'bodega_destino_id' => $bodega->id,
+            'cantidad' => 10,
+            'costo_unitario' => 50,
+            'motivo' => MovimientoInventario::MOTIVO_INGRESO_MANUAL,
+        ])->assertCreated();
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_AJUSTE_CRITICO_POSITIVO);
+
+        // Ajuste crítico positivo: 5 unidades a $200 (capa nueva y más cara).
+        $registro = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 5,
+            'costo_unitario' => 200,
+            'motivo' => 'Ajuste positivo a revisar',
+            'observacion' => 'Se anulará para verificar la reversión de capas FIFO',
+        ]);
+        $registro->assertStatus(201);
+        $ajusteId = $registro->json('data.id');
+
+        $stockTrasAjuste = $this->stock($empresa, $producto, $bodega);
+        $this->assertEquals(15.0, (float) $stockTrasAjuste->stock_actual);
+
+        $anulacion = $this->postJson("/api/inventario/ajustes-criticos/{$ajusteId}/anular", [
+            'motivo_anulacion' => 'Cantidad/costo incorrectos, se corrige por otra vía',
+        ]);
+        $anulacion->assertOk();
+
+        // La cantidad total vuelve a la original (10): esto sí es correcto.
+        $stockTrasAnulacion = $this->stock($empresa, $producto, $bodega);
+        $this->assertEquals(10.0, (float) $stockTrasAnulacion->stock_actual);
+
+        // Pero la composición de capas quedó distorsionada: la reversa (salida FIFO) consumió la
+        // capa MÁS ANTIGUA (la entrada real de $50), no la capa que el propio ajuste creó ($200).
+        $capas = InventarioValorizacionCapa::query()
+            ->where('empresa_id', $empresa->id)
+            ->where('producto_id', $producto->id)
+            ->where('bodega_id', $bodega->id)
+            ->orderBy('fecha_entrada')
+            ->orderBy('id')
+            ->get();
+
+        $this->assertCount(2, $capas);
+
+        $capaEntradaOriginal = $capas[0];
+        $this->assertEquals(50.0, (float) $capaEntradaOriginal->costo_unitario);
+        $this->assertEquals(5.0, (float) $capaEntradaOriginal->cantidad_disponible);
+        $this->assertEquals(InventarioValorizacionCapa::ESTADO_ABIERTA, $capaEntradaOriginal->estado);
+
+        $capaDelAjuste = $capas[1];
+        $this->assertEquals(200.0, (float) $capaDelAjuste->costo_unitario);
+        // La capa que creó el ajuste anulado queda intacta y huérfana: nadie la consumió.
+        $this->assertEquals(5.0, (float) $capaDelAjuste->cantidad_disponible);
+        $this->assertEquals(InventarioValorizacionCapa::ESTADO_ABIERTA, $capaDelAjuste->estado);
+
+        // Consecuencia: el costo del stock remanente queda en (5*50 + 5*200)/10 = $125 unitario
+        // promedio, muy por encima de los $50 originales, pese a que el ajuste "erróneo" que
+        // introdujo el costo de $200 fue anulado.
+        $stockTrasAnulacion->refresh();
+        $this->assertEquals(1250.0, (float) $stockTrasAnulacion->valor_total);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Ajuste crítico + lotes
@@ -499,6 +643,85 @@ class InventarioAjusteCriticoApiTest extends TestCase
         $this->assertSame(0, AjusteCriticoInventario::count());
     }
 
+    public function test_registro_permite_ajuste_negativo_de_exactamente_el_stock_disponible(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa);
+        $bodega = $this->crearBodega($empresa);
+        $this->crearStock($empresa, $producto, $bodega, 2, 100);
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_VENCIMIENTO);
+
+        $response = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 2,
+            'motivo' => 'Producto vencido',
+            'observacion' => 'Cantidad exactamente igual al stock disponible',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+            ]);
+
+        $stock = $this->stock($empresa, $producto, $bodega);
+
+        $this->assertEquals(0.0, (float) $stock->stock_actual);
+    }
+
+    /**
+     * Un producto FIFO no acepta que su capa se valorice con el promedio ponderado del stock (ver
+     * fix de FifoValorizacionStrategy::calcularEntrada() y HALLAZGOS-COLATERALES.md): un ajuste
+     * crítico positivo hereda esa exigencia porque reutiliza registrarMovimiento() sin declarar
+     * costo_unitario si el usuario no lo informa. Se confirma aquí explícitamente (no estaba
+     * cubierto) que el ajuste crítico se rechaza y no queda ningún registro a medio crear.
+     */
+    public function test_ajuste_critico_positivo_sin_costo_unitario_falla_para_producto_fifo(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa, [
+            'metodo_valorizacion' => 'FIFO',
+        ]);
+
+        $bodega = $this->crearBodega($empresa);
+        $this->crearStock($empresa, $producto, $bodega, 5, 100);
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_AJUSTE_CRITICO_POSITIVO);
+
+        $response = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 4,
+            'motivo' => 'Corrección positiva sin costo informado',
+            'observacion' => 'Producto FIFO, usuario no informó costo_unitario',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
+
+        $stock = $this->stock($empresa, $producto, $bodega);
+        $this->assertEquals(5.0, (float) $stock->stock_actual);
+
+        $this->assertSame(0, AjusteCriticoInventario::where('producto_id', $producto->id)->count());
+    }
+
     public function test_listado_de_ajustes_criticos_respeta_filtros_y_empresa(): void
     {
         [$empresa, $usuario] = $this->usuarioContadorConPermisos([
@@ -535,9 +758,9 @@ class InventarioAjusteCriticoApiTest extends TestCase
 
         $response = $this->getJson(
             '/api/inventario/ajustes-criticos'
-            . '?producto_id=' . $producto->id
-            . '&bodega_id=' . $bodega->id
-            . '&tipo_ajuste_critico_id=' . $tipo->id
+            .'?producto_id='.$producto->id
+            .'&bodega_id='.$bodega->id
+            .'&tipo_ajuste_critico_id='.$tipo->id
         );
 
         $response->assertOk()
@@ -585,7 +808,7 @@ class InventarioAjusteCriticoApiTest extends TestCase
 
         $ajusteId = $registro->json('data.id');
 
-        $detalle = $this->getJson('/api/inventario/ajustes-criticos/' . $ajusteId);
+        $detalle = $this->getJson('/api/inventario/ajustes-criticos/'.$ajusteId);
 
         $detalle->assertOk()
             ->assertJson([
@@ -610,7 +833,7 @@ class InventarioAjusteCriticoApiTest extends TestCase
 
         $ajusteAjeno = $this->crearAjusteCriticoDeOtraEmpresa($tipo);
 
-        $response = $this->getJson('/api/inventario/ajustes-criticos/' . $ajusteAjeno->id);
+        $response = $this->getJson('/api/inventario/ajustes-criticos/'.$ajusteAjeno->id);
 
         $response->assertStatus(422)
             ->assertJson([
@@ -629,7 +852,7 @@ class InventarioAjusteCriticoApiTest extends TestCase
     {
         return Bodega::create(array_merge([
             'empresa_id' => $empresa->id,
-            'codigo' => 'BOD-' . strtoupper(substr(uniqid(), -6)),
+            'codigo' => 'BOD-'.strtoupper(substr(uniqid(), -6)),
             'nombre' => 'Bodega Ajuste Critico API Test',
             'direccion' => 'Santiago, Chile',
             'estado' => 'ACTIVA',
@@ -642,7 +865,7 @@ class InventarioAjusteCriticoApiTest extends TestCase
 
         return Producto::create(array_merge([
             'empresa_id' => $empresa->id,
-            'sku' => 'PROD-' . strtoupper(substr(uniqid(), -8)),
+            'sku' => 'PROD-'.strtoupper(substr(uniqid(), -8)),
             'nombre' => 'Producto Ajuste Critico API Test',
             'descripcion' => 'Producto para pruebas Feature/API de ajustes críticos',
             'tipo_producto' => 'BIEN',
@@ -651,7 +874,7 @@ class InventarioAjusteCriticoApiTest extends TestCase
             'costo_promedio' => 100,
             'precio_venta_neto' => 1000,
             'afecto_iva' => true,
-            'codigo_barra' => '780' . random_int(1000000000, 9999999999),
+            'codigo_barra' => '780'.random_int(1000000000, 9999999999),
             'stock_minimo' => 0,
             'bodega_defecto_id' => null,
             'permite_merma' => true,
@@ -681,7 +904,7 @@ class InventarioAjusteCriticoApiTest extends TestCase
         return LoteInventario::create(array_merge([
             'empresa_id' => $empresa->id,
             'producto_id' => $producto->id,
-            'codigo_lote' => 'LOT-' . strtoupper(substr(uniqid(), -8)),
+            'codigo_lote' => 'LOT-'.strtoupper(substr(uniqid(), -8)),
             'fecha_fabricacion' => now()->subMonth()->toDateString(),
             'fecha_vencimiento' => now()->addMonth()->toDateString(),
             'activo' => true,
@@ -761,11 +984,11 @@ class InventarioAjusteCriticoApiTest extends TestCase
         ]);
 
         $productoAjeno = $this->crearProducto($empresaAjena, [
-            'sku' => 'PROD-AJENO-' . strtoupper(substr(uniqid(), -5)),
+            'sku' => 'PROD-AJENO-'.strtoupper(substr(uniqid(), -5)),
         ]);
 
         $bodegaAjena = $this->crearBodega($empresaAjena, [
-            'codigo' => 'BOD-AJENA-' . strtoupper(substr(uniqid(), -4)),
+            'codigo' => 'BOD-AJENA-'.strtoupper(substr(uniqid(), -4)),
         ]);
 
         $this->crearStock($empresaAjena, $productoAjeno, $bodegaAjena, 10, 100);
@@ -810,6 +1033,6 @@ class InventarioAjusteCriticoApiTest extends TestCase
 
     private function rutUnico(): string
     {
-        return (string) random_int(70000000, 99999999) . '-' . random_int(0, 9);
+        return (string) random_int(70000000, 99999999).'-'.random_int(0, 9);
     }
 }

@@ -16,8 +16,8 @@ use Tests\TestCase;
 
 class InventarioMovimientoApiTest extends TestCase
 {
-    use RefreshDatabase;
     use PreparaInventarioTrait;
+    use RefreshDatabase;
 
     protected bool $seed = true;
 
@@ -135,6 +135,32 @@ class InventarioMovimientoApiTest extends TestCase
             'producto_id' => $producto->id,
             'tipo' => MovimientoInventario::TIPO_SALIDA,
         ]);
+    }
+
+    public function test_permite_salida_de_exactamente_el_stock_disponible(): void
+    {
+        [$empresa, $usuario] = $this->crearUsuarioConPermisos($this->permisosMovimientoCompleto());
+
+        $producto = $this->crearProducto($empresa);
+        $bodega = $this->crearBodega($empresa);
+
+        $this->crearStock($empresa, $producto, $bodega, 5, 500);
+
+        Sanctum::actingAs($usuario);
+
+        $response = $this->postJson('/api/inventario/movimientos', [
+            'tipo' => MovimientoInventario::TIPO_SALIDA,
+            'producto_id' => $producto->id,
+            'bodega_origen_id' => $bodega->id,
+            'cantidad' => 5,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true);
+
+        $stock = $this->stock($empresa, $producto, $bodega);
+
+        $this->assertEquals(0.0, (float) $stock->stock_actual);
     }
 
     public function test_contador_puede_registrar_traspaso_y_mueve_stock_entre_bodegas(): void
@@ -276,6 +302,68 @@ class InventarioMovimientoApiTest extends TestCase
             'producto_id' => $producto->id,
             'tipo' => MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
             'motivo' => MovimientoInventario::MOTIVO_MERMA,
+        ]);
+    }
+
+    public function test_permite_ajuste_negativo_de_exactamente_el_stock_disponible(): void
+    {
+        [$empresa, $usuario] = $this->crearUsuarioConPermisos($this->permisosMovimientoCompleto());
+
+        $producto = $this->crearProducto($empresa);
+        $bodega = $this->crearBodega($empresa);
+
+        $this->crearStock($empresa, $producto, $bodega, 3, 100);
+
+        Sanctum::actingAs($usuario);
+
+        $response = $this->postJson('/api/inventario/movimientos', [
+            'tipo' => MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
+            'producto_id' => $producto->id,
+            'bodega_origen_id' => $bodega->id,
+            'cantidad' => 3,
+            'motivo' => MovimientoInventario::MOTIVO_MERMA,
+            'observacion' => 'Ajuste que agota exactamente el stock disponible',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true);
+
+        $stock = $this->stock($empresa, $producto, $bodega);
+
+        $this->assertEquals(0.0, (float) $stock->stock_actual);
+    }
+
+    public function test_no_permite_ajuste_negativo_con_una_unidad_mas_del_stock_disponible(): void
+    {
+        [$empresa, $usuario] = $this->crearUsuarioConPermisos($this->permisosMovimientoCompleto());
+
+        $producto = $this->crearProducto($empresa);
+        $bodega = $this->crearBodega($empresa);
+
+        $this->crearStock($empresa, $producto, $bodega, 3, 100);
+
+        Sanctum::actingAs($usuario);
+
+        $response = $this->postJson('/api/inventario/movimientos', [
+            'tipo' => MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
+            'producto_id' => $producto->id,
+            'bodega_origen_id' => $bodega->id,
+            'cantidad' => 4,
+            'motivo' => MovimientoInventario::MOTIVO_MERMA,
+            'observacion' => 'Ajuste que excede en una unidad el stock disponible',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false);
+
+        $stock = $this->stock($empresa, $producto, $bodega);
+
+        $this->assertEquals(3.0, (float) $stock->stock_actual);
+
+        $this->assertDatabaseMissing('inventario_movimientos', [
+            'empresa_id' => $empresa->id,
+            'producto_id' => $producto->id,
+            'tipo' => MovimientoInventario::TIPO_AJUSTE_NEGATIVO,
         ]);
     }
 
@@ -613,7 +701,7 @@ class InventarioMovimientoApiTest extends TestCase
     {
         return Empresa::create([
             'rut' => $this->rutUnico(),
-            'razon_social' => 'Empresa Inventario ' . uniqid(),
+            'razon_social' => 'Empresa Inventario '.uniqid(),
         ]);
     }
 
@@ -621,7 +709,7 @@ class InventarioMovimientoApiTest extends TestCase
     {
         return Bodega::create(array_merge([
             'empresa_id' => $empresa->id,
-            'codigo' => 'BOD-' . strtoupper(substr(uniqid(), -6)),
+            'codigo' => 'BOD-'.strtoupper(substr(uniqid(), -6)),
             'nombre' => 'Bodega Test',
             'direccion' => 'Santiago, Chile',
             'estado' => 'ACTIVA',
@@ -634,7 +722,7 @@ class InventarioMovimientoApiTest extends TestCase
 
         return Producto::create(array_merge([
             'empresa_id' => $empresa->id,
-            'sku' => 'PROD-' . strtoupper(substr(uniqid(), -8)),
+            'sku' => 'PROD-'.strtoupper(substr(uniqid(), -8)),
             'nombre' => 'Producto Movimiento Test',
             'descripcion' => 'Producto para pruebas de movimientos',
             'tipo_producto' => 'BIEN',
@@ -643,7 +731,7 @@ class InventarioMovimientoApiTest extends TestCase
             'costo_promedio' => 100,
             'precio_venta_neto' => 1000,
             'afecto_iva' => true,
-            'codigo_barra' => '780' . random_int(1000000000, 9999999999),
+            'codigo_barra' => '780'.random_int(1000000000, 9999999999),
             'stock_minimo' => 0,
             'bodega_defecto_id' => null,
             'permite_merma' => true,
@@ -691,6 +779,6 @@ class InventarioMovimientoApiTest extends TestCase
 
     private function rutUnico(): string
     {
-        return (string) random_int(70000000, 99999999) . '-' . random_int(0, 9);
+        return (string) random_int(70000000, 99999999).'-'.random_int(0, 9);
     }
 }
