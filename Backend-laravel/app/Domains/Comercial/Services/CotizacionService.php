@@ -3,12 +3,12 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-
+use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\CotizacionDetalle;
-use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
@@ -32,11 +32,11 @@ class CotizacionService
             $cliente = Cliente::where('empresa_id', $datos['empresa_id'])
                 ->find($datos['cliente_id']);
 
-            if (!$cliente || $cliente->estado === 'INACTIVO') {
-                throw ComercialException::regla("No se puede emitir una cotización a un cliente inactivo.");
+            if (! $cliente || $cliente->estado === 'INACTIVO') {
+                throw ComercialException::regla('No se puede emitir una cotización a un cliente inactivo.');
             }
 
-            if (!empty($datos['numero_cotizacion'])) {
+            if (! empty($datos['numero_cotizacion'])) {
                 $existe = Cotizacion::where('empresa_id', $datos['empresa_id'])
                     ->where('numero_cotizacion', $datos['numero_cotizacion'])
                     ->exists();
@@ -54,19 +54,19 @@ class CotizacionService
             $montoDescuento = round($subtotalCalculado * ($porcentajeDescuento / 100));
             $montoNeto = $subtotalCalculado - $montoDescuento;
             $esAfecta = isset($datos['es_afecta']) ? (bool) $datos['es_afecta'] : true;
-            $porcentajeIva = $esAfecta ? ($datos['porcentaje_iva'] ?? 19) : 0;
+            $porcentajeIva = $esAfecta ? ($datos['porcentaje_iva'] ?? (config('fiscal.tasa_iva') * 100)) : 0;
             $montoIva = $esAfecta ? round($montoNeto * ($porcentajeIva / 100)) : 0;
             $montoTotal = $montoNeto + $montoIva;
 
             $fechaEmision = $datos['fecha_emision'] ?? date('Y-m-d');
             $validezDias = $datos['validez'] ?? 30;
-            $fechaValidez = $datos['fecha_validez'] ?? date('Y-m-d', strtotime($fechaEmision . ' + ' . $validezDias . ' days'));
+            $fechaValidez = $datos['fecha_validez'] ?? date('Y-m-d', strtotime($fechaEmision.' + '.$validezDias.' days'));
 
             $cotizacion = Cotizacion::create([
                 'empresa_id' => $datos['empresa_id'],
                 'cliente_id' => $datos['cliente_id'],
                 'nombre_cliente' => $cliente->razon_social,
-                'numero_cotizacion' => $datos['numero_cotizacion'] ?? 'COT-' . time(),
+                'numero_cotizacion' => $datos['numero_cotizacion'] ?? 'COT-'.time(),
                 'fecha_emision' => $fechaEmision,
                 'fecha_validez' => $fechaValidez,
                 'validez' => $validezDias,
@@ -88,9 +88,9 @@ class CotizacionService
                 'garantia' => $datos['garantia'] ?? null,
             ]);
 
-            if (!isset($datos['numero_cotizacion'])) {
+            if (! isset($datos['numero_cotizacion'])) {
                 $cotizacion->update([
-                    'numero_cotizacion' => 'COT-' . str_pad((string) $cotizacion->id, 6, '0', STR_PAD_LEFT)
+                    'numero_cotizacion' => 'COT-'.str_pad((string) $cotizacion->id, 6, '0', STR_PAD_LEFT),
                 ]);
             }
 
@@ -117,8 +117,8 @@ class CotizacionService
             ->with(['cliente', 'estado', 'detalles'])
             ->find($id);
 
-        if (!$cotizacion) {
-            throw ComercialException::noEncontrado("La cotización solicitada no existe o no pertenece a su empresa.");
+        if (! $cotizacion) {
+            throw ComercialException::noEncontrado('La cotización solicitada no existe o no pertenece a su empresa.');
         }
 
         return $cotizacion;
@@ -128,13 +128,13 @@ class CotizacionService
     {
         $cotizacion = Cotizacion::where('empresa_id', $empresaId)->find($id);
 
-        if (!$cotizacion) {
-            throw ComercialException::noEncontrado("La cotización solicitada no existe o no pertenece a su empresa.");
+        if (! $cotizacion) {
+            throw ComercialException::noEncontrado('La cotización solicitada no existe o no pertenece a su empresa.');
         }
 
         $estado = EstadoCotizacion::where('nombre', $nombreEstado)->first();
 
-        if (!$estado) {
+        if (! $estado) {
             throw ComercialException::regla("El estado '$nombreEstado' no es válido en el sistema.");
         }
 
@@ -150,7 +150,7 @@ class CotizacionService
             $cotizacion = Cotizacion::where('empresa_id', $empresaId)->findOrFail($cotiId);
 
             if (in_array($cotizacion->estado_id, [3, 5])) {
-                throw ComercialException::regla("No se puede editar una cotización que ya ha sido aprobada o facturada.");
+                throw ComercialException::regla('No se puede editar una cotización que ya ha sido aprobada o facturada.');
             }
 
             $camposOpcionales = ['fecha_validez', 'porcentaje_descuento', 'notas_condiciones', 'metodo_pago', 'condiciones_pago', 'plazo_entrega', 'comentarios', 'garantia'];
@@ -172,13 +172,13 @@ class CotizacionService
                         'producto_nombre' => $item['producto_nombre'],
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $item['precio_unitario'],
-                        'subtotal' => $lineSubtotal
+                        'subtotal' => $lineSubtotal,
                     ]);
                 }
 
                 $descuento = $subtotal * (($cotizacion->porcentaje_descuento ?? 0) / 100);
                 $neto = $subtotal - $descuento;
-                $iva = $cotizacion->es_afecta ? round($neto * (($cotizacion->porcentaje_iva ?? 19) / 100)) : 0;
+                $iva = $cotizacion->es_afecta ? round($neto * (($cotizacion->porcentaje_iva ?? (config('fiscal.tasa_iva') * 100)) / 100)) : 0;
 
                 $cotizacion->subtotal = $subtotal;
                 $cotizacion->monto_descuento = $descuento;
@@ -204,34 +204,34 @@ class CotizacionService
                 ->lockForUpdate()
                 ->find($cotizacionId);
 
-            if (!$cotizacion) {
-                throw ComercialException::noEncontrado("Cotizacion no encontrada.");
+            if (! $cotizacion) {
+                throw ComercialException::noEncontrado('Cotizacion no encontrada.');
             }
 
             $estadoAprobada = EstadoCotizacion::where('nombre', 'Aceptada')->first();
-            if (!$estadoAprobada || $cotizacion->estado_id !== $estadoAprobada->id) {
+            if (! $estadoAprobada || $cotizacion->estado_id !== $estadoAprobada->id) {
                 throw ComercialException::regla(
-                    "Solo cotizaciones ACEPTADAS pueden ser facturadas. " .
-                    "Estado actual: " . ($cotizacion->estado->nombre ?? '?')
+                    'Solo cotizaciones ACEPTADAS pueden ser facturadas. '.
+                    'Estado actual: '.($cotizacion->estado->nombre ?? '?')
                 );
             }
 
             $cliente = $cotizacion->cliente;
-            if (!$cliente) {
-                throw ComercialException::regla("Cotizacion no tiene cliente vinculado.");
+            if (! $cliente) {
+                throw ComercialException::regla('Cotizacion no tiene cliente vinculado.');
             }
 
-            $proveedor = \App\Domains\Comercial\Models\Proveedor::where('empresa_id', $empresaId)
+            $proveedor = Proveedor::where('empresa_id', $empresaId)
                 ->where('rut', $cliente->rut)
                 ->lockForUpdate()
                 ->first();
 
-            if (!$proveedor) {
-                $proveedor = \App\Domains\Comercial\Models\Proveedor::create([
+            if (! $proveedor) {
+                $proveedor = Proveedor::create([
                     'empresa_id' => $empresaId,
                     'rut' => $cliente->rut,
                     'razon_social' => $cliente->razon_social,
-                    'codigo_interno' => 'CLI-' . $cliente->id,
+                    'codigo_interno' => 'CLI-'.$cliente->id,
                     'pais_iso' => 'CL',
                     'moneda_defecto' => 'CLP',
                 ]);
@@ -244,7 +244,7 @@ class CotizacionService
                 'proveedor_id' => $proveedor->id,
                 // cliente_id es la relación real usada por el mapeo a DTE SII (FacturaAComercialDteMapper) y ArAgingService; proveedor_id es solo una entidad espejo, no la reemplaza.
                 'cliente_id' => $cliente->id,
-                'numero_factura' => 'FV-' . $cotizacion->numero_cotizacion,
+                'numero_factura' => 'FV-'.$cotizacion->numero_cotizacion,
                 'tipo' => 'VENTA',
                 'tipo_documento' => 'FACTURA',
                 'fecha_emision' => $fecha,
@@ -264,9 +264,9 @@ class CotizacionService
             $cuentaVentas = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
             $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
 
-            if (!$cuentaCxC || !$cuentaVentas || !$cuentaIvaDebito) {
+            if (! $cuentaCxC || ! $cuentaVentas || ! $cuentaIvaDebito) {
                 throw ComercialException::regla(
-                    "Configuración Contable Incompleta: para facturar una venta se requieren las cuentas de Clientes (152005), Ventas (501105) e IVA Débito (353360) en el plan de cuentas."
+                    'Configuración Contable Incompleta: para facturar una venta se requieren las cuentas de Clientes (152005), Ventas (501105) e IVA Débito (353360) en el plan de cuentas.'
                 );
             }
 
