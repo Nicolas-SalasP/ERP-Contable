@@ -1,13 +1,12 @@
 ﻿import React from 'react';
 import { X } from 'lucide-react';
-import { formatearMoneda } from '../../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../../Utilidades/formato';
 
 const formatCurrency = formatearMoneda;
 
 const formatDate = (dateString) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-CL');
+    return formatFecha(dateString);
 };
 
 const ModalAsiento = ({ isOpen, onClose, data, loading }) => {

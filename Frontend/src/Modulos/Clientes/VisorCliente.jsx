@@ -4,7 +4,7 @@ import { api } from '../../Configuracion/api';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import ModalDocumentosFactura from '../../Componentes/ModalDocumentosFactura';
 import Swal from 'sweetalert2';
-import { formatearMoneda } from '../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../Utilidades/formato';
 
 const formatCurrency = formatearMoneda;
 
@@ -159,6 +159,7 @@ const VisorCliente = () => {
                 ...f,
                 _tipo: esNC ? 'NOTA_CREDITO' : esND ? 'NOTA_DEBITO' : 'FACTURA',
                 _fechaOrden: new Date(f.fecha_emision),
+                _fechaRaw: f.fecha_emision,
                 _documento: f.numero_factura ? `${prefijo} #${f.numero_factura}` : `${prefijo} S/N`,
                 // NC reduce lo que el cliente debe (abono); Factura y ND lo aumentan (cargo).
                 _cargo: esNC ? 0 : parseFloat(f.monto_bruto || 0),
@@ -171,6 +172,7 @@ const VisorCliente = () => {
             ...a,
             _tipo: 'ANTICIPO',
             _fechaOrden: new Date(a.fecha || a.created_at),
+            _fechaRaw: a.fecha || a.created_at,
             _documento: a.referencia ? `Anticipo: ${a.referencia}` : 'Anticipo S/R',
             _cargo: 0,
             _abono: parseFloat(a.saldo_disponible ?? a.monto ?? 0),
@@ -340,7 +342,7 @@ const VisorCliente = () => {
                                 {historialFiltrado.map((item, i) => (
                                     <tr key={`${item._tipo}-${item.id}-${i}`} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                         <td className="px-6 py-3 text-slate-600 dark:text-slate-400 font-mono text-xs">
-                                            {item._fechaOrden.toLocaleDateString('es-CL')}
+                                            {formatFecha(item._fechaRaw)}
                                         </td>
                                         <td className="px-6 py-3">
                                             <div className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import { BotonEliminar } from '../../../Componentes/ConfirmacionInline';
 
-import { formatearMoneda } from '../../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../../Utilidades/formato';
 
 const TASAS = { 2024: 13.75, 2025: 14.50, 2026: 15.25, 2027: 16.25, 2028: 17.00 };
 
@@ -321,7 +321,7 @@ const HonorariosRecibidos = () => {
                                 return (
                                     <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                                         <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
-                                            {h.fecha ? new Date(h.fecha).toLocaleDateString('es-CL') : '—'}
+                                            {h.fecha ? formatFecha(h.fecha) : '—'}
                                         </td>
                                         <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">{h.rut_prestador ?? '—'}</td>
                                         <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{h.nombre_prestador ?? '—'}</td>
