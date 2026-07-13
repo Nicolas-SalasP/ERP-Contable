@@ -227,14 +227,14 @@ class FacturaAComercialDteMapper
             'monto_exento' => $esExento
                 ? (float) $factura->monto_bruto
                 : (float) ($factura->monto_exento ?? 0),
-            // NOTA sobre tasa_iva en DTE exentos (tipos 34/41): el formato DTE del SII
-            // (docs/sii-normativa/formato_dte_202602.pdf, campo 111 <TasaIVA>) no permite
-            // determinar de forma concluyente via extraccion de texto si el valor esperado
-            // para documentos exentos es 0, ausente o 19; la tabla de obligatoriedad del PDF
-            // se perdio en la extraccion (columnas desalineadas). Esto es una INFERENCIA por
-            // consistencia interna (no una confirmacion del PDF): se pone 0, igual que
-            // monto_neto/iva en este mismo mapper para $esExento, en vez de dejar 19.00 fijo
-            // sin sentido para un documento sin IVA.
+            // tasa_iva en DTE exentos (tipos 34/41): confirmado contra el formato DTE del SII
+            // (docs/sii-normativa/formato_dte_202602.pdf, pag.10 leyenda de obligatoriedad +
+            // pag.30 campo 111 <TasaIVA>): el codigo de obligatoriedad para Factura Exenta es
+            // "2 = condicional" (obligatorio solo si el documento tiene una porcion afecta).
+            // Este ERP no modela documentos mixtos exento+afecto: $esExento es binario por
+            // factura completa y monto_neto ya se fuerza a 0 en ese caso (ver arriba). La
+            // condicion que activaria la obligatoriedad de TasaIVA no puede ocurrir en este
+            // modelo de datos, por lo que 0 es correcto.
             'tasa_iva' => $esExento ? 0 : $this->tasaIvaPorcentaje(),
             'iva' => $esExento ? 0 : (float) $factura->monto_iva,
             'monto_total' => (float) $factura->monto_bruto,
