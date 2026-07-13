@@ -392,6 +392,6 @@ trait PreparaEntornoBase
         $numero = rand(10000000, 99999999);
         $dv = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'][rand(0, 10)];
 
-        return number_format($numero, 0, '', '.').'-'.$dv;
+        return $numero.'-'.$dv;
     }
 }

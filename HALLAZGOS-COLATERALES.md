@@ -2,6 +2,10 @@
 
 Hallazgos detectados durante otras tareas que quedan fuera del alcance del sprint en curso. No se modifican sin autorización explícita.
 
+## 2026-07-13 — Verificación MySQL de Punto 2, fallo pre-existente no relacionado
+
+`Tests\Feature\Inventario\InventarioEmpresaActivaMultitenantTest::test_reporte_reservas_usa_empresa_activa_no_empresa_hogar` falla solo bajo MySQL real (pasa en SQLite): `GET /api/inventario/reportes/reservas` devuelve 422 en vez de 200. No es el mismo síntoma que los fallos de `emisor_rut`/`codigo_unico`/enum `estado` (esos eran QueryException; este es una validación de negocio que rechaza el request). No se investigó la causa raíz — queda para un sprint de compatibilidad SQLite/MySQL, junto con `CompensarPartidasClienteTest` (ver sección de Sprint S1 más abajo).
+
 ## 2026-07-13 — Sprint S1 (fix tasa IVA hardcodeada)
 
 Durante el fix de `TASA_IVA = 19.00` hardcodeada en `FacturaAComercialDteMapper.php` y `CotizacionService.php`, se hizo un grep de todo `app/` por `tasa_iva|19.00` para verificar cobertura. Se encontraron más instancias del mismo patrón (literal en PORCENTAJE, no derivado de `config('fiscal.tasa_iva')`) fuera del alcance explícito de este sprint (que solo cubría `FacturaAComercialDteMapper.php` y `CotizacionService.php`):

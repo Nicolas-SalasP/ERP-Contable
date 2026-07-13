@@ -2,23 +2,21 @@
 
 namespace Tests\Feature\Activos;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Tests\Concerns\PreparaEntornoBase;
+use App\Domains\Activos\Models\ProyectoActivo;
+use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
-use App\Domains\Core\Models\Rol;
-use App\Domains\Core\Models\EstadoSuscripcion;
-use App\Domains\Core\Models\Pais;
-use App\Domains\Activos\Models\ProyectoActivo;
-use App\Domains\Comercial\Models\Proveedor;
-use App\Domains\Comercial\Models\Factura;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PreparaEntornoBase;
+use Tests\TestCase;
 
 class ProyectoActivoConsultasTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     protected $empresa;
+
     protected $usuario;
 
     protected function setUp(): void
@@ -36,7 +34,7 @@ class ProyectoActivoConsultasTest extends TestCase
             'nombre' => 'Análisis Vacio',
             'estado' => 'EN_CONSTRUCCION',
             'valor_total_original' => 0,
-            'vida_util_meses' => 60
+            'vida_util_meses' => 60,
         ]);
 
         $response = $this->actingAs($this->usuario)->getJson("/api/activos/proyectos/{$proyecto->id_proyecto}/analisis");
@@ -75,7 +73,7 @@ class ProyectoActivoConsultasTest extends TestCase
     public function test_facturas_disponibles_ignora_facturas_de_venta()
     {
         $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'P1', 'razon_social' => 'Prov', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
-        Factura::create(['empresa_id' => $this->empresa->id, 'codigo_unico' => 88, 'proveedor_id' => $prov->id, 'numero_factura' => 'VENTA', 'monto_neto' => 100, 'monto_iva' => 0, 'monto_bruto' => 100, 'tipo' => 'FACTURA', 'estado' => 'EMITIDA', 'fecha_emision' => now()]);
+        Factura::create(['empresa_id' => $this->empresa->id, 'codigo_unico' => 88, 'proveedor_id' => $prov->id, 'numero_factura' => 'VENTA', 'monto_neto' => 100, 'monto_iva' => 0, 'monto_bruto' => 100, 'tipo' => 'VENTA', 'estado' => 'REGISTRADA', 'fecha_emision' => now()]);
 
         $response = $this->actingAs($this->usuario)->getJson('/api/activos/proyectos/facturas-disponibles');
 
