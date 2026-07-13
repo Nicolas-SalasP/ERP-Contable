@@ -37,6 +37,13 @@ class ProveedorService
 
     public function registrarProveedor(array $datos): Proveedor
     {
+        // Defensa en profundidad: aunque el controller ya valide, el service no debe
+        // reventar con "Undefined array key" si le llega un array incompleto.
+        $razonSocial = $datos['razonSocial'] ?? $datos['razon_social'] ?? null;
+        if (! $razonSocial) {
+            throw ComercialException::regla('La razón social del proveedor es obligatoria.');
+        }
+
         $paisIso = $datos['paisIso'] ?? 'CL';
 
         // Solo se valida formato/DV para proveedores nacionales: uno extranjero
@@ -59,7 +66,7 @@ class ProveedorService
             'empresa_id' => $datos['empresa_id'],
             'codigo_interno' => 'TEMP',
             'rut' => $datos['rut'] ?? null,
-            'razon_social' => $datos['razonSocial'] ?? $datos['razon_social'],
+            'razon_social' => $razonSocial,
             'pais_iso' => $datos['paisIso'] ?? 'CL',
             'moneda_defecto' => $datos['moneda'] ?? 'CLP',
             'nombre_contacto' => $datos['nombreContacto'] ?? null,

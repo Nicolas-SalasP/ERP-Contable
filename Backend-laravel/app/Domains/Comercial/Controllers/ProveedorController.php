@@ -54,7 +54,20 @@ class ProveedorController
     public function store(Request $request)
     {
         try {
-            $datos = $request->all();
+            $datos = $request->validate([
+                'rut' => 'nullable|string|max:20',
+                'razonSocial' => 'required_without:razon_social|string|max:150',
+                'razon_social' => 'required_without:razonSocial|string|max:150',
+                'paisIso' => 'nullable|string|size:2',
+                'moneda' => 'nullable|string|size:3',
+                'nombreContacto' => 'nullable|string|max:100',
+                'emailContacto' => 'nullable|email|max:100',
+                'direccion' => 'nullable|string|max:255',
+                'telefono' => 'nullable|string|max:50',
+            ]);
+
+            // empresa_id SIEMPRE se asigna despues de validar y solo desde el usuario
+            // autenticado: nunca puede provenir del body (fuga de aislamiento multitenant).
             $datos['empresa_id'] = $request->user()->empresa_activa_id;
 
             $proveedor = $this->service->registrarProveedor($datos);
@@ -64,6 +77,12 @@ class ProveedorController
                 'data' => $proveedor,
                 'codigo_generado' => $proveedor->codigo_interno,
             ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => MensajeErrorGenerico::desde($e),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
