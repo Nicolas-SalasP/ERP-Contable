@@ -3,6 +3,7 @@
 namespace Tests\Feature\Inventario;
 
 use App\Domains\Core\Models\Empresa;
+use App\Domains\Inventario\Exceptions\InventarioException;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\InventarioValorizacionCapa;
 use App\Domains\Inventario\Models\Producto;
@@ -270,13 +271,12 @@ class FifoValorizacionEdgeCasesTest extends TestCase
     }
 
     /**
-     * Hallazgo documentado (ver HALLAZGOS-COLATERALES.md): una entrada FIFO SIN costo_unitario
-     * explícito no usa el costo de la capa más antigua ni el de la última compra real: usa
-     * costo_promedio del stock, que es un promedio ponderado (mecanismo típico de PMP) mezclado
-     * entre todas las capas vigentes. Esto puede insertar capas FIFO con un costo que no
-     * corresponde a ninguna compra real.
+     * Una entrada FIFO sin costo_unitario explícito no debe usar costo_promedio del stock (promedio
+     * ponderado de todas las capas vigentes, mecanismo de PMP) como costo de la capa nueva: eso
+     * insertaría una capa FIFO con un costo que no corresponde a ninguna compra real. Cada entrada
+     * FIFO que crea valorización nueva (compra, ajuste positivo manual) exige costo_unitario.
      */
-    public function test_entrada_fifo_sin_costo_explicito_usa_el_promedio_ponderado_del_stock(): void
+    public function test_entrada_fifo_sin_costo_explicito_lanza_excepcion_y_no_crea_capa(): void
     {
         $empresa = $this->crearEmpresa();
         $producto = $this->crearProductoFifo($empresa);
@@ -285,15 +285,18 @@ class FifoValorizacionEdgeCasesTest extends TestCase
 
         $this->fifo->calcularEntrada($stock, $producto, 10, 100);
         $this->fifo->calcularEntrada($stock->refresh(), $producto, 5, 200);
-        // costo_promedio del stock tras las dos entradas: (1000 + 1000) / 15 = 133.3333.
 
-        $resultado = $this->fifo->calcularEntrada($stock->refresh(), $producto, 5, null);
+        $this->expectException(InventarioException::class);
+        $this->expectExceptionMessage('usa valorización FIFO y requiere costo_unitario explícito');
 
-        // Ni 100 (capa más antigua) ni 200 (última compra real): el promedio ponderado 133.3333.
-        $this->assertEquals(133.3333, $resultado['costo_unitario']);
-
-        $capaSinCostoExplicito = $this->capasDe($empresa, $producto, $bodega)->last();
-        $this->assertEquals(133.3333, (float) $capaSinCostoExplicito->costo_unitario);
+        try {
+            $this->fifo->calcularEntrada($stock->refresh(), $producto, 5, null);
+        } finally {
+            // No debe haberse creado una tercera capa ni haberse alterado el stock.
+            $this->assertCount(2, $this->capasDe($empresa, $producto, $bodega));
+            $stock->refresh();
+            $this->assertEquals(15.0, (float) $stock->stock_actual);
+        }
     }
 
     /**

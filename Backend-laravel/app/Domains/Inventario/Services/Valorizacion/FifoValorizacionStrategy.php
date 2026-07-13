@@ -2,10 +2,10 @@
 
 namespace App\Domains\Inventario\Services\Valorizacion;
 
+use App\Domains\Inventario\Exceptions\InventarioException;
 use App\Domains\Inventario\Models\InventarioValorizacionCapa;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockProducto;
-use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class FifoValorizacionStrategy implements ValorizacionStrategyInterface
@@ -29,6 +29,12 @@ class FifoValorizacionStrategy implements ValorizacionStrategyInterface
 
         if ($costoUnitario !== null && $costoUnitario < 0) {
             throw new RuntimeException('El costo unitario no puede ser negativo.');
+        }
+
+        if ($costoUnitario === null) {
+            throw InventarioException::regla(
+                "El producto {$producto->id} usa valorización FIFO y requiere costo_unitario explícito en cada entrada."
+            );
         }
 
         $stockAntes = $this->numero($stock->stock_actual);
@@ -277,6 +283,7 @@ class FifoValorizacionStrategy implements ValorizacionStrategyInterface
         }
 
         $costoProducto = $this->numero($producto->costo_promedio);
+
         return $costoProducto > 0 ? $this->redondear($costoProducto) : 0.0000;
     }
 
