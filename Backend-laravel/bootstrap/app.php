@@ -26,7 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        // Sin proxy/CDN delante en prod (hosting DirectAdmin directo): no confiar en
+        // ningun X-Forwarded-For, o cualquiera podria spoofear su IP y evadir el
+        // rate limit de login. REMOTE_ADDR ya es la IP real del cliente.
         // API-only: no existe ruta 'login'. Sin esto, Laravel intenta route('login') al
         // armar el redirect de invitado (requests sin header Accept: application/json)
         // y explota con RouteNotFoundException -> 500 en vez de un 401 limpio.
