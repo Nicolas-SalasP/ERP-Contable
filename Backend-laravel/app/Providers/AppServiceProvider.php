@@ -61,6 +61,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Empresa::observe(EmpresaObserver::class);
+        // Cambios sensibles (ej. regimen_tributario, que decide si aplica correccion
+        // monetaria) no quedaban en ningun log; el propio provisioning via HMAC no tiene
+        // usuario autenticado, por eso el observer generico cae a 'Sistema' en ese caso.
+        Empresa::observe(AuditoriaPiiObserver::class);
 
         // Contabilidad — bloqueo de periodo cerrado (inmutabilidad, F-1/F-2).
         AsientoContable::observe(AsientoContableObserver::class);

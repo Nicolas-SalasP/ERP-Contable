@@ -3,6 +3,7 @@
 namespace App\Domains\Rrhh\Services\Calculo;
 
 use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Core\Models\Auditoria;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\ConceptoRemuneracion;
@@ -16,6 +17,7 @@ use App\Domains\Rrhh\Models\ParametroPrevisional;
 use App\Domains\Rrhh\Models\TablaImpuestoUnico;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /** Motor de liquidación de remuneraciones según legislación laboral chilena (Código del Trabajo + DL 3500/3501 + Ley 19.728 + LIR Art. 42-43); los valores nunca son hardcodeados, se leen de ParametroPrevisional e IndicadorMensual. */
 class LiquidacionService
@@ -72,12 +74,39 @@ class LiquidacionService
                 );
             }
 
-            Liquidacion::where('empresa_id', $empresaId)
+            // forceDelete() masivo via query builder no dispara eventos Eloquent (ni siquiera
+            // 'deleted'), por lo que el observer de auditoria nunca se entera. Se audita a mano
+            // antes de borrar para no perder el rastro de la eliminacion fisica.
+            $borradoresAEliminar = Liquidacion::where('empresa_id', $empresaId)
                 ->where('empleado_id', $empleadoId)
                 ->where('anio', $anio)
                 ->where('mes', $mes)
                 ->where('estado', Liquidacion::ESTADO_BORRADOR)
-                ->forceDelete();
+                ->get(['id']);
+
+            if ($borradoresAEliminar->isNotEmpty()) {
+                foreach ($borradoresAEliminar as $borrador) {
+                    try {
+                        Auditoria::create([
+                            'auditable_type' => Liquidacion::class,
+                            'auditable_id' => $borrador->id,
+                            'nombre_usuario' => auth()->user()->nombre ?? 'Sistema',
+                            'operacion' => 'ELIMINAR',
+                            'estado_anterior' => Liquidacion::ESTADO_BORRADOR,
+                            'estado_nuevo' => null,
+                            'detalle' => "Liquidación BORRADOR eliminada físicamente antes de recalcular el período {$mes}/{$anio}.",
+                            'referencia_cruzada' => (string) $empresaId,
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::warning('LiquidacionService: fallo al auditar eliminación de borrador', [
+                            'liquidacion_id' => $borrador->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+
+                Liquidacion::whereIn('id', $borradoresAEliminar->pluck('id'))->forceDelete();
+            }
 
             $liq = Liquidacion::create([
                 'empresa_id' => $empresaId,
