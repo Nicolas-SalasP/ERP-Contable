@@ -11,6 +11,9 @@ use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\MovimientoInventario;
+use App\Domains\Inventario\Services\InventarioMovimientoService;
 use Illuminate\Support\Facades\DB;
 
 class CotizacionService
@@ -99,6 +102,7 @@ class CotizacionService
 
                 CotizacionDetalle::create([
                     'cotizacion_id' => $cotizacion->id,
+                    'producto_id' => $detalle['producto_id'] ?? null,
                     'producto_nombre' => $detalle['producto_nombre'],
                     'descripcion' => $detalle['descripcion'] ?? null,
                     'cantidad' => $detalle['cantidad'],
@@ -169,6 +173,7 @@ class CotizacionService
                     $subtotal += $lineSubtotal;
 
                     $cotizacion->detalles()->create([
+                        'producto_id' => $item['producto_id'] ?? null,
                         'producto_nombre' => $item['producto_nombre'],
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $item['precio_unitario'],
@@ -200,7 +205,7 @@ class CotizacionService
             $fecha = $fechaEmision ?? date('Y-m-d');
             // Lock pesimista: evita que doble clic o reintento de red dupliquen la factura de venta generada.
             $cotizacion = Cotizacion::where('empresa_id', $empresaId)
-                ->with('estado', 'cliente')
+                ->with('estado', 'cliente', 'detalles')
                 ->lockForUpdate()
                 ->find($cotizacionId);
 
@@ -276,6 +281,67 @@ class CotizacionService
             ];
             if ($iva > 0) {
                 $detallesVenta[] = ['cuenta_contable' => '353360', 'debe' => 0, 'haber' => $iva, 'glosa_detalle' => "IVA Débito Venta {$factura->numero_factura}"];
+            }
+
+            // Salida de inventario por cada línea con producto de Inventario vinculado (producto_id).
+            // Las líneas sin producto_id (servicios/ítems sin stock) no disparan nada aquí, a propósito.
+            // Si InventarioMovimientoService::registrarMovimiento lanza excepción (p.ej. stock
+            // insuficiente), se propaga y revierte TODA la venta (misma transacción DB::transaction
+            // de este método): no queda factura, asiento ni movimiento huérfano.
+            $costoVentaTotal = 0.0;
+            foreach ($cotizacion->detalles as $detalleCotizacion) {
+                if (empty($detalleCotizacion->producto_id)) {
+                    continue;
+                }
+
+                // No existe hoy un campo de "bodega por defecto de la empresa"; se usa la primera
+                // bodega activa de la empresa (ordenada por id) como bodega de salida de venta.
+                // Documentado en HALLAZGOS-COLATERALES.md: decisión de menor blast radius
+                // mientras no exista una configuración explícita de bodega de ventas.
+                $bodegaVenta = Bodega::where('empresa_id', $empresaId)
+                    ->where('estado', 'ACTIVA')
+                    ->orderBy('id')
+                    ->first();
+
+                if (! $bodegaVenta) {
+                    throw ComercialException::regla(
+                        'No hay ninguna bodega activa configurada en Inventario para descontar el stock de esta venta.'
+                    );
+                }
+
+                $movimientoSalida = app(InventarioMovimientoService::class)->registrarMovimiento([
+                    'tipo' => MovimientoInventario::TIPO_SALIDA,
+                    'producto_id' => $detalleCotizacion->producto_id,
+                    'bodega_origen_id' => $bodegaVenta->id,
+                    'cantidad' => $detalleCotizacion->cantidad,
+                    'referencia' => "Venta {$factura->numero_factura}",
+                    'motivo' => 'venta',
+                    'origen_modulo' => 'ventas',
+                    'origen_id' => $factura->id,
+                ], $empresaId, auth()->id());
+
+                $detalleCotizacion->update(['movimiento_inventario_id' => $movimientoSalida->id]);
+
+                $costoVentaTotal += (float) $movimientoSalida->costo_total;
+            }
+
+            // Línea adicional de Costo de Venta / Costo de Mercadería Vendida (COGS): débito Costo de
+            // Venta (601205, ya existente en el plan de cuentas maestro para este propósito), crédito
+            // Inventario (151005, cuenta de activo de Inventario ya existente) por el costo real que
+            // InventarioMovimientoService calculó (FIFO/PMP), no un estimado. Solo se agrega si hubo
+            // al menos una salida de inventario asociada a esta venta.
+            if ($costoVentaTotal > 0) {
+                $cuentaCostoVenta = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '601205')->first();
+                $cuentaInventario = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '151005')->first();
+
+                if (! $cuentaCostoVenta || ! $cuentaInventario) {
+                    throw ComercialException::regla(
+                        'Configuración Contable Incompleta: para facturar una venta con productos de Inventario se requieren las cuentas de Costo de Venta (601205) e Inventario (151005) en el plan de cuentas.'
+                    );
+                }
+
+                $detallesVenta[] = ['cuenta_contable' => '601205', 'debe' => $costoVentaTotal, 'haber' => 0, 'glosa_detalle' => "Costo de Venta {$factura->numero_factura}"];
+                $detallesVenta[] = ['cuenta_contable' => '151005', 'debe' => 0, 'haber' => $costoVentaTotal, 'glosa_detalle' => "Salida de Inventario Venta {$factura->numero_factura}"];
             }
 
             $asientoVenta = app(AsientoContableService::class)->registrarAsiento([

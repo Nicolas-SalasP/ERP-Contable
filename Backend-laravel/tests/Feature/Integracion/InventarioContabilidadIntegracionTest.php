@@ -5,6 +5,7 @@ namespace Tests\Feature\Integracion;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\EstadoCotizacion;
+use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\CotizacionService;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Contabilidad\Models\AsientoContable;
@@ -23,29 +24,15 @@ use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
 
 /**
- * Auditoría de integración Inventario <-> Contabilidad.
+ * Integración real Inventario <-> Contabilidad vía CotizacionService::convertirEnFactura.
  *
- * HALLAZGO PRINCIPAL (ver HALLAZGOS-COLATERALES.md): NO existe hoy un flujo automático que
- * conecte una venta (Comercial\Services\CotizacionService::convertirEnFactura /
- * FacturaService) con una salida de inventario (Inventario\Services\
- * InventarioMovimientoService::registrarMovimiento). Los detalles de una Cotizacion
- * (cotizacion_detalles.producto_nombre) son texto libre, sin FK al modelo
- * Inventario\Models\Producto. El asiento contable que genera una venta solo registra
- * CxC/Ventas/IVA Débito — nunca una línea de "Costo de Venta" / "Costo de Mercadería
- * Vendida" tomada de Inventario. Cada módulo se opera de forma completamente
- * independiente.
- *
- * Esta clase por lo tanto NO puede escribir el test end-to-end "venta -> salida de
- * inventario -> asiento con costo de venta" pedido en el Paso 2 del plan, porque ese
- * flujo no existe en el código. En su lugar:
- *  - Prueba 1: demuestra objetivamente la ausencia de conexión (ejercitando el flujo real
- *    de venta con un producto que sí existe en Inventario, y verificando que Inventario
- *    queda intacto).
- *  - Pruebas 2-6: ejercitan cada mitad por separado con las clases reales encadenadas
- *    (sin mocks): el costeo FIFO/PMP end-to-end vía InventarioMovimientoService, y el
- *    asiento de venta vía CotizacionService/FacturaService.
- *  - Pruebas 7-8: casos de borde de integración (stock insuficiente, anulación de
- *    factura) documentando el comportamiento real observado.
+ * Cubre el flujo agregado: una línea de cotización con `producto_id` vinculado a un
+ * Producto de Inventario dispara, al facturar, una salida de inventario real (costeada
+ * por InventarioMovimientoService, FIFO o PMP) y agrega una línea de Costo de Venta /
+ * Inventario al asiento de la venta, con el monto exacto que Inventario calculó. Las
+ * líneas sin `producto_id` (servicios) siguen sin tocar Inventario. La anulación de la
+ * factura repone el stock. Ver HALLAZGOS-COLATERALES.md para el estado anterior
+ * (sin integración) que este archivo documentaba.
  */
 class InventarioContabilidadIntegracionTest extends TestCase
 {
@@ -86,6 +73,8 @@ class InventarioContabilidadIntegracionTest extends TestCase
             ['152005', 'Clientes', 'ACTIVO'],
             ['501105', 'Ingresos por Venta', 'INGRESO'],
             ['353360', 'IVA Débito Fiscal', 'PASIVO'],
+            ['601205', 'Costo Ventas Nacional', 'GASTO'],
+            ['151005', 'Inventario Materiales', 'ACTIVO'],
         ] as [$codigo, $nombre, $tipo]) {
             PlanCuenta::create([
                 'empresa_id' => $this->empresa->id,
@@ -99,13 +88,11 @@ class InventarioContabilidadIntegracionTest extends TestCase
     }
 
     /**
-     * Prueba 1 (hallazgo principal): se vende -vía el flujo real Cotizacion -> Factura- un
-     * producto que efectivamente existe en Inventario con stock valorizado. Si existiera
-     * integración automática, la venta debería generar una salida de inventario (y una
-     * línea de costo de venta en el asiento). No ocurre: Inventario queda exactamente
-     * igual que antes de la venta, y el asiento solo tiene las 3 líneas comerciales.
+     * Prueba 1: vender -vía el flujo real Cotizacion -> Factura- un producto FIFO vinculado
+     * por producto_id sí genera una salida de inventario real y una línea de costo de venta
+     * en el asiento, con el costo exacto calculado por InventarioMovimientoService.
      */
-    public function test_convertir_cotizacion_en_factura_no_genera_ninguna_salida_de_inventario(): void
+    public function test_convertir_cotizacion_en_factura_con_producto_vinculado_genera_salida_de_inventario_y_costo_de_venta(): void
     {
         $producto = $this->crearProductoFifo();
         $bodega = $this->crearBodega();
@@ -117,103 +104,55 @@ class InventarioContabilidadIntegracionTest extends TestCase
             'costo_unitario' => 1000,
         ], $this->empresa->id, $this->usuario->id);
 
-        $cliente = Cliente::create([
-            'empresa_id' => $this->empresa->id,
-            'rut' => '9.999.999-9',
-            'razon_social' => 'Cliente Integración',
-            'estado' => 'ACTIVO',
-        ]);
+        $cliente = $this->crearCliente('9.999.999-9', 'Cliente Integración');
 
-        $cotizacion = Cotizacion::create([
-            'empresa_id' => $this->empresa->id,
-            'cliente_id' => $cliente->id,
-            'nombre_cliente' => $cliente->razon_social,
-            'estado_id' => 3, // Aceptada
-            'numero_cotizacion' => 'COT-INT-001',
-            'subtotal' => 5000,
-            'monto_neto' => 5000,
-            'monto_iva' => 950,
-            'monto_total' => 5950,
-            'total' => 5950,
-            'fecha_emision' => now(),
-        ]);
-        // El detalle referencia el producto solo por nombre libre: no hay FK real al
-        // Producto de Inventario, aunque el nombre coincida con uno existente.
-        $cotizacion->detalles()->create([
+        $cotizacion = $this->crearCotizacionAceptada('COT-INT-001', $cliente, 5000, 950);
+        $detalle = $cotizacion->detalles()->create([
+            'producto_id' => $producto->id,
             'producto_nombre' => $producto->nombre,
             'cantidad' => 5,
             'precio_unitario' => 1000,
             'subtotal' => 5000,
         ]);
 
-        $stockAntes = StockProducto::where('empresa_id', $this->empresa->id)
-            ->where('producto_id', $producto->id)
-            ->where('bodega_id', $bodega->id)
-            ->first();
+        $stockAntes = $this->obtenerStock($producto->id, $bodega->id);
         $this->assertEquals(10.0, (float) $stockAntes->stock_actual);
 
         $factura = app(CotizacionService::class)->convertirEnFactura($this->empresa->id, $cotizacion->id);
 
-        // La venta se registró y generó su asiento comercial (CxC/Ventas/IVA)...
-        $this->assertNotNull($factura->comprobante_contable);
         $asiento = AsientoContable::with('detalles')
             ->where('empresa_id', $this->empresa->id)
             ->where('numero_comprobante', $factura->comprobante_contable)
             ->first();
-        $this->assertCount(3, $asiento->detalles);
-        $codigosCuenta = $asiento->detalles->pluck('cuenta_contable')->sort()->values()->all();
-        $this->assertEquals(['152005', '353360', '501105'], $codigosCuenta);
 
-        // ... pero el stock de Inventario NO se movió ni un poco: la "venta" nunca tocó
-        // InventarioMovimientoService. No hay línea de costo de venta y no hay ningún
-        // MovimientoInventario de salida asociado a esta factura.
-        $stockDespues = StockProducto::where('empresa_id', $this->empresa->id)
-            ->where('producto_id', $producto->id)
-            ->where('bodega_id', $bodega->id)
-            ->first();
-        $this->assertEquals(10.0, (float) $stockDespues->stock_actual, 'La venta no debería mover stock: no existe integración automática.');
+        // Ahora el asiento tiene 5 líneas: CxC/Ventas/IVA (las 3 de siempre) + Costo de Venta/Inventario.
+        $this->assertCount(5, $asiento->detalles);
+        $lineaCosto = $asiento->detalles->firstWhere('cuenta_contable', '601205');
+        $lineaInventario = $asiento->detalles->firstWhere('cuenta_contable', '151005');
+        $this->assertNotNull($lineaCosto, 'Debe existir una línea de Costo de Venta (601205).');
+        $this->assertNotNull($lineaInventario, 'Debe existir una línea de descarga de Inventario (151005).');
+        $this->assertEquals(5000.0, (float) $lineaCosto->debe);
+        $this->assertEquals(5000.0, (float) $lineaInventario->haber);
 
-        $this->assertSame(0, MovimientoInventario::where('empresa_id', $this->empresa->id)
-            ->where('tipo', MovimientoInventario::TIPO_SALIDA)
-            ->count());
+        // El stock se descontó realmente: 10 - 5 = 5.
+        $stockDespues = $this->obtenerStock($producto->id, $bodega->id);
+        $this->assertEquals(5.0, (float) $stockDespues->stock_actual);
+
+        // El movimiento de salida quedó vinculado a la línea de la cotización.
+        $detalle->refresh();
+        $this->assertNotNull($detalle->movimiento_inventario_id);
+        $movimiento = MovimientoInventario::find($detalle->movimiento_inventario_id);
+        $this->assertSame(MovimientoInventario::TIPO_SALIDA, $movimiento->tipo);
+        $this->assertEquals(5.0, (float) $movimiento->cantidad);
+        $this->assertEquals(1000.0, (float) $movimiento->costo_unitario);
+        $this->assertEquals(5000.0, (float) $movimiento->costo_total);
     }
 
     /**
-     * Prueba 2: mitad Inventario en aislamiento, método FIFO, capa única.
-     * Verifica que InventarioMovimientoService (el servicio real que se llamaría en un
-     * flujo de venta si existiera integración) calcula el costo de venta correcto.
+     * Prueba 2: FIFO multi-lote. El costo de venta que llega al asiento debe ser el costo
+     * mezclado real de las capas consumidas (no un promedio simplificado de las entradas).
      */
-    public function test_fifo_capa_unica_calcula_costo_de_venta_correcto_via_movimiento_service(): void
-    {
-        $producto = $this->crearProductoFifo();
-        $bodega = $this->crearBodega();
-        $servicio = app(InventarioMovimientoService::class);
-
-        $servicio->registrarMovimiento([
-            'tipo' => MovimientoInventario::TIPO_ENTRADA,
-            'producto_id' => $producto->id,
-            'bodega_destino_id' => $bodega->id,
-            'cantidad' => 10,
-            'costo_unitario' => 1000,
-        ], $this->empresa->id, $this->usuario->id);
-
-        $salida = $servicio->registrarMovimiento([
-            'tipo' => MovimientoInventario::TIPO_SALIDA,
-            'producto_id' => $producto->id,
-            'bodega_origen_id' => $bodega->id,
-            'cantidad' => 5,
-        ], $this->empresa->id, $this->usuario->id);
-
-        $this->assertEquals(1000.0, (float) $salida->costo_unitario);
-        $this->assertEquals(5000.0, (float) $salida->costo_total);
-    }
-
-    /**
-     * Prueba 3: mitad Inventario en aislamiento, método FIFO multi-lote (costos distintos).
-     * El costo de venta debe reflejar el costo mezclado real de las capas consumidas,
-     * no un promedio simplificado de todas las entradas históricas.
-     */
-    public function test_fifo_multi_lote_calcula_costo_mezclado_real_no_promedio_simplificado(): void
+    public function test_asiento_de_venta_con_producto_fifo_multi_lote_incluye_costo_de_venta_exacto(): void
     {
         $producto = $this->crearProductoFifo();
         $bodega = $this->crearBodega();
@@ -236,51 +175,39 @@ class InventarioContabilidadIntegracionTest extends TestCase
             'costo_unitario' => 1500,
         ], $this->empresa->id, $this->usuario->id);
 
-        // Venta de 20 unidades: consume 10@1000 + 10@1500 = 25.000 / 20 = 1.250 c/u.
-        $salida = $servicio->registrarMovimiento([
-            'tipo' => MovimientoInventario::TIPO_SALIDA,
+        $cliente = $this->crearCliente('9.888.888-8', 'Cliente FIFO Multi Lote');
+        $cotizacion = $this->crearCotizacionAceptada('COT-INT-FIFO-MULTI', $cliente, 20000, 3800);
+        // Venta de 20 unidades: consume 10@1000 + 10@1500 = 25.000.
+        $cotizacion->detalles()->create([
             'producto_id' => $producto->id,
-            'bodega_origen_id' => $bodega->id,
+            'producto_nombre' => $producto->nombre,
             'cantidad' => 20,
-        ], $this->empresa->id, $this->usuario->id);
+            'precio_unitario' => 1000,
+            'subtotal' => 20000,
+        ]);
 
-        $this->assertEquals(1250.0, (float) $salida->costo_unitario);
-        $this->assertEquals(25000.0, (float) $salida->costo_total);
-        // Confirma que NO es el promedio simplificado (1000+1500)/2 = 1250 coincide numéricamente
-        // en este caso por simetría de cantidades; se agrega un tercer lote para descartar ese
-        // espejismo y forzar una mezcla realmente ponderada por cantidad.
-        $servicio->registrarMovimiento([
-            'tipo' => MovimientoInventario::TIPO_ENTRADA,
-            'producto_id' => $producto->id,
-            'bodega_destino_id' => $bodega->id,
-            'cantidad' => 3,
-            'costo_unitario' => 3000,
-        ], $this->empresa->id, $this->usuario->id);
+        $factura = app(CotizacionService::class)->convertirEnFactura($this->empresa->id, $cotizacion->id);
 
-        // Queda: 5@1500 + 3@3000. Venta de 6: consume 5@1500 + 1@3000 = (7500+3000)/6 = 1750.
-        $salida2 = $servicio->registrarMovimiento([
-            'tipo' => MovimientoInventario::TIPO_SALIDA,
-            'producto_id' => $producto->id,
-            'bodega_origen_id' => $bodega->id,
-            'cantidad' => 6,
-        ], $this->empresa->id, $this->usuario->id);
+        $asiento = AsientoContable::with('detalles')
+            ->where('empresa_id', $this->empresa->id)
+            ->where('numero_comprobante', $factura->comprobante_contable)
+            ->first();
 
-        $this->assertEquals(1750.0, (float) $salida2->costo_unitario);
-        $this->assertEquals(10500.0, (float) $salida2->costo_total);
+        $lineaCosto = $asiento->detalles->firstWhere('cuenta_contable', '601205');
+        $this->assertEquals(25000.0, (float) $lineaCosto->debe);
     }
 
     /**
-     * Prueba 4/5: mitad Inventario en aislamiento, método PMP (costo promedio ponderado).
-     * El costo de venta debe ser el costo promedio ponderado vigente al momento de la salida.
+     * Prueba 3: PMP (costo promedio ponderado). El costo de venta debe ser el promedio
+     * ponderado vigente al momento de la salida.
      */
-    public function test_pmp_calcula_costo_de_venta_como_promedio_ponderado_vigente(): void
+    public function test_asiento_de_venta_con_producto_pmp_incluye_costo_de_venta_como_promedio_ponderado(): void
     {
         $producto = $this->crearProductoPmp();
         $bodega = $this->crearBodega();
         $servicio = app(InventarioMovimientoService::class);
 
-        // Entrada 1: 10 unidades a $1.000. Entrada 2: 10 unidades a $2.000.
-        // Promedio ponderado: (10*1000 + 10*2000) / 20 = 1.500.
+        // Entrada 1: 10 unidades a $1.000. Entrada 2: 10 unidades a $2.000. Promedio: $1.500.
         $servicio->registrarMovimiento([
             'tipo' => MovimientoInventario::TIPO_ENTRADA,
             'producto_id' => $producto->id,
@@ -297,58 +224,14 @@ class InventarioContabilidadIntegracionTest extends TestCase
             'costo_unitario' => 2000,
         ], $this->empresa->id, $this->usuario->id);
 
-        $salida = $servicio->registrarMovimiento([
-            'tipo' => MovimientoInventario::TIPO_SALIDA,
-            'producto_id' => $producto->id,
-            'bodega_origen_id' => $bodega->id,
-            'cantidad' => 8,
-        ], $this->empresa->id, $this->usuario->id);
-
-        $this->assertEquals(1500.0, (float) $salida->costo_unitario);
-        $this->assertEquals(12000.0, (float) $salida->costo_total);
-
-        $stock = StockProducto::where('empresa_id', $this->empresa->id)
-            ->where('producto_id', $producto->id)
-            ->where('bodega_id', $bodega->id)
-            ->first();
-        // El promedio ponderado no cambia con la salida (PMP solo se recalcula en entradas).
-        $this->assertEquals(1500.0, (float) $stock->costo_promedio);
-        $this->assertEquals(12.0, (float) $stock->stock_actual);
-    }
-
-    /**
-     * Prueba 6: mitad Contabilidad en aislamiento. Confirma que el asiento generado por
-     * CotizacionService::convertirEnFactura no incluye, bajo ninguna circunstancia, una
-     * línea de costo de venta/costo de mercadería vendida (porque no hay dato de
-     * Inventario que se le pueda pasar): solo las 3 líneas comerciales de siempre.
-     */
-    public function test_asiento_de_venta_nunca_incluye_linea_de_costo_de_venta(): void
-    {
-        $cliente = Cliente::create([
-            'empresa_id' => $this->empresa->id,
-            'rut' => '8.888.888-8',
-            'razon_social' => 'Cliente Sin Costo Venta',
-            'estado' => 'ACTIVO',
-        ]);
-
-        $cotizacion = Cotizacion::create([
-            'empresa_id' => $this->empresa->id,
-            'cliente_id' => $cliente->id,
-            'nombre_cliente' => $cliente->razon_social,
-            'estado_id' => 3,
-            'numero_cotizacion' => 'COT-INT-002',
-            'subtotal' => 10000,
-            'monto_neto' => 10000,
-            'monto_iva' => 1900,
-            'monto_total' => 11900,
-            'total' => 11900,
-            'fecha_emision' => now(),
-        ]);
+        $cliente = $this->crearCliente('9.777.777-7', 'Cliente PMP');
+        $cotizacion = $this->crearCotizacionAceptada('COT-INT-PMP', $cliente, 8000, 1520);
         $cotizacion->detalles()->create([
-            'producto_nombre' => 'Servicio genérico sin inventario',
-            'cantidad' => 1,
-            'precio_unitario' => 10000,
-            'subtotal' => 10000,
+            'producto_id' => $producto->id,
+            'producto_nombre' => $producto->nombre,
+            'cantidad' => 8,
+            'precio_unitario' => 1000,
+            'subtotal' => 8000,
         ]);
 
         $factura = app(CotizacionService::class)->convertirEnFactura($this->empresa->id, $cotizacion->id);
@@ -358,63 +241,62 @@ class InventarioContabilidadIntegracionTest extends TestCase
             ->where('numero_comprobante', $factura->comprobante_contable)
             ->first();
 
-        foreach ($asiento->detalles as $detalle) {
-            $this->assertStringNotContainsStringIgnoringCase('costo', (string) $detalle->descripcion_extensa);
-        }
-        $this->assertCount(3, $asiento->detalles);
+        $lineaCosto = $asiento->detalles->firstWhere('cuenta_contable', '601205');
+        // 8 unidades * $1.500 (promedio ponderado) = $12.000.
+        $this->assertEquals(12000.0, (float) $lineaCosto->debe);
     }
 
     /**
-     * Prueba 7 (caso de borde): si la salida de inventario pide más cantidad de la
-     * disponible, InventarioMovimientoService bloquea la operación con una excepción de
-     * validación (no permite stock negativo ni deja un costo de venta "no calculable").
-     * Como no hay integración automática, este guard nunca se ejerce hoy desde una venta
-     * real -- solo si alguien registra manualmente la salida de inventario.
+     * Prueba 4 (caso de borde): vender más cantidad de la disponible bloquea la operación
+     * completa. No debe quedar factura, ni asiento, ni movimiento de inventario huérfano:
+     * todo dentro de la misma transacción de convertirEnFactura.
      */
-    public function test_salida_sin_stock_suficiente_es_bloqueada_no_se_permite_stock_negativo(): void
+    public function test_vender_sin_stock_suficiente_revierte_toda_la_venta_sin_dejar_huerfanos(): void
     {
         $producto = $this->crearProductoFifo();
         $bodega = $this->crearBodega();
-        $servicio = app(InventarioMovimientoService::class);
-
-        $servicio->registrarMovimiento([
+        app(InventarioMovimientoService::class)->registrarMovimiento([
             'tipo' => MovimientoInventario::TIPO_ENTRADA,
             'producto_id' => $producto->id,
             'bodega_destino_id' => $bodega->id,
-            'cantidad' => 5,
+            'cantidad' => 3,
             'costo_unitario' => 1000,
         ], $this->empresa->id, $this->usuario->id);
+
+        $cliente = $this->crearCliente('9.666.666-6', 'Cliente Sin Stock');
+        $cotizacion = $this->crearCotizacionAceptada('COT-INT-SINSTOCK', $cliente, 10000, 1900);
+        $cotizacion->detalles()->create([
+            'producto_id' => $producto->id,
+            'producto_nombre' => $producto->nombre,
+            'cantidad' => 10, // más que el stock disponible (3)
+            'precio_unitario' => 1000,
+            'subtotal' => 10000,
+        ]);
 
         $this->expectException(ValidationException::class);
 
         try {
-            $servicio->registrarMovimiento([
-                'tipo' => MovimientoInventario::TIPO_SALIDA,
-                'producto_id' => $producto->id,
-                'bodega_origen_id' => $bodega->id,
-                'cantidad' => 10,
-            ], $this->empresa->id, $this->usuario->id);
+            app(CotizacionService::class)->convertirEnFactura($this->empresa->id, $cotizacion->id);
         } finally {
-            $stock = StockProducto::where('empresa_id', $this->empresa->id)
-                ->where('producto_id', $producto->id)
-                ->where('bodega_id', $bodega->id)
-                ->first();
-            $this->assertEquals(5.0, (float) $stock->stock_actual, 'El stock no debe quedar negativo ni alterado tras el rechazo.');
+            $this->assertSame(0, Factura::where('empresa_id', $this->empresa->id)->count());
+            $this->assertSame(0, AsientoContable::where('empresa_id', $this->empresa->id)->count());
+            $this->assertSame(0, MovimientoInventario::where('empresa_id', $this->empresa->id)
+                ->where('tipo', MovimientoInventario::TIPO_SALIDA)
+                ->count());
+
+            $stock = $this->obtenerStock($producto->id, $bodega->id);
+            $this->assertEquals(3.0, (float) $stock->stock_actual, 'El stock no debe quedar alterado tras el rollback.');
+
+            $cotizacion->refresh();
+            $this->assertNotEquals(5, $cotizacion->estado_id, 'La cotización no debe quedar marcada como Facturada tras el rollback.');
         }
     }
 
     /**
-     * Prueba 8 (caso de borde de integración — hallazgo): al anular una factura de VENTA,
-     * FacturaService::anularFactura reversa correctamente el asiento contable (CxC/Ventas/
-     * IVA), pero como nunca existió un MovimientoInventario vinculado a esa factura, no hay
-     * nada que "revertir" del lado de Inventario. El stock permanece exactamente donde
-     * estaba antes y después de anular la venta: ni se descontó al vender, ni se repone al
-     * anular. Esto documenta objetivamente que la ausencia de integración automática
-     * también implica ausencia de reversa automática (consistente por diseño, pero crítico
-     * para la auditoría: si mañana se agrega la integración de venta -> salida, se debe
-     * agregar en el mismo cambio la reversa de esa salida al anular).
+     * Prueba 5: anular la factura de venta repone el stock exactamente en la cantidad
+     * vendida, reingresando al mismo costo con el que salió (no al costo vigente actual).
      */
-    public function test_anular_factura_venta_reversa_el_asiento_pero_no_toca_inventario_porque_nunca_lo_vinculo(): void
+    public function test_anular_factura_de_venta_repone_el_stock_de_inventario(): void
     {
         $producto = $this->crearProductoFifo();
         $bodega = $this->crearBodega();
@@ -426,27 +308,10 @@ class InventarioContabilidadIntegracionTest extends TestCase
             'costo_unitario' => 1000,
         ], $this->empresa->id, $this->usuario->id);
 
-        $cliente = Cliente::create([
-            'empresa_id' => $this->empresa->id,
-            'rut' => '7.777.777-7',
-            'razon_social' => 'Cliente Anulacion',
-            'estado' => 'ACTIVO',
-        ]);
-
-        $cotizacion = Cotizacion::create([
-            'empresa_id' => $this->empresa->id,
-            'cliente_id' => $cliente->id,
-            'nombre_cliente' => $cliente->razon_social,
-            'estado_id' => 3,
-            'numero_cotizacion' => 'COT-INT-003',
-            'subtotal' => 5000,
-            'monto_neto' => 5000,
-            'monto_iva' => 950,
-            'monto_total' => 5950,
-            'total' => 5950,
-            'fecha_emision' => now(),
-        ]);
+        $cliente = $this->crearCliente('9.555.555-5', 'Cliente Anulacion');
+        $cotizacion = $this->crearCotizacionAceptada('COT-INT-ANULA', $cliente, 5000, 950);
         $cotizacion->detalles()->create([
+            'producto_id' => $producto->id,
             'producto_nombre' => $producto->nombre,
             'cantidad' => 5,
             'precio_unitario' => 1000,
@@ -455,21 +320,12 @@ class InventarioContabilidadIntegracionTest extends TestCase
 
         $factura = app(CotizacionService::class)->convertirEnFactura($this->empresa->id, $cotizacion->id);
 
-        // Ahora, fuera de este flujo, alguien registra manualmente la salida real de
-        // inventario para esta venta (como se opera hoy en producción: dos procesos
-        // separados y manuales). El costo original calculado en ese momento fue $1.000/u,
-        // aunque el costo actual del producto cambie después.
-        $servicio = app(InventarioMovimientoService::class);
-        $salidaManual = $servicio->registrarMovimiento([
-            'tipo' => MovimientoInventario::TIPO_SALIDA,
-            'producto_id' => $producto->id,
-            'bodega_origen_id' => $bodega->id,
-            'cantidad' => 5,
-        ], $this->empresa->id, $this->usuario->id);
-        $this->assertEquals(1000.0, (float) $salidaManual->costo_unitario);
+        $stockTrasVenta = $this->obtenerStock($producto->id, $bodega->id);
+        $this->assertEquals(5.0, (float) $stockTrasVenta->stock_actual);
 
-        // Cambia el costo vigente del producto con una nueva entrada a $5.000/u.
-        $servicio->registrarMovimiento([
+        // Cambia el costo vigente del producto: la reposición debe usar el costo original de
+        // la salida ($1.000), no este nuevo costo ($5.000).
+        app(InventarioMovimientoService::class)->registrarMovimiento([
             'tipo' => MovimientoInventario::TIPO_ENTRADA,
             'producto_id' => $producto->id,
             'bodega_destino_id' => $bodega->id,
@@ -487,32 +343,100 @@ class InventarioContabilidadIntegracionTest extends TestCase
         $factura->refresh();
         $this->assertSame('ANULADA', $factura->estado);
 
-        // El asiento comercial quedó cuadrado (reversado): la suma de detalles del asiento
-        // original + su reverso es 0 en cada cuenta (verificado indirectamente via el status
-        // REVERSADO del asiento original).
         $asientoOriginal = AsientoContable::where('empresa_id', $this->empresa->id)
             ->where('numero_comprobante', $factura->comprobante_contable)
             ->first();
-        $this->assertNotNull($asientoOriginal);
         $this->assertTrue(
             in_array(strtoupper((string) $asientoOriginal->estado), ['REVERSADO', 'ANULADO'], true),
             'El asiento original de la venta debe quedar marcado como reversado tras anular la factura.'
         );
 
-        // Inventario, en cambio, no se enteró de la anulación: el movimiento de salida
-        // manual sigue existiendo tal cual, con el costo original ($1.000/u), y el stock NO
-        // se repuso automáticamente. Si mañana existiera integración automática venta ->
-        // salida, este es el mismo punto donde debería dispararse la reversa del
-        // movimiento de inventario.
-        $salidaManual->refresh();
-        $this->assertEquals(1000.0, (float) $salidaManual->costo_unitario, 'El costo del movimiento original no debe recalcularse con el costo vigente actual ($5.000).');
+        // Stock: 10 (entrada) - 5 (venta) + 5 (entrada a costo distinto) + 5 (reposición por anulación) = 15.
+        $stockFinal = $this->obtenerStock($producto->id, $bodega->id);
+        $this->assertEquals(15.0, (float) $stockFinal->stock_actual);
 
-        $stockFinal = StockProducto::where('empresa_id', $this->empresa->id)
+        $entradaReposicion = MovimientoInventario::where('empresa_id', $this->empresa->id)
             ->where('producto_id', $producto->id)
-            ->where('bodega_id', $bodega->id)
+            ->where('tipo', MovimientoInventario::TIPO_ENTRADA)
+            ->orderByDesc('id')
             ->first();
-        // 10 (entrada inicial) - 5 (salida manual) + 5 (segunda entrada) = 10; no hubo reposición automática por la anulación.
-        $this->assertEquals(10.0, (float) $stockFinal->stock_actual);
+        $this->assertEquals(1000.0, (float) $entradaReposicion->costo_unitario, 'La reposición debe reingresar al costo original de la salida, no al costo vigente.');
+    }
+
+    /**
+     * Anular una venta cuyo costo original fue $0 (bonificación/muestra gratis) no debe fallar:
+     * reponer el stock al mismo costo $0 con el que salió es restaurar el estado anterior, no una
+     * entrada nueva sin confirmar.
+     */
+    public function test_anular_factura_de_venta_a_costo_cero_repone_el_stock_sin_fallar(): void
+    {
+        $producto = $this->crearProductoFifo();
+        $bodega = $this->crearBodega();
+        app(InventarioMovimientoService::class)->registrarMovimiento([
+            'tipo' => MovimientoInventario::TIPO_ENTRADA,
+            'producto_id' => $producto->id,
+            'bodega_destino_id' => $bodega->id,
+            'cantidad' => 5,
+            'costo_unitario' => 0,
+            'costo_cero_confirmado' => true,
+        ], $this->empresa->id, $this->usuario->id);
+
+        $cliente = $this->crearCliente('9.444.444-4', 'Cliente Costo Cero');
+        $cotizacion = $this->crearCotizacionAceptada('COT-INT-CEROCOSTO', $cliente, 0, 0);
+        $cotizacion->detalles()->create([
+            'producto_id' => $producto->id,
+            'producto_nombre' => $producto->nombre,
+            'cantidad' => 5,
+            'precio_unitario' => 0,
+            'subtotal' => 0,
+        ]);
+
+        $factura = app(CotizacionService::class)->convertirEnFactura($this->empresa->id, $cotizacion->id);
+
+        app(FacturaService::class)->anularFactura(
+            $this->empresa->id,
+            $this->usuario->id,
+            $factura->id,
+            'Anulación de venta a costo cero'
+        );
+
+        $factura->refresh();
+        $this->assertSame('ANULADA', $factura->estado);
+
+        $stockFinal = $this->obtenerStock($producto->id, $bodega->id);
+        $this->assertEquals(5.0, (float) $stockFinal->stock_actual);
+    }
+
+    /**
+     * Prueba 6: un ítem SIN producto_id (servicio) sigue sin tocar Inventario, como antes de
+     * esta integración.
+     */
+    public function test_vender_item_sin_producto_id_sigue_sin_tocar_inventario(): void
+    {
+        $cliente = $this->crearCliente('8.888.888-8', 'Cliente Sin Costo Venta');
+        $cotizacion = $this->crearCotizacionAceptada('COT-INT-002', $cliente, 10000, 1900);
+        $cotizacion->detalles()->create([
+            'producto_nombre' => 'Servicio genérico sin inventario',
+            'cantidad' => 1,
+            'precio_unitario' => 10000,
+            'subtotal' => 10000,
+        ]);
+
+        $factura = app(CotizacionService::class)->convertirEnFactura($this->empresa->id, $cotizacion->id);
+
+        $asiento = AsientoContable::with('detalles')
+            ->where('empresa_id', $this->empresa->id)
+            ->where('numero_comprobante', $factura->comprobante_contable)
+            ->first();
+
+        // Sigue teniendo exactamente 3 líneas: sin producto_id no hay costo de venta que agregar.
+        $this->assertCount(3, $asiento->detalles);
+        $codigosCuenta = $asiento->detalles->pluck('cuenta_contable')->sort()->values()->all();
+        $this->assertEquals(['152005', '353360', '501105'], $codigosCuenta);
+
+        $this->assertSame(0, MovimientoInventario::where('empresa_id', $this->empresa->id)
+            ->where('tipo', MovimientoInventario::TIPO_SALIDA)
+            ->count());
     }
 
     /*
@@ -561,6 +485,41 @@ class InventarioContabilidadIntegracionTest extends TestCase
             'direccion' => 'Santiago, Chile',
             'estado' => 'ACTIVA',
         ], $overrides));
+    }
+
+    private function crearCliente(string $rut, string $razonSocial): Cliente
+    {
+        return Cliente::create([
+            'empresa_id' => $this->empresa->id,
+            'rut' => $rut,
+            'razon_social' => $razonSocial,
+            'estado' => 'ACTIVO',
+        ]);
+    }
+
+    private function crearCotizacionAceptada(string $numero, Cliente $cliente, float $montoNeto, float $montoIva): Cotizacion
+    {
+        return Cotizacion::create([
+            'empresa_id' => $this->empresa->id,
+            'cliente_id' => $cliente->id,
+            'nombre_cliente' => $cliente->razon_social,
+            'estado_id' => 3, // Aceptada
+            'numero_cotizacion' => $numero,
+            'subtotal' => $montoNeto,
+            'monto_neto' => $montoNeto,
+            'monto_iva' => $montoIva,
+            'monto_total' => $montoNeto + $montoIva,
+            'total' => $montoNeto + $montoIva,
+            'fecha_emision' => now(),
+        ]);
+    }
+
+    private function obtenerStock(int $productoId, int $bodegaId): ?StockProducto
+    {
+        return StockProducto::where('empresa_id', $this->empresa->id)
+            ->where('producto_id', $productoId)
+            ->where('bodega_id', $bodegaId)
+            ->first();
     }
 
     private function obtenerUnidadBase(): UnidadMedida

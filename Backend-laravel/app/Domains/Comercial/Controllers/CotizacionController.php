@@ -3,15 +3,16 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-use App\Support\MensajeErrorGenerico;
-
+use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Comercial\Services\CotizacionService;
-use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Core\Models\Empresa;
-use Illuminate\Http\Request;
+use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
+use App\Support\MensajeErrorGenerico;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Validation\ValidationException;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * @tags Cotizaciones
@@ -48,6 +49,8 @@ class CotizacionController
     public function store(Request $request)
     {
         try {
+            $empresaId = $request->user()->empresa_activa_id;
+
             $request->validate([
                 'porcentaje_descuento' => 'nullable|numeric|min:0|max:100',
                 'fecha_emision' => 'nullable|date',
@@ -55,6 +58,12 @@ class CotizacionController
                 'detalles' => 'required|array|min:1',
                 'detalles.*.cantidad' => 'required|numeric|min:0.01',
                 'detalles.*.precio_unitario' => 'required|numeric|min:0',
+                // producto_id es opcional: solo los ítems con stock real en Inventario lo informan (ver CotizacionDetalle).
+                'detalles.*.producto_id' => [
+                    'nullable',
+                    'integer',
+                    Rule::exists('inventario_productos', 'id')->where('empresa_id', $empresaId),
+                ],
                 'metodo_pago' => 'nullable|string|max:100',
                 'condiciones_pago' => 'nullable|string|max:150',
                 'plazo_entrega' => 'nullable|string|max:150',
@@ -90,6 +99,7 @@ class CotizacionController
 
             $detalles = array_map(function ($item) {
                 return [
+                    'producto_id' => $item['productoId'] ?? $item['producto_id'] ?? null,
                     'producto_nombre' => $item['productoNombre'] ?? $item['producto_nombre'] ?? 'Servicio/Producto General',
                     'descripcion' => $item['descripcion'] ?? '',
                     'cantidad' => $item['cantidad'] ?? 1,
@@ -102,21 +112,21 @@ class CotizacionController
 
             return response()->json([
                 'success' => true,
-                'data' => $cotizacion
+                'data' => $cotizacion,
             ], 201);
 
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }
@@ -130,14 +140,15 @@ class CotizacionController
             $cuentasBancarias = CuentaBancariaEmpresa::where('empresa_id', $empresaId)->get();
             $pdf = Pdf::loadView('pdf.cotizacion', compact('cotizacion', 'empresa', 'cuentasBancarias'));
             $nombreLimpio = preg_replace('/[^a-zA-Z0-9\s\-_]/', '', $cotizacion->nombre_cliente);
-            return $pdf->download('Cotizacion_' . $cotizacion->id . ' - ' . trim($nombreLimpio) . '.pdf');
+
+            return $pdf->download('Cotizacion_'.$cotizacion->id.' - '.trim($nombreLimpio).'.pdf');
 
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 500);
         }
     }
@@ -151,22 +162,22 @@ class CotizacionController
             ]);
 
             $estadoNombre = $datos['estado'] ?? null;
-            if (!$estadoNombre && isset($datos['estado_id'])) {
-                $estadoModel = \App\Domains\Comercial\Models\EstadoCotizacion::find($datos['estado_id']);
-                if (!$estadoModel) {
+            if (! $estadoNombre && isset($datos['estado_id'])) {
+                $estadoModel = EstadoCotizacion::find($datos['estado_id']);
+                if (! $estadoModel) {
                     return response()->json([
                         'success' => false,
-                        'message' => "Estado con id {$datos['estado_id']} no existe."
+                        'message' => "Estado con id {$datos['estado_id']} no existe.",
                     ], 422);
                 }
                 $estadoNombre = $estadoModel->nombre;
             }
 
-            if (!$estadoNombre) {
+            if (! $estadoNombre) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Debes especificar estado o estado_id.',
-                    'errors' => ['estado' => ['Campo requerido.']]
+                    'errors' => ['estado' => ['Campo requerido.']],
                 ], 422);
             }
 
@@ -178,21 +189,22 @@ class CotizacionController
 
             return response()->json([
                 'success' => true,
-                'data' => $cotizacion
+                'data' => $cotizacion,
             ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
+
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], $status);
         }
     }
@@ -200,10 +212,17 @@ class CotizacionController
     public function update(Request $request, $id)
     {
         try {
+            $empresaId = $request->user()->empresa_activa_id;
+
             $datos = $request->validate([
                 'porcentaje_descuento' => 'nullable|numeric|min:0|max:100',
                 'fecha_validez' => 'nullable|date',
                 'detalles' => 'nullable|array|min:1',
+                'detalles.*.producto_id' => [
+                    'nullable',
+                    'integer',
+                    Rule::exists('inventario_productos', 'id')->where('empresa_id', $empresaId),
+                ],
                 'detalles.*.producto_nombre' => 'required_with:detalles|string|max:255',
                 'detalles.*.cantidad' => 'required_with:detalles|numeric|min:1',
                 'detalles.*.precio_unitario' => 'required_with:detalles|numeric|min:0',
@@ -215,15 +234,15 @@ class CotizacionController
             ]);
 
             $cotizacion = $this->service->actualizarCotizacion(
-                $request->user()->empresa_activa_id, 
-                (int) $id, 
+                $request->user()->empresa_activa_id,
+                (int) $id,
                 $datos
             );
 
             return response()->json([
                 'success' => true,
                 'message' => 'Cotización actualizada correctamente.',
-                'data' => $cotizacion
+                'data' => $cotizacion,
             ]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
@@ -248,15 +267,16 @@ class CotizacionController
             return response()->json([
                 'success' => true,
                 'message' => 'Factura de venta creada exitosamente.',
-                'data' => $factura
+                'data' => $factura,
             ], 201);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 404 ? 404 : 400;
+
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], $status);
         }
     }
