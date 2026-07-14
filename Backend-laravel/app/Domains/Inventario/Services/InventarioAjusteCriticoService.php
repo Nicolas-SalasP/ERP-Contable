@@ -2,13 +2,13 @@
 
 namespace App\Domains\Inventario\Services;
 
-use App\Domains\Inventario\Exceptions\InventarioException;
-
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Exceptions\InventarioException;
 use App\Domains\Inventario\Models\AjusteCriticoInventario;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
+use App\Domains\Inventario\Models\InventarioValorizacionCapa;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\TipoAjusteCritico;
@@ -24,8 +24,7 @@ class InventarioAjusteCriticoService
         private readonly InventarioPermisoService $permisos,
         private readonly InventarioAuditoriaService $auditoria,
         private readonly InventarioEventoIntegracionService $eventosIntegracion
-    ) {
-    }
+    ) {}
 
     public function listarTiposAjusteCritico(User $usuario): Collection
     {
@@ -56,19 +55,19 @@ class InventarioAjusteCriticoService
                 'registradoPor:id,nombre,email',
             ])
             ->empresa($empresaId)
-            ->when(!empty($filtros['producto_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['producto_id']), function ($query) use ($filtros) {
                 $query->producto((int) $filtros['producto_id']);
             })
-            ->when(!empty($filtros['bodega_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['bodega_id']), function ($query) use ($filtros) {
                 $query->bodega((int) $filtros['bodega_id']);
             })
-            ->when(!empty($filtros['tipo_ajuste_critico_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['tipo_ajuste_critico_id']), function ($query) use ($filtros) {
                 $query->tipoAjusteCritico((int) $filtros['tipo_ajuste_critico_id']);
             })
-            ->when(!empty($fechaDesde), function ($query) use ($fechaDesde) {
+            ->when(! empty($fechaDesde), function ($query) use ($fechaDesde) {
                 $query->desde((string) $fechaDesde);
             })
-            ->when(!empty($fechaHasta), function ($query) use ($fechaHasta) {
+            ->when(! empty($fechaHasta), function ($query) use ($fechaHasta) {
                 $query->hasta((string) $fechaHasta);
             })
             ->masRecientes()
@@ -90,7 +89,7 @@ class InventarioAjusteCriticoService
             ->empresa((int) $usuario->empresa_activa_id)
             ->find($ajusteCriticoId);
 
-        if (!$ajuste) {
+        if (! $ajuste) {
             throw InventarioException::noEncontrado('El ajuste crítico solicitado no existe o no pertenece a la empresa.');
         }
 
@@ -169,11 +168,22 @@ class InventarioAjusteCriticoService
                 loteId: $loteId
             );
 
+            if (array_key_exists('costo_cero_confirmado', $datos)) {
+                $datosMovimiento['costo_cero_confirmado'] = (bool) $datos['costo_cero_confirmado'];
+            }
+
             $movimiento = $this->movimientoService->registrarMovimiento(
                 $datosMovimiento,
                 $empresaId,
                 (int) $usuario->id
             );
+
+            // Para poder anular limpiamente este ajuste más adelante, se rastrea la capa FIFO
+            // exacta que la entrada creó (ver vincularCapaCreadaPorMovimiento()). En PMP no hay
+            // capas individuales, así que esto solo aplica a productos FIFO positivos.
+            $capaCreada = $tipo->esAjustePositivo() && $this->productoUsaFifo($producto)
+                ? $this->vincularCapaCreadaPorMovimiento($empresaId, $producto, $bodega, $loteId, $movimiento)
+                : null;
 
             $ajuste = AjusteCriticoInventario::create([
                 'empresa_id' => $empresaId,
@@ -190,6 +200,7 @@ class InventarioAjusteCriticoService
                 'origen_modulo' => $origenModulo,
                 'origen_id' => $origenId,
                 'registrado_por' => (int) $usuario->id,
+                'valorizacion_capa_id' => $capaCreada?->id,
             ]);
 
             $accionAuditoria = $this->accionAuditoriaPorTipo($tipo);
@@ -250,7 +261,13 @@ class InventarioAjusteCriticoService
         });
     }
 
-    /** Revierte con un movimiento compensatorio (no edita/borra el original) y reusa registrarMovimiento() para que valorización y capas FIFO/lote usen la misma lógica probada, no aritmética manual sobre el stock. */
+    /**
+     * Revierte con un movimiento compensatorio (no edita/borra el original) y reusa
+     * registrarMovimiento() para que valorización y capas FIFO/lote usen la misma lógica
+     * probada, no aritmética manual sobre el stock. Para un ajuste positivo, la reversa apunta
+     * a la capa FIFO exacta (o al costo original en PMP) que ese ajuste creó, no a una salida
+     * genérica por costo actual/cronológico (ver HALLAZGOS-COLATERALES.md).
+     */
     public function anularAjusteCritico(User $usuario, int $ajusteCriticoId, string $motivoAnulacion): AjusteCriticoInventario
     {
         $this->permisos->exigir($usuario, 'inventario.ajustes_criticos.crear');
@@ -266,12 +283,12 @@ class InventarioAjusteCriticoService
 
         return DB::transaction(function () use ($usuario, $empresaId, $ajusteCriticoId, $motivoAnulacion) {
             $ajuste = AjusteCriticoInventario::query()
-                ->with(['tipo', 'movimiento'])
+                ->with(['tipo', 'movimiento', 'producto'])
                 ->empresa($empresaId)
                 ->lockForUpdate()
                 ->find($ajusteCriticoId);
 
-            if (!$ajuste) {
+            if (! $ajuste) {
                 throw InventarioException::noEncontrado('El ajuste crítico solicitado no existe o no pertenece a la empresa.');
             }
 
@@ -301,11 +318,55 @@ class InventarioAjusteCriticoService
                 // Original sumó stock en bodega_destino -> reversa resta en la misma bodega.
                 $datosReversa['tipo'] = MovimientoInventario::TIPO_AJUSTE_NEGATIVO;
                 $datosReversa['bodega_origen_id'] = $ajuste->bodega_id;
+
+                if ($this->productoUsaFifo($ajuste->producto)) {
+                    // La reversa debe anular exactamente la capa que este ajuste creó, no una
+                    // salida FIFO cronológica genérica (ver InventarioValorizacionCapa y el
+                    // hallazgo documentado en HALLAZGOS-COLATERALES.md).
+                    if ($ajuste->valorizacion_capa_id === null) {
+                        throw InventarioException::regla(
+                            'No es posible anular limpiamente este ajuste crítico: no quedó registrada la '
+                            .'capa de valorización FIFO que generó (fue registrado antes de esta validación). '
+                            .'Corrija el stock y el costeo manualmente en vez de anular este ajuste.'
+                        );
+                    }
+
+                    $datosReversa['_capa_objetivo_id'] = $ajuste->valorizacion_capa_id;
+                } else {
+                    // PMP es un promedio ponderado, no capas individuales: una vez que el costo del
+                    // ajuste se mezcla en el promedio, ya no puede aislarse si algo más consumió o
+                    // modificó el stock después. Exigir que nada más haya tocado este producto/bodega
+                    // desde el movimiento del ajuste es la única forma segura de revertir sin
+                    // distorsionar el costeo.
+                    $huboMovimientoPosterior = MovimientoInventario::query()
+                        ->where('empresa_id', $empresaId)
+                        ->where('producto_id', $ajuste->producto_id)
+                        ->where(function ($query) use ($ajuste) {
+                            $query->where('bodega_origen_id', $ajuste->bodega_id)
+                                ->orWhere('bodega_destino_id', $ajuste->bodega_id);
+                        })
+                        ->where('id', '>', $ajuste->movimiento_inventario_id)
+                        ->exists();
+
+                    if ($huboMovimientoPosterior) {
+                        throw InventarioException::regla(
+                            'No es posible anular limpiamente este ajuste crítico: el costo promedio '
+                            .'ponderado (PMP) de este producto/bodega ya fue afectado por movimientos '
+                            .'posteriores. Revertir ahora distorsionaría el costeo. Corrija con un ajuste '
+                            .'manual adicional en vez de anular este ajuste.'
+                        );
+                    }
+
+                    $datosReversa['_costo_unitario_forzado'] = (float) $ajuste->costo_unitario;
+                }
             } else {
                 // Original restó stock en bodega_origen -> reversa suma en la misma bodega, preservando el costo unitario original para no distorsionar el promedio.
                 $datosReversa['tipo'] = MovimientoInventario::TIPO_AJUSTE_POSITIVO;
                 $datosReversa['bodega_destino_id'] = $ajuste->bodega_id;
                 $datosReversa['costo_unitario'] = (float) $ajuste->costo_unitario;
+                // El costo viene heredado del ajuste original (ya aceptado cuando se registro), no es
+                // una decision nueva del usuario: la reversa nunca debe exigir reconfirmacion de costo cero.
+                $datosReversa['costo_cero_confirmado'] = true;
             }
 
             $movimientoReversa = $this->movimientoService->registrarMovimiento(
@@ -362,7 +423,7 @@ class InventarioAjusteCriticoService
     ): array {
         $tipoMovimiento = $tipo->tipo_movimiento;
 
-        if (!in_array($tipoMovimiento, TipoAjusteCritico::tiposMovimientoPermitidos(), true)) {
+        if (! in_array($tipoMovimiento, TipoAjusteCritico::tiposMovimientoPermitidos(), true)) {
             throw ValidationException::withMessages([
                 'tipo_ajuste_critico_id' => 'El tipo de ajuste crítico tiene un tipo de movimiento no válido.',
             ]);
@@ -388,6 +449,13 @@ class InventarioAjusteCriticoService
 
             if ($costoUnitario !== null) {
                 $datosMovimiento['costo_unitario'] = $costoUnitario;
+            } elseif (strtoupper((string) $producto->metodo_valorizacion) === 'FIFO') {
+                // Sin esta validacion explicita, la excepcion real la lanza FifoValorizacionStrategy
+                // varios niveles mas abajo en la pila, con un mensaje generico que no menciona el
+                // contexto de "ajuste critico".
+                throw ValidationException::withMessages([
+                    'costo_unitario' => 'El ajuste crítico positivo de un producto FIFO requiere informar costo_unitario.',
+                ]);
             }
 
             return $datosMovimiento;
@@ -403,7 +471,6 @@ class InventarioAjusteCriticoService
             'tipo_ajuste_critico_id' => 'El tipo de ajuste crítico no puede generar movimiento de inventario.',
         ]);
     }
-
 
     private function accionAuditoriaPorTipo(TipoAjusteCritico $tipo): string
     {
@@ -447,13 +514,13 @@ class InventarioAjusteCriticoService
             ->where('id', $tipoAjusteCriticoId)
             ->first();
 
-        if (!$tipo) {
+        if (! $tipo) {
             throw ValidationException::withMessages([
                 'tipo_ajuste_critico_id' => 'El tipo de ajuste crítico no existe.',
             ]);
         }
 
-        if (!$tipo->activo) {
+        if (! $tipo->activo) {
             throw ValidationException::withMessages([
                 'tipo_ajuste_critico_id' => 'El tipo de ajuste crítico está inactivo.',
             ]);
@@ -469,13 +536,13 @@ class InventarioAjusteCriticoService
             ->where('empresa_id', $empresaId)
             ->first();
 
-        if (!$producto) {
+        if (! $producto) {
             throw ValidationException::withMessages([
                 'producto_id' => 'El producto no existe o no pertenece a la empresa.',
             ]);
         }
 
-        if (!$producto->activo) {
+        if (! $producto->activo) {
             throw ValidationException::withMessages([
                 'producto_id' => 'El producto está inactivo.',
             ]);
@@ -491,7 +558,7 @@ class InventarioAjusteCriticoService
             ->where('empresa_id', $empresaId)
             ->first();
 
-        if (!$bodega) {
+        if (! $bodega) {
             throw ValidationException::withMessages([
                 'bodega_id' => 'La bodega no existe o no pertenece a la empresa.',
             ]);
@@ -506,13 +573,52 @@ class InventarioAjusteCriticoService
         return $bodega;
     }
 
+    private function productoUsaFifo(Producto $producto): bool
+    {
+        return strtoupper((string) $producto->metodo_valorizacion) === 'FIFO';
+    }
+
+    /**
+     * Ubica y vincula la capa de valorización FIFO que la entrada de este movimiento acaba de
+     * crear. calcularEntrada() no recibe el id del movimiento (se crea después de calcular la
+     * valorización), así que la capa se localiza dentro de la misma transacción bloqueada por
+     * InventarioMovimientoService::obtenerOCrearStockBloqueado(), buscando la más reciente sin
+     * movimiento_origen_id asignado que coincida en cantidad y costo. Solo aplica a productos
+     * FIFO: PMP no crea capas individuales.
+     */
+    private function vincularCapaCreadaPorMovimiento(
+        int $empresaId,
+        Producto $producto,
+        Bodega $bodega,
+        ?int $loteId,
+        MovimientoInventario $movimiento
+    ): ?InventarioValorizacionCapa {
+        $capa = InventarioValorizacionCapa::query()
+            ->where('empresa_id', $empresaId)
+            ->where('producto_id', $producto->id)
+            ->where('bodega_id', $bodega->id)
+            ->when($loteId !== null, fn ($query) => $query->where('lote_id', $loteId))
+            ->whereNull('movimiento_origen_id')
+            ->where('cantidad_inicial', (float) $movimiento->cantidad)
+            ->where('costo_unitario', (float) $movimiento->costo_unitario)
+            ->orderByDesc('id')
+            ->lockForUpdate()
+            ->first();
+
+        if ($capa) {
+            $capa->update(['movimiento_origen_id' => $movimiento->id]);
+        }
+
+        return $capa;
+    }
+
     private function validarProductoPermiteTipoCritico(
         Producto $producto,
         TipoAjusteCritico $tipo
     ): void {
         if (
             $tipo->codigo === TipoAjusteCritico::CODIGO_MERMA_OPERACIONAL
-            && !$producto->permite_merma
+            && ! $producto->permite_merma
         ) {
             throw ValidationException::withMessages([
                 'producto_id' => 'El producto no permite registrar mermas.',
@@ -522,7 +628,7 @@ class InventarioAjusteCriticoService
 
     private function normalizarCantidad(mixed $cantidad): float
     {
-        if (!is_numeric($cantidad)) {
+        if (! is_numeric($cantidad)) {
             throw ValidationException::withMessages([
                 'cantidad' => 'La cantidad debe ser numérica.',
             ]);
@@ -545,7 +651,7 @@ class InventarioAjusteCriticoService
             return null;
         }
 
-        if (!is_numeric($valor)) {
+        if (! is_numeric($valor)) {
             throw ValidationException::withMessages([
                 $campo => 'El valor debe ser numérico.',
             ]);
@@ -568,7 +674,7 @@ class InventarioAjusteCriticoService
             return null;
         }
 
-        if (!is_numeric($valor)) {
+        if (! is_numeric($valor)) {
             throw ValidationException::withMessages([
                 $campo => 'El valor debe ser numérico.',
             ]);

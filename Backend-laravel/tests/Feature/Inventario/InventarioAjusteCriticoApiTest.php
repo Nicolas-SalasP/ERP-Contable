@@ -321,16 +321,18 @@ class InventarioAjusteCriticoApiTest extends TestCase
     }
 
     /**
-     * Hallazgo real, documentado también en HALLAZGOS-COLATERALES.md: anularAjusteCritico()
-     * revierte el ajuste con un movimiento compensatorio (registrarMovimiento reusa la misma
-     * lógica de valorización probada), pero para un producto FIFO ese movimiento compensatorio es
-     * una salida que consume capas en orden FIFO estricto (la más antigua primero) — no
-     * necesariamente la capa que el propio ajuste creó. Si ya existía stock más antiguo antes del
-     * ajuste, la reversa consume ESE stock en su lugar, y la capa que el ajuste crítico anulado
-     * creó queda intacta y huérfana, distorsionando el costo del stock remanente pese a que el
-     * ajuste "erróneo" fue anulado.
+     * Corrige un hallazgo real, documentado también en HALLAZGOS-COLATERALES.md:
+     * anularAjusteCritico() revertía un ajuste crítico positivo con un movimiento compensatorio
+     * que, para un producto FIFO, consumía capas en orden cronológico estricto (la más antigua
+     * primero) en vez de anular específicamente la capa que el propio ajuste creó. Si ya existía
+     * stock más antiguo antes del ajuste, la reversa consumía ESE stock y la capa del ajuste
+     * anulado quedaba intacta y huérfana, distorsionando el costo del stock remanente.
+     *
+     * Ahora la reversa localiza y cierra exactamente esa capa (AjusteCriticoInventario::
+     * valorizacion_capa_id), dejando la capa original intacta y el costo del stock remanente
+     * igual al que tenía antes del ajuste anulado.
      */
-    public function test_anular_ajuste_critico_positivo_fifo_no_revierte_la_capa_que_el_ajuste_creo(): void
+    public function test_anular_ajuste_critico_positivo_fifo_cierra_exactamente_la_capa_que_el_ajuste_creo(): void
     {
         [$empresa, $usuario] = $this->usuarioContadorConPermisos([
             'inventario.ajustes_criticos.ver',
@@ -371,6 +373,9 @@ class InventarioAjusteCriticoApiTest extends TestCase
         $registro->assertStatus(201);
         $ajusteId = $registro->json('data.id');
 
+        $ajuste = AjusteCriticoInventario::find($ajusteId);
+        $this->assertNotNull($ajuste->valorizacion_capa_id);
+
         $stockTrasAjuste = $this->stock($empresa, $producto, $bodega);
         $this->assertEquals(15.0, (float) $stockTrasAjuste->stock_actual);
 
@@ -379,12 +384,11 @@ class InventarioAjusteCriticoApiTest extends TestCase
         ]);
         $anulacion->assertOk();
 
-        // La cantidad total vuelve a la original (10): esto sí es correcto.
+        // La cantidad total vuelve a la original (10).
         $stockTrasAnulacion = $this->stock($empresa, $producto, $bodega);
         $this->assertEquals(10.0, (float) $stockTrasAnulacion->stock_actual);
 
-        // Pero la composición de capas quedó distorsionada: la reversa (salida FIFO) consumió la
-        // capa MÁS ANTIGUA (la entrada real de $50), no la capa que el propio ajuste creó ($200).
+        // La reversa cerró exactamente la capa que el ajuste creó ($200), no la más antigua ($50).
         $capas = InventarioValorizacionCapa::query()
             ->where('empresa_id', $empresa->id)
             ->where('producto_id', $producto->id)
@@ -397,20 +401,231 @@ class InventarioAjusteCriticoApiTest extends TestCase
 
         $capaEntradaOriginal = $capas[0];
         $this->assertEquals(50.0, (float) $capaEntradaOriginal->costo_unitario);
-        $this->assertEquals(5.0, (float) $capaEntradaOriginal->cantidad_disponible);
+        // La capa original queda intacta: nadie la tocó.
+        $this->assertEquals(10.0, (float) $capaEntradaOriginal->cantidad_disponible);
         $this->assertEquals(InventarioValorizacionCapa::ESTADO_ABIERTA, $capaEntradaOriginal->estado);
 
         $capaDelAjuste = $capas[1];
         $this->assertEquals(200.0, (float) $capaDelAjuste->costo_unitario);
-        // La capa que creó el ajuste anulado queda intacta y huérfana: nadie la consumió.
-        $this->assertEquals(5.0, (float) $capaDelAjuste->cantidad_disponible);
-        $this->assertEquals(InventarioValorizacionCapa::ESTADO_ABIERTA, $capaDelAjuste->estado);
+        // La capa del ajuste anulado queda en 0 y cerrada.
+        $this->assertEquals(0.0, (float) $capaDelAjuste->cantidad_disponible);
+        $this->assertEquals(InventarioValorizacionCapa::ESTADO_CONSUMIDA, $capaDelAjuste->estado);
 
-        // Consecuencia: el costo del stock remanente queda en (5*50 + 5*200)/10 = $125 unitario
-        // promedio, muy por encima de los $50 originales, pese a que el ajuste "erróneo" que
-        // introdujo el costo de $200 fue anulado.
+        // El costo del stock remanente vuelve exactamente al original: 10 * $50 = $500.
         $stockTrasAnulacion->refresh();
-        $this->assertEquals(1250.0, (float) $stockTrasAnulacion->valor_total);
+        $this->assertEquals(500.0, (float) $stockTrasAnulacion->valor_total);
+        $this->assertEquals(50.0, (float) $stockTrasAnulacion->costo_promedio);
+    }
+
+    /**
+     * Si la capa que un ajuste crítico positivo creó ya fue consumida (total o parcialmente) por
+     * un movimiento posterior (ej. una venta/salida), no existe forma de anular limpiamente el
+     * ajuste sin corromper el costeo FIFO: la cantidad que el ajuste "aportó" ya salió del
+     * inventario físico. En vez de dejar el sistema en un estado inconsistente de forma
+     * silenciosa (ej. dejando stock/valor negativos o robando cantidad de otra capa), la
+     * anulación debe rechazarse con un mensaje de negocio claro.
+     */
+    public function test_anular_ajuste_critico_positivo_fifo_falla_si_la_capa_ya_fue_consumida(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+            'inventario.movimientos.ver',
+            'inventario.movimientos.entrada',
+            'inventario.movimientos.salida',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa, [
+            'metodo_valorizacion' => 'FIFO',
+        ]);
+        $bodega = $this->crearBodega($empresa);
+
+        // Stock inicial real: 10 unidades a $50 (capa más antigua).
+        $this->postJson('/api/inventario/movimientos', [
+            'tipo' => MovimientoInventario::TIPO_ENTRADA,
+            'producto_id' => $producto->id,
+            'bodega_destino_id' => $bodega->id,
+            'cantidad' => 10,
+            'costo_unitario' => 50,
+            'motivo' => MovimientoInventario::MOTIVO_INGRESO_MANUAL,
+        ])->assertCreated();
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_AJUSTE_CRITICO_POSITIVO);
+
+        // Ajuste crítico positivo: 5 unidades a $200 (capa nueva).
+        $registro = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 5,
+            'costo_unitario' => 200,
+            'motivo' => 'Ajuste positivo a revisar',
+            'observacion' => 'Se consumirá antes de anular para probar el bloqueo',
+        ]);
+        $registro->assertStatus(201);
+        $ajusteId = $registro->json('data.id');
+
+        // Se vende parte del stock (13 unidades): por orden FIFO se consume primero la capa más
+        // antigua completa (10 @ $50) y luego 3 de las 5 unidades de la capa del ajuste ($200),
+        // que queda parcialmente consumida (2 disponibles de 5).
+        $this->postJson('/api/inventario/movimientos', [
+            'tipo' => MovimientoInventario::TIPO_SALIDA,
+            'producto_id' => $producto->id,
+            'bodega_origen_id' => $bodega->id,
+            'cantidad' => 13,
+            'motivo' => MovimientoInventario::MOTIVO_EGRESO_MANUAL,
+        ])->assertCreated();
+
+        // Entra stock nuevo y no relacionado, para que el stock TOTAL vuelva a ser suficiente
+        // (>= 5) y no se rechace la anulación simplemente por falta de stock global: lo que debe
+        // bloquearla es que la capa específica del ajuste ya no tiene sus 5 unidades completas.
+        $this->postJson('/api/inventario/movimientos', [
+            'tipo' => MovimientoInventario::TIPO_ENTRADA,
+            'producto_id' => $producto->id,
+            'bodega_destino_id' => $bodega->id,
+            'cantidad' => 20,
+            'costo_unitario' => 80,
+            'motivo' => MovimientoInventario::MOTIVO_INGRESO_MANUAL,
+        ])->assertCreated();
+
+        $anulacion = $this->postJson("/api/inventario/ajustes-criticos/{$ajusteId}/anular", [
+            'motivo_anulacion' => 'Cantidad/costo incorrectos, se corrige por otra vía',
+        ]);
+
+        $anulacion->assertStatus(422)->assertJson(['success' => false]);
+        $this->assertStringContainsString(
+            'ya fue',
+            $anulacion->json('message')
+        );
+
+        // El ajuste sigue vigente (no se anuló) y el stock no quedó en un estado inconsistente.
+        $ajuste = AjusteCriticoInventario::find($ajusteId);
+        $this->assertNull($ajuste->anulado_at);
+
+        $stock = $this->stock($empresa, $producto, $bodega);
+        $this->assertEquals(22.0, (float) $stock->stock_actual);
+    }
+
+    /**
+     * PMP no tiene capas individuales: el costo de cada entrada se mezcla de inmediato en un
+     * único promedio ponderado. Si nada más tocó el producto/bodega desde el ajuste, es posible
+     * revertirlo con precisión matemática usando el costo original del ajuste (no el promedio
+     * actual, que ya lo absorbió) — ver InventarioValorizacionService::calcularSalidaPmp().
+     */
+    public function test_anular_ajuste_critico_positivo_pmp_revierte_exactamente_al_costo_original(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa, [
+            'metodo_valorizacion' => 'PMP',
+            'costo_promedio' => 50,
+        ]);
+        $bodega = $this->crearBodega($empresa);
+
+        // Stock inicial real: 10 unidades a $50 (promedio ponderado = $50).
+        $this->crearStock($empresa, $producto, $bodega, 10, 50);
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_AJUSTE_CRITICO_POSITIVO);
+
+        // Ajuste crítico positivo: 5 unidades a $200 (dispara el promedio a $100 = (500+1000)/15).
+        $registro = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 5,
+            'costo_unitario' => 200,
+            'motivo' => 'Ajuste positivo a revisar',
+            'observacion' => 'Se anulará para verificar la reversión exacta en PMP',
+        ]);
+        $registro->assertStatus(201);
+        $ajusteId = $registro->json('data.id');
+
+        $stockTrasAjuste = $this->stock($empresa, $producto, $bodega);
+        $this->assertEquals(15.0, (float) $stockTrasAjuste->stock_actual);
+        $this->assertEquals(1500.0, (float) $stockTrasAjuste->valor_total);
+        $this->assertEquals(100.0, (float) $stockTrasAjuste->costo_promedio);
+
+        $anulacion = $this->postJson("/api/inventario/ajustes-criticos/{$ajusteId}/anular", [
+            'motivo_anulacion' => 'Cantidad/costo incorrectos, se corrige por otra vía',
+        ]);
+        $anulacion->assertOk();
+
+        // El promedio ponderado vuelve exactamente al original: 10 unidades a $50 = $500.
+        $stockTrasAnulacion = $this->stock($empresa, $producto, $bodega);
+        $this->assertEquals(10.0, (float) $stockTrasAnulacion->stock_actual);
+        $this->assertEquals(500.0, (float) $stockTrasAnulacion->valor_total);
+        $this->assertEquals(50.0, (float) $stockTrasAnulacion->costo_promedio);
+    }
+
+    /**
+     * Si algo más (una venta, otro ajuste, etc.) tocó el producto/bodega después del ajuste
+     * crítico positivo y antes de anularlo, el promedio ponderado ya mezcló el costo erróneo con
+     * esos otros movimientos y no puede aislarse. Igual que en FIFO, anular en ese caso debe
+     * rechazarse con un mensaje claro en vez de distorsionar el costeo silenciosamente.
+     */
+    public function test_anular_ajuste_critico_positivo_pmp_falla_si_hubo_movimiento_posterior(): void
+    {
+        [$empresa, $usuario] = $this->usuarioContadorConPermisos([
+            'inventario.ajustes_criticos.ver',
+            'inventario.ajustes_criticos.crear',
+            'inventario.movimientos.ver',
+            'inventario.movimientos.entrada',
+        ]);
+
+        Sanctum::actingAs($usuario);
+
+        $producto = $this->crearProducto($empresa, [
+            'metodo_valorizacion' => 'PMP',
+            'costo_promedio' => 50,
+        ]);
+        $bodega = $this->crearBodega($empresa);
+
+        $this->crearStock($empresa, $producto, $bodega, 10, 50);
+
+        $tipo = $this->tipo(TipoAjusteCritico::CODIGO_AJUSTE_CRITICO_POSITIVO);
+
+        $registro = $this->postJson('/api/inventario/ajustes-criticos', [
+            'tipo_ajuste_critico_id' => $tipo->id,
+            'producto_id' => $producto->id,
+            'bodega_id' => $bodega->id,
+            'cantidad' => 5,
+            'costo_unitario' => 200,
+            'motivo' => 'Ajuste positivo a revisar',
+            'observacion' => 'Se afectará con otro movimiento antes de anular',
+        ]);
+        $registro->assertStatus(201);
+        $ajusteId = $registro->json('data.id');
+
+        // Movimiento posterior sobre el mismo producto/bodega: el promedio ponderado ya mezcló
+        // el costo del ajuste con esta entrada adicional.
+        $this->postJson('/api/inventario/movimientos', [
+            'tipo' => MovimientoInventario::TIPO_ENTRADA,
+            'producto_id' => $producto->id,
+            'bodega_destino_id' => $bodega->id,
+            'cantidad' => 5,
+            'costo_unitario' => 10,
+            'motivo' => MovimientoInventario::MOTIVO_INGRESO_MANUAL,
+        ])->assertCreated();
+
+        $anulacion = $this->postJson("/api/inventario/ajustes-criticos/{$ajusteId}/anular", [
+            'motivo_anulacion' => 'Cantidad/costo incorrectos, se corrige por otra vía',
+        ]);
+
+        $anulacion->assertStatus(422)->assertJson(['success' => false]);
+        $this->assertStringContainsString(
+            'promedio ponderado',
+            $anulacion->json('message')
+        );
+
+        $ajuste = AjusteCriticoInventario::find($ajusteId);
+        $this->assertNull($ajuste->anulado_at);
     }
 
     /*
@@ -714,6 +929,7 @@ class InventarioAjusteCriticoApiTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
+                'message' => 'El ajuste crítico positivo de un producto FIFO requiere informar costo_unitario.',
             ]);
 
         $stock = $this->stock($empresa, $producto, $bodega);

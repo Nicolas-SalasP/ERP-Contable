@@ -23,7 +23,8 @@ class FifoValorizacionStrategy implements ValorizacionStrategyInterface
         float $cantidad,
         ?float $costoUnitario = null,
         ?int $loteId = null,
-        ?string $fechaMovimiento = null
+        ?string $fechaMovimiento = null,
+        bool $costoCeroIntencional = false
     ): array {
         $this->validarCantidadPositiva($cantidad);
 
@@ -34,6 +35,13 @@ class FifoValorizacionStrategy implements ValorizacionStrategyInterface
         if ($costoUnitario === null) {
             throw InventarioException::regla(
                 "El producto {$producto->id} usa valorización FIFO y requiere costo_unitario explícito en cada entrada."
+            );
+        }
+
+        if ($costoUnitario === 0.0 && ! $costoCeroIntencional) {
+            throw InventarioException::regla(
+                'El costo unitario de la entrada es 0. Si es intencional (bonificación, muestra gratis, etc.), '
+                .'confirme explícitamente que el costo cero es correcto.'
             );
         }
 
@@ -88,7 +96,8 @@ class FifoValorizacionStrategy implements ValorizacionStrategyInterface
         StockProducto $stock,
         Producto $producto,
         float $cantidad,
-        ?int $loteId = null
+        ?int $loteId = null,
+        ?int $capaObjetivoId = null
     ): array {
         $this->validarCantidadPositiva($cantidad);
 
@@ -100,8 +109,15 @@ class FifoValorizacionStrategy implements ValorizacionStrategyInterface
             throw new RuntimeException('Stock insuficiente para realizar la operación.');
         }
 
-        $this->asegurarCapaInicialSiNoExiste($stock, $producto, $loteId);
-        $valorSalida = $this->consumirCapasFifo($stock, $cantidad, $loteId);
+        if ($capaObjetivoId !== null) {
+            // Reversa de un ajuste crítico positivo: se anula exactamente la capa que ese
+            // ajuste creó, no la salida cronológica FIFO habitual (que consumiría la capa
+            // más antigua disponible, sin relación con el ajuste anulado).
+            $valorSalida = $this->consumirCapaEspecifica($stock, $cantidad, $capaObjetivoId);
+        } else {
+            $this->asegurarCapaInicialSiNoExiste($stock, $producto, $loteId);
+            $valorSalida = $this->consumirCapasFifo($stock, $cantidad, $loteId);
+        }
         $costoSalida = $cantidad > 0 ? $this->redondear($valorSalida / $cantidad) : 0.0000;
         $stockDespues = $this->redondear($stockAntes - $cantidad);
         $valorDespues = $stockDespues > 0 ? max($this->redondear($valorAntes - $valorSalida), 0.0000) : 0.0000;
@@ -150,7 +166,10 @@ class FifoValorizacionStrategy implements ValorizacionStrategyInterface
             cantidad: $cantidad,
             costoUnitario: (float) $salida['costo_unitario'],
             loteId: $loteId,
-            fechaMovimiento: $fechaMovimiento
+            fechaMovimiento: $fechaMovimiento,
+            // El costo viene heredado de la bodega origen (ya aceptado cuando entró alli), no es
+            // una decision nueva del usuario: un traspaso nunca debe exigir reconfirmacion de costo cero.
+            costoCeroIntencional: true
         );
 
         return [
@@ -211,6 +230,49 @@ class FifoValorizacionStrategy implements ValorizacionStrategyInterface
         if ($pendiente > 0) {
             throw new RuntimeException('Capas FIFO insuficientes para valorizar la salida.');
         }
+
+        return $this->formatear($valorConsumido);
+    }
+
+    /** Consume exactamente la capa indicada (reversa de ajuste crítico positivo), sin tocar otras capas. */
+    private function consumirCapaEspecifica(StockProducto $stock, float $cantidad, int $capaId): float
+    {
+        $capa = InventarioValorizacionCapa::query()
+            ->where('id', $capaId)
+            ->where('empresa_id', $stock->empresa_id)
+            ->where('producto_id', $stock->producto_id)
+            ->where('bodega_id', $stock->bodega_id)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $capa) {
+            throw new RuntimeException('La capa de valorización del ajuste crítico anulado ya no existe.');
+        }
+
+        $pendiente = $this->redondear($cantidad);
+        $disponible = $this->numero($capa->cantidad_disponible);
+
+        if ($disponible < $pendiente) {
+            throw new RuntimeException(
+                'No se puede anular limpiamente este ajuste crítico: la capa FIFO que generó ya fue '
+                .'consumida parcialmente por movimientos posteriores (ventas, salidas u otros ajustes). '
+                .'Corrija el costeo con un ajuste manual adicional en vez de anular este ajuste.'
+            );
+        }
+
+        $nuevoDisponible = $this->redondear($disponible - $pendiente);
+        $valorConsumido = $this->redondear($pendiente * $this->numero($capa->costo_unitario));
+        $nuevoValorDisponible = $nuevoDisponible > 0
+            ? $this->redondear($nuevoDisponible * $this->numero($capa->costo_unitario))
+            : 0.0000;
+
+        $capa->update([
+            'cantidad_disponible' => $nuevoDisponible,
+            'valor_disponible' => $nuevoValorDisponible,
+            'estado' => $nuevoDisponible > 0
+                ? InventarioValorizacionCapa::ESTADO_ABIERTA
+                : InventarioValorizacionCapa::ESTADO_CONSUMIDA,
+        ]);
 
         return $this->formatear($valorConsumido);
     }
