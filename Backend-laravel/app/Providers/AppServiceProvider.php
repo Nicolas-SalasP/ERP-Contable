@@ -2,39 +2,37 @@
 
 namespace App\Providers;
 
+use App\Domains\Comercial\Models\Cliente;
+use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
+use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Contabilidad\Observers\AsientoContableObserver;
+use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Models\Rol;
+use App\Domains\Core\Observers\AuditoriaPiiObserver;
+use App\Domains\CorreccionMonetaria\Providers\IneApiIpcProvider;
+use App\Domains\CorreccionMonetaria\Providers\IpcProviderInterface;
+use App\Domains\CorreccionMonetaria\Providers\ManualIpcProvider;
+use App\Domains\Inventario\Events\LoteVencidoDetectado;
+use App\Domains\Inventario\Events\StockMinimoPerforado;
+use App\Domains\Inventario\Events\TomaFisicaConfirmada;
+use App\Domains\Inventario\Listeners\RegistrarEventoInventarioListener;
+use App\Domains\Rrhh\Models\CargaFamiliar;
+use App\Domains\Rrhh\Models\Contrato;
+use App\Domains\Rrhh\Models\Empleado;
+use App\Domains\Rrhh\Models\Liquidacion;
+use App\Domains\Sii\Services\Xml\DteXmlBuilder;
+use App\Domains\Sii\Services\Xml\DteXsdValidator;
+use App\Domains\Sii\Services\Xml\Ted\TedBuilder;
+use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
+use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
+use App\Observers\EmpresaObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
-use App\Domains\Core\Models\Empresa;
-use App\Domains\Core\Models\Rol;
-use App\Observers\EmpresaObserver;
-use App\Domains\Contabilidad\Models\AsientoContable;
-use App\Domains\Contabilidad\Observers\AsientoContableObserver;
-use App\Domains\Core\Observers\AuditoriaPiiObserver;
-use App\Domains\Rrhh\Models\Empleado;
-use App\Domains\Rrhh\Models\Contrato;
-use App\Domains\Rrhh\Models\Liquidacion;
-use App\Domains\Rrhh\Models\CargaFamiliar;
-use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
-use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
-use App\Domains\Comercial\Models\Cliente;
-use App\Domains\Comercial\Models\Proveedor;
-
-use App\Domains\CorreccionMonetaria\Providers\IpcProviderInterface;
-use App\Domains\CorreccionMonetaria\Providers\ManualIpcProvider;
-use App\Domains\CorreccionMonetaria\Providers\IneApiIpcProvider;
-
-use App\Domains\Sii\Services\Xml\DteXmlBuilder;
-use App\Domains\Sii\Services\Xml\DteXsdValidator;
-use App\Domains\Sii\Services\Xml\Ted\TedBuilder;
-
-use App\Domains\Inventario\Events\LoteVencidoDetectado;
-use App\Domains\Inventario\Events\StockMinimoPerforado;
-use App\Domains\Inventario\Events\TomaFisicaConfirmada;
-use App\Domains\Inventario\Listeners\RegistrarEventoInventarioListener;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,9 +41,10 @@ class AppServiceProvider extends ServiceProvider
         // CorreccionMonetaria — proveedor de índices IPC configurable
         $this->app->bind(IpcProviderInterface::class, function () {
             $proveedor = config('correccion_monetaria.ipc_provider', 'manual');
+
             return match ($proveedor) {
-                'api_ine' => new IneApiIpcProvider(),
-                default   => new ManualIpcProvider(),
+                'api_ine' => new IneApiIpcProvider,
+                default => new ManualIpcProvider,
             };
         });
 
@@ -81,6 +80,12 @@ class AppServiceProvider extends ServiceProvider
         Cliente::observe(AuditoriaPiiObserver::class);
         Proveedor::observe(AuditoriaPiiObserver::class);
 
+        // Facturas/notas de credito-debito y asientos contables no dejaban rastro real de
+        // anulacion/reclasificacion/reversa (la pantalla de "auditoria" mostraba solo un
+        // fallback sintetico de creacion). Se reusa el mismo observer generico y append-only.
+        Factura::observe(AuditoriaPiiObserver::class);
+        AsientoContable::observe(AuditoriaPiiObserver::class);
+
         // Inventario — eventos de dominio
         Event::listen(StockMinimoPerforado::class, RegistrarEventoInventarioListener::class);
         Event::listen(LoteVencidoDetectado::class, RegistrarEventoInventarioListener::class);
@@ -98,7 +103,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('gestionar-contabilidad-critica', function ($user) {
             $rol = Rol::find($user->rol_id);
 
-            if (!$rol) {
+            if (! $rol) {
                 return false;
             }
 
