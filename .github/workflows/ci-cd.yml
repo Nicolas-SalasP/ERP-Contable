@@ -384,11 +384,21 @@ jobs:
             php artisan route:cache
             php artisan view:cache
             php artisan event:cache
-            php artisan storage:link --force 2>/dev/null || true
+            php artisan storage:link --force || echo "⚠️ storage:link fallo -- revisar manualmente, los archivos subidos (logos, PDFs, etc) no se van a servir."
 
             cp public/index.php  "$ERP_PUBLIC/index.php"
             cp public/favicon.ico "$ERP_PUBLIC/favicon.ico" 2>/dev/null || true
             cp public/robots.txt  "$ERP_PUBLIC/robots.txt"  2>/dev/null || true
+
+            # ── Symlink de storage en el docroot publico real ──
+            # $ERP_PUBLIC (public_html) es la carpeta que sirve el navegador -- es
+            # DISTINTA de $APP_LINK/public (donde corre storage:link, resuelto via
+            # base_path() de Laravel). Sin este symlink, cualquier archivo subido
+            # (logo de empresa, PDFs adjuntos, etc) se guarda bien en $SHARED/storage
+            # pero el navegador nunca lo puede pedir por URL -- 404 silencioso,
+            # aunque el backend (que si usa base_path()/public_path()) lo encuentre
+            # bien para cosas como el logo embebido en el PDF de cotizacion.
+            ln -sfn "$SHARED/storage/app/public" "$ERP_PUBLIC/storage"
 
             # ── Swap atomico: recien aqui el sitio en vivo pasa a usar la release nueva ──
             # Si erp_backend_staging todavia es carpeta real (primer deploy con este
@@ -642,11 +652,15 @@ jobs:
             php artisan route:cache
             php artisan view:cache
             php artisan event:cache
-            php artisan storage:link --force 2>/dev/null || true
+            php artisan storage:link --force || echo "⚠️ storage:link fallo -- revisar manualmente, los archivos subidos (logos, PDFs, etc) no se van a servir."
 
             cp public/index.php  "$ERP_PUBLIC/index.php"
             cp public/favicon.ico "$ERP_PUBLIC/favicon.ico" 2>/dev/null || true
             cp public/robots.txt  "$ERP_PUBLIC/robots.txt"  2>/dev/null || true
+
+            # ── Symlink de storage en el docroot publico real (mismo motivo que en
+            # staging: $ERP_PUBLIC es distinto de $APP_LINK/public) ──
+            ln -sfn "$SHARED/storage/app/public" "$ERP_PUBLIC/storage"
 
             # ── Swap atomico: recien aqui produccion pasa a usar la release nueva ──
             # Si erp_backend todavia es carpeta real (primer deploy con este patron),
