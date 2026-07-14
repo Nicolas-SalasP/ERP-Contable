@@ -8,6 +8,9 @@ export default defineConfig({
     VitePWA({
       // 'prompt' evita recargas silenciosas del SW que descartarian formularios activos.
       registerType: 'prompt',
+      // Registro manual via useRegisterSW() (ActualizacionDisponible.jsx) en vez del script
+      // auto-inyectado, para controlar el banner de "nueva version disponible".
+      injectRegister: null,
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       workbox: {
         // Sin esto, NavigationRoute de Workbox intercepta TODA navegacion
