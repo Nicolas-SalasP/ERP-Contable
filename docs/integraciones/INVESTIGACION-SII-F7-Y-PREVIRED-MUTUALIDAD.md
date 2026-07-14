@@ -13,12 +13,11 @@ otra sesión las implemente con contexto sólido y sin adivinar requisitos norma
 >
 > **Actualización 2026-07-12:** auditoría de seguimiento sobre el fix anterior encontró y corrigió
 > un bug real más (fallback de código Previred usaba el parámetro legacy global en vez del default
-> documentado para IST/CChC — ver nota en "Qué sigue pendiente" de la sección 2). Ver
-> `docs/qa/PLAYWRIGHT-QA-2026-07-12.md` para el detalle completo de esa sesión, que además corrigió
-> 2 bugs reales encontrados en QA manual (mensaje de error crudo al usuario, fecha off-by-one en 3
-> pantallas) y un hallazgo aparte sin resolver (18 tests de `Dj1835Test`/`LibroComprasVentasTest`/
-> `Ap-ArAgingTest` fallan bajo MySQL real por `emisor_rut` varchar(10) truncado — no relacionado a
-> los fixes de esta sesión, pendiente de investigar).
+> documentado para IST/CChC — ver nota en "Qué sigue pendiente" de la sección 2). Esa misma sesión
+> de QA manual corrigió además 2 bugs reales (mensaje de error crudo al usuario, fecha off-by-one en
+> 3 pantallas) y dejó un hallazgo aparte sin resolver: 18 tests de `Dj1835Test`/
+> `LibroComprasVentasTest`/`Ap-ArAgingTest` fallan bajo MySQL real por `emisor_rut` varchar(10)
+> truncado — no relacionado a los fixes de esta sesión, pendiente de investigar.
 
 ---
 
