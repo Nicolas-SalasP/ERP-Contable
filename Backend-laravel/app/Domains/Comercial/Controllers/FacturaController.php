@@ -5,7 +5,9 @@ namespace App\Domains\Comercial\Controllers;
 use App\Domains\Comercial\Exceptions\ComercialException;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Services\FacturaService;
+use App\Domains\Core\Models\Empresa;
 use App\Support\MensajeErrorGenerico;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -592,6 +594,33 @@ class FacturaController
         }
 
         return Storage::disk('local')->response($factura->archivo_pdf, "Factura-{$factura->numero_factura}.pdf");
+    }
+
+    /**
+     * Genera el comprobante PDF de una factura de VENTA (documento interno, no el DTE
+     * timbrado del SII). ?copia=1 marca el documento como reimpresión -- watermark
+     * "COPIA" visible, para no confundirlo con la primera impresión/envío original.
+     * GET /facturas/{id}/comprobante
+     */
+    public function generarComprobantePdf(Request $request, int $id)
+    {
+        $empresaId = $request->user()->empresa_activa_id;
+        $factura = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->with('cliente')
+            ->find($id);
+
+        if (! $factura) {
+            return response()->json(['success' => false, 'message' => 'Factura de venta no encontrada.'], 404);
+        }
+
+        $empresa = Empresa::find($empresaId);
+        $esCopia = $request->boolean('copia');
+
+        $pdf = Pdf::loadView('pdf.factura', compact('factura', 'empresa', 'esCopia'));
+        $sufijo = $esCopia ? '-COPIA' : '';
+
+        return $pdf->download("Factura-{$factura->numero_factura}{$sufijo}.pdf");
     }
 
     /** Emite una Nota de Débito sobre una factura de VENTA. POST /facturas/{id}/nota-debito */

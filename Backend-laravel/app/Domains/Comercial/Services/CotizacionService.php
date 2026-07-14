@@ -3,6 +3,8 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Domains\Comercial\Jobs\EnviarCotizacionCorreoJob;
+use App\Domains\Comercial\Jobs\EnviarFacturaCorreoJob;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\CotizacionDetalle;
@@ -209,9 +211,9 @@ class CotizacionService
         });
     }
 
-    public function convertirEnFactura(int $empresaId, int $cotizacionId, ?string $fechaEmision = null): Factura
+    public function convertirEnFactura(int $empresaId, int $cotizacionId, ?string $fechaEmision = null, ?int $usuarioId = null): Factura
     {
-        return DB::transaction(function () use ($empresaId, $cotizacionId, $fechaEmision) {
+        return DB::transaction(function () use ($empresaId, $cotizacionId, $fechaEmision, $usuarioId) {
             $fecha = $fechaEmision ?? date('Y-m-d');
             // Lock pesimista: evita que doble clic o reintento de red dupliquen la factura de venta generada.
             $cotizacion = Cotizacion::where('empresa_id', $empresaId)
@@ -374,7 +376,23 @@ class CotizacionService
                 $cotizacion->save();
             }
 
+            // afterCommit(): la cola podria procesar el job casi al instante (driver 'sync' en
+            // tests, o un worker muy rapido) -- sin esto, el job podria intentar leer la factura
+            // antes de que esta transaccion realmente committee.
+            EnviarFacturaCorreoJob::dispatch($empresaId, $factura->id, $usuarioId)->afterCommit();
+
             return $factura;
         });
+    }
+
+    /** Accion explicita del usuario -- a diferencia de convertirEnFactura(), esto NUNCA se dispara solo. */
+    public function enviarCotizacion(int $empresaId, int $cotizacionId, ?int $usuarioId): void
+    {
+        $existe = Cotizacion::where('empresa_id', $empresaId)->where('id', $cotizacionId)->exists();
+        if (! $existe) {
+            throw ComercialException::noEncontrado('Cotizacion no encontrada.');
+        }
+
+        EnviarCotizacionCorreoJob::dispatch($empresaId, $cotizacionId, $usuarioId);
     }
 }

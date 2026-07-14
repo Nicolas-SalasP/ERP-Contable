@@ -48,6 +48,8 @@ class Cotizacion extends Model
         'plazo_entrega',
         'comentarios',
         'garantia',
+        'enviada_at',
+        'usuario_envio_id',
     ];
 
     protected $casts = [
@@ -56,6 +58,7 @@ class Cotizacion extends Model
         'total' => 'decimal:2',
         'monto_total' => 'decimal:2',
         'es_afecta' => 'boolean',
+        'enviada_at' => 'datetime',
     ];
 
     /** @return BelongsTo<Cliente, $this> */

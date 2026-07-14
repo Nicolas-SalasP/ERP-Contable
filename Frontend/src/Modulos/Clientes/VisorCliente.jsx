@@ -84,6 +84,15 @@ const VisorCliente = () => {
 
     const [facturaDocumentos, setFacturaDocumentos] = useState(null);
 
+    const descargarComprobanteFactura = async (facturaId, etiqueta, esCopia) => {
+        try {
+            const nombreArchivo = `${etiqueta.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim()}${esCopia ? '-COPIA' : ''}.pdf`;
+            await api.download(`/facturas/${facturaId}/comprobante${esCopia ? '?copia=1' : ''}`, nombreArchivo, { silent: true });
+        } catch (error) {
+            Swal.fire('Error', error.message || 'No se pudo descargar el comprobante.', 'error');
+        }
+    };
+
     const clientesFiltrados = listaClientes.filter(c => {
         const b = terminoBusqueda.toLowerCase();
         return c.razon_social?.toLowerCase().includes(b) || (c.rut && c.rut.toLowerCase().includes(b)) || (c.codigo_cliente && c.codigo_cliente.toLowerCase().includes(b));
@@ -375,15 +384,37 @@ const VisorCliente = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-3 text-center">
-                                            {item._tipo !== 'ANTICIPO' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFacturaDocumentos(item)}
-                                                    className="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors"
-                                                >
-                                                    Documentos{item._cantidadDocumentos > 0 ? ` (${item._cantidadDocumentos})` : ''}
-                                                </button>
-                                            )}
+                                            <div className="flex items-center justify-center gap-3">
+                                                {item._tipo === 'FACTURA' && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => descargarComprobanteFactura(item.id, item._documento, false)}
+                                                            className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold text-xs transition-colors"
+                                                            title="Descargar comprobante (original)"
+                                                        >
+                                                            Imprimir
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => descargarComprobanteFactura(item.id, item._documento, true)}
+                                                            className="text-amber-600 hover:text-amber-800 font-bold text-xs transition-colors"
+                                                            title="Reimprimir como copia (marca de agua COPIA, para no confundir con el original)"
+                                                        >
+                                                            Reimprimir
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {item._tipo !== 'ANTICIPO' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFacturaDocumentos(item)}
+                                                        className="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors"
+                                                    >
+                                                        Documentos{item._cantidadDocumentos > 0 ? ` (${item._cantidadDocumentos})` : ''}
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { logger } from '../../Configuracion/logger';
-import { Search, Calendar, FileText, Check, X, ReceiptText } from 'lucide-react';
+import { Search, Calendar, FileText, Check, X, ReceiptText, Send } from 'lucide-react';
 import { TablaSkeleton } from '../../Componentes/Skeleton';
 import { EstadoVacio } from '../../Componentes/EstadoVacio';
 import { useToast } from '../../Contextos/ToastContext';
@@ -93,6 +93,27 @@ const GestionCotizaciones = () => {
             }
         } catch (error) {
             Swal.fire('Error', error.response?.data?.message || 'No se pudo generar la factura.', 'error');
+        }
+    };
+
+    const handleEnviar = async (id) => {
+        const { isConfirmed } = await Swal.fire({
+            title: '¿Enviar cotización?',
+            text: `Se genera el PDF y se envía por correo al equipo interno de tu empresa (envío directo al cliente aún no está habilitado).`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Enviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0f172a',
+        });
+        if (!isConfirmed) return;
+        try {
+            const res = await api.post(`/cotizaciones/${id}/enviar`);
+            if (res.success) {
+                toast('La cotización quedó en cola de envío.', 'success');
+            }
+        } catch (error) {
+            Swal.fire('Error', error.response?.data?.message || 'No se pudo enviar la cotización.', 'error');
         }
     };
 
@@ -256,6 +277,10 @@ const GestionCotizaciones = () => {
                                             Facturar
                                         </button>
                                     )}
+                                    <button onClick={() => handleEnviar(c.id)} className={`flex-1 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 font-bold text-xs py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-600 flex items-center justify-center gap-2`}>
+                                        <Send size={16} strokeWidth={1.75} />
+                                        Enviar
+                                    </button>
                                     <button onClick={() => descargarPDF(c.id, c.nombre_cliente)} className={`flex-1 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 font-bold text-xs py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-600 flex items-center justify-center gap-2`}>
                                         <FileText size={16} strokeWidth={1.75} />
                                         PDF
@@ -325,6 +350,13 @@ const GestionCotizaciones = () => {
                                                             Facturar
                                                         </button>
                                                     )}
+                                                    <button
+                                                        onClick={() => handleEnviar(c.id)}
+                                                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all font-bold text-xs"
+                                                        title="Enviar cotización por correo"
+                                                    >
+                                                        <Send size={16} strokeWidth={1.75} />
+                                                    </button>
                                                     <button
                                                         onClick={() => descargarPDF(c.id, c.nombre_cliente)}
                                                         className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all font-bold text-xs"

@@ -276,6 +276,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::post('/facturas/{id}/vincular-proyecto', [FacturaController::class, 'vincularProyecto'])->middleware('permiso:activos.crear,compras.crear');
     Route::post('/facturas/{id}/pdf', [FacturaController::class, 'subirPdf'])->middleware('permiso:compras.crear,ventas.crear');
     Route::get('/facturas/{id}/pdf', [FacturaController::class, 'descargarPdf'])->middleware('permiso:compras.ver,ventas.ver');
+    Route::get('/facturas/{id}/comprobante', [FacturaController::class, 'generarComprobantePdf'])->middleware('permiso:ventas.ver');
 
     // Documentos adjuntos (varios por factura: guías de despacho, comprobantes, etc.)
     Route::get('/facturas/{facturaId}/adjuntos', [DocumentoAdjuntoController::class, 'index'])->middleware('permiso:compras.ver,ventas.ver');
@@ -300,6 +301,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::put('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado'])->middleware('permiso:ventas.crear');
     Route::patch('/cotizaciones/{id}/estado', [CotizacionController::class, 'actualizarEstado'])->middleware('permiso:ventas.crear');
     Route::post('/cotizaciones/{id}/facturar', [CotizacionController::class, 'facturar'])->middleware('permiso:ventas.crear');
+    Route::post('/cotizaciones/{id}/enviar', [CotizacionController::class, 'enviar'])->middleware('permiso:ventas.crear');
 
     // Resource de cotizaciones (index/store; show, update y destroy excluidos)
     Route::get('/cotizaciones', [CotizacionController::class, 'index'])->middleware('permiso:ventas.ver');
