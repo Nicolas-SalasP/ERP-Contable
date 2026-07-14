@@ -217,7 +217,10 @@ class CotizacionService
             }
 
             $estadoAprobada = EstadoCotizacion::where('nombre', 'Aceptada')->first();
-            if (! $estadoAprobada || $cotizacion->estado_id !== $estadoAprobada->id) {
+            // estado_id no tiene cast explicito -- via MySQL/PDO puede volver como string ("2")
+            // mientras que $estadoAprobada->id es int, y la comparacion estricta fallaba pese a
+            // ser el mismo estado (reproducible solo en MySQL real, no en SQLite de los tests).
+            if (! $estadoAprobada || (int) $cotizacion->estado_id !== (int) $estadoAprobada->id) {
                 throw ComercialException::regla(
                     'Solo cotizaciones ACEPTADAS pueden ser facturadas. '.
                     'Estado actual: '.($cotizacion->estado->nombre ?? '?')
