@@ -104,15 +104,15 @@ CREATE TABLE `asientos_contables` (
 --
 
 INSERT INTO `asientos_contables` (`id`, `codigo_unico`, `empresa_id`, `centro_costo_id`, `empleado_nombre`, `fecha`, `glosa`, `tipo_asiento`, `origen_modulo`, `origen_id`, `created_at`) VALUES
-(7, 26260000004, 1, NULL, NULL, '2026-01-06', 'Compra Fac. 1 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 5, '2026-01-06 20:51:01'),
-(8, 26260000005, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 494150 - Ingenieria Informatica Asociada Limitada (Tecnomas) | [Reclasificado: Lenovo ThinkBook 14 F-494150 TecnoMas] | [Reclasificado: Lenovo ThinkBook 14 F-494150 TecnoMas]', 'egreso', 'COMPRA', 6, '2026-02-20 19:16:23'),
-(9, 26260000006, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 20896 - Premium Hosting Solutions Spa', 'egreso', 'COMPRA', 7, '2026-02-20 19:16:58'),
+(7, 26260000004, 1, NULL, NULL, '2026-01-06', 'Compra Fac. 1 - Proveedor Demo Uno SpA', 'egreso', 'COMPRA', 5, '2026-01-06 20:51:01'),
+(8, 26260000005, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 494150 - Proveedor Demo Dos SpA | [Reclasificado: Notebook Demo F-494150] | [Reclasificado: Notebook Demo F-494150]', 'egreso', 'COMPRA', 6, '2026-02-20 19:16:23'),
+(9, 26260000006, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 20896 - Proveedor Demo Tres SpA', 'egreso', 'COMPRA', 7, '2026-02-20 19:16:58'),
 (10, 26260000007, 1, NULL, NULL, '2026-02-20', 'REVERSO NULO: Factura N° 1. Motivo: Documento de pruebas', '', 'COMPRA', 5, '2026-02-20 19:55:07'),
-(12, 26260000008, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 2 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 9, '2026-02-20 20:04:08'),
+(12, 26260000008, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 2 - Proveedor Demo Uno SpA', 'egreso', 'COMPRA', 9, '2026-02-20 20:04:08'),
 (13, 26260000009, 1, NULL, NULL, '2026-02-20', 'REVERSO NULO: Factura N° 2. Motivo: prueba', '', 'COMPRA', 9, '2026-02-20 20:10:06'),
-(14, 26260000010, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 3 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 10, '2026-02-20 20:19:10'),
-(15, 26260000011, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 4 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 11, '2026-02-20 20:23:22'),
-(16, 26260000012, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 5 - Procesadora Insuban Spa', 'egreso', 'COMPRA', 12, '2026-02-20 20:24:47'),
+(14, 26260000010, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 3 - Proveedor Demo Uno SpA', 'egreso', 'COMPRA', 10, '2026-02-20 20:19:10'),
+(15, 26260000011, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 4 - Proveedor Demo Uno SpA', 'egreso', 'COMPRA', 11, '2026-02-20 20:23:22'),
+(16, 26260000012, 1, NULL, NULL, '2026-02-20', 'Compra Fac. 5 - Proveedor Demo Uno SpA', 'egreso', 'COMPRA', 12, '2026-02-20 20:24:47'),
 (17, 26260000013, 1, NULL, NULL, '2026-02-20', 'REVERSO NULO: Factura N° 4. Motivo: Prueba', '', 'COMPRA', 11, '2026-02-20 22:06:25'),
 (21, 26120000001, 1, NULL, NULL, '2026-02-21', 'Depreciación de Activos Fijos - Periodo 02/2026', 'traspaso', 'ACTIVOS_FIJOS', 0, '2026-02-21 22:54:24');
 
@@ -399,7 +399,7 @@ CREATE TABLE `clientes` (
 --
 
 INSERT INTO `clientes` (`id`, `rut`, `razon_social`, `contacto_nombre`, `contacto_email`, `contacto_telefono`, `direccion`, `telefono`, `email`, `estado`, `empresa_id`, `created_at`) VALUES
-(1, '78.730.890-2', 'Procesadora Insuban Spa', 'Nestor Cerdan', 'ncerdan@insuban.cl', '', 'Antillanca Norte 391', NULL, 'finanzas@insuban.cl', 'ACTIVO', 1, '2026-01-07 18:55:18');
+(1, '22.222.222-2', 'Cliente Demo SpA', 'Contacto Demo', 'contacto@clientedemo.cl', '', 'Calle Demo 123', NULL, 'finanzas@clientedemo.cl', 'ACTIVO', 1, '2026-01-07 18:55:18');
 
 -- --------------------------------------------------------
 
@@ -450,8 +450,8 @@ CREATE TABLE `cotizaciones` (
 --
 
 INSERT INTO `cotizaciones` (`id`, `cliente_id`, `nombre_cliente`, `fecha_emision`, `total`, `estado_id`, `empresa_id`, `created_at`, `es_afecta`, `validez`) VALUES
-(7, 1, 'Procesadora Insuban Spa', '2026-01-08', 2000000.00, 2, 1, '2026-01-08 02:15:01', 0, 7),
-(8, 1, 'Procesadora Insuban Spa', '2026-02-18', 600000.00, 2, 1, '2026-02-20 18:45:51', 0, 1);
+(7, 1, 'Cliente Demo SpA', '2026-01-08', 2000000.00, 2, 1, '2026-01-08 02:15:01', 0, 7),
+(8, 1, 'Cliente Demo SpA', '2026-02-18', 600000.00, 2, 1, '2026-02-20 18:45:51', 0, 1);
 
 -- --------------------------------------------------------
 
@@ -473,8 +473,8 @@ CREATE TABLE `cotizacion_detalles` (
 --
 
 INSERT INTO `cotizacion_detalles` (`id`, `cotizacion_id`, `producto_nombre`, `cantidad`, `precio_unitario`, `subtotal`) VALUES
-(7, 7, 'Sistema de Gestión - InsuOrders\nPlataforma web para gestión de bodega, compras y mantenciones, con control de inventarios, proveedores y trazabilidad de operaciones.', 1, 2000000.00, 2000000.00),
-(8, 8, 'Sistema de gestion general InsuOrders - Creación nuevos módulos de Clientes y modificación de modelos de datos', 1, 600000.00, 600000.00);
+(7, 7, 'Sistema de Gestión Demo\nPlataforma web para gestión de bodega, compras y mantenciones, con control de inventarios, proveedores y trazabilidad de operaciones.', 1, 2000000.00, 2000000.00),
+(8, 8, 'Sistema de gestion general Demo - Creación nuevos módulos de Clientes y modificación de modelos de datos', 1, 600000.00, 600000.00);
 
 -- --------------------------------------------------------
 
@@ -501,7 +501,7 @@ CREATE TABLE `cuentas_bancarias_empresa` (
 --
 
 INSERT INTO `cuentas_bancarias_empresa` (`id`, `empresa_id`, `banco`, `tipo_cuenta`, `numero_cuenta`, `cuenta_contable`, `saldo_actual`, `titular`, `rut_titular`, `email_notificacion`, `created_at`) VALUES
-(1, 1, 'Scotiabank', 'Corriente', '000991980431', '110107', 0.00, 'Tecnologias Nicolas Salas E.I.R.L', '78.149.179-9', '', '2026-01-08 01:40:43');
+(1, 1, 'Scotiabank', 'Corriente', '000000000001', '110107', 0.00, 'Empresa Demo SpA', '11.111.111-1', '', '2026-01-08 01:40:43');
 
 -- --------------------------------------------------------
 
@@ -525,8 +525,8 @@ CREATE TABLE `cuentas_bancarias_proveedores` (
 --
 
 INSERT INTO `cuentas_bancarias_proveedores` (`id`, `proveedor_id`, `banco`, `numero_cuenta`, `tipo_cuenta`, `pais_iso`, `swift_bic`, `activo`) VALUES
-(3, 2, 'Banco Itau', '215674042', 'Corriente', 'CL', NULL, 1),
-(4, 3, 'Banco Estado', '21670128111', 'Vista', 'CL', NULL, 1);
+(3, 2, 'Banco Itau', '000000000002', 'Corriente', 'CL', NULL, 1),
+(4, 3, 'Banco Estado', '000000000003', 'Vista', 'CL', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -623,7 +623,7 @@ CREATE TABLE `empresas` (
 --
 
 INSERT INTO `empresas` (`id`, `rut`, `razon_social`, `direccion`, `created_at`, `email`, `telefono`, `logo_path`, `color_primario`, `regimen_tributario`, `tasa_impuesto`) VALUES
-(1, '78.149.179-9', 'Tecnologías Nicolas Salas E.I.R.L', 'Antonio Bellet 193', '2026-01-04 19:04:33', 'nicolas.salas.contacto@gmail.com', '+56 9 3709 4271', 'uploads/logos/logo_695f098840c13.png', '#2492f9', '14_D3', 25.00);
+(1, '11.111.111-1', 'Empresa Demo SpA', 'Calle Demo 100', '2026-01-04 19:04:33', 'contacto@empresademo.cl', '+56 9 0000 0000', NULL, '#2492f9', '14_D3', 25.00);
 
 -- --------------------------------------------------------
 
@@ -998,9 +998,9 @@ CREATE TABLE `proveedores` (
 --
 
 INSERT INTO `proveedores` (`id`, `empresa_id`, `codigo_interno`, `rut`, `razon_social`, `pais_iso`, `moneda_defecto`, `region`, `comuna`, `direccion`, `telefono`, `email_contacto`, `nombre_contacto`, `created_at`) VALUES
-(1, 1, '1', '78.730.890-2', 'Procesadora Insuban Spa', 'CL', 'CLP', NULL, NULL, '', '', 'ncerdan@insuban.cl', 'Nestor Cerdan', '2026-01-05 02:58:39'),
-(2, 1, '2', '79.882.360-4', 'Ingenieria Informatica Asociada Limitada (Tecnomas)', 'CL', 'CLP', NULL, NULL, '', '', '', '', '2026-02-20 19:10:31'),
-(3, 1, '3', '76.457.436-2', 'Premium Hosting Solutions Spa', 'CL', 'CLP', NULL, NULL, '', '', '', '', '2026-02-20 19:12:00');
+(1, 1, '1', '33.333.333-3', 'Proveedor Demo Uno SpA', 'CL', 'CLP', NULL, NULL, '', '', 'contacto@proveedordemo1.cl', 'Contacto Demo Uno', '2026-01-05 02:58:39'),
+(2, 1, '2', '44.444.444-4', 'Proveedor Demo Dos SpA', 'CL', 'CLP', NULL, NULL, '', '', '', '', '2026-02-20 19:10:31'),
+(3, 1, '3', '55.555.555-5', 'Proveedor Demo Tres SpA', 'CL', 'CLP', NULL, NULL, '', '', '', '', '2026-02-20 19:12:00');
 
 -- --------------------------------------------------------
 
@@ -1151,7 +1151,7 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `empresa_id`, `email`, `password`, `intentos_fallidos`, `nivel_bloqueo`, `bloqueado_hasta`, `reset_token`, `reset_expires_at`, `nombre`, `rol_id`, `estado_suscripcion_id`, `fecha_fin_suscripcion`, `created_at`) VALUES
-(1, 1, 'admin@erp.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0, 0, NULL, NULL, NULL, 'Super Admin', 1, 1, '2030-12-31', '2026-01-04 19:03:19');
+(1, 1, 'admin@erp.cl', '$2y$10$REEMPLAZAR.CON.HASH.GENERADO.LOCALMENTE.NO.USAR.EN.PROD', 0, 0, NULL, NULL, NULL, 'Super Admin', 1, 1, '2030-12-31', '2026-01-04 19:03:19');
 
 --
 -- Índices para tablas volcadas
