@@ -2,19 +2,17 @@
 
 namespace Tests\Feature\Dashboard;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Proveedor;
-use App\Domains\Comercial\Models\EstadoCotizacion;
-use App\Domains\Rrhh\Models\Liquidacion;
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\PreparaEntornoBase;
+use Tests\TestCase;
 
 class DashboardResumenTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -34,38 +32,39 @@ class DashboardResumenTest extends TestCase
         int $empresaId,
         int $proveedorId,
         float $monto = 100000,
-        string $fechaEmision = null,
+        ?string $fechaEmision = null,
         string $estado = 'REGISTRADA'
     ): Factura {
         static $seq = 0;
         $seq++;
 
-        $f = new Factura();
-        $f->empresa_id      = $empresaId;
-        $f->proveedor_id    = $proveedorId;
-        $f->numero_factura  = 'F-TEST-' . $seq . '-' . uniqid();
-        $f->monto_bruto     = $monto;
-        $f->monto_neto      = round($monto / 1.19, 2);
-        $f->monto_iva       = round($monto - ($monto / 1.19), 2);
-        $f->tipo            = 'VENTA';
-        $f->estado          = $estado;
-        $f->codigo_unico    = (int) (microtime(true) * 10000) + $seq;
-        $f->fecha_emision   = $fechaEmision ?? Carbon::now()->toDateString();
+        $f = new Factura;
+        $f->empresa_id = $empresaId;
+        $f->proveedor_id = $proveedorId;
+        $f->numero_factura = 'F-TEST-'.$seq.'-'.uniqid();
+        $f->monto_bruto = $monto;
+        $f->monto_neto = round($monto / 1.19, 2);
+        $f->monto_iva = round($monto - ($monto / 1.19), 2);
+        $f->tipo = 'VENTA';
+        $f->estado = $estado;
+        $f->codigo_unico = (int) (microtime(true) * 10000) + $seq;
+        $f->fecha_emision = $fechaEmision ?? Carbon::now()->toDateString();
         $f->save();
 
         return $f;
     }
 
-    private function crearProveedor(int $empresaId, string $razonSocial = null): Proveedor
+    private function crearProveedor(int $empresaId, ?string $razonSocial = null): Proveedor
     {
         static $pSeq = 0;
         $pSeq++;
+
         return Proveedor::create([
-            'empresa_id'     => $empresaId,
-            'rut'            => $pSeq . '.111.' . $pSeq . '11-' . ($pSeq % 10),
-            'razon_social'   => $razonSocial ?? 'Cliente Test ' . uniqid(),
-            'codigo_interno' => 'C' . $pSeq,
-            'pais_iso'       => 'CL',
+            'empresa_id' => $empresaId,
+            'rut' => $pSeq.'.111.'.$pSeq.'11-'.($pSeq % 10),
+            'razon_social' => $razonSocial ?? 'Cliente Test '.uniqid(),
+            'codigo_interno' => 'C'.$pSeq,
+            'pais_iso' => 'CL',
             'moneda_defecto' => 'CLP',
         ]);
     }
@@ -188,17 +187,17 @@ class DashboardResumenTest extends TestCase
         $proveedor = $this->crearProveedor($empresa->id);
 
         // Crear una factura de tipo COMPRA en el mes actual
-        $compra = new Factura();
-        $compra->empresa_id     = $empresa->id;
-        $compra->proveedor_id   = $proveedor->id;
-        $compra->numero_factura = 'C-TEST-' . uniqid();
-        $compra->monto_bruto    = 250000;
-        $compra->monto_neto     = round(250000 / 1.19, 2);
-        $compra->monto_iva      = round(250000 - (250000 / 1.19), 2);
-        $compra->tipo           = 'COMPRA';
-        $compra->estado         = 'REGISTRADA';
-        $compra->codigo_unico   = (int) (microtime(true) * 10000) + 9999;
-        $compra->fecha_emision  = Carbon::now()->toDateString();
+        $compra = new Factura;
+        $compra->empresa_id = $empresa->id;
+        $compra->proveedor_id = $proveedor->id;
+        $compra->numero_factura = 'C-TEST-'.uniqid();
+        $compra->monto_bruto = 250000;
+        $compra->monto_neto = round(250000 / 1.19, 2);
+        $compra->monto_iva = round(250000 - (250000 / 1.19), 2);
+        $compra->tipo = 'COMPRA';
+        $compra->estado = 'REGISTRADA';
+        $compra->codigo_unico = (int) (microtime(true) * 10000) + 9999;
+        $compra->fecha_emision = Carbon::now()->toDateString();
         $compra->save();
 
         $response = $this->actingAs($usuario)
@@ -278,7 +277,7 @@ class DashboardResumenTest extends TestCase
         $this->assertIsArray($aging);
         $this->assertCount(4, $aging);
 
-        $tramo0_30  = collect($aging)->firstWhere('tramo', '0-30');
+        $tramo0_30 = collect($aging)->firstWhere('tramo', '0-30');
         $tramo31_60 = collect($aging)->firstWhere('tramo', '31-60');
         $tramo91plus = collect($aging)->firstWhere('tramo', '91+');
 
@@ -380,5 +379,131 @@ class DashboardResumenTest extends TestCase
 
         $this->assertEquals(111000.0, (float) $respA->json('data.kpis.ventas_mes'));
         $this->assertEquals(222000.0, (float) $respB->json('data.kpis.ventas_mes'));
+    }
+
+    // -------------------------------------------------------------------------
+    // Rango de fechas custom + comparación interanual
+    // -------------------------------------------------------------------------
+
+    public function test_fecha_desde_y_fecha_hasta_explicitas_tienen_prioridad_sobre_periodo(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $proveedor = $this->crearProveedor($empresa->id);
+
+        // Factura dentro del rango explícito pero fuera del mes actual (periodo preset)
+        $fechaEnRango = Carbon::now()->subMonths(2)->toDateString();
+        $this->crearFacturaVenta($empresa->id, $proveedor->id, 150000, $fechaEnRango);
+        // Factura en el mes actual, que quedaría fuera del rango explícito
+        $this->crearFacturaVenta($empresa->id, $proveedor->id, 999000, Carbon::now()->toDateString());
+
+        $desde = Carbon::now()->subMonths(3)->startOfMonth()->toDateString();
+        $hasta = Carbon::now()->subMonths(2)->endOfMonth()->toDateString();
+
+        $response = $this->actingAs($usuario)->getJson(
+            "/api/dashboard/resumen?periodo=mes&fecha_desde={$desde}&fecha_hasta={$hasta}"
+        );
+
+        $response->assertOk();
+        $this->assertEquals(150000.0, (float) $response->json('data.kpis.ventas_mes'));
+    }
+
+    public function test_fecha_hasta_menor_a_fecha_desde_devuelve_422(): void
+    {
+        [, $usuario] = $this->crearEmpresaConAdmin();
+
+        $response = $this->actingAs($usuario)->getJson(
+            '/api/dashboard/resumen?fecha_desde=2026-06-01&fecha_hasta=2026-05-01'
+        );
+
+        $response->assertStatus(422);
+    }
+
+    public function test_rango_de_fechas_mayor_a_366_dias_devuelve_422(): void
+    {
+        [, $usuario] = $this->crearEmpresaConAdmin();
+
+        $response = $this->actingAs($usuario)->getJson(
+            '/api/dashboard/resumen?fecha_desde=2020-01-01&fecha_hasta=2026-01-01'
+        );
+
+        $response->assertStatus(422);
+    }
+
+    public function test_solo_fecha_desde_sin_fecha_hasta_devuelve_422(): void
+    {
+        [, $usuario] = $this->crearEmpresaConAdmin();
+
+        $response = $this->actingAs($usuario)->getJson(
+            '/api/dashboard/resumen?fecha_desde=2026-01-01'
+        );
+
+        $response->assertStatus(422);
+    }
+
+    public function test_comparar_anio_anterior_agrega_clave_con_kpis_y_serie(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $proveedor = $this->crearProveedor($empresa->id);
+
+        // Ventas del mes actual
+        $this->crearFacturaVenta($empresa->id, $proveedor->id, 200000, Carbon::now()->toDateString());
+        // Ventas del mismo mes, un año atrás
+        $this->crearFacturaVenta($empresa->id, $proveedor->id, 100000, Carbon::now()->subYear()->toDateString());
+
+        $response = $this->actingAs($usuario)->getJson(
+            '/api/dashboard/resumen?periodo=mes&comparar_anio_anterior=1'
+        );
+
+        $response->assertOk()->assertJsonStructure([
+            'data' => [
+                'comparacion_anio_anterior' => [
+                    'ventas',
+                    'variacion_pct',
+                    'facturas_emitidas',
+                    'facturas_emitidas_variacion_pct',
+                    'serie',
+                    'periodo' => ['desde', 'hasta'],
+                ],
+            ],
+        ]);
+
+        $this->assertEquals(200000.0, (float) $response->json('data.kpis.ventas_mes'));
+        $this->assertEquals(100000.0, (float) $response->json('data.comparacion_anio_anterior.ventas'));
+        $this->assertEquals(100.0, (float) $response->json('data.comparacion_anio_anterior.variacion_pct'));
+    }
+
+    public function test_sin_comparar_anio_anterior_no_incluye_la_clave(): void
+    {
+        [, $usuario] = $this->crearEmpresaConAdmin();
+
+        $response = $this->actingAs($usuario)->getJson('/api/dashboard/resumen?periodo=mes');
+
+        $response->assertOk();
+        $this->assertArrayNotHasKey('comparacion_anio_anterior', $response->json('data'));
+    }
+
+    /**
+     * Regresion: topClientes() seleccionaba proveedores.id sin incluirlo en el
+     * groupBy. Bajo SQLite (motor de tests por defecto) no falla, pero bajo MySQL
+     * con ONLY_FULL_GROUP_BY (modo por defecto) lanza SQLSTATE 42000/1055 y el
+     * dashboard completo devolvia 500 en produccion. Este test necesita >1 factura
+     * para el mismo cliente, que es lo que fuerza la agregacion real.
+     */
+    public function test_top_clientes_agrupa_multiples_facturas_del_mismo_cliente(): void
+    {
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $cliente = $this->crearProveedor($empresa->id, 'Cliente Top');
+
+        $this->crearFacturaVenta($empresa->id, $cliente->id, 100000);
+        $this->crearFacturaVenta($empresa->id, $cliente->id, 50000);
+
+        $response = $this->actingAs($usuario)->getJson('/api/dashboard/resumen');
+
+        $response->assertOk();
+        $topClientes = $response->json('data.top_clientes');
+
+        $this->assertCount(1, $topClientes);
+        $this->assertEquals('Cliente Top', $topClientes[0]['nombre']);
+        $this->assertEquals(150000.0, (float) $topClientes[0]['monto']);
     }
 }

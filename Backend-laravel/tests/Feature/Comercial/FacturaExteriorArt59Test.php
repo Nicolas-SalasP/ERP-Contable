@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Comercial;
 
-use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Contabilidad\Models\PlanCuenta;
-use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Core\Models\Empresa;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\PreparaEntornoBase;
@@ -20,10 +20,12 @@ use Tests\TestCase;
  */
 class FacturaExteriorArt59Test extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     private FacturaService $service;
+
     private Empresa $empresa;
+
     private Proveedor $proveedor;
 
     protected function setUp(): void
@@ -174,7 +176,7 @@ class FacturaExteriorArt59Test extends TestCase
 
     public function test_tipo_gasto_invalido_lanza_excepcion(): void
     {
-        $this->expectException(\App\Domains\Comercial\Exceptions\ComercialException::class);
+        $this->expectException(ComercialException::class);
 
         $this->service->registrarFacturaCompra(
             $this->payload('ART59-008', ['tipo_gasto_art59' => 'dividendos'])
@@ -183,7 +185,7 @@ class FacturaExteriorArt59Test extends TestCase
 
     public function test_cuenta_retencion_inexistente_lanza_excepcion(): void
     {
-        $this->expectException(\App\Domains\Comercial\Exceptions\ComercialException::class);
+        $this->expectException(ComercialException::class);
 
         $this->service->registrarFacturaCompra(
             $this->payload('ART59-009', ['tipo_gasto_art59' => 'regalias', 'cuentaRetencion' => '999999'])
@@ -213,5 +215,23 @@ class FacturaExteriorArt59Test extends TestCase
         $factura = $this->service->registrarFacturaCompra($datos);
 
         $this->assertNull($factura->retencion_art59, 'Nacional no debe tener retención Art. 59');
+    }
+
+    // FacturaController::f50() estaba implementado pero sin ruta registrada (endpoint huérfano).
+    public function test_endpoint_f50_via_http_real_resume_retenciones_por_tipo_de_gasto(): void
+    {
+        $this->service->registrarFacturaCompra(
+            $this->payload('ART59-011', ['tipo_gasto_art59' => 'regalias', 'cuentaRetencion' => '252200'])
+        );
+
+        $usuario = $this->crearUsuario($this->empresa, $this->rolSuperAdmin, [
+            'nombre' => 'Contador F50',
+            'email' => 'f50@art59.cl',
+        ]);
+
+        $response = $this->actingAs($usuario)->getJson('/api/facturas/f50?periodo=2026-06');
+
+        $response->assertStatus(200);
+        $response->assertJsonFragment(['tipo_gasto' => 'regalias']);
     }
 }

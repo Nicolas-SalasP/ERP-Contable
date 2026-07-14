@@ -25,8 +25,7 @@ class InventarioMovimientoService
         private readonly InventarioStockUbicacionService $stockUbicacionService,
         private readonly InventarioAuditoriaService $auditoria,
         private readonly InventarioEventoIntegracionService $eventosIntegracion
-    ) {
-    }
+    ) {}
 
     public function registrarMovimiento(array $data, int $empresaId, ?int $userId = null): MovimientoInventario
     {
@@ -67,7 +66,8 @@ class InventarioMovimientoService
             cantidad: $cantidad,
             costoUnitario: $costoUnitarioEntrada,
             loteId: $lote?->id,
-            fechaMovimiento: $data['fecha_movimiento'] ?? null
+            fechaMovimiento: $data['fecha_movimiento'] ?? null,
+            costoCeroIntencional: $this->costoCeroConfirmadoEnPayload($data)
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -97,7 +97,7 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
-        if (!empty($data['ubicacion_destino_id'])) {
+        if (! empty($data['ubicacion_destino_id'])) {
             $this->stockUbicacionService->aplicarEntrada(
                 empresaId: $empresaId,
                 productoId: (int) $producto->id,
@@ -164,7 +164,7 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
-        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+        if (! empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
             $this->stockUbicacionService->aplicarSalida(
                 empresaId: $empresaId,
                 productoId: (int) $producto->id,
@@ -257,7 +257,7 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
-        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+        if (! empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
             $this->stockUbicacionService->aplicarSalida(
                 empresaId: $empresaId,
                 productoId: (int) $producto->id,
@@ -268,7 +268,7 @@ class InventarioMovimientoService
             );
         }
 
-        if (!empty($data['ubicacion_destino_id'])) {
+        if (! empty($data['ubicacion_destino_id'])) {
             $this->stockUbicacionService->aplicarEntrada(
                 empresaId: $empresaId,
                 productoId: (int) $producto->id,
@@ -308,7 +308,8 @@ class InventarioMovimientoService
             cantidad: $cantidad,
             costoUnitario: $costoUnitarioEntrada,
             loteId: $lote?->id,
-            fechaMovimiento: $data['fecha_movimiento'] ?? null
+            fechaMovimiento: $data['fecha_movimiento'] ?? null,
+            costoCeroIntencional: $this->costoCeroConfirmadoEnPayload($data)
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -338,7 +339,7 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
-        if (!empty($data['ubicacion_destino_id'])) {
+        if (! empty($data['ubicacion_destino_id'])) {
             $this->stockUbicacionService->aplicarEntrada(
                 empresaId: $empresaId,
                 productoId: (int) $producto->id,
@@ -375,7 +376,9 @@ class InventarioMovimientoService
             stock: $stockOrigen,
             producto: $producto,
             cantidad: $cantidad,
-            loteId: $lote?->id
+            loteId: $lote?->id,
+            capaObjetivoId: isset($data['_capa_objetivo_id']) ? (int) $data['_capa_objetivo_id'] : null,
+            costoUnitarioForzado: isset($data['_costo_unitario_forzado']) ? (float) $data['_costo_unitario_forzado'] : null
         );
 
         $movimiento = MovimientoInventario::create(array_merge([
@@ -405,7 +408,7 @@ class InventarioMovimientoService
             empresaId: $empresaId
         );
 
-        if (!empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
+        if (! empty($data['ubicacion_origen_id']) && empty($data['_ubicacion_reserva_ya_controlada'])) {
             $this->stockUbicacionService->aplicarSalida(
                 empresaId: $empresaId,
                 productoId: (int) $producto->id,
@@ -441,31 +444,31 @@ class InventarioMovimientoService
                 'lotes.bodegaDestino:id,empresa_id,codigo,nombre,estado',
             ])
             ->empresa($empresaId)
-            ->when(!empty($filtros['producto_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['producto_id']), function ($query) use ($filtros) {
                 $query->producto((int) $filtros['producto_id']);
             })
-            ->when(!empty($filtros['tipo']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['tipo']), function ($query) use ($filtros) {
                 $query->tipo($filtros['tipo']);
             })
-            ->when(!empty($filtros['bodega_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['bodega_id']), function ($query) use ($filtros) {
                 $query->bodega((int) $filtros['bodega_id']);
             })
-            ->when(!empty($filtros['lote_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['lote_id']), function ($query) use ($filtros) {
                 $query->whereHas('lotes', function ($loteQuery) use ($filtros) {
                     $loteQuery->where('lote_id', (int) $filtros['lote_id']);
                 });
             })
-            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
                 $query->where(function ($subQuery) use ($filtros) {
                     $subQuery
                         ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
                         ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
                 });
             })
-            ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['desde']), function ($query) use ($filtros) {
                 $query->desde($filtros['desde']);
             })
-            ->when(!empty($filtros['hasta']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['hasta']), function ($query) use ($filtros) {
                 $query->hasta($filtros['hasta']);
             })
             ->masRecientes()
@@ -489,28 +492,28 @@ class InventarioMovimientoService
             ])
             ->empresa($empresaId)
             ->producto($productoId)
-            ->when(!empty($filtros['bodega_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['bodega_id']), function ($query) use ($filtros) {
                 $query->bodega((int) $filtros['bodega_id']);
             })
-            ->when(!empty($filtros['lote_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['lote_id']), function ($query) use ($filtros) {
                 $query->whereHas('lotes', function ($loteQuery) use ($filtros) {
                     $loteQuery->where('lote_id', (int) $filtros['lote_id']);
                 });
             })
-            ->when(!empty($filtros['tipo']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['tipo']), function ($query) use ($filtros) {
                 $query->tipo($filtros['tipo']);
             })
-            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
                 $query->where(function ($subQuery) use ($filtros) {
                     $subQuery
                         ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
                         ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
                 });
             })
-            ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['desde']), function ($query) use ($filtros) {
                 $query->desde($filtros['desde']);
             })
-            ->when(!empty($filtros['hasta']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['hasta']), function ($query) use ($filtros) {
                 $query->hasta($filtros['hasta']);
             })
             ->ordenKardex()
@@ -531,31 +534,31 @@ class InventarioMovimientoService
                 'lotes.bodegaDestino:id,empresa_id,codigo,nombre,estado',
             ])
             ->empresa($empresaId)
-            ->when(!empty($filtros['producto_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['producto_id']), function ($query) use ($filtros) {
                 $query->producto((int) $filtros['producto_id']);
             })
-            ->when(!empty($filtros['bodega_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['bodega_id']), function ($query) use ($filtros) {
                 $query->bodega((int) $filtros['bodega_id']);
             })
-            ->when(!empty($filtros['lote_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['lote_id']), function ($query) use ($filtros) {
                 $query->whereHas('lotes', function ($loteQuery) use ($filtros) {
                     $loteQuery->where('lote_id', (int) $filtros['lote_id']);
                 });
             })
-            ->when(!empty($filtros['tipo']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['tipo']), function ($query) use ($filtros) {
                 $query->tipo($filtros['tipo']);
             })
-            ->when(!empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['ubicacion_id']), function ($query) use ($filtros) {
                 $query->where(function ($subQuery) use ($filtros) {
                     $subQuery
                         ->where('ubicacion_origen_id', (int) $filtros['ubicacion_id'])
                         ->orWhere('ubicacion_destino_id', (int) $filtros['ubicacion_id']);
                 });
             })
-            ->when(!empty($filtros['desde']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['desde']), function ($query) use ($filtros) {
                 $query->desde($filtros['desde']);
             })
-            ->when(!empty($filtros['hasta']), function ($query) use ($filtros) {
+            ->when(! empty($filtros['hasta']), function ($query) use ($filtros) {
                 $query->hasta($filtros['hasta']);
             })
             ->ordenKardex()
@@ -569,7 +572,7 @@ class InventarioMovimientoService
             ->where('empresa_id', $empresaId)
             ->first();
 
-        if (!$producto) {
+        if (! $producto) {
             throw ValidationException::withMessages([
                 'producto_id' => 'El producto no existe o no pertenece a la empresa.',
             ]);
@@ -582,7 +585,7 @@ class InventarioMovimientoService
     {
         $producto = $this->obtenerProductoEmpresa($productoId, $empresaId);
 
-        if (!$producto->activo) {
+        if (! $producto->activo) {
             throw ValidationException::withMessages([
                 'producto_id' => 'El producto está inactivo.',
             ]);
@@ -598,7 +601,7 @@ class InventarioMovimientoService
             ->where('empresa_id', $empresaId)
             ->first();
 
-        if (!$bodega) {
+        if (! $bodega) {
             throw ValidationException::withMessages([
                 'bodega_id' => 'La bodega no existe o no pertenece a la empresa.',
             ]);
@@ -689,7 +692,7 @@ class InventarioMovimientoService
 
     private function validarLoteMovibleParaSalida(?LoteInventario $lote): void
     {
-        if (!$lote) {
+        if (! $lote) {
             return;
         }
 
@@ -786,7 +789,7 @@ class InventarioMovimientoService
 
     private function validarCantidadPositiva(mixed $cantidad): float
     {
-        if (!is_numeric($cantidad)) {
+        if (! is_numeric($cantidad)) {
             throw ValidationException::withMessages([
                 'cantidad' => 'La cantidad debe ser numérica.',
             ]);
@@ -811,6 +814,12 @@ class InventarioMovimientoService
             'El costo unitario debe ser numérico.',
             'El costo unitario no puede ser negativo.'
         );
+    }
+
+    /** Confirmacion explicita del usuario para aceptar una entrada con costo_unitario exactamente 0 (bonificacion, muestra gratis, etc.), en vez de que pase silenciosamente como si fuera un dato faltante. */
+    private function costoCeroConfirmadoEnPayload(array $data): bool
+    {
+        return (bool) ($data['costo_cero_confirmado'] ?? false);
     }
 
     private function datosComplementariosMovimiento(
@@ -844,7 +853,7 @@ class InventarioMovimientoService
             return null;
         }
 
-        if (!is_numeric($valor)) {
+        if (! is_numeric($valor)) {
             throw ValidationException::withMessages([
                 $campo => $mensajeNoNumerico,
             ]);

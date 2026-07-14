@@ -7,7 +7,7 @@ import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
 import Select from 'react-select';
 import { CreditCard, X, Check } from 'lucide-react';
-import { formatearMoneda } from '../../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../../Utilidades/formato';
 
 const formatCurrency = formatearMoneda;
 
@@ -208,6 +208,10 @@ const MesaConciliacion = () => {
                 return Swal.fire('Atención', 'Selecciona al menos una factura o un proveedor/cliente para generar un anticipo.', 'warning');
             }
 
+            if (totalSugerido < montoMovimiento && !entidadSel) {
+                return Swal.fire('Atención', 'El pago supera el total de las facturas seleccionadas (sobrepago). Selecciona el cliente/proveedor del excedente antes de continuar, o quedará como anticipo sin vincular.', 'warning');
+            }
+
             try {
                 Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
@@ -378,7 +382,7 @@ const MesaConciliacion = () => {
                             <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                 {movimientos.map(mov => (
                                     <tr key={mov.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700 transition-colors group">
-                                        <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-700 dark:text-slate-300">{new Date(mov.fecha).toLocaleDateString('es-CL')}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-700 dark:text-slate-300">{formatFecha(mov.fecha)}</td>
                                         <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{mov.descripcion}</td>
                                         <td className="px-6 py-4 font-black text-rose-500 text-right">{mov.cargo > 0 ? formatCurrency(mov.cargo) : ''}</td>
                                         <td className="px-6 py-4 font-black text-emerald-500 text-right">{mov.abono > 0 ? formatCurrency(mov.abono) : ''}</td>
@@ -475,6 +479,14 @@ const MesaConciliacion = () => {
                                                     </tbody>
                                                 </table>
                                                 </div>
+                                                {totalSugerido < montoMovimiento && (
+                                                    <div className="p-4 border-t border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 text-center">
+                                                        <p className="text-xs text-amber-700 dark:text-amber-400 font-bold mb-2">El pago supera el total de estas facturas. Selecciona el cliente/proveedor del excedente para que quede como anticipo vinculado.</p>
+                                                        <button onClick={() => handleCambioModo('MANUAL')} className="bg-amber-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-amber-700 shadow-md transition-all">
+                                                            Seleccionar Cliente/Proveedor del Excedente
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="py-10 text-center border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl bg-white dark:bg-slate-800 shadow-sm">

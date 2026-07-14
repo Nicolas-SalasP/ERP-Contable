@@ -2,15 +2,15 @@
 
 namespace App\Domains\Core\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use App\Domains\Core\Models\User;
-use Illuminate\Validation\ValidationException;
 use App\Domains\Core\Services\ProvisionUserService;
 use App\Domains\Core\Services\WebAuthClient;
 use App\Domains\Core\Support\ModuloPermisos;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class AuthController
@@ -18,15 +18,14 @@ class AuthController
     public function __construct(
         private readonly WebAuthClient $webClient,
         private readonly ProvisionUserService $provisioner,
-    ) {
-    }
+    ) {}
 
     public function login(Request $request)
     {
         try {
             $request->validate([
                 'email' => 'required|email',
-                'password' => 'required'
+                'password' => 'required',
             ]);
 
             $user = User::with(['rol', 'estadoSuscripcion'])->where('email', $request->email)->first();
@@ -34,26 +33,32 @@ class AuthController
             $credencialesLocalesValidas = $user && Hash::check($request->password, $user->password);
 
             // Si fallan las credenciales locales, se intenta contra la web (puede existir ahí sin haber sido provisionado aún).
-            if (!$credencialesLocalesValidas) {
+            if (! $credencialesLocalesValidas) {
                 $webResult = $this->webClient->validateLogin($request->email, $request->password);
 
-                if (!$webResult || !($webResult['valid'] ?? false)) {
+                if (! $webResult || ! ($webResult['valid'] ?? false)) {
+                    // Bloqueo automatico por cuenta (complementa el throttle por IP de la ruta,
+                    // que no protege contra intentos distribuidos desde varias IPs).
+                    if ($user) {
+                        $this->registrarIntentoFallido($user);
+                    }
+
                     return response()->json([
                         'success' => false,
-                        'message' => 'Credenciales incorrectas'
+                        'message' => 'Credenciales incorrectas',
                     ], 401);
                 }
 
                 // Provisionar / actualizar el usuario desde la web
                 $user = $this->provisioner->provision([
                     'tenri_user_id' => $webResult['tenri_user_id'],
-                    'email'         => $webResult['email'],
-                    'name'          => $webResult['name'],
+                    'email' => $webResult['email'],
+                    'name' => $webResult['name'],
                     'password_hash' => $webResult['password_hash'],
-                    'plan_slug'     => $webResult['plan_slug'],
-                    'module_keys'   => $webResult['module_keys'],
-                    'rol_erp'       => $webResult['rol_erp'],
-                    'subscription_status'  => $webResult['subscription_status'] ?? 'active',
+                    'plan_slug' => $webResult['plan_slug'],
+                    'module_keys' => $webResult['module_keys'],
+                    'rol_erp' => $webResult['rol_erp'],
+                    'subscription_status' => $webResult['subscription_status'] ?? 'active',
                     'subscription_ends_at' => $webResult['subscription_ends_at'] ?? null,
                 ]);
 
@@ -62,7 +67,7 @@ class AuthController
 
             // Credenciales locales validas pero cache de suscripcion viejo (>1h): re-sincroniza antes de los guards.
             if ($credencialesLocalesValidas
-                && (!$user->tenri_synced_at || Carbon::parse($user->tenri_synced_at)->diffInHours(now()) >= 1)) {
+                && (! $user->tenri_synced_at || Carbon::parse($user->tenri_synced_at)->diffInHours(now()) >= 1)) {
                 $webResult = $this->webClient->validateLogin($request->email, $request->password);
                 if ($webResult && ($webResult['valid'] ?? false)) {
                     $user = $this->provisioner->provision($webResult);
@@ -71,10 +76,10 @@ class AuthController
             }
 
             // Se valida por nombre del estado, no por id hardcodeado (el id no es estable entre entornos/seeders).
-            if (!$user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
+            if (! $user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cuenta inactiva o suspendida.'
+                    'message' => 'Cuenta inactiva o suspendida.',
                 ], 403);
             }
 
@@ -83,7 +88,7 @@ class AuthController
                 if ($empresa && (bool) $empresa->activa === false) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'La empresa se encuentra suspendida. Contacte al administrador.'
+                        'message' => 'La empresa se encuentra suspendida. Contacte al administrador.',
                     ], 403);
                 }
             }
@@ -92,18 +97,22 @@ class AuthController
                 && Carbon::parse($user->bloqueado_hasta)->isFuture()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Usuario bloqueado temporalmente.'
+                    'message' => 'Usuario bloqueado temporalmente.',
                 ], 403);
             }
 
             if ($user->subscription_status === 'expired') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tu suscripción venció. Renueva tu plan en tenri.cl para volver a ingresar.'
+                    'message' => 'Tu suscripción venció. Renueva tu plan en tenri.cl para volver a ingresar.',
                 ], 403);
             }
 
-            $user->update(['ultimo_acceso' => now()]);
+            $user->update([
+                'ultimo_acceso' => now(),
+                'intentos_fallidos' => 0,
+                'bloqueado_hasta' => null,
+            ]);
 
             $permisos = ModuloPermisos::permisosUsuario($user);
 
@@ -119,20 +128,21 @@ class AuthController
                     'empresa_id' => $user->empresa_id,
                     'rol_id' => $user->rol_id,
                     'plan_slug' => $user->plan_slug,
-                    'permisos' => $permisos
-                ]
+                    'permisos' => $permisos,
+                ],
             ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (Throwable $e) {
-            Log::error('Error en Login: ' . $e->getMessage());
+            Log::error('Error en Login: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error Interno del Servidor. Inténtelo más tarde.'
+                'message' => 'Error Interno del Servidor. Inténtelo más tarde.',
             ], 500);
         }
     }
@@ -145,7 +155,7 @@ class AuthController
 
             $webResult = $this->webClient->validateSsoToken($request->sso_token);
 
-            if (!$webResult || !($webResult['valid'] ?? false)) {
+            if (! $webResult || ! ($webResult['valid'] ?? false)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Token SSO inválido o expirado.',
@@ -153,19 +163,19 @@ class AuthController
             }
 
             $user = $this->provisioner->provision([
-                'tenri_user_id'        => $webResult['tenri_user_id'],
-                'email'                => $webResult['email'],
-                'name'                 => $webResult['name'],
-                'password_hash'        => $webResult['password_hash'],
-                'plan_slug'            => $webResult['plan_slug'],
-                'module_keys'          => $webResult['module_keys'],
-                'rol_erp'              => $webResult['rol_erp'],
-                'subscription_status'  => $webResult['subscription_status'] ?? 'active',
+                'tenri_user_id' => $webResult['tenri_user_id'],
+                'email' => $webResult['email'],
+                'name' => $webResult['name'],
+                'password_hash' => $webResult['password_hash'],
+                'plan_slug' => $webResult['plan_slug'],
+                'module_keys' => $webResult['module_keys'],
+                'rol_erp' => $webResult['rol_erp'],
+                'subscription_status' => $webResult['subscription_status'] ?? 'active',
                 'subscription_ends_at' => $webResult['subscription_ends_at'] ?? null,
             ]);
             $user->load(['rol', 'estadoSuscripcion']);
 
-            if (!$user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
+            if (! $user->estadoSuscripcion || $user->estadoSuscripcion->nombre !== 'Activa') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Cuenta inactiva o suspendida.',
@@ -223,7 +233,8 @@ class AuthController
                 'errors' => $e->errors(),
             ], 422);
         } catch (Throwable $e) {
-            Log::error('Error en tokenLogin SSO: ' . $e->getMessage());
+            Log::error('Error en tokenLogin SSO: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error Interno del Servidor. Inténtelo más tarde.',
@@ -255,10 +266,11 @@ class AuthController
                 'issued_at' => now()->toIso8601String(),
             ]);
         } catch (Throwable $e) {
-            Log::error('Error en refresh token: ' . $e->getMessage());
+            Log::error('Error en refresh token: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'No se pudo refrescar el token. Inicia sesion nuevamente.'
+                'message' => 'No se pudo refrescar el token. Inicia sesion nuevamente.',
             ], 500);
         }
     }
@@ -271,18 +283,36 @@ class AuthController
 
         // Whitelist (misma forma que el login): no se expone toArray() completo del usuario.
         return response()->json([
-            'id'                   => $user->id,
-            'nombre'               => $user->nombre,
-            'email'                => $user->email,
-            'empresa_id'           => $user->empresa_id,
-            'empresa_activa_id'    => $user->empresa_activa_id,
-            'rol_id'               => $user->rol_id,
-            'plan_slug'            => $user->plan_slug,
-            'module_keys'          => $user->module_keys ?? [],
-            'subscription_status'  => $user->subscription_status,
+            'id' => $user->id,
+            'nombre' => $user->nombre,
+            'email' => $user->email,
+            'empresa_id' => $user->empresa_id,
+            'empresa_activa_id' => $user->empresa_activa_id,
+            'rol_id' => $user->rol_id,
+            'plan_slug' => $user->plan_slug,
+            'module_keys' => $user->module_keys ?? [],
+            'subscription_status' => $user->subscription_status,
             'subscription_ends_at' => $user->subscription_ends_at,
-            'permisos'             => $permisos,
-            'empresas_count'       => $user->empresas()->count(),
+            'permisos' => $permisos,
+            'empresas_count' => $user->empresas()->count(),
         ]);
+    }
+
+    /** Bloqueo escalonado por cuenta: a los 5 intentos fallidos consecutivos bloquea 15 min y sube el nivel; no reemplaza el throttle por IP de la ruta, lo complementa contra ataques distribuidos. */
+    private function registrarIntentoFallido(User $user): void
+    {
+        $intentos = $user->intentos_fallidos + 1;
+
+        if ($intentos >= 5) {
+            $user->update([
+                'intentos_fallidos' => 0,
+                'nivel_bloqueo' => $user->nivel_bloqueo + 1,
+                'bloqueado_hasta' => now()->addMinutes(15),
+            ]);
+
+            return;
+        }
+
+        $user->update(['intentos_fallidos' => $intentos]);
     }
 }

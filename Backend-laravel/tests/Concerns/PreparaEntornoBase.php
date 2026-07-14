@@ -129,6 +129,7 @@ trait PreparaEntornoBase
                     'contabilidad.ver', 'contabilidad.crear',
                     'tributario.ver', 'tributario.crear',
                     'activos.ver',
+                    'alertas.ver', 'alertas.gestionar',
                 ],
                 $this->permisosInventarioCompletos(),
                 $this->permisosSiiOperacion(),
@@ -169,6 +170,7 @@ trait PreparaEntornoBase
             'contabilidad.ver', 'contabilidad.crear',
             'activos.ver', 'activos.crear',
             'tributario.ver', 'tributario.crear',
+            'alertas.ver', 'alertas.gestionar',
         ];
     }
 
@@ -325,20 +327,20 @@ trait PreparaEntornoBase
     /**
      * Crea una Empresa con un Usuario administrador asociado.
      *
-     * @param array $datosEmpresa Override opcional de campos de la empresa
-     * @param array $datosUsuario Override opcional de campos del usuario
+     * @param  array  $datosEmpresa  Override opcional de campos de la empresa
+     * @param  array  $datosUsuario  Override opcional de campos del usuario
      * @return array{0: Empresa, 1: User}
      */
     protected function crearEmpresaConAdmin(array $datosEmpresa = [], array $datosUsuario = []): array
     {
         $empresa = Empresa::create(array_merge([
             'rut' => $this->rutAleatorio(),
-            'razon_social' => 'Empresa Test ' . uniqid(),
+            'razon_social' => 'Empresa Test '.uniqid(),
         ], $datosEmpresa));
 
         $usuario = User::create(array_merge([
             'nombre' => 'Admin Test',
-            'email' => 'admin' . uniqid() . '@test.cl',
+            'email' => 'admin'.uniqid().'@test.cl',
             'password' => bcrypt('password123'),
             'empresa_id' => $empresa->id,
             'empresa_activa_id' => $empresa->id,
@@ -356,16 +358,15 @@ trait PreparaEntornoBase
     {
         return Empresa::create(array_merge([
             'rut' => $this->rutAleatorio(),
-            'razon_social' => 'Empresa Test ' . uniqid(),
+            'razon_social' => 'Empresa Test '.uniqid(),
         ], $datos));
     }
 
     /**
      * Crea un usuario asociado a una empresa y un rol.
      *
-     * @param Empresa $empresa
-     * @param Rol|null $rol Si null, usa rolAdministrador
-     * @param array $overrides Campos extras a sobreescribir
+     * @param  Rol|null  $rol  Si null, usa rolAdministrador
+     * @param  array  $overrides  Campos extras a sobreescribir
      */
     protected function crearUsuario(Empresa $empresa, ?Rol $rol = null, array $overrides = []): User
     {
@@ -373,7 +374,7 @@ trait PreparaEntornoBase
 
         return User::create(array_merge([
             'nombre' => 'Usuario Test',
-            'email' => 'user' . uniqid() . '@test.cl',
+            'email' => 'user'.uniqid().'@test.cl',
             'password' => bcrypt('password123'),
             'empresa_id' => $empresa->id,
             'empresa_activa_id' => $empresa->id,
@@ -389,7 +390,8 @@ trait PreparaEntornoBase
     protected function rutAleatorio(): string
     {
         $numero = rand(10000000, 99999999);
-        $dv = ['0','1','2','3','4','5','6','7','8','9','K'][rand(0, 10)];
-        return number_format($numero, 0, '', '.') . '-' . $dv;
+        $dv = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K'][rand(0, 10)];
+
+        return $numero.'-'.$dv;
     }
 }

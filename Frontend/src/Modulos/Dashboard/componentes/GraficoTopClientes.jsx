@@ -43,17 +43,20 @@ const tickNombre = (valor) => {
   return valor.length > 16 ? `${valor.slice(0, 15)}…` : valor;
 };
 
-export default function GraficoTopClientes({ datos = [] }) {
+export default function GraficoTopClientes({ datos = [], onClienteClick }) {
   const oscuro = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const sinDatos =
     !datos ||
     datos.length === 0 ||
     datos.every((d) => d.monto === 0);
 
+  const clickeable = typeof onClienteClick === 'function';
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
       <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
         Top clientes (últimos 12 meses)
+        {clickeable && <span className="ml-2 text-[10px] font-normal text-slate-400">(click para ver ficha)</span>}
       </h3>
 
       {sinDatos ? (
@@ -93,7 +96,12 @@ export default function GraficoTopClientes({ datos = [] }) {
               content={<TooltipPersonalizado />}
               cursor={{ fill: oscuro ? '#1e293b' : '#f1f5f9' }}
             />
-            <Bar dataKey="monto" radius={[0, 4, 4, 0]}>
+            <Bar
+              dataKey="monto"
+              radius={[0, 4, 4, 0]}
+              cursor={clickeable ? 'pointer' : 'default'}
+              onClick={clickeable ? (data) => data?.id && onClienteClick(data.id) : undefined}
+            >
               {datos.map((_, indice) => (
                 <Cell
                   key={`celda-${indice}`}

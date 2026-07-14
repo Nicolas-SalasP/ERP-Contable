@@ -10,6 +10,7 @@ use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Contabilidad\Services\PlanCuentaService;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -140,6 +141,20 @@ class ActivoFijoService
     }
 
     public function depreciarMes(int $empresaId, int $usuarioId, string $mesAnio)
+    {
+        try {
+            return $this->depreciarMesSinGuard($empresaId, $usuarioId, $mesAnio);
+        } catch (QueryException $e) {
+            // La unique de BD (defensa final contra la carrera que el exists() de mas
+            // abajo no cubre) salta aqui como codigo 23000/1062.
+            if ((int) $e->getCode() === 23000 || str_contains($e->getMessage(), 'dep_ejec_activos_periodo_unique')) {
+                throw new Exception("El proceso de depreciación para este período ya fue ejecutado y contabilizado.");
+            }
+            throw $e;
+        }
+    }
+
+    private function depreciarMesSinGuard(int $empresaId, int $usuarioId, string $mesAnio)
     {
         $periodo = Carbon::createFromFormat('Y-m-d', $mesAnio . '-01');
         $fechaCalculo = $periodo->copy()->endOfMonth();

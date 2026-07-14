@@ -7,7 +7,7 @@ import { api } from '../../../Configuracion/api';
 import Swal from 'sweetalert2';
 import { logger } from '../../../Configuracion/logger';
 import { CreditCard, Upload, FileText, Check, Plus } from 'lucide-react';
-import { formatearMoneda } from '../../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../../Utilidades/formato';
 const formatCurrency = formatearMoneda;
 
 const CartolaBancaria = () => {
@@ -357,7 +357,7 @@ const CartolaBancaria = () => {
                                     {movimientos.map(mov => (
                                         <tr key={mov.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                             <td className="px-6 py-4 font-medium text-slate-600 dark:text-slate-400">
-                                                {new Date(mov.fecha).toLocaleDateString('es-CL')}
+                                                {formatFecha(mov.fecha)}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <p className="font-bold text-slate-800 dark:text-slate-200">{mov.descripcion}</p>

@@ -10,10 +10,11 @@ use Tests\TestCase;
 
 class SiiConfiguracionControllerTest extends TestCase
 {
-    use RefreshDatabase;
     use PreparaEntornoBase;
+    use RefreshDatabase;
 
     private Empresa $empresa;
+
     private $usuario;
 
     protected function setUp(): void
@@ -26,11 +27,11 @@ class SiiConfiguracionControllerTest extends TestCase
     public function test_get_devuelve_campos_sii_de_la_empresa(): void
     {
         $this->empresa->update([
-            'giro_emisor'             => 'Venta al por menor',
-            'codigo_actividad_sii'    => 471910,
-            'comuna'                  => 'Santiago',
-            'ambiente_sii'            => 'certificacion',
-            'email_intercambio_sii'   => 'intercambio@acme.cl',
+            'giro_emisor' => 'Venta al por menor',
+            'codigo_actividad_sii' => 471910,
+            'comuna' => 'Santiago',
+            'ambiente_sii' => 'certificacion',
+            'email_intercambio_sii' => 'intercambio@acme.cl',
         ]);
 
         Sanctum::actingAs($this->usuario);
@@ -38,10 +39,10 @@ class SiiConfiguracionControllerTest extends TestCase
         $this->getJson('/api/sii/configuracion')
             ->assertStatus(200)
             ->assertJson([
-                'giro_emisor'           => 'Venta al por menor',
-                'codigo_actividad_sii'  => 471910,
-                'comuna'                => 'Santiago',
-                'ambiente_sii'          => 'certificacion',
+                'giro_emisor' => 'Venta al por menor',
+                'codigo_actividad_sii' => 471910,
+                'comuna' => 'Santiago',
+                'ambiente_sii' => 'certificacion',
                 'email_intercambio_sii' => 'intercambio@acme.cl',
             ]);
     }
@@ -51,11 +52,11 @@ class SiiConfiguracionControllerTest extends TestCase
         Sanctum::actingAs($this->usuario);
 
         $payload = [
-            'giro_emisor'           => 'Servicios contables',
-            'codigo_actividad_sii'  => 692000,
-            'comuna'                => 'Providencia',
-            'ciudad'                => 'Santiago',
-            'ambiente_sii'          => 'produccion',
+            'giro_emisor' => 'Servicios contables',
+            'codigo_actividad_sii' => 692000,
+            'comuna' => 'Providencia',
+            'ciudad' => 'Santiago',
+            'ambiente_sii' => 'produccion',
             'email_intercambio_sii' => 'sii@empresa.cl',
         ];
 
@@ -68,6 +69,23 @@ class SiiConfiguracionControllerTest extends TestCase
         $this->assertSame('produccion', $this->empresa->ambiente_sii);
     }
 
+    public function test_put_acepta_rut_representante_legal_formateado_con_puntos(): void
+    {
+        // Regresion: la columna/validacion eran max:10, pero el frontend siempre
+        // envia el RUT con puntos ("12.345.678-5", 12 caracteres) -- ningun RUT
+        // real de 8 digitos se podia guardar antes de este fix.
+        Sanctum::actingAs($this->usuario);
+
+        $this->putJson('/api/sii/configuracion', [
+            'ambiente_sii' => 'certificacion',
+            'rut_representante_legal' => '12.345.678-5',
+        ])->assertStatus(200)
+            ->assertJson(['rut_representante_legal' => '12.345.678-5']);
+
+        $this->empresa->refresh();
+        $this->assertSame('12.345.678-5', $this->empresa->rut_representante_legal);
+    }
+
     public function test_put_rechaza_ambiente_invalido_con_422(): void
     {
         Sanctum::actingAs($this->usuario);
@@ -75,7 +93,7 @@ class SiiConfiguracionControllerTest extends TestCase
         $this->putJson('/api/sii/configuracion', [
             'ambiente_sii' => 'staging', // no es certificacion/produccion
         ])->assertStatus(422)
-          ->assertJsonValidationErrors('ambiente_sii');
+            ->assertJsonValidationErrors('ambiente_sii');
     }
 
     public function test_put_rechaza_email_malformado_con_422(): void
@@ -83,10 +101,10 @@ class SiiConfiguracionControllerTest extends TestCase
         Sanctum::actingAs($this->usuario);
 
         $this->putJson('/api/sii/configuracion', [
-            'ambiente_sii'          => 'certificacion',
+            'ambiente_sii' => 'certificacion',
             'email_intercambio_sii' => 'no-es-un-email',
         ])->assertStatus(422)
-          ->assertJsonValidationErrors('email_intercambio_sii');
+            ->assertJsonValidationErrors('email_intercambio_sii');
     }
 
     public function test_put_no_acepta_empresa_id_del_payload_mass_assignment(): void
@@ -96,7 +114,7 @@ class SiiConfiguracionControllerTest extends TestCase
         Sanctum::actingAs($this->usuario);
 
         $this->putJson('/api/sii/configuracion', [
-            'empresa_id'   => $otraEmpresa->id, // intento de toma de control
+            'empresa_id' => $otraEmpresa->id, // intento de toma de control
             'ambiente_sii' => 'produccion',
         ])->assertStatus(200);
 

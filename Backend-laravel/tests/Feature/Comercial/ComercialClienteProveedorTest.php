@@ -2,23 +2,21 @@
 
 namespace Tests\Feature\Comercial;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Tests\Concerns\PreparaEntornoBase;
+use App\Domains\Comercial\Models\Cliente;
+use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
-use App\Domains\Core\Models\Rol;
-use App\Domains\Comercial\Models\Cliente;
-use App\Domains\Comercial\Models\Proveedor;
-use App\Domains\Comercial\Models\Factura;
-use App\Domains\Core\Models\EstadoSuscripcion;
-use App\Domains\Core\Models\Pais;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PreparaEntornoBase;
+use Tests\TestCase;
 
 class ComercialClienteProveedorTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     protected $empresa;
+
     protected $usuario;
 
     protected function setUp(): void
@@ -31,16 +29,16 @@ class ComercialClienteProveedorTest extends TestCase
 
     public function test_rechaza_creacion_de_cliente_con_rut_duplicado_en_la_misma_empresa()
     {
-        $this->actingAs($this->usuario)->postJson('/api/clientes', ['rut' => '76.543.210-K', 'razon_social' => 'Original']);
-        $response = $this->actingAs($this->usuario)->postJson('/api/clientes', ['rut' => '76.543.210-K', 'razon_social' => 'Clon']);
+        $this->actingAs($this->usuario)->postJson('/api/clientes', ['rut' => '76.543.210-3', 'razon_social' => 'Original']);
+        $response = $this->actingAs($this->usuario)->postJson('/api/clientes', ['rut' => '76.543.210-3', 'razon_social' => 'Clon']);
 
         $response->assertStatus(422)->assertSee('ya se encuentra registrado');
     }
 
     public function test_rechaza_creacion_de_proveedor_con_rut_duplicado()
     {
-        Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'PR-1', 'rut' => '77.123.456-7', 'razon_social' => 'Prov Original', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
-        $response = $this->actingAs($this->usuario)->postJson('/api/proveedores', ['rut' => '77.123.456-7', 'razon_social' => 'Prov Clon']);
+        Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'PR-1', 'rut' => '77.123.456-9', 'razon_social' => 'Prov Original', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+        $response = $this->actingAs($this->usuario)->postJson('/api/proveedores', ['rut' => '77.123.456-9', 'razon_social' => 'Prov Clon']);
 
         $response->assertStatus(422)->assertSee('ya se encuentra registrado');
     }
@@ -123,5 +121,25 @@ class ComercialClienteProveedorTest extends TestCase
         ]);
 
         $response->assertStatus(422)->assertSee('proveedor inactivo');
+    }
+
+    public function test_get_proveedor_individual_devuelve_el_proveedor_de_la_empresa()
+    {
+        // Regresion: no existia GET /api/proveedores/{id} (show), solo /ficha/{id} (mas pesado).
+        $proveedor = Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'PR-5', 'rut' => '5.5.5.5-5', 'razon_social' => 'Proveedor Show', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        $response = $this->actingAs($this->usuario)->getJson("/api/proveedores/{$proveedor->id}");
+
+        $response->assertStatus(200)->assertJsonPath('data.razon_social', 'Proveedor Show');
+    }
+
+    public function test_get_proveedor_de_otra_empresa_devuelve_404()
+    {
+        $empresaRival = Empresa::create(['rut' => '88.888.888-8', 'razon_social' => 'Rival SpA']);
+        $proveedorRival = Proveedor::create(['empresa_id' => $empresaRival->id, 'codigo_interno' => 'PR-R', 'rut' => '6.6.6.6-6', 'razon_social' => 'Prov Rival', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        $response = $this->actingAs($this->usuario)->getJson("/api/proveedores/{$proveedorRival->id}");
+
+        $response->assertStatus(404);
     }
 }

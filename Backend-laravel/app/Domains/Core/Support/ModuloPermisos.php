@@ -8,6 +8,7 @@ final class ModuloPermisos
 {
     public const MAP = [
         'dashboard' => ['dashboard.ver'],
+        'alertas' => ['alertas.ver', 'alertas.gestionar'],
         'clientes' => ['ventas.ver', 'clientes.ver', 'clientes.crear'],
         'cotizaciones' => ['ventas.ver', 'ventas.crear'],
         'facturas.manual' => ['compras.ver', 'compras.crear'],
@@ -54,10 +55,10 @@ final class ModuloPermisos
         'tributario.f29' => ['tributario.ver', 'tributario.crear'],
         'usuarios.gestion' => ['usuarios.ver', 'usuarios.gestionar'],
         'sii.configuracion' => ['sii.configuracion.ver', 'sii.configuracion.editar'],
-        'sii.certificado'   => ['sii.certificado.ver', 'sii.certificado.subir', 'sii.certificado.revocar'],
-        'sii.caf'           => ['sii.caf.ver', 'sii.caf.subir', 'sii.caf.revocar'],
-        'sii.dte'           => ['sii.dte.ver', 'sii.dte.emitir', 'sii.dte.reintentar', 'sii.dte.anular'],
-        'sii.auditoria'     => ['sii.auditoria.ver'],
+        'sii.certificado' => ['sii.certificado.ver', 'sii.certificado.subir', 'sii.certificado.revocar'],
+        'sii.caf' => ['sii.caf.ver', 'sii.caf.subir', 'sii.caf.revocar'],
+        'sii.dte' => ['sii.dte.ver', 'sii.dte.emitir', 'sii.dte.reintentar', 'sii.dte.anular'],
+        'sii.auditoria' => ['sii.auditoria.ver'],
         'roles.gestion' => ['usuarios.ver', 'usuarios.gestionar'],
         'rrhh.empleados' => ['rrhh.empleados.ver', 'rrhh.empleados.crear', 'rrhh.empleados.editar'],
         'rrhh.contratos' => ['rrhh.empleados.ver', 'rrhh.contratos.crear'],
@@ -74,12 +75,13 @@ final class ModuloPermisos
         'dashboard.ejecutivo' => ['contabilidad.ver', 'tesoreria.ver', 'ventas.ver'],
         'white_label' => [],
         'modulos.custom' => [],
-        'soporte.tickets'    => ['soporte.ver', 'soporte.crear'],
+        'soporte.tickets' => ['soporte.ver', 'soporte.crear'],
     ];
 
     /** Metadatos de presentación por módulo [label, categoria], capa visual sobre MAP (la fuente real); sin entrada acá usa label humanizado y categoria 'General'. */
     private const META = [
         'dashboard' => ['Dashboard principal', 'General'],
+        'alertas' => ['Central de alertas', 'General'],
         'dashboard.ejecutivo' => ['Dashboard ejecutivo', 'General'],
         'empresa.perfil' => ['Perfil de empresa', 'General'],
         'glosario' => ['Glosario contable', 'General'],
@@ -145,7 +147,7 @@ final class ModuloPermisos
         'integraciones.api' => ['Integraciones API', 'Enterprise'],
         'white_label' => ['White-label', 'Enterprise'],
         'modulos.custom' => ['Módulos a medida', 'Enterprise'],
-        'soporte.tickets'    => ['Tickets de soporte', 'Soporte'],
+        'soporte.tickets' => ['Tickets de soporte', 'Soporte'],
     ];
 
     /** Catálogo de módulos asignables a un plan [{key, label, categoria}], derivado de MAP por lo que nunca se desincroniza. */
@@ -182,7 +184,7 @@ final class ModuloPermisos
         $base = self::normalizarLista($base);
 
         // Plan como techo: si el usuario viene de un plan (module_keys no vacio), sus permisos se limitan a los del plan sin importar lo que conceda el rol.
-        if (!empty($moduleKeys)) {
+        if (! empty($moduleKeys)) {
             $base = array_values(array_intersect($base, $permisosModulos));
         }
 
@@ -226,7 +228,7 @@ final class ModuloPermisos
             $valores = json_last_error() === JSON_ERROR_NONE ? $decoded : [$valores];
         }
 
-        if (!is_array($valores)) {
+        if (! is_array($valores)) {
             return [];
         }
 
@@ -240,7 +242,7 @@ final class ModuloPermisos
     {
         $rol = $usuario->rol;
 
-        if (!$rol) {
+        if (! $rol) {
             return false;
         }
 

@@ -2,10 +2,28 @@
 
 Sistema de Planificación de Recursos Empresariales (ERP) diseñado para escalar y automatizar la gestión financiera, contable, tributaria y de remuneraciones de las pymes en Chile.
 
-![Estado](https://img.shields.io/badge/Estado-Beta_1.0_Cerrada-success)
+![Versión](https://img.shields.io/badge/Versión-1.11.0-success)
+![Estado](https://img.shields.io/badge/Estado-Producción-success)
 ![Frontend](https://img.shields.io/badge/Frontend-React_19_+_Vite-blue)
 ![Backend](https://img.shields.io/badge/Backend-Laravel_12_(PHP_8.2)-777BB4)
 ![Database](https://img.shields.io/badge/Database-MySQL_8.0-orange)
+
+## 📸 Vistas del Sistema
+
+<table>
+<tr>
+<td><img src="docs/screenshots/dashboard.png" alt="Dashboard" width="400"/><br/><sub>Dashboard</sub></td>
+<td><img src="docs/screenshots/contabilidad.png" alt="Contabilidad — Plan de Cuentas" width="400"/><br/><sub>Contabilidad — Plan de Cuentas</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/comercial.png" alt="Comercial — Clientes" width="400"/><br/><sub>Comercial — Clientes</sub></td>
+<td><img src="docs/screenshots/tesoreria.png" alt="Tesorería — Conciliación" width="400"/><br/><sub>Tesorería — Conciliación</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/rrhh.png" alt="RRHH — Empleados" width="400"/><br/><sub>RRHH — Empleados</sub></td>
+<td></td>
+</tr>
+</table>
 
 ## 🏢 Arquitectura del Proyecto
 
@@ -25,7 +43,9 @@ Monorepo (pnpm workspace) con una SPA en React y una API RESTful en Laravel 12.
 │   │   │   ├── Inventario/    # Productos, bodegas, kardex, picking/packing
 │   │   │   ├── Sii/           # Integración Servicio de Impuestos Internos
 │   │   │   ├── Activos/       # Activos fijos y depreciación
-│   │   │   └── CorreccionMonetaria/
+│   │   │   ├── CorreccionMonetaria/
+│   │   │   ├── Alertas/       # Motor de alertas de cumplimiento (jobs en cola)
+│   │   │   └── Soporte/       # Tickets de soporte
 │   │   ├── Http/Middleware/   # RBAC, suscripciones, API key HMAC
 │   │   └── Support/           # Utilidades transversales (firma HMAC, etc.)
 │   ├── routes/api.php         # Todas las rutas de la API
@@ -40,7 +60,6 @@ Monorepo (pnpm workspace) con una SPA en React y una API RESTful en Laravel 12.
 │   │   └── Utilidades/        # Helpers (export Excel/PDF)
 │   ├── e2e/                   # Tests E2E Playwright
 │   └── vite.config.js
-├── Base de Datos/             # Estructura SQL y datos semilla
 └── docs/                      # Normativa SII, leyes RRHH, auditorías
 ```
 
@@ -53,8 +72,14 @@ Monorepo (pnpm workspace) con una SPA en React y una API RESTful en Laravel 12.
 * **RRHH y Remuneraciones:** Contratos, liquidaciones de sueldo, finiquitos, parámetros previsionales (AFP, salud, CCAF), archivo Previred y centralización contable.
 * **Inventario:** Multi-bodega, kardex valorizado, lotes, reservas, picking/packing y tomas físicas.
 * **Activos Fijos:** Cálculo automatizado de depreciación mensual.
-* **Cumplimiento Tributario:** Formulario 29 (F29), F22 y pre-cálculo para la Operación Renta.
+* **Cumplimiento Tributario:** Formulario 29 (F29), F22, Declaraciones Juradas SII (1887, 1879, 1947, 1926, 1837, 1835) y pre-cálculo para la Operación Renta.
 * **Suscripciones:** SSO e integración con tenri.cl; gating de funcionalidades por plan y estado de suscripción.
+* **Motor de Alertas:** Vigilancia automática de vencimientos y cumplimiento (certificados digitales SII, F29/DJ sin presentar, períodos contables sin cerrar, cuentas por cobrar/pagar vencidas, contratos RRHH por vencer) vía jobs en cola con lock atómico anti-duplicado y notificación por correo.
+* **Soporte:** Sistema de tickets integrado para atención a clientes.
+
+## 🔐 Seguridad
+
+Headers de seguridad HTTP (CSP, HSTS, X-Frame-Options), rate limiting en endpoints de auth, HMAC con anti-replay para la integración con tenri.cl, cifrado en reposo de RUT/datos bancarios/certificados digitales (Ley 21.719), y bloqueo de período contable cerrado. El sistema pasa por auditorías de seguridad ofensivas periódicas (whitebox, multi-agente) sobre el código real — hallazgos y su estado de remediación en `docs/auditoria/`.
 
 ## 🛠️ Entorno de Desarrollo (Local)
 
@@ -94,11 +119,12 @@ pnpm e2e                                  # Playwright (requiere pnpm e2e:instal
 
 ## 🔄 Integración y Despliegue Continuo (CI/CD)
 
-Pipeline automatizado vía GitHub Actions (`.github/workflows/ci-cd.yml`):
+Pipeline automatizado vía GitHub Actions:
 
-* **Push a cualquier rama:** suite PHPUnit contra SQLite **y** contra MySQL 8 en contenedor (los tests deben pasar en ambos engines), más lint y build del frontend.
-* **Push a `staging`:** si todos los tests pasan, despliega a `staging.erp.tenri.cl` (mismo mecanismo FTP + SSH, secrets independientes).
-* **Push a `main`:** si todos los tests pasan, compila el frontend y despliega ambos ecosistemas a producción (FTP + SSH con migraciones y cache de Laravel).
+* **`ci-cd.yml`** — push a cualquier rama: suite PHPUnit contra SQLite **y** contra MySQL 8 en contenedor (los tests deben pasar en ambos engines), más lint y build del frontend.
+  * **Push a `staging`:** si todos los tests pasan, despliega a `staging.erp.tenri.cl` (FTP + SSH, secrets independientes), luego corre smoke tests Playwright contra ese ambiente.
+  * **Push a `main`:** si todos los tests pasan, compila el frontend y despliega ambos ecosistemas a producción (FTP + SSH con migraciones y cache de Laravel).
+* **`e2e.yml`** — suite E2E Playwright completa (no solo smoke) contra el entorno que corresponda.
 
 ## Flujo de despliegue
 

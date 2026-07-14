@@ -1,84 +1,86 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Domains\Activos\Controllers\ActivoFijoController;
+use App\Domains\Alertas\Controllers\AlertaController as AlertaGenericaController;
+use App\Domains\Comercial\Controllers\AnticipoClienteController;
+use App\Domains\Comercial\Controllers\AnticipoProveedorController;
+use App\Domains\Comercial\Controllers\ClienteController;
+use App\Domains\Comercial\Controllers\CotizacionController;
+use App\Domains\Comercial\Controllers\DocumentoAdjuntoController;
+use App\Domains\Comercial\Controllers\FacturaController;
+use App\Domains\Comercial\Controllers\HonorariosController;
+use App\Domains\Comercial\Controllers\OrdenCompraController;
+use App\Domains\Comercial\Controllers\ProveedorController;
+use App\Domains\Contabilidad\Controllers\ApAgingController;
+use App\Domains\Contabilidad\Controllers\ArAgingController;
+use App\Domains\Contabilidad\Controllers\AsientoContableController;
+use App\Domains\Contabilidad\Controllers\Dj1835Controller;
+use App\Domains\Contabilidad\Controllers\Dj1837Controller;
+use App\Domains\Contabilidad\Controllers\Dj1879Controller;
+use App\Domains\Contabilidad\Controllers\Dj1887Controller;
+use App\Domains\Contabilidad\Controllers\Dj1926Controller;
+use App\Domains\Contabilidad\Controllers\Dj1947Controller;
+use App\Domains\Contabilidad\Controllers\ImpuestosController;
+use App\Domains\Contabilidad\Controllers\LibroComprasVentasController;
+use App\Domains\Contabilidad\Controllers\PeriodoContableController;
+use App\Domains\Contabilidad\Controllers\PlanCuentaController;
+use App\Domains\Contabilidad\Controllers\ReporteController;
+use App\Domains\Core\Controllers\AnulacionController;
+use App\Domains\Core\Controllers\AuditoriaController;
 use App\Domains\Core\Controllers\AuthController;
+use App\Domains\Core\Controllers\DashboardResumenController;
+use App\Domains\Core\Controllers\EmpresaCambioController;
+use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\HealthController;
+use App\Domains\Core\Controllers\IncidenteSeguridadController;
 use App\Domains\Core\Controllers\Internal\AdminEmpresasController;
 use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
-use App\Domains\Core\Controllers\EmpresaController;
-use App\Domains\Core\Controllers\AnulacionController;
-use App\Domains\Core\Controllers\AuditoriaController;
-use App\Domains\Core\Controllers\UsuarioController;
 use App\Domains\Core\Controllers\PrivacidadController;
-use App\Domains\Comercial\Controllers\ClienteController;
-use App\Domains\Comercial\Controllers\ProveedorController;
-use App\Domains\Comercial\Controllers\FacturaController;
-use App\Domains\Comercial\Controllers\DocumentoAdjuntoController;
-use App\Domains\Comercial\Controllers\CotizacionController;
-use App\Domains\Comercial\Controllers\AnticipoProveedorController;
-use App\Domains\Comercial\Controllers\AnticipoClienteController;
-use App\Domains\Comercial\Controllers\OrdenCompraController;
-use App\Domains\Contabilidad\Controllers\PlanCuentaController;
-use App\Domains\Contabilidad\Controllers\AsientoContableController;
-use App\Domains\Contabilidad\Controllers\ReporteController;
-use App\Domains\Contabilidad\Controllers\ImpuestosController;
-use App\Domains\Contabilidad\Controllers\PeriodoContableController;
+use App\Domains\Core\Controllers\PropietariosController;
+use App\Domains\Core\Controllers\UsuarioController;
+use App\Domains\Core\Support\ModuloPermisos;
 use App\Domains\CorreccionMonetaria\Controllers\CorreccionMonetariaController;
-use App\Domains\Rrhh\Controllers\ArcoController;
-use App\Domains\Rrhh\Controllers\EmpleadoController;
-use App\Domains\Rrhh\Controllers\ContratoController;
-use App\Domains\Rrhh\Controllers\LiquidacionController;
-use App\Domains\Rrhh\Controllers\FiniquitoController;
-use App\Domains\Rrhh\Controllers\VacacionesController;
-use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
-use App\Domains\Rrhh\Controllers\CentralizacionController;
-use App\Domains\Rrhh\Controllers\PreviredController;
-use App\Domains\Rrhh\Controllers\LreController;
-use App\Domains\Rrhh\Controllers\EmrclController;
-use App\Domains\Rrhh\Controllers\LibroRemuneracionesController;
-use App\Domains\Tesoreria\Controllers\BancoController;
-use App\Domains\Tesoreria\Controllers\ConciliacionController;
-use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
-use App\Domains\Activos\Controllers\ActivoFijoController;
-use App\Domains\Inventario\Controllers\ProductoController;
-use App\Domains\Inventario\Controllers\BodegaController;
-use App\Domains\Inventario\Controllers\MovimientoController;
-use App\Domains\Inventario\Controllers\KardexController;
-use App\Domains\Inventario\Controllers\ValorizacionController;
-use App\Domains\Inventario\Controllers\LoteController;
-use App\Domains\Inventario\Controllers\ReservaController;
-use App\Domains\Inventario\Controllers\TomaFisicaController;
-use App\Domains\Inventario\Controllers\DisponibilidadController;
-use App\Domains\Inventario\Controllers\ReposicionController;
-use App\Domains\Inventario\Controllers\AlertaController;
-use App\Domains\Inventario\Controllers\UbicacionController;
-use App\Domains\Inventario\Controllers\StockUbicacionController;
 use App\Domains\Inventario\Controllers\AjusteCriticoController;
-use App\Domains\Inventario\Controllers\DashboardController;
+use App\Domains\Inventario\Controllers\AlertaController;
+use App\Domains\Inventario\Controllers\BodegaController;
 use App\Domains\Inventario\Controllers\CatalogoController;
+use App\Domains\Inventario\Controllers\DashboardController;
+use App\Domains\Inventario\Controllers\DisponibilidadController;
 use App\Domains\Inventario\Controllers\InventarioAuditoriaController;
 use App\Domains\Inventario\Controllers\InventarioDespachoController;
 use App\Domains\Inventario\Controllers\InventarioDevolucionController;
 use App\Domains\Inventario\Controllers\InventarioEventoIntegracionController;
 use App\Domains\Inventario\Controllers\InventarioPackingController;
 use App\Domains\Inventario\Controllers\InventarioPickingController;
+use App\Domains\Inventario\Controllers\KardexController;
+use App\Domains\Inventario\Controllers\LoteController;
+use App\Domains\Inventario\Controllers\MovimientoController;
+use App\Domains\Inventario\Controllers\ProductoController;
 use App\Domains\Inventario\Controllers\ReporteInventarioController;
-use App\Domains\Core\Controllers\IncidenteSeguridadController;
-use App\Domains\Contabilidad\Controllers\Dj1887Controller;
-use App\Domains\Contabilidad\Controllers\Dj1879Controller;
-use App\Domains\Contabilidad\Controllers\Dj1947Controller;
-use App\Domains\Contabilidad\Controllers\Dj1835Controller;
-use App\Domains\Contabilidad\Controllers\Dj1837Controller;
-use App\Domains\Contabilidad\Controllers\Dj1926Controller;
-use App\Domains\Core\Controllers\PropietariosController;
-use App\Domains\Comercial\Controllers\HonorariosController;
+use App\Domains\Inventario\Controllers\ReposicionController;
+use App\Domains\Inventario\Controllers\ReservaController;
+use App\Domains\Inventario\Controllers\StockUbicacionController;
+use App\Domains\Inventario\Controllers\TomaFisicaController;
+use App\Domains\Inventario\Controllers\UbicacionController;
+use App\Domains\Inventario\Controllers\ValorizacionController;
+use App\Domains\Rrhh\Controllers\ArcoController;
+use App\Domains\Rrhh\Controllers\CentralizacionController;
+use App\Domains\Rrhh\Controllers\ContratoController;
+use App\Domains\Rrhh\Controllers\EmpleadoController;
+use App\Domains\Rrhh\Controllers\EmrclController;
+use App\Domains\Rrhh\Controllers\FiniquitoController;
+use App\Domains\Rrhh\Controllers\LibroRemuneracionesController;
+use App\Domains\Rrhh\Controllers\LiquidacionController;
+use App\Domains\Rrhh\Controllers\LreController;
+use App\Domains\Rrhh\Controllers\ParametroPrevisionalController;
+use App\Domains\Rrhh\Controllers\PreviredController;
+use App\Domains\Rrhh\Controllers\VacacionesController;
 use App\Domains\Soporte\Controllers\SoporteController;
-use App\Domains\Core\Controllers\EmpresaCambioController;
-use App\Domains\Core\Controllers\DashboardResumenController;
-use App\Domains\Contabilidad\Controllers\ArAgingController;
-use App\Domains\Contabilidad\Controllers\ApAgingController;
-use App\Domains\Contabilidad\Controllers\LibroComprasVentasController;
+use App\Domains\Tesoreria\Controllers\BancoController;
+use App\Domains\Tesoreria\Controllers\ConciliacionController;
+use App\Domains\Tesoreria\Controllers\CuentaProveedorController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -192,6 +194,12 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // consultar el log. Las filas ya estan filtradas por empresa del solicitante.
     Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware('permiso:usuarios.gestionar');
 
+    // Motor de alertas de cumplimiento y gestion (bandeja multitipo: periodos, F29, CxC/CxP, RRHH).
+    Route::prefix('alertas')->group(function () {
+        Route::get('/', [AlertaGenericaController::class, 'index'])->middleware('permiso:alertas.ver');
+        Route::patch('/{id}', [AlertaGenericaController::class, 'resolver'])->middleware(['permiso:alertas.gestionar', 'subscription.writable']);
+    });
+
     // Registro de incidentes de seguridad (Fase 6 — Ley 21.663 / 21.719).
     // Solo administradores (permiso usuarios.gestionar). Aislamiento multitenant
     // garantizado por EmpresaScope sobre IncidenteSeguridad.
@@ -223,6 +231,8 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/proveedores/catalogo', [ProveedorController::class, 'catalogo'])->middleware('permiso:proveedores.ver,compras.ver');
     Route::get('/proveedores/ficha/{id}', [ProveedorController::class, 'ficha'])->middleware('permiso:proveedores.ver,compras.ver');
     Route::post('/proveedores/anticipos', [ProveedorController::class, 'guardarAnticipo'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::post('/proveedores/anticipos/{id}/pdf', [ProveedorController::class, 'subirPdfAnticipo'])->middleware('permiso:proveedores.crear,compras.crear');
+    Route::get('/proveedores/anticipos/{id}/pdf', [ProveedorController::class, 'descargarPdfAnticipo'])->middleware('permiso:proveedores.ver,compras.ver');
 
     // Endpoints dedicados de anticipos a proveedores (con saldo disponible)
     Route::get('/anticipos-proveedores', [AnticipoProveedorController::class, 'index'])->middleware('permiso:proveedores.ver,compras.ver');
@@ -232,8 +242,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::put('/proveedores/{id}/activar', [ProveedorController::class, 'activar'])->middleware('permiso:proveedores.crear,compras.crear');
 
-    // Resource de proveedores (index/store/update; show y destroy excluidos)
+    // Resource de proveedores (index/store/update/show; destroy en ruta dedicada arriba)
     Route::get('/proveedores', [ProveedorController::class, 'index'])->middleware('permiso:proveedores.ver,compras.ver');
+    Route::get('/proveedores/{id}', [ProveedorController::class, 'show'])->middleware('permiso:proveedores.ver,compras.ver');
     Route::post('/proveedores', [ProveedorController::class, 'store'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::put('/proveedores/{id}', [ProveedorController::class, 'update'])->middleware('permiso:proveedores.crear,compras.crear');
     Route::patch('/proveedores/{id}', [ProveedorController::class, 'update'])->middleware('permiso:proveedores.crear,compras.crear');
@@ -248,6 +259,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     // acota a 10 req/min para evitar abuso/uso como vector de denegacion de servicio.
     Route::get('/facturas/exportar/excel', [FacturaController::class, 'exportarExcel'])->middleware(['permiso:compras.ver', 'throttle:10,1']);
     Route::get('/facturas/disponibles-proyectos', [FacturaController::class, 'disponiblesProyectos'])->middleware('permiso:compras.ver,activos.ver');
+    Route::get('/facturas/f50', [FacturaController::class, 'f50'])->middleware('permiso:compras.ver');
 
     // Resource de facturas (index/store/show; update y destroy no existen)
     Route::get('/facturas', [FacturaController::class, 'index'])->middleware('permiso:compras.ver');
@@ -360,6 +372,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::get('/contabilidad/libro-diario', [ReporteController::class, 'libroDiario'])->middleware('permiso:contabilidad.ver');
     Route::get('/contabilidad/reportes/libro-mayor', [ReporteController::class, 'libroMayor'])->middleware('permiso:contabilidad.ver');
     Route::get('/contabilidad/reportes/balance-comprobacion', [ReporteController::class, 'balanceComprobacion'])->middleware('permiso:contabilidad.ver');
+    Route::post('/contabilidad/reportes/exportar', [ReporteController::class, 'solicitarExportacion'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/reportes/exportar/{id}', [ReporteController::class, 'estadoExportacion'])->middleware('permiso:contabilidad.ver');
+    Route::get('/contabilidad/reportes/exportar', [ReporteController::class, 'historialExportaciones'])->middleware('permiso:contabilidad.ver');
 
     // Contabilidad - Formularios 29 y 22 (Renta)
     Route::get('/impuestos/cierre-f29/simular/{mes}/{anio}', [ImpuestosController::class, 'simularF29'])->middleware('permiso:tributario.ver');
@@ -371,9 +386,9 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::delete('/renta/mapeo/{id}', [ImpuestosController::class, 'eliminarMapeo'])->middleware('permiso:tributario.crear');
 
     // LCV — Libro de Compras y Ventas (Res. Ex. SII N°45/2003)
-    Route::get('/impuestos/lcv/ventas/{mes}/{anio}',            [LibroComprasVentasController::class, 'ventas'])->middleware('permiso:tributario.ver');
-    Route::get('/impuestos/lcv/compras/{mes}/{anio}',           [LibroComprasVentasController::class, 'compras'])->middleware('permiso:tributario.ver');
-    Route::get('/impuestos/lcv/ventas/{mes}/{anio}/descargar',  [LibroComprasVentasController::class, 'descargarVentas'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/ventas/{mes}/{anio}', [LibroComprasVentasController::class, 'ventas'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/compras/{mes}/{anio}', [LibroComprasVentasController::class, 'compras'])->middleware('permiso:tributario.ver');
+    Route::get('/impuestos/lcv/ventas/{mes}/{anio}/descargar', [LibroComprasVentasController::class, 'descargarVentas'])->middleware('permiso:tributario.ver');
     Route::get('/impuestos/lcv/compras/{mes}/{anio}/descargar', [LibroComprasVentasController::class, 'descargarCompras'])->middleware('permiso:tributario.ver');
 
     // Correccion Monetaria (parte de contabilidad)
@@ -640,100 +655,100 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
 // DJ 1887 - Declaración Jurada de Rentas (SII)
 Route::prefix('dj/1887')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                    [Dj1887Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                            [Dj1887Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                  [Dj1887Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                 [Dj1887Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',   [Dj1887Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/', [Dj1887Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar', [Dj1887Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar', [Dj1887Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar', [Dj1887Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion', [Dj1887Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 // DJ 1879 - Retenciones de honorarios (SII)
 Route::prefix('dj/1879')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                   [Dj1879Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                           [Dj1879Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                 [Dj1879Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                [Dj1879Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1879Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/', [Dj1879Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar', [Dj1879Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar', [Dj1879Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar', [Dj1879Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion', [Dj1879Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 // DJ 1947 — Propyme Transparente 14D N°8
 Route::prefix('dj/1947')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                   [Dj1947Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                           [Dj1947Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                 [Dj1947Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                [Dj1947Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1947Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/', [Dj1947Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar', [Dj1947Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar', [Dj1947Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar', [Dj1947Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion', [Dj1947Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 // DJ 1835 — Retenciones Art. 59 LIR (Exterior)
 Route::prefix('dj/1835')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                   [Dj1835Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                           [Dj1835Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                 [Dj1835Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                [Dj1835Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1835Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/', [Dj1835Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar', [Dj1835Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar', [Dj1835Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar', [Dj1835Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion', [Dj1835Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 // DJ 1837 — Retenciones y otros impuestos de trabajadores dependientes
 Route::prefix('dj/1837')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                   [Dj1837Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                           [Dj1837Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                 [Dj1837Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                [Dj1837Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1837Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/', [Dj1837Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar', [Dj1837Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar', [Dj1837Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar', [Dj1837Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion', [Dj1837Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 // DJ 1926 — Impuesto adicional servicios digitales
 Route::prefix('dj/1926')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                                   [Dj1926Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/generar',                           [Dj1926Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::post('/{djEnvio}/validar',                 [Dj1926Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
-    Route::get('/{djEnvio}/descargar',                [Dj1926Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
-    Route::post('/{djEnvio}/confirmar-presentacion',  [Dj1926Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/', [Dj1926Controller::class, 'index'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/generar', [Dj1926Controller::class, 'generar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::post('/{djEnvio}/validar', [Dj1926Controller::class, 'validar'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
+    Route::get('/{djEnvio}/descargar', [Dj1926Controller::class, 'descargar'])->middleware('permiso:contabilidad.dj.ver');
+    Route::post('/{djEnvio}/confirmar-presentacion', [Dj1926Controller::class, 'confirmarPresentacion'])->middleware(['subscription.writable', 'permiso:contabilidad.dj.procesar']);
 });
 
 // Propietarios de la empresa (para DJ 1947 / Propyme)
 Route::prefix('empresa/propietarios')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                    [PropietariosController::class, 'index'])->middleware('permiso:contabilidad.ver');
-    Route::post('/',                   [PropietariosController::class, 'store'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
-    Route::put('/{propietario}',       [PropietariosController::class, 'update'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
-    Route::delete('/{propietario}',    [PropietariosController::class, 'destroy'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::get('/', [PropietariosController::class, 'index'])->middleware('permiso:contabilidad.ver');
+    Route::post('/', [PropietariosController::class, 'store'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::put('/{propietario}', [PropietariosController::class, 'update'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
+    Route::delete('/{propietario}', [PropietariosController::class, 'destroy'])->middleware(['subscription.writable', 'permiso:contabilidad.crear']);
 });
 
 // Honorarios recibidos
 Route::prefix('honorarios')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',                          [HonorariosController::class, 'index'])->middleware('permiso:compras.ver');
-    Route::post('/',                         [HonorariosController::class, 'store'])->middleware(['permiso:compras.crear', 'subscription.writable']);
-    Route::delete('/{honorariosRecibido}',   [HonorariosController::class, 'destroy'])->middleware(['permiso:compras.crear', 'subscription.writable']);
+    Route::get('/', [HonorariosController::class, 'index'])->middleware('permiso:compras.ver');
+    Route::post('/', [HonorariosController::class, 'store'])->middleware(['permiso:compras.crear', 'subscription.writable']);
+    Route::delete('/{honorariosRecibido}', [HonorariosController::class, 'destroy'])->middleware(['permiso:compras.crear', 'subscription.writable']);
 });
 
 // Soporte — proxy hacia api.tenri.cl
 Route::prefix('soporte/tickets')->middleware(['auth:sanctum', 'check.subscription'])->group(function () {
-    Route::get('/',          [SoporteController::class, 'index'])->middleware('permiso:soporte.ver');
-    Route::post('/',         [SoporteController::class, 'store'])->middleware(['permiso:soporte.crear', 'subscription.writable']);
-    Route::get('/{id}',      [SoporteController::class, 'show'])->middleware('permiso:soporte.ver')->whereNumber('id');
+    Route::get('/', [SoporteController::class, 'index'])->middleware('permiso:soporte.ver');
+    Route::post('/', [SoporteController::class, 'store'])->middleware(['permiso:soporte.crear', 'subscription.writable']);
+    Route::get('/{id}', [SoporteController::class, 'show'])->middleware('permiso:soporte.ver')->whereNumber('id');
     Route::post('/{id}/reply', [SoporteController::class, 'reply'])->middleware(['permiso:soporte.crear', 'subscription.writable'])->whereNumber('id');
 });
 
 Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->group(function () {
     Route::post('/provision-user', [WebProvisioningController::class, 'provisionUser']);
-    Route::post('/sync-plan',      [WebProvisioningController::class, 'syncPlan']);
-    Route::post('/sync-password',  [WebProvisioningController::class, 'syncPassword']);
-    Route::get('/online-users',    [WebProvisioningController::class, 'onlineUsers']);
+    Route::post('/sync-plan', [WebProvisioningController::class, 'syncPlan']);
+    Route::post('/sync-password', [WebProvisioningController::class, 'syncPassword']);
+    Route::get('/online-users', [WebProvisioningController::class, 'onlineUsers']);
 
     // Catalogo de modulos asignables a un plan (fuente de verdad para el admin).
     Route::get('/module-catalog', fn () => response()->json([
-        'modules' => \App\Domains\Core\Support\ModuloPermisos::catalogo(),
+        'modules' => ModuloPermisos::catalogo(),
     ]));
 
-    Route::get('/empresas',        [AdminEmpresasController::class, 'index']);
-    Route::get('/empresas/{id}',   [AdminEmpresasController::class, 'show']);
-    Route::get('/usuarios',        [AdminEmpresasController::class, 'usuarios']);
+    Route::get('/empresas', [AdminEmpresasController::class, 'index']);
+    Route::get('/empresas/{id}', [AdminEmpresasController::class, 'show']);
+    Route::get('/usuarios', [AdminEmpresasController::class, 'usuarios']);
 
     // Acciones administrativas (write-side multitenant)
     Route::post('/empresas/{id}/suspender', [AdminEmpresasController::class, 'suspender']);
-    Route::post('/empresas/{id}/activar',   [AdminEmpresasController::class, 'activar']);
-    Route::put('/empresas/{id}/plan',       [AdminEmpresasController::class, 'cambiarPlan']);
-    Route::post('/usuarios/{id}/bloquear',    [AdminEmpresasController::class, 'bloquearUsuario']);
+    Route::post('/empresas/{id}/activar', [AdminEmpresasController::class, 'activar']);
+    Route::put('/empresas/{id}/plan', [AdminEmpresasController::class, 'cambiarPlan']);
+    Route::post('/usuarios/{id}/bloquear', [AdminEmpresasController::class, 'bloquearUsuario']);
     Route::post('/usuarios/{id}/desbloquear', [AdminEmpresasController::class, 'desbloquearUsuario']);
 });

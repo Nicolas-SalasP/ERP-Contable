@@ -836,6 +836,58 @@ PlanCuenta::create(['empresa_id' => $this->empresaA->id, 'codigo' => '353360', '
         ]);
     }
 
+    // PRUEBA: /api/anulacion/anular NO debe permitir anular directamente el asiento de
+    // REGISTRO de una Factura (origen_modulo ventas/compras) -- ese asiento solo debe
+    // reversarse via FacturaService::anularFactura, que además revierte Factura.estado,
+    // anticipos y cotización asociada. Antes de este fix, anular aquí dejaba el asiento
+    // en ANULADO/reverso correcto pero la Factura seguía REGISTRADA para siempre (huérfana).
+    public function test_anulacion_documento_rechaza_asiento_de_registro_de_factura()
+    {
+        Pais::firstOrCreate(['iso' => 'CL'], ['nombre' => 'Chile', 'moneda_defecto' => 'CLP', 'activo' => true]);
+        $proveedor = Proveedor::create(['empresa_id' => $this->empresaA->id, 'codigo_interno' => 'P-ANUL', 'rut' => '9-9', 'razon_social' => 'Proveedor Anulacion', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        $asientoRegistro = AsientoContable::create([
+            'empresa_id' => $this->empresaA->id,
+            'numero_comprobante' => 'C-FACTURA-REGISTRO',
+            'fecha' => now()->format('Y-m-d'),
+            'glosa' => 'Centralización Automática Factura Compra N° F-ANUL-01',
+            'estado' => 'MAYORIZADO',
+            'origen_modulo' => 'compras',
+        ]);
+
+        $factura = Factura::create([
+            'empresa_id' => $this->empresaA->id,
+            'proveedor_id' => $proveedor->id,
+            'numero_factura' => 'F-ANUL-01',
+            'tipo' => 'COMPRA',
+            'codigo_unico' => 5551,
+            'fecha_emision' => now()->format('Y-m-d'),
+            'monto_neto' => 100000,
+            'monto_iva' => 19000,
+            'monto_bruto' => 119000,
+            'estado' => 'REGISTRADA',
+            'comprobante_contable' => $asientoRegistro->numero_comprobante,
+        ]);
+
+        $response = $this->actingAs($this->usuarioContador)->postJson('/api/anulacion/anular', [
+            'tipo_documento'  => 'ASIENTO',
+            'documento_id'    => $asientoRegistro->id,
+            'motivo'          => 'Intento de bypass',
+            'fecha_anulacion' => now()->format('Y-m-d'),
+        ]);
+
+        $response->assertStatus(422);
+
+        $this->assertDatabaseHas('asientos_contables', [
+            'id' => $asientoRegistro->id,
+            'estado' => 'MAYORIZADO',
+        ]);
+        $this->assertDatabaseHas('facturas', [
+            'id' => $factura->id,
+            'estado' => 'REGISTRADA',
+        ]);
+    }
+
     // PRUEBA: RECHAZA INGRESO DE LETRAS O CARACTERES ESPECIALES EN MONTOS FINANCIEROS
     public function test_rechaza_letras_en_montos_financieros()
     {

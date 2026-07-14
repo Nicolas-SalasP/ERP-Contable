@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const formatCLP = (v) => {
@@ -20,12 +21,17 @@ const ETIQUETAS = {
     anuladas:   'Anuladas',
 };
 
-export default function GraficoDistribucionFacturas({ datos }) {
+export default function GraficoDistribucionFacturas({ datos, onSegmentoClick }) {
+    const [indiceActivo, setIndiceActivo] = useState(null);
+
     if (!datos) return null;
+
+    const totalFacturas = Object.values(datos).reduce((acc, v) => acc + v.cantidad, 0);
 
     const series = Object.entries(datos)
         .filter(([, v]) => v.cantidad > 0)
         .map(([key, v]) => ({
+            clave: key,
             name:  ETIQUETAS[key] || key,
             value: v.cantidad,
             monto: v.monto,
@@ -33,6 +39,8 @@ export default function GraficoDistribucionFacturas({ datos }) {
         }));
 
     if (!series.length) return null;
+
+    const clickeable = typeof onSegmentoClick === 'function';
 
     return (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-4">
@@ -50,13 +58,23 @@ export default function GraficoDistribucionFacturas({ datos }) {
                         dataKey="value"
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         labelLine={false}
+                        onMouseEnter={(_, indice) => setIndiceActivo(indice)}
+                        onMouseLeave={() => setIndiceActivo(null)}
+                        onClick={clickeable ? (entry) => onSegmentoClick(entry.clave) : undefined}
+                        cursor={clickeable ? 'pointer' : 'default'}
                     >
-                        {series.map((entry) => (
-                            <Cell key={entry.name} fill={entry.color} />
+                        {series.map((entry, indice) => (
+                            <Cell
+                                key={entry.name}
+                                fill={entry.color}
+                                stroke={indice === indiceActivo ? '#0f172a' : undefined}
+                                strokeWidth={indice === indiceActivo ? 2 : 0}
+                                opacity={indiceActivo === null || indice === indiceActivo ? 1 : 0.45}
+                            />
                         ))}
                     </Pie>
                     <Tooltip formatter={(v, name, props) => [
-                        `${v} facturas (${formatCLP(props.payload.monto)})`,
+                        `${v} facturas (${formatCLP(props.payload.monto)}) · ${totalFacturas > 0 ? ((v / totalFacturas) * 100).toFixed(1) : 0}%`,
                         name,
                     ]} />
                     <Legend />

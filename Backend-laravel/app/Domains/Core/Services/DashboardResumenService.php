@@ -21,13 +21,22 @@ class DashboardResumenService
     /**
      * Resumen de KPIs, serie de ventas, top clientes, facturas urgentes y secciones gateadas por permiso.
      *
-     * @param  int    $empresaId  ID de la empresa activa del usuario
-     * @param  string $periodo    'mes' | 'trimestre' | 'año'
-     * @param  array  $permisos   Lista de permisos efectivos del usuario (ModuloPermisos::permisosUsuario)
+     * @param  int  $empresaId  ID de la empresa activa del usuario
+     * @param  string  $periodo  'mes' | 'trimestre' | 'año' (ignorado si vienen fecha_desde/fecha_hasta)
+     * @param  array  $permisos  Lista de permisos efectivos del usuario (ModuloPermisos::permisosUsuario)
+     * @param  string|null  $fechaDesde  Fecha explícita (Y-m-d), tiene prioridad sobre $periodo si viene junto a $fechaHasta
+     * @param  string|null  $fechaHasta  Fecha explícita (Y-m-d)
+     * @param  bool  $compararAnioAnterior  Si es true, agrega la clave 'comparacion_anio_anterior' con el periodo equivalente del año anterior
      */
-    public function obtener(int $empresaId, string $periodo = 'mes', array $permisos = []): array
-    {
-        // La clave incluye empresa_id (aislamiento multitenant obligatorio) + periodo + los permisos que efectivamente cambian el resultado.
+    public function obtener(
+        int $empresaId,
+        string $periodo = 'mes',
+        array $permisos = [],
+        ?string $fechaDesde = null,
+        ?string $fechaHasta = null,
+        bool $compararAnioAnterior = false
+    ): array {
+        // La clave incluye empresa_id (aislamiento multitenant obligatorio) + periodo/fechas + comparación + los permisos que efectivamente cambian el resultado.
         $permisosRelevantes = array_values(array_intersect($permisos, [
             'inventario.productos.ver',
             'rrhh.remuneraciones.ver',
@@ -35,34 +44,51 @@ class DashboardResumenService
         ]));
         sort($permisosRelevantes);
         $claveCache = sprintf(
-            'dashboard_resumen:empresa_%d:periodo_%s:permisos_%s',
+            'dashboard_resumen:empresa_%d:periodo_%s:desde_%s:hasta_%s:cmp_%s:permisos_%s',
             $empresaId,
             $periodo,
+            $fechaDesde ?? '-',
+            $fechaHasta ?? '-',
+            $compararAnioAnterior ? '1' : '0',
             md5(implode(',', $permisosRelevantes))
         );
 
-        return Cache::remember($claveCache, self::TTL_SEGUNDOS, function () use ($empresaId, $periodo, $permisos) {
-            return $this->calcular($empresaId, $periodo, $permisos);
-        });
+        return Cache::remember(
+            $claveCache,
+            self::TTL_SEGUNDOS,
+            function () use ($empresaId, $periodo, $permisos, $fechaDesde, $fechaHasta, $compararAnioAnterior) {
+                return $this->calcular($empresaId, $periodo, $permisos, $fechaDesde, $fechaHasta, $compararAnioAnterior);
+            }
+        );
     }
 
-    private function calcular(int $empresaId, string $periodo, array $permisos): array
-    {
-        [$inicio, $fin]            = $this->rangoPeriodo($periodo);
-        [$inicioAnt, $finAnt]      = $this->rangoPeriodoAnterior($periodo);
+    private function calcular(
+        int $empresaId,
+        string $periodo,
+        array $permisos,
+        ?string $fechaDesde = null,
+        ?string $fechaHasta = null,
+        bool $compararAnioAnterior = false
+    ): array {
+        [$inicio, $fin] = $this->rangoPeriodo($periodo, $fechaDesde, $fechaHasta);
+        [$inicioAnt, $finAnt] = $this->rangoPeriodoAnterior($periodo, $fechaDesde, $fechaHasta);
 
-        $kpis        = $this->calcularKpis($empresaId, $inicio, $fin, $inicioAnt, $finAnt);
+        $kpis = $this->calcularKpis($empresaId, $inicio, $fin, $inicioAnt, $finAnt);
         $serieVentas = $this->serieVentas12m($empresaId);
         $topClientes = $this->topClientes($empresaId);
-        $urgentes    = $this->facturasUrgentes($empresaId);
+        $urgentes = $this->facturasUrgentes($empresaId);
 
         $resultado = [
-            'kpis'              => $kpis,
-            'serie_ventas_12m'  => $serieVentas,
-            'top_clientes'      => $topClientes,
+            'kpis' => $kpis,
+            'serie_ventas_12m' => $serieVentas,
+            'top_clientes' => $topClientes,
             'facturas_urgentes' => $urgentes,
-            'compras_12m'       => $this->serieCompras12m($empresaId),
+            'compras_12m' => $this->serieCompras12m($empresaId),
         ];
+
+        if ($compararAnioAnterior) {
+            $resultado['comparacion_anio_anterior'] = $this->compararAnioAnterior($empresaId, $inicio, $fin, $kpis);
+        }
 
         if (in_array('inventario.productos.ver', $permisos)) {
             $resultado['inventario'] = $this->resumenInventario($empresaId);
@@ -72,16 +98,16 @@ class DashboardResumenService
             $resultado['rrhh'] = $this->resumenRrhh($empresaId);
         }
 
-        $resultado['alertas_pendientes']          = $this->alertasPendientes($empresaId, $permisos);
-        $resultado['aging_ar']                    = $this->agingAR($empresaId);
-        $resultado['aging_ap']                    = $this->agingAP($empresaId);
-        $resultado['flujo_caja_30d']              = $this->flujoCaja30d($empresaId);
-        $resultado['ordenes_compra_pendientes']   = $this->ordenesCompraPendientes($empresaId);
-        $resultado['distribucion_facturas']       = $this->distribucionFacturas($empresaId);
-        $resultado['pipeline_cotizaciones']       = $this->pipelineCotizaciones($empresaId);
-        $resultado['clientes_nuevos_6m']          = $this->clientesNuevos6m($empresaId);
-        $resultado['dso']                         = $this->dso($empresaId);
-        $resultado['proximas_vencer_7d']          = $this->proximasVencer($empresaId, 7);
+        $resultado['alertas_pendientes'] = $this->alertasPendientes($empresaId, $permisos);
+        $resultado['aging_ar'] = $this->agingAR($empresaId);
+        $resultado['aging_ap'] = $this->agingAP($empresaId);
+        $resultado['flujo_caja_30d'] = $this->flujoCaja30d($empresaId);
+        $resultado['ordenes_compra_pendientes'] = $this->ordenesCompraPendientes($empresaId);
+        $resultado['distribucion_facturas'] = $this->distribucionFacturas($empresaId);
+        $resultado['pipeline_cotizaciones'] = $this->pipelineCotizaciones($empresaId);
+        $resultado['clientes_nuevos_6m'] = $this->clientesNuevos6m($empresaId);
+        $resultado['dso'] = $this->dso($empresaId);
+        $resultado['proximas_vencer_7d'] = $this->proximasVencer($empresaId, 7);
 
         return $resultado;
     }
@@ -145,13 +171,13 @@ class DashboardResumenService
         }
 
         return [
-            'ventas_mes'               => (float) $ventasMes,
-            'ventas_mes_anterior'      => (float) $ventasMesAnterior,
-            'variacion_pct'            => $variacionPct,
-            'facturas_emitidas_mes'    => $facturasEmitidasMes,
-            'facturas_pendientes'      => $facturasPendientes,
-            'clientes_activos'         => $clientesActivos,
-            'cotizaciones_pendientes'  => $cotizacionesPendientes,
+            'ventas_mes' => (float) $ventasMes,
+            'ventas_mes_anterior' => (float) $ventasMesAnterior,
+            'variacion_pct' => $variacionPct,
+            'facturas_emitidas_mes' => $facturasEmitidasMes,
+            'facturas_pendientes' => $facturasPendientes,
+            'clientes_activos' => $clientesActivos,
+            'cotizaciones_pendientes' => $cotizacionesPendientes,
         ];
     }
 
@@ -281,7 +307,7 @@ class DashboardResumenService
 
     private function flujoCaja30d(int $empresaId): array
     {
-        $hoy  = Carbon::now();
+        $hoy = Carbon::now();
         $en30 = Carbon::now()->addDays(30);
 
         $entradas = Factura::where('empresa_id', $empresaId)
@@ -302,8 +328,8 @@ class DashboardResumenService
 
         return [
             'entradas_30d' => round((float) $entradas, 2),
-            'salidas_30d'  => round((float) $salidas, 2),
-            'neto_30d'     => round((float) $entradas - (float) $salidas, 2),
+            'salidas_30d' => round((float) $salidas, 2),
+            'neto_30d' => round((float) $entradas - (float) $salidas, 2),
         ];
     }
 
@@ -320,7 +346,7 @@ class DashboardResumenService
             ->sum('total');
 
         return [
-            'cantidad'    => (int) $total,
+            'cantidad' => (int) $total,
             'monto_total' => round((float) $monto, 2),
         ];
     }
@@ -350,14 +376,14 @@ class DashboardResumenService
 
             return [
                 'total_productos' => (int) $totalProductos,
-                'bajo_minimo'     => (int) $bajoMinimo,
-                'valor_stock'     => round((float) $valorStock, 2),
+                'bajo_minimo' => (int) $bajoMinimo,
+                'valor_stock' => round((float) $valorStock, 2),
             ];
         } catch (\Throwable) {
             return [
                 'total_productos' => 0,
-                'bajo_minimo'     => 0,
-                'valor_stock'     => 0.0,
+                'bajo_minimo' => 0,
+                'valor_stock' => 0.0,
             ];
         }
     }
@@ -365,7 +391,7 @@ class DashboardResumenService
     private function resumenRrhh(int $empresaId): array
     {
         $anio = (int) Carbon::now()->format('Y');
-        $mes  = (int) Carbon::now()->format('n');
+        $mes = (int) Carbon::now()->format('n');
 
         $pendientes = Liquidacion::where('empresa_id', $empresaId)
             ->where('anio', $anio)
@@ -375,18 +401,18 @@ class DashboardResumenService
 
         return [
             'liquidaciones_pendientes' => $pendientes->count(),
-            'total_liquido_pendiente'  => round((float) $pendientes->sum('liquido_a_pagar'), 2),
-            'mes_referencia'           => Carbon::now()->format('Y-m'),
+            'total_liquido_pendiente' => round((float) $pendientes->sum('liquido_a_pagar'), 2),
+            'mes_referencia' => Carbon::now()->format('Y-m'),
         ];
     }
 
     private function alertasPendientes(int $empresaId, array $permisos): array
     {
         $alertas = [];
-        $hoy     = Carbon::now();
-        $anio    = (int) $hoy->format('Y');
-        $mes     = (int) $hoy->format('n');
-        $dia     = (int) $hoy->format('j');
+        $hoy = Carbon::now();
+        $anio = (int) $hoy->format('Y');
+        $mes = (int) $hoy->format('n');
+        $dia = (int) $hoy->format('j');
 
         // Alerta DJ: solo en temporada de declaración (enero-marzo o diciembre)
         if (in_array('contabilidad.dj.ver', $permisos)) {
@@ -403,12 +429,12 @@ class DashboardResumenService
                     ->toArray();
 
                 foreach ($codigosDj as $codigo) {
-                    if (!in_array($codigo, $presentadas)) {
+                    if (! in_array($codigo, $presentadas)) {
                         $alertas[] = [
-                            'tipo'        => 'dj',
-                            'titulo'      => "DJ {$codigo} pendiente",
+                            'tipo' => 'dj',
+                            'titulo' => "DJ {$codigo} pendiente",
                             'descripcion' => "DJ {$codigo} no presentada para {$anio}",
-                            'urgencia'    => 'alta',
+                            'urgencia' => 'alta',
                         ];
                     }
                 }
@@ -418,10 +444,10 @@ class DashboardResumenService
         // Alerta F29 por calendario (no hay modelo F29): ventana de pago entre día 10 y 20
         if ($dia >= 10 && $dia <= 20) {
             $alertas[] = [
-                'tipo'        => 'f29',
-                'titulo'      => 'Vencimiento F29',
+                'tipo' => 'f29',
+                'titulo' => 'Vencimiento F29',
                 'descripcion' => 'F29 del mes anterior vence el día 20',
-                'urgencia'    => 'media',
+                'urgencia' => 'media',
             ];
         }
 
@@ -435,10 +461,10 @@ class DashboardResumenService
 
             if ($cantidad > 0) {
                 $alertas[] = [
-                    'tipo'        => 'rrhh',
-                    'titulo'      => 'Liquidaciones pendientes',
+                    'tipo' => 'rrhh',
+                    'titulo' => 'Liquidaciones pendientes',
                     'descripcion' => "{$cantidad} liquidaciones pendientes de pago este mes",
-                    'urgencia'    => 'alta',
+                    'urgencia' => 'alta',
                 ];
             }
         }
@@ -458,17 +484,18 @@ class DashboardResumenService
             ->whereDate('facturas.fecha_emision', '>=', $desde)
             ->whereNull('facturas.deleted_at')
             ->join('proveedores', 'proveedores.id', '=', 'facturas.proveedor_id')
-            ->groupBy('facturas.proveedor_id', 'proveedores.razon_social')
-            ->selectRaw('proveedores.razon_social as nombre, SUM(facturas.monto_bruto) as monto')
+            ->groupBy('facturas.proveedor_id', 'proveedores.id', 'proveedores.razon_social')
+            ->selectRaw('proveedores.id as id, proveedores.razon_social as nombre, SUM(facturas.monto_bruto) as monto')
             ->orderByRaw('SUM(facturas.monto_bruto) DESC')
             ->limit(5)
             ->get();
 
         return $filas->map(function (object $f) {
-            /** @var object{nombre: string, monto: string|null} $f */
+            /** @var object{id: int, nombre: string, monto: string|null} $f */
             return [
+                'id' => (int) $f->id,
                 'nombre' => $f->nombre,
-                'monto'  => round((float) $f->monto, 2),
+                'monto' => round((float) $f->monto, 2),
             ];
         })->all();
     }
@@ -483,12 +510,12 @@ class DashboardResumenService
             ->get(['id', 'numero_factura', 'fecha_emision', 'fecha_vencimiento', 'monto_bruto', 'estado']);
 
         return $filas->map(fn ($f) => [
-            'id'               => $f->id,
-            'numero_factura'   => $f->numero_factura,
-            'fecha_emision'    => $f->fecha_emision->toDateString(),
-            'fecha_vencimiento'=> $f->fecha_vencimiento?->toDateString(),
-            'monto_bruto'      => (float) $f->monto_bruto,
-            'estado'           => $f->estado,
+            'id' => $f->id,
+            'numero_factura' => $f->numero_factura,
+            'fecha_emision' => $f->fecha_emision->toDateString(),
+            'fecha_vencimiento' => $f->fecha_vencimiento?->toDateString(),
+            'monto_bruto' => (float) $f->monto_bruto,
+            'estado' => $f->estado,
         ])->all();
     }
 
@@ -501,10 +528,10 @@ class DashboardResumenService
             ->get(['estado', 'fecha_vencimiento', 'monto_bruto']);
 
         $dist = [
-            'pagadas'    => ['cantidad' => 0, 'monto' => 0.0],
+            'pagadas' => ['cantidad' => 0, 'monto' => 0.0],
             'pendientes' => ['cantidad' => 0, 'monto' => 0.0],
-            'vencidas'   => ['cantidad' => 0, 'monto' => 0.0],
-            'anuladas'   => ['cantidad' => 0, 'monto' => 0.0],
+            'vencidas' => ['cantidad' => 0, 'monto' => 0.0],
+            'anuladas' => ['cantidad' => 0, 'monto' => 0.0],
         ];
 
         foreach ($filas as $f) {
@@ -535,7 +562,7 @@ class DashboardResumenService
     {
         $desde = Carbon::now()->startOfMonth()->subMonths(11)->toDateString();
 
-        $estados  = EstadoCotizacion::all(['id', 'nombre']);
+        $estados = EstadoCotizacion::all(['id', 'nombre']);
         $pipeline = [];
 
         foreach ($estados as $estado) {
@@ -548,21 +575,21 @@ class DashboardResumenService
                 ->whereDate('fecha_emision', '>=', $desde)
                 ->sum('monto_total');
             $pipeline[] = [
-                'estado'   => $estado->nombre,
+                'estado' => $estado->nombre,
                 'cantidad' => $count,
-                'monto'    => round($monto, 2),
+                'monto' => round($monto, 2),
             ];
         }
 
         // Tasa de conversión: Aceptadas / (Aceptadas + Rechazadas + Expiradas)
-        $aceptadas   = collect($pipeline)->firstWhere('estado', 'Aceptada')['cantidad'] ?? 0;
-        $rechazadas  = collect($pipeline)->firstWhere('estado', 'Rechazada')['cantidad'] ?? 0;
-        $expiradas   = collect($pipeline)->firstWhere('estado', 'Expirada')['cantidad'] ?? 0;
+        $aceptadas = collect($pipeline)->firstWhere('estado', 'Aceptada')['cantidad'] ?? 0;
+        $rechazadas = collect($pipeline)->firstWhere('estado', 'Rechazada')['cantidad'] ?? 0;
+        $expiradas = collect($pipeline)->firstWhere('estado', 'Expirada')['cantidad'] ?? 0;
         $denominador = $aceptadas + $rechazadas + $expiradas;
         $tasaConversion = $denominador > 0 ? round($aceptadas / $denominador * 100, 1) : null;
 
         return [
-            'etapas'          => $pipeline,
+            'etapas' => $pipeline,
             'tasa_conversion' => $tasaConversion,
         ];
     }
@@ -577,7 +604,7 @@ class DashboardResumenService
 
         $meses = [];
         for ($i = 5; $i >= 0; $i--) {
-            $clave         = Carbon::now()->startOfMonth()->subMonths($i)->format('Y-m');
+            $clave = Carbon::now()->startOfMonth()->subMonths($i)->format('Y-m');
             $meses[$clave] = 0;
         }
 
@@ -619,7 +646,7 @@ class DashboardResumenService
 
     private function proximasVencer(int $empresaId, int $dias = 7): array
     {
-        $hoy    = Carbon::now()->toDateString();
+        $hoy = Carbon::now()->toDateString();
         $limite = Carbon::now()->addDays($dias)->toDateString();
 
         $filas = Factura::where('empresa_id', $empresaId)
@@ -632,17 +659,27 @@ class DashboardResumenService
             ->get(['id', 'numero_factura', 'fecha_emision', 'fecha_vencimiento', 'monto_bruto', 'estado']);
 
         return $filas->map(fn ($f) => [
-            'id'               => $f->id,
-            'numero_factura'   => $f->numero_factura,
-            'fecha_vencimiento'=> optional($f->fecha_vencimiento)->toDateString(),
-            'monto_bruto'      => round((float) $f->monto_bruto, 2),
-            'estado'           => $f->estado,
-            'dias_restantes'   => (int) Carbon::now()->diffInDays($f->fecha_vencimiento, false),
+            'id' => $f->id,
+            'numero_factura' => $f->numero_factura,
+            'fecha_vencimiento' => optional($f->fecha_vencimiento)->toDateString(),
+            'monto_bruto' => round((float) $f->monto_bruto, 2),
+            'estado' => $f->estado,
+            'dias_restantes' => (int) Carbon::now()->diffInDays($f->fecha_vencimiento, false),
         ])->all();
     }
 
-    private function rangoPeriodo(string $periodo): array
+    /**
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    private function rangoPeriodo(string $periodo, ?string $fechaDesde = null, ?string $fechaHasta = null): array
     {
+        if ($fechaDesde !== null && $fechaHasta !== null) {
+            return [
+                Carbon::parse($fechaDesde)->startOfDay(),
+                Carbon::parse($fechaHasta)->endOfDay(),
+            ];
+        }
+
         return match ($periodo) {
             'trimestre' => [
                 Carbon::now()->startOfQuarter(),
@@ -659,8 +696,25 @@ class DashboardResumenService
         };
     }
 
-    private function rangoPeriodoAnterior(string $periodo): array
+    /**
+     * Rango del periodo inmediatamente anterior (misma duración), usado para 'variacion_pct'.
+     * Con fechas explícitas, calcula el rango de igual duración justo antes de fecha_desde.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    private function rangoPeriodoAnterior(string $periodo, ?string $fechaDesde = null, ?string $fechaHasta = null): array
     {
+        if ($fechaDesde !== null && $fechaHasta !== null) {
+            $inicio = Carbon::parse($fechaDesde)->startOfDay();
+            $fin = Carbon::parse($fechaHasta)->endOfDay();
+            $dias = $inicio->diffInDays($fin) + 1;
+
+            $finAnterior = $inicio->copy()->subDay()->endOfDay();
+            $inicioAnterior = $finAnterior->copy()->subDays($dias - 1)->startOfDay();
+
+            return [$inicioAnterior, $finAnterior];
+        }
+
         return match ($periodo) {
             'trimestre' => [
                 Carbon::now()->subQuarter()->startOfQuarter(),
@@ -675,5 +729,106 @@ class DashboardResumenService
                 Carbon::now()->subMonth()->endOfMonth(),
             ],
         };
+    }
+
+    /**
+     * KPIs y serie de ventas del período equivalente del año anterior (mismo rango, un año atrás),
+     * para comparación interanual. Se apoya en $kpisActuales (ya calculados) para el delta porcentual.
+     */
+    private function compararAnioAnterior(int $empresaId, Carbon $inicio, Carbon $fin, array $kpisActuales): array
+    {
+        $inicioAnt = $inicio->copy()->subYear();
+        $finAnt = $fin->copy()->subYear();
+
+        $ventasAnt = (float) Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->where('estado', '!=', 'ANULADA')
+            ->whereDate('fecha_emision', '>=', $inicioAnt->toDateString())
+            ->whereDate('fecha_emision', '<=', $finAnt->toDateString())
+            ->sum('monto_bruto');
+
+        $facturasAnt = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->where('estado', '!=', 'ANULADA')
+            ->whereBetween('fecha_emision', [$inicioAnt->toDateString(), $finAnt->toDateString()])
+            ->count();
+
+        $ventasActuales = (float) ($kpisActuales['ventas_mes'] ?? 0);
+        $facturasActuales = (int) ($kpisActuales['facturas_emitidas_mes'] ?? 0);
+
+        $variacionVentasPct = $ventasAnt > 0 ? round((($ventasActuales - $ventasAnt) / $ventasAnt) * 100, 2) : null;
+        $variacionFacturasPct = $facturasAnt > 0 ? round((($facturasActuales - $facturasAnt) / $facturasAnt) * 100, 2) : null;
+
+        return [
+            'ventas' => round($ventasAnt, 2),
+            'variacion_pct' => $variacionVentasPct,
+            'facturas_emitidas' => (int) $facturasAnt,
+            'facturas_emitidas_variacion_pct' => $variacionFacturasPct,
+            'serie' => $this->serieVentasComparativa($empresaId, $inicio, $fin, $inicioAnt, $finAnt),
+            'periodo' => [
+                'desde' => $inicioAnt->toDateString(),
+                'hasta' => $finAnt->toDateString(),
+            ],
+        ];
+    }
+
+    /**
+     * Alinea, mes a mes, la serie de ventas del período actual con la del período equivalente
+     * del año anterior, para graficar ambas líneas superpuestas en el frontend.
+     */
+    private function serieVentasComparativa(int $empresaId, Carbon $inicio, Carbon $fin, Carbon $inicioAnt, Carbon $finAnt): array
+    {
+        $serieActual = $this->serieVentasEnRango($empresaId, $inicio, $fin);
+        $serieAnterior = $this->serieVentasEnRango($empresaId, $inicioAnt, $finAnt);
+
+        $total = max(count($serieActual), count($serieAnterior));
+        $salida = [];
+        for ($i = 0; $i < $total; $i++) {
+            $salida[] = [
+                'mes' => $serieActual[$i]['mes'] ?? null,
+                'mes_anio_anterior' => $serieAnterior[$i]['mes'] ?? null,
+                'actual' => $serieActual[$i]['monto'] ?? 0.0,
+                'anio_anterior' => $serieAnterior[$i]['monto'] ?? 0.0,
+            ];
+        }
+
+        return $salida;
+    }
+
+    /**
+     * Serie mensual de ventas (VENTA, no ANULADA) para un rango de fechas arbitrario.
+     * Agrupación en PHP (compatible SQLite y MySQL), igual patrón que serieVentas12m().
+     */
+    private function serieVentasEnRango(int $empresaId, Carbon $desde, Carbon $hasta): array
+    {
+        $inicioMes = $desde->copy()->startOfMonth();
+        $finMes = $hasta->copy()->startOfMonth();
+
+        $filas = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'VENTA')
+            ->where('estado', '!=', 'ANULADA')
+            ->whereDate('fecha_emision', '>=', $desde->toDateString())
+            ->whereDate('fecha_emision', '<=', $hasta->toDateString())
+            ->get(['fecha_emision', 'monto_bruto']);
+
+        $meses = [];
+        $cursor = $inicioMes->copy();
+        while ($cursor->lte($finMes)) {
+            $meses[$cursor->format('Y-m')] = 0.0;
+            $cursor->addMonth();
+        }
+
+        foreach ($filas as $fila) {
+            $clave = Carbon::parse($fila->fecha_emision)->format('Y-m');
+            if (isset($meses[$clave])) {
+                $meses[$clave] += (float) $fila->monto_bruto;
+            }
+        }
+
+        return array_map(
+            fn ($mes, $monto) => ['mes' => $mes, 'monto' => round($monto, 2)],
+            array_keys($meses),
+            array_values($meses)
+        );
     }
 }

@@ -2,11 +2,9 @@
 
 namespace App\Domains\Inventario\Controllers;
 
-use App\Domains\Inventario\Exceptions\InventarioException;
-use App\Support\MensajeErrorGenerico;
-
 use App\Domains\Core\Models\User;
 use App\Domains\Inventario\Controllers\Concerns\RespondeInventario;
+use App\Domains\Inventario\Exceptions\InventarioException;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Models\StockUbicacionInventario;
 use App\Domains\Inventario\Services\InventarioMovimientoService;
@@ -25,8 +23,7 @@ class MovimientoController
     public function __construct(
         protected InventarioMovimientoService $movimientoService,
         protected InventarioPermisoService $permisos,
-    ) {
-    }
+    ) {}
 
     public function movimientos(Request $request): JsonResponse
     {
@@ -77,6 +74,7 @@ class MovimientoController
                 'estado_stock_destino' => ['nullable', Rule::in(StockUbicacionInventario::estadosPermitidos())],
                 'cantidad' => ['required', 'numeric', 'gt:0'],
                 'costo_unitario' => ['nullable', 'numeric', 'min:0'],
+                'costo_cero_confirmado' => ['nullable', 'boolean'],
 
                 'lote_id' => ['nullable', 'integer'],
                 'lote' => ['nullable', 'array'],
@@ -167,8 +165,8 @@ class MovimientoController
 
         if (
             $tipo === MovimientoInventario::TIPO_TRASPASO
-            && !empty($datos['bodega_origen_id'])
-            && !empty($datos['bodega_destino_id'])
+            && ! empty($datos['bodega_origen_id'])
+            && ! empty($datos['bodega_destino_id'])
             && (int) $datos['bodega_origen_id'] === (int) $datos['bodega_destino_id']
         ) {
             throw ValidationException::withMessages([

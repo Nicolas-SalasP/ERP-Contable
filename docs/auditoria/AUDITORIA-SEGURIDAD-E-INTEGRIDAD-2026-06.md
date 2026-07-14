@@ -10,6 +10,10 @@
 > `✔ CONFIRMADO` = verificado manualmente sobre el código.
 > `● REPORTADO` = hallazgo de revisión especializada, consistente con el código pero pendiente de validación puntual.
 
+> **Re-verificación 2026-07-14** (5 agentes en paralelo, uno por sección, contra el código actual de `NSalas-dev`): de 27 hallazgos con ID, **16 resueltos**, **2 ya no aplican**, **2 parciales**, **7 siguen abiertos**. Cada ítem abajo lleva su estado real actualizado entre corchetes al inicio de la fila; el texto original del hallazgo se conserva sin editar. Dos hallazgos nuevos salieron de esta re-verificación y ya se corrigieron el mismo día: `Base de Datos/sistema_contable.sql` tenía datos con forma de reales (RUT/email/teléfono personal del propietario + 3 proveedores/cliente) — sanitizado, y la carpeta completa se eliminó después por estar en desuso (legacy backend PHP nativo); `_ide_helper*.php` seguían trackeados sin excepción en `.gitignore` — corregido.
+>
+> **Segunda pasada 2026-07-14 (mismo día, priorizada con `/council`):** de los 10 hallazgos que seguían realmente abiertos tras la primera pasada, se cerraron **A-4** (validación de formato de hash), **F-3** (whitelist mínima de transiciones en `Factura::cambiarEstado`, código hoy muerto/sin ruta) y **F-4** (FK real en `movimientos_bancarios`/`anticipos_*`, con fix adicional para no perder triggers de SQLite en el mismo cambio). **F-7 se cerró sin código** tras confirmar por grep que `ActivoFijo::restore()` no es alcanzable desde ningún endpoint hoy. **M-2 y M-4 se intentaron y se revirtieron**: ambos fixes (agregar `HasEmpresaScope` a 3 modelos de CorrecciónMonetaria; forzar `empresa_id` desde el usuario autenticado en el trait) rompieron flujos legítimos reales en tests (`EmpresaObserver::created()` al onboardear una empresa nueva, y un test de aislamiento IDOR que crea fixtures de otra empresa a propósito) — quedan documentados en su fila con el detalle de por qué no son un fix seguro de una sesión. **Siguen abiertos sin tocar**: **M-3** (jobs/consola sin filtro de tenant, ya documentado como responsabilidad manual), **F-6** (auditoría de campo, alcance grande, requiere decisión de negocio de qué operaciones auditar), **S-1/S-2/S-5/S-6** (firma CAF/SOAP del SII, rotación de `APP_KEY` — bloqueados por falta de certificado de prueba / script de rotación mayor), **C-2** (token en localStorage, plan propio `S-2-PLAN-TOKEN-COOKIE-HTTPONLY.md`).
+
 ---
 
 ## 1. Resumen ejecutivo
@@ -60,12 +64,12 @@ Dicho eso, la auditoría identifica **riesgos que deben cerrarse antes de escala
 
 | ID | Sev | Hallazgo | Evidencia | Confianza |
 |---|---|---|---|---|
-| A-1 | 🔴 CRÍTICO | **Login sin rate-limiting.** El grupo `api` no aplica `throttle`; `/auth/login` y `/auth/token-login` son públicos y sin límite → fuerza bruta y enumeración. | `routes/api.php:55-56`, `bootstrap/app.php:21-28` | ✔ CONFIRMADO |
-| A-2 | 🟠 ALTO | **Fallback legacy `X-WEB-API-KEY`** (llave estática sin nonce/timestamp) coexiste con HMAC → ventana de *replay* indefinida hasta retirar "Fase 2". | `app/Http/Middleware/VerifyWebApiKey.php:24-27` | ✔ CONFIRMADO |
-| A-3 | 🟠 ALTO | **Endpoints internos sin rate-limiting** (`/internal/web/*`): aun con HMAC, permiten DoS/abuso por volumen (p. ej. provisión masiva). | `routes/api.php:405-426` | ✔ CONFIRMADO |
-| A-4 | 🟡 MEDIO | **`syncPassword`/`provisionUser` insertan el hash directo** desde la web sin validar que sea bcrypt/argon2 válido → riesgo si la web emisora se ve comprometida. | `Core/Controllers/Internal/WebProvisioningController.php:107-137`, `Core/Services/ProvisionUserService.php:65` | ● REPORTADO |
-| A-5 | 🟡 MEDIO | **Posible escalada de jerarquía en gestión de roles** (self-asignación / techo de plan no aplicado a Administradores). Requiere validar la lógica relativa del controller. | `Core/Controllers/UsuarioController.php:78-114, 202-231`; `Core/Support/ModuloPermisos.php:158-174` | ● REPORTADO (verificar) |
-| A-6 | 🟢 BAJO | `/me` expone `subscription_ends_at`/`module_keys` al cliente (info de negocio). | `Core/Controllers/AuthController.php:270-290` | ● REPORTADO |
+| A-1 | 🔴 CRÍTICO | [✅ RESUELTO] **Login sin rate-limiting.** El grupo `api` no aplica `throttle`; `/auth/login` y `/auth/token-login` son públicos y sin límite → fuerza bruta y enumeración. | `routes/api.php:55-56`, `bootstrap/app.php:21-28` | ✔ CONFIRMADO |
+| A-2 | 🟠 ALTO | [✅ RESUELTO] **Fallback legacy `X-WEB-API-KEY`** (llave estática sin nonce/timestamp) coexiste con HMAC → ventana de *replay* indefinida hasta retirar "Fase 2". | `app/Http/Middleware/VerifyWebApiKey.php:24-27` | ✔ CONFIRMADO |
+| A-3 | 🟠 ALTO | [✅ RESUELTO] **Endpoints internos sin rate-limiting** (`/internal/web/*`): aun con HMAC, permiten DoS/abuso por volumen (p. ej. provisión masiva). | `routes/api.php:405-426` | ✔ CONFIRMADO |
+| A-4 | 🟡 MEDIO | [✅ RESUELTO 2026-07-14 — `password_get_info()` rechaza hashes no bcrypt/argon2] **`syncPassword`/`provisionUser` insertan el hash directo** desde la web sin validar que sea bcrypt/argon2 válido → riesgo si la web emisora se ve comprometida. | `Core/Controllers/Internal/WebProvisioningController.php:107-137`, `Core/Services/ProvisionUserService.php:65` | ● REPORTADO |
+| A-5 | 🟡 MEDIO | [✅ RESUELTO] **Posible escalada de jerarquía en gestión de roles** (self-asignación / techo de plan no aplicado a Administradores). Requiere validar la lógica relativa del controller. | `Core/Controllers/UsuarioController.php:78-114, 202-231`; `Core/Support/ModuloPermisos.php:158-174` | ● REPORTADO (verificar) |
+| A-6 | 🟢 BAJO | [⚪ ACEPTADO, sigue así] `/me` expone `subscription_ends_at`/`module_keys` al cliente (info de negocio). | `Core/Controllers/AuthController.php:270-290` | ● REPORTADO |
 
 ### 3.2 Fortalezas
 - **RBAC en dos capas**: gate grueso por permiso en la ruta (`EnsureUserHasPermission`) + lógica relativa por instancia en el controller. Bien razonado y documentado.
@@ -77,6 +81,11 @@ Dicho eso, la auditoría identifica **riesgos que deben cerrarse antes de escala
 ## 4. Aislamiento multitenant *(área de mayor riesgo estructural)*
 
 ### 4.1 Hallazgo central — `✔ CONFIRMADO`
+
+[🟡 PARCIAL — re-verificado 2026-07-14] El caso "usuario autenticado sin empresa" ya es fail-safe
+(`whereRaw('1 = 0')`, ver §7-bis). El caso "sin autenticación" (jobs/consola/colas) **sigue sin
+filtrar en absoluto** — el propio código lo admite explícitamente y delega en disciplina manual por
+Job. Es el hueco más serio que persiste de todo este documento.
 
 El scope global de empresa **no es *fail-safe***:
 
@@ -103,10 +112,10 @@ Consecuencias:
 
 | ID | Sev | Hallazgo | Evidencia | Confianza |
 |---|---|---|---|---|
-| M-1 | 🟠 ALTO | Servicios que acceden por ID sin pasar `empresa_id` explícito (defensa en profundidad ausente). | `Comercial/Services/ClienteService.php:47`, `Comercial/Services/CotizacionService.php:29`, `Inventario/Services/InventarioUbicacionService.php:227` | ● REPORTADO |
-| M-2 | 🟠 ALTO | 45 modelos con `empresa_id` sin `HasEmpresaScope` (defensa central ausente). | (lista §4.1) | ✔ CONFIRMADO |
-| M-3 | 🟡 MEDIO | `EmpresaScope` debería **fallar cerrado** cuando no hay tenant resoluble en contexto web. | `Core/Scopes/EmpresaScope.php:13-16` | ✔ CONFIRMADO |
-| M-4 | 🟢 BAJO | Form Requests no bloquean `empresa_id` por mass-assignment; se mitiga porque los controllers lo sobreescriben con `$user->empresa_id`. | `Sii/Http/Requests/SubirCafRequest.php` y otros | ● REPORTADO |
+| M-1 | 🟠 ALTO | [✅ RESUELTO] Servicios que acceden por ID sin pasar `empresa_id` explícito (defensa en profundidad ausente). | `Comercial/Services/ClienteService.php:47`, `Comercial/Services/CotizacionService.php:29`, `Inventario/Services/InventarioUbicacionService.php:227` | ● REPORTADO |
+| M-2 | 🟠 ALTO | [🟡 PARCIAL — 2026-07-14: 68/75 modelos con `HasEmpresaScope` (era 6/51). 3 gap real: `CorreccionMonetaria/Models/{CmConfiguracionCuenta,CmConfiguracionEmpresa,CmEjecucion}.php` sin el trait. **Intento de fix revertido**: agregar el trait rompe `EmpresaObserver::created()` (crea config CM para la empresa nueva, no la activa del usuario) y `firstOrCreate()` en flujos legítimos cross-empresa (setup interno) — el scope filtra por la empresa activa del usuario autenticado y no encuentra filas de otra empresa que sí existen, duplicando inserts (`UniqueConstraintViolationException` reproducido en test). El filtrado manual explícito ya presente en `CorreccionMonetariaService` (100% consistente, verificado) queda como mitigación; cerrar el gap real requeriría separar el caso "observer/setup interno" del caso "request de usuario", fuera de alcance de un fix rápido] 45 modelos con `empresa_id` sin `HasEmpresaScope` (defensa central ausente). | (lista §4.1) | ✔ CONFIRMADO |
+| M-3 | 🟡 MEDIO | [🟡 PARCIAL, ver §4.1] `EmpresaScope` debería **fallar cerrado** cuando no hay tenant resoluble en contexto web. | `Core/Scopes/EmpresaScope.php:13-16` | ✔ CONFIRMADO |
+| M-4 | 🟢 BAJO | [🔴 SIGUE ABIERTO — **intento de fix revertido**: forzar `empresa_id` desde el usuario autenticado en el `creating()` del trait `HasEmpresaScope` (para cerrar mass-assignment) rompe `EmpresaObserver::created()` igual que M-2, y además rompe un test de aislamiento IDOR que crea fixtures "de otra empresa" a propósito (`InventarioAjusteCriticoApiTest`). No hay forma de distinguir desde el trait un mass-assignment malicioso de una escritura interna legítima para otra empresa. El fix correcto es sacar `empresa_id` de `$fillable` en cada uno de los ~60 modelos afectados (o mover a `$guarded`), uno por uno con verificación — blast radius grande, fuera de alcance de esta sesión] Form Requests no bloquean `empresa_id` por mass-assignment; se mitiga porque los controllers lo sobreescriben con `$user->empresa_id`. | `Sii/Http/Requests/SubirCafRequest.php` y otros | ● REPORTADO |
 
 ### 4.3 Fortaleza
 - Existe `tests/Feature/Core/AislamientoMultiTenantTest.php` que valida no-fuga en los modelos con scope. **Buena base** para extender la cobertura a los 45 restantes.
@@ -119,13 +128,13 @@ Consecuencias:
 
 | ID | Sev | Hallazgo | Evidencia | Confianza |
 |---|---|---|---|---|
-| F-1 | 🔴 CRÍTICO | **Reclasificación de asiento sin validar período cerrado**: permite cambiar `fecha`/cuentas de una factura ya pagada hacia un mes cerrado (post-F29). | `Comercial/Services/FacturaService.php:238-283` | ● REPORTADO |
-| F-2 | 🔴 CRÍTICO | **Soft-delete sin candado de estado**: asientos `MAYORIZADO` y facturas `PAGADA` pueden borrarse lógicamente (y `restore()`) sin reversa → libro mayor inconsistente, inmutabilidad rota. | `Contabilidad/Models/AsientoContable.php` (SoftDeletes); migración `2026_06_03_130000_add_soft_deletes_to_critical_tables` | ● REPORTADO |
-| F-3 | 🟠 ALTO | **`cambiarEstado` de factura sin máquina de estados**: transiciones ilegales posibles (PAGADA→REGISTRADA, ANULADA→REGISTRADA) sin asiento de reversa. | `Comercial/Services/FacturaService.php:405-410` | ● REPORTADO |
-| F-4 | 🟠 ALTO | **Sin FK `movimientos_bancarios.asiento_id → asientos_contables.id`**: integridad referencial débil entre tesorería y mayor. | migración `2026_04_28_120000_create_movimientos_bancarios_table.php:21` | ● REPORTADO |
-| F-5 | 🟠 ALTO | **Race condition latente**: el candado `Cache::add` de asientos depende de `CACHE_STORE`; con `file` y múltiples workers el lock no es global → duplicados. El `.env.example` ya advierte usar `database`. | `Contabilidad/Controllers/AsientoContableController.php:32,95`; `.env.example:48-50` | ✔ CONFIRMADO (riesgo de config) |
-| F-6 | 🟡 MEDIO | **Auditoría registra solo cambios de estado**, no de montos/fechas → reclasificaciones quedan fuera de la traza. | `Core/Models/Auditoria.php`; `FacturaService::obtenerAuditoriaCompleta` | ● REPORTADO |
-| F-7 | 🟡 MEDIO | Soft-delete de activos podría permitir doble depreciación al restaurar. | `Activos/Services/ActivoFijoService.php:439-508` | ● REPORTADO |
+| F-1 | 🔴 CRÍTICO | [✅ RESUELTO, ver §7-ter] **Reclasificación de asiento sin validar período cerrado**: permite cambiar `fecha`/cuentas de una factura ya pagada hacia un mes cerrado (post-F29). | `Comercial/Services/FacturaService.php:238-283` | ● REPORTADO |
+| F-2 | 🔴 CRÍTICO | [✅ RESUELTO vía `AsientoContableObserver` + bloqueo de período, ver §7-ter. Nota: un asiento MAYORIZADO en período aún abierto sí puede soft-deletarse — el observer no mira `estado`, solo período; fuera del alcance original de F-1/F-2] **Soft-delete sin candado de estado**: asientos `MAYORIZADO` y facturas `PAGADA` pueden borrarse lógicamente (y `restore()`) sin reversa → libro mayor inconsistente, inmutabilidad rota. | `Contabilidad/Models/AsientoContable.php` (SoftDeletes); migración `2026_06_03_130000_add_soft_deletes_to_critical_tables` | ● REPORTADO |
+| F-3 | 🟠 ALTO | [✅ RESUELTO PARCIALMENTE 2026-07-14 — whitelist mínima (no máquina de estados completa): bloquea salir de `ANULADA` y entrar a `ANULADA` fuera del flujo real de anulación. Nota: el método es código muerto hoy, sin ruta/controller que lo invoque — el fix es defensivo para cuando se conecte] **`cambiarEstado` de factura sin máquina de estados**: transiciones ilegales posibles (PAGADA→REGISTRADA, ANULADA→REGISTRADA) sin asiento de reversa. | `Comercial/Services/FacturaService.php:405-410` | ● REPORTADO |
+| F-4 | 🟠 ALTO | [✅ RESUELTO 2026-07-14 — FK agregada en `movimientos_bancarios`, `anticipos_proveedores` y `anticipos_clientes` (mismo patrón), `nullOnDelete()`, huérfanos preexistentes limpiados antes del constraint] **Sin FK `movimientos_bancarios.asiento_id → asientos_contables.id`**: integridad referencial débil entre tesorería y mayor. | migración `2026_04_28_120000_create_movimientos_bancarios_table.php:21` | ● REPORTADO |
+| F-5 | 🟠 ALTO | [🟡 SIN CAMBIO DE CÓDIGO, riesgo depende de config del operador] **Race condition latente**: el candado `Cache::add` de asientos depende de `CACHE_STORE`; con `file` y múltiples workers el lock no es global → duplicados. El `.env.example` ya advierte usar `database`. | `Contabilidad/Controllers/AsientoContableController.php:32,95`; `.env.example:48-50` | ✔ CONFIRMADO (riesgo de config) |
+| F-6 | 🟡 MEDIO | [🔴 SIGUE ABIERTO] **Auditoría registra solo cambios de estado**, no de montos/fechas → reclasificaciones quedan fuera de la traza. | `Core/Models/Auditoria.php`; `FacturaService::obtenerAuditoriaCompleta` | ● REPORTADO |
+| F-7 | 🟡 MEDIO | [⚪ VERIFICADO NO EXPLOTABLE 2026-07-14 — `grep` confirma que `ActivoFijo::restore()` no es alcanzable desde ningún controller/ruta hoy; cerrado sin código. Si algún día se expone un endpoint de restore, agregar guard entonces] Soft-delete de activos podría permitir doble depreciación al restaurar. | `Activos/Services/ActivoFijoService.php:439-508` | ● REPORTADO |
 
 ---
 
@@ -135,12 +144,12 @@ Consecuencias:
 
 | ID | Sev | Hallazgo | Evidencia | Confianza |
 |---|---|---|---|---|
-| S-1 | 🟠 ALTO | **No se valida la firma del CAF contra la CA raíz del SII** (comentario explícito "validación contra cert raíz SII queda diferida al backlog") → un CAF manipulado podría aceptarse. | `Sii/Services/Caf/CafXmlParser.php:13,35-95` | ● REPORTADO |
-| S-2 | 🟠 ALTO | **Respuestas SOAP del SII se parsean sin validar firma** (solo estructura/regex) → un MITM podría inyectar un estado "ACEPTADO" falso. | `Sii/Services/Ws/SiiUploadService.php:106-131`, `SiiEstadoUpService.php:137-178` | ● REPORTADO |
-| S-3 | 🟠 ALTO | **No hay bloqueo automático de CAF vencido** (6 meses): folios vencidos podrían usarse. | `Sii/Models/SiiCaf.php`; falta job de expiración | ● REPORTADO |
-| S-4 | 🟡 MEDIO | **XXE no mitigado explícitamente** en parseos libxml/simplexml (sin `LIBXML_NONET`/deshabilitar entidades). | `Sii/Services/Caf/CafXmlParser.php:105` y parsers XML | ● REPORTADO |
-| S-5 | 🟡 MEDIO | **Sin estrategia documentada de rotación de `APP_KEY`**: toda la cadena de certificados depende de una sola llave; su fuga compromete todo y no hay plan de re-cifrado. | arquitectura de cifrado | ✔ CONFIRMADO (ausencia) |
-| S-6 | 🟢 BAJO | Sin validación de cadena/expiración por OCSP/CRL del certificado del contribuyente (solo `validTo`). | `Sii/Services/Certificado/CertificadoService.php:26-35` | ● REPORTADO |
+| S-1 | 🟠 ALTO | [🔴 SIGUE ABIERTO, el propio docblock del código lo admite] **No se valida la firma del CAF contra la CA raíz del SII** (comentario explícito "validación contra cert raíz SII queda diferida al backlog") → un CAF manipulado podría aceptarse. | `Sii/Services/Caf/CafXmlParser.php:13,35-95` | ● REPORTADO |
+| S-2 | 🟠 ALTO | [🔴 SIGUE ABIERTO] **Respuestas SOAP del SII se parsean sin validar firma** (solo estructura/regex) → un MITM podría inyectar un estado "ACEPTADO" falso. | `Sii/Services/Ws/SiiUploadService.php:106-131`, `SiiEstadoUpService.php:137-178` | ● REPORTADO |
+| S-3 | 🟠 ALTO | [🟡 PARCIAL — `CafService::reservarSiguienteFolio` bloquea reactivamente al intentar usar un CAF vencido; sigue faltando el job proactivo/batch] **No hay bloqueo automático de CAF vencido** (6 meses): folios vencidos podrían usarse. | `Sii/Models/SiiCaf.php`; falta job de expiración | ● REPORTADO |
+| S-4 | 🟡 MEDIO | [⚪ YA NO APLICA — PHP ^8.2 + libxml ≥2.9 deshabilita expansión de entidades externas por defecto, sin necesidad de `LIBXML_NOENT`; confirmado también por la auditoría ofensiva 2026-07-14] **XXE no mitigado explícitamente** en parseos libxml/simplexml (sin `LIBXML_NONET`/deshabilitar entidades). | `Sii/Services/Caf/CafXmlParser.php:105` y parsers XML | ● REPORTADO |
+| S-5 | 🟡 MEDIO | [🔴 SIGUE ABIERTO] **Sin estrategia documentada de rotación de `APP_KEY`**: toda la cadena de certificados depende de una sola llave; su fuga compromete todo y no hay plan de re-cifrado. | arquitectura de cifrado | ✔ CONFIRMADO (ausencia) |
+| S-6 | 🟢 BAJO | [🔴 SIGUE ABIERTO] Sin validación de cadena/expiración por OCSP/CRL del certificado del contribuyente (solo `validTo`). | `Sii/Services/Certificado/CertificadoService.php:26-35` | ● REPORTADO |
 
 ---
 
@@ -148,14 +157,14 @@ Consecuencias:
 
 | ID | Sev | Hallazgo | Evidencia | Confianza |
 |---|---|---|---|---|
-| C-1 | 🟡 ALTO* | **Credenciales de prueba commiteadas y reutilizadas**: `superadmin@tenri.cl` / `password123` en `Frontend/.env.e2e` y en `UserSeeder` (4 roles). Mismo par como *fallback* en `e2e.yml`. *Crítico si producción fue sembrada con seeders.* | `Frontend/.env.e2e:1-2`, `database/seeders/UserSeeder.php:14`, `.github/workflows/e2e.yml:182-183` | ✔ CONFIRMADO |
-| C-2 | 🟠 ALTO | **Token en `localStorage`** (no HttpOnly) → robo por XSS. | `Frontend/src/Configuracion/api.js:20-34` | ● REPORTADO |
-| C-3 | 🟠 ALTO | **Faltan cabeceras de seguridad** (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) en backend y `.htaccess` del frontend. | sin middleware de headers | ● REPORTADO |
-| C-4 | 🟡 MEDIO | **PDFs de anticipos en disco `public`** (`store(...,'public')`) → potencialmente enumerables/descargables sin auth. | `Comercial/Controllers/ProveedorController.php:157` | ● REPORTADO |
-| C-5 | 🟡 MEDIO | **Dump SQL commiteado** (`Base de Datos/sistema_contable.sql`). Revisar que nunca contenga datos reales. | repo raíz | ✔ CONFIRMADO |
-| C-6 | 🟢 BAJO | `_ide_helper.php` / `_ide_helper_models.php` commiteados (deberían ignorarse). Archivo basura `an optimizeclear` (salida de `less`) en la raíz. | repo | ✔ CONFIRMADO |
-| C-7 | 🟢 BAJO | `CORS allowed_methods/headers = ['*']` con `supports_credentials=true` (orígenes sí explícitos). Restringir a métodos/headers concretos. | `config/cors.php` | ✔ CONFIRMADO |
-| C-8 | 🟢 BAJO | Doc API (Scramble `/docs/api`) protegida por `RestrictedDocsAccess`: verificar que exige auth en prod. | `config/scramble.php` | ● REPORTADO |
+| C-1 | 🟡 ALTO* | [✅ RESUELTO — reapareció como fallback en 8 specs `Frontend/e2e/*.spec.js` en junio/julio, corregido de nuevo el 2026-07-14 (commit `82eb14e`)] **Credenciales de prueba commiteadas y reutilizadas**: `superadmin@tenri.cl` / `password123` en `Frontend/.env.e2e` y en `UserSeeder` (4 roles). Mismo par como *fallback* en `e2e.yml`. *Crítico si producción fue sembrada con seeders.* | `Frontend/.env.e2e:1-2`, `database/seeders/UserSeeder.php:14`, `.github/workflows/e2e.yml:182-183` | ✔ CONFIRMADO |
+| C-2 | 🟠 ALTO | [🔴 SIGUE ABIERTO — plan de migración en `S-2-PLAN-TOKEN-COOKIE-HTTPONLY.md`] **Token en `localStorage`** (no HttpOnly) → robo por XSS. | `Frontend/src/Configuracion/api.js:20-34` | ● REPORTADO |
+| C-3 | 🟠 ALTO | [✅ RESUELTO] **Faltan cabeceras de seguridad** (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) en backend y `.htaccess` del frontend. | sin middleware de headers | ● REPORTADO |
+| C-4 | 🟡 MEDIO | [✅ RESUELTO] **PDFs de anticipos en disco `public`** (`store(...,'public')`) → potencialmente enumerables/descargables sin auth. | `Comercial/Controllers/ProveedorController.php:157` | ● REPORTADO |
+| C-5 | 🟡 MEDIO | [✅ SANITIZADO 2026-07-14 — sí tenía datos con forma de reales (RUT/email/teléfono personal del propietario, 3 proveedores/cliente con RUT y contacto); reemplazados por datos demo genéricos en el commit del mismo día. El dato viejo sigue en el historial git (no reescrito, requiere autorización aparte)] **Dump SQL commiteado** (`Base de Datos/sistema_contable.sql`). Revisar que nunca contenga datos reales. | repo raíz | ✔ CONFIRMADO |
+| C-6 | 🟢 BAJO | [✅ RESUELTO 2026-07-14 — `_ide_helper*.php` desindexados + agregados a `.gitignore`; `an optimizeclear` ya no existía] `_ide_helper.php` / `_ide_helper_models.php` commiteados (deberían ignorarse). Archivo basura `an optimizeclear` (salida de `less`) en la raíz. | repo | ✔ CONFIRMADO |
+| C-7 | 🟢 BAJO | [✅ RESUELTO] `CORS allowed_methods/headers = ['*']` con `supports_credentials=true` (orígenes sí explícitos). Restringir a métodos/headers concretos. | `config/cors.php` | ✔ CONFIRMADO |
+| C-8 | 🟢 BAJO | [✅ RESUELTO — `Gate::allows('viewApiDocs')` sin definir → `false` por defecto en prod, más restrictivo que "requiere auth"] Doc API (Scramble `/docs/api`) protegida por `RestrictedDocsAccess`: verificar que exige auth en prod. | `config/scramble.php` | ● REPORTADO |
 
 \* Severidad efectiva depende de si producción usó estos seeds/credenciales. **Acción inmediata:** confirmar y rotar.
 

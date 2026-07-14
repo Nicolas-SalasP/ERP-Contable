@@ -21,7 +21,7 @@ use Tests\TestCase;
  */
 class LiquidacionCalculoTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     private LiquidacionService $service;
 
@@ -94,7 +94,7 @@ class LiquidacionCalculoTest extends TestCase
     ): Empleado {
         $empleado = Empleado::create([
             'empresa_id' => $empresaId,
-            'rut' => '12.345.678-' . rand(0, 9),
+            'rut' => '12.345.678-'.rand(0, 9),
             'nombres' => 'Trabajador',
             'apellido_paterno' => 'Test',
             'afp' => $afp,
@@ -155,6 +155,21 @@ class LiquidacionCalculoTest extends TestCase
         $imponible = (float) $liq->total_haberes_imponibles;
         $afcEsperado = (int) round($imponible * 0.006);
         $this->assertEquals($afcEsperado, (int) $afc->monto);
+    }
+
+    // ── 2b. Tasa adicional Ley 16.744 de la empresa se suma a la básica ───────
+
+    public function test_aporte_mutual_suma_tasa_adicional_diferenciada_de_la_empresa(): void
+    {
+        [$empresa] = $this->crearEmpresaConAdmin();
+        $empresa->update(['mutual_tasa_adicional_pct' => 1.5]);
+        $empleado = $this->empleadoConContrato($empresa->id, 1000000);
+
+        $liq = $this->service->calcular($empresa->id, $empleado->id, 2026, 6);
+
+        // Básica 0.9% (seed legal) + adicional 1.5% de la empresa = 2.4% de la base imponible.
+        $mutualEsperado = (int) round((float) $liq->base_imponible * (0.9 + 1.5) / 100);
+        $this->assertEquals($mutualEsperado, (int) $liq->aporte_empleador_mutual);
     }
 
     // ── 3. ISAPRE adicional no rebaja base tributable ─────────────────────────

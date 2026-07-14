@@ -2,21 +2,24 @@
 
 namespace App\Domains\Core\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * @property-read \App\Domains\Core\Models\Rol|null $rol
- * @property-read \App\Domains\Core\Models\Empresa|null $empresa
- * @property-read \App\Domains\Core\Models\Empresa|null $empresaActiva
- * @property-read \App\Domains\Core\Models\EstadoSuscripcion|null $estadoSuscripcion
+ * @property-read Rol|null $rol
+ * @property-read Empresa|null $empresa
+ * @property-read Empresa|null $empresaActiva
+ * @property-read EstadoSuscripcion|null $estadoSuscripcion
  */
 class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
     protected $table = 'usuarios';
+
     public const UPDATED_AT = null;
 
     protected $fillable = [
@@ -34,6 +37,9 @@ class User extends Authenticatable
         'tenri_synced_at',
         'subscription_status',
         'subscription_ends_at',
+        'intentos_fallidos',
+        'nivel_bloqueo',
+        'bloqueado_hasta',
     ];
 
     protected $hidden = [
@@ -60,13 +66,13 @@ class User extends Authenticatable
         });
     }
 
-    public function empresas(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function empresas(): BelongsToMany
     {
         return $this->belongsToMany(Empresa::class, 'empresa_user')
             ->withPivot('rol_id', 'created_at');
     }
 
-    public function empresaActiva(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function empresaActiva(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_activa_id');
     }
@@ -77,12 +83,12 @@ class User extends Authenticatable
         return $this->belongsTo(Empresa::class, 'empresa_activa_id');
     }
 
-    public function rol(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function rol(): BelongsTo
     {
         return $this->belongsTo(Rol::class);
     }
 
-    public function estadoSuscripcion(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function estadoSuscripcion(): BelongsTo
     {
         return $this->belongsTo(EstadoSuscripcion::class);
     }

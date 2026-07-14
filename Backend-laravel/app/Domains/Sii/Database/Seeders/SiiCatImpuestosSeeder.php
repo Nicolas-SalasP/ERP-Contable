@@ -9,9 +9,13 @@ class SiiCatImpuestosSeeder extends Seeder
 {
     public function run(): void
     {
+        // La tasa de IVA se deriva de config('fiscal.tasa_iva') (fraccion, ej. 0.19) en vez de un literal,
+        // para que el catalogo quede consistente si el legislador cambia la tasa.
+        $tasaIva = round((float) config('fiscal.tasa_iva') * 100, 2);
+
         $registros = [
-            ['codigo' => 14,  'nombre' => 'IVA',                                                'tasa' => 19.00, 'tipo' => 'iva',         'es_adicional' => false],
-            ['codigo' => 15,  'nombre' => 'IVA Retenido Total',                                 'tasa' => 19.00, 'tipo' => 'retencion',   'es_adicional' => true],
+            ['codigo' => 14,  'nombre' => 'IVA',                                                'tasa' => $tasaIva, 'tipo' => 'iva',         'es_adicional' => false],
+            ['codigo' => 15,  'nombre' => 'IVA Retenido Total',                                 'tasa' => $tasaIva, 'tipo' => 'retencion',   'es_adicional' => true],
             ['codigo' => 17,  'nombre' => 'IVA Retenido Parcial',                               'tasa' => null,  'tipo' => 'retencion',   'es_adicional' => true],
             ['codigo' => 23,  'nombre' => 'Impuesto Adicional Bebidas Alcohólicas (vinos)',     'tasa' => 20.50, 'tipo' => 'ila',         'es_adicional' => true],
             ['codigo' => 24,  'nombre' => 'Impuesto Adicional Bebidas Destiladas',              'tasa' => 31.50, 'tipo' => 'ila',         'es_adicional' => true],

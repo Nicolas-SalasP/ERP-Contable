@@ -186,6 +186,11 @@ const MovimientosInventario = () => {
     const guardarMovimiento = async (event) => {
         event.preventDefault();
 
+        if (!(Number(form.cantidad) > 0)) {
+            setError({ message: 'La cantidad debe ser mayor a 0.' });
+            return;
+        }
+
         try {
             setSaving(true);
             setError(null);
@@ -272,7 +277,7 @@ const MovimientosInventario = () => {
                     subtitle="La operación modifica stock real y genera trazabilidad en Kardex."
                 >
 
-                    <form onSubmit={guardarMovimiento} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                    <form onSubmit={guardarMovimiento} noValidate className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                         <Field label="Tipo de movimiento">
                             <select
                                 name="tipo"

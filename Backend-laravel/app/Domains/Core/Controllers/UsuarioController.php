@@ -60,14 +60,23 @@ class UsuarioController
                 'rol_id' => 'required|integer|exists:roles,id'
             ]);
 
-            $this->service->invitarUsuario(
+            $passwordTemporal = $this->service->invitarUsuario(
                 $request->user()->empresa_activa_id,
                 $datos['email'],
                 $datos['rol_id'],
                 $request->user()->module_keys ?? []
             );
 
-            return response()->json(['success' => true, 'message' => 'Invitación enviada.']);
+            // Sin flujo de email todavía: la password temporal se entrega una sola vez, en esta
+            // respuesta, a quien invita (ya validado jerarquia>=100 arriba) para que la comunique
+            // fuera de banda. Null si el usuario ya existía (no se tocó su password).
+            return response()->json([
+                'success' => true,
+                'message' => $passwordTemporal
+                    ? 'Usuario creado. Comparte esta password temporal por un canal seguro.'
+                    : 'Invitación enviada.',
+                'password_temporal' => $passwordTemporal,
+            ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,

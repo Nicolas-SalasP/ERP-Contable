@@ -3,12 +3,14 @@
 namespace App\Domains\Comercial\Controllers;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-use App\Support\MensajeErrorGenerico;
-
+use App\Domains\Comercial\Models\AnticipoProveedor;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Services\ProveedorService;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
+use App\Support\MensajeErrorGenerico;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 /**
  * @tags Proveedores
@@ -34,8 +36,8 @@ class ProveedorController
             'pagination' => [
                 'total' => $paginador->total(),
                 'totalPages' => $paginador->lastPage(),
-                'page' => $paginador->currentPage()
-            ]
+                'page' => $paginador->currentPage(),
+            ],
         ]);
     }
 
@@ -44,7 +46,7 @@ class ProveedorController
     {
         return response()->json([
             'success' => true,
-            'data' => $this->service->obtenerCatalogoBasico($request->user()->empresa_activa_id)
+            'data' => $this->service->obtenerCatalogoBasico($request->user()->empresa_activa_id),
         ]);
     }
 
@@ -52,7 +54,20 @@ class ProveedorController
     public function store(Request $request)
     {
         try {
-            $datos = $request->all();
+            $datos = $request->validate([
+                'rut' => 'nullable|string|max:20',
+                'razonSocial' => 'required_without:razon_social|string|max:150',
+                'razon_social' => 'required_without:razonSocial|string|max:150',
+                'paisIso' => 'nullable|string|size:2',
+                'moneda' => 'nullable|string|size:3',
+                'nombreContacto' => 'nullable|string|max:100',
+                'emailContacto' => 'nullable|email|max:100',
+                'direccion' => 'nullable|string|max:255',
+                'telefono' => 'nullable|string|max:50',
+            ]);
+
+            // empresa_id SIEMPRE se asigna despues de validar y solo desde el usuario
+            // autenticado: nunca puede provenir del body (fuga de aislamiento multitenant).
             $datos['empresa_id'] = $request->user()->empresa_activa_id;
 
             $proveedor = $this->service->registrarProveedor($datos);
@@ -60,16 +75,38 @@ class ProveedorController
             return response()->json([
                 'success' => true,
                 'data' => $proveedor,
-                'codigo_generado' => $proveedor->codigo_interno
+                'codigo_generado' => $proveedor->codigo_interno,
             ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => MensajeErrorGenerico::desde($e),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
+    }
+
+    /** Muestra el detalle de un proveedor por id (scope empresa). */
+    public function show(Request $request, $id)
+    {
+        $proveedor = Proveedor::where('empresa_id', $request->user()->empresa_activa_id)
+            ->find($id);
+
+        if (! $proveedor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Proveedor no encontrado.',
+            ], 404);
+        }
+
+        return response()->json(['success' => true, 'data' => $proveedor]);
     }
 
     /** Ficha completa de un proveedor (datos + cuentas + anticipos). */
@@ -78,14 +115,14 @@ class ProveedorController
         try {
             return response()->json([
                 'success' => true,
-                'data' => $this->service->obtenerFichaProveedor($request->user()->empresa_activa_id, (int) $id)
+                'data' => $this->service->obtenerFichaProveedor($request->user()->empresa_activa_id, (int) $id),
             ]);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 404);
         }
     }
@@ -94,26 +131,36 @@ class ProveedorController
     {
         try {
             $datos = [];
-            if ($request->has('rut'))
+            if ($request->has('rut')) {
                 $datos['rut'] = $request->rut;
-            if ($request->has('razonSocial'))
+            }
+            if ($request->has('razonSocial')) {
                 $datos['razon_social'] = $request->razonSocial;
-            if ($request->has('paisIso'))
+            }
+            if ($request->has('paisIso')) {
                 $datos['pais_iso'] = $request->paisIso;
-            if ($request->has('moneda'))
+            }
+            if ($request->has('moneda')) {
                 $datos['moneda_defecto'] = $request->moneda;
-            if ($request->has('nombreContacto'))
+            }
+            if ($request->has('nombreContacto')) {
                 $datos['nombre_contacto'] = $request->nombreContacto;
-            if ($request->has('emailContacto'))
+            }
+            if ($request->has('emailContacto')) {
                 $datos['email_contacto'] = $request->emailContacto;
-            if ($request->has('direccion'))
+            }
+            if ($request->has('direccion')) {
                 $datos['direccion'] = $request->direccion;
-            if ($request->has('telefono'))
+            }
+            if ($request->has('telefono')) {
                 $datos['telefono'] = $request->telefono;
-            if ($request->has('region'))
+            }
+            if ($request->has('region')) {
                 $datos['region'] = $request->region;
-            if ($request->has('comuna'))
+            }
+            if ($request->has('comuna')) {
                 $datos['comuna'] = $request->comuna;
+            }
 
             $proveedor = $this->service->actualizarProveedor($request->user()->empresa_activa_id, $id, $datos);
 
@@ -132,7 +179,7 @@ class ProveedorController
                 'proveedor_id' => 'required|integer',
                 'fecha' => 'required|date',
                 'monto' => 'required|numeric|min:1',
-                'referencia' => 'nullable|string|max:255'
+                'referencia' => 'nullable|string|max:255',
             ]);
 
             $anticipo = $this->service->registrarAnticipo(
@@ -143,21 +190,21 @@ class ProveedorController
             return response()->json([
                 'success' => true,
                 'message' => 'Anticipo registrado correctamente.',
-                'data' => $anticipo
+                'data' => $anticipo,
             ], 201);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Faltan datos obligatorios',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 400);
         }
     }
@@ -176,7 +223,7 @@ class ProveedorController
             $anticipo = $this->service->adjuntarPdfAnticipo($request->user()->empresa_activa_id, $id, $rutaPdf);
 
             return response()->json(['success' => true, 'data' => $anticipo]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e), 'errors' => $e->errors()], 422);
         } catch (ComercialException $e) {
             throw $e;
@@ -192,10 +239,10 @@ class ProveedorController
     /** Descarga el PDF de un anticipo, autenticado y acotado a la empresa. GET /proveedores/anticipos/{id}/pdf */
     public function descargarPdfAnticipo(Request $request, int $id)
     {
-        $anticipo = \App\Domains\Comercial\Models\AnticipoProveedor::where('empresa_id', $request->user()->empresa_activa_id)
+        $anticipo = AnticipoProveedor::where('empresa_id', $request->user()->empresa_activa_id)
             ->findOrFail($id);
 
-        if (!$anticipo->archivo_pdf || !Storage::disk('local')->exists($anticipo->archivo_pdf)) {
+        if (! $anticipo->archivo_pdf || ! Storage::disk('local')->exists($anticipo->archivo_pdf)) {
             return response()->json(['success' => false, 'message' => 'No hay PDF adjunto para este anticipo.'], 404);
         }
 
@@ -206,6 +253,7 @@ class ProveedorController
     public function destroy(Request $request, $id)
     {
         $this->service->inactivarProveedor($request->user()->empresa_activa_id, $id);
+
         return response()->json(['success' => true]);
     }
 
@@ -214,6 +262,7 @@ class ProveedorController
     {
         try {
             $this->service->activarProveedor($request->user()->empresa_activa_id, $id);
+
             return response()->json(['success' => true, 'message' => 'Proveedor activado']);
         } catch (ComercialException $e) {
             throw $e;
@@ -241,20 +290,20 @@ class ProveedorController
             return response()->json([
                 'success' => true,
                 'message' => 'Documentos cruzados y compensados exitosamente.',
-                'data' => $resultado
+                'data' => $resultado,
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => MensajeErrorGenerico::desde($e),
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ComercialException $e) {
             throw $e;
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 400);
         }
     }

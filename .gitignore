@@ -63,3 +63,6 @@ Frontend/.env.e2e.local
 
 # Snapshots/artefactos locales de Playwright MCP
 .playwright-mcp/
+
+# Reportes de coverage HTML (regenerables, ~180MB — no versionar)
+docs/coverage/

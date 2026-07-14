@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 class Dj1926Test extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -26,33 +26,33 @@ class Dj1926Test extends TestCase
     private function crearGastoRechazado(int $empresaId, string $codigo, string $nombre, int $monto, string $fecha = '2026-05-15'): void
     {
         $cuenta = PlanCuenta::create([
-            'empresa_id'        => $empresaId,
-            'codigo'            => $codigo,
-            'nombre'            => $nombre,
-            'tipo'              => 'GASTO',
-            'nivel'             => 5,
-            'imputable'         => true,
-            'activo'            => true,
+            'empresa_id' => $empresaId,
+            'codigo' => $codigo,
+            'nombre' => $nombre,
+            'tipo' => 'GASTO',
+            'nivel' => 5,
+            'imputable' => true,
+            'activo' => true,
             'es_gasto_rechazado' => true,
         ]);
 
         $asiento = AsientoContable::create([
-            'empresa_id'        => $empresaId,
+            'empresa_id' => $empresaId,
             'numero_comprobante' => uniqid('COMP-'),
-            'fecha'             => $fecha,
-            'glosa'             => 'Gasto rechazado test',
-            'tipo_asiento'      => 'manual',
-            'origen_modulo'     => 'contabilidad',
-            'estado'            => 'MAYORIZADO',
+            'fecha' => $fecha,
+            'glosa' => 'Gasto rechazado test',
+            'tipo_asiento' => 'traspaso',
+            'origen_modulo' => 'contabilidad',
+            'estado' => 'MAYORIZADO',
         ]);
 
         DetalleAsiento::create([
-            'asiento_id'      => $asiento->id,
+            'asiento_id' => $asiento->id,
             'cuenta_contable' => $cuenta->codigo,
-            'fecha'           => $fecha,
-            'tipo_operacion'  => 'DEBE',
-            'debe'            => $monto,
-            'haber'           => 0,
+            'fecha' => $fecha,
+            'tipo_operacion' => 'DEBE',
+            'debe' => $monto,
+            'haber' => 0,
             'descripcion_extensa' => 'Gasto rechazado test',
         ]);
     }
@@ -64,8 +64,8 @@ class Dj1926Test extends TestCase
         $this->crearGastoRechazado($empresa->id, '810101', 'Gastos Personales Socios', 500_000);
         $this->crearGastoRechazado($empresa->id, '810102', 'Multas y Sanciones', 100_000);
 
-        $service = new Dj1926Service();
-        $data    = $service->construir($empresa->id, 2026);
+        $service = new Dj1926Service;
+        $data = $service->construir($empresa->id, 2026);
 
         $this->assertCount(2, $data->lineas);
     }
@@ -75,39 +75,39 @@ class Dj1926Test extends TestCase
         [$empresa] = $this->crearEmpresaConAdmin();
 
         $cuenta = PlanCuenta::create([
-            'empresa_id'        => $empresa->id,
-            'codigo'            => '810201',
-            'nombre'            => 'Entretenimiento No Deducible',
-            'tipo'              => 'GASTO',
-            'nivel'             => 5,
-            'imputable'         => true,
-            'activo'            => true,
+            'empresa_id' => $empresa->id,
+            'codigo' => '810201',
+            'nombre' => 'Entretenimiento No Deducible',
+            'tipo' => 'GASTO',
+            'nivel' => 5,
+            'imputable' => true,
+            'activo' => true,
             'es_gasto_rechazado' => true,
         ]);
 
         foreach (['2026-01-10', '2026-04-20', '2026-08-05'] as $fecha) {
             $asiento = AsientoContable::create([
-                'empresa_id'         => $empresa->id,
+                'empresa_id' => $empresa->id,
                 'numero_comprobante' => uniqid('COMP-'),
-                'fecha'              => $fecha,
-                'glosa'              => 'Gasto rechazado',
-                'tipo_asiento'       => 'manual',
-                'origen_modulo'      => 'contabilidad',
-                'estado'             => 'MAYORIZADO',
+                'fecha' => $fecha,
+                'glosa' => 'Gasto rechazado',
+                'tipo_asiento' => 'traspaso',
+                'origen_modulo' => 'contabilidad',
+                'estado' => 'MAYORIZADO',
             ]);
             DetalleAsiento::create([
-                'asiento_id'         => $asiento->id,
-                'cuenta_contable'    => $cuenta->codigo,
-                'fecha'              => $fecha,
-                'tipo_operacion'     => 'DEBE',
-                'debe'               => 200_000,
-                'haber'              => 0,
+                'asiento_id' => $asiento->id,
+                'cuenta_contable' => $cuenta->codigo,
+                'fecha' => $fecha,
+                'tipo_operacion' => 'DEBE',
+                'debe' => 200_000,
+                'haber' => 0,
                 'descripcion_extensa' => 'Test',
             ]);
         }
 
-        $service = new Dj1926Service();
-        $data    = $service->construir($empresa->id, 2026);
+        $service = new Dj1926Service;
+        $data = $service->construir($empresa->id, 2026);
 
         $this->assertCount(1, $data->lineas);
         $this->assertEquals(600_000, $data->lineas[0]->campos['monto_total']);
@@ -119,7 +119,7 @@ class Dj1926Test extends TestCase
 
         $this->expectException(DjException::class);
 
-        $service = new Dj1926Service();
+        $service = new Dj1926Service;
         $service->construir($empresa->id, 2026);
     }
 
@@ -128,39 +128,39 @@ class Dj1926Test extends TestCase
         [$empresa] = $this->crearEmpresaConAdmin();
 
         $cuenta = PlanCuenta::create([
-            'empresa_id'        => $empresa->id,
-            'codigo'            => '810301',
-            'nombre'            => 'Gastos No Deducibles',
-            'tipo'              => 'GASTO',
-            'nivel'             => 5,
-            'imputable'         => true,
-            'activo'            => true,
+            'empresa_id' => $empresa->id,
+            'codigo' => '810301',
+            'nombre' => 'Gastos No Deducibles',
+            'tipo' => 'GASTO',
+            'nivel' => 5,
+            'imputable' => true,
+            'activo' => true,
             'es_gasto_rechazado' => true,
         ]);
 
         // Asiento en BORRADOR — no debe incluirse
         $asiento = AsientoContable::create([
-            'empresa_id'         => $empresa->id,
+            'empresa_id' => $empresa->id,
             'numero_comprobante' => uniqid('COMP-'),
-            'fecha'              => '2026-03-01',
-            'glosa'              => 'Borrador',
-            'tipo_asiento'       => 'manual',
-            'origen_modulo'      => 'contabilidad',
-            'estado'             => 'BORRADOR',
+            'fecha' => '2026-03-01',
+            'glosa' => 'Borrador',
+            'tipo_asiento' => 'traspaso',
+            'origen_modulo' => 'contabilidad',
+            'estado' => 'BORRADOR',
         ]);
         DetalleAsiento::create([
-            'asiento_id'         => $asiento->id,
-            'cuenta_contable'    => $cuenta->codigo,
-            'fecha'              => '2026-03-01',
-            'tipo_operacion'     => 'DEBE',
-            'debe'               => 300_000,
-            'haber'              => 0,
+            'asiento_id' => $asiento->id,
+            'cuenta_contable' => $cuenta->codigo,
+            'fecha' => '2026-03-01',
+            'tipo_operacion' => 'DEBE',
+            'debe' => 300_000,
+            'haber' => 0,
             'descripcion_extensa' => 'Test borrador',
         ]);
 
         $this->expectException(DjException::class);
 
-        $service = new Dj1926Service();
+        $service = new Dj1926Service;
         $service->construir($empresa->id, 2026);
     }
 
@@ -170,8 +170,8 @@ class Dj1926Test extends TestCase
 
         $this->crearGastoRechazado($empresa->id, '810401', 'Multa SII', 50_000);
 
-        $service = new Dj1926Service();
-        $data    = $service->construir($empresa->id, 2026);
+        $service = new Dj1926Service;
+        $data = $service->construir($empresa->id, 2026);
         $errores = $service->validar($data);
 
         $this->assertEmpty($errores);
@@ -182,30 +182,30 @@ class Dj1926Test extends TestCase
         [$empresa] = $this->crearEmpresaConAdmin();
 
         $data = new DjData(
-            codigoDj:  '1926',
+            codigoDj: '1926',
             empresaId: $empresa->id,
-            anio:      2026,
+            anio: 2026,
             cabecera: ['rut_empresa' => $empresa->rut, 'razon_social' => $empresa->razon_social],
             lineas: [
                 new DjLineaData(['codigo_cuenta' => '810101', 'nombre_cuenta' => 'Gastos Socios', 'monto_total' => 0]),
             ],
         );
 
-        $service = new Dj1926Service();
+        $service = new Dj1926Service;
         $errores = $service->validar($data);
 
         $this->assertNotEmpty($errores);
         $this->assertTrue(collect($errores)->contains(fn ($e) => str_contains($e, 'cero o negativo')));
     }
 
-    public function test_archivo_contiene_registros_A_D_T(): void
+    public function test_archivo_contiene_registros_a_d_t(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
 
         $this->crearGastoRechazado($empresa->id, '810501', 'Gastos Rechazados', 80_000);
 
-        $service = new Dj1926Service();
-        $data    = $service->construir($empresa->id, 2026);
+        $service = new Dj1926Service;
+        $data = $service->construir($empresa->id, 2026);
         $archivo = $service->formatearArchivo($data);
 
         $this->assertTrue(str_starts_with($archivo, 'A;'));
@@ -223,7 +223,7 @@ class Dj1926Test extends TestCase
 
         $this->expectException(DjException::class);
 
-        $service = new Dj1926Service();
+        $service = new Dj1926Service;
         $service->construir($empresa2->id, 2026);
     }
 
@@ -231,6 +231,7 @@ class Dj1926Test extends TestCase
     {
         [$empresa, $usuario] = $this->crearEmpresaConAdmin();
         $usuario->update(['rol_id' => $this->rolSuperAdmin->id]);
+
         return [$empresa, $usuario];
     }
 
@@ -263,7 +264,7 @@ class Dj1926Test extends TestCase
     public function test_http_multitenant_usuario_solo_ve_sus_envios(): void
     {
         [$empresa1, $usuario1] = $this->crearEmpresaConSuperAdmin();
-        [, $usuario2]          = $this->crearEmpresaConSuperAdmin();
+        [, $usuario2] = $this->crearEmpresaConSuperAdmin();
 
         $this->crearGastoRechazado($empresa1->id, '810801', 'Gasto Solo E1', 50_000);
         $this->actingAs($usuario1)->postJson('/api/dj/1926/generar', ['anio' => 2026]);

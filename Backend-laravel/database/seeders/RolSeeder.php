@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Domains\Core\Models\Rol;
+use Illuminate\Database\Seeder;
 
 class RolSeeder extends Seeder
 {
@@ -46,6 +46,7 @@ class RolSeeder extends Seeder
                         'contabilidad.ver', 'contabilidad.crear',
                         'tributario.ver', 'tributario.crear',
                         'activos.ver',
+                        'alertas.ver', 'alertas.gestionar',
                     ],
                     $this->permisosInventarioCompletos(),
                     $this->permisosSiiOperacion(),
@@ -60,7 +61,7 @@ class RolSeeder extends Seeder
                     [
                         'ventas.ver', 'clientes.ver', 'compras.ver', 'proveedores.ver',
                         'tesoreria.ver', 'contabilidad.ver', 'activos.ver', 'tributario.ver',
-                        'usuarios.ver',
+                        'usuarios.ver', 'alertas.ver',
                     ],
                     $this->permisosInventarioSoloLectura(),
                     $this->permisosSiiSoloLectura(),
@@ -85,6 +86,7 @@ class RolSeeder extends Seeder
             'contabilidad.ver', 'contabilidad.crear',
             'activos.ver', 'activos.crear',
             'tributario.ver', 'tributario.crear',
+            'alertas.ver', 'alertas.gestionar',
         ];
     }
 
@@ -94,8 +96,6 @@ class RolSeeder extends Seeder
             'usuarios.ver', 'usuarios.gestionar',
         ];
     }
-
-
 
     private function permisosSiiAdministracion(): array
     {

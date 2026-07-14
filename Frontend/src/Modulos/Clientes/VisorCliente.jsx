@@ -4,7 +4,7 @@ import { api } from '../../Configuracion/api';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import ModalDocumentosFactura from '../../Componentes/ModalDocumentosFactura';
 import Swal from 'sweetalert2';
-import { formatearMoneda } from '../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../Utilidades/formato';
 
 const formatCurrency = formatearMoneda;
 
@@ -86,7 +86,7 @@ const VisorCliente = () => {
 
     const clientesFiltrados = listaClientes.filter(c => {
         const b = terminoBusqueda.toLowerCase();
-        return c.razon_social?.toLowerCase().includes(b) || (c.rut && c.rut.toLowerCase().includes(b));
+        return c.razon_social?.toLowerCase().includes(b) || (c.rut && c.rut.toLowerCase().includes(b)) || (c.codigo_cliente && c.codigo_cliente.toLowerCase().includes(b));
     });
 
     const modalSpotlightJSX = modalAbierto && (
@@ -94,7 +94,7 @@ const VisorCliente = () => {
             <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] border border-slate-300 dark:border-slate-700" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <i className="fas fa-search text-slate-500 text-xl mr-4"></i>
-                    <input ref={inputBusquedaRef} type="text" className="flex-1 bg-transparent border-none outline-none text-lg font-bold text-slate-800 dark:text-slate-200 placeholder-slate-400" placeholder="Buscar por RUT o Nombre..." value={terminoBusqueda} onChange={(e) => setTerminoBusqueda(e.target.value)} />
+                    <input ref={inputBusquedaRef} type="text" className="flex-1 bg-transparent border-none outline-none text-lg font-bold text-slate-800 dark:text-slate-200 placeholder-slate-400" placeholder="Buscar por RUT, Nombre o Código..." value={terminoBusqueda} onChange={(e) => setTerminoBusqueda(e.target.value)} />
                     <button onClick={() => setModalAbierto(false)} className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600 text-xs font-bold px-3 py-1 rounded transition-colors">ESC</button>
                 </div>
                 <div className="overflow-y-auto p-2">
@@ -159,6 +159,7 @@ const VisorCliente = () => {
                 ...f,
                 _tipo: esNC ? 'NOTA_CREDITO' : esND ? 'NOTA_DEBITO' : 'FACTURA',
                 _fechaOrden: new Date(f.fecha_emision),
+                _fechaRaw: f.fecha_emision,
                 _documento: f.numero_factura ? `${prefijo} #${f.numero_factura}` : `${prefijo} S/N`,
                 // NC reduce lo que el cliente debe (abono); Factura y ND lo aumentan (cargo).
                 _cargo: esNC ? 0 : parseFloat(f.monto_bruto || 0),
@@ -171,6 +172,7 @@ const VisorCliente = () => {
             ...a,
             _tipo: 'ANTICIPO',
             _fechaOrden: new Date(a.fecha || a.created_at),
+            _fechaRaw: a.fecha || a.created_at,
             _documento: a.referencia ? `Anticipo: ${a.referencia}` : 'Anticipo S/R',
             _cargo: 0,
             _abono: parseFloat(a.saldo_disponible ?? a.monto ?? 0),
@@ -340,7 +342,7 @@ const VisorCliente = () => {
                                 {historialFiltrado.map((item, i) => (
                                     <tr key={`${item._tipo}-${item.id}-${i}`} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                         <td className="px-6 py-3 text-slate-600 dark:text-slate-400 font-mono text-xs">
-                                            {item._fechaOrden.toLocaleDateString('es-CL')}
+                                            {formatFecha(item._fechaRaw)}
                                         </td>
                                         <td className="px-6 py-3">
                                             <div className="flex items-center gap-2">
