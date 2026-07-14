@@ -11,6 +11,7 @@ use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Core\Services\ContadorEmpresaService;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\MovimientoInventario;
 use App\Domains\Inventario\Services\InventarioMovimientoService;
@@ -18,6 +19,10 @@ use Illuminate\Support\Facades\DB;
 
 class CotizacionService
 {
+    public function __construct(
+        private readonly ContadorEmpresaService $contadorService,
+    ) {}
+
     public function obtenerPorEmpresa(int $empresaId, int $perPage = 100)
     {
         // Paginado server-side: ->get() sin límite cargaba TODAS las cotizaciones en memoria en empresas con histórico grande.
@@ -68,11 +73,19 @@ class CotizacionService
             $validezDias = $datos['validez'] ?? 30;
             $fechaValidez = $datos['fecha_validez'] ?? date('Y-m-d', strtotime($fechaEmision.' + '.$validezDias.' days'));
 
+            // Antes se usaba 'COT-'.time() como placeholder y despues se sobreescribia con el id
+            // autoincremental de la tabla -- pero ese id es GLOBAL (compartido entre todas las
+            // empresas), asi que el correlativo de una empresa saltaba cada vez que otra empresa
+            // creaba una cotizacion (ej. de COT-000003 a COT-000010). ContadorEmpresaService lleva
+            // un correlativo atomico por empresa (mismo patron que OrdenCompraService).
+            $numeroCotizacion = $datos['numero_cotizacion']
+                ?? sprintf('COT-%06d', $this->contadorService->siguienteNumero($datos['empresa_id'], 'cotizacion'));
+
             $cotizacion = Cotizacion::create([
                 'empresa_id' => $datos['empresa_id'],
                 'cliente_id' => $datos['cliente_id'],
                 'nombre_cliente' => $cliente->razon_social,
-                'numero_cotizacion' => $datos['numero_cotizacion'] ?? 'COT-'.time(),
+                'numero_cotizacion' => $numeroCotizacion,
                 'fecha_emision' => $fechaEmision,
                 'fecha_validez' => $fechaValidez,
                 'validez' => $validezDias,
@@ -93,12 +106,6 @@ class CotizacionService
                 'comentarios' => $datos['comentarios'] ?? null,
                 'garantia' => $datos['garantia'] ?? null,
             ]);
-
-            if (! isset($datos['numero_cotizacion'])) {
-                $cotizacion->update([
-                    'numero_cotizacion' => 'COT-'.str_pad((string) $cotizacion->id, 6, '0', STR_PAD_LEFT),
-                ]);
-            }
 
             foreach ($detalles as $detalle) {
                 $subtotalLinea = $detalle['cantidad'] * $detalle['precio_unitario'];

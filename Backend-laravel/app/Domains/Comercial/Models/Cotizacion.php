@@ -2,17 +2,18 @@
 
 namespace App\Domains\Comercial\Models;
 
+use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Traits\HasEmpresaScope;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Domains\Core\Models\Empresa;
-use App\Domains\Core\Traits\HasEmpresaScope;
 
 /**
- * @property-read \App\Domains\Comercial\Models\Cliente|null $cliente
- * @property-read \App\Domains\Comercial\Models\EstadoCotizacion|null $estado
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Comercial\Models\CotizacionDetalle> $detalles
+ * @property-read Cliente|null $cliente
+ * @property-read EstadoCotizacion|null $estado
+ * @property-read Collection<int, CotizacionDetalle> $detalles
  */
 class Cotizacion extends Model
 {
@@ -20,6 +21,7 @@ class Cotizacion extends Model
     use SoftDeletes;
 
     protected $table = 'cotizaciones';
+
     const UPDATED_AT = null;
 
     protected $fillable = [
@@ -56,11 +58,13 @@ class Cotizacion extends Model
         'es_afecta' => 'boolean',
     ];
 
+    /** @return BelongsTo<Cliente, $this> */
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
     }
 
+    /** @return BelongsTo<EstadoCotizacion, $this> */
     public function estado(): BelongsTo
     {
         return $this->belongsTo(EstadoCotizacion::class, 'estado_id');
@@ -71,9 +75,16 @@ class Cotizacion extends Model
         return $this->belongsTo(Empresa::class);
     }
 
+    /** @return HasMany<CotizacionDetalle, $this> */
     public function detalles(): HasMany
     {
         return $this->hasMany(CotizacionDetalle::class);
+    }
+
+    /** @return HasMany<Factura, $this> */
+    public function facturas(): HasMany
+    {
+        return $this->hasMany(Factura::class);
     }
 
     public function documentosAdjuntos(): HasMany
