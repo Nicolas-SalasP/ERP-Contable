@@ -280,7 +280,7 @@ class FlujoCompletoPruebaCommand extends Command
                 'moneda' => 'CLP',
                 'monto_neto' => $neto,
                 'monto_exento' => 0,
-                'tasa_iva' => 19.00,
+                'tasa_iva' => round((float) config('fiscal.tasa_iva') * 100, 2),
                 'iva' => $iva,
                 'monto_total' => $total,
                 'estado' => SiiDteEmitido::ESTADO_BORRADOR,

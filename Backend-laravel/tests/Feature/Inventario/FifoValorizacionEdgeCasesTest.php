@@ -202,7 +202,7 @@ class FifoValorizacionEdgeCasesTest extends TestCase
         $this->assertEquals(20.0, (float) $stock->stock_actual);
     }
 
-    public function test_entrada_a_costo_cero_es_aceptada_y_diluye_el_costo_promedio(): void
+    public function test_entrada_a_costo_cero_sin_confirmar_es_rechazada(): void
     {
         $empresa = $this->crearEmpresa();
         $producto = $this->crearProductoFifo($empresa);
@@ -210,12 +210,26 @@ class FifoValorizacionEdgeCasesTest extends TestCase
         $stock = $this->crearStockVacio($empresa, $producto, $bodega);
 
         $this->fifo->calcularEntrada($stock, $producto, 10, 100);
-        $resultado = $this->fifo->calcularEntrada($stock->refresh(), $producto, 5, 0);
+
+        $this->expectException(InventarioException::class);
+
+        $this->fifo->calcularEntrada($stock->refresh(), $producto, 5, 0);
+    }
+
+    public function test_entrada_a_costo_cero_confirmada_es_aceptada_y_diluye_el_costo_promedio(): void
+    {
+        $empresa = $this->crearEmpresa();
+        $producto = $this->crearProductoFifo($empresa);
+        $bodega = $this->crearBodega($empresa);
+        $stock = $this->crearStockVacio($empresa, $producto, $bodega);
+
+        $this->fifo->calcularEntrada($stock, $producto, 10, 100);
+        $resultado = $this->fifo->calcularEntrada($stock->refresh(), $producto, 5, 0, costoCeroIntencional: true);
 
         $this->assertEquals(0.0, $resultado['costo_unitario']);
         $this->assertEquals(0.0, $resultado['costo_total']);
-        // (1000 + 0) / 15 = 66.6667: una entrada a costo 0 diluye el promedio sin ninguna
-        // validación de negocio que la rechace o advierta.
+        // (1000 + 0) / 15 = 66.6667: una entrada a costo 0 confirmada explícitamente diluye el
+        // promedio sin más objeciones.
         $this->assertEquals(66.6667, $resultado['costo_promedio_despues']);
 
         $capaCeroCosto = $this->capasDe($empresa, $producto, $bodega)->last();

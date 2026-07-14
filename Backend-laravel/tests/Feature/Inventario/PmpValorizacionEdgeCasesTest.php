@@ -33,7 +33,24 @@ class PmpValorizacionEdgeCasesTest extends TestCase
         $this->service = app(InventarioValorizacionService::class);
     }
 
-    public function test_entrada_a_costo_cero_es_aceptada_y_diluye_el_promedio(): void
+    public function test_entrada_a_costo_cero_sin_confirmar_es_rechazada(): void
+    {
+        $empresa = $this->crearEmpresa();
+        $producto = $this->crearProducto($empresa, ['costo_promedio' => 100]);
+        $bodega = $this->crearBodega($empresa);
+        $stock = $this->crearStock($empresa, $producto, $bodega, 10, 100);
+
+        $this->expectException(RuntimeException::class);
+
+        $this->service->calcularEntradaPmp(
+            stock: $stock,
+            producto: $producto,
+            cantidad: 10,
+            costoUnitario: 0
+        );
+    }
+
+    public function test_entrada_a_costo_cero_confirmada_es_aceptada_y_diluye_el_promedio(): void
     {
         $empresa = $this->crearEmpresa();
         $producto = $this->crearProducto($empresa, ['costo_promedio' => 100]);
@@ -44,12 +61,13 @@ class PmpValorizacionEdgeCasesTest extends TestCase
             stock: $stock,
             producto: $producto,
             cantidad: 10,
-            costoUnitario: 0
+            costoUnitario: 0,
+            costoCeroIntencional: true
         );
 
         $this->assertSame('0.0000', $resultado['costo_unitario']);
         $this->assertSame('0.0000', $resultado['costo_total']);
-        // (1000 + 0) / 20 = 50: la entrada a costo 0 no se rechaza ni advierte, solo diluye.
+        // (1000 + 0) / 20 = 50: la entrada a costo 0 confirmada explícitamente diluye el promedio.
         $this->assertSame('50.0000', $resultado['costo_promedio_despues']);
 
         $stock->refresh();
