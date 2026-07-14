@@ -57,7 +57,6 @@ Monorepo (pnpm workspace) con una SPA en React y una API RESTful en Laravel 12.
 │   │   └── Utilidades/        # Helpers (export Excel/PDF)
 │   ├── e2e/                   # Tests E2E Playwright
 │   └── vite.config.js
-├── Base de Datos/             # Estructura SQL y datos semilla
 └── docs/                      # Normativa SII, leyes RRHH, auditorías
 ```
 
