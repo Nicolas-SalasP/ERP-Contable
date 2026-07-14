@@ -46,6 +46,7 @@ class Empresa extends Model
         return $this->hasMany(User::class);
     }
 
+    /** @return BelongsTo<Mutualidad, $this> */
     public function mutualidad(): BelongsTo
     {
         return $this->belongsTo(Mutualidad::class);
