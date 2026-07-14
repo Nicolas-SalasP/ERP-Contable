@@ -680,18 +680,24 @@ class DashboardResumenService
             ];
         }
 
+        // "hasta" se limita a hoy (periodo-a-la-fecha), nunca al cierre teorico del periodo.
+        // Sin este limite, "Este año" en julio comparaba el año en curso (con 5 meses sin
+        // datos, porque no existen facturas futuras) contra el año anterior COMPLETO,
+        // mostrando una caida de ventas falsa de ~40-50% solo por el calendario.
+        $hoy = Carbon::now()->endOfDay();
+
         return match ($periodo) {
             'trimestre' => [
                 Carbon::now()->startOfQuarter(),
-                Carbon::now()->endOfQuarter(),
+                Carbon::now()->endOfQuarter()->min($hoy),
             ],
             'año' => [
                 Carbon::now()->startOfYear(),
-                Carbon::now()->endOfYear(),
+                Carbon::now()->endOfYear()->min($hoy),
             ],
             default => [ // 'mes'
                 Carbon::now()->startOfMonth(),
-                Carbon::now()->endOfMonth(),
+                Carbon::now()->endOfMonth()->min($hoy),
             ],
         };
     }

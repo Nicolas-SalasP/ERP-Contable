@@ -186,7 +186,7 @@ class FacturaAComercialDteMapper
             'moneda' => $factura->moneda ?? 'CLP',
 
             // EMISOR — snapshot completo desde Empresa.
-            'emisor_rut' => Iso88591Helper::sanitize((string) $empresa->rut, 12),
+            'emisor_rut' => Iso88591Helper::sanitize((string) $empresa->rut, 20),
             'emisor_razon_social' => Iso88591Helper::sanitize((string) $empresa->razon_social, 100),
             'emisor_giro' => $empresa->giro_emisor
                 ? Iso88591Helper::sanitize((string) $empresa->giro_emisor, 80)
@@ -203,7 +203,7 @@ class FacturaAComercialDteMapper
                 : null,
 
             // RECEPTOR — snapshot desde Cliente.
-            'receptor_rut' => Iso88591Helper::sanitize((string) $cliente->rut, 12),
+            'receptor_rut' => Iso88591Helper::sanitize((string) $cliente->rut, 20),
             'receptor_razon_social' => Iso88591Helper::sanitize((string) $cliente->razon_social, 100),
             'receptor_giro' => $cliente->giro
                 ? Iso88591Helper::sanitize((string) $cliente->giro, 40)
