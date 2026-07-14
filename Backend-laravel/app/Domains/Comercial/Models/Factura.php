@@ -19,6 +19,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $tipo_dte
  * @property int|null $cliente_id
  * @property Carbon $fecha_emision
+ * @property string|null $emisor_razon_social
+ * @property string|null $emisor_rut
+ * @property string|null $emisor_logo_path
  * @property-read SiiDteEmitido|null $dteEmitido
  * @property-read Cliente|null $cliente
  * @property-read Proveedor|null $proveedor
@@ -69,6 +72,9 @@ class Factura extends Model
         'razon_nota_debito',
         'notificada_at',
         'usuario_notificacion_id',
+        'emisor_razon_social',
+        'emisor_rut',
+        'emisor_logo_path',
     ];
 
     protected $casts = [
@@ -85,6 +91,26 @@ class Factura extends Model
     ];
 
     protected $appends = ['nombre_proveedor'];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Factura $factura) {
+            if ($factura->tipo !== 'VENTA' || $factura->emisor_razon_social !== null) {
+                return;
+            }
+
+            $empresa = Empresa::find($factura->empresa_id);
+            if (! $empresa) {
+                return;
+            }
+
+            $factura->emisor_razon_social = $empresa->razon_social;
+            $factura->emisor_rut = $empresa->rut;
+            $factura->emisor_logo_path = $empresa->logo_path;
+        });
+    }
 
     public function empresa(): BelongsTo
     {

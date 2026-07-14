@@ -4,6 +4,9 @@
     $fechaEmision = \Carbon\Carbon::parse($cotizacion->fecha_emision);
     $fechaVencimiento = \Carbon\Carbon::parse($cotizacion->fecha_validez ?? $fechaEmision->copy()->addDays($diasValidez));
     $esAfecta = (bool) $cotizacion->es_afecta;
+    $emisorRazonSocial = $cotizacion->emisor_razon_social ?? $empresa->razon_social;
+    $emisorRut = $cotizacion->emisor_rut ?? $empresa->rut;
+    $emisorLogoPath = $cotizacion->emisor_logo_path ?? $empresa->logo_path;
 @endphp
 
 <!DOCTYPE html>
@@ -154,14 +157,14 @@
     <table class="header-table">
         <tr>
             <td class="logo-td">
-                @if(!empty($empresa->logo_path))
-                    <img src="{{ public_path('storage/' . $empresa->logo_path) }}" class="logo-img" alt="Logo">
+                @if(!empty($emisorLogoPath))
+                    <img src="{{ public_path('storage/' . $emisorLogoPath) }}" class="logo-img" alt="Logo">
                 @endif
             </td>
             <td class="empresa-td">
-                <div class="empresa-nombre">{{ $empresa->razon_social ?? 'Empresa No Configurada' }}</div>
+                <div class="empresa-nombre">{{ $emisorRazonSocial ?? 'Empresa No Configurada' }}</div>
                 <div class="empresa-info">
-                    RUT: {{ $empresa->rut ?? 'N/A' }}<br>
+                    RUT: {{ $emisorRut ?? 'N/A' }}<br>
                     Dirección: {{ $empresa->direccion ?? 'N/A' }}<br>
                     Email: {{ $empresa->email ?? 'S/I' }} | Tel: {{ $empresa->telefono ?? 'S/I' }}
                 </div>
@@ -347,7 +350,7 @@
     </table>
 
     <div class="footer">
-        Generado vía Tenri ERP Cloud por {{ $empresa->razon_social ?? 'Empresa' }}
+        Generado vía Tenri ERP Cloud por {{ $emisorRazonSocial ?? 'Empresa' }}
     </div>
 
 </body>

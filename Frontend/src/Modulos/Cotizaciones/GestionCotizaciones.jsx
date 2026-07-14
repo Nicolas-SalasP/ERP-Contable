@@ -82,6 +82,8 @@ const GestionCotizaciones = () => {
             confirmButtonText: 'Facturar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#0f172a',
+            buttonsStyling: true,
+            customClass: { popup: 'rounded-2xl', input: '!mt-2' },
             inputValidator: (valor) => !valor ? 'Selecciona una fecha.' : undefined,
         });
         if (!isConfirmed) return;
@@ -148,6 +150,7 @@ const GestionCotizaciones = () => {
 
     const getEstadoStyle = (estado) => {
         switch (estado?.toUpperCase()) {
+            case 'FACTURADA': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
             case 'ACEPTADA': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
             case 'RECHAZADA': return 'bg-rose-50 text-rose-700 border-rose-200';
             case 'ENVIADA': return 'bg-blue-50 text-blue-700 border-blue-200';
@@ -237,7 +240,7 @@ const GestionCotizaciones = () => {
                             const nombreEstado = c.estado?.nombre || 'Borrador';
                             return (
                             <div key={c.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm relative overflow-hidden">
-                                <div className={`absolute top-0 left-0 w-1.5 h-full ${nombreEstado === 'ACEPTADA' ? 'bg-emerald-500' : nombreEstado === 'Rechazada' ? 'bg-rose-400' : 'bg-amber-400'}`}></div>
+                                <div className={`absolute top-0 left-0 w-1.5 h-full ${nombreEstado === 'Facturada' ? 'bg-indigo-500' : nombreEstado === 'Aceptada' ? 'bg-emerald-500' : nombreEstado === 'Rechazada' ? 'bg-rose-400' : 'bg-amber-400'}`}></div>
 
                                 <div className="flex justify-between items-start mb-2 pl-2">
                                     <div>

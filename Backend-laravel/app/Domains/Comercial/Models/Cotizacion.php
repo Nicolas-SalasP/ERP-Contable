@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * @property string|null $emisor_razon_social
+ * @property string|null $emisor_rut
+ * @property string|null $emisor_logo_path
  * @property-read Cliente|null $cliente
  * @property-read EstadoCotizacion|null $estado
  * @property-read Collection<int, CotizacionDetalle> $detalles
@@ -50,6 +53,9 @@ class Cotizacion extends Model
         'garantia',
         'enviada_at',
         'usuario_envio_id',
+        'emisor_razon_social',
+        'emisor_rut',
+        'emisor_logo_path',
     ];
 
     protected $casts = [
@@ -101,6 +107,21 @@ class Cotizacion extends Model
 
         static::deleting(function (Cotizacion $cotizacion) {
             $cotizacion->detalles()->delete();
+        });
+
+        static::creating(function (Cotizacion $cotizacion) {
+            if ($cotizacion->emisor_razon_social !== null) {
+                return;
+            }
+
+            $empresa = Empresa::find($cotizacion->empresa_id);
+            if (! $empresa) {
+                return;
+            }
+
+            $cotizacion->emisor_razon_social = $empresa->razon_social;
+            $cotizacion->emisor_rut = $empresa->rut;
+            $cotizacion->emisor_logo_path = $empresa->logo_path;
         });
     }
 }
