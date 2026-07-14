@@ -11,6 +11,7 @@ use App\Domains\CorreccionMonetaria\Providers\ManualIpcProvider;
 use App\Domains\Activos\Models\ActivoFijo;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -231,6 +232,20 @@ class CorreccionMonetariaService
     }
 
     public function ejecutar(int $empresaId, int $usuarioId, int $mes, int $anio): array
+    {
+        try {
+            return $this->ejecutarSinGuard($empresaId, $usuarioId, $mes, $anio);
+        } catch (QueryException $e) {
+            // La unique de BD (defensa final contra la carrera que el exists() de
+            // validarYObtenerConfig no cubre) salta aqui como codigo 23000/1062.
+            if ((int) $e->getCode() === 23000 || str_contains($e->getMessage(), 'cm_ejecuciones_periodo_unique')) {
+                throw new Exception("La Corrección Monetaria de {$this->nombreMes($mes)} {$anio} ya fue ejecutada y contabilizada.");
+            }
+            throw $e;
+        }
+    }
+
+    private function ejecutarSinGuard(int $empresaId, int $usuarioId, int $mes, int $anio): array
     {
         return DB::transaction(function () use ($empresaId, $usuarioId, $mes, $anio) {
             $config = $this->validarYObtenerConfig($empresaId, $mes, $anio, soloSimular: false);
