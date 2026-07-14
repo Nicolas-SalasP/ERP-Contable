@@ -288,7 +288,8 @@ class LiquidacionService
             // Tasa básica (parámetro legal nacional) + tasa adicional diferenciada de la empresa
             // según su resolución de afiliación (Ley 16.744) — antes solo se aplicaba la básica,
             // subestimando el costo empresa real para toda empresa con tasa diferenciada > 0.
-            $mutualTasaAdicional = (float) (Empresa::find($empresaId)?->mutual_tasa_adicional_pct ?? 0);
+            $empresaMutual = Empresa::find($empresaId);
+            $mutualTasaAdicional = (float) ($empresaMutual->mutual_tasa_adicional_pct ?? 0);
             $mutualMonto = round($baseImponible * (((float) $parametro->mutual_cotizacion_basica_pct + $mutualTasaAdicional) / 100));
             // Fix 5: cotización adicional Ley 21.735 — cargo patronal puro
             $reformaMonto = round($baseImponible * ((float) $parametro->cotizacion_adicional_empleador_pct / 100));

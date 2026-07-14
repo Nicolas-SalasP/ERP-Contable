@@ -6,6 +6,7 @@ use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Traits\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Solo se persisten los periodos CERRADOS; la ausencia de fila significa que el periodo esta ABIERTO. */
 class PeriodoContable extends Model
@@ -15,6 +16,7 @@ class PeriodoContable extends Model
     protected $table = 'periodos_contables';
 
     public const ESTADO_CERRADO = 'CERRADO';
+
     public const ESTADO_ABIERTO = 'ABIERTO';
 
     protected $fillable = [
@@ -41,12 +43,14 @@ class PeriodoContable extends Model
         return $this->belongsTo(Empresa::class);
     }
 
-    public function cerradoPor()
+    /** @return BelongsTo<User, $this> */
+    public function cerradoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cerrado_por');
     }
 
-    public function reabiertoPor()
+    /** @return BelongsTo<User, $this> */
+    public function reabiertoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reabierto_por');
     }
