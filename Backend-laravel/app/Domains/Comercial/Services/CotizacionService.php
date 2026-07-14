@@ -57,7 +57,10 @@ class CotizacionService
             $montoDescuento = round($subtotalCalculado * ($porcentajeDescuento / 100));
             $montoNeto = $subtotalCalculado - $montoDescuento;
             $esAfecta = isset($datos['es_afecta']) ? (bool) $datos['es_afecta'] : true;
-            $porcentajeIva = $esAfecta ? ($datos['porcentaje_iva'] ?? (config('fiscal.tasa_iva') * 100)) : 0;
+            // porcentaje_iva NO viene del cliente: una cotización afecta con IVA=0 (o cualquier
+            // valor arbitrario) se convierte en factura real vía convertirEnFactura(), subdeclarando
+            // IVA Débito al SII. La tasa fiscal siempre se fija server-side.
+            $porcentajeIva = $esAfecta ? (config('fiscal.tasa_iva') * 100) : 0;
             $montoIva = $esAfecta ? round($montoNeto * ($porcentajeIva / 100)) : 0;
             $montoTotal = $montoNeto + $montoIva;
 

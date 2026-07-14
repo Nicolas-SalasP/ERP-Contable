@@ -408,6 +408,8 @@ class FacturaService
                 );
             }
 
+            $this->validarProporcionIva($origen, $neto, $iva, 'Nota de Crédito');
+
             $nc = Factura::create([
                 'empresa_id' => $empresaId,
                 'tipo' => 'VENTA',
@@ -563,6 +565,8 @@ class FacturaService
                 );
             }
 
+            $this->validarProporcionIva($origen, $neto, $iva, 'Nota de Débito');
+
             $nd = Factura::create([
                 'empresa_id' => $empresaId,
                 'tipo' => 'VENTA',
@@ -633,6 +637,29 @@ class FacturaService
 
             return $nd->load(['facturaOrigen']);
         });
+    }
+
+    /**
+     * El neto y el IVA de una NC/ND llegan del cliente sin ninguna relación forzada entre
+     * ellos -- registrarAsiento solo exige que debe==haber (neto+iva==bruto), así que un
+     * split arbitrario como neto=1/iva=1.189.999 cuadra igual y reversa el IVA Débito real
+     * casi completo. Exige que el IVA respete la misma proporción neto/IVA del documento
+     * de origen (0 en exentas, ~19% en afectas), con una tolerancia solo por redondeo.
+     */
+    private function validarProporcionIva(Factura $origen, float $neto, float $iva, string $tipoDoc): void
+    {
+        $netoOrigen = (float) $origen->monto_neto;
+        $ivaOrigen = (float) $origen->monto_iva;
+        $ratioOrigen = $netoOrigen > 0 ? $ivaOrigen / $netoOrigen : 0;
+
+        $ivaEsperado = round($neto * $ratioOrigen, 2);
+        $tolerancia = max(1.0, round($ivaEsperado * 0.005, 2));
+
+        if (abs($iva - $ivaEsperado) > $tolerancia) {
+            throw ComercialException::regla(
+                "El IVA de la {$tipoDoc} (\${$iva}) no es proporcional al de la factura original (esperado ~\${$ivaEsperado})."
+            );
+        }
     }
 
     public function obtenerAsientoDeFactura(int $empresaId, int $facturaId): array
