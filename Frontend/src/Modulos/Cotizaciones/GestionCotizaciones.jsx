@@ -69,18 +69,24 @@ const GestionCotizaciones = () => {
     };
 
     const handleFacturar = async (id) => {
-        const { isConfirmed } = await Swal.fire({
+        const hoy = new Date().toISOString().slice(0, 10);
+        const { isConfirmed, value: fechaEmision } = await Swal.fire({
             title: '¿Generar factura?',
-            text: `Se creará una factura de venta a partir de la cotización #${String(id).padStart(5, '0')} y se registrará el asiento contable.`,
+            html: `Se creará una factura de venta a partir de la cotización #${String(id).padStart(5, '0')} y se registrará el asiento contable.`,
             icon: 'question',
+            input: 'date',
+            inputLabel: 'Fecha de la factura',
+            inputValue: hoy,
+            inputAttributes: { max: hoy },
             showCancelButton: true,
             confirmButtonText: 'Facturar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#0f172a',
+            inputValidator: (valor) => !valor ? 'Selecciona una fecha.' : undefined,
         });
         if (!isConfirmed) return;
         try {
-            const res = await api.post(`/cotizaciones/${id}/facturar`);
+            const res = await api.post(`/cotizaciones/${id}/facturar`, { fecha_emision: fechaEmision });
             if (res.success) {
                 toast(`Factura ${res.data?.numero_factura || ''} generada correctamente.`, 'success');
                 fetchCotizaciones();
