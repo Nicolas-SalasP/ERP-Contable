@@ -872,9 +872,27 @@ class FacturaService
             ->get();
     }
 
+    /**
+     * Whitelist minima, no una maquina de estados completa: bloquea solo las transiciones
+     * obviamente destructivas. ANULADA es terminal (nunca se sale de ahi por aqui) y nunca se
+     * entra a ANULADA por esta via -- eso requiere el flujo real de anulacion (reversa de
+     * asiento, liberacion de anticipos, etc. via AnulacionService/anularFactura), no un simple
+     * UPDATE de columna que dejaria esos efectos secundarios sin aplicar.
+     */
+    private const ESTADOS_FACTURA_VALIDOS = ['BORRADOR', 'REGISTRADA', 'PAGADA', 'ABONADA', 'APLICADA'];
+
     public function cambiarEstado(int $empresaId, int $id, string $estado)
     {
         $factura = $this->obtenerFacturaPorId($empresaId, $id);
+
+        if ($factura->estado === 'ANULADA') {
+            throw ComercialException::regla('No se puede cambiar el estado de una factura anulada.');
+        }
+
+        if (!in_array($estado, self::ESTADOS_FACTURA_VALIDOS, true)) {
+            throw ComercialException::regla("Estado '{$estado}' no es una transición válida. Use el flujo de anulación para anular una factura.");
+        }
+
         $factura->update(['estado' => $estado]);
 
         return $factura;
