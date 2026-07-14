@@ -6,7 +6,7 @@ import { TablaSkeleton } from '../../Componentes/Skeleton';
 import { EstadoVacio } from '../../Componentes/EstadoVacio';
 import ModalDocumentosFactura from '../../Componentes/ModalDocumentosFactura';
 import Swal from 'sweetalert2';
-import { formatearMoneda } from '../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../Utilidades/formato';
 
 const formatCurrency = formatearMoneda;
 
@@ -309,6 +309,7 @@ const VisorProveedor = () => {
                 ...f,
                 _tipo: isNotaCredito ? 'NOTA_CREDITO' : 'FACTURA',
                 _fechaOrden: new Date(f.fecha_emision),
+                _fechaRaw: f.fecha_emision,
                 _documento: f.numero_factura ? `${isNotaCredito ? 'NC' : 'Factura'} #${f.numero_factura}` : `${isNotaCredito ? 'NC' : 'Factura'} S/N`,
                 _cargo: isNotaCredito ? 0 : parseFloat(f.monto_bruto || 0),
                 _abono: isNotaCredito ? parseFloat(f.monto_bruto || 0) : 0,
@@ -320,6 +321,7 @@ const VisorProveedor = () => {
             ...a,
             _tipo: 'ANTICIPO',
             _fechaOrden: new Date(a.fecha || a.created_at),
+            _fechaRaw: a.fecha || a.created_at,
             _documento: a.referencia ? `Anticipo: ${a.referencia}` : 'Anticipo S/R',
             _cargo: 0,
             _abono: parseFloat(a.monto || 0),
@@ -424,7 +426,7 @@ const VisorProveedor = () => {
                                                 </div>
                                                 <div className="flex-1">
                                                     <p className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-none">Fac #{fac.numero_factura}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">{new Date(fac.fecha_emision).toLocaleDateString()}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">{formatFecha(fac.fecha_emision)}</p>
                                                 </div>
                                                 <p className="font-bold text-slate-800 dark:text-slate-200 text-base">{formatCurrency(fac.monto_bruto)}</p>
                                             </div>
@@ -468,7 +470,7 @@ const VisorProveedor = () => {
                                                         <span className="bg-purple-100 text-purple-700 border border-purple-200 px-1 py-0.5 rounded text-[10px] uppercase">NC</span>
                                                         #{nc.numero_factura}
                                                     </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">{new Date(nc.fecha_emision).toLocaleDateString()}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">{formatFecha(nc.fecha_emision)}</p>
                                                 </div>
                                                 <p className="font-bold text-slate-800 dark:text-slate-200 text-base">{formatCurrency(nc.monto_bruto)}</p>
                                             </div>
@@ -498,7 +500,7 @@ const VisorProveedor = () => {
                                                         )}
                                                     </p>
                                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
-                                                        {new Date(ant.fecha || ant.created_at).toLocaleDateString()}
+                                                        {formatFecha(ant.fecha || ant.created_at)}
                                                         {tieneAplicacionParcial && (
                                                             <span className="ml-2 text-slate-400">
                                                                 de {formatCurrency(montoOriginal)} original
@@ -685,7 +687,7 @@ const VisorProveedor = () => {
                                 {historialFiltrado.map((item, i) => (
                                     <tr key={`${item._tipo}-${item.id}-${i}`} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                         <td className="px-6 py-3 text-slate-600 dark:text-slate-400 font-mono text-xs">
-                                            {item._fechaOrden.toLocaleDateString('es-CL')}
+                                            {formatFecha(item._fechaRaw)}
                                         </td>
                                         <td className="px-6 py-3">
                                             <div className="flex items-center gap-2">

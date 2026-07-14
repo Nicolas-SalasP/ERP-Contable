@@ -2,24 +2,22 @@
 
 namespace Tests\Feature\Comercial;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Tests\Concerns\PreparaEntornoBase;
-use App\Domains\Core\Models\Empresa;
-use App\Domains\Core\Models\User;
-use App\Domains\Core\Models\Rol;
-use App\Domains\Core\Models\EstadoSuscripcion;
-use App\Domains\Core\Models\Pais;
 use App\Domains\Comercial\Models\Cliente;
-use App\Domains\Comercial\Models\Proveedor;
-use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Cotizacion;
 use App\Domains\Comercial\Models\EstadoCotizacion;
+use App\Domains\Comercial\Models\Proveedor;
+use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PreparaEntornoBase;
+use Tests\TestCase;
 
 class ComercialIntegridadRelacionalTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
+
     protected $empresa;
+
     protected $usuario;
 
     protected function setUp(): void
@@ -29,7 +27,7 @@ class ComercialIntegridadRelacionalTest extends TestCase
         EstadoCotizacion::insert([
             ['id' => 1, 'nombre' => 'Borrador'],
             ['id' => 2, 'nombre' => 'Enviada'],
-            ['id' => 3, 'nombre' => 'Aprobada']
+            ['id' => 3, 'nombre' => 'Aprobada'],
         ]);
 
         $this->empresa = Empresa::create(['rut' => '77.777.777-7', 'razon_social' => 'Integridad SpA']);
@@ -47,7 +45,7 @@ class ComercialIntegridadRelacionalTest extends TestCase
         // Verificamos que el cliente SÍ siga en la base de datos, pero inactivo
         $this->assertDatabaseHas('clientes', [
             'id' => $cliente->id,
-            'estado' => 'INACTIVO'
+            'estado' => 'INACTIVO',
         ]);
     }
 
@@ -62,7 +60,7 @@ class ComercialIntegridadRelacionalTest extends TestCase
             'fecha_emision' => now()->format('Y-m-d'),
             'monto_neto' => 1000,
             'monto_iva' => 190,
-            'monto_bruto' => 1190
+            'monto_bruto' => 1190,
         ]);
 
         // El sistema no debe permitir que se le compre a un proveedor que fue inhabilitado
@@ -72,8 +70,8 @@ class ComercialIntegridadRelacionalTest extends TestCase
     public function test_proveedor_hereda_moneda_por_defecto_si_no_se_envia()
     {
         $response = $this->actingAs($this->usuario)->postJson('/api/proveedores', [
-            'rut' => '3.3.3.3-3',
-            'razon_social' => 'Prov Moneda'
+            'rut' => '3.3.3.3-2',
+            'razon_social' => 'Prov Moneda',
             // NO enviamos moneda_defecto ni pais_iso
         ]);
 

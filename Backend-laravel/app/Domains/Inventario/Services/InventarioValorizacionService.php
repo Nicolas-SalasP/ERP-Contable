@@ -15,8 +15,7 @@ class InventarioValorizacionService
 
     public function __construct(
         private ?FifoValorizacionStrategy $fifoStrategy = null
-    ) {
-    }
+    ) {}
 
     public function calcularEntrada(
         StockProducto $stock,
@@ -24,7 +23,8 @@ class InventarioValorizacionService
         float $cantidad,
         ?float $costoUnitario = null,
         ?int $loteId = null,
-        ?string $fechaMovimiento = null
+        ?string $fechaMovimiento = null,
+        bool $costoCeroIntencional = false
     ): array {
         if ($this->usaFifo($producto)) {
             return $this->fifoStrategy()->calcularEntrada(
@@ -33,11 +33,12 @@ class InventarioValorizacionService
                 cantidad: $cantidad,
                 costoUnitario: $costoUnitario,
                 loteId: $loteId,
-                fechaMovimiento: $fechaMovimiento
+                fechaMovimiento: $fechaMovimiento,
+                costoCeroIntencional: $costoCeroIntencional
             );
         }
 
-        $resultado = $this->calcularEntradaPmp($stock, $producto, $cantidad, $costoUnitario);
+        $resultado = $this->calcularEntradaPmp($stock, $producto, $cantidad, $costoUnitario, costoCeroIntencional: $costoCeroIntencional);
         $resultado['metodo_valorizacion'] = 'PMP';
 
         return $resultado;
@@ -47,18 +48,21 @@ class InventarioValorizacionService
         StockProducto $stock,
         Producto $producto,
         float $cantidad,
-        ?int $loteId = null
+        ?int $loteId = null,
+        ?int $capaObjetivoId = null,
+        ?float $costoUnitarioForzado = null
     ): array {
         if ($this->usaFifo($producto)) {
             return $this->fifoStrategy()->calcularSalida(
                 stock: $stock,
                 producto: $producto,
                 cantidad: $cantidad,
-                loteId: $loteId
+                loteId: $loteId,
+                capaObjetivoId: $capaObjetivoId
             );
         }
 
-        $resultado = $this->calcularSalidaPmp($stock, $producto, $cantidad);
+        $resultado = $this->calcularSalidaPmp($stock, $producto, $cantidad, costoUnitarioForzado: $costoUnitarioForzado);
         $resultado['metodo_valorizacion'] = 'PMP';
 
         return $resultado;
@@ -105,12 +109,20 @@ class InventarioValorizacionService
         Producto $producto,
         float $cantidad,
         ?float $costoUnitario = null,
-        bool $actualizarProducto = true
+        bool $actualizarProducto = true,
+        bool $costoCeroIntencional = false
     ): array {
         $this->validarCantidadPositiva($cantidad);
 
         if ($costoUnitario !== null && $costoUnitario < 0) {
             throw new RuntimeException('El costo unitario no puede ser negativo.');
+        }
+
+        if ($costoUnitario === 0.0 && ! $costoCeroIntencional) {
+            throw new RuntimeException(
+                'El costo unitario de la entrada es 0. Si es intencional (bonificación, muestra gratis, etc.), '
+                .'confirme explícitamente que el costo cero es correcto.'
+            );
         }
 
         $stockAntes = $this->numero($stock->stock_actual);
@@ -160,12 +172,19 @@ class InventarioValorizacionService
         ];
     }
 
-    /** Calcula salida valorizada con PMP: usa el PMP actual de la bodega y no lo recalcula hacia arriba o abajo. */
+    /**
+     * Calcula salida valorizada con PMP: usa el PMP actual de la bodega y no lo recalcula
+     * hacia arriba o abajo. $costoUnitarioForzado permite anular exactamente la reversa de un
+     * ajuste crítico positivo, usando el costo original del ajuste en vez del promedio actual
+     * (el promedio ponderado ya absorbió ese costo y no puede "recordar" la porción original
+     * si se usara el promedio vigente para revertir).
+     */
     public function calcularSalidaPmp(
         StockProducto $stock,
         Producto $producto,
         float $cantidad,
-        bool $actualizarProducto = true
+        bool $actualizarProducto = true,
+        ?float $costoUnitarioForzado = null
     ): array {
         $this->validarCantidadPositiva($cantidad);
 
@@ -177,10 +196,12 @@ class InventarioValorizacionService
             throw new RuntimeException('Stock insuficiente para realizar la operación.');
         }
 
-        $costoSalida = $this->obtenerCostoUnitarioSalida(
-            stock: $stock,
-            producto: $producto
-        );
+        $costoSalida = $costoUnitarioForzado !== null
+            ? $this->redondear($costoUnitarioForzado)
+            : $this->obtenerCostoUnitarioSalida(
+                stock: $stock,
+                producto: $producto
+            );
 
         $valorSalida = $this->redondear($cantidad * $costoSalida);
         $stockDespues = $this->redondear($stockAntes - $cantidad);
@@ -193,8 +214,15 @@ class InventarioValorizacionService
             $valorDespues = 0.0000;
         }
 
+        // En una salida normal (costoUnitarioForzado === null), costoSalida es el propio
+        // promedio vigente, así que remover unidades a ese costo no lo altera: usarlo
+        // directamente equivale a recalcular valorDespues/stockDespues. Pero cuando se fuerza un
+        // costo distinto al promedio actual (reversa exacta de un ajuste crítico positivo), el
+        // promedio resultante SÍ cambia y debe recalcularse a partir del valor remanente.
+        $costoPromedioDespues = $stockDespues > 0 ? $this->redondear($valorDespues / $stockDespues) : 0.0000;
+
         $stock->stock_actual = $stockDespues;
-        $stock->costo_promedio = $stockDespues > 0 ? $costoSalida : 0.0000;
+        $stock->costo_promedio = $costoPromedioDespues;
         $stock->valor_total = $valorDespues;
         $stock->save();
 
@@ -247,7 +275,10 @@ class InventarioValorizacionService
             producto: $producto,
             cantidad: $cantidad,
             costoUnitario: (float) $salida['costo_unitario'],
-            actualizarProducto: false
+            actualizarProducto: false,
+            // El costo viene heredado de la bodega origen (ya aceptado cuando entro alli), no es
+            // una decision nueva del usuario: un traspaso nunca debe exigir reconfirmacion de costo cero.
+            costoCeroIntencional: true
         );
 
         $productoCostoPromedio = $this->actualizarCostoPromedioProducto(
@@ -482,15 +513,15 @@ class InventarioValorizacionService
     /** Aplica filtros comunes para listado/resumen. */
     private function aplicarFiltrosValorizacion($query, array $filtros): void
     {
-        if (!empty($filtros['producto_id'])) {
+        if (! empty($filtros['producto_id'])) {
             $query->where('s.producto_id', (int) $filtros['producto_id']);
         }
 
-        if (!empty($filtros['bodega_id'])) {
+        if (! empty($filtros['bodega_id'])) {
             $query->where('s.bodega_id', (int) $filtros['bodega_id']);
         }
 
-        if (!empty($filtros['search'])) {
+        if (! empty($filtros['search'])) {
             $search = trim((string) $filtros['search']);
 
             $query->where(function ($subQuery) use ($search) {

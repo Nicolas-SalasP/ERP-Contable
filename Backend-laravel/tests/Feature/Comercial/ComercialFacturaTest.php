@@ -2,24 +2,23 @@
 
 namespace Tests\Feature\Comercial;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Tests\Concerns\PreparaEntornoBase;
+use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
+use App\Domains\Comercial\Services\FacturaService;
+use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
-use App\Domains\Core\Models\Rol;
-use App\Domains\Core\Models\EstadoSuscripcion;
-use App\Domains\Core\Models\Pais;
-use App\Domains\Comercial\Models\Proveedor;
-use App\Domains\Comercial\Models\Factura;
-use App\Domains\Contabilidad\Models\PlanCuenta;
-use App\Domains\Contabilidad\Models\AsientoContable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PreparaEntornoBase;
+use Tests\TestCase;
 
 class ComercialFacturaTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     protected $empresa;
+
     protected $usuario;
 
     protected function setUp(): void
@@ -49,10 +48,34 @@ class ComercialFacturaTest extends TestCase
             'tipo_documento' => 'FACTURA',
             'cuentaDestino' => '410101',
             'cuentaIva' => '353350',
-            'cuentaProveedor' => '352105'
+            'cuentaProveedor' => '352105',
         ]);
 
         $response->assertStatus(422)->assertSee('Inconsistencia tributaria');
+    }
+
+    public function test_factura_compra_sin_monto_iva_explicito_autocalcula_desde_neto()
+    {
+        // Regresion: el controller forzaba monto_iva a 0 cuando no venia en el payload,
+        // lo que pisaba el autocalculo de FacturaService::registrarFacturaCompra() y
+        // rechazaba con "Inconsistencia tributaria" facturas matematicamente correctas.
+        $proveedor = Proveedor::create(['empresa_id' => $this->empresa->id, 'razon_social' => 'P', 'rut' => '4.4.4.4-4', 'codigo_interno' => 'P4', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        $response = $this->actingAs($this->usuario)->postJson('/api/facturas', [
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $proveedor->id,
+            'numero_factura' => 'F-SIN-IVA',
+            'fecha_emision' => now()->format('Y-m-d'),
+            'monto_neto' => 10000,
+            'monto_bruto' => 11900,
+            'tipo_documento' => 'FACTURA',
+            'cuentaDestino' => '410101',
+            'cuentaIva' => '353350',
+            'cuentaProveedor' => '352105',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertEquals(1900, (float) $response->json('data.monto_iva'));
     }
 
     public function test_evita_registrar_factura_de_compra_duplicada_para_el_mismo_proveedor()
@@ -69,7 +92,7 @@ class ComercialFacturaTest extends TestCase
             'tipo_documento' => 'FACTURA',
             'cuentaDestino' => '410101',
             'cuentaIva' => '353350',
-            'cuentaProveedor' => '352105'
+            'cuentaProveedor' => '352105',
         ];
 
         $this->actingAs($this->usuario)->postJson('/api/facturas', $payload)->assertStatus(201);
@@ -90,7 +113,7 @@ class ComercialFacturaTest extends TestCase
             'tipo_documento' => 'FACTURA',
             'cuentaDestino' => '410101',
             'cuentaIva' => '353350',
-            'cuentaProveedor' => '352105'
+            'cuentaProveedor' => '352105',
         ]);
 
         $response->assertStatus(201);
@@ -111,7 +134,7 @@ class ComercialFacturaTest extends TestCase
             'tipo_documento' => 'FACTURA',
             'cuentaDestino' => '999999',
             'cuentaIva' => '353350',
-            'cuentaProveedor' => '352105'
+            'cuentaProveedor' => '352105',
         ]);
 
         $response->assertStatus(422)->assertSee('Verifique que las cuentas');
@@ -126,17 +149,16 @@ class ComercialFacturaTest extends TestCase
         $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$facturaSinAsiento->id}/reclasificar", [
             'fecha' => now()->format('Y-m-d'),
             'glosa' => 'A',
-            'cambios' => ['352130' => '410101']
+            'cambios' => ['352130' => '410101'],
         ]);
         $response->assertStatus(422)->assertSee('no tiene un asiento contable');
     }
 
-
     public function test_anular_factura_reversa_asiento_contable_y_cambia_estado()
     {
         $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'rut' => '6.6.6.6-6', 'razon_social' => 'P6', 'codigo_interno' => 'P6', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
-        
-        $asiento = new AsientoContable();
+
+        $asiento = new AsientoContable;
         $asiento->empresa_id = $this->empresa->id;
         $asiento->fecha = now()->toDateString();
         $asiento->glosa = 'Asiento Original';
@@ -148,7 +170,7 @@ class ComercialFacturaTest extends TestCase
         $asiento->detalles()->create(['cuenta_contable' => '410101', 'debe' => 100, 'haber' => 0]);
         $asiento->detalles()->create(['cuenta_contable' => '352105', 'debe' => 0, 'haber' => 100]);
 
-        $factura = new Factura();
+        $factura = new Factura;
         $factura->empresa_id = $this->empresa->id;
         $factura->proveedor_id = $prov->id;
         $factura->numero_factura = 'F-ANULAR';
@@ -163,7 +185,7 @@ class ComercialFacturaTest extends TestCase
         $factura->save();
 
         $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$factura->id}/anular", [
-            'motivo' => 'Devolucion de mercaderia'
+            'motivo' => 'Devolucion de mercaderia',
         ]);
 
         $response->assertStatus(200);
@@ -171,7 +193,7 @@ class ComercialFacturaTest extends TestCase
 
         $this->assertDatabaseHas('asientos_contables', [
             'empresa_id' => $this->empresa->id,
-            'glosa' => 'Reversa automática por anulación de factura N° F-ANULAR. Motivo: Devolucion de mercaderia'
+            'glosa' => 'Reversa automática por anulación de factura N° F-ANULAR. Motivo: Devolucion de mercaderia',
         ]);
     }
 
@@ -308,7 +330,7 @@ class ComercialFacturaTest extends TestCase
             Factura::create([
                 'empresa_id' => $this->empresa->id,
                 'proveedor_id' => $prov->id,
-                'numero_factura' => 'F-PAG-' . $i,
+                'numero_factura' => 'F-PAG-'.$i,
                 'codigo_unico' => Factura::generarCodigoUnico() + $i,
                 'fecha_emision' => now()->subDays($i),
                 'monto_bruto' => 1000,
@@ -353,7 +375,7 @@ class ComercialFacturaTest extends TestCase
 
         // El paginador de Laravel expone perPage(): confirma que el limit
         // solicitado (999999) fue acotado al tope duro de 500, no aceptado tal cual.
-        $paginador = app(\App\Domains\Comercial\Services\FacturaService::class)
+        $paginador = app(FacturaService::class)
             ->obtenerFacturasPaginadas($this->empresa->id, ['limit' => 999999]);
         $this->assertEquals(500, $paginador->perPage());
     }

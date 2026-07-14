@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import siiApi from '../Servicios/siiApi';
 
 /**
@@ -16,14 +16,11 @@ const useSiiConfiguracion = () => {
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
 
-    const montadoRef = useRef(true);
-    useEffect(() => () => { montadoRef.current = false; }, []);
-
     const cargar = useCallback(async () => {
         setCargando(true);
         try {
             const data = await siiApi.configuracion.obtener();
-            if (montadoRef.current) setConfiguracion(data);
+            setConfiguracion(data);
         } catch (_) {
             // El error ya fue notificado al usuario por api.js (Swal).
         } finally {

@@ -2,10 +2,10 @@
 
 namespace App\Domains\Inventario\Models;
 
-use App\Domains\Core\Traits\HasEmpresaScope;
-
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
+use App\Domains\Core\Traits\HasEmpresaScope;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,13 +27,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $origen_modulo
  * @property int|null $origen_id
  * @property int $registrado_por
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read int|null $total_ajustes
  */
 class AjusteCriticoInventario extends Model
 {
     use HasEmpresaScope;
+
     protected $table = 'inventario_ajustes_criticos';
 
     protected $fillable = [
@@ -56,6 +57,7 @@ class AjusteCriticoInventario extends Model
         'anulado_por',
         'motivo_anulacion',
         'movimiento_reversa_id',
+        'valorizacion_capa_id',
     ];
 
     protected $casts = [
@@ -69,6 +71,7 @@ class AjusteCriticoInventario extends Model
         'registrado_por' => 'integer',
         'anulado_por' => 'integer',
         'movimiento_reversa_id' => 'integer',
+        'valorizacion_capa_id' => 'integer',
         'anulado_at' => 'datetime',
 
         'cantidad' => 'decimal:4',
@@ -128,6 +131,12 @@ class AjusteCriticoInventario extends Model
     public function movimientoReversa(): BelongsTo
     {
         return $this->belongsTo(MovimientoInventario::class, 'movimiento_reversa_id');
+    }
+
+    /** @return BelongsTo<InventarioValorizacionCapa, $this> */
+    public function valorizacionCapa(): BelongsTo
+    {
+        return $this->belongsTo(InventarioValorizacionCapa::class, 'valorizacion_capa_id');
     }
 
     public function estaAnulado(): bool
@@ -210,8 +219,8 @@ class AjusteCriticoInventario extends Model
 
     public function tieneReferenciaExterna(): bool
     {
-        return !empty($this->referencia)
-            || !empty($this->origen_modulo)
-            || !empty($this->origen_id);
+        return ! empty($this->referencia)
+            || ! empty($this->origen_modulo)
+            || ! empty($this->origen_id);
     }
 }

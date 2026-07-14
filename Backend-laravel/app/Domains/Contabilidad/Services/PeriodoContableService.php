@@ -82,7 +82,7 @@ class PeriodoContableService
             ->where('estado', PeriodoContable::ESTADO_CERRADO)
             ->first();
 
-        if (!$periodo) {
+        if (! $periodo) {
             throw new AuthorizationException('El periodo indicado no esta cerrado.');
         }
 
@@ -102,6 +102,7 @@ class PeriodoContableService
     public function listarCerrados(int $empresaId, ?int $anio = null): Collection
     {
         return PeriodoContable::query()
+            ->with(['cerradoPor:id,nombre', 'reabiertoPor:id,nombre'])
             ->where('empresa_id', $empresaId)
             ->where('estado', PeriodoContable::ESTADO_CERRADO)
             ->when($anio !== null, fn ($q) => $q->where('anio', $anio))

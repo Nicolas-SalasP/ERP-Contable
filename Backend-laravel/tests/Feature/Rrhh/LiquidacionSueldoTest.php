@@ -14,6 +14,7 @@ use App\Domains\Rrhh\Models\ParametroPrevisional;
 use App\Domains\Rrhh\Models\TablaImpuestoUnico;
 use App\Domains\Rrhh\Services\Calculo\LiquidacionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
 
@@ -23,7 +24,7 @@ use Tests\TestCase;
  */
 class LiquidacionSueldoTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     private LiquidacionService $service;
 
@@ -94,7 +95,7 @@ class LiquidacionSueldoTest extends TestCase
     ): Empleado {
         $empleado = Empleado::create([
             'empresa_id' => $empresaId,
-            'rut' => '12.345.678-' . rand(0, 9),
+            'rut' => '12.345.678-'.rand(0, 9),
             'nombres' => 'Trabajador',
             'apellido_paterno' => 'Test',
             'afp' => $afp,
@@ -113,6 +114,45 @@ class LiquidacionSueldoTest extends TestCase
         ]);
 
         return $empleado->fresh();
+    }
+
+    public function test_listado_de_liquidaciones_devuelve_rut_del_empleado_desencriptado(): void
+    {
+        // Regresion: el listado hacia with(['empleado:id,nombres,...,rut']) -- un
+        // eager-load con columnas parciales. Empleado.rut esta cifrado con
+        // CipherSweet, que necesita ver todos sus campos cifrados declarados en
+        // configureCipherSweet() (email/telefono/direccion/fecha_nacimiento
+        // tambien) para descifrar la fila; si falta alguno, ModelObserver::retrieved()
+        // traga la EmptyFieldException en silencio y el RUT queda como ciphertext.
+        [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+        $empleado = $this->empleadoConContrato($empresa->id, 1000000, 'INDEFINIDO', 'Habitat');
+        $this->service->calcular($empresa->id, $empleado->id, 2026, 6);
+
+        Sanctum::actingAs($usuario);
+
+        $response = $this->getJson('/api/rrhh/liquidaciones');
+
+        $response->assertStatus(200);
+        $rutDevuelto = $response->json('data.data.0.empleado.rut');
+        $this->assertSame($empleado->rut, $rutDevuelto);
+        $this->assertMatchesRegularExpression('/^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/', $rutDevuelto);
+    }
+
+    public function test_show_liquidacion_de_otra_empresa_devuelve_404_limpio(): void
+    {
+        // Regresion: show() usaba findOrFail() sin try/catch -- una liquidacion ajena
+        // tiraba ModelNotFoundException cruda en vez de un 404 de dominio.
+        [$empresaA] = $this->crearEmpresaConAdmin();
+        [$empresaB, $usuarioB] = $this->crearEmpresaConAdmin();
+
+        $empleado = $this->empleadoConContrato($empresaA->id, 1000000, 'INDEFINIDO', 'Habitat');
+        $liq = $this->service->calcular($empresaA->id, $empleado->id, 2026, 6);
+
+        Sanctum::actingAs($usuarioB);
+        $response = $this->getJson("/api/rrhh/liquidaciones/{$liq->id}");
+
+        $response->assertStatus(404)->assertJsonStructure(['success', 'message']);
+        $this->assertStringNotContainsString('ModelNotFoundException', (string) $response->getContent());
     }
 
     public function test_calcula_descuentos_previsionales_basicos(): void
@@ -501,7 +541,7 @@ class LiquidacionSueldoTest extends TestCase
     public function test_anular_lanza_excepcion_si_periodo_ya_centralizado(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
-        $empleado  = $this->empleadoConContrato($empresa->id, 1000000);
+        $empleado = $this->empleadoConContrato($empresa->id, 1000000);
 
         $liq = $this->service->calcular($empresa->id, $empleado->id, 2026, 6);
         $liq->update(['estado' => Liquidacion::ESTADO_EMITIDA]);
@@ -509,15 +549,15 @@ class LiquidacionSueldoTest extends TestCase
         // Simular que el período fue centralizado (mismo criterio de idempotencia).
         $periodoId = 2026 * 100 + 6;
         AsientoContable::create([
-            'empresa_id'        => $empresa->id,
+            'empresa_id' => $empresa->id,
             'numero_comprobante' => 'RRHH-202606-001',
-            'fecha'             => '2026-06-30',
-            'glosa'             => 'Centralización remuneraciones 06/2026',
-            'tipo_asiento'      => 'traspaso',
-            'origen_modulo'     => 'rrhh',
-            'origen_id'         => $periodoId,
-            'usuario_id'        => 1,
-            'estado'            => 'MAYORIZADO',
+            'fecha' => '2026-06-30',
+            'glosa' => 'Centralización remuneraciones 06/2026',
+            'tipo_asiento' => 'traspaso',
+            'origen_modulo' => 'rrhh',
+            'origen_id' => $periodoId,
+            'usuario_id' => 1,
+            'estado' => 'MAYORIZADO',
         ]);
 
         $this->expectException(RrhhException::class);
@@ -529,7 +569,7 @@ class LiquidacionSueldoTest extends TestCase
     public function test_anular_sin_centralizacion_funciona_correctamente(): void
     {
         [$empresa] = $this->crearEmpresaConAdmin();
-        $empleado  = $this->empleadoConContrato($empresa->id, 1000000);
+        $empleado = $this->empleadoConContrato($empresa->id, 1000000);
 
         $liq = $this->service->calcular($empresa->id, $empleado->id, 2026, 6);
         $liq->update(['estado' => Liquidacion::ESTADO_EMITIDA]);

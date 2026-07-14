@@ -2,12 +2,13 @@
 
 namespace Tests\Feature\Rrhh;
 
+use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\Contrato;
 use App\Domains\Rrhh\Models\Empleado;
 use App\Domains\Rrhh\Models\IndicadorMensual;
 use App\Domains\Rrhh\Services\Finiquito\FiniquitoService;
-use App\Domains\Rrhh\Exceptions\RrhhException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
 
@@ -17,7 +18,7 @@ use Tests\TestCase;
  */
 class FiniquitoTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     private FiniquitoService $service;
 
@@ -44,7 +45,7 @@ class FiniquitoTest extends TestCase
     {
         $empleado = Empleado::create([
             'empresa_id' => $empresaId,
-            'rut' => '12.345.678-' . rand(0, 9),
+            'rut' => '12.345.678-'.rand(0, 9),
             'nombres' => 'Trabajador',
             'apellido_paterno' => 'Test',
         ]);
@@ -268,5 +269,22 @@ class FiniquitoTest extends TestCase
         $this->service->calcular(
             $empresa->id, $contrato->id, 'NECESIDADES_EMPRESA', '2025-04-15'
         );
+    }
+
+    public function test_show_finiquito_de_otra_empresa_devuelve_404_limpio(): void
+    {
+        // Regresion: show() usaba findOrFail() sin try/catch -- un finiquito ajeno
+        // tiraba ModelNotFoundException cruda en vez de un 404 de dominio.
+        [$empresaA] = $this->crearEmpresaConAdmin();
+        [$empresaB, $usuarioB] = $this->crearEmpresaConAdmin();
+
+        $contrato = $this->contratoVigente($empresaA->id, 800000, '2020-01-01');
+        $finiquito = $this->service->calcular($empresaA->id, $contrato->id, 'RENUNCIA', '2026-06-30');
+
+        Sanctum::actingAs($usuarioB);
+        $response = $this->getJson("/api/rrhh/finiquitos/{$finiquito->id}");
+
+        $response->assertStatus(404)->assertJsonStructure(['success', 'message']);
+        $this->assertStringNotContainsString('ModelNotFoundException', (string) $response->getContent());
     }
 }

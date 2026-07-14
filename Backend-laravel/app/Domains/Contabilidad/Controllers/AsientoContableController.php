@@ -3,13 +3,15 @@
 namespace App\Domains\Contabilidad\Controllers;
 
 use App\Domains\Contabilidad\Services\AsientoContableService;
+use App\Domains\Core\Models\User;
 use App\Support\MensajeErrorGenerico;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Database\QueryException;
-use Illuminate\Http\Request;
-use Log;
 use Exception;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
+use Log;
 
 class AsientoContableController
 {
@@ -28,16 +30,21 @@ class AsientoContableController
     public function store(Request $request)
     {
         try {
-            $lockKey = 'lock_asiento_' . $request->user()->id . '_' . md5($request->getContent());
+            $lockKey = 'lock_asiento_'.$request->user()->id.'_'.md5($request->getContent());
 
-            if (!Cache::add($lockKey, true, 3)) {
+            if (! Cache::add($lockKey, true, 3)) {
                 throw ValidationException::withMessages(['general' => 'Petición en proceso. Por favor, espere.']);
             }
 
             $datosValidados = $request->validate([
                 'fecha' => 'required|date',
                 'glosa' => 'required|string|max:255',
-                'tipo_asiento' => 'nullable|string',
+                // Debe calzar con el enum real de la columna (ingreso/egreso/traspaso/''); un valor
+                // fuera de ese set pasaba la validacion como string libre y explotaba como
+                // QueryException/500 en MySQL en vez de un 422 de validacion claro (SQLite, motor
+                // de tests por defecto, no aplica esta restriccion — encontrado corriendo contra
+                // MySQL real).
+                'tipo_asiento' => 'nullable|string|in:ingreso,egreso,traspaso',
                 'origen_modulo' => 'nullable|string|in:manual',
                 'origen_id' => 'nullable|integer',
                 'detalles' => 'required|array|min:2',
@@ -47,7 +54,7 @@ class AsientoContableController
                 'detalles.*.debe' => 'required|numeric|min:0|max:99999999999999',
                 'detalles.*.haber' => 'required|numeric|min:0|max:99999999999999',
                 'detalles.*.tipo_operacion' => 'nullable|string|in:DEBE,HABER',
-                'detalles.*.glosa_detalle' => 'nullable|string|max:255'
+                'detalles.*.glosa_detalle' => 'nullable|string|max:255',
             ]);
 
             foreach ($datosValidados['detalles'] as $detalle) {
@@ -72,18 +79,18 @@ class AsientoContableController
             return response()->json([
                 'success' => true,
                 'message' => 'Asiento contable registrado con éxito',
-                'data' => $asiento->load('detalles')
+                'data' => $asiento->load('detalles'),
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }
@@ -91,9 +98,9 @@ class AsientoContableController
     public function storeAvanzado(Request $request)
     {
         try {
-            $lockKey = 'lock_asiento_avanzado_' . $request->user()->id . '_' . md5($request->getContent());
+            $lockKey = 'lock_asiento_avanzado_'.$request->user()->id.'_'.md5($request->getContent());
 
-            if (!Cache::add($lockKey, true, 3)) {
+            if (! Cache::add($lockKey, true, 3)) {
                 throw ValidationException::withMessages(['general' => 'Petición en proceso. Por favor, espere.']);
             }
 
@@ -107,7 +114,7 @@ class AsientoContableController
                 'detalles.*.empleado_nombre' => 'nullable|string',
                 'detalles.*.debe' => 'required|numeric|min:0|max:99999999999999',
                 'detalles.*.haber' => 'required|numeric|min:0|max:99999999999999',
-                'detalles.*.tipo_operacion' => 'nullable|string|in:DEBE,HABER'
+                'detalles.*.tipo_operacion' => 'nullable|string|in:DEBE,HABER',
             ]);
 
             foreach ($datos['detalles'] as $detalle) {
@@ -131,18 +138,18 @@ class AsientoContableController
             return response()->json([
                 'success' => true,
                 'message' => 'Asiento contable registrado exitosamente.',
-                'data' => $asiento
+                'data' => $asiento,
             ]);
 
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
 
         } catch (QueryException $e) {
-            Log::error('Error de BD en storeAvanzado: ' . $e->getMessage(), [
+            Log::error('Error de BD en storeAvanzado: '.$e->getMessage(), [
                 'sql_state' => $e->errorInfo[0] ?? null,
                 'code' => $e->getCode(),
             ]);
@@ -163,43 +170,43 @@ class AsientoContableController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }
 
-    public function show(Request $request, $id): \Illuminate\Http\JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
         try {
-            /** @var \App\Domains\Core\Models\User $usuario */
+            /** @var User $usuario */
             $usuario = $request->user();
 
             $asiento = $this->service->obtenerAsientoPorId($usuario->empresa_activa_id, (int) $id);
 
             $detalles = $asiento->detalles->map(function ($d) {
                 return [
-                    'id'              => $d->id,
+                    'id' => $d->id,
                     'cuenta_contable' => $d->cuenta_contable,
-                    'cuenta_nombre'   => $d->cuenta->nombre ?? 'Sin nombre',
-                    'descripcion'     => $d->descripcion_extensa ?? '',
-                    'debe'            => $d->debe,
-                    'haber'           => $d->haber,
+                    'cuenta_nombre' => $d->cuenta->nombre ?? 'Sin nombre',
+                    'descripcion' => $d->descripcion_extensa ?? '',
+                    'debe' => $d->debe,
+                    'haber' => $d->haber,
                 ];
             });
 
             return response()->json([
                 'success' => true,
-                'data'    => [
-                    'cabecera'    => $asiento,
-                    'detalles'    => $detalles,
-                    'total_debe'  => $detalles->sum(fn ($d) => (float) $d['debe']),
+                'data' => [
+                    'cabecera' => $asiento,
+                    'detalles' => $detalles,
+                    'total_debe' => $detalles->sum(fn ($d) => (float) $d['debe']),
                     'total_haber' => $detalles->sum(fn ($d) => (float) $d['haber']),
-                ]
+                ],
             ]);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'El asiento contable no existe o no pertenece a tu empresa.'
+                'message' => 'El asiento contable no existe o no pertenece a tu empresa.',
             ], 404);
         }
     }
@@ -209,7 +216,7 @@ class AsientoContableController
         try {
             $datos = $request->validate([
                 'fecha_reversa' => 'required|date',
-                'motivo' => 'required|string|min:3'
+                'motivo' => 'required|string|min:3',
             ]);
 
             $nuevoAsiento = $this->service->reversarAsientoPorId(
@@ -223,18 +230,18 @@ class AsientoContableController
             return response()->json([
                 'success' => true,
                 'message' => 'Asiento reversado exitosamente.',
-                'data' => $nuevoAsiento
+                'data' => $nuevoAsiento,
             ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => MensajeErrorGenerico::desde($e)
+                'message' => MensajeErrorGenerico::desde($e),
             ], 422);
         }
     }

@@ -125,6 +125,16 @@ describe('getBodegaNombre', () => {
     it('retorna "Bodega #3" cuando solo hay bodega_id', () => {
         expect(getBodegaNombre({ bodega_id: 3 })).toBe('Bodega #3');
     });
+
+    it('retorna nombre de bodega_origen en filas de Salida del Kardex (regresion)', () => {
+        // Un movimiento SALIDA solo trae bodega_origen poblada (bodega_destino_id
+        // es null); antes de este fix caia siempre en "Bodega #-".
+        expect(getBodegaNombre({ bodega_origen: { nombre: 'Bodega Sur' }, bodega_origen_id: 5 })).toBe('Bodega Sur');
+    });
+
+    it('retorna "Bodega #5" cuando solo hay bodega_origen_id', () => {
+        expect(getBodegaNombre({ bodega_origen_id: 5 })).toBe('Bodega #5');
+    });
 });
 
 // ── EstadoBadge ────────────────────────────────────────────────────────────

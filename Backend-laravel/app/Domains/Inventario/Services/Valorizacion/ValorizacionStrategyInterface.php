@@ -15,14 +15,16 @@ interface ValorizacionStrategyInterface
         float $cantidad,
         ?float $costoUnitario = null,
         ?int $loteId = null,
-        ?string $fechaMovimiento = null
+        ?string $fechaMovimiento = null,
+        bool $costoCeroIntencional = false
     ): array;
 
     public function calcularSalida(
         StockProducto $stock,
         Producto $producto,
         float $cantidad,
-        ?int $loteId = null
+        ?int $loteId = null,
+        ?int $capaObjetivoId = null
     ): array;
 
     public function calcularTraspaso(

@@ -20,6 +20,13 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
             path: '/',
         },
         {
+            id: 'alertas',
+            label: 'Alertas',
+            icon: 'fas fa-triangle-exclamation',
+            permisosRequeridos: ['alertas.ver'],
+            path: '/alertas',
+        },
+        {
             id: 'comercial',
             label: 'Ventas y Comercial',
             icon: 'fas fa-store',
@@ -69,6 +76,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/contabilidad/ar-aging', label: 'CxC por Antigüedad' },
                 { path: '/contabilidad/ap-aging', label: 'CxP por Antigüedad' },
                 { path: '/contabilidad/cierre-periodo', label: 'Cierre de Períodos' },
+                { path: '/contabilidad/exportar-reportes', label: 'Exportar Reportes por Correo' },
             ]
         },
         {
@@ -232,8 +240,8 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
                 { path: '/tributario/dj-1879', label: 'DJ 1879 — Retenciones Honorarios' },
                 { path: '/tributario/dj-1947', label: 'DJ 1947 — Propyme' },
                 { path: '/tributario/dj-1835', label: 'DJ 1835 — Retenciones Art. 59' },
-                { path: '/tributario/dj-1837', label: 'DJ 1837 — Gastos Rechazados' },
-                { path: '/tributario/dj-1926', label: 'DJ 1926 — Créditos al Exterior' },
+                { path: '/tributario/dj-1837', label: 'DJ 1837 — Honorarios sin Retención' },
+                { path: '/tributario/dj-1926', label: 'DJ 1926 — Gastos Rechazados' },
                 { path: '/tributario/libro-cv', label: 'Libro de Compras y Ventas' },
             ]
         },

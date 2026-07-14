@@ -24,7 +24,7 @@ const PERIODOS_CON_CERRADOS = {
             estado: 'CERRADO',
             motivo: 'Cierre trimestral',
             cerrado_at: '2026-04-01T12:00:00.000000Z',
-            cerrado_por: { id: 1, name: 'Admin Test' },
+            cerrado_por: { id: 1, nombre: 'Admin Test' },
             reabierto_por: null,
         },
         {
@@ -34,7 +34,7 @@ const PERIODOS_CON_CERRADOS = {
             estado: 'CERRADO',
             motivo: null,
             cerrado_at: '2026-06-01T10:00:00.000000Z',
-            cerrado_por: { id: 1, name: 'Admin Test' },
+            cerrado_por: { id: 1, nombre: 'Admin Test' },
             reabierto_por: null,
         },
     ],

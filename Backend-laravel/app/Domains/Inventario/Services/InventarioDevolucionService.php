@@ -2,19 +2,20 @@
 
 namespace App\Domains\Inventario\Services;
 
-use App\Domains\Inventario\Exceptions\InventarioException;
-
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Exceptions\InventarioException;
 use App\Domains\Inventario\Models\InventarioAuditoriaEvento;
-use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioDespachoDetalle;
 use App\Domains\Inventario\Models\InventarioDespachoOrden;
 use App\Domains\Inventario\Models\InventarioDevolucionDetalle;
 use App\Domains\Inventario\Models\InventarioDevolucionOrden;
+use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioUbicacion;
 use App\Domains\Inventario\Models\MovimientoInventario;
+use App\Domains\Inventario\Models\Producto;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -25,8 +26,7 @@ class InventarioDevolucionService
         private readonly InventarioMovimientoService $movimientoService,
         private readonly InventarioAuditoriaService $auditoria,
         private readonly InventarioEventoIntegracionService $eventosIntegracion
-    ) {
-    }
+    ) {}
 
     public function listar(User $usuario, array $filtros = []): LengthAwarePaginator
     {
@@ -35,12 +35,12 @@ class InventarioDevolucionService
         return InventarioDevolucionOrden::query()
             ->where('empresa_id', $usuario->empresa_activa_id)
             ->with($this->relacionesListado())
-            ->when(!empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
-            ->when(!empty($filtros['tipo']), fn (Builder $query) => $query->where('tipo', $filtros['tipo']))
-            ->when(!empty($filtros['despacho_orden_id']), fn (Builder $query) => $query->where('despacho_orden_id', (int) $filtros['despacho_orden_id']))
-            ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
-            ->when(!empty($filtros['search']), function (Builder $query) use ($filtros) {
-                $term = '%' . trim((string) $filtros['search']) . '%';
+            ->when(! empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
+            ->when(! empty($filtros['tipo']), fn (Builder $query) => $query->where('tipo', $filtros['tipo']))
+            ->when(! empty($filtros['despacho_orden_id']), fn (Builder $query) => $query->where('despacho_orden_id', (int) $filtros['despacho_orden_id']))
+            ->when(! empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
+            ->when(! empty($filtros['search']), function (Builder $query) use ($filtros) {
+                $term = '%'.trim((string) $filtros['search']).'%';
                 $query->where(function (Builder $subQuery) use ($term) {
                     $subQuery->where('codigo', 'like', $term)
                         ->orWhere('referencia', 'like', $term)
@@ -61,7 +61,7 @@ class InventarioDevolucionService
             ->where('empresa_id', $usuario->empresa_activa_id)
             ->find($id);
 
-        if (!$orden) {
+        if (! $orden) {
             throw InventarioException::noEncontrado('La devolución/reversa no existe o no pertenece a la empresa.');
         }
 
@@ -82,13 +82,13 @@ class InventarioDevolucionService
             ])
             ->find($despachoId);
 
-        if (!$despacho) {
+        if (! $despacho) {
             throw InventarioException::noEncontrado('La orden de despacho no existe o no pertenece a la empresa.');
         }
 
         $this->validarDespachoReversible($despacho);
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, InventarioDespachoDetalle> $despachoDetallesRel */
+        /** @var Collection<int, InventarioDespachoDetalle> $despachoDetallesRel */
         $despachoDetallesRel = $despacho->detalles;
         $detalles = $despachoDetallesRel->map(function (InventarioDespachoDetalle $detalle) use ($despacho) {
             $despachada = $this->redondearCantidad((float) $detalle->cantidad_despachada);
@@ -132,7 +132,7 @@ class InventarioDevolucionService
                 ->lockForUpdate()
                 ->find((int) $datos['despacho_orden_id']);
 
-            if (!$despacho) {
+            if (! $despacho) {
                 throw ValidationException::withMessages(['despacho_orden_id' => 'La orden de despacho no existe o no pertenece a la empresa.']);
             }
 
@@ -172,7 +172,7 @@ class InventarioDevolucionService
             foreach ($payloadDetalles as $item) {
                 /** @var InventarioDespachoDetalle|null $detalle */
                 $detalle = $detallesDespacho->get($item['despacho_detalle_id']);
-                if (!$detalle) {
+                if (! $detalle) {
                     throw ValidationException::withMessages(['detalles' => 'Uno de los detalles no pertenece al despacho indicado.']);
                 }
 
@@ -232,11 +232,11 @@ class InventarioDevolucionService
                 ->lockForUpdate()
                 ->find($id);
 
-            if (!$orden) {
+            if (! $orden) {
                 throw InventarioException::noEncontrado('La devolución/reversa no existe o no pertenece a la empresa.');
             }
 
-            if (!$orden->puedeConfirmarse()) {
+            if (! $orden->puedeConfirmarse()) {
                 throw InventarioException::regla('Solo se pueden confirmar devoluciones/reversas pendientes.');
             }
 
@@ -245,7 +245,7 @@ class InventarioDevolucionService
                 ->lockForUpdate()
                 ->find($orden->despacho_orden_id);
 
-            if (!$despacho) {
+            if (! $despacho) {
                 throw InventarioException::noEncontrado('El despacho asociado no existe o no pertenece a la empresa.');
             }
 
@@ -266,9 +266,9 @@ class InventarioDevolucionService
             $hayDiferencias = false;
 
             foreach ($detalles as $detalle) {
-                /** @var \App\Domains\Inventario\Models\InventarioDespachoDetalle|null $despachoDetalle */
+                /** @var InventarioDespachoDetalle|null $despachoDetalle */
                 $despachoDetalle = $detalle->despachoDetalle;
-                if (!$despachoDetalle || (int) $despachoDetalle->empresa_id !== $empresaId || (int) $despachoDetalle->despacho_orden_id !== (int) $despacho->id) {
+                if (! $despachoDetalle || (int) $despachoDetalle->empresa_id !== $empresaId || (int) $despachoDetalle->despacho_orden_id !== (int) $despacho->id) {
                     throw InventarioException::noEncontrado('Un detalle de devolución no pertenece al despacho asociado.');
                 }
 
@@ -293,7 +293,7 @@ class InventarioDevolucionService
                 $ubicacionDestinoId = $override['ubicacion_destino_id'] ?? $detalle->ubicacion_destino_id;
 
                 if ($cantidadAceptada > 0) {
-                    if (!$ubicacionDestinoId) {
+                    if (! $ubicacionDestinoId) {
                         throw ValidationException::withMessages(['ubicacion_destino_id' => 'Debe informar ubicación destino para reingresar stock físico.']);
                     }
 
@@ -347,11 +347,11 @@ class InventarioDevolucionService
                 ->lockForUpdate()
                 ->find($id);
 
-            if (!$orden) {
+            if (! $orden) {
                 throw InventarioException::noEncontrado('La devolución/reversa no existe o no pertenece a la empresa.');
             }
 
-            if (!$orden->puedeCancelarse()) {
+            if (! $orden->puedeCancelarse()) {
                 throw InventarioException::regla('Solo se pueden cancelar devoluciones/reversas pendientes.');
             }
 
@@ -383,11 +383,11 @@ class InventarioDevolucionService
 
         $base = InventarioDevolucionOrden::query()
             ->where('empresa_id', $usuario->empresa_activa_id)
-            ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
-            ->when(!empty($filtros['tipo']), fn (Builder $query) => $query->where('tipo', $filtros['tipo']))
-            ->when(!empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
-            ->when(!empty($filtros['desde']), fn (Builder $query) => $query->whereDate('fecha_creacion', '>=', $filtros['desde']))
-            ->when(!empty($filtros['hasta']), fn (Builder $query) => $query->whereDate('fecha_creacion', '<=', $filtros['hasta']));
+            ->when(! empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
+            ->when(! empty($filtros['tipo']), fn (Builder $query) => $query->where('tipo', $filtros['tipo']))
+            ->when(! empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
+            ->when(! empty($filtros['desde']), fn (Builder $query) => $query->whereDate('fecha_creacion', '>=', $filtros['desde']))
+            ->when(! empty($filtros['hasta']), fn (Builder $query) => $query->whereDate('fecha_creacion', '<=', $filtros['hasta']));
 
         $resumenPorEstado = (clone $base)
             ->select('estado', DB::raw('COUNT(*) as total'))
@@ -519,9 +519,9 @@ class InventarioDevolucionService
     }
 
     /**
-     * @param \Illuminate\Database\Eloquent\Collection<int, InventarioDespachoDetalle> $detallesDespacho
+     * @param  Collection<int, InventarioDespachoDetalle>  $detallesDespacho
      */
-    private function normalizarDetallesCreacion(string $tipo, array $detallesPayload, \Illuminate\Database\Eloquent\Collection $detallesDespacho, mixed $ubicacionDestinoGlobal): array
+    private function normalizarDetallesCreacion(string $tipo, array $detallesPayload, Collection $detallesDespacho, mixed $ubicacionDestinoGlobal): array
     {
         if ($tipo === InventarioDevolucionOrden::TIPO_REVERSA_TOTAL) {
             return $detallesDespacho
@@ -553,11 +553,11 @@ class InventarioDevolucionService
 
         return array_map(function (array $item) use ($ubicacionDestinoGlobal) {
             $detalleId = $item['despacho_detalle_id'] ?? $item['detalle_id'] ?? $item['id'] ?? null;
-            if (!$detalleId) {
+            if (! $detalleId) {
                 throw ValidationException::withMessages(['detalles' => 'Cada detalle debe informar despacho_detalle_id.']);
             }
 
-            if (!isset($item['cantidad_devolver']) || !is_numeric($item['cantidad_devolver'])) {
+            if (! isset($item['cantidad_devolver']) || ! is_numeric($item['cantidad_devolver'])) {
                 throw ValidationException::withMessages(['detalles' => 'Cada detalle debe informar cantidad_devolver numérica.']);
             }
 
@@ -575,11 +575,11 @@ class InventarioDevolucionService
     {
         $ubicacionDestinoId = $ubicacionDestinoId ?: $detalle->ubicacion_origen_id;
 
-        if ($tipo === InventarioDevolucionOrden::TIPO_DIFERENCIA_POST_DESPACHO && !$ubicacionDestinoId) {
+        if ($tipo === InventarioDevolucionOrden::TIPO_DIFERENCIA_POST_DESPACHO && ! $ubicacionDestinoId) {
             return null;
         }
 
-        if (!$ubicacionDestinoId) {
+        if (! $ubicacionDestinoId) {
             throw ValidationException::withMessages(['ubicacion_destino_id' => 'Debe informar ubicación destino para devolución/reversa física.']);
         }
 
@@ -597,14 +597,14 @@ class InventarioDevolucionService
             ->where('activo', true)
             ->exists();
 
-        if (!$existe) {
+        if (! $existe) {
             throw ValidationException::withMessages(['ubicacion_destino_id' => 'La ubicación destino no existe, no está activa o no pertenece a la bodega/empresa.']);
         }
     }
 
     private function validarDespachoReversible(InventarioDespachoOrden $despacho): void
     {
-        if (!in_array($despacho->estado, [InventarioDespachoOrden::ESTADO_DESPACHADO, InventarioDespachoOrden::ESTADO_CON_DIFERENCIAS], true)) {
+        if (! in_array($despacho->estado, [InventarioDespachoOrden::ESTADO_DESPACHADO, InventarioDespachoOrden::ESTADO_CON_DIFERENCIAS], true)) {
             throw ValidationException::withMessages(['despacho_orden_id' => 'Solo se puede devolver/reversar sobre despachos confirmados o con diferencias.']);
         }
     }
@@ -639,7 +639,6 @@ class InventarioDevolucionService
         return $this->redondearCantidad((float) $cantidad);
     }
 
-
     private function cantidadPendienteReservada(int $empresaId, int $despachoDetalleId): float
     {
         $cantidad = InventarioDevolucionDetalle::query()
@@ -658,7 +657,7 @@ class InventarioDevolucionService
 
         foreach ($detallesPayload as $item) {
             $id = $item['devolucion_detalle_id'] ?? $item['detalle_id'] ?? $item['id'] ?? null;
-            if (!$id) {
+            if (! $id) {
                 continue;
             }
 
@@ -671,7 +670,7 @@ class InventarioDevolucionService
     private function resolverCantidadAceptada(InventarioDevolucionOrden $orden, InventarioDevolucionDetalle $detalle, array $override): float
     {
         if (isset($override['cantidad_aceptada'])) {
-            if (!is_numeric($override['cantidad_aceptada'])) {
+            if (! is_numeric($override['cantidad_aceptada'])) {
                 throw ValidationException::withMessages(['cantidad_aceptada' => 'La cantidad aceptada debe ser numérica.']);
             }
 
@@ -699,11 +698,11 @@ class InventarioDevolucionService
         int $ubicacionDestinoId,
         ?string $observacionDetalle = null
     ): MovimientoInventario {
-        /** @var \App\Domains\Inventario\Models\MovimientoInventario|null $movimientoOriginal */
+        /** @var MovimientoInventario|null $movimientoOriginal */
         $movimientoOriginal = $despachoDetalle->movimiento;
-        /** @var \App\Domains\Inventario\Models\Producto|null $productoDespachoDetalle */
+        /** @var Producto|null $productoDespachoDetalle */
         $productoDespachoDetalle = $despachoDetalle->producto;
-        /** @var \App\Domains\Inventario\Models\InventarioDespachoOrden|null $despachoOrdenRel */
+        /** @var InventarioDespachoOrden|null $despachoOrdenRel */
         $despachoOrdenRel = $orden->despacho;
         $costoUnitario = $movimientoOriginal?->costo_unitario !== null
             ? (float) $movimientoOriginal->costo_unitario
@@ -717,12 +716,16 @@ class InventarioDevolucionService
             'lote_id' => $detalle->lote_id,
             'cantidad' => $cantidadAceptada,
             'costo_unitario' => $costoUnitario,
+            // El costo viene heredado del movimiento de salida original o del costo promedio del
+            // producto (ya aceptado antes), no es una decision nueva del usuario: una devolucion
+            // nunca debe exigir reconfirmacion de costo cero.
+            'costo_cero_confirmado' => true,
             'referencia' => $orden->codigo,
             'motivo' => MovimientoInventario::MOTIVO_DEVOLUCION,
             'observacion' => trim(sprintf(
                 '%s post-despacho %s. %s',
                 strtolower(str_replace('_', ' ', $orden->tipo)),
-                $despachoOrdenRel->codigo ?? ('#' . $orden->despacho_orden_id),
+                $despachoOrdenRel->codigo ?? ('#'.$orden->despacho_orden_id),
                 (string) ($observacionDetalle ?: $detalle->observacion ?: $orden->observacion ?: '')
             )),
             'fecha_movimiento' => now(),
@@ -745,12 +748,12 @@ class InventarioDevolucionService
 
     private function generarCodigo(int $empresaId): string
     {
-        $prefijo = 'DEV-' . now()->format('Ymd') . '-';
+        $prefijo = 'DEV-'.now()->format('Ymd').'-';
         $totalDia = InventarioDevolucionOrden::where('empresa_id', $empresaId)
-            ->where('codigo', 'like', $prefijo . '%')
+            ->where('codigo', 'like', $prefijo.'%')
             ->count() + 1;
 
-        return $prefijo . str_pad((string) $totalDia, 5, '0', STR_PAD_LEFT);
+        return $prefijo.str_pad((string) $totalDia, 5, '0', STR_PAD_LEFT);
     }
 
     private function motivoDefault(string $tipo): string

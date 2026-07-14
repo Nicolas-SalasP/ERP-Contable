@@ -390,8 +390,11 @@ class BancoService
 
         if (!$mov) throw TesoreriaException::noEncontrado("Movimiento bancario no encontrado.");
 
-        if (isset($mov->estado) && $mov->estado === 'CONCILIADO') {
-            throw TesoreriaException::regla("El movimiento bancario ya fue conciliado.");
+        // Whitelist en vez de blacklist: CONCILIADO_ANTICIPO tambien debe bloquear,
+        // sino el mismo movimiento se puede aplicar dos veces (doble anticipo o
+        // anticipo + conciliacion directa sobre el mismo deposito).
+        if (isset($mov->estado) && $mov->estado !== 'PENDIENTE') {
+            throw TesoreriaException::regla("El movimiento bancario ya fue conciliado (estado: {$mov->estado}).");
         }
 
         return $mov;

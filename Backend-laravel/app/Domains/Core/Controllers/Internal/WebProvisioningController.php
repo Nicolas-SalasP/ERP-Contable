@@ -24,7 +24,7 @@ class WebProvisioningController
             'email' => ['required', 'email'],
             'name' => ['required', 'string'],
             'rut' => ['nullable', 'string'],
-            'password_hash' => ['required', 'string'],
+            'password_hash' => ['required', 'string', self::reglaHashValido()],
             'plan_slug' => ['required', 'string'],
             'module_keys' => ['required', 'array'],
             'rol_erp' => ['required', 'string'],
@@ -104,7 +104,7 @@ class WebProvisioningController
     {
         $data = $request->validate([
             'tenri_user_id' => ['required', 'integer'],
-            'password_hash' => ['required', 'string'],
+            'password_hash' => ['required', 'string', self::reglaHashValido()],
         ]);
 
         $user = User::where('tenri_user_id', $data['tenri_user_id'])->first();
@@ -131,6 +131,18 @@ class WebProvisioningController
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    // La web emisora podria estar comprometida y mandar un "hash" que en realidad es la
+    // password en texto plano o un formato debil -- password_get_info() (PHP nativo) rechaza
+    // cualquier string que no sea un hash bcrypt/argon2 reconocible.
+    private static function reglaHashValido(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            if (!is_string($value) || password_get_info($value)['algoName'] === 'unknown') {
+                $fail('El hash de contraseña no tiene un formato válido (bcrypt/argon2).');
+            }
+        };
     }
 
     public function onlineUsers(Request $request): JsonResponse

@@ -25,6 +25,8 @@ import PerfilEmpresa from './Modulos/Empresa/PerfilEmpresa';
 import GestionActivos from './Modulos/Activos/Vistas/GestionActivos';
 const VisorAuditoriaFactura = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAuditoriaFactura'));
 const AdministradorCuentas = lazy(() => import('./Modulos/Contabilidad/Vistas/AdministradorCuentas'));
+const VisorAsientoCompleto = lazy(() => import('./Modulos/Contabilidad/Vistas/VisorAsientoCompleto'));
+const ReclasificadorAsiento = lazy(() => import('./Modulos/Contabilidad/Vistas/ReclasificadorAsiento'));
 import DashboardRenta from './Modulos/Tributario/Vistas/DashboardRenta';
 import NominaPagos from './Modulos/Banco/Vistas/NominaPagos';
 import CartolaBancaria from './Modulos/Banco/Vistas/CartolaBancaria';
@@ -32,6 +34,7 @@ import MesaConciliacion from './Modulos/Banco/Vistas/MesaConciliacion';
 const CierreF29 = lazy(() => import('./Modulos/Contabilidad/Vistas/CierreF29'));
 const CierrePeriodo = lazy(() => import('./Modulos/Contabilidad/Vistas/CierrePeriodo'));
 const AsientoManual = lazy(() => import('./Modulos/Contabilidad/Vistas/AsientoManual'));
+const ExportarReportes = lazy(() => import('./Modulos/Contabilidad/Vistas/ExportarReportes'));
 import VisorProveedor from './Modulos/Proveedores/VisorProveedor';
 import CrearEmpresa from './Modulos/Bienvenida/CrearEmpresa';
 import GestionUsuarios from './Modulos/Administrador/GestionUsuarios';
@@ -84,6 +87,7 @@ import Glosario from './Modulos/Glosario/Glosario';
 import Manuales from './Modulos/Manuales/Manuales';
 const PanelDpo = lazy(() => import('./Modulos/Cumplimiento/PanelDpo'));
 const SoporteTickets = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTickets'));
+const Alertas = lazy(() => import('./Modulos/Alertas/Vistas/Alertas'));
 const SoporteTicketDetalle = lazy(() => import('./Modulos/Soporte/Vistas/SoporteTicketDetalle'));
 const ArAging = lazy(() => import('./Modulos/Contabilidad/Vistas/ArAging'));
 const ApAging = lazy(() => import('./Modulos/Contabilidad/Vistas/ApAging'));
@@ -410,6 +414,22 @@ function App() {
             </RutaPrivada>
           } />
 
+          <Route path="/contabilidad/factura/:id/asiento" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><VisorAsientoCompleto /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/factura/:id/reclasificar" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.crear">
+                <LayoutPrincipal><ReclasificadorAsiento /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
           <Route path="/banco/nomina-pagos" element={
             <RutaPrivada>
               <RutaProtegida permiso="tesoreria.ver">
@@ -454,6 +474,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="contabilidad.crear">
                 <LayoutPrincipal><AsientoManual /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/contabilidad/exportar-reportes" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="contabilidad.ver">
+                <LayoutPrincipal><ExportarReportes /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />
@@ -864,6 +892,14 @@ function App() {
             <RutaPrivada>
               <RutaProtegida permiso="usuarios.gestionar">
                 <LayoutPrincipal><PanelDpo /></LayoutPrincipal>
+              </RutaProtegida>
+            </RutaPrivada>
+          } />
+
+          <Route path="/alertas" element={
+            <RutaPrivada>
+              <RutaProtegida permiso="alertas.ver">
+                <LayoutPrincipal><Alertas /></LayoutPrincipal>
               </RutaProtegida>
             </RutaPrivada>
           } />

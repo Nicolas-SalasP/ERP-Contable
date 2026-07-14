@@ -5,6 +5,7 @@ namespace App\Domains\Rrhh\Services\Provisiones;
 use App\Domains\Rrhh\Exceptions\RrhhException;
 use App\Domains\Rrhh\Models\Contrato;
 use App\Domains\Rrhh\Models\Empleado;
+use App\Domains\Rrhh\Models\Liquidacion;
 use App\Domains\Rrhh\Models\ProvisionVacaciones;
 use App\Domains\Rrhh\Models\SolicitudVacaciones;
 use Carbon\Carbon;
@@ -19,13 +20,13 @@ class VacacionesService
     public function devengarMes(int $empresaId, int $liquidacionId): ProvisionVacaciones
     {
         return DB::transaction(function () use ($empresaId, $liquidacionId) {
-            $liq = \App\Domains\Rrhh\Models\Liquidacion::where('empresa_id', $empresaId)
+            $liq = Liquidacion::where('empresa_id', $empresaId)
                 ->with(['empleado', 'contrato'])
                 ->findOrFail($liquidacionId);
 
-            /** @var \App\Domains\Rrhh\Models\Contrato $contrato */
+            /** @var Contrato $contrato */
             $contrato = $liq->contrato;
-            /** @var \App\Domains\Rrhh\Models\Empleado $empleado */
+            /** @var Empleado $empleado */
             $empleado = $liq->empleado;
             $anio = $liq->anio;
             $mes = $liq->mes;
@@ -118,7 +119,7 @@ class VacacionesService
     {
         return DB::transaction(function () use ($empresaId, $empleadoId, $fechaDesde, $fechaHasta, $userId, $observacion) {
             $empleado = Empleado::where('empresa_id', $empresaId)->find($empleadoId);
-            if (!$empleado) {
+            if (! $empleado) {
                 throw RrhhException::noEncontrado('El empleado no existe o no pertenece a la empresa.');
             }
 
@@ -128,7 +129,7 @@ class VacacionesService
                 ->orderByDesc('fecha_inicio')
                 ->first();
 
-            if (!$contrato) {
+            if (! $contrato) {
                 throw RrhhException::regla('El empleado no tiene un contrato vigente.');
             }
 
@@ -153,7 +154,7 @@ class VacacionesService
             $saldo = $this->saldoActual($empresaId, $empleadoId);
             if ($diasHabiles > $saldo['dias_disponibles']) {
                 throw RrhhException::regla(
-                    "Saldo insuficiente: solicita {$diasHabiles} dias habiles y el saldo disponible es " .
+                    "Saldo insuficiente: solicita {$diasHabiles} dias habiles y el saldo disponible es ".
                     "{$saldo['dias_disponibles']}."
                 );
             }
@@ -180,7 +181,7 @@ class VacacionesService
                 ->lockForUpdate()
                 ->find($solicitudId);
 
-            if (!$solicitud) {
+            if (! $solicitud) {
                 throw RrhhException::noEncontrado('La solicitud no existe o no pertenece a la empresa.');
             }
 
@@ -194,7 +195,7 @@ class VacacionesService
             $saldo = $this->saldoActual($empresaId, $solicitud->empleado_id);
             if ((float) $solicitud->dias_habiles > $saldo['dias_disponibles']) {
                 throw RrhhException::regla(
-                    "Saldo insuficiente al momento de aprobar: {$solicitud->dias_habiles} dias solicitados, " .
+                    "Saldo insuficiente al momento de aprobar: {$solicitud->dias_habiles} dias solicitados, ".
                     "{$saldo['dias_disponibles']} disponibles."
                 );
             }
@@ -216,7 +217,7 @@ class VacacionesService
                 ->lockForUpdate()
                 ->find($solicitudId);
 
-            if (!$solicitud) {
+            if (! $solicitud) {
                 throw RrhhException::noEncontrado('La solicitud no existe o no pertenece a la empresa.');
             }
 
@@ -243,7 +244,7 @@ class VacacionesService
                 ->lockForUpdate()
                 ->find($solicitudId);
 
-            if (!$solicitud) {
+            if (! $solicitud) {
                 throw RrhhException::noEncontrado('La solicitud no existe o no pertenece a la empresa.');
             }
 
@@ -265,13 +266,13 @@ class VacacionesService
     public function listarSolicitudes(int $empresaId, array $filtros = [])
     {
         $query = SolicitudVacaciones::where('empresa_id', $empresaId)
-            ->with(['empleado:id,nombres,apellido_paterno,apellido_materno,rut'])
+            ->with('empleado')
             ->orderByDesc('created_at');
 
-        if (!empty($filtros['empleado_id'])) {
+        if (! empty($filtros['empleado_id'])) {
             $query->where('empleado_id', (int) $filtros['empleado_id']);
         }
-        if (!empty($filtros['estado'])) {
+        if (! empty($filtros['estado'])) {
             $query->where('estado', $filtros['estado']);
         }
 
@@ -342,6 +343,7 @@ class VacacionesService
             return self::DIAS_HABILES_ANUALES;
         }
         $extra = (int) floor(($anios - 10) / 3);
+
         return self::DIAS_HABILES_ANUALES + $extra;
     }
 }

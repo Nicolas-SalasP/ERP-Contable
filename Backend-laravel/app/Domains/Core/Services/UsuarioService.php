@@ -8,6 +8,7 @@ use App\Domains\Core\Models\EstadoSuscripcion;
 use App\Domains\Core\Exceptions\CoreException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Exception;
 
 class UsuarioService
@@ -23,7 +24,12 @@ class UsuarioService
         return Rol::visiblesPara($empresaId)->get();
     }
 
-    public function invitarUsuario(int $empresaId, string $email, int $rolId, array $moduleKeysInvitador = [])
+    /**
+     * @return string|null Password temporal generada, solo cuando se crea un usuario nuevo
+     *   (null si ya existía). El controller debe entregarla al admin que invita para que la
+     *   comunique fuera de banda -- no hay flujo de email todavía.
+     */
+    public function invitarUsuario(int $empresaId, string $email, int $rolId, array $moduleKeysInvitador = []): ?string
     {
         $usuario = User::where('email', $email)->first();
 
@@ -51,19 +57,30 @@ class UsuarioService
                     'rol_id' => $rolId
                 ]);
             }
-        } else {
-            // Se busca el id del estado 'Activa' en vez de hardcodear 1, para no depender del orden de seeders.
-            $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
 
-            $usuario = User::create([
-                'email' => $email,
-                'nombre' => 'Usuario Invitado',
-                'empresa_id' => $empresaId,
-                'rol_id' => $rolId,
-                'password' => Hash::make('12345678'),
-                'estado_suscripcion_id' => $estadoActiva->id
-            ]);
+            DB::table('empresa_user')->updateOrInsert(
+                ['user_id' => $usuario->id, 'empresa_id' => $empresaId],
+                ['rol_id' => $rolId, 'created_at' => now()]
+            );
+
+            return null;
         }
+
+        // Se busca el id del estado 'Activa' en vez de hardcodear 1, para no depender del orden de seeders.
+        $estadoActiva = EstadoSuscripcion::where('nombre', 'Activa')->firstOrFail();
+
+        // Password aleatoria por invitación, nunca una constante compartida: con un valor fijo
+        // cualquiera que conociera el email invitado podía loguearse antes que el titular real.
+        $passwordTemporal = Str::password(16);
+
+        $usuario = User::create([
+            'email' => $email,
+            'nombre' => 'Usuario Invitado',
+            'empresa_id' => $empresaId,
+            'rol_id' => $rolId,
+            'password' => Hash::make($passwordTemporal),
+            'estado_suscripcion_id' => $estadoActiva->id
+        ]);
 
         // Sin esto, empresa_user (usado por EmpresaCambioController para listar/autorizar el
         // cambio de empresa activa) nunca se entera de esta invitación: el usuario invitado
@@ -73,7 +90,7 @@ class UsuarioService
             ['rol_id' => $rolId, 'created_at' => now()]
         );
 
-        return true;
+        return $passwordTemporal;
     }
 
     public function actualizarRol(int $empresaId, int $usuarioId, int $rolId)

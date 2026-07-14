@@ -2,30 +2,35 @@
 
 namespace App\Domains\Comercial\Services;
 
-use App\Domains\Comercial\Exceptions\ComercialException;
-
 use App\Domains\Activos\Models\ProyectoActivo;
 use App\Domains\Activos\Services\ActivoFijoService;
+use App\Domains\Comercial\Exceptions\ComercialException;
+use App\Domains\Comercial\Models\Cotizacion;
+use App\Domains\Comercial\Models\CotizacionDetalle;
+use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\Proveedor;
-use App\Domains\Comercial\Models\Cotizacion;
-use App\Domains\Comercial\Models\EstadoCotizacion;
-use App\Domains\Comercial\Services\AnticipoProveedorService;
-use App\Domains\Comercial\Services\AnticipoClienteService;
-use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Models\AsientoContable;
+use App\Domains\Contabilidad\Models\DetalleAsiento;
+use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Contabilidad\Services\F29DriftService;
+use App\Domains\Contabilidad\Services\PeriodoContableService;
+use App\Domains\Inventario\Models\MovimientoInventario;
+use App\Domains\Inventario\Services\InventarioMovimientoService;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Integracion\EmitirDteDesdeFacturaService;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use \Carbon\Carbon;
 
 class FacturaService
 {
     protected $asientoService;
+
     protected AnticipoProveedorService $anticipoService;
+
     protected AnticipoClienteService $anticipoClienteService;
 
     public function __construct(
@@ -43,40 +48,41 @@ class FacturaService
         $query = Factura::where('empresa_id', $empresaId)
             ->with(['proveedor', 'cuentaBancaria']);
 
-        if (!empty($filtros['estado'])) {
+        if (! empty($filtros['estado'])) {
             $query->where('estado', $filtros['estado']);
         }
 
-        if (!empty($filtros['tipo'])) {
+        if (! empty($filtros['tipo'])) {
             $query->where('tipo', $filtros['tipo']);
         }
 
-        if (!empty($filtros['proveedor_id'])) {
+        if (! empty($filtros['proveedor_id'])) {
             // proveedor_id identifica tanto al proveedor (COMPRA) como al cliente (VENTA).
             $query->where('proveedor_id', $filtros['proveedor_id']);
         }
 
-        if (!empty($filtros['num'])) {
+        if (! empty($filtros['num'])) {
             $query->where('numero_factura', 'like', "%{$filtros['num']}%");
         }
 
-        if (!empty($filtros['search'])) {
+        if (! empty($filtros['search'])) {
             $query->whereHas('proveedor', function ($q) use ($filtros) {
                 $q->where('razon_social', 'like', "%{$filtros['search']}%")
                     ->orWhere('rut', 'like', "%{$filtros['search']}%");
             });
         }
 
-        if (!empty($filtros['fecha_desde'])) {
+        if (! empty($filtros['fecha_desde'])) {
             $query->whereDate('fecha_emision', '>=', $filtros['fecha_desde']);
         }
 
-        if (!empty($filtros['fecha_hasta'])) {
+        if (! empty($filtros['fecha_hasta'])) {
             $query->whereDate('fecha_emision', '<=', $filtros['fecha_hasta']);
         }
 
         // Tope duro de 500: evita que un limit arbitrario en query string vuelva a convertir esto en un dump completo de la tabla.
         $limit = min((int) ($filtros['limit'] ?? 10), 500);
+
         return $query->orderBy('fecha_emision', 'desc')->paginate($limit);
     }
 
@@ -86,8 +92,8 @@ class FacturaService
             ->with(['proveedor', 'cuentaBancaria'])
             ->find($facturaId);
 
-        if (!$factura) {
-            throw ComercialException::noEncontrado("La factura solicitada no existe o no pertenece a su empresa.");
+        if (! $factura) {
+            throw ComercialException::noEncontrado('La factura solicitada no existe o no pertenece a su empresa.');
         }
 
         return $factura;
@@ -95,8 +101,9 @@ class FacturaService
 
     public function verificarDuplicado(int $empresaId, ?int $proveedorId, string $numero): bool
     {
-        if (!$proveedorId)
+        if (! $proveedorId) {
             return false;
+        }
 
         return Factura::where('empresa_id', $empresaId)
             ->where('proveedor_id', $proveedorId)
@@ -110,10 +117,10 @@ class FacturaService
 
         if ($esDocumentoExterior) {
             if (empty($datos['tipo_cambio']) || (float) $datos['tipo_cambio'] <= 0) {
-                throw ComercialException::regla("Para documentos del exterior, debe especificar el tipo de cambio (mayor a 0).");
+                throw ComercialException::regla('Para documentos del exterior, debe especificar el tipo de cambio (mayor a 0).');
             }
             if (empty($datos['moneda']) || $datos['moneda'] === 'CLP') {
-                throw ComercialException::regla("Para documentos del exterior, debe especificar una moneda extranjera (USD, EUR, etc.).");
+                throw ComercialException::regla('Para documentos del exterior, debe especificar una moneda extranjera (USD, EUR, etc.).');
             }
             $tipoCambio = round((float) $datos['tipo_cambio'], 4);
             $montoOrigen = round((float) ($datos['monto_bruto_origen'] ?? $datos['monto_bruto']), 2);
@@ -121,54 +128,54 @@ class FacturaService
             $neto = $bruto;
             $iva = 0;
         } else {
-            if (!isset($datos['monto_neto']) || $datos['monto_neto'] <= 0) {
-                throw ComercialException::regla("El monto neto debe ser mayor a 0.");
+            if (! isset($datos['monto_neto']) || $datos['monto_neto'] <= 0) {
+                throw ComercialException::regla('El monto neto debe ser mayor a 0.');
             }
             $neto = round((float) $datos['monto_neto'], 2);
             $iva = isset($datos['monto_iva']) ? round((float) $datos['monto_iva'], 2) : round($neto * config('fiscal.tasa_iva'), 2);
             $bruto = isset($datos['monto_bruto']) ? round((float) $datos['monto_bruto'], 2) : round($neto + $iva, 2);
             if (abs(($neto + $iva) - $bruto) > 0.01) {
-                throw ComercialException::regla("Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.");
+                throw ComercialException::regla('Inconsistencia tributaria: El Neto + IVA no coincide con el Monto Bruto.');
             }
         }
 
         // Retención Art. 59 LIR: obligación de retener al pagar servicios al exterior; el retenido se entera al SII vía Formulario 50.
         $tipoGastoArt59 = null;
         $retencionArt59 = 0.0;
-        if ($esDocumentoExterior && !empty($datos['tipo_gasto_art59'])) {
+        if ($esDocumentoExterior && ! empty($datos['tipo_gasto_art59'])) {
             $tasasArt59 = [
-                'intereses'          => 4.0,   // Art. 59 N°1
-                'regalias'           => 30.0,  // Art. 59 N°2
+                'intereses' => 4.0,   // Art. 59 N°1
+                'regalias' => 30.0,  // Art. 59 N°2
                 'servicios_tecnicos' => 15.0,  // Art. 59 N°2 (con convenio)
-                'honorarios'         => 15.0,  // Art. 59 N°2
-                'otros'              => 35.0,  // Art. 59 N°4
+                'honorarios' => 15.0,  // Art. 59 N°2
+                'otros' => 35.0,  // Art. 59 N°4
             ];
             $tipoGastoArt59 = $datos['tipo_gasto_art59'];
-            if (!array_key_exists($tipoGastoArt59, $tasasArt59)) {
-                throw ComercialException::regla("Tipo de gasto Art. 59 inválido. Use: intereses, regalias, servicios_tecnicos, honorarios u otros.");
+            if (! array_key_exists($tipoGastoArt59, $tasasArt59)) {
+                throw ComercialException::regla('Tipo de gasto Art. 59 inválido. Use: intereses, regalias, servicios_tecnicos, honorarios u otros.');
             }
             $retencionArt59 = round($bruto * $tasasArt59[$tipoGastoArt59] / 100, 2);
         }
 
         // Validar pertenencia antes de abrir la transacción (fail-fast).
-        if (!empty($datos['proveedor_id'])) {
+        if (! empty($datos['proveedor_id'])) {
             $proveedor = Proveedor::where('empresa_id', $datos['empresa_id'])
                 ->where('id', $datos['proveedor_id'])
                 ->first();
-            if (!$proveedor) {
-                throw ComercialException::regla("El proveedor indicado no pertenece a esta empresa.");
+            if (! $proveedor) {
+                throw ComercialException::regla('El proveedor indicado no pertenece a esta empresa.');
             }
             if ($proveedor->estado === 'INACTIVO') {
-                throw ComercialException::regla("No se puede registrar una factura de compra a un proveedor inactivo.");
+                throw ComercialException::regla('No se puede registrar una factura de compra a un proveedor inactivo.');
             }
         }
 
-        if (!empty($datos['cuenta_bancaria_id'])) {
+        if (! empty($datos['cuenta_bancaria_id'])) {
             $cuentaValida = CuentaBancariaEmpresa::where('empresa_id', $datos['empresa_id'])
                 ->where('id', $datos['cuenta_bancaria_id'])
                 ->exists();
-            if (!$cuentaValida) {
-                throw ComercialException::regla("La cuenta bancaria indicada no pertenece a esta empresa.");
+            if (! $cuentaValida) {
+                throw ComercialException::regla('La cuenta bancaria indicada no pertenece a esta empresa.');
             }
         }
 
@@ -187,17 +194,17 @@ class FacturaService
             // factura_referencia_id se aceptaba tal cual venía, sin cruzarlo contra el monto ni
             // contra otra NC activa), y la factura origen nunca se marcaba ANULADA al cubrirse
             // 100% (quedaba REGISTRADA para siempre pese a no tener saldo real pendiente).
-            if ($esNotaCreditoCompra && !empty($datos['factura_referencia_id'])) {
+            if ($esNotaCreditoCompra && ! empty($datos['factura_referencia_id'])) {
                 $facturaOrigenCompra = Factura::where('empresa_id', $datos['empresa_id'])
                     ->where('id', $datos['factura_referencia_id'])
                     ->first();
 
-                if (!$facturaOrigenCompra) {
-                    throw ComercialException::regla("La factura de compra de origen no existe o no pertenece a esta empresa.");
+                if (! $facturaOrigenCompra) {
+                    throw ComercialException::regla('La factura de compra de origen no existe o no pertenece a esta empresa.');
                 }
 
                 if ($facturaOrigenCompra->estado === 'ANULADA') {
-                    throw ComercialException::regla("No se puede emitir una NC sobre una factura de compra ya anulada.");
+                    throw ComercialException::regla('No se puede emitir una NC sobre una factura de compra ya anulada.');
                 }
 
                 if ($bruto > (float) $facturaOrigenCompra->monto_bruto) {
@@ -213,7 +220,7 @@ class FacturaService
                     ->exists();
 
                 if ($ncCompraExistente) {
-                    throw ComercialException::regla("Esta factura ya tiene una Nota de Crédito activa. Anule la NC anterior antes de registrar una nueva.");
+                    throw ComercialException::regla('Esta factura ya tiene una Nota de Crédito activa. Anule la NC anterior antes de registrar una nueva.');
                 }
             }
 
@@ -250,7 +257,7 @@ class FacturaService
                 $codigoIva = $datos['cuentaIva'] ?? '353350';
                 $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
             } else {
-                $codigoDestino = $datos['cuentaDestino'] ?? throw ComercialException::regla("Debe especificar la cuenta de destino/gasto.");
+                $codigoDestino = $datos['cuentaDestino'] ?? throw ComercialException::regla('Debe especificar la cuenta de destino/gasto.');
                 $codigoIva = $datos['cuentaIva'] ?? '353350';
                 $codigoProveedor = $datos['cuentaProveedor'] ?? '352105';
             }
@@ -259,7 +266,7 @@ class FacturaService
             $cuentaProveedor = $codigoProveedor ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoProveedor)->first() : null;
             $cuentaGasto = $codigoDestino ? PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoDestino)->first() : null;
             // Antes una NOTA_CREDITO con cuentas faltantes se registraba sin asiento (descuadre); ahora exige las mismas cuentas que una factura normal.
-            if (!$cuentaGasto || !$cuentaIva || !$cuentaProveedor) {
+            if (! $cuentaGasto || ! $cuentaIva || ! $cuentaProveedor) {
                 throw ComercialException::regla("Configuración Contable Incompleta: Verifique que las cuentas de IVA ({$codigoIva}), Proveedor ({$codigoProveedor}) y Destino ({$codigoDestino}) existan en el plan de cuentas de esta empresa.");
             }
 
@@ -267,7 +274,7 @@ class FacturaService
             if ($retencionArt59 > 0) {
                 $codigoRetencion = $datos['cuentaRetencion'] ?? '252200';
                 $cuentaRetencionArt59 = PlanCuenta::where('empresa_id', $datos['empresa_id'])->where('codigo', $codigoRetencion)->first();
-                if (!$cuentaRetencionArt59) {
+                if (! $cuentaRetencionArt59) {
                     throw ComercialException::regla("Cuenta de Retención Art. 59 ({$codigoRetencion}) no existe en el plan de cuentas. Créela como pasivo circulante antes de registrar esta factura.");
                 }
             }
@@ -277,7 +284,7 @@ class FacturaService
             $cabeceraAsiento = [
                 'empresa_id' => $datos['empresa_id'],
                 'fecha' => $fechaOperacion,
-                'glosa' => ($esDocumentoExterior ? "Centralización Automática Factura Exterior N° " : ($esNotaCredito ? "Centralización Automática Nota de Crédito Compra N° " : "Centralización Automática Factura Compra N° ")) . $datos['numero_factura'],
+                'glosa' => ($esDocumentoExterior ? 'Centralización Automática Factura Exterior N° ' : ($esNotaCredito ? 'Centralización Automática Nota de Crédito Compra N° ' : 'Centralización Automática Factura Compra N° ')).$datos['numero_factura'],
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'compras',
                 'origen_id' => $factura->id,
@@ -291,8 +298,8 @@ class FacturaService
                 'cuenta_contable' => $cuentaGasto->codigo,
                 'debe' => $esNotaCredito ? 0 : $neto,
                 'haber' => $esNotaCredito ? $neto : 0,
-                'glosa_detalle' => ($esNotaCredito ? "Reversa Gasto NC N° " : "Gasto Factura N° ") . $datos['numero_factura'],
-                'centro_costo_id' => $datos['centro_costo_id'] ?? null
+                'glosa_detalle' => ($esNotaCredito ? 'Reversa Gasto NC N° ' : 'Gasto Factura N° ').$datos['numero_factura'],
+                'centro_costo_id' => $datos['centro_costo_id'] ?? null,
             ];
 
             if ($iva > 0) {
@@ -300,7 +307,7 @@ class FacturaService
                     'cuenta_contable' => $cuentaIva->codigo,
                     'debe' => $esNotaCredito ? 0 : $iva,
                     'haber' => $esNotaCredito ? $iva : 0,
-                    'glosa_detalle' => ($esNotaCredito ? "Reversa IVA CF NC N° " : "IVA CF Factura N° ") . $datos['numero_factura'],
+                    'glosa_detalle' => ($esNotaCredito ? 'Reversa IVA CF NC N° ' : 'IVA CF Factura N° ').$datos['numero_factura'],
                 ];
             }
 
@@ -310,7 +317,7 @@ class FacturaService
                 'cuenta_contable' => $cuentaProveedor->codigo,
                 'debe' => $esNotaCredito ? $montoNoCxP : 0,
                 'haber' => $esNotaCredito ? 0 : $montoNoCxP,
-                'glosa_detalle' => ($esNotaCredito ? "Reducción CxP NC N° " : "CxP Proveedor Factura N° ") . $datos['numero_factura'],
+                'glosa_detalle' => ($esNotaCredito ? 'Reducción CxP NC N° ' : 'CxP Proveedor Factura N° ').$datos['numero_factura'],
             ];
 
             // Retención Art. 59 LIR por enterar vía F50
@@ -319,15 +326,15 @@ class FacturaService
                     'cuenta_contable' => $cuentaRetencionArt59->codigo,
                     'debe' => $esNotaCredito ? $retencionArt59 : 0,
                     'haber' => $esNotaCredito ? 0 : $retencionArt59,
-                    'glosa_detalle' => "Retención Art. 59 LIR Factura N° " . $datos['numero_factura'],
+                    'glosa_detalle' => 'Retención Art. 59 LIR Factura N° '.$datos['numero_factura'],
                 ];
             }
 
             $asiento = $this->asientoService->registrarAsiento($cabeceraAsiento, $detallesAsiento);
 
             $factura->update([
-                'codigo_interno' => 'FAC-' . str_pad((string) $factura->id, 5, '0', STR_PAD_LEFT),
-                'comprobante_contable' => $asiento->numero_comprobante
+                'codigo_interno' => 'FAC-'.str_pad((string) $factura->id, 5, '0', STR_PAD_LEFT),
+                'comprobante_contable' => $asiento->numero_comprobante,
             ]);
 
             // Mismo comportamiento que la NC de venta: si la NC cubre el 100% del monto
@@ -365,12 +372,12 @@ class FacturaService
                 ->with(['dteEmitido'])
                 ->find($facturaVentaId);
 
-            if (!$origen) {
-                throw ComercialException::noEncontrado("La factura de origen no existe o no pertenece a esta empresa.");
+            if (! $origen) {
+                throw ComercialException::noEncontrado('La factura de origen no existe o no pertenece a esta empresa.');
             }
 
             if ($origen->estado === 'ANULADA') {
-                throw ComercialException::regla("No se puede emitir una NC sobre una factura ya anulada.");
+                throw ComercialException::regla('No se puede emitir una NC sobre una factura ya anulada.');
             }
 
             if ((float) $datos['monto_bruto'] > (float) $origen->monto_bruto) {
@@ -386,85 +393,87 @@ class FacturaService
                 ->exists();
 
             if ($ncExistente) {
-                throw ComercialException::regla("Esta factura ya tiene una Nota de Crédito activa. Anule la NC anterior antes de emitir una nueva.");
+                throw ComercialException::regla('Esta factura ya tiene una Nota de Crédito activa. Anule la NC anterior antes de emitir una nueva.');
             }
 
-            $neto  = round((float) $datos['monto_neto'], 2);
-            $iva   = round((float) $datos['monto_iva'], 2);
+            $neto = round((float) $datos['monto_neto'], 2);
+            $iva = round((float) $datos['monto_iva'], 2);
             $bruto = round((float) $datos['monto_bruto'], 2);
             $fecha = $datos['fecha_emision'] ?? now()->toDateString();
 
             // A diferencia de una factura normal, esta validación faltaba: un monto en 0 o negativo pasaba el guard "no superar el original" y registrarAsiento solo exige DEBE=HABER, no montos positivos -- una NC negativa invierte el efecto contable en vez de anularlo.
             if ($neto <= 0 || $iva < 0 || $bruto <= 0) {
                 throw ComercialException::regla(
-                    "Los montos de la Nota de Crédito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo)."
+                    'Los montos de la Nota de Crédito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo).'
                 );
             }
 
+            $this->validarProporcionIva($origen, $neto, $iva, 'Nota de Crédito');
+
             $nc = Factura::create([
-                'empresa_id'          => $empresaId,
-                'tipo'                => 'VENTA',
-                'tipo_documento'      => 'NOTA_CREDITO',
-                'tipo_dte'            => 61,
-                'codigo_unico'        => Factura::generarCodigoUnico(),
-                'cliente_id'          => $origen->cliente_id,
-                'proveedor_id'        => $origen->proveedor_id,
-                'numero_factura'      => $datos['numero_nc'],
-                'fecha_emision'       => $fecha,
-                'monto_neto'          => $neto,
-                'monto_iva'           => $iva,
-                'monto_bruto'         => $bruto,
-                'estado'              => 'REGISTRADA',
+                'empresa_id' => $empresaId,
+                'tipo' => 'VENTA',
+                'tipo_documento' => 'NOTA_CREDITO',
+                'tipo_dte' => 61,
+                'codigo_unico' => Factura::generarCodigoUnico(),
+                'cliente_id' => $origen->cliente_id,
+                'proveedor_id' => $origen->proveedor_id,
+                'numero_factura' => $datos['numero_nc'],
+                'fecha_emision' => $fecha,
+                'monto_neto' => $neto,
+                'monto_iva' => $iva,
+                'monto_bruto' => $bruto,
+                'estado' => 'REGISTRADA',
                 'factura_referencia_id' => $origen->id,
-                'razon_nota_credito'  => $datos['razon'],
-                'moneda'              => $origen->moneda ?? 'CLP',
+                'razon_nota_credito' => $datos['razon'],
+                'moneda' => $origen->moneda ?? 'CLP',
             ]);
 
             $nc->update([
-                'codigo_interno' => 'NC-' . str_pad((string) $nc->id, 5, '0', STR_PAD_LEFT),
+                'codigo_interno' => 'NC-'.str_pad((string) $nc->id, 5, '0', STR_PAD_LEFT),
             ]);
 
-            $cuentaCxC      = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
-            $cuentaVentas   = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
+            $cuentaCxC = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
+            $cuentaVentas = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
             $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
 
-            if (!$cuentaCxC || !$cuentaVentas) {
+            if (! $cuentaCxC || ! $cuentaVentas) {
                 throw ComercialException::regla(
-                    "Configuración Contable Incompleta: se requieren cuentas 152005 (CxC) y 501105 (Ingresos) para emitir la NC."
+                    'Configuración Contable Incompleta: se requieren cuentas 152005 (CxC) y 501105 (Ingresos) para emitir la NC.'
                 );
             }
 
             $detalles = [
                 [
                     'cuenta_contable' => $cuentaVentas->codigo,
-                    'debe'           => $neto,
-                    'haber'          => 0,
-                    'glosa_detalle'  => "Reversa Ingreso NC {$datos['numero_nc']}",
+                    'debe' => $neto,
+                    'haber' => 0,
+                    'glosa_detalle' => "Reversa Ingreso NC {$datos['numero_nc']}",
                 ],
                 [
                     'cuenta_contable' => $cuentaCxC->codigo,
-                    'debe'           => 0,
-                    'haber'          => $bruto,
-                    'glosa_detalle'  => "Reducción CxC Cliente NC {$datos['numero_nc']}",
+                    'debe' => 0,
+                    'haber' => $bruto,
+                    'glosa_detalle' => "Reducción CxC Cliente NC {$datos['numero_nc']}",
                 ],
             ];
 
             if ($iva > 0 && $cuentaIvaDebito) {
                 $detalles[] = [
                     'cuenta_contable' => $cuentaIvaDebito->codigo,
-                    'debe'           => $iva,
-                    'haber'          => 0,
-                    'glosa_detalle'  => "Reversa IVA Débito NC {$datos['numero_nc']}",
+                    'debe' => $iva,
+                    'haber' => 0,
+                    'glosa_detalle' => "Reversa IVA Débito NC {$datos['numero_nc']}",
                 ];
             }
 
             $asiento = $this->asientoService->registrarAsiento([
-                'empresa_id'    => $empresaId,
-                'fecha'         => $fecha,
-                'glosa'         => "Nota de Crédito Venta N° {$datos['numero_nc']} — {$datos['razon']}",
-                'tipo_asiento'  => 'traspaso',
+                'empresa_id' => $empresaId,
+                'fecha' => $fecha,
+                'glosa' => "Nota de Crédito Venta N° {$datos['numero_nc']} — {$datos['razon']}",
+                'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'ventas',
-                'origen_id'     => $nc->id,
+                'origen_id' => $nc->id,
             ], $detalles);
 
             $nc->update(['comprobante_contable' => $asiento->numero_comprobante]);
@@ -490,7 +499,7 @@ class FacturaService
                 $this->liberarAnticipoYCotizacionDeFactura($empresaId, $origen);
             }
 
-            if (!empty($datos['emitir_dte']) && $origen->sii_dte_emitido_id) {
+            if (! empty($datos['emitir_dte']) && $origen->sii_dte_emitido_id) {
                 /** @var SiiDteEmitido|null $dteOrigen */
                 $dteOrigen = $origen->dteEmitido;
                 if ($dteOrigen && $dteOrigen->folio > 0) {
@@ -498,7 +507,7 @@ class FacturaService
                         'tipo_doc' => (int) ($origen->tipo_dte ?? 33),
                         'folio_ref' => (string) $dteOrigen->folio,
                         'fecha_ref' => $origen->fecha_emision->format('Y-m-d'),
-                        'cod_ref'   => 1, // 1 = Anula documento de referencia (SII)
+                        'cod_ref' => 1, // 1 = Anula documento de referencia (SII)
                         'razon_ref' => $datos['razon'],
                     ]];
 
@@ -536,90 +545,92 @@ class FacturaService
             /** @var Factura|null $origen */
             $origen = Factura::where('empresa_id', $empresaId)->find($facturaVentaId);
 
-            if (!$origen) {
-                throw ComercialException::noEncontrado("La factura de origen no existe o no pertenece a esta empresa.");
+            if (! $origen) {
+                throw ComercialException::noEncontrado('La factura de origen no existe o no pertenece a esta empresa.');
             }
 
             if ($origen->estado === 'ANULADA') {
-                throw ComercialException::regla("No se puede emitir una ND sobre una factura anulada.");
+                throw ComercialException::regla('No se puede emitir una ND sobre una factura anulada.');
             }
 
-            $neto  = round((float) $datos['monto_neto'], 2);
-            $iva   = round((float) $datos['monto_iva'], 2);
+            $neto = round((float) $datos['monto_neto'], 2);
+            $iva = round((float) $datos['monto_iva'], 2);
             $bruto = round((float) $datos['monto_bruto'], 2);
             $fecha = $datos['fecha_emision'] ?? now()->toDateString();
 
             // Mismo hallazgo que en emitirNotaCreditoVenta: sin este guard, una ND con montos en 0 o negativos pasaba (registrarAsiento solo exige partida doble cuadrada, no montos positivos por línea).
             if ($neto <= 0 || $iva < 0 || $bruto <= 0) {
                 throw ComercialException::regla(
-                    "Los montos de la Nota de Débito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo)."
+                    'Los montos de la Nota de Débito deben ser mayores a 0 (el IVA puede ser 0 en operaciones exentas, pero no negativo).'
                 );
             }
 
+            $this->validarProporcionIva($origen, $neto, $iva, 'Nota de Débito');
+
             $nd = Factura::create([
-                'empresa_id'            => $empresaId,
-                'tipo'                  => 'VENTA',
-                'tipo_documento'        => 'NOTA_DEBITO',
-                'tipo_dte'              => 56,
-                'codigo_unico'          => Factura::generarCodigoUnico(),
-                'cliente_id'            => $origen->cliente_id,
-                'proveedor_id'          => $origen->proveedor_id,
-                'numero_factura'        => $datos['numero_nd'],
-                'fecha_emision'         => $fecha,
-                'monto_neto'            => $neto,
-                'monto_iva'             => $iva,
-                'monto_bruto'           => $bruto,
-                'estado'                => 'REGISTRADA',
+                'empresa_id' => $empresaId,
+                'tipo' => 'VENTA',
+                'tipo_documento' => 'NOTA_DEBITO',
+                'tipo_dte' => 56,
+                'codigo_unico' => Factura::generarCodigoUnico(),
+                'cliente_id' => $origen->cliente_id,
+                'proveedor_id' => $origen->proveedor_id,
+                'numero_factura' => $datos['numero_nd'],
+                'fecha_emision' => $fecha,
+                'monto_neto' => $neto,
+                'monto_iva' => $iva,
+                'monto_bruto' => $bruto,
+                'estado' => 'REGISTRADA',
                 'factura_referencia_id' => $origen->id,
-                'razon_nota_debito'     => $datos['razon'],
-                'moneda'                => $origen->moneda ?? 'CLP',
+                'razon_nota_debito' => $datos['razon'],
+                'moneda' => $origen->moneda ?? 'CLP',
             ]);
 
             $nd->update([
-                'codigo_interno' => 'ND-' . str_pad((string) $nd->id, 5, '0', STR_PAD_LEFT),
+                'codigo_interno' => 'ND-'.str_pad((string) $nd->id, 5, '0', STR_PAD_LEFT),
             ]);
 
-            $cuentaCxC       = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
-            $cuentaVentas    = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
+            $cuentaCxC = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '152005')->first();
+            $cuentaVentas = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '501105')->first();
             $cuentaIvaDebito = PlanCuenta::where('empresa_id', $empresaId)->where('codigo', '353360')->first();
 
-            if (!$cuentaCxC || !$cuentaVentas) {
+            if (! $cuentaCxC || ! $cuentaVentas) {
                 throw ComercialException::regla(
-                    "Configuración Contable Incompleta: se requieren cuentas 152005 (CxC) y 501105 (Ventas) para emitir la ND."
+                    'Configuración Contable Incompleta: se requieren cuentas 152005 (CxC) y 501105 (Ventas) para emitir la ND.'
                 );
             }
 
             $detalles = [
                 [
                     'cuenta_contable' => $cuentaVentas->codigo,
-                    'debe'            => 0,
-                    'haber'           => $neto,
-                    'glosa_detalle'   => "Ingreso adicional ND {$datos['numero_nd']} — {$datos['razon']}",
+                    'debe' => 0,
+                    'haber' => $neto,
+                    'glosa_detalle' => "Ingreso adicional ND {$datos['numero_nd']} — {$datos['razon']}",
                 ],
                 [
                     'cuenta_contable' => $cuentaCxC->codigo,
-                    'debe'            => $bruto,
-                    'haber'           => 0,
-                    'glosa_detalle'   => "Aumento CxC ND {$datos['numero_nd']} — cliente {$origen->nombre_proveedor}",
+                    'debe' => $bruto,
+                    'haber' => 0,
+                    'glosa_detalle' => "Aumento CxC ND {$datos['numero_nd']} — cliente {$origen->nombre_proveedor}",
                 ],
             ];
 
             if ($iva > 0 && $cuentaIvaDebito) {
                 $detalles[] = [
                     'cuenta_contable' => $cuentaIvaDebito->codigo,
-                    'debe'            => 0,
-                    'haber'           => $iva,
-                    'glosa_detalle'   => "IVA Débito ND {$datos['numero_nd']}",
+                    'debe' => 0,
+                    'haber' => $iva,
+                    'glosa_detalle' => "IVA Débito ND {$datos['numero_nd']}",
                 ];
             }
 
             $asiento = $this->asientoService->registrarAsiento([
-                'empresa_id'    => $empresaId,
-                'fecha'         => $fecha,
-                'glosa'         => "Nota de Débito Venta N° {$datos['numero_nd']} — {$datos['razon']}",
-                'tipo_asiento'  => 'traspaso',
+                'empresa_id' => $empresaId,
+                'fecha' => $fecha,
+                'glosa' => "Nota de Débito Venta N° {$datos['numero_nd']} — {$datos['razon']}",
+                'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'ventas',
-                'origen_id'     => $nd->id,
+                'origen_id' => $nd->id,
             ], $detalles);
 
             $nd->update(['comprobante_contable' => $asiento->numero_comprobante]);
@@ -628,11 +639,34 @@ class FacturaService
         });
     }
 
+    /**
+     * El neto y el IVA de una NC/ND llegan del cliente sin ninguna relación forzada entre
+     * ellos -- registrarAsiento solo exige que debe==haber (neto+iva==bruto), así que un
+     * split arbitrario como neto=1/iva=1.189.999 cuadra igual y reversa el IVA Débito real
+     * casi completo. Exige que el IVA respete la misma proporción neto/IVA del documento
+     * de origen (0 en exentas, ~19% en afectas), con una tolerancia solo por redondeo.
+     */
+    private function validarProporcionIva(Factura $origen, float $neto, float $iva, string $tipoDoc): void
+    {
+        $netoOrigen = (float) $origen->monto_neto;
+        $ivaOrigen = (float) $origen->monto_iva;
+        $ratioOrigen = $netoOrigen > 0 ? $ivaOrigen / $netoOrigen : 0;
+
+        $ivaEsperado = round($neto * $ratioOrigen, 2);
+        $tolerancia = max(1.0, round($ivaEsperado * 0.005, 2));
+
+        if (abs($iva - $ivaEsperado) > $tolerancia) {
+            throw ComercialException::regla(
+                "El IVA de la {$tipoDoc} (\${$iva}) no es proporcional al de la factura original (esperado ~\${$ivaEsperado})."
+            );
+        }
+    }
+
     public function obtenerAsientoDeFactura(int $empresaId, int $facturaId): array
     {
         $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
-        if (!$factura->comprobante_contable) {
+        if (! $factura->comprobante_contable) {
             throw ComercialException::regla('Esta factura aún no tiene un asiento contable vinculado.');
         }
 
@@ -641,23 +675,23 @@ class FacturaService
             ->where('numero_comprobante', $factura->comprobante_contable)
             ->first();
 
-        if (!$asiento) {
+        if (! $asiento) {
             throw ComercialException::regla('El asiento asociado no fue encontrado en la base de datos.');
         }
 
         return [
             'cabecera' => $asiento,
             'detalles' => $asiento->detalles->map(function ($d) {
-                /** @var \App\Domains\Contabilidad\Models\DetalleAsiento $d */
+                /** @var DetalleAsiento $d */
                 return [
                     'id' => $d->id,
                     'cuenta_contable' => $d->cuenta_contable,
                     'cuenta_nombre' => $d->cuenta->nombre ?? 'Sin nombre',
                     'debe' => $d->debe,
                     'haber' => $d->haber,
-                    'glosa_detalle' => $d->descripcion_extensa
+                    'glosa_detalle' => $d->descripcion_extensa,
                 ];
-            })
+            }),
         ];
     }
 
@@ -671,7 +705,7 @@ class FacturaService
                 throw ComercialException::regla('No se puede reclasificar el asiento de una factura anulada.');
             }
 
-            if (!$factura->comprobante_contable) {
+            if (! $factura->comprobante_contable) {
                 throw ComercialException::regla('Esta factura aún no tiene un asiento contable vinculado.');
             }
 
@@ -681,30 +715,30 @@ class FacturaService
                 ->firstOrFail();
 
             // No reclasificar desde ni hacia un periodo contable cerrado.
-            $periodos = app(\App\Domains\Contabilidad\Services\PeriodoContableService::class);
+            $periodos = app(PeriodoContableService::class);
             $periodos->assertAbierto($empresaId, $asiento->fecha);
             $periodos->assertAbierto($empresaId, $datos['fecha']);
 
             $glosaCabeceraOriginal = $asiento->glosa;
             $asiento->update([
                 'fecha' => $datos['fecha'],
-                'usuario_id' => $usuarioId
+                'usuario_id' => $usuarioId,
             ]);
 
             foreach ($datos['cambios'] as $detalleId => $nuevoCodigoCuenta) {
                 $lineaOriginal = $asiento->detalles->firstWhere('id', $detalleId);
 
                 if ($lineaOriginal) {
-                    /** @var \App\Domains\Contabilidad\Models\DetalleAsiento $lineaOriginal */
+                    /** @var DetalleAsiento $lineaOriginal */
                     $glosaLineaOriginal = $lineaOriginal->descripcion_extensa ?: $glosaCabeceraOriginal;
 
                     $asiento->detalles()->create([
                         'cuenta_contable' => $lineaOriginal->cuenta_contable,
                         'debe' => $lineaOriginal->haber,
                         'haber' => $lineaOriginal->debe,
-                        'descripcion_extensa' => "Reverso: " . $glosaLineaOriginal,
+                        'descripcion_extensa' => 'Reverso: '.$glosaLineaOriginal,
                         'centro_costo_id' => $lineaOriginal->centro_costo_id,
-                        'empleado_nombre' => $lineaOriginal->empleado_nombre
+                        'empleado_nombre' => $lineaOriginal->empleado_nombre,
                     ]);
 
                     $asiento->detalles()->create([
@@ -713,7 +747,7 @@ class FacturaService
                         'haber' => $lineaOriginal->haber,
                         'descripcion_extensa' => $datos['glosa'],
                         'centro_costo_id' => $lineaOriginal->centro_costo_id,
-                        'empleado_nombre' => $lineaOriginal->empleado_nombre
+                        'empleado_nombre' => $lineaOriginal->empleado_nombre,
                     ]);
                 }
             }
@@ -730,11 +764,12 @@ class FacturaService
             ->get()
             ->map(function ($f) {
                 $nombreProv = $f->proveedor->razon_social ?? 'Proveedor sin nombre';
+
                 return [
                     'factura_id' => $f->id,
                     'numero_factura' => $f->numero_factura,
                     'proveedor' => $nombreProv,
-                    'monto' => (float) $f->monto_neto
+                    'monto' => (float) $f->monto_neto,
                 ];
             })
             ->toArray();
@@ -743,10 +778,11 @@ class FacturaService
     public function vincularAProyecto(int $empresaId, int $facturaId, int $proyectoId): Factura
     {
         $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
-        if (!$factura) {
-            throw ComercialException::noEncontrado("Factura no encontrada.");
+        if (! $factura) {
+            throw ComercialException::noEncontrado('Factura no encontrada.');
         }
         $factura->update(['proyecto_activo_id' => $proyectoId]);
+
         return $factura;
     }
 
@@ -756,13 +792,14 @@ class FacturaService
             ->with('proveedor')
             ->get()
             ->map(function ($f) {
-                /** @var \App\Domains\Comercial\Models\Proveedor $prov */
+                /** @var Proveedor $prov */
                 $prov = $f->proveedor;
+
                 return [
                     'id' => $f->id,
                     'numero' => $f->numero_factura,
                     'proveedor' => $prov->razon_social ?? $prov->rut,
-                    'monto' => (float) $f->monto_neto
+                    'monto' => (float) $f->monto_neto,
                 ];
             })
             ->toArray();
@@ -786,7 +823,7 @@ class FacturaService
                     'estado_ant' => $log->estado_anterior ?? '-',
                     'estado_nue' => $log->estado_nuevo ?? '-',
                     'detalle' => $log->detalle,
-                    'asiento' => $log->referencia_cruzada
+                    'asiento' => $log->referencia_cruzada,
                 ];
             })->toArray();
 
@@ -800,8 +837,8 @@ class FacturaService
                     'estado_ant' => '-',
                     'estado_nue' => $factura->estado,
                     'detalle' => 'Registro original migrado/creado en el sistema.',
-                    'asiento' => $factura->codigo_asiento ?? null
-                ]
+                    'asiento' => $factura->codigo_asiento ?? null,
+                ],
             ];
         }
 
@@ -810,9 +847,9 @@ class FacturaService
                 'id' => $factura->id,
                 'numero_factura' => $factura->numero_factura,
                 'proveedor' => $factura->proveedor->razon_social ?? 'Proveedor Desconocido',
-                'estado' => $factura->estado
+                'estado' => $factura->estado,
             ],
-            'historial' => $historial
+            'historial' => $historial,
         ];
     }
 
@@ -820,8 +857,8 @@ class FacturaService
     {
         // Se deshabilito el atajo de "marcar pagada" directo: dejaba la CxP abierta en contabilidad (descuadre subdiario vs mayor) al no generar el asiento de egreso; los pagos deben registrarse desde Tesoreria > Conciliacion Bancaria.
         throw ComercialException::regla(
-            "Los pagos de facturas se registran desde Tesoreria > Conciliacion Bancaria "
-            . "para contabilizar el egreso. Esta accion directa fue deshabilitada."
+            'Los pagos de facturas se registran desde Tesoreria > Conciliacion Bancaria '
+            .'para contabilizar el egreso. Esta accion directa fue deshabilitada.'
         );
     }
 
@@ -835,10 +872,29 @@ class FacturaService
             ->get();
     }
 
+    /**
+     * Whitelist minima, no una maquina de estados completa: bloquea solo las transiciones
+     * obviamente destructivas. ANULADA es terminal (nunca se sale de ahi por aqui) y nunca se
+     * entra a ANULADA por esta via -- eso requiere el flujo real de anulacion (reversa de
+     * asiento, liberacion de anticipos, etc. via AnulacionService/anularFactura), no un simple
+     * UPDATE de columna que dejaria esos efectos secundarios sin aplicar.
+     */
+    private const ESTADOS_FACTURA_VALIDOS = ['BORRADOR', 'REGISTRADA', 'PAGADA', 'ABONADA', 'APLICADA'];
+
     public function cambiarEstado(int $empresaId, int $id, string $estado)
     {
         $factura = $this->obtenerFacturaPorId($empresaId, $id);
+
+        if ($factura->estado === 'ANULADA') {
+            throw ComercialException::regla('No se puede cambiar el estado de una factura anulada.');
+        }
+
+        if (!in_array($estado, self::ESTADOS_FACTURA_VALIDOS, true)) {
+            throw ComercialException::regla("Estado '{$estado}' no es una transición válida. Use el flujo de anulación para anular una factura.");
+        }
+
         $factura->update(['estado' => $estado]);
+
         return $factura;
     }
 
@@ -858,7 +914,7 @@ class FacturaService
         string $tipo,
         float $monto,
         float $toleranciaPct
-    ): \Illuminate\Support\Collection {
+    ): Collection {
         $tipoFactura = $tipo === 'cobrar' ? 'VENTA' : 'COMPRA';
 
         $montoMin = $monto * (1 - $toleranciaPct);
@@ -868,7 +924,7 @@ class FacturaService
         return DB::table('facturas')
             ->leftJoin('proveedores', function ($join) use ($empresaId) {
                 $join->on('facturas.proveedor_id', '=', 'proveedores.id')
-                     ->where('proveedores.empresa_id', '=', $empresaId);
+                    ->where('proveedores.empresa_id', '=', $empresaId);
             })
             ->select(
                 'facturas.id',
@@ -892,11 +948,11 @@ class FacturaService
             $factura = Factura::where('empresa_id', $empresaId)->findOrFail($facturaId);
 
             if ($factura->estado === 'ANULADA') {
-                throw ComercialException::regla("Esta factura ya fue anulada anteriormente.");
+                throw ComercialException::regla('Esta factura ya fue anulada anteriormente.');
             }
 
             if (in_array($factura->estado, ['PAGADA', 'ABONADA'], true)) {
-                throw ComercialException::regla("No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.");
+                throw ComercialException::regla('No se puede anular una factura que ya tiene pagos aplicados en Tesorería. Debe reversar los pagos primero.');
             }
 
             // Si la factura capitalizó un proyecto de activo fijo, verificar su estado ANTES de tocar nada:
@@ -910,7 +966,7 @@ class FacturaService
 
                 if ($proyecto && $proyecto->estado !== 'EN_CONSTRUCCION') {
                     throw ComercialException::regla(
-                        "No se puede anular esta factura: el proyecto de activo fijo asociado ya fue capitalizado (ACTIVO_OPERATIVO). Debe resolver el ajuste manualmente en Contabilidad/Activos antes de anular la factura."
+                        'No se puede anular esta factura: el proyecto de activo fijo asociado ya fue capitalizado (ACTIVO_OPERATIVO). Debe resolver el ajuste manualmente en Contabilidad/Activos antes de anular la factura.'
                     );
                 }
             }
@@ -923,6 +979,45 @@ class FacturaService
                     "Reversa automática por anulación de factura N° {$factura->numero_factura}. Motivo: {$motivo}",
                     $fechaAnulacion
                 );
+            }
+
+            // Reponer el stock de las líneas de venta que sí generaron una salida de inventario
+            // (producto_id vinculado); si la factura no vino de una cotización con productos de
+            // Inventario, esta consulta simplemente no devuelve nada y no se toca Inventario.
+            if ($factura->cotizacion_id) {
+                $detallesConMovimiento = CotizacionDetalle::where('cotizacion_id', $factura->cotizacion_id)
+                    ->whereNotNull('movimiento_inventario_id')
+                    ->get();
+
+                foreach ($detallesConMovimiento as $detalleCotizacion) {
+                    $movimientoOriginal = MovimientoInventario::where('empresa_id', $empresaId)
+                        ->find($detalleCotizacion->movimiento_inventario_id);
+
+                    if (! $movimientoOriginal) {
+                        continue;
+                    }
+
+                    // Reversa como movimiento de ENTRADA compensatorio (mismo patrón que la reversa de
+                    // asientos contables: no se toca el movimiento original, se registra su contrapartida).
+                    // No existe un método de reversa dedicado en InventarioMovimientoService, así que se
+                    // usa el costo_unitario del movimiento original explícitamente: el stock repuesto debe
+                    // reingresar al mismo costo con el que salió, no al costo vigente actual del producto.
+                    // costo_cero_confirmado siempre va en true aquí: si el movimiento original fue
+                    // legítimamente a costo $0 (bonificación), reponerlo al mismo costo $0 no es una
+                    // entrada nueva sin confirmar, es restaurar exactamente lo que había.
+                    app(InventarioMovimientoService::class)->registrarMovimiento([
+                        'tipo' => MovimientoInventario::TIPO_ENTRADA,
+                        'producto_id' => $movimientoOriginal->producto_id,
+                        'bodega_destino_id' => $movimientoOriginal->bodega_origen_id,
+                        'cantidad' => $movimientoOriginal->cantidad,
+                        'costo_unitario' => $movimientoOriginal->costo_unitario,
+                        'costo_cero_confirmado' => true,
+                        'referencia' => "Anulación Venta {$factura->numero_factura}",
+                        'motivo' => 'anulacion_venta',
+                        'origen_modulo' => 'ventas',
+                        'origen_id' => $factura->id,
+                    ], $empresaId, $userId);
+                }
             }
 
             $factura->estado = 'ANULADA';
@@ -1006,10 +1101,10 @@ class FacturaService
                 $emision = $f->fecha_emision->format('Y-m-d');
                 $vcto = $f->fecha_vencimiento ? $f->fecha_vencimiento->format('Y-m-d') : '';
                 $csvData .= "{$f->id},"
-                    . $this->escaparCampoCsv((string) $f->numero_factura) . ","
-                    . $this->escaparCampoCsv($provNombre) . ","
-                    . $this->escaparCampoCsv($provRut) . ","
-                    . "{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
+                    .$this->escaparCampoCsv((string) $f->numero_factura).','
+                    .$this->escaparCampoCsv($provNombre).','
+                    .$this->escaparCampoCsv($provRut).','
+                    ."{$emision},{$vcto},{$f->monto_neto},{$f->monto_iva},{$f->monto_bruto},{$f->estado}\n";
             }
         });
 
@@ -1020,8 +1115,9 @@ class FacturaService
     {
         $valor = str_replace('"', '""', $valor);
         if (preg_match('/^[=+\-@\t\r]/', $valor)) {
-            $valor = "'" . $valor;
+            $valor = "'".$valor;
         }
-        return '"' . $valor . '"';
+
+        return '"'.$valor.'"';
     }
 }

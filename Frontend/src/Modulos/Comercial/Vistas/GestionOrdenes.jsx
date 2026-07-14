@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ordenesCompra } from '../Servicios/comercialApi';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
 import { EstadoVacio } from '../../../Componentes/EstadoVacio';
-import { formatearMoneda } from '../../../Utilidades/formato';
+import { formatearMoneda, formatFecha } from '../../../Utilidades/formato';
 
 const clpFmt = { format: formatearMoneda };
 
@@ -314,10 +314,10 @@ const GestionOrdenes = () => {
                                         {oc.proveedor?.razon_social ?? <span className="text-slate-400 italic">Sin proveedor</span>}
                                     </td>
                                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                                        {oc.fecha_emision ? new Date(oc.fecha_emision).toLocaleDateString('es-CL') : '—'}
+                                        {oc.fecha_emision ? formatFecha(oc.fecha_emision) : '—'}
                                     </td>
                                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                                        {oc.fecha_entrega_esperada ? new Date(oc.fecha_entrega_esperada).toLocaleDateString('es-CL') : '—'}
+                                        {oc.fecha_entrega_esperada ? formatFecha(oc.fecha_entrega_esperada) : '—'}
                                     </td>
                                     <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-slate-100">
                                         {clpFmt.format(parseFloat(oc.total ?? 0))}
@@ -559,13 +559,13 @@ const GestionOrdenes = () => {
                                     <div>
                                         <p className="text-xs text-slate-500 font-semibold">Fecha emisión</p>
                                         <p className="text-slate-900 dark:text-slate-100">
-                                            {ocSeleccionada.fecha_emision ? new Date(ocSeleccionada.fecha_emision).toLocaleDateString('es-CL') : '—'}
+                                            {ocSeleccionada.fecha_emision ? formatFecha(ocSeleccionada.fecha_emision) : '—'}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-slate-500 font-semibold">Entrega esperada</p>
                                         <p className="text-slate-900 dark:text-slate-100">
-                                            {ocSeleccionada.fecha_entrega_esperada ? new Date(ocSeleccionada.fecha_entrega_esperada).toLocaleDateString('es-CL') : '—'}
+                                            {ocSeleccionada.fecha_entrega_esperada ? formatFecha(ocSeleccionada.fecha_entrega_esperada) : '—'}
                                         </p>
                                     </div>
                                     <div>

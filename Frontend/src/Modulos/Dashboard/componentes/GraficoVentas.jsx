@@ -5,6 +5,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
+  Brush,
   ResponsiveContainer,
 } from 'recharts';
 import { formatearMoneda } from '../../../Utilidades/formato';
@@ -28,8 +30,32 @@ const formatMes = (valor) => {
 
 const formatCLP = { format: formatearMoneda };
 
-const TooltipPersonalizado = ({ active, payload, label }) => {
+const TooltipPersonalizado = ({ active, payload, label, comparando }) => {
   if (!active || !payload || payload.length === 0) return null;
+
+  if (comparando) {
+    const actual = payload.find((p) => p.dataKey === 'actual');
+    const anterior = payload.find((p) => p.dataKey === 'anio_anterior');
+    const valorActual = actual?.value ?? 0;
+    const valorAnterior = anterior?.value ?? 0;
+    const variacion =
+      valorAnterior > 0 ? (((valorActual - valorAnterior) / valorAnterior) * 100).toFixed(1) : null;
+
+    return (
+      <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
+        <p className="font-medium mb-1">{formatMes(label)}</p>
+        <p className="text-emerald-300">Este año: {formatCLP.format(valorActual)}</p>
+        <p className="text-slate-300">Año anterior: {formatCLP.format(valorAnterior)}</p>
+        {variacion !== null && (
+          <p className={`mt-1 font-bold ${Number(variacion) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {Number(variacion) >= 0 ? '+' : ''}
+            {variacion}% vs año anterior
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
       <p className="font-medium mb-1">{formatMes(label)}</p>
@@ -38,17 +64,24 @@ const TooltipPersonalizado = ({ active, payload, label }) => {
   );
 };
 
-export default function GraficoVentas({ datos = [] }) {
+export default function GraficoVentas({ datos = [], comparacion = null }) {
   const oscuro = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const comparando = Boolean(comparacion?.serie?.length);
+  const datosGrafico = comparando ? comparacion.serie : datos;
+
   const sinDatos =
-    !datos ||
-    datos.length === 0 ||
-    datos.every((d) => d.monto === 0);
+    !datosGrafico ||
+    datosGrafico.length === 0 ||
+    (comparando
+      ? datosGrafico.every((d) => (d.actual ?? 0) === 0 && (d.anio_anterior ?? 0) === 0)
+      : datosGrafico.every((d) => d.monto === 0));
+
+  const mostrarBrush = !sinDatos && datosGrafico.length > 6;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
       <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
-        Ventas últimos 12 meses
+        {comparando ? 'Ventas — este año vs año anterior' : 'Ventas últimos 12 meses'}
       </h3>
 
       {sinDatos ? (
@@ -56,9 +89,9 @@ export default function GraficoVentas({ datos = [] }) {
           Sin ventas registradas
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={comparando ? 260 : 220}>
           <LineChart
-            data={datos}
+            data={datosGrafico}
             margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
           >
             <CartesianGrid
@@ -82,17 +115,56 @@ export default function GraficoVentas({ datos = [] }) {
               width={52}
             />
             <Tooltip
-              content={<TooltipPersonalizado />}
+              content={<TooltipPersonalizado comparando={comparando} />}
               cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '4 2' }}
             />
-            <Line
-              type="monotone"
-              dataKey="monto"
-              stroke="#10b981"
-              strokeWidth={2}
-              dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }}
-              activeDot={{ r: 5, fill: '#10b981', strokeWidth: 0 }}
-            />
+            {comparando && (
+              <Legend
+                wrapperStyle={{ fontSize: 12 }}
+                formatter={(value) => (value === 'actual' ? 'Este año' : 'Año anterior')}
+              />
+            )}
+            {comparando ? (
+              <>
+                <Line
+                  type="monotone"
+                  dataKey="actual"
+                  name="actual"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#10b981', strokeWidth: 0 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="anio_anterior"
+                  name="anio_anterior"
+                  stroke="#94a3b8"
+                  strokeWidth={2}
+                  strokeDasharray="4 3"
+                  dot={{ r: 3, fill: '#94a3b8', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#94a3b8', strokeWidth: 0 }}
+                />
+              </>
+            ) : (
+              <Line
+                type="monotone"
+                dataKey="monto"
+                stroke="#10b981"
+                strokeWidth={2}
+                dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: '#10b981', strokeWidth: 0 }}
+              />
+            )}
+            {mostrarBrush && (
+              <Brush
+                dataKey="mes"
+                height={22}
+                stroke="#10b981"
+                tickFormatter={formatMes}
+                travellerWidth={8}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       )}

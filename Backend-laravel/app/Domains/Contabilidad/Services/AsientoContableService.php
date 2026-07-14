@@ -340,6 +340,9 @@ class AsientoContableService
                         ->where('id', $cuota->activo_id)
                         ->decrement('depreciacion_acumulada', (float) $cuota->monto_cuota);
                 }
+                // Libera el período: sin esto, la unique de depreciacion_ejecucion_activos
+                // (anti-doble-ejecución) bloquearía para siempre volver a depreciar este mes.
+                DB::table('depreciacion_ejecucion_activos')->where('asiento_id', $asientoOriginal->id)->delete();
             }
 
             return $nuevoAsiento;
