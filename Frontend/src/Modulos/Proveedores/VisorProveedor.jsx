@@ -195,8 +195,14 @@ const VisorProveedor = () => {
     });
 
     const modalSpotlightJSX = modalAbierto && (
-        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex items-start justify-center pt-[10vh] p-4 animate-fade-in" onClick={() => setModalAbierto(false)}>
-            <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] border border-slate-300 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+        <div
+            className="fixed inset-0 bg-slate-900/80 z-[100] flex items-start justify-center pt-[10vh] p-4 animate-fade-in"
+            role="button"
+            tabIndex={0}
+            onClick={() => setModalAbierto(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModalAbierto(false); } }}
+        >
+            <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] border border-slate-300 dark:border-slate-700" role="presentation" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <i className="fas fa-search text-slate-500 text-xl mr-4"></i>
                     <input ref={inputBusquedaRef} type="text" className="flex-1 bg-transparent border-none outline-none text-lg font-bold text-slate-800 dark:text-slate-200 placeholder-slate-400" placeholder="Buscar por RUT, Nombre o Código..." value={terminoBusqueda} onChange={(e) => setTerminoBusqueda(e.target.value)} />
@@ -204,7 +210,15 @@ const VisorProveedor = () => {
                 </div>
                 <div className="overflow-y-auto p-2">
                     {proveedoresFiltrados.map(prov => (
-                        <div key={prov.id} onClick={() => seleccionarProveedor(prov.id)} className="flex items-center justify-between p-4 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-50 dark:border-slate-700 transition-colors">
+                        <div
+                            key={prov.id}
+                            role="option"
+                            aria-selected="false"
+                            tabIndex={0}
+                            onClick={() => seleccionarProveedor(prov.id)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); seleccionarProveedor(prov.id); } }}
+                            className="flex items-center justify-between p-4 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-50 dark:border-slate-700 transition-colors"
+                        >
                             <div className="flex items-center gap-4">
                                 <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600"><i className="fas fa-building"></i></div>
                                 <div>
@@ -221,8 +235,14 @@ const VisorProveedor = () => {
     );
 
     const modalAnticipoJSX = modalAnticipoAbierto && (
-        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setModalAnticipoAbierto(false)}>
-            <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-xl shadow-xl overflow-hidden border border-slate-300 dark:border-slate-700 flex flex-col" onClick={e => e.stopPropagation()}>
+        <div
+            className="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 animate-fade-in"
+            role="button"
+            tabIndex={0}
+            onClick={() => setModalAnticipoAbierto(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModalAnticipoAbierto(false); } }}
+        >
+            <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-xl shadow-xl overflow-hidden border border-slate-300 dark:border-slate-700 flex flex-col" role="presentation" onClick={e => e.stopPropagation()}>
 
                 <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white shrink-0 border-b border-slate-800">
                     <div className="flex items-center gap-3">
@@ -371,8 +391,14 @@ const VisorProveedor = () => {
     const difCruce = totalSelCargos - totalSelAbonos;
 
     const modalCruceJSX = modalCruceAbierto && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setModalCruceAbierto(false)}>
-            <div className="bg-white dark:bg-slate-800 w-full max-w-5xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-300 dark:border-slate-700 animate-slide-down" onClick={e => e.stopPropagation()}>
+        <div
+            className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in"
+            role="button"
+            tabIndex={0}
+            onClick={() => setModalCruceAbierto(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModalCruceAbierto(false); } }}
+        >
+            <div className="bg-white dark:bg-slate-800 w-full max-w-5xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-300 dark:border-slate-700 animate-slide-down" role="presentation" onClick={e => e.stopPropagation()}>
 
                 <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white shrink-0 border-b border-slate-800 relative overflow-hidden">
                     <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-blue-500 opacity-20 rounded-full blur-3xl pointer-events-none"></div>
@@ -418,7 +444,11 @@ const VisorProveedor = () => {
                                         return (
                                             <div
                                                 key={fac.id}
+                                                role="button"
+                                                tabIndex={0}
+                                                aria-pressed={seleccionado}
                                                 onClick={() => toggleSeleccionCruce(fac, 'FACTURA', false)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSeleccionCruce(fac, 'FACTURA', false); } }}
                                                 className={`p-3 rounded border cursor-pointer transition-all flex items-center gap-3 ${seleccionado ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}
                                             >
                                                 <div className={`w-5 h-5 rounded-sm flex items-center justify-center border transition-colors ${seleccionado ? 'bg-blue-600 border-blue-600' : 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600'}`}>
@@ -459,7 +489,11 @@ const VisorProveedor = () => {
                                         return (
                                             <div
                                                 key={`nc-${nc.id}`}
+                                                role="button"
+                                                tabIndex={0}
+                                                aria-pressed={seleccionado}
                                                 onClick={() => toggleSeleccionCruce(nc, 'NOTA_CREDITO', true)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSeleccionCruce(nc, 'NOTA_CREDITO', true); } }}
                                                 className={`p-3 rounded border cursor-pointer transition-all flex items-center gap-3 ${seleccionado ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}
                                             >
                                                 <div className={`w-5 h-5 rounded-sm flex items-center justify-center border transition-colors ${seleccionado ? 'bg-blue-600 border-blue-600' : 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600'}`}>
@@ -485,7 +519,11 @@ const VisorProveedor = () => {
                                         return (
                                             <div
                                                 key={`ant-${ant.id}`}
+                                                role="button"
+                                                tabIndex={0}
+                                                aria-pressed={seleccionado}
                                                 onClick={() => toggleSeleccionCruce(ant, 'ANTICIPO', true)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSeleccionCruce(ant, 'ANTICIPO', true); } }}
                                                 className={`p-3 rounded border cursor-pointer transition-all flex items-center gap-3 ${seleccionado ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}
                                             >
                                                 <div className={`w-5 h-5 rounded-sm flex items-center justify-center border transition-colors ${seleccionado ? 'bg-blue-600 border-blue-600' : 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600'}`}>

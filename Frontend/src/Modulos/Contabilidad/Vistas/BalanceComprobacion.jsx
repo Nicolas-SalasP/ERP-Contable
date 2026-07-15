@@ -118,8 +118,9 @@ const BalanceComprobacion = () => {
 
             <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Inicio</label>
+                    <label htmlFor="balance-fecha-inicio" className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Inicio</label>
                     <input
+                        id="balance-fecha-inicio"
                         type="date"
                         className="border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         value={filtros.fecha_inicio}
@@ -127,8 +128,9 @@ const BalanceComprobacion = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Fin</label>
+                    <label htmlFor="balance-fecha-fin" className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Fin</label>
                     <input
+                        id="balance-fecha-fin"
                         type="date"
                         className="border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                         value={filtros.fecha_fin}

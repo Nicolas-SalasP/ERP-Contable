@@ -216,8 +216,8 @@ const VacacionesRrhh = () => {
             <PanelModal abierto={modalSolicitar} titulo="Solicitar vacaciones" icono="fas fa-calendar-plus" onClose={() => setModalSolicitar(false)}>
                 <form onSubmit={solicitar} className="grid sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado *</label>
-                        <select required value={form.empleado_id} onChange={(e) => onEmpleado(e.target.value)} className={inputCls}>
+                        <label htmlFor="vacaciones-empleado" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado *</label>
+                        <select id="vacaciones-empleado" required value={form.empleado_id} onChange={(e) => onEmpleado(e.target.value)} className={inputCls}>
                             <option value="">Selecciona...</option>
                             {empleados.map((emp) => <option key={emp.id} value={emp.id}>{emp.rut} — {emp.nombres} {emp.apellido_paterno}</option>)}
                         </select>
@@ -229,16 +229,16 @@ const VacacionesRrhh = () => {
                         )}
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha desde *</label>
-                        <input required type="date" value={form.fecha_desde} onChange={(e) => setCampo('fecha_desde', e.target.value)} className={inputCls} />
+                        <label htmlFor="vacaciones-fecha-desde" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha desde *</label>
+                        <input id="vacaciones-fecha-desde" required type="date" value={form.fecha_desde} onChange={(e) => setCampo('fecha_desde', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha hasta *</label>
-                        <input required type="date" value={form.fecha_hasta} onChange={(e) => setCampo('fecha_hasta', e.target.value)} className={inputCls} />
+                        <label htmlFor="vacaciones-fecha-hasta" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha hasta *</label>
+                        <input id="vacaciones-fecha-hasta" required type="date" value={form.fecha_hasta} onChange={(e) => setCampo('fecha_hasta', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Observación</label>
-                        <textarea rows={2} value={form.observacion} onChange={(e) => setCampo('observacion', e.target.value)} className={inputCls} />
+                        <label htmlFor="vacaciones-observacion" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Observación</label>
+                        <textarea id="vacaciones-observacion" rows={2} value={form.observacion} onChange={(e) => setCampo('observacion', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                         <button type="button" onClick={() => setModalSolicitar(false)} className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>

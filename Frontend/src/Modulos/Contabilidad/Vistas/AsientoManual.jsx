@@ -163,15 +163,17 @@ const AsientoManual = () => {
             <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/4">
-                        <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Fecha Contable</label>
+                        <label htmlFor="asiento-fecha-contable" className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Fecha Contable</label>
                         <input
+                            id="asiento-fecha-contable"
                             type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
                             className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                         />
                     </div>
                     <div className="w-full md:w-3/4">
-                        <label className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Glosa General del Comprobante</label>
+                        <label htmlFor="asiento-glosa-general" className="block text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Glosa General del Comprobante</label>
                         <input
+                            id="asiento-glosa-general"
                             type="text" value={glosaGeneral} onChange={(e) => setGlosaGeneral(e.target.value)} placeholder="Ej: Reconocimiento de gastos bancarios..." maxLength="255"
                             className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-bold rounded-xl p-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                         />
@@ -263,15 +265,16 @@ const AsientoManual = () => {
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-end mb-4">
                         <div className="md:col-span-3">
-                            <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Cuenta Contable *</label>
+                            <label htmlFor="asiento-cuenta-contable" className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Cuenta Contable *</label>
                             <Select
+                                inputId="asiento-cuenta-contable"
                                 options={planCuentas} value={cuentaActual} onChange={setCuentaActual}
                                 placeholder="Buscar cuenta..." styles={selectStyles} menuPortalTarget={document.body} menuPosition="fixed"
                             />
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Tipo *</label>
+                            <span className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Tipo *</span>
                             <div className="flex bg-white rounded-lg border border-slate-300 p-1 h-[42px]">
                                 <button
                                     onClick={() => setTipoMovimiento('debe')}
@@ -289,12 +292,13 @@ const AsientoManual = () => {
                         </div>
 
                         <div className="md:col-span-2 lg:col-span-3">
-                            <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Monto *</label>
+                            <label htmlFor="asiento-monto" className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Monto *</label>
                             <div className={`flex items-center bg-white border rounded-lg h-[42px] transition-all shadow-none overflow-hidden ${tipoMovimiento === 'debe' ? 'focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 border-slate-300' : 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-100 border-slate-300'}`}>
                                 <span className="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-bold px-3 h-full flex items-center border-r border-slate-200 dark:border-slate-600 shrink-0">
                                     $
                                 </span>
                                 <input
+                                    id="asiento-monto"
                                     type="number"
                                     min="0"
                                     max="999999999999"
@@ -309,8 +313,9 @@ const AsientoManual = () => {
                         </div>
 
                         <div className="md:col-span-4">
-                            <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Glosa Específica (Opcional)</label>
+                            <label htmlFor="asiento-glosa-detalle" className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Glosa Específica (Opcional)</label>
                             <input
+                                id="asiento-glosa-detalle"
                                 type="text" value={glosaDetalleActual} onChange={(e) => setGlosaDetalleActual(e.target.value)} onKeyDown={handleKeyDown}
                                 placeholder="Detalle de esta cuenta..." maxLength="255"
                                 className="w-full h-[42px] bg-white border border-slate-300 text-slate-700 text-sm rounded-lg px-3 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
@@ -320,16 +325,18 @@ const AsientoManual = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                         <div className="md:col-span-4">
-                            <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Centro de Costo</label>
+                            <label htmlFor="asiento-centro-costo" className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Centro de Costo</label>
                             <Select
+                                inputId="asiento-centro-costo"
                                 options={centrosCosto} value={centroCostoActual} onChange={setCentroCostoActual}
                                 placeholder="Seleccionar..." styles={selectStyles} menuPortalTarget={document.body} menuPosition="fixed" isClearable
                             />
                         </div>
 
                         <div className="md:col-span-4">
-                            <label className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Empleado</label>
+                            <label htmlFor="asiento-empleado" className="block text-[10px] font-black text-indigo-900/60 uppercase mb-1">Empleado</label>
                             <input
+                                id="asiento-empleado"
                                 type="text" value={empleadoActual} onChange={(e) => setEmpleadoActual(e.target.value)} onKeyDown={handleKeyDown}
                                 placeholder="Nombre empleado..."
                                 className="w-full h-[42px] bg-white border border-slate-300 text-slate-700 text-sm rounded-lg px-3 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"

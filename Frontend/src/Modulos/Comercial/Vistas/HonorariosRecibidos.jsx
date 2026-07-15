@@ -151,10 +151,11 @@ const HonorariosRecibidos = () => {
                 <form onSubmit={handleRegistrar}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label htmlFor="honorario-rut" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 RUT prestador <span className="text-red-500">*</span>
                             </label>
                             <input
+                                id="honorario-rut"
                                 type="text"
                                 value={rut}
                                 onChange={(e) => setRut(e.target.value)}
@@ -164,10 +165,11 @@ const HonorariosRecibidos = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label htmlFor="honorario-nombre" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 Nombre prestador <span className="text-red-500">*</span>
                             </label>
                             <input
+                                id="honorario-nombre"
                                 type="text"
                                 value={nombre}
                                 onChange={(e) => setNombre(e.target.value)}
@@ -177,10 +179,11 @@ const HonorariosRecibidos = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label htmlFor="honorario-boleta" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 N° boleta (opcional)
                             </label>
                             <input
+                                id="honorario-boleta"
                                 type="text"
                                 value={noBoleta}
                                 onChange={(e) => setNoBoleta(e.target.value)}
@@ -189,10 +192,11 @@ const HonorariosRecibidos = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label htmlFor="honorario-monto" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 Monto bruto (CLP) <span className="text-red-500">*</span>
                             </label>
                             <input
+                                id="honorario-monto"
                                 type="number"
                                 value={monto}
                                 onChange={(e) => setMonto(e.target.value)}
@@ -203,10 +207,11 @@ const HonorariosRecibidos = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label htmlFor="honorario-fecha" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 Fecha <span className="text-red-500">*</span>
                             </label>
                             <input
+                                id="honorario-fecha"
                                 type="date"
                                 value={fecha}
                                 onChange={(e) => setFecha(e.target.value)}
@@ -255,8 +260,9 @@ const HonorariosRecibidos = () => {
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Filtrar período</h2>
                 <div className="flex flex-wrap gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Mes</label>
+                        <label htmlFor="honorario-filtro-mes" className="block text-xs font-semibold text-slate-600 mb-1">Mes</label>
                         <select
+                            id="honorario-filtro-mes"
                             value={filtromes}
                             onChange={(e) => setFiltroMes(Number(e.target.value))}
                             className={inputCls + ' w-auto'}
@@ -267,8 +273,9 @@ const HonorariosRecibidos = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">Año</label>
+                        <label htmlFor="honorario-filtro-anio" className="block text-xs font-semibold text-slate-600 mb-1">Año</label>
                         <select
+                            id="honorario-filtro-anio"
                             value={filtroAnio}
                             onChange={(e) => setFiltroAnio(Number(e.target.value))}
                             className={inputCls + ' w-auto'}

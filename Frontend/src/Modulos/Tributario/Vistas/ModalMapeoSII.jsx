@@ -126,9 +126,10 @@ const ModalMapeoSII = ({ onClose }) => {
                         <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-4"><i className="fas fa-link text-indigo-500 mr-2"></i>Vincular Nueva Cuenta</h4>
                         <form onSubmit={handleGuardar} className="flex flex-col md:flex-row gap-4 items-end">
                             <div className="flex-1">
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">1. Cuenta de Ingreso o Gasto</label>
-                                <select 
-                                    required value={nuevoMapeo.codigo_cuenta} 
+                                <label htmlFor="modal-mapeo-sii-cuenta" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">1. Cuenta de Ingreso o Gasto</label>
+                                <select
+                                    id="modal-mapeo-sii-cuenta"
+                                    required value={nuevoMapeo.codigo_cuenta}
                                     onChange={(e) => setNuevoMapeo({...nuevoMapeo, codigo_cuenta: e.target.value})}
                                     className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
                                 >
@@ -137,9 +138,10 @@ const ModalMapeoSII = ({ onClose }) => {
                                 </select>
                             </div>
                             <div className="flex-1">
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">2. Asignar al Concepto SII</label>
-                                <select 
-                                    required value={nuevoMapeo.concepto_sii} 
+                                <label htmlFor="modal-mapeo-sii-concepto" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">2. Asignar al Concepto SII</label>
+                                <select
+                                    id="modal-mapeo-sii-concepto"
+                                    required value={nuevoMapeo.concepto_sii}
                                     onChange={(e) => setNuevoMapeo({...nuevoMapeo, concepto_sii: e.target.value})}
                                     className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
                                 >

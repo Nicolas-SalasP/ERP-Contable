@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { formatearMoneda } from '../../../Utilidades/formato';
 
@@ -25,10 +25,16 @@ const RegistroFacturaPaso1 = ({
     onTipoCambioChange,
     onMontoOrigenChange,
 }) => {
+    const busquedaInputRef = useRef(null);
+
+    useEffect(() => {
+        if (!formData.proveedorId) busquedaInputRef.current?.focus();
+    }, [formData.proveedorId]);
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-fade-in-up">
             <div className="flex flex-col gap-4">
-                <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                <label htmlFor="factura-proveedor-busqueda" className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                     Proveedor
                 </label>
 
@@ -39,13 +45,14 @@ const RegistroFacturaPaso1 = ({
                                 <i className="fas fa-search"></i>
                             </span>
                             <input
+                                id="factura-proveedor-busqueda"
+                                ref={busquedaInputRef}
                                 type="text"
                                 placeholder="Buscar RUT, Razón Social..."
                                 value={busqueda}
                                 onChange={onBusquedaChange}
                                 onFocus={() => { if (busqueda) onMostrarSugerencias(true); }}
                                 className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm text-lg text-slate-800 dark:text-slate-200"
-                                autoFocus
                             />
                         </div>
 
@@ -54,7 +61,10 @@ const RegistroFacturaPaso1 = ({
                                 {sugerencias.length > 0 ? sugerencias.map(p => (
                                     <div
                                         key={p.id}
+                                        role="button"
+                                        tabIndex={0}
                                         onClick={() => onSeleccionarProveedor(p)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeleccionarProveedor(p); } }}
                                         className="p-4 hover:bg-blue-50 cursor-pointer border-b last:border-0 border-slate-100 dark:border-slate-800 transition-colors group"
                                     >
                                         <p className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-700">
@@ -119,10 +129,11 @@ const RegistroFacturaPaso1 = ({
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">
+                                <label htmlFor="factura-monto-origen-divisa" className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">
                                     Monto en {formData.moneda}
                                 </label>
                                 <input
+                                    id="factura-monto-origen-divisa"
                                     type="number"
                                     step="0.01"
                                     min="0"
@@ -134,10 +145,11 @@ const RegistroFacturaPaso1 = ({
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">
+                                <label htmlFor="factura-tipo-cambio" className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">
                                     Tipo de Cambio (CLP/{formData.moneda})
                                 </label>
                                 <input
+                                    id="factura-tipo-cambio"
                                     type="number"
                                     step="0.01"
                                     min="0"
@@ -167,8 +179,9 @@ const RegistroFacturaPaso1 = ({
                             </p>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Tipo de Gasto</label>
+                                    <label htmlFor="factura-tipo-gasto-art59" className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Tipo de Gasto</label>
                                     <select
+                                        id="factura-tipo-gasto-art59"
                                         name="tipoGastoArt59"
                                         value={formData.tipoGastoArt59}
                                         onChange={onChange}
@@ -181,8 +194,9 @@ const RegistroFacturaPaso1 = ({
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Monto Retención (CLP)</label>
+                                    <label htmlFor="factura-retencion-art59" className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Monto Retención (CLP)</label>
                                     <input
+                                        id="factura-retencion-art59"
                                         type="number"
                                         step="1"
                                         min="0"
@@ -203,10 +217,11 @@ const RegistroFacturaPaso1 = ({
             <div className="flex flex-col gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+                        <label htmlFor="factura-tipo-documento" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
                             Tipo Documento
                         </label>
                         <select
+                            id="factura-tipo-documento"
                             name="tipoDocumento"
                             value={formData.tipoDocumento}
                             onChange={onChange}
@@ -220,10 +235,11 @@ const RegistroFacturaPaso1 = ({
                         {/* AUDITORIA FE-BE: para NOTA_CREDITO el backend valida que monto <= factura original */}
                         {formData.tipoDocumento === 'NOTA_CREDITO' && (
                             <div className="mt-2">
-                                <label className="block text-xs font-bold text-amber-700 mb-1">
+                                <label htmlFor="factura-referencia-id" className="block text-xs font-bold text-amber-700 mb-1">
                                     ID de Factura Original (requerido para NC)
                                 </label>
                                 <input
+                                    id="factura-referencia-id"
                                     type="number"
                                     name="factura_referencia_id"
                                     value={formData.factura_referencia_id || ''}
@@ -238,10 +254,11 @@ const RegistroFacturaPaso1 = ({
                         )}
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+                        <label htmlFor="factura-numero-documento" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
                             N° Documento
                         </label>
                         <input
+                            id="factura-numero-documento"
                             type="text"
                             name="numeroFactura"
                             value={formData.numeroFactura}
@@ -255,10 +272,11 @@ const RegistroFacturaPaso1 = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide" title="Fecha que aparece en el PDF">
+                        <label htmlFor="factura-fecha-emision" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide" title="Fecha que aparece en el PDF">
                             Emisión (Doc)
                         </label>
                         <input
+                            id="factura-fecha-emision"
                             type="date"
                             name="fechaEmision"
                             value={formData.fechaEmision}
@@ -267,10 +285,11 @@ const RegistroFacturaPaso1 = ({
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-blue-700 mb-2 uppercase tracking-wide" title="Fecha que irá al Libro Diario">
+                        <label htmlFor="factura-fecha-contable" className="block text-xs font-bold text-blue-700 mb-2 uppercase tracking-wide" title="Fecha que irá al Libro Diario">
                             Contable (Libro)
                         </label>
                         <input
+                            id="factura-fecha-contable"
                             type="date"
                             name="fechaContable"
                             value={formData.fechaContable}
@@ -281,7 +300,7 @@ const RegistroFacturaPaso1 = ({
                 </div>
 
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+                    <label htmlFor="factura-monto-total" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
                         Monto Bruto Total
                     </label>
                     <div className="relative rounded-lg shadow-sm">
@@ -289,6 +308,7 @@ const RegistroFacturaPaso1 = ({
                             <span className="text-slate-400 font-bold text-xl">$</span>
                         </div>
                         <input
+                            id="factura-monto-total"
                             type="text"
                             name="monto_total"
                             value={formData.montoVisual}

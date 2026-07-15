@@ -326,8 +326,9 @@ const AdministradorCuentas = () => {
                         <div className="p-6 space-y-5 bg-white dark:bg-slate-800">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Código Contable</label>
+                                    <label htmlFor="cuenta-codigo" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Código Contable</label>
                                     <input
+                                        id="cuenta-codigo"
                                         type="text"
                                         value={formEdit.codigo}
                                         onChange={e => setFormEdit({ ...formEdit, codigo: e.target.value.replace(/[^0-9.-]/g, '') })}
@@ -338,8 +339,9 @@ const AdministradorCuentas = () => {
                                     {cuentaEditando && <span className="text-[10px] text-slate-400 mt-1 block">El código no es editable.</span>}
                                 </div>
                                 <div className="col-span-2 sm:col-span-1">
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Nivel (1 al 6)</label>
+                                    <label htmlFor="cuenta-nivel" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Nivel (1 al 6)</label>
                                     <input
+                                        id="cuenta-nivel"
                                         type="number"
                                         min="1" max="6"
                                         value={formEdit.nivel}
@@ -348,8 +350,9 @@ const AdministradorCuentas = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Tipo de Cuenta</label>
+                                    <label htmlFor="cuenta-tipo" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Tipo de Cuenta</label>
                                     <select
+                                        id="cuenta-tipo"
                                         value={formEdit.tipo}
                                         onChange={e => setFormEdit({ ...formEdit, tipo: e.target.value })}
                                         disabled={!!cuentaEditando}
@@ -365,8 +368,9 @@ const AdministradorCuentas = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Nombre de la Cuenta</label>
+                                <label htmlFor="cuenta-nombre" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Nombre de la Cuenta</label>
                                 <input
+                                    id="cuenta-nombre"
                                     type="text"
                                     value={formEdit.nombre}
                                     onChange={e => setFormEdit({ ...formEdit, nombre: e.target.value })}
@@ -381,7 +385,7 @@ const AdministradorCuentas = () => {
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Permite recibir asientos contables.</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" disabled={parseInt(formEdit.nivel) === 1} checked={formEdit.imputable === 1} onChange={() => setFormEdit({ ...formEdit, imputable: formEdit.imputable === 1 ? 0 : 1 })} />
+                                    <input type="checkbox" aria-label="Cuenta Imputable" className="sr-only peer" disabled={parseInt(formEdit.nivel) === 1} checked={formEdit.imputable === 1} onChange={() => setFormEdit({ ...formEdit, imputable: formEdit.imputable === 1 ? 0 : 1 })} />
                                     <div className="w-11 h-6 bg-slate-300 dark:bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
@@ -392,7 +396,7 @@ const AdministradorCuentas = () => {
                                     <p className="text-xs text-emerald-700 mt-0.5">Actívala o escóndela del sistema.</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={formEdit.activo === 1} onChange={() => setFormEdit({ ...formEdit, activo: formEdit.activo === 1 ? 0 : 1 })} />
+                                    <input type="checkbox" aria-label="Estado de la Cuenta" className="sr-only peer" checked={formEdit.activo === 1} onChange={() => setFormEdit({ ...formEdit, activo: formEdit.activo === 1 ? 0 : 1 })} />
                                     <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
                                 </label>
                             </div>
@@ -404,7 +408,7 @@ const AdministradorCuentas = () => {
                                         <p className="text-xs text-red-700 mt-0.5">Marca esta cuenta para incluirla en la DJ 1926.</p>
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" className="sr-only peer" checked={formEdit.es_gasto_rechazado === 1} onChange={() => setFormEdit({ ...formEdit, es_gasto_rechazado: formEdit.es_gasto_rechazado === 1 ? 0 : 1 })} />
+                                        <input type="checkbox" aria-label="Gasto Rechazado (Art. 33 N°1 LIR)" className="sr-only peer" checked={formEdit.es_gasto_rechazado === 1} onChange={() => setFormEdit({ ...formEdit, es_gasto_rechazado: formEdit.es_gasto_rechazado === 1 ? 0 : 1 })} />
                                         <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                                     </label>
                                 </div>

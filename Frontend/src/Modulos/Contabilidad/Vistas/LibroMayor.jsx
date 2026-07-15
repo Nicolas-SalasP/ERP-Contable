@@ -258,18 +258,19 @@ const LibroMayor = () => {
             {activeTab === 'diario' && (
                 <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 flex flex-wrap gap-4 items-end z-20 relative">
                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Desde</label>
-                        <input type="date" className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.desde} onChange={e => setFiltros({ ...filtros, desde: e.target.value })} />
+                        <label htmlFor="libromayor-desde" className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Desde</label>
+                        <input id="libromayor-desde" type="date" className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.desde} onChange={e => setFiltros({ ...filtros, desde: e.target.value })} />
                     </div>
                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Hasta</label>
-                        <input type="date" className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.hasta} onChange={e => setFiltros({ ...filtros, hasta: e.target.value })} />
+                        <label htmlFor="libromayor-hasta" className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Hasta</label>
+                        <input id="libromayor-hasta" type="date" className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" value={filtros.hasta} onChange={e => setFiltros({ ...filtros, hasta: e.target.value })} />
                     </div>
 
                     <div className="flex-1 min-w-full sm:min-w-[250px] relative" ref={wrapperRef}>
-                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Buscar Cuenta (Vacío para ver todo)</label>
+                        <label htmlFor="libromayor-buscar-cuenta" className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Buscar Cuenta (Vacío para ver todo)</label>
                         <div className="relative">
                             <input
+                                id="libromayor-buscar-cuenta"
                                 type="text"
                                 placeholder="Escribe 'Caja' o '1101'..."
                                 className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-mono"
@@ -301,11 +302,23 @@ const LibroMayor = () => {
                                     {sugerencias.map(cta => (
                                         <li
                                             key={cta.id}
+                                            role="option"
+                                            aria-selected={filtros.cuenta === cta.codigo}
+                                            tabIndex={0}
                                             onClick={() => {
                                                 setBusquedaCuenta(cta.codigo);
                                                 setFiltros({ ...filtros, cuenta: cta.codigo });
                                                 localStorage.setItem('ultimaCuentaLibroDiario', cta.codigo);
                                                 setMostrarLista(false);
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    setBusquedaCuenta(cta.codigo);
+                                                    setFiltros({ ...filtros, cuenta: cta.codigo });
+                                                    localStorage.setItem('ultimaCuentaLibroDiario', cta.codigo);
+                                                    setMostrarLista(false);
+                                                }
                                             }}
                                             className="px-4 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between border-b border-slate-50 dark:border-slate-700"
                                         >
@@ -318,8 +331,9 @@ const LibroMayor = () => {
                         )}
                     </div>
                     <div className="flex-1 min-w-full sm:min-w-[180px]">
-                        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Palabra en Glosa</label>
+                        <label htmlFor="libromayor-glosa" className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Palabra en Glosa</label>
                         <input
+                            id="libromayor-glosa"
                             type="text"
                             className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
                             placeholder="Ej: Traspaso, Pago..."
@@ -328,8 +342,9 @@ const LibroMayor = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Auditoría</label>
+                        <label htmlFor="libromayor-auditoria" className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Auditoría</label>
                         <select
+                            id="libromayor-auditoria"
                             className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold text-slate-700 dark:text-blue-300"
                             value={filtros.auditoria}
                             onChange={e => setFiltros({ ...filtros, auditoria: Number(e.target.value) })}

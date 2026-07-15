@@ -187,8 +187,9 @@ const Dj1947 = () => {
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Generar DJ 1947</h2>
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año tributario</label>
+                        <label htmlFor="dj1947-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año tributario</label>
                         <select
+                            id="dj1947-anio"
                             value={anio}
                             onChange={(e) => setAnio(Number(e.target.value))}
                             className={inputCls}
@@ -274,10 +275,11 @@ const Dj1947 = () => {
                             </p>
                             <div className="flex flex-wrap items-end gap-3">
                                 <div className="flex-1 min-w-[200px]">
-                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                    <label htmlFor="dj1947-folio-confirmacion" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Folio de presentación SII (opcional)
                                     </label>
                                     <input
+                                        id="dj1947-folio-confirmacion"
                                         type="text"
                                         value={folioConfirmacion}
                                         onChange={(e) => setFolioConf(e.target.value)}

@@ -227,28 +227,28 @@ const ParametrosRrhh = () => {
             <PanelModal abierto={modalInd} titulo="Registrar indicador mensual" icono="fas fa-chart-line" onClose={() => setModalInd(false)}>
                 <form onSubmit={guardarIndicador} className="grid sm:grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año *</label>
-                        <select value={formInd.anio} onChange={(e) => setFi('anio', e.target.value)} className={inputCls}>
+                        <label htmlFor="parametros-indicador-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año *</label>
+                        <select id="parametros-indicador-anio" value={formInd.anio} onChange={(e) => setFi('anio', e.target.value)} className={inputCls}>
                             {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes *</label>
-                        <select value={formInd.mes} onChange={(e) => setFi('mes', e.target.value)} className={inputCls}>
+                        <label htmlFor="parametros-indicador-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes *</label>
+                        <select id="parametros-indicador-mes" value={formInd.mes} onChange={(e) => setFi('mes', e.target.value)} className={inputCls}>
                             {MESES.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">UF *</label>
-                        <input required type="number" step="0.01" min="0" value={formInd.uf_valor} onChange={(e) => setFi('uf_valor', e.target.value)} className={inputCls} />
+                        <label htmlFor="parametros-indicador-uf" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">UF *</label>
+                        <input id="parametros-indicador-uf" required type="number" step="0.01" min="0" value={formInd.uf_valor} onChange={(e) => setFi('uf_valor', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">UTM *</label>
-                        <input required type="number" step="0.01" min="0" value={formInd.utm_valor} onChange={(e) => setFi('utm_valor', e.target.value)} className={inputCls} />
+                        <label htmlFor="parametros-indicador-utm" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">UTM *</label>
+                        <input id="parametros-indicador-utm" required type="number" step="0.01" min="0" value={formInd.utm_valor} onChange={(e) => setFi('utm_valor', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fuente</label>
-                        <input value={formInd.fuente} onChange={(e) => setFi('fuente', e.target.value)} placeholder="CMF (UF), SII (UTM)" className={inputCls} />
+                        <label htmlFor="parametros-indicador-fuente" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fuente</label>
+                        <input id="parametros-indicador-fuente" value={formInd.fuente} onChange={(e) => setFi('fuente', e.target.value)} placeholder="CMF (UF), SII (UTM)" className={inputCls} />
                     </div>
                     <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                         <button type="button" onClick={() => setModalInd(false)} className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>

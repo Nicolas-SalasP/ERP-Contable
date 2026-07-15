@@ -141,14 +141,14 @@ const LiquidacionesRrhh = () => {
 
             <div className="flex flex-wrap gap-3 mb-5">
                 <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
-                    <select value={filtros.anio} onChange={(e) => setFiltros((f) => ({ ...f, anio: Number(e.target.value) }))} className={inputCls}>
+                    <label htmlFor="liquidaciones-filtro-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
+                    <select id="liquidaciones-filtro-anio" value={filtros.anio} onChange={(e) => setFiltros((f) => ({ ...f, anio: Number(e.target.value) }))} className={inputCls}>
                         {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
-                    <select value={filtros.mes} onChange={(e) => setFiltros((f) => ({ ...f, mes: Number(e.target.value) }))} className={inputCls}>
+                    <label htmlFor="liquidaciones-filtro-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
+                    <select id="liquidaciones-filtro-mes" value={filtros.mes} onChange={(e) => setFiltros((f) => ({ ...f, mes: Number(e.target.value) }))} className={inputCls}>
                         {MESES.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
                     </select>
                 </div>
@@ -212,35 +212,35 @@ const LiquidacionesRrhh = () => {
             <PanelModal abierto={modalCalc} titulo="Calcular liquidación" icono="fas fa-calculator" onClose={() => setModalCalc(false)}>
                 <form onSubmit={calcular} className="grid sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado *</label>
-                        <select required value={formCalc.empleado_id} onChange={(e) => setFc('empleado_id', e.target.value)} className={inputCls}>
+                        <label htmlFor="liquidacion-empleado" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado *</label>
+                        <select id="liquidacion-empleado" required value={formCalc.empleado_id} onChange={(e) => setFc('empleado_id', e.target.value)} className={inputCls}>
                             <option value="">Selecciona...</option>
                             {empleados.map((emp) => <option key={emp.id} value={emp.id}>{emp.rut} — {emp.nombres} {emp.apellido_paterno}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año *</label>
-                        <select value={formCalc.anio} onChange={(e) => setFc('anio', e.target.value)} className={inputCls}>
+                        <label htmlFor="liquidacion-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año *</label>
+                        <select id="liquidacion-anio" value={formCalc.anio} onChange={(e) => setFc('anio', e.target.value)} className={inputCls}>
                             {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes *</label>
-                        <select value={formCalc.mes} onChange={(e) => setFc('mes', e.target.value)} className={inputCls}>
+                        <label htmlFor="liquidacion-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes *</label>
+                        <select id="liquidacion-mes" value={formCalc.mes} onChange={(e) => setFc('mes', e.target.value)} className={inputCls}>
                             {MESES.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Horas extra</label>
-                        <input type="number" min="0" step="0.5" value={formCalc.horas_extra} onChange={(e) => setFc('horas_extra', e.target.value)} className={inputCls} />
+                        <label htmlFor="liquidacion-horas-extra" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Horas extra</label>
+                        <input id="liquidacion-horas-extra" type="number" min="0" step="0.5" value={formCalc.horas_extra} onChange={(e) => setFc('horas_extra', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Remuneraciones variables</label>
-                        <input type="number" min="0" value={formCalc.remuneraciones_variables} onChange={(e) => setFc('remuneraciones_variables', e.target.value)} className={inputCls} />
+                        <label htmlFor="liquidacion-remuneraciones-variables" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Remuneraciones variables</label>
+                        <input id="liquidacion-remuneraciones-variables" type="number" min="0" value={formCalc.remuneraciones_variables} onChange={(e) => setFc('remuneraciones_variables', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">APV voluntario</label>
-                        <input type="number" min="0" value={formCalc.apv_voluntario} onChange={(e) => setFc('apv_voluntario', e.target.value)} className={inputCls} />
+                        <label htmlFor="liquidacion-apv-voluntario" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">APV voluntario</label>
+                        <input id="liquidacion-apv-voluntario" type="number" min="0" value={formCalc.apv_voluntario} onChange={(e) => setFc('apv_voluntario', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                         <button type="button" onClick={() => setModalCalc(false)} className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>

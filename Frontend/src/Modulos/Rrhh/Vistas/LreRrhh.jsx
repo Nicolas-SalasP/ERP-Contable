@@ -184,8 +184,9 @@ const LreRrhh = () => {
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Período</h2>
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
+                        <label htmlFor="lre-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
                         <select
+                            id="lre-anio"
                             value={periodo.anio}
                             onChange={(e) => setPeriodo((p) => ({ ...p, anio: Number(e.target.value) }))}
                             className={inputCls}
@@ -194,8 +195,9 @@ const LreRrhh = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
+                        <label htmlFor="lre-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
                         <select
+                            id="lre-mes"
                             value={periodo.mes}
                             onChange={(e) => setPeriodo((p) => ({ ...p, mes: Number(e.target.value) }))}
                             className={inputCls}
@@ -299,10 +301,11 @@ const LreRrhh = () => {
                             </p>
                             <div className="flex flex-wrap items-end gap-3">
                                 <div className="flex-1 min-w-[200px]">
-                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                    <label htmlFor="lre-numero-confirmacion" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Número de confirmación (opcional)
                                     </label>
                                     <input
+                                        id="lre-numero-confirmacion"
                                         type="text"
                                         value={numConfirmacion}
                                         onChange={(e) => setNumConf(e.target.value)}

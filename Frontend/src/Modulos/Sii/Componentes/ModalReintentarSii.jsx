@@ -71,6 +71,10 @@ export function ModalReintentarSii({
                 <div
                     className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
                     onClick={enviando ? undefined : onCerrar}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Cerrar"
+                    onKeyDown={(e) => { if (!enviando && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onCerrar(); } }}
                 />
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 

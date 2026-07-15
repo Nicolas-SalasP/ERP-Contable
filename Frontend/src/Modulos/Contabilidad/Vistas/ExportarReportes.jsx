@@ -128,8 +128,9 @@ const ExportarReportes = () => {
             <form onSubmit={enviarSolicitud} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-8 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tipo de Reporte</label>
+                        <label htmlFor="reporte-tipo" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tipo de Reporte</label>
                         <select
+                            id="reporte-tipo"
                             value={tipoReporte}
                             onChange={(e) => setTipoReporte(e.target.value)}
                             className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm"
@@ -141,8 +142,9 @@ const ExportarReportes = () => {
 
                     {tipoReporte === 'libro_mayor' && (
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Cuenta Contable</label>
+                            <label htmlFor="reporte-cuenta-contable" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Cuenta Contable</label>
                             <Select
+                                inputId="reporte-cuenta-contable"
                                 options={cuentas}
                                 value={cuentaSel}
                                 onChange={setCuentaSel}
@@ -153,8 +155,9 @@ const ExportarReportes = () => {
                     )}
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Inicio</label>
+                        <label htmlFor="reporte-fecha-inicio" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Inicio</label>
                         <input
+                            id="reporte-fecha-inicio"
                             type="date"
                             value={fechaInicio}
                             onChange={(e) => setFechaInicio(e.target.value)}
@@ -163,8 +166,9 @@ const ExportarReportes = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Fin</label>
+                        <label htmlFor="reporte-fecha-fin" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha Fin</label>
                         <input
+                            id="reporte-fecha-fin"
                             type="date"
                             value={fechaFin}
                             onChange={(e) => setFechaFin(e.target.value)}
@@ -173,8 +177,9 @@ const ExportarReportes = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Filtro de Estado</label>
+                        <label htmlFor="reporte-filtro-estado" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Filtro de Estado</label>
                         <select
+                            id="reporte-filtro-estado"
                             value={filtro}
                             onChange={(e) => setFiltro(e.target.value)}
                             className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm"
@@ -186,10 +191,11 @@ const ExportarReportes = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Enviar a</label>
+                        <label htmlFor="reporte-email" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Enviar a</label>
                         <div className="relative">
                             <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
+                                id="reporte-email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}

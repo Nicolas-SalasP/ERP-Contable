@@ -28,10 +28,11 @@ const IvaWarningModal = ({ isOpen, onClose, onConfirm, calculado, ingresado }) =
                         <span className="font-bold text-emerald-600 text-lg">${formatCurrency(ingresado)}</span>
                     </div>
                 </div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-1">
+                <label htmlFor="iva-warning-motivo" className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-1">
                     Motivo (Para Auditoría)
                 </label>
                 <textarea
+                    id="iva-warning-motivo"
                     className="w-full border rounded p-2 text-sm focus:ring-yellow-500 outline-none dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
                     rows="2"
                     placeholder="Ej: Impuesto específico..."
