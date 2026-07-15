@@ -18,23 +18,35 @@ return new class extends Migration
             $table->string('ambito', 20)->default('factura')->after('ambiente');
         });
 
+        // El índice nuevo se crea ANTES de borrar el viejo: MySQL rechaza (error 1553)
+        // dropear el único índice que respalda la FK de empresa_id mientras no exista
+        // otro que la cubra.
         Schema::table('sii_token_sesion', function (Blueprint $table) {
-            $table->dropIndex('sii_token_sesion_activa_idx');
             $table->index(
                 ['empresa_id', 'ambiente', 'ambito', 'fecha_expiracion'],
-                'sii_token_sesion_activa_idx'
+                'sii_token_sesion_activa_v2_idx'
             );
+        });
+
+        Schema::table('sii_token_sesion', function (Blueprint $table) {
+            $table->dropIndex('sii_token_sesion_activa_idx');
         });
     }
 
     public function down(): void
     {
         Schema::table('sii_token_sesion', function (Blueprint $table) {
-            $table->dropIndex('sii_token_sesion_activa_idx');
             $table->index(
                 ['empresa_id', 'ambiente', 'fecha_expiracion'],
                 'sii_token_sesion_activa_idx'
             );
+        });
+
+        Schema::table('sii_token_sesion', function (Blueprint $table) {
+            $table->dropIndex('sii_token_sesion_activa_v2_idx');
+        });
+
+        Schema::table('sii_token_sesion', function (Blueprint $table) {
             $table->dropColumn('ambito');
         });
     }
