@@ -127,8 +127,17 @@ test.describe.serial('@flujo-completo - Ciclo cotización → cierre de período
         await expect(filaMovimiento).toBeVisible({ timeout: 10_000 });
         await filaMovimiento.getByRole('button', { name: 'Conciliar' }).click();
 
-        // El modal no usa role="dialog" -- se ubica por el titulo fijo de la cabecera.
-        const modal = page.locator('div').filter({ has: page.getByText('Plataforma de Conciliación') }).last();
+        // El modal no usa role="dialog" -- se ubica por el titulo fijo de la cabecera. OJO:
+        // `div.filter({has:...}).last()` en orden de documento agarra el div MAS INTERNO que
+        // contiene el texto -- en MesaConciliacion.jsx eso es el wrapper del header
+        // (`<div className="relative z-10"><h3>Plataforma de Conciliación</h3>...`), que NO
+        // incluye el Select/tabs/boton de abajo (estan en divs hermanos, no descendientes).
+        // ROOT CAUSE real de "Parte 4" (encontrado con trace de Playwright, nunca fue un bug de
+        // react-select): con `.last()`, cualquier `modal.getByText/getByRole` para contenido
+        // fuera del header no encontraba nada -- `entroModoManual` quedaba siempre en `false` y
+        // el bloque de seleccion manual (el <Select>) nunca llegaba a tocarse. Se ubica por la
+        // clase del card (`max-w-4xl`), que sí envuelve header + contenido.
+        const modal = page.locator('div.max-w-4xl').filter({ has: page.getByText('Plataforma de Conciliación') });
         await expect(modal).toBeVisible({ timeout: 5_000 });
 
         // abrirModalConciliacion() intenta "Sugerencia" (match automatico por monto) primero;
@@ -137,21 +146,14 @@ test.describe.serial('@flujo-completo - Ciclo cotización → cierre de período
         // componente cae solo a modo "Busqueda Manual" cuando no hay match. El test maneja
         // ambos caminos en vez de asumir uno fijo.
         await page.waitForResponse((res) => res.url().includes('/sugerencias'));
-        // Margen extra: la respuesta HTTP ya llegó, pero React puede tardar un tick más en
-        // reflejar el cambio de modo (SUGERENCIAS -> MANUAL) cuando no hay match.
-        await page.waitForTimeout(500);
-        const entroModoManual = await modal.getByText('Seleccionar Cliente').isVisible({ timeout: 8_000 }).catch(() => false);
+
+        const marcaModoManual = modal.getByText(/Seleccionar (Cliente|Proveedor)/i);
+        const entroModoManual = await marcaModoManual
+            .waitFor({ state: 'visible', timeout: 8_000 })
+            .then(() => true)
+            .catch(() => false);
 
         if (entroModoManual) {
-            // KNOWN ISSUE (verificado en corridas locales reales, sin resolver): la interaccion
-            // con este <Select> de react-select (click + type + click en opcion) no deja el
-            // campo poblado de forma confiable -- el combobox queda vacio ("Busca el
-            // cliente...") pese a que el mismo patron (click, keyboard.type, click en opcion
-            // por texto) es el estandar recomendado por Playwright para react-select. No se
-            // identifico la causa raiz (¿portal de menuPortalTarget interceptando el foco?
-            // ¿un onBlur que limpia el input al perder foco tras el type?) dentro del tiempo
-            // disponible en esta sesion. Las Partes 1, 2, 3 y 5 SI se verificaron pasando de
-            // extremo a extremo contra un backend+frontend reales.
             const comboboxCliente = modal.getByRole('combobox');
             await comboboxCliente.click();
             await page.keyboard.type('Cliente E2E', { delay: 60 });
