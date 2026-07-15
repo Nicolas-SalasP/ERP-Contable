@@ -7,12 +7,13 @@ use App\Domains\Comercial\Models\Factura;
 use App\Domains\Comercial\Models\FacturaDetalle;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Sii\Events\FacturaListaParaEmitirEvent;
+use App\Domains\Sii\Exceptions\FacturaIncompletaParaSii;
 use App\Domains\Sii\Listeners\ProcesarFacturaParaSiiListener;
 use App\Domains\Sii\Models\SiiDteEmitido;
-use App\Domains\Sii\Services\Emision\EmitirDteService;
-use App\Domains\Sii\Services\Envio\EnvioSiiService;
-use App\Domains\Sii\Services\Mapping\FacturaAComercialDteMapper;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
@@ -23,9 +24,9 @@ use Tests\TestCase;
 
 class ProcesarFacturaParaSiiListenerTest extends TestCase
 {
-    use RefreshDatabase;
-    use PreparaEntornoBase;
     use OrquestaFlujoCompletoEnTests;
+    use PreparaEntornoBase;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -38,8 +39,8 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
 
         config([
             'sii.upload.timeout_seconds' => 5,
-            'sii.upload.retries'         => 2,
-            'sii.upload.retry_delay_ms'  => 1,
+            'sii.upload.retries' => 2,
+            'sii.upload.retry_delay_ms' => 1,
         ]);
 
         Storage::fake(config('sii.storage.disk', 'local'));
@@ -57,27 +58,27 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
         $ctx['dte']->delete();
 
         $cliente = Cliente::create([
-            'rut'             => '11222333-4',
-            'razon_social'    => 'CLIENTE LISTENER',
-            'contacto_email'  => 'listener@cli.cl',
-            'direccion'       => 'X',
-            'comuna'          => 'Stgo', 'ciudad' => 'Stgo',
-            'giro'            => 'Comercio',
-            'estado'          => 'ACTIVO',
-            'empresa_id'      => $ctx['empresa']->id,
+            'rut' => '11222333-4',
+            'razon_social' => 'CLIENTE LISTENER',
+            'contacto_email' => 'listener@cli.cl',
+            'direccion' => 'X',
+            'comuna' => 'Stgo', 'ciudad' => 'Stgo',
+            'giro' => 'Comercio',
+            'estado' => 'ACTIVO',
+            'empresa_id' => $ctx['empresa']->id,
         ]);
 
         $factura = Factura::create([
-            'empresa_id'     => $ctx['empresa']->id,
-            'codigo_unico'   => Factura::generarCodigoUnico(),
-            'cliente_id'     => $cliente->id,
-            'numero_factura' => 'F-LIS-' . random_int(1000, 99999),
-            'tipo'           => 'VENTA',
+            'empresa_id' => $ctx['empresa']->id,
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'cliente_id' => $cliente->id,
+            'numero_factura' => 'F-LIS-'.random_int(1000, 99999),
+            'tipo' => 'VENTA',
             'tipo_documento' => 'FACTURA',
-            'tipo_dte'       => 33,
-            'fecha_emision'  => now()->toDateString(),
-            'monto_neto'     => 1000, 'monto_iva' => 190, 'monto_bruto' => 1190,
-            'estado'         => 'REGISTRADA',
+            'tipo_dte' => 33,
+            'fecha_emision' => now()->toDateString(),
+            'monto_neto' => 1000, 'monto_iva' => 190, 'monto_bruto' => 1190,
+            'estado' => 'REGISTRADA',
         ]);
         FacturaDetalle::create([
             'factura_id' => $factura->id, 'numero_linea' => 1,
@@ -90,6 +91,74 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
             'cliente' => $cliente,
             'factura' => $factura->fresh(['cliente', 'empresa', 'detalles']),
         ];
+    }
+
+    /**
+     * Escenario boleta (tipo_dte 39): empresa+cert+CAF boleta+cliente+factura emisible.
+     */
+    private function escenarioBoletaEmisible(string $rut = '76666555-2'): array
+    {
+        $ctx = $this->setupEmpresaConFlujoCompleto(['rut' => $rut, 'tipo_dte' => 39]);
+        $ctx['dte']->delete();
+
+        $cliente = Cliente::create([
+            'rut' => '11333222-5',
+            'razon_social' => 'CLIENTE BOLETA LISTENER',
+            'contacto_email' => 'boleta-listener@cli.cl',
+            'direccion' => 'X',
+            'comuna' => 'Stgo', 'ciudad' => 'Stgo',
+            'giro' => 'Comercio',
+            'estado' => 'ACTIVO',
+            'empresa_id' => $ctx['empresa']->id,
+        ]);
+
+        $factura = Factura::create([
+            'empresa_id' => $ctx['empresa']->id,
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'cliente_id' => $cliente->id,
+            'numero_factura' => 'B-LIS-'.random_int(1000, 99999),
+            'tipo' => 'VENTA',
+            'tipo_documento' => 'BOLETA',
+            'tipo_dte' => 39,
+            'fecha_emision' => now()->toDateString(),
+            'monto_neto' => 1000, 'monto_iva' => 190, 'monto_bruto' => 1190,
+            'estado' => 'REGISTRADA',
+        ]);
+        FacturaDetalle::create([
+            'factura_id' => $factura->id, 'numero_linea' => 1,
+            'nombre_item' => 'Servicio', 'cantidad' => 1, 'precio_unitario' => 1000,
+            'monto_item' => 1000, 'exento' => false,
+        ]);
+
+        return [
+            'empresa' => $ctx['empresa'],
+            'cliente' => $cliente,
+            'factura' => $factura->fresh(['cliente', 'empresa', 'detalles']),
+        ];
+    }
+
+    private function fakeRespuestasBoletaFlujoCompleto(string $trackId = '1014'): void
+    {
+        Http::clearResolvedInstance('http');
+
+        Http::fake([
+            '*apicert.sii.cl/recursos/v1/boleta.electronica.semilla*' => Http::response(
+                '<SII:RESPUESTA xmlns:SII="http://www.sii.cl/XMLSchema"><SII:RESP_HDR><ESTADO>00</ESTADO></SII:RESP_HDR><SII:RESP_BODY><SEMILLA>123456789</SEMILLA></SII:RESP_BODY></SII:RESPUESTA>',
+                200
+            ),
+            '*apicert.sii.cl/recursos/v1/boleta.electronica.token*' => Http::response(
+                '<SII:RESPUESTA xmlns:SII="http://www.sii.cl/XMLSchema"><SII:RESP_HDR><ESTADO>00</ESTADO></SII:RESP_HDR><SII:RESP_BODY><TOKEN>TOK_BOLETA_DEMO</TOKEN></SII:RESP_BODY></SII:RESPUESTA>',
+                200
+            ),
+            '*pangal.sii.cl/recursos/v1/boleta.electronica.envio*' => Http::response(json_encode([
+                'rut_emisor' => '76666555-2',
+                'rut_envia' => '76666555-2',
+                'trackid' => (int) $trackId,
+                'fecha_recepcion' => now()->toDateTimeString(),
+                'estado' => 'REC',
+                'file' => 'boleta.xml',
+            ]), 200),
+        ]);
     }
 
     private function listener(): ProcesarFacturaParaSiiListener
@@ -123,7 +192,7 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
         ]);
         $e['factura']->update(['sii_dte_emitido_id' => $dteExistente->id]);
 
-        $handler = new TestHandler();
+        $handler = new TestHandler;
         Log::channel('sii')->getLogger()->pushHandler($handler);
 
         $event = new FacturaListaParaEmitirEvent($e['factura']->fresh(), [], 'manual', 1);
@@ -145,28 +214,28 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
 
         $event = new FacturaListaParaEmitirEvent($e['factura']->fresh(), [], 'manual', 1);
 
-        $this->expectException(\App\Domains\Sii\Exceptions\FacturaIncompletaParaSii::class);
+        $this->expectException(FacturaIncompletaParaSii::class);
         $this->listener()->handle($event);
     }
 
-    public function test_listener_falla_en_envio_DTE_queda_en_FIRMADO(): void
+    public function test_listener_falla_en_envio_dt_e_queda_en_firmado(): void
     {
         $e = $this->escenarioFacturaEmisible();
 
         // Construimos el fake completo en UNA sola llamada (Http::fake mergea
         // matchers entre llamadas sucesivas y retiene los primeros responses
         // por URL — bug de Laravel ya identificado en F5.4).
-        $envSeed  = '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><getSeedResponse>'
-                  . '<getSeedReturn><![CDATA[<SII:RESPUESTA xmlns:SII="http://www.sii.cl/XMLSchema"><SII:RESP_HDR><ESTADO>00</ESTADO></SII:RESP_HDR><SII:RESP_BODY><SEMILLA>S</SEMILLA></SII:RESP_BODY></SII:RESPUESTA>]]></getSeedReturn>'
-                  . '</getSeedResponse></soapenv:Body></soapenv:Envelope>';
+        $envSeed = '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><getSeedResponse>'
+                  .'<getSeedReturn><![CDATA[<SII:RESPUESTA xmlns:SII="http://www.sii.cl/XMLSchema"><SII:RESP_HDR><ESTADO>00</ESTADO></SII:RESP_HDR><SII:RESP_BODY><SEMILLA>S</SEMILLA></SII:RESP_BODY></SII:RESPUESTA>]]></getSeedReturn>'
+                  .'</getSeedResponse></soapenv:Body></soapenv:Envelope>';
         $envToken = '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><getTokenResponse>'
-                  . '<getTokenReturn><![CDATA[<SII:RESPUESTA xmlns:SII="http://www.sii.cl/XMLSchema"><SII:RESP_HDR><ESTADO>00</ESTADO></SII:RESP_HDR><SII:RESP_BODY><TOKEN>T</TOKEN></SII:RESP_BODY></SII:RESPUESTA>]]></getTokenReturn>'
-                  . '</getTokenResponse></soapenv:Body></soapenv:Envelope>';
+                  .'<getTokenReturn><![CDATA[<SII:RESPUESTA xmlns:SII="http://www.sii.cl/XMLSchema"><SII:RESP_HDR><ESTADO>00</ESTADO></SII:RESP_HDR><SII:RESP_BODY><TOKEN>T</TOKEN></SII:RESP_BODY></SII:RESPUESTA>]]></getTokenReturn>'
+                  .'</getTokenResponse></soapenv:Body></soapenv:Envelope>';
 
-        \Illuminate\Support\Facades\Http::fake([
-            '*/DTEWS/CrSeed*'           => \Illuminate\Support\Facades\Http::response($envSeed, 200),
-            '*/DTEWS/GetTokenFromSeed*' => \Illuminate\Support\Facades\Http::response($envToken, 200),
-            '*/cgi_dte/UPL/DTEUpload*'  => \Illuminate\Support\Facades\Http::response('ServerError', 500),
+        Http::fake([
+            '*/DTEWS/CrSeed*' => Http::response($envSeed, 200),
+            '*/DTEWS/GetTokenFromSeed*' => Http::response($envToken, 200),
+            '*/cgi_dte/UPL/DTEUpload*' => Http::response('ServerError', 500),
         ]);
 
         $event = new FacturaListaParaEmitirEvent($e['factura'], [], 'manual', 1);
@@ -186,7 +255,7 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
         $e = $this->escenarioFacturaEmisible();
         $this->fakeRespuestasSiiFlujoCompleto('aceptado');
 
-        $handler = new TestHandler();
+        $handler = new TestHandler;
         Log::channel('sii')->getLogger()->pushHandler($handler);
 
         $event = new FacturaListaParaEmitirEvent($e['factura'], [], 'reintento', 999);
@@ -212,7 +281,7 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
 
     public function test_listener_failed_hook_loguea_critical(): void
     {
-        $handler = new TestHandler();
+        $handler = new TestHandler;
         Log::channel('sii')->getLogger()->pushHandler($handler);
 
         $e = $this->escenarioFacturaEmisible();
@@ -244,10 +313,51 @@ class ProcesarFacturaParaSiiListenerTest extends TestCase
         $this->assertNotSame($dteA->id, $dteB->id);
     }
 
-    public function test_listener_implementa_ShouldQueue(): void
+    public function test_listener_boleta_se_envia_via_envio_boleta_service_no_envio_sii_service(): void
+    {
+        $e = $this->escenarioBoletaEmisible();
+        $this->fakeRespuestasBoletaFlujoCompleto('1014');
+
+        $event = new FacturaListaParaEmitirEvent($e['factura'], [], 'manual', 1);
+        $this->listener()->handle($event);
+
+        $factura = $e['factura']->fresh();
+        $this->assertNotNull($factura->sii_dte_emitido_id);
+        $dte = SiiDteEmitido::findOrFail($factura->sii_dte_emitido_id);
+        $this->assertSame(39, $dte->tipo_dte);
+        $this->assertSame(SiiDteEmitido::ESTADO_ENVIADO_SII, $dte->estado);
+        $this->assertSame('1014', $dte->track_id);
+
+        Http::assertSent(function (Request $r) {
+            return str_contains($r->url(), 'pangal.sii.cl');
+        });
+        Http::assertNotSent(function (Request $r) {
+            return str_contains($r->url(), 'cgi_dte/UPL/DTEUpload');
+        });
+    }
+
+    public function test_listener_factura_normal_sigue_usando_envio_sii_service_no_boleta(): void
+    {
+        $e = $this->escenarioFacturaEmisible();
+        $this->fakeRespuestasSiiFlujoCompleto('aceptado', trackId: 'TRK_FACT');
+
+        $event = new FacturaListaParaEmitirEvent($e['factura'], [], 'manual', 1);
+        $this->listener()->handle($event);
+
+        $factura = $e['factura']->fresh();
+        $dte = SiiDteEmitido::findOrFail($factura->sii_dte_emitido_id);
+        $this->assertSame(33, $dte->tipo_dte);
+        $this->assertSame(SiiDteEmitido::ESTADO_ENVIADO_SII, $dte->estado);
+
+        Http::assertNotSent(function (Request $r) {
+            return str_contains($r->url(), 'boleta.electronica.envio');
+        });
+    }
+
+    public function test_listener_implementa_should_queue(): void
     {
         $this->assertInstanceOf(
-            \Illuminate\Contracts\Queue\ShouldQueue::class,
+            ShouldQueue::class,
             $this->listener()
         );
     }

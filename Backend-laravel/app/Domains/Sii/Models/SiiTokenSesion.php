@@ -2,12 +2,12 @@
 
 namespace App\Domains\Sii\Models;
 
-use App\Domains\Core\Traits\HasEmpresaScope;
-
 use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Traits\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Sesion autenticada contra el WS SII (F5.1); SEGURIDAD: token nunca debe aparecer en JSON, el $hidden lo excluye automaticamente de toJson()/toArray().
@@ -16,23 +16,31 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $empresa_id
  * @property string $ambiente
  * @property string $token
- * @property \Illuminate\Support\Carbon $fecha_obtencion
- * @property \Illuminate\Support\Carbon $fecha_expiracion
+ * @property Carbon $fecha_obtencion
+ * @property Carbon $fecha_expiracion
  * @property int $intentos_uso
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class SiiTokenSesion extends Model
 {
     use HasEmpresaScope;
+
     public const AMBIENTE_CERTIFICACION = 'certificacion';
-    public const AMBIENTE_PRODUCCION    = 'produccion';
+
+    public const AMBIENTE_PRODUCCION = 'produccion';
+
+    /** Boleta (39/41) requiere un token propio, distinto al de Factura/NC/ND (exigencia del SII). */
+    public const AMBITO_FACTURA = 'factura';
+
+    public const AMBITO_BOLETA = 'boleta';
 
     protected $table = 'sii_token_sesion';
 
     protected $fillable = [
         'empresa_id',
         'ambiente',
+        'ambito',
         'token',
         'semilla_usada',
         'hash_firma_semilla',
@@ -47,10 +55,10 @@ class SiiTokenSesion extends Model
     ];
 
     protected $casts = [
-        'fecha_obtencion'  => 'datetime',
+        'fecha_obtencion' => 'datetime',
         'fecha_expiracion' => 'datetime',
-        'ultimo_uso_en'    => 'datetime',
-        'intentos_uso'     => 'integer',
+        'ultimo_uso_en' => 'datetime',
+        'intentos_uso' => 'integer',
     ];
 
     public function empresa(): BelongsTo
@@ -71,6 +79,11 @@ class SiiTokenSesion extends Model
     public function scopePorAmbiente(Builder $query, string $ambiente): Builder
     {
         return $query->where('ambiente', $ambiente);
+    }
+
+    public function scopePorAmbito(Builder $query, string $ambito): Builder
+    {
+        return $query->where('ambito', $ambito);
     }
 
     /** Incrementa el contador de usos y actualiza ultimo_uso_en a now; util para auditoria de cuanto se reusa una sesion. */

@@ -5,6 +5,7 @@ namespace App\Domains\Sii\Listeners;
 use App\Domains\Sii\Events\FacturaListaParaEmitirEvent;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Emision\EmitirDteService;
+use App\Domains\Sii\Services\Envio\EnvioBoletaService;
 use App\Domains\Sii\Services\Envio\EnvioSiiService;
 use App\Domains\Sii\Services\Mapping\FacturaAComercialDteMapper;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,17 +18,23 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
 {
     use InteractsWithQueue;
 
-    public string $queue       = 'sii';
-    public int    $tries       = 3;
-    public int    $timeout     = 120;
-    public bool   $failOnTimeout = true;
+    public string $queue = 'sii';
+
+    public int $tries = 3;
+
+    public int $timeout = 120;
+
+    public bool $failOnTimeout = true;
+
+    /** Tipos DTE que son boleta (39 normal, 41 exenta) -- van por EnvioBoletaService, no EnvioSiiService. */
+    private const TIPOS_BOLETA = [39, 41];
 
     public function __construct(
         private readonly FacturaAComercialDteMapper $mapper,
         private readonly EmitirDteService $emitirService,
-        private readonly EnvioSiiService $envioService
-    ) {
-    }
+        private readonly EnvioSiiService $envioService,
+        private readonly EnvioBoletaService $envioBoletaService
+    ) {}
 
     /** @return array<int, int> */
     public function backoff(): array
@@ -42,7 +49,7 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
         $contextoBase = [
             'factura_id' => $factura->id,
             'empresa_id' => $factura->empresa_id,
-            'origen'     => $event->origen,
+            'origen' => $event->origen,
             'usuario_id' => $event->usuarioId,
         ];
 
@@ -67,11 +74,12 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
                 'Listener skip: el DTE ya fue enviado/terminal.',
                 array_merge($contextoBase, ['dte_id' => $dte->id, 'estado' => $dte->estado])
             );
+
             return;
         }
 
         // Mapeo Factura -> SiiDteEmitido BORRADOR, solo si aun no existe.
-        if (!$dte) {
+        if (! $dte) {
             try {
                 $dte = $this->mapper->mapear($factura, $event->referencias);
                 Log::channel('sii')->info(
@@ -98,11 +106,19 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
             }
         }
 
-        // Envio al WS DTEUpload; el polling hace el resto hasta ACEPTADO/RECHAZADO.
+        // Envio: boleta (39/41) va por el endpoint REST propio (EnvioBoletaService), factura/NC/ND
+        // por el WS legacy DTEUpload (EnvioSiiService); el polling de factura hace el resto hasta
+        // ACEPTADO/RECHAZADO -- boleta todavia no tiene polling de estado (ver README, F6-bis).
+        $esBoleta = in_array((int) $dte->tipo_dte, self::TIPOS_BOLETA, true);
+
         try {
-            $this->envioService->enviar($dte->id);
+            if ($esBoleta) {
+                $this->envioBoletaService->enviar($dte->id);
+            } else {
+                $this->envioService->enviar($dte->id);
+            }
             Log::channel('sii')->info(
-                'DTE enviado al SII; polling de F5.3 tomara el resto.',
+                $esBoleta ? 'Boleta enviada al SII.' : 'DTE enviado al SII; polling de F5.3 tomara el resto.',
                 array_merge($contextoBase, ['dte_id' => $dte->id, 'paso' => 'envio'])
             );
         } catch (Throwable $e) {
@@ -116,30 +132,30 @@ class ProcesarFacturaParaSiiListener implements ShouldQueue
         Log::channel('sii')->critical(
             'Listener fallo despues de todos los reintentos.',
             [
-                'factura_id'      => $event->factura->id,
-                'origen'          => $event->origen,
-                'usuario_id'      => $event->usuarioId,
-                'tries_usados'    => $this->tries,
+                'factura_id' => $event->factura->id,
+                'origen' => $event->origen,
+                'usuario_id' => $event->usuarioId,
+                'tries_usados' => $this->tries,
                 'exception_class' => $exception::class,
-                'message'         => $exception->getMessage(),
+                'message' => $exception->getMessage(),
             ]
         );
         // F6.4 expondra endpoints para reintento manual.
     }
 
     /**
-     * @param array<string, mixed> $contextoBase
+     * @param  array<string, mixed>  $contextoBase
      */
     private function logError(array $contextoBase, Throwable $e, string $paso, ?int $dteId): void
     {
         Log::channel('sii')->error(
             "Falla en paso '{$paso}' del listener de emision SII.",
             array_merge($contextoBase, [
-                'paso'            => $paso,
-                'dte_id'          => $dteId,
+                'paso' => $paso,
+                'dte_id' => $dteId,
                 'exception_class' => $e::class,
-                'message'         => $e->getMessage(),
-                'trace_hash'      => substr(sha1($e->getTraceAsString()), 0, 8),
+                'message' => $e->getMessage(),
+                'trace_hash' => substr(sha1($e->getTraceAsString()), 0, 8),
             ])
         );
     }

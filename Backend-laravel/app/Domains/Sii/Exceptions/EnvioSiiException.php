@@ -7,12 +7,19 @@ use RuntimeException;
 /** F5.2 — errores del flujo de envio del XML EnvioDTE al WS DTEUpload del SII. */
 class EnvioSiiException extends RuntimeException
 {
-    public const MOTIVO_YA_ENVIADO            = 'ya_enviado';
-    public const MOTIVO_DTE_NO_FIRMADO        = 'dte_no_firmado';
+    public const MOTIVO_YA_ENVIADO = 'ya_enviado';
+
+    public const MOTIVO_DTE_NO_FIRMADO = 'dte_no_firmado';
+
     public const MOTIVO_RESPUESTA_SIN_TRACKID = 'respuesta_sin_trackid';
-    public const MOTIVO_ERROR_PERMANENTE_SII  = 'error_permanente_sii';
-    public const MOTIVO_ERROR_TRANSPORTE      = 'error_transporte';
-    public const MOTIVO_ENVIO_EN_CURSO        = 'envio_en_curso';
+
+    public const MOTIVO_ERROR_PERMANENTE_SII = 'error_permanente_sii';
+
+    public const MOTIVO_ERROR_TRANSPORTE = 'error_transporte';
+
+    public const MOTIVO_ENVIO_EN_CURSO = 'envio_en_curso';
+
+    public const MOTIVO_TIPO_DTE_INVALIDO = 'tipo_dte_invalido';
 
     public readonly string $motivo;
 
@@ -22,7 +29,7 @@ class EnvioSiiException extends RuntimeException
     public function __construct(string $message, string $motivo, array $contexto = [])
     {
         parent::__construct($message);
-        $this->motivo   = $motivo;
+        $this->motivo = $motivo;
         $this->contexto = $contexto;
     }
 
@@ -47,6 +54,7 @@ class EnvioSiiException extends RuntimeException
     public static function respuestaSinTrackId(string $body): self
     {
         $muestra = substr($body, 0, 200);
+
         return new self(
             "Respuesta del DTEUpload del SII no contiene TRACKID parseable. Body[0..200]: {$muestra}",
             self::MOTIVO_RESPUESTA_SIN_TRACKID
@@ -65,10 +73,20 @@ class EnvioSiiException extends RuntimeException
     public static function errorTransporte(int $httpStatus, string $body, int $intentos): self
     {
         $muestra = substr($body, 0, 200);
+
         return new self(
             "Fallo de transporte al subir DTE tras {$intentos} intentos. HTTP {$httpStatus}. Body[0..200]: {$muestra}",
             self::MOTIVO_ERROR_TRANSPORTE,
             ['http_status' => $httpStatus, 'intentos' => $intentos]
+        );
+    }
+
+    public static function tipoDteInvalido(int $dteId, int $tipoDte, string $servicioEsperado): self
+    {
+        return new self(
+            "DTE {$dteId} es tipo_dte={$tipoDte}, no soportado por {$servicioEsperado}.",
+            self::MOTIVO_TIPO_DTE_INVALIDO,
+            ['dte_id' => $dteId, 'tipo_dte' => $tipoDte]
         );
     }
 

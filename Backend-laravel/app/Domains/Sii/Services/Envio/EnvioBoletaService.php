@@ -9,35 +9,46 @@ use App\Domains\Sii\Models\SiiDteEmitidoEvento;
 use App\Domains\Sii\Models\SiiEnvioDte;
 use App\Domains\Sii\Services\Certificado\CertificadoService;
 use App\Domains\Sii\Services\Integridad\XmlDteIntegrityService;
-use App\Domains\Sii\Services\Ws\SiiTokenService;
-use App\Domains\Sii\Services\Ws\SiiUploadService;
+use App\Domains\Sii\Services\Ws\Boleta\SiiBoletaTokenService;
+use App\Domains\Sii\Services\Ws\Boleta\SiiBoletaUploadService;
 use App\Domains\Sii\Support\RutHelper;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/** Orquestador del envio de un DTE firmado al WS DTEUpload del SII. */
-class EnvioSiiService
+/**
+ * Orquestador del envio de una Boleta Electronica (39/41) firmada al endpoint REST
+ * boleta.electronica.envio del SII -- estructuralmente calcado de EnvioSiiService (mismo
+ * SiiEnvioDte, mismos estados terminales), pero usa los servicios de auth/upload especificos
+ * de boleta (token propio, servidores propios, respuesta JSON). Separado en su propia clase
+ * (no un parametro en EnvioSiiService) porque el protocolo HTTP real difiere lo suficiente
+ * (JSON vs texto/HTML, servidores distintos) como para que compartir la clase confundiera mas
+ * de lo que ahorraria: ver README del dominio Sii, "cuando aterrice (Fase 6-bis), EnvioBoletaService
+ * quedara separado de EnvioDteService".
+ *
+ * NO incluye el polling de estado post-envio (GET boleta.electronica.envio/{rut}-{dv}-{trackid}) --
+ * eso y el RCOF (Reporte de Consumo de Folios) quedan fuera de este alcance, documentados como
+ * pendiente.
+ */
+class EnvioBoletaService
 {
-    /** ERROR del SII que indica token expirado. Sugiere reintento con sesion nueva. */
     private const ERROR_SII_TOKEN_EXPIRADO = 99;
 
-    /** ERROR=0 del SII indica recepcion exitosa del envio. */
     private const ERROR_SII_OK = 0;
 
-    /** Boletas (39/41) van por EnvioBoletaService (endpoint/protocolo distinto) -- rechazarlas aqui evita enviarlas por error al WS de Factura. */
+    /** Tipos DTE que son boleta; usado para validar que este service solo procese boletas. */
     private const TIPOS_BOLETA = [39, 41];
 
     public function __construct(
         private readonly XmlDteIntegrityService $integrityService,
-        private readonly SiiTokenService $tokenService,
-        private readonly SiiUploadService $uploadService,
+        private readonly SiiBoletaTokenService $tokenService,
+        private readonly SiiBoletaUploadService $uploadService,
         private readonly CertificadoService $certificadoService
     ) {}
 
     /**
-     * @throws EnvioSiiException si el DTE no se puede enviar o el SII rechaza.
+     * @throws EnvioSiiException si el DTE no se puede enviar, no es boleta, o el SII rechaza.
      */
     public function enviar(int $dteEmitidoId): SiiEnvioDte
     {
@@ -47,7 +58,7 @@ class EnvioSiiService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $this->validarNoEsBoleta($dte);
+            $this->validarEsBoleta($dte);
             $this->validarDtePuedeEnviarse($dte);
 
             return SiiEnvioDte::create([
@@ -89,7 +100,7 @@ class EnvioSiiService
                 $envio,
                 0,
                 $e::class.': '.$e->getMessage(),
-                'Excepcion no manejada al enviar al SII'
+                'Excepcion no manejada al enviar boleta al SII'
             );
         }
 
@@ -98,7 +109,7 @@ class EnvioSiiService
                 $envio,
                 $resultado['http_status'],
                 $resultado['response_body'],
-                $resultado['glosa'] ?? 'Transport failed tras reintentos'
+                $resultado['glosa'] ?? 'Transport failed tras reintentos (boleta)'
             );
         }
 
@@ -136,7 +147,7 @@ class EnvioSiiService
                 'intentos_envio' => $envio->intentos_envio,
             ]);
 
-            Log::channel('sii')->info('DTE enviado al SII', [
+            Log::channel('sii')->info('Boleta enviada al SII', [
                 'dte_id' => $dte->id,
                 'envio_id' => $envio->id,
                 'track_id' => $resultado['track_id'],
@@ -148,26 +159,22 @@ class EnvioSiiService
         });
     }
 
-    /**
-     * @throws EnvioSiiException
-     */
-    /** Estados de un envio previo que admiten reintentar el envio del mismo DTE. */
+    private function validarEsBoleta(SiiDteEmitido $dte): void
+    {
+        if (! in_array((int) $dte->tipo_dte, self::TIPOS_BOLETA, true)) {
+            throw EnvioSiiException::tipoDteInvalido($dte->id, (int) $dte->tipo_dte, self::class);
+        }
+    }
+
+    /** Estados de un envio previo que admiten reintentar el envio de la misma boleta. */
     private const ESTADOS_ENVIO_REINTENTABLES = [
         SiiEnvioDte::ESTADO_ERROR_TRANSPORTE,
         SiiEnvioDte::ESTADO_ERROR_TIMEOUT,
         SiiEnvioDte::ESTADO_ERROR_PERMANENTE,
     ];
 
-    private function validarNoEsBoleta(SiiDteEmitido $dte): void
-    {
-        if (in_array((int) $dte->tipo_dte, self::TIPOS_BOLETA, true)) {
-            throw EnvioSiiException::tipoDteInvalido($dte->id, (int) $dte->tipo_dte, self::class);
-        }
-    }
-
     private function validarDtePuedeEnviarse(SiiDteEmitido $dte): void
     {
-        // Bloquear si ya existe un envio en ENVIANDO (en curso o huerfano): previene doble envio del mismo folio si el envio huerfano SI llego al SII pero se perdio la respuesta antes de poder marcarlo.
         $envioEnCurso = SiiEnvioDte::query()
             ->where('dte_emitido_id', $dte->id)
             ->where('estado_envio', SiiEnvioDte::ESTADO_ENVIANDO)
@@ -191,7 +198,6 @@ class EnvioSiiService
             throw EnvioSiiException::yaEnviado($dte->id, (string) $envioPrevio->track_id);
         }
 
-        // DTE quedo en ENVIADO_SII porque un envio anterior fallo por transporte/timeout/error permanente (marcarTimeout() en PollearEstadoSiiService no toca dte->estado, solo el envio) y ningun envio fue exitoso todavia -- es reintentable, no un DTE "no firmado".
         if ($dte->estado === SiiDteEmitido::ESTADO_ENVIADO_SII) {
             $ultimoEnvio = SiiEnvioDte::query()
                 ->where('dte_emitido_id', $dte->id)
@@ -207,8 +213,6 @@ class EnvioSiiService
     }
 
     /**
-     * Postea al SII; si responde ERROR=99 (token expirado) regenera la sesion y reintenta UNA vez; incrementa intentos_envio en cada intento HTTP.
-     *
      * @return array{
      *   track_id: string|null, error_code: int, glosa: string|null,
      *   request_body: string, response_body: string, http_status: int,
@@ -238,9 +242,8 @@ class EnvioSiiService
                 $empresa->ambiente_sii
             );
 
-            // Solo reintentamos UNA vez en caso de token expirado (intentoToken=0).
             if ($intentoToken === 0 && $resultado['error_code'] === self::ERROR_SII_TOKEN_EXPIRADO) {
-                Log::channel('sii')->warning('Token SII expirado; regenerando sesion y reintentando.', [
+                Log::channel('sii')->warning('Token SII (boleta) expirado; regenerando sesion y reintentando.', [
                     'envio_id' => $envio->id,
                     'empresa_id' => $empresa->id,
                 ]);
@@ -254,7 +257,6 @@ class EnvioSiiService
             return $resultado;
         }
 
-        // Caso defensivo (loop completo sin return): devolver ultimo resultado.
         return $resultado;
     }
 
@@ -273,7 +275,7 @@ class EnvioSiiService
             'http_status_ultimo_envio' => $httpStatus,
         ]);
 
-        Log::channel('sii')->error('Envio DTE marcado como ERROR_TRANSPORTE.', [
+        Log::channel('sii')->error('Envio de boleta marcado como ERROR_TRANSPORTE.', [
             'envio_id' => $envio->id,
             'http_status' => $httpStatus,
             'glosa' => $glosa,
@@ -293,13 +295,13 @@ class EnvioSiiService
     {
         $envio->update([
             'estado_envio' => SiiEnvioDte::ESTADO_ERROR_PERMANENTE,
-            'glosa_sii' => $resultado['glosa'] ?? "SII respondio ERROR={$resultado['error_code']}",
+            'glosa_sii' => $resultado['glosa'] ?? "SII (boleta) respondio error_code={$resultado['error_code']}",
             'request_body_completo_cifrado' => Crypt::encryptString($resultado['request_body']),
             'respuesta_body_completo_cifrado' => Crypt::encryptString($resultado['response_body']),
             'http_status_ultimo_envio' => $resultado['http_status'],
         ]);
 
-        Log::channel('sii')->error('Envio DTE marcado como ERROR_PERMANENTE (SII rechazo).', [
+        Log::channel('sii')->error('Envio de boleta marcado como ERROR_PERMANENTE (SII rechazo).', [
             'envio_id' => $envio->id,
             'error_code' => $resultado['error_code'],
             'glosa' => $resultado['glosa'],
@@ -310,8 +312,6 @@ class EnvioSiiService
     }
 
     /**
-     * El RUT del FIRMANTE (sender) viene del subject del certificado digital; puede diferir del RUT de la empresa en escenarios de delegacion (operador contable firma para varias empresas).
-     *
      * @return array{0: string, 1: string} [rutSinDv, dv]
      */
     private function extraerRutSender(Empresa $empresa): array
@@ -325,8 +325,6 @@ class EnvioSiiService
     }
 
     /**
-     * RUT de la EMPRESA emisora (company), separado en numero + DV.
-     *
      * @return array{0: string, 1: string} [rutSinDv, dv]
      */
     private function extraerRutCompany(Empresa $empresa): array

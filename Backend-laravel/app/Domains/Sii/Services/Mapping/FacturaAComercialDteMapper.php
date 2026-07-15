@@ -169,12 +169,17 @@ class FacturaAComercialDteMapper
         $cliente = $factura->cliente;
         $tipoDte = (int) $factura->tipo_dte;
         $esExento = in_array($tipoDte, self::TIPOS_DTE_EXENTOS, true);
+        $esBoleta = in_array($tipoDte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true);
 
         return SiiDteEmitido::create([
             'empresa_id' => $factura->empresa_id,
             'factura_id' => $factura->id,
             'estado' => SiiDteEmitido::ESTADO_BORRADOR,
             'tipo_dte' => $tipoDte,
+            // IndServicio es requerido por BOLETADefType (ver DteXmlBuilder::buildIdDoc); el
+            // Comercial no modela este campo aun, asi que se usa 3 (Otros - venta y otros
+            // servicios), el valor correcto para el unico flujo que este ERP emite (VENTA).
+            'indicador_servicio' => $esBoleta ? 3 : null,
             // folio se asigna en F4.4 (EmitirDteService->reservarSiguienteFolio).
             'folio' => 0,
             'fecha_emision' => $factura->fecha_emision,
