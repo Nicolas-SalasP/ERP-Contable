@@ -5,7 +5,13 @@ import { render, screen, cleanup } from '@testing-library/react';
 vi.mock('recharts', () => ({
     BarChart: ({ children }) => <div data-testid="bar-chart">{children}</div>,
     Bar: ({ children, onClick }) => (
-        <div data-testid="bar" onClick={() => onClick?.({ id: 42, nombre: 'Empresa XYZ SpA', monto: 4500000 })}>
+        <div
+            data-testid="bar"
+            role="button"
+            tabIndex={0}
+            onClick={() => onClick?.({ id: 42, nombre: 'Empresa XYZ SpA', monto: 4500000 })}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.({ id: 42, nombre: 'Empresa XYZ SpA', monto: 4500000 }); } }}
+        >
             {children}
         </div>
     ),
