@@ -202,6 +202,198 @@ jobs:
         run: pnpm run build
 
   # ══════════════════════════════════════════════
+  # JOB 2A — E2E SMOKE (flujos existentes, backend+frontend levantados en el runner)
+  # ══════════════════════════════════════════════
+  # No depende de un deploy a staging: levanta backend (sqlite file-based) + frontend (via
+  # webServer de Playwright) directo en el runner, igual que global-setup.js hace en local.
+  e2e-smoke:
+    name: 🎭 E2E Smoke
+    runs-on: ubuntu-latest
+    needs: [test-backend-sqlite, test-frontend]
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_sqlite, mbstring, json, bcmath, intl, gd, zip
+          tools: composer:v2
+
+      - name: 📦 Instalar dependencias backend
+        working-directory: Backend-laravel
+        run: composer install --no-interaction --prefer-dist
+
+      - name: 🔧 Preparar .env (sqlite persistente, no en memoria)
+        working-directory: Backend-laravel
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i 's#DB_DATABASE=.*#DB_DATABASE=${{ github.workspace }}/Backend-laravel/database/database.sqlite#' .env
+          touch database/database.sqlite
+          php artisan key:generate
+
+      - name: ⚙️ Instalar OpenSSL dev
+        run: sudo apt-get update -qq && sudo apt-get install -y openssl libssl-dev
+
+      - name: 🔧 Configurar OPENSSL_CONF
+        run: echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
+
+      - name: 🌱 Migrar y sembrar datos base
+        working-directory: Backend-laravel
+        run: php artisan migrate --seed --force
+
+      - name: 👤 Crear usuario/cliente/cuenta bancaria E2E
+        working-directory: Backend-laravel
+        run: php artisan tenri:e2e-setup
+
+      - name: 🚀 Levantar backend en background (puerto 8001)
+        working-directory: Backend-laravel
+        run: nohup php artisan serve --port=8001 > storage/logs/serve-e2e.log 2>&1 &
+
+      - name: ⏳ Esperar backend disponible
+        run: |
+          for i in {1..30}; do
+            curl -sf http://localhost:8001/api/health -o /dev/null && { echo "Backend listo"; exit 0; }
+            sleep 1
+          done
+          echo "Backend no respondió a tiempo"; exit 1
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 11
+
+      - name: ⚙️ Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: './pnpm-lock.yaml'
+
+      - name: 📦 Instalar dependencias frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎭 Instalar Chromium
+        working-directory: Frontend
+        run: pnpm e2e:install
+
+      - name: 🔥 Correr E2E smoke (flujos existentes)
+        working-directory: Frontend
+        env:
+          VITE_API_URL: http://localhost:8001/api
+          E2E_API_URL: http://localhost:8001
+          E2E_BASE_URL: http://localhost:3000
+          CI: true
+        run: pnpm e2e:smoke
+
+      - name: 📊 Subir reporte Playwright (smoke)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-smoke
+          path: Frontend/playwright-report/
+          retention-days: 7
+
+  # ══════════════════════════════════════════════
+  # JOB 2B — E2E FLUJO COMPLETO (solo si el smoke pasó)
+  # ══════════════════════════════════════════════
+  # Ciclo cotización → factura → pago → conciliación → cierre de período, "por partes"
+  # (test.describe.serial). Deliberadamente NO corre si e2e-smoke falla: needs lo garantiza.
+  e2e-flujo-completo:
+    name: 🎭 E2E Flujo Completo (cotización → cierre)
+    runs-on: ubuntu-latest
+    needs: [e2e-smoke]
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_sqlite, mbstring, json, bcmath, intl, gd, zip
+          tools: composer:v2
+
+      - name: 📦 Instalar dependencias backend
+        working-directory: Backend-laravel
+        run: composer install --no-interaction --prefer-dist
+
+      - name: 🔧 Preparar .env (sqlite persistente, no en memoria)
+        working-directory: Backend-laravel
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i 's#DB_DATABASE=.*#DB_DATABASE=${{ github.workspace }}/Backend-laravel/database/database.sqlite#' .env
+          touch database/database.sqlite
+          php artisan key:generate
+
+      - name: ⚙️ Instalar OpenSSL dev
+        run: sudo apt-get update -qq && sudo apt-get install -y openssl libssl-dev
+
+      - name: 🔧 Configurar OPENSSL_CONF
+        run: echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
+
+      - name: 🌱 Migrar y sembrar datos base
+        working-directory: Backend-laravel
+        run: php artisan migrate --seed --force
+
+      - name: 👤 Crear usuario/cliente/cuenta bancaria E2E
+        working-directory: Backend-laravel
+        run: php artisan tenri:e2e-setup
+
+      - name: 🚀 Levantar backend en background (puerto 8001)
+        working-directory: Backend-laravel
+        run: nohup php artisan serve --port=8001 > storage/logs/serve-e2e.log 2>&1 &
+
+      - name: ⏳ Esperar backend disponible
+        run: |
+          for i in {1..30}; do
+            curl -sf http://localhost:8001/api/health -o /dev/null && { echo "Backend listo"; exit 0; }
+            sleep 1
+          done
+          echo "Backend no respondió a tiempo"; exit 1
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 11
+
+      - name: ⚙️ Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: './pnpm-lock.yaml'
+
+      - name: 📦 Instalar dependencias frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎭 Instalar Chromium
+        working-directory: Frontend
+        run: pnpm e2e:install
+
+      - name: 🔗 Correr E2E flujo completo (por partes, serial)
+        working-directory: Frontend
+        env:
+          VITE_API_URL: http://localhost:8001/api
+          E2E_API_URL: http://localhost:8001
+          E2E_BASE_URL: http://localhost:3000
+          CI: true
+        run: pnpm exec playwright test --grep @flujo-completo
+
+      - name: 📊 Subir reporte Playwright (flujo completo)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-flujo-completo
+          path: Frontend/playwright-report/
+          retention-days: 7
+
+  # ══════════════════════════════════════════════
   # JOB 3 — DEPLOY STAGING (solo rama staging)
   # ══════════════════════════════════════════════
   deploy-staging:
