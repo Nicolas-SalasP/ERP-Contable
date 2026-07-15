@@ -57,8 +57,15 @@ class FacturaService
         }
 
         if (! empty($filtros['proveedor_id'])) {
-            // proveedor_id identifica tanto al proveedor (COMPRA) como al cliente (VENTA).
+            // proveedor_id identifica tanto al proveedor (COMPRA) como al cliente (VENTA), pero
+            // en VENTA apunta a la entidad "espejo" Proveedor autogenerada por RUT (ver
+            // CotizacionService::facturar), no al id real de Cliente -- por eso existe el filtro
+            // 'cliente_id' aparte para quien ya tiene el Cliente.id real (ej. Mesa de Conciliación).
             $query->where('proveedor_id', $filtros['proveedor_id']);
+        }
+
+        if (! empty($filtros['cliente_id'])) {
+            $query->where('cliente_id', $filtros['cliente_id']);
         }
 
         if (! empty($filtros['num'])) {

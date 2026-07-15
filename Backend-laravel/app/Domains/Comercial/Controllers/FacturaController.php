@@ -29,7 +29,7 @@ class FacturaController
 
     public function index(Request $request)
     {
-        $filtros = $request->only(['estado', 'tipo', 'proveedor_id', 'search', 'num', 'limit', 'fecha_desde', 'fecha_hasta']);
+        $filtros = $request->only(['estado', 'tipo', 'proveedor_id', 'cliente_id', 'search', 'num', 'limit', 'fecha_desde', 'fecha_hasta']);
         $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_activa_id, $filtros);
 
         return response()->json([

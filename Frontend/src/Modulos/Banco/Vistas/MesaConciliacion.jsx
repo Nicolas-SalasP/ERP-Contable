@@ -174,8 +174,14 @@ const MesaConciliacion = () => {
         
         try {
             // Filtramos server-side por tipo + entidad para no traer todas las facturas de la empresa (el endpoint pagina).
+            // En VENTA, factura.proveedor_id NO es el Cliente.id -- apunta a una entidad "espejo"
+            // Proveedor autogenerada por RUT (ver CotizacionService::facturar). `selected.value`
+            // aqui SIEMPRE es el id real de la entidad elegida en el <Select> (Cliente.id o
+            // Proveedor.id segun corresponda), por eso se manda en el parametro que coincide con
+            // la columna real de la factura para cada tipo.
+            const paramEntidad = esEgreso ? { proveedor_id: selected.value } : { cliente_id: selected.value };
             const res = await api.get('/facturas', {
-                params: { tipo, proveedor_id: selected.value, limit: 500 }
+                params: { tipo, ...paramEntidad, limit: 500 }
             });
             const todas = res.success ? res.data : (res.data?.data || []);
             const pendientes = todas.filter(f =>
