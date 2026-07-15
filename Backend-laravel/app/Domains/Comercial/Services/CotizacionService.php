@@ -242,7 +242,7 @@ class CotizacionService
             }
 
             $proveedor = Proveedor::where('empresa_id', $empresaId)
-                ->where('rut', $cliente->rut)
+                ->whereBlind('rut', 'proveedor_rut_index', $cliente->rut)
                 ->lockForUpdate()
                 ->first();
 

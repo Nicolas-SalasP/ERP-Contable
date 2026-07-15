@@ -117,6 +117,7 @@ class Factura extends Model
         return $this->belongsTo(Empresa::class);
     }
 
+    /** @return BelongsTo<Proveedor, $this> */
     public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);

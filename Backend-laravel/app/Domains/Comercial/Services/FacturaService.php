@@ -66,9 +66,29 @@ class FacturaService
         }
 
         if (! empty($filtros['search'])) {
-            $query->whereHas('proveedor', function ($q) use ($filtros) {
+            // rut cifrado (Ley 21.719): la busqueda por RUT ya no puede ser parcial (LIKE no
+            // funciona sobre ciphertext), solo match exacto via blind index. Proveedor.rut no
+            // se normaliza al guardarse (ver ProveedorService), asi que la comparacion aqui
+            // usa el mismo valor crudo para no introducir un desajuste de formato.
+            //
+            // No se usa el scope whereBlind() dentro de la closure de whereHas() porque
+            // Larastan tipa esa closure como Builder<Model> generico (no Proveedor), y
+            // whereBlind() solo existe en el builder de modelos con UsesCipherSweet -- se
+            // arma el mismo whereExists a mano con metodos base del Builder.
+            $rutIndexado = Proveedor::getCipherSweetEncryptedRow()
+                ->getBlindIndex('proveedor_rut_index', ['rut' => $filtros['search']]);
+            $proveedorMorphClass = (new Proveedor)->getMorphClass();
+
+            $query->whereHas('proveedor', function ($q) use ($filtros, $rutIndexado, $proveedorMorphClass) {
                 $q->where('razon_social', 'like', "%{$filtros['search']}%")
-                    ->orWhere('rut', 'like', "%{$filtros['search']}%");
+                    ->orWhereExists(function ($sub) use ($rutIndexado, $proveedorMorphClass) {
+                        $sub->select(DB::raw(1))
+                            ->from('blind_indexes')
+                            ->where('indexable_type', $proveedorMorphClass)
+                            ->whereColumn('indexable_id', 'proveedores.id')
+                            ->where('name', 'proveedor_rut_index')
+                            ->where('value', $rutIndexado);
+                    });
             });
         }
 
@@ -889,7 +909,7 @@ class FacturaService
             throw ComercialException::regla('No se puede cambiar el estado de una factura anulada.');
         }
 
-        if (!in_array($estado, self::ESTADOS_FACTURA_VALIDOS, true)) {
+        if (! in_array($estado, self::ESTADOS_FACTURA_VALIDOS, true)) {
             throw ComercialException::regla("Estado '{$estado}' no es una transición válida. Use el flujo de anulación para anular una factura.");
         }
 

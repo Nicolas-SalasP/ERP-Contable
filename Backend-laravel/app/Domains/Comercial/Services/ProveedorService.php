@@ -54,7 +54,7 @@ class ProveedorService
 
         if (! empty($datos['rut'])) {
             $rutExiste = Proveedor::where('empresa_id', $datos['empresa_id'])
-                ->where('rut', $datos['rut'])
+                ->whereBlind('rut', 'proveedor_rut_index', $datos['rut'])
                 ->exists();
 
             if ($rutExiste) {
@@ -121,7 +121,7 @@ class ProveedorService
             }
 
             $existe = Proveedor::where('empresa_id', $empresaId)
-                ->where('rut', $datos['rut'])
+                ->whereBlind('rut', 'proveedor_rut_index', $datos['rut'])
                 ->exists();
 
             if ($existe) {

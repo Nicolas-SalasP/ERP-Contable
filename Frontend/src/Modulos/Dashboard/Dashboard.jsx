@@ -1,9 +1,10 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, AlertTriangle, Check, Wallet, ArrowRight } from 'lucide-react';
 import { api } from '../../Configuracion/api';
 import { logger } from '../../Configuracion/logger';
 import { usePermisos } from '../../Contextos/Permisos';
+import { useToast } from '../../Contextos/ToastContext';
 import GraficoVentas from './componentes/GraficoVentas';
 import GraficoTopClientes from './componentes/GraficoTopClientes';
 import GraficoComprasVsVentas from './componentes/GraficoComprasVsVentas';
@@ -89,6 +90,8 @@ const Dashboard = () => {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
 
+    const { toast } = useToast();
+    const tieneResumenPrevio = useRef(false);
     const { tieneAlgunPermiso } = usePermisos();
     const tieneInventario = tieneAlgunPermiso(['inventario.productos.ver']);
     const tieneRrhh = tieneAlgunPermiso(['rrhh.remuneraciones.ver']);
@@ -114,16 +117,27 @@ const Dashboard = () => {
             const res = await api.get(`/dashboard/resumen?${params.toString()}`);
             if (res.success) {
                 setResumen(res.data);
+                tieneResumenPrevio.current = true;
             } else {
                 throw new Error('Respuesta inesperada del servidor');
             }
         } catch (err) {
             logger.error('Error al cargar resumen del dashboard:', err);
-            setError(err?.message ?? 'Error al conectar con el servidor');
+            const mensaje = err?.message ?? 'Error al conectar con el servidor';
+            setError(mensaje);
+            // Si ya había datos en pantalla (esto fue un refresco por cambio de filtro, no
+            // la carga inicial), no los ocultamos: solo avisamos que el filtro no se pudo
+            // aplicar, para no dejar al usuario mirando datos del filtro anterior sin darse
+            // cuenta. tieneResumenPrevio es un ref (no state) a propósito: si dependiera de
+            // `resumen` directamente, cada setResumen() cambiaría la identidad de este
+            // callback y el useEffect de abajo volvería a dispararlo en bucle infinito.
+            if (tieneResumenPrevio.current) {
+                toast('No se pudo actualizar el dashboard con el nuevo filtro. ' + mensaje, 'error');
+            }
         } finally {
             setCargando(false);
         }
-    }, [periodo, fechaDesde, fechaHasta, rangoCustomActivo, compararAnioAnterior]);
+    }, [periodo, fechaDesde, fechaHasta, rangoCustomActivo, compararAnioAnterior, toast]);
 
     useEffect(() => {
         cargarResumen();
@@ -138,7 +152,11 @@ const Dashboard = () => {
     const irAClienteFicha = (clienteId) => navigate(`/clientes/visor/${clienteId}`);
     const irAFacturasPorEstado = () => navigate('/facturas/historial');
 
-    if (cargando) {
+    // Spinner de pantalla completa solo en la carga inicial (sin datos previos). Al cambiar
+    // un filtro con datos ya cargados, desmontar todo el dashboard (incluidos los propios
+    // controles de filtro) se sentía como una recarga de página -- ahora el contenido
+    // anterior se mantiene visible, atenuado, con un indicador liviano mientras refresca.
+    if (cargando && !resumen) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-slate-500">
                 <Loader2 size={40} strokeWidth={1.75} className="animate-spin text-emerald-500" />
@@ -147,7 +165,7 @@ const Dashboard = () => {
         );
     }
 
-    if (error) {
+    if (error && !resumen) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <div className="bg-red-50 text-red-600 rounded-2xl p-8 text-center max-w-sm">
@@ -240,10 +258,17 @@ const Dashboard = () => {
                         />
                         <span className="text-sm font-bold text-slate-600 dark:text-slate-300">Comparar con año anterior</span>
                     </label>
+
+                    {cargando && (
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <Loader2 size={14} strokeWidth={2} className="animate-spin" />
+                            Actualizando…
+                        </span>
+                    )}
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+            <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8 transition-opacity ${cargando ? 'opacity-60' : 'opacity-100'}`}>
 
                 <TarjetaKpi
                     icono="fas fa-chart-line"
