@@ -9,7 +9,6 @@ use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Sii\Exceptions\FacturaIncompletaParaSii;
 use App\Domains\Sii\Models\SiiDteEmitido;
-use App\Domains\Sii\Models\SiiDteEmitidoDetalle;
 use App\Domains\Sii\Services\Mapping\FacturaAComercialDteMapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\PreparaEntornoBase;
@@ -17,8 +16,8 @@ use Tests\TestCase;
 
 class FacturaAComercialDteMapperTest extends TestCase
 {
-    use RefreshDatabase;
     use PreparaEntornoBase;
+    use RefreshDatabase;
 
     private FacturaAComercialDteMapper $mapper;
 
@@ -34,42 +33,43 @@ class FacturaAComercialDteMapperTest extends TestCase
     private function crearEmpresaConSii(array $overrides = []): Empresa
     {
         return Empresa::create(array_merge([
-            'rut'                  => '76123456-7',
-            'razon_social'         => 'EMPRESA EMISORA',
-            'giro_emisor'          => 'Servicios profesionales',
+            'rut' => '76123456-7',
+            'razon_social' => 'EMPRESA EMISORA',
+            'giro_emisor' => 'Servicios profesionales',
             'codigo_actividad_sii' => 471910,
-            'direccion'            => 'Av Siempre Viva 742',
-            'comuna'               => 'Santiago',
-            'ciudad'               => 'Santiago',
+            'direccion' => 'Av Siempre Viva 742',
+            'comuna' => 'Santiago',
+            'ciudad' => 'Santiago',
             'resolucion_sii_numero' => 80,
-            'resolucion_sii_fecha'  => '2024-08-22',
-            'ambiente_sii'         => 'certificacion',
+            'resolucion_sii_fecha' => '2024-08-22',
+            'ambiente_sii' => 'certificacion',
         ], $overrides));
     }
 
     private function crearClienteCompleto(int $empresaId, array $overrides = []): Cliente
     {
         return Cliente::create(array_merge([
-            'rut'             => '11222333-4',
-            'razon_social'    => 'CLIENTE FINAL S.A.',
+            'rut' => '11222333-4',
+            'razon_social' => 'CLIENTE FINAL S.A.',
             'contacto_nombre' => 'Juan Perez',
-            'contacto_email'  => 'juan@cliente.cl',
-            'direccion'       => 'Calle Cliente 100',
-            'telefono'        => '+56222334455',
-            'email'           => 'general@cliente.cl',
-            'estado'          => 'ACTIVO',
-            'empresa_id'      => $empresaId,
-            'comuna'          => 'Providencia',
-            'ciudad'          => 'Santiago',
-            'giro'            => 'Comercio al por menor',
+            'contacto_email' => 'juan@cliente.cl',
+            'direccion' => 'Calle Cliente 100',
+            'telefono' => '+56222334455',
+            'email' => 'general@cliente.cl',
+            'estado' => 'ACTIVO',
+            'empresa_id' => $empresaId,
+            'comuna' => 'Providencia',
+            'ciudad' => 'Santiago',
+            'giro' => 'Comercio al por menor',
             'codigo_actividad' => 471910,
         ], $overrides));
     }
 
     /**
      * Crea una factura VENTA + 1 detalle, montos cuadrados, lista para mapeo.
-     * @param array $overridesFactura  para campos de la factura
-     * @param array $overridesDetalle  para campos del detalle unico
+     *
+     * @param  array  $overridesFactura  para campos de la factura
+     * @param  array  $overridesDetalle  para campos del detalle unico
      */
     private function crearFacturaVentaCompleta(
         Empresa $empresa,
@@ -79,37 +79,37 @@ class FacturaAComercialDteMapperTest extends TestCase
     ): Factura {
         // Proveedor placeholder (proveedor_id es nullable post F1.x SII).
         $factura = Factura::create(array_merge([
-            'empresa_id'          => $empresa->id,
-            'codigo_unico'        => Factura::generarCodigoUnico(),
-            'proveedor_id'        => null,
-            'cliente_id'          => $cliente->id,
-            'numero_factura'      => 'F-' . random_int(1000, 99999),
-            'tipo'                => 'VENTA',
-            'tipo_documento'      => 'FACTURA',
-            'tipo_dte'            => 33,
-            'fecha_emision'       => now()->toDateString(),
-            'monto_neto'          => 1000,
-            'monto_iva'           => 190,
-            'monto_bruto'         => 1190,
-            'monto_exento'        => 0,
-            'estado'              => 'REGISTRADA',
-            'moneda'              => 'CLP',
+            'empresa_id' => $empresa->id,
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'proveedor_id' => null,
+            'cliente_id' => $cliente->id,
+            'numero_factura' => 'F-'.random_int(1000, 99999),
+            'tipo' => 'VENTA',
+            'tipo_documento' => 'FACTURA',
+            'tipo_dte' => 33,
+            'fecha_emision' => now()->toDateString(),
+            'monto_neto' => 1000,
+            'monto_iva' => 190,
+            'monto_bruto' => 1190,
+            'monto_exento' => 0,
+            'estado' => 'REGISTRADA',
+            'moneda' => 'CLP',
         ], $overridesFactura));
 
         FacturaDetalle::create(array_merge([
-            'factura_id'      => $factura->id,
-            'numero_linea'    => 1,
-            'nombre_item'     => 'Servicio profesional',
-            'descripcion'     => 'Asesoria mes',
-            'cantidad'        => 1,
-            'unidad_medida'   => 'UN',
+            'factura_id' => $factura->id,
+            'numero_linea' => 1,
+            'nombre_item' => 'Servicio profesional',
+            'descripcion' => 'Asesoria mes',
+            'cantidad' => 1,
+            'unidad_medida' => 'UN',
             'precio_unitario' => 1000,
-            'descuento_pct'   => 0,
+            'descuento_pct' => 0,
             'descuento_monto' => 0,
-            'recargo_pct'     => 0,
-            'recargo_monto'   => 0,
-            'exento'          => false,
-            'monto_item'      => 1000,
+            'recargo_pct' => 0,
+            'recargo_monto' => 0,
+            'exento' => false,
+            'monto_item' => 1000,
         ], $overridesDetalle));
 
         return $factura->fresh(['detalles', 'cliente', 'empresa']);
@@ -144,13 +144,13 @@ class FacturaAComercialDteMapperTest extends TestCase
         $empresa = $this->crearEmpresaConSii(['rut' => '76777888-K']);
         $cliente = $this->crearClienteCompleto($empresa->id, ['rut' => '11111111-1']);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
-            'tipo_dte'    => 34,
-            'monto_neto'  => 0,
-            'monto_iva'   => 0,
+            'tipo_dte' => 34,
+            'monto_neto' => 0,
+            'monto_iva' => 0,
             'monto_exento' => 5000,
             'monto_bruto' => 5000,
         ], [
-            'exento'     => true,
+            'exento' => true,
             'monto_item' => 5000,
             'precio_unitario' => 5000,
         ]);
@@ -169,7 +169,7 @@ class FacturaAComercialDteMapperTest extends TestCase
         $empresa = $this->crearEmpresaConSii(['rut' => '76333222-1']);
         $cliente = $this->crearClienteCompleto($empresa->id, ['rut' => '12345678-9']);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
-            'tipo_dte'       => 39,
+            'tipo_dte' => 39,
             'tipo_documento' => 'BOLETA',
         ]);
 
@@ -182,14 +182,14 @@ class FacturaAComercialDteMapperTest extends TestCase
         $empresa = $this->crearEmpresaConSii(['rut' => '76333000-K']);
         $cliente = $this->crearClienteCompleto($empresa->id, ['rut' => '22222222-2']);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
-            'tipo_dte'       => 41,
+            'tipo_dte' => 41,
             'tipo_documento' => 'BOLETA',
-            'monto_neto'  => 0,
-            'monto_iva'   => 0,
+            'monto_neto' => 0,
+            'monto_iva' => 0,
             'monto_exento' => 3000,
             'monto_bruto' => 3000,
         ], [
-            'exento'     => true,
+            'exento' => true,
             'monto_item' => 3000,
             'precio_unitario' => 3000,
         ]);
@@ -204,7 +204,7 @@ class FacturaAComercialDteMapperTest extends TestCase
         $empresa = $this->crearEmpresaConSii(['rut' => '76998877-K']);
         $cliente = $this->crearClienteCompleto($empresa->id, ['rut' => '33333333-3']);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
-            'tipo_dte'       => 61,
+            'tipo_dte' => 61,
             'tipo_documento' => 'NOTA_CREDITO',
         ]);
 
@@ -219,12 +219,101 @@ class FacturaAComercialDteMapperTest extends TestCase
         $this->assertSame('33', $dte->referencias->first()->tipo_documento_referencia);
     }
 
+    public function test_mapea_factura_tipo_52_guia_despacho_crea_traslado(): void
+    {
+        $empresa = $this->crearEmpresaConSii(['rut' => '76555111-9']);
+        $cliente = $this->crearClienteCompleto($empresa->id, ['rut' => '55555555-5']);
+        $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
+            'tipo_dte' => 52,
+            'tipo_documento' => 'GUIA_DESPACHO',
+        ]);
+
+        $dte = $this->mapper->mapear($factura);
+
+        $this->assertSame(52, (int) $dte->tipo_dte);
+        $this->assertNotNull($dte->traslado);
+        $this->assertSame(1, (int) $dte->traslado->indicador_traslado);
+    }
+
+    public function test_mapea_factura_tipo_46_compra_receptor_viene_de_proveedor(): void
+    {
+        $empresa = $this->crearEmpresaConSii(['rut' => '76555222-8']);
+        $proveedor = Proveedor::create([
+            'empresa_id' => $empresa->id,
+            'codigo_interno' => 'PROV-001',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP',
+            'rut' => '66666666-6',
+            'razon_social' => 'PROVEEDOR AGRICOLA LTDA',
+            'comuna' => 'Rancagua',
+            'direccion' => 'Camino Rural KM 5',
+            'email_contacto' => 'contacto@proveedor.cl',
+            'nombre_contacto' => 'Pedro Gonzalez',
+            'estado' => 'ACTIVO',
+        ]);
+        $factura = Factura::create([
+            'empresa_id' => $empresa->id,
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'proveedor_id' => $proveedor->id,
+            'cliente_id' => null,
+            'numero_factura' => 'FC-'.random_int(1000, 99999),
+            'tipo' => 'COMPRA',
+            'tipo_documento' => 'FACTURA_COMPRA',
+            'tipo_dte' => 46,
+            'fecha_emision' => now()->toDateString(),
+            'monto_neto' => 1000, 'monto_iva' => 190, 'monto_bruto' => 1190, 'monto_exento' => 0,
+            'estado' => 'REGISTRADA', 'moneda' => 'CLP',
+        ]);
+        FacturaDetalle::create([
+            'factura_id' => $factura->id, 'numero_linea' => 1,
+            'nombre_item' => 'Compra insumo', 'cantidad' => 1, 'precio_unitario' => 1000,
+            'monto_item' => 1000, 'exento' => false,
+        ]);
+
+        $dte = $this->mapper->mapear($factura->fresh(['detalles', 'proveedor', 'empresa']));
+
+        $this->assertSame(46, (int) $dte->tipo_dte);
+        $this->assertSame('66666666-6', $dte->receptor_rut);
+        $this->assertSame('PROVEEDOR AGRICOLA LTDA', $dte->receptor_razon_social);
+        $this->assertSame('76555222-8', $dte->emisor_rut);
+    }
+
+    public function test_lanza_si_tipo_46_sin_proveedor_id(): void
+    {
+        $empresa = $this->crearEmpresaConSii();
+        $factura = Factura::create([
+            'empresa_id' => $empresa->id,
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'proveedor_id' => null,
+            'cliente_id' => null,
+            'numero_factura' => 'FC-'.random_int(1000, 99999),
+            'tipo' => 'COMPRA',
+            'tipo_documento' => 'FACTURA_COMPRA',
+            'tipo_dte' => 46,
+            'fecha_emision' => now()->toDateString(),
+            'monto_neto' => 1000, 'monto_iva' => 190, 'monto_bruto' => 1190,
+            'estado' => 'REGISTRADA',
+        ]);
+        FacturaDetalle::create([
+            'factura_id' => $factura->id, 'numero_linea' => 1,
+            'nombre_item' => 'X', 'cantidad' => 1, 'precio_unitario' => 1000,
+            'monto_item' => 1000, 'exento' => false,
+        ]);
+
+        try {
+            $this->mapper->mapear($factura->fresh(['detalles']));
+            $this->fail('Debio lanzar proveedorFaltante');
+        } catch (FacturaIncompletaParaSii $e) {
+            $this->assertSame(FacturaIncompletaParaSii::PROVEEDOR_FALTANTE, $e->razon);
+        }
+    }
+
     public function test_mapea_factura_tipo_56_nota_debito_requiere_referencia(): void
     {
         $empresa = $this->crearEmpresaConSii(['rut' => '76888777-1']);
         $cliente = $this->crearClienteCompleto($empresa->id, ['rut' => '44444444-4']);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
-            'tipo_dte'       => 56,
+            'tipo_dte' => 56,
             'tipo_documento' => 'NOTA_DEBITO',
         ]);
 
@@ -283,7 +372,7 @@ class FacturaAComercialDteMapperTest extends TestCase
         $empresa = $this->crearEmpresaConSii();
         $cliente = $this->crearClienteCompleto($empresa->id, [
             'contacto_email' => 'preferred@x.cl',
-            'email'          => 'fallback@x.cl',
+            'email' => 'fallback@x.cl',
         ]);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente);
 
@@ -296,7 +385,7 @@ class FacturaAComercialDteMapperTest extends TestCase
         $empresa = $this->crearEmpresaConSii();
         $cliente = $this->crearClienteCompleto($empresa->id, [
             'contacto_email' => null,
-            'email'          => null,
+            'email' => null,
         ]);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente);
 
@@ -352,11 +441,11 @@ class FacturaAComercialDteMapperTest extends TestCase
         // Factura con monto_neto=3000 (3 lineas de 1000)
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
             'monto_neto' => 3000,
-            'monto_iva'  => 570,
+            'monto_iva' => 570,
             'monto_bruto' => 3570,
         ], [
             'numero_linea' => 3,
-            'nombre_item'  => 'Item C',
+            'nombre_item' => 'Item C',
         ]);
         // Agregar 2 detalles mas con numeros 1 y 2 (orden inverso a creacion).
         FacturaDetalle::create([
@@ -382,7 +471,7 @@ class FacturaAComercialDteMapperTest extends TestCase
         $empresa = $this->crearEmpresaConSii();
         $cliente = $this->crearClienteCompleto($empresa->id);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
-            'tipo_dte'   => 34,
+            'tipo_dte' => 34,
             'monto_neto' => 0, 'monto_iva' => 0, 'monto_exento' => 1000, 'monto_bruto' => 1000,
         ], ['exento' => true]);
 
@@ -425,7 +514,7 @@ class FacturaAComercialDteMapperTest extends TestCase
         $empresa = $this->crearEmpresaConSii();
         $cliente = $this->crearClienteCompleto($empresa->id);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [], [
-            'descuento_pct'   => 10,
+            'descuento_pct' => 10,
             'descuento_monto' => 100,
         ]);
 
@@ -478,7 +567,7 @@ class FacturaAComercialDteMapperTest extends TestCase
         $this->mapper->mapear($factura);
     }
 
-    public function test_lanza_si_estado_es_ANULADA(): void
+    public function test_lanza_si_estado_es_anulada(): void
     {
         $empresa = $this->crearEmpresaConSii();
         $cliente = $this->crearClienteCompleto($empresa->id);
@@ -492,7 +581,7 @@ class FacturaAComercialDteMapperTest extends TestCase
         }
     }
 
-    public function test_lanza_si_sii_dte_emitido_id_ya_seteado_yaEmitida(): void
+    public function test_lanza_si_sii_dte_emitido_id_ya_seteado_ya_emitida(): void
     {
         $empresa = $this->crearEmpresaConSii();
         $cliente = $this->crearClienteCompleto($empresa->id);
@@ -527,13 +616,13 @@ class FacturaAComercialDteMapperTest extends TestCase
         }
     }
 
-    public function test_lanza_si_tipo_documento_FACTURA_con_tipo_dte_61_inconsistente(): void
+    public function test_lanza_si_tipo_documento_factur_a_con_tipo_dte_61_inconsistente(): void
     {
         $empresa = $this->crearEmpresaConSii();
         $cliente = $this->crearClienteCompleto($empresa->id);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
             'tipo_documento' => 'FACTURA',
-            'tipo_dte'       => 61,
+            'tipo_dte' => 61,
         ]);
 
         try {
@@ -544,13 +633,13 @@ class FacturaAComercialDteMapperTest extends TestCase
         }
     }
 
-    public function test_lanza_si_tipo_documento_NOTA_CREDITO_con_tipo_dte_33_inconsistente(): void
+    public function test_lanza_si_tipo_documento_not_a_credit_o_con_tipo_dte_33_inconsistente(): void
     {
         $empresa = $this->crearEmpresaConSii();
         $cliente = $this->crearClienteCompleto($empresa->id);
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
             'tipo_documento' => 'NOTA_CREDITO',
-            'tipo_dte'       => 33,
+            'tipo_dte' => 33,
         ]);
 
         $this->expectException(FacturaIncompletaParaSii::class);
@@ -591,11 +680,11 @@ class FacturaAComercialDteMapperTest extends TestCase
         $cliente = $this->crearClienteCompleto($empresa->id);
         // monto_neto declarado 1000 pero detalle suma 800: discrepancia 200.
         $factura = $this->crearFacturaVentaCompleta($empresa, $cliente, [
-            'monto_neto'  => 1000,
-            'monto_iva'   => 190,
+            'monto_neto' => 1000,
+            'monto_iva' => 190,
             'monto_bruto' => 1190,
         ], [
-            'monto_item'      => 800,
+            'monto_item' => 800,
             'precio_unitario' => 800,
         ]);
 

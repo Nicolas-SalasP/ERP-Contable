@@ -7,32 +7,44 @@ use DomainException;
 /** F6.1 — falla de validacion pre-mapeo de una Factura al snapshot SiiDteEmitido, lanzada por FacturaAComercialDteMapper ANTES de cualquier persistencia para no consumir folio CAF (D5): cero efectos secundarios mientras el mapper no complete exitosamente. */
 class FacturaIncompletaParaSii extends DomainException
 {
-    public const TIPO_DTE_FALTANTE              = 'tipo_dte_faltante';
-    public const TIPO_DTE_INVALIDO              = 'tipo_dte_invalido';
-    public const CLIENTE_FALTANTE               = 'cliente_faltante';
-    public const ESTADO_INVALIDO                = 'estado_invalido';
-    public const YA_EMITIDA                     = 'ya_emitida';
-    public const SIN_DETALLES                   = 'sin_detalles';
-    public const TIPO_DOCUMENTO_INCONSISTENTE   = 'tipo_documento_inconsistente';
-    public const MONTOS_NO_CUADRAN              = 'montos_no_cuadran';
-    public const REFERENCIAS_FALTANTES          = 'referencias_faltantes';
-    public const EMPRESA_SIN_AMBIENTE_SII       = 'empresa_sin_ambiente_sii';
+    public const TIPO_DTE_FALTANTE = 'tipo_dte_faltante';
+
+    public const TIPO_DTE_INVALIDO = 'tipo_dte_invalido';
+
+    public const CLIENTE_FALTANTE = 'cliente_faltante';
+
+    public const PROVEEDOR_FALTANTE = 'proveedor_faltante';
+
+    public const ESTADO_INVALIDO = 'estado_invalido';
+
+    public const YA_EMITIDA = 'ya_emitida';
+
+    public const SIN_DETALLES = 'sin_detalles';
+
+    public const TIPO_DOCUMENTO_INCONSISTENTE = 'tipo_documento_inconsistente';
+
+    public const MONTOS_NO_CUADRAN = 'montos_no_cuadran';
+
+    public const REFERENCIAS_FALTANTES = 'referencias_faltantes';
+
+    public const EMPRESA_SIN_AMBIENTE_SII = 'empresa_sin_ambiente_sii';
 
     public readonly string $razon;
+
     public readonly int $facturaId;
 
     /** @var array<string, mixed> contexto opcional para logs. */
     public readonly array $contexto;
 
     /**
-     * @param array<string, mixed> $contexto
+     * @param  array<string, mixed>  $contexto
      */
     public function __construct(string $message, string $razon, int $facturaId, array $contexto = [])
     {
         parent::__construct($message);
-        $this->razon     = $razon;
+        $this->razon = $razon;
         $this->facturaId = $facturaId;
-        $this->contexto  = $contexto;
+        $this->contexto = $contexto;
     }
 
     public static function tipoDteFaltante(int $facturaId): self
@@ -45,7 +57,7 @@ class FacturaIncompletaParaSii extends DomainException
     }
 
     /**
-     * @param array<int, int> $validos
+     * @param  array<int, int>  $validos
      */
     public static function tipoDteInvalido(int $facturaId, ?int $tipoDte, array $validos): self
     {
@@ -67,6 +79,15 @@ class FacturaIncompletaParaSii extends DomainException
         return new self(
             "Factura {$facturaId} no tiene cliente_id asignado; requerido para emitir al SII.",
             self::CLIENTE_FALTANTE,
+            $facturaId
+        );
+    }
+
+    public static function proveedorFaltante(int $facturaId): self
+    {
+        return new self(
+            "Factura {$facturaId} no tiene proveedor_id asignado; requerido para emitir Factura de Compra (tipo_dte=46) al SII.",
+            self::PROVEEDOR_FALTANTE,
             $facturaId
         );
     }
