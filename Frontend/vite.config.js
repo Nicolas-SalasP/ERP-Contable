@@ -45,15 +45,19 @@ export default defineConfig({
     })
   ],
   server: {
-    port: 3000,
+    // Puerto y target del proxy hardcodeados a 3000/8001 rompian correr un segundo entorno
+    // dev en paralelo (ej. E2E contra un backend aislado mientras otra sesion usa el real).
+    // VITE_API_URL ya es la variable que el resto del frontend usa para el backend -- se
+    // reusa aqui (sin el sufijo /api) en vez de inventar una env var nueva.
+    port: Number(process.env.VITE_DEV_PORT) || 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8001',
+        target: (process.env.VITE_API_URL || 'http://localhost:8001/api').replace(/\/api\/?$/, ''),
         changeOrigin: true,
         secure: false,
       },
       '/storage': {
-        target: 'http://localhost:8001',
+        target: (process.env.VITE_API_URL || 'http://localhost:8001/api').replace(/\/api\/?$/, ''),
         changeOrigin: true,
         secure: false,
       }

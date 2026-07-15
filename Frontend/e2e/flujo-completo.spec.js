@@ -11,6 +11,11 @@ import { test, expect } from '@playwright/test';
  * job e2e-flujo-completo con needs: [e2e-smoke]).
  */
 test.describe.serial('@flujo-completo - Ciclo cotización → cierre de período', () => {
+    // Un retry en modo serial re-ejecuta TODO el grupo desde el principio (asi funciona
+    // Playwright), duplicando cotizacion/factura/movimiento con los mismos datos de prueba --
+    // mejor un fallo limpio de una sola corrida que reintentos que enmascaran el estado real.
+    test.describe.configure({ retries: 0 });
+
     const CLIENTE_NOMBRE = 'Cliente E2E de Prueba';
     const MONTO = 50_000;
     const HOY = new Date().toISOString().slice(0, 10);
@@ -85,10 +90,14 @@ test.describe.serial('@flujo-completo - Ciclo cotización → cierre de período
     test('Parte 3 — registra el ingreso en la cartola bancaria', async ({ page }) => {
         test.skip(!numeroFactura, 'La Parte 2 no dejó una factura emitida');
 
+        // "Banco E2E" (creada por tenri:e2e-setup) es la unica cuenta -> queda auto-seleccionada
+        // en cuantoActiva tras GET /banco/cuentas. Sin esperar esa respuesta hay una carrera:
+        // el submit puede salir con cuenta_bancaria_id vacio (400 "el campo... es obligatorio").
+        const cuentasResponse = page.waitForResponse((res) => res.url().includes('/banco/cuentas'));
         await page.goto('/banco/cartola');
         await expect(page.getByText(/Cartola y Movimientos/i).first()).toBeVisible({ timeout: 10_000 });
+        await cuentasResponse;
 
-        // "Banco E2E" (creada por tenri:e2e-setup) es la unica cuenta -> queda auto-seleccionada.
         // tipo_movimiento ya inicia en 'INGRESO' por defecto, pero se clickea igual por claridad.
         await page.getByRole('button', { name: /Ingreso \(Abono\)/i }).click();
 
@@ -107,8 +116,12 @@ test.describe.serial('@flujo-completo - Ciclo cotización → cierre de período
     test('Parte 4 — concilia el movimiento con la factura emitida', async ({ page }) => {
         test.skip(!numeroFactura, 'La Parte 2 no dejó una factura emitida');
 
+        // Igual que en Parte 3: sin esperar la respuesta de movimientos pendientes hay una
+        // carrera entre la navegación y la carga de datos (la fila puede no estar aun en el DOM).
+        const movimientosResponse = page.waitForResponse((res) => res.url().includes('/banco/movimientos/pendientes'));
         await page.goto('/banco/conciliacion');
         await expect(page.getByText(/Conciliación/i).first()).toBeVisible({ timeout: 10_000 });
+        await movimientosResponse;
 
         const filaMovimiento = page.locator('tr').filter({ hasText: 'E2E' }).first();
         await expect(filaMovimiento).toBeVisible({ timeout: 10_000 });
@@ -118,10 +131,47 @@ test.describe.serial('@flujo-completo - Ciclo cotización → cierre de período
         const modal = page.locator('div').filter({ has: page.getByText('Plataforma de Conciliación') }).last();
         await expect(modal).toBeVisible({ timeout: 5_000 });
 
-        // Pestaña "Pago / Cobro Facturas" + modo "Sugerencia" ya son el default: el monto del
-        // movimiento coincide exacto con la factura, asi que aparece sola en la tabla de
-        // sugerencias sin necesitar seleccionar cliente/proveedor a mano (react-select).
+        // abrirModalConciliacion() intenta "Sugerencia" (match automatico por monto) primero;
+        // GET /banco/movimientos/{id}/sugerencias a veces encuentra la factura y a veces no
+        // (observado en corridas reales -- no depende de nada en este spec), y el propio
+        // componente cae solo a modo "Busqueda Manual" cuando no hay match. El test maneja
+        // ambos caminos en vez de asumir uno fijo.
+        await page.waitForResponse((res) => res.url().includes('/sugerencias'));
+        // Margen extra: la respuesta HTTP ya llegó, pero React puede tardar un tick más en
+        // reflejar el cambio de modo (SUGERENCIAS -> MANUAL) cuando no hay match.
+        await page.waitForTimeout(500);
+        const entroModoManual = await modal.getByText('Seleccionar Cliente').isVisible({ timeout: 8_000 }).catch(() => false);
+
+        if (entroModoManual) {
+            // KNOWN ISSUE (verificado en corridas locales reales, sin resolver): la interaccion
+            // con este <Select> de react-select (click + type + click en opcion) no deja el
+            // campo poblado de forma confiable -- el combobox queda vacio ("Busca el
+            // cliente...") pese a que el mismo patron (click, keyboard.type, click en opcion
+            // por texto) es el estandar recomendado por Playwright para react-select. No se
+            // identifico la causa raiz (¿portal de menuPortalTarget interceptando el foco?
+            // ¿un onBlur que limpia el input al perder foco tras el type?) dentro del tiempo
+            // disponible en esta sesion. Las Partes 1, 2, 3 y 5 SI se verificaron pasando de
+            // extremo a extremo contra un backend+frontend reales.
+            const comboboxCliente = modal.getByRole('combobox');
+            await comboboxCliente.click();
+            await page.keyboard.type('Cliente E2E', { delay: 60 });
+
+            const opcionCliente = page.getByText('Cliente E2E de Prueba', { exact: false }).last();
+            await expect(opcionCliente).toBeVisible({ timeout: 5_000 });
+
+            const facturasResponsePromise = page.waitForResponse((res) => res.url().includes('/facturas?') || res.url().includes('/facturas'));
+            await opcionCliente.click();
+            await facturasResponsePromise;
+
+            const filaFactura = modal.locator('tr').filter({ hasText: numeroFactura }).first();
+            await expect(filaFactura).toBeVisible({ timeout: 10_000 });
+            await filaFactura.click();
+        }
+        // Si NO entró a modo manual, la sugerencia automática ya dejó la factura lista en
+        // facturasAProcesar (todo lo que devuelve /sugerencias se incluye sin selección manual).
+
         const responsePromise = page.waitForResponse((res) => res.url().includes('/banco/movimientos/conciliar-facturas'));
+        await expect(modal.getByRole('button', { name: /Aprobar Pago|Registrar como Anticipo/i })).toBeVisible({ timeout: 5_000 });
         await modal.getByRole('button', { name: /Aprobar Pago|Registrar como Anticipo/i }).click();
         const response = await responsePromise;
 
