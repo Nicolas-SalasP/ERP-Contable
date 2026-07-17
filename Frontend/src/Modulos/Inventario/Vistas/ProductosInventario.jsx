@@ -28,6 +28,7 @@ const initialForm = {
     maneja_lotes: false,
     requiere_fecha_vencimiento: false,
     activo: true,
+    visible_web: false,
 };
 
 const ProductosInventario = () => {
@@ -46,6 +47,7 @@ const ProductosInventario = () => {
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
     const [form, setForm] = useState(initialForm);
     const [busqueda, setBusqueda] = useState('');
+    const [editandoId, setEditandoId] = useState(null);
 
     const cargarDatos = async (force = false) => {
         try {
@@ -102,7 +104,26 @@ const ProductosInventario = () => {
 
     const limpiarFormulario = () => {
         setForm(initialForm);
+        setEditandoId(null);
         setError(null);
+    };
+
+    const abrirEdicion = (producto) => {
+        setForm({
+            sku: producto.sku || '',
+            nombre: producto.nombre || '',
+            descripcion: producto.descripcion || '',
+            unidad_medida_id: producto.unidad_medida_id || producto.unidad_medida?.id || '',
+            costo_promedio: producto.costo_promedio ?? '',
+            stock_minimo: producto.stock_minimo ?? '',
+            maneja_lotes: Boolean(producto.maneja_lotes),
+            requiere_fecha_vencimiento: Boolean(producto.requiere_fecha_vencimiento),
+            activo: Boolean(producto.activo),
+            visible_web: Boolean(producto.visible_web),
+        });
+        setEditandoId(producto.id);
+        setError(null);
+        setMostrarFormulario(true);
     };
 
     const guardarProducto = async (event) => {
@@ -120,14 +141,21 @@ const ProductosInventario = () => {
                 maneja_lotes: Boolean(form.maneja_lotes),
                 requiere_fecha_vencimiento: Boolean(form.requiere_fecha_vencimiento),
                 activo: Boolean(form.activo),
+                visible_web: Boolean(form.visible_web),
             };
 
-            await inventarioApi.productos.crear(payload);
+            if (editandoId) {
+                await inventarioApi.productos.actualizar(editandoId, payload);
+            } else {
+                await inventarioApi.productos.crear(payload);
+            }
 
             await Swal.fire({
                 icon: 'success',
-                title: 'Producto creado',
-                text: 'El producto fue registrado correctamente en Inventario.',
+                title: editandoId ? 'Producto actualizado' : 'Producto creado',
+                text: editandoId
+                    ? 'Los cambios se guardaron correctamente.'
+                    : 'El producto fue registrado correctamente en Inventario.',
                 confirmButtonColor: '#10b981',
             });
 
@@ -159,7 +187,15 @@ const ProductosInventario = () => {
                             Actualizar
                         </SecondaryButton>
 
-                        <PrimaryButton onClick={() => setMostrarFormulario((value) => !value)}>
+                        <PrimaryButton onClick={() => {
+                            if (mostrarFormulario) {
+                                limpiarFormulario();
+                                setMostrarFormulario(false);
+                            } else {
+                                limpiarFormulario();
+                                setMostrarFormulario(true);
+                            }
+                        }}>
                             <i className={mostrarFormulario ? 'fas fa-xmark' : 'fas fa-plus'}></i>
                             {mostrarFormulario ? 'Cerrar formulario' : 'Nuevo producto'}
                         </PrimaryButton>
@@ -171,8 +207,10 @@ const ProductosInventario = () => {
 
             {mostrarFormulario && (
                 <Panel
-                    title="Crear producto"
-                    subtitle="El stock inicial se mantiene en cero; los movimientos controlan entradas y salidas."
+                    title={editandoId ? 'Editar producto' : 'Crear producto'}
+                    subtitle={editandoId
+                        ? 'El costo promedio y el stock se ajustan desde Movimientos/Valorización, no desde aquí.'
+                        : 'El stock inicial se mantiene en cero; los movimientos controlan entradas y salidas.'}
                 >
 
                     <form onSubmit={guardarProducto} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
@@ -217,18 +255,20 @@ const ProductosInventario = () => {
                             </select>
                         </Field>
 
-                        <Field label="Costo promedio inicial">
-                            <input
-                                type="number"
-                                name="costo_promedio"
-                                value={form.costo_promedio}
-                                onChange={handleChange}
-                                min="0"
-                                step="1"
-                                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
-                                placeholder="0"
-                            />
-                        </Field>
+                        {!editandoId && (
+                            <Field label="Costo promedio inicial">
+                                <input
+                                    type="number"
+                                    name="costo_promedio"
+                                    value={form.costo_promedio}
+                                    onChange={handleChange}
+                                    min="0"
+                                    step="1"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 outline-none"
+                                    placeholder="0"
+                                />
+                            </Field>
+                        )}
 
                         <Field label="Stock mínimo">
                             <input
@@ -254,7 +294,7 @@ const ProductosInventario = () => {
                             />
                         </Field>
 
-                        <div className="md:col-span-2 xl:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-2 xl:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                             <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-600 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
                                 <input
                                     type="checkbox"
@@ -293,16 +333,29 @@ const ProductosInventario = () => {
                                     Producto activo
                                 </span>
                             </label>
+
+                            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-600 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
+                                <input
+                                    type="checkbox"
+                                    name="visible_web"
+                                    checked={form.visible_web}
+                                    onChange={handleChange}
+                                    className="w-4 h-4 accent-emerald-500"
+                                />
+                                <span className="font-black text-slate-700 dark:text-slate-300 text-sm">
+                                    Publicar en la web
+                                </span>
+                            </label>
                         </div>
 
                         <div className="md:col-span-2 xl:col-span-4 flex flex-wrap justify-end gap-3">
                             <SecondaryButton type="button" onClick={limpiarFormulario}>
-                                Limpiar
+                                {editandoId ? 'Cancelar edición' : 'Limpiar'}
                             </SecondaryButton>
 
                             <PrimaryButton type="submit" disabled={saving}>
                                 <i className="fas fa-save"></i>
-                                {saving ? 'Guardando...' : 'Guardar producto'}
+                                {saving ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Guardar producto'}
                             </PrimaryButton>
                         </div>
                     </form>
@@ -339,6 +392,8 @@ const ProductosInventario = () => {
                                 <Th align="right">Stock mínimo</Th>
                                 <Th>Lotes</Th>
                                 <Th>Estado</Th>
+                                <Th>Web</Th>
+                                <Th align="right">Acciones</Th>
                             </tr>
                         </thead>
 
@@ -398,6 +453,24 @@ const ProductosInventario = () => {
                                         >
                                             {producto.activo ? 'Activo' : 'Inactivo'}
                                         </span>
+                                    </Td>
+
+                                    <Td>
+                                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-black uppercase border ${
+                                            producto.visible_web
+                                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                        }`}
+                                        >
+                                            {producto.visible_web ? 'Publicado' : 'Oculto'}
+                                        </span>
+                                    </Td>
+
+                                    <Td align="right">
+                                        <SecondaryButton onClick={() => abrirEdicion(producto)}>
+                                            <i className="fas fa-pen"></i>
+                                            Editar
+                                        </SecondaryButton>
                                     </Td>
                                 </tr>
                             ))}
