@@ -120,6 +120,8 @@ Sigue el mismo contrato HTTP general del proyecto (`docs/CONTRATO-HTTP.md`):
   de que Web haga polling.
 - **Fase 3**: plugin WordPress u otros terceros — mismo mecanismo de API-key, sin código nuevo en
   el ERP salvo, eventualmente, nuevos scopes si se exponen otros dominios además de inventario.
+  Implementación de referencia (no probada contra un WordPress real, no había ninguno disponible):
+  `wordpress-plugin/` en esta misma carpeta.
 - Webhooks push desde el ERP: no existen en v1 (solo lectura/escritura por request del
   consumidor). Si se necesitan a futuro, el punto de partida es el bus de eventos interno ya
   existente (`InventarioEventoIntegracionService`), hoy solo usado para integraciones internas
