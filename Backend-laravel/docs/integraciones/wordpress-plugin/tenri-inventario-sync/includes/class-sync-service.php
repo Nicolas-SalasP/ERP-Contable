@@ -1,6 +1,7 @@
 <?php
 /**
- * Upsert de productos del ERP hacia el CPT local (por sku). Espejo funcional de
+ * Upsert de productos del ERP hacia el destino local (por sku), delegado al adaptador que
+ * corresponda: WooCommerce si esta activo, CPT propio si no. Espejo funcional de
  * ProductErpSyncService.php (Tenri-Web-Page/backend): el ERP es la fuente de verdad de
  * existencia/precio/stock/visibilidad mientras el producto siga viniendo en la respuesta
  * (que ya filtra visible_web=1) — si deja de venir, esta sync NO lo borra ni lo oculta de
@@ -14,10 +15,28 @@ if (!defined('ABSPATH')) {
 class Tenri_Inventario_Sync_Service
 {
     private Tenri_Inventario_Sync_Api_Client $cliente;
+    /** @var Tenri_Inventario_Sync_Cpt_Adapter|Tenri_Inventario_Sync_Woocommerce_Adapter */
+    private $adaptador;
 
-    public function __construct(Tenri_Inventario_Sync_Api_Client $cliente)
+    public function __construct(Tenri_Inventario_Sync_Api_Client $cliente, $adaptador = null)
     {
         $this->cliente = $cliente;
+        $this->adaptador = $adaptador ?? self::detectar_adaptador();
+    }
+
+    /** WooCommerce si esta activo al momento de correr la sync, CPT propio si no. Se detecta en cada
+     *  ejecucion (no en la activacion del plugin) -> si WooCommerce se instala/desinstala despues,
+     *  la proxima sync usa el destino correcto sin que haya que reconfigurar nada. */
+    public static function detectar_adaptador()
+    {
+        return class_exists('WooCommerce')
+            ? new Tenri_Inventario_Sync_Woocommerce_Adapter()
+            : new Tenri_Inventario_Sync_Cpt_Adapter();
+    }
+
+    public static function nombre_adaptador_activo(): string
+    {
+        return class_exists('WooCommerce') ? 'WooCommerce' : 'CPT propio (tenri_producto)';
     }
 
     /** @return array{creados: int, actualizados: int, total: int}|WP_Error */
@@ -38,55 +57,17 @@ class Tenri_Inventario_Sync_Service
                 continue;
             }
 
-            $postId = Tenri_Inventario_Sync_Post_Type::buscarPorSku($sku);
+            $id = $this->adaptador->buscarPorSku($sku);
 
-            if ($postId === null) {
-                $this->crear($producto);
+            if ($id === null) {
+                $this->adaptador->crear($producto);
                 $creados++;
             } else {
-                $this->actualizar($postId, $producto);
+                $this->adaptador->actualizar($id, $producto);
                 $actualizados++;
             }
         }
 
         return ['creados' => $creados, 'actualizados' => $actualizados, 'total' => count($productos)];
-    }
-
-    private function crear(array $producto): void
-    {
-        $postId = wp_insert_post([
-            'post_type' => Tenri_Inventario_Sync_Post_Type::SLUG,
-            'post_title' => $producto['nombre'] ?? $producto['sku'],
-            'post_content' => $producto['descripcion'] ?? '',
-            'post_status' => 'publish',
-        ]);
-
-        if (is_wp_error($postId) || $postId === 0) {
-            return;
-        }
-
-        $this->guardarMeta($postId, $producto);
-    }
-
-    private function actualizar(int $postId, array $producto): void
-    {
-        wp_update_post([
-            'ID' => $postId,
-            'post_title' => $producto['nombre'] ?? get_the_title($postId),
-            'post_content' => $producto['descripcion'] ?? '',
-        ]);
-
-        $this->guardarMeta($postId, $producto);
-    }
-
-    private function guardarMeta(int $postId, array $producto): void
-    {
-        update_post_meta($postId, '_tenri_sku', $producto['sku']);
-        update_post_meta($postId, '_tenri_precio_venta_neto', $producto['precio_venta_neto'] ?? null);
-        update_post_meta($postId, '_tenri_stock_actual_total', $producto['stock_actual_total'] ?? null);
-        update_post_meta($postId, '_tenri_afecto_iva', !empty($producto['afecto_iva']) ? 1 : 0);
-        update_post_meta($postId, '_tenri_codigo_barra', $producto['codigo_barra'] ?? '');
-        update_post_meta($postId, '_tenri_activo', !empty($producto['activo']) ? 1 : 0);
-        update_post_meta($postId, '_tenri_synced_at', current_time('mysql'));
     }
 }

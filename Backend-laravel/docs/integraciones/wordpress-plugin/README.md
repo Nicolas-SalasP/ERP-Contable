@@ -9,9 +9,16 @@ es un punto de partida completo, no una entrega verificada en producción.
 
 - Consume `GET /api/integraciones/v1/inventario/productos` con una API-key propia (scope
   `inventario:leer`), igual que lo haría cualquier otro consumidor de la API.
-- Guarda los productos en un Custom Post Type propio (`tenri_producto`), **no** en WooCommerce —
-  para no asumir que el sitio use esa plataforma ni pisar un catálogo existente.
-- Sincroniza cada 15 minutos vía WP-Cron (o manualmente desde Ajustes → Tenri Inventario).
+- **Detecta automáticamente si WooCommerce está activo** (`class_exists('WooCommerce')`, evaluado
+  en cada sync) y sincroniza hacia el destino que corresponda, sin configuración manual:
+  - **Con WooCommerce**: crea/actualiza `WC_Product_Simple` (nombre, precio, stock, descripción)
+    vía `Tenri_Inventario_Sync_Woocommerce_Adapter`.
+  - **Sin WooCommerce**: usa un Custom Post Type propio (`tenri_producto`) vía
+    `Tenri_Inventario_Sync_Cpt_Adapter`, para no depender de ningún plugin de tienda.
+  - Si WooCommerce se instala/desinstala después, la próxima sync cambia de destino sola — no
+    hay que tocar nada.
+- Sincroniza cada 15 minutos vía WP-Cron (o manualmente desde Ajustes → Tenri Inventario, que
+  también muestra qué destino está usando ahora mismo).
 
 ## Instalación
 
@@ -21,16 +28,17 @@ es un punto de partida completo, no una entrega verificada en producción.
    requiere sesión y permiso `integraciones.api.gestionar`).
 4. Cargar la URL del ERP y esa API-key en **Ajustes → Tenri Inventario**.
 
-## Si el sitio real usa WooCommerce
+## Estructura de los adaptadores
 
-El punto de enganche es `Tenri_Inventario_Sync_Service::crear()`/`actualizar()`
-(`includes/class-sync-service.php`): en vez de `wp_insert_post()` con el CPT propio, mapear a
-`wc_get_product()`/`WC_Product::save()`. No se hizo de entrada porque no todo WordPress usa
-WooCommerce y forzarlo como dependencia dura habría sido asumir de más sin un sitio real
-para validarlo.
+Ambos adaptadores (`class-cpt-adapter.php` / `class-woocommerce-adapter.php`) implementan el
+mismo contrato informal (`buscarPorSku(string): ?int`, `crear(array): void`,
+`actualizar(int, array): void`); `Tenri_Inventario_Sync_Service` no sabe ni le importa cuál de
+los dos está usando — solo llama a esos tres métodos. Agregar un tercer destino (ej. otro plugin
+de catálogo) es agregar un adaptador nuevo con ese mismo contrato, sin tocar el resto.
 
 ## Qué falta antes de un sitio real
 
-- Probarlo contra un WordPress real (no se hizo — no había ninguno disponible).
-- Decidir si conviene WooCommerce en vez del CPT propio.
+- Probarlo contra un WordPress real (no se hizo — no había ninguno disponible), con y sin
+  WooCommerce activo.
 - Manejo de imágenes de producto (el contrato v1 de la API no expone imágenes hoy).
+- Mapeo de categorías WooCommerce (hoy el adaptador WooCommerce no asigna ninguna).

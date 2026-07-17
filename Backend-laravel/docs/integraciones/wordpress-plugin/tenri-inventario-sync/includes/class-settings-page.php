@@ -48,6 +48,8 @@ class Tenri_Inventario_Sync_Settings_Page
         <div class="wrap">
             <h1>Tenri Inventario Sync</h1>
             <p>Sincroniza el inventario visible del ERP hacia productos de este sitio, cada 15 minutos.</p>
+            <p><strong>Destino detectado:</strong> <?php echo esc_html(Tenri_Inventario_Sync_Service::nombre_adaptador_activo()); ?>
+                <span style="color:#666;">(automático — se resuelve solo según si WooCommerce está activo)</span></p>
 
             <form method="post">
                 <?php wp_nonce_field('tenri_inv_sync_guardar_ajustes'); ?>
