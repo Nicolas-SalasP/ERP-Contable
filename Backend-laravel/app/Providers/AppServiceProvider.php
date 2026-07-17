@@ -104,6 +104,16 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perHour(10)->by($request->user()->empresa_id ?? $request->ip());
         });
 
+        // Integraciones: por empresa de la API-key, no por IP (varios terceros pueden compartir
+        // IP de datacenter). La key se resuelve DESPUES de este limiter en el pipeline, asi que
+        // se identifica por el prefijo del token crudo -> no filtra si aun no hay key valida.
+        RateLimiter::for('integraciones-empresa', function (Request $request) {
+            $token = $request->bearerToken() ?? $request->header('X-Api-Key');
+            $prefijo = is_string($token) ? explode('_', $token, 3)[1] ?? $request->ip() : $request->ip();
+
+            return Limit::perMinute(60)->by($prefijo);
+        });
+
         Gate::define('gestionar-contabilidad-critica', function ($user) {
             $rol = Rol::find($user->rol_id);
 

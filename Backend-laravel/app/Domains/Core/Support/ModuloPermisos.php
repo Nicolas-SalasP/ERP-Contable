@@ -77,7 +77,7 @@ final class ModuloPermisos
         'contabilidad.dj' => ['contabilidad.dj.ver', 'contabilidad.dj.procesar'],
         'empresa.perfil' => [],
         'glosario' => [],
-        'integraciones.api' => [],
+        'integraciones.api' => ['integraciones.api.ver', 'integraciones.api.gestionar'],
         'dashboard.ejecutivo' => ['contabilidad.ver', 'tesoreria.ver', 'ventas.ver'],
         'white_label' => [],
         'modulos.custom' => [],
