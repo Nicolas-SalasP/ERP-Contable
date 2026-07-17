@@ -98,6 +98,7 @@ class InventarioService
                 'maneja_lotes' => $datos['maneja_lotes'] ?? false,
                 'requiere_fecha_vencimiento' => $datos['requiere_fecha_vencimiento'] ?? false,
                 'activo' => $datos['activo'] ?? true,
+                'visible_web' => $datos['visible_web'] ?? false,
             ]);
 
             if (!empty($datos['bodega_defecto_id'])) {
@@ -136,7 +137,7 @@ class InventarioService
         $antes = $producto->only([
             'sku', 'nombre', 'descripcion', 'tipo_producto', 'unidad_medida_id', 'metodo_valorizacion',
             'precio_venta_neto', 'afecto_iva', 'codigo_barra', 'stock_minimo', 'bodega_defecto_id',
-            'permite_merma', 'maneja_lotes', 'requiere_fecha_vencimiento', 'activo',
+            'permite_merma', 'maneja_lotes', 'requiere_fecha_vencimiento', 'activo', 'visible_web',
         ]);
 
         $producto->update([
@@ -155,6 +156,11 @@ class InventarioService
             'maneja_lotes' => $datos['maneja_lotes'] ?? false,
             'requiere_fecha_vencimiento' => $datos['requiere_fecha_vencimiento'] ?? false,
             'activo' => $datos['activo'] ?? true,
+            // A diferencia del resto de los booleanos de arriba, NO se resetea a un default fijo si
+            // el caller no lo manda: el formulario de edicion del ERP (Frontend) todavia no expone
+            // este campo (Tanda 3 pendiente) y no debe apagar visible_web como efecto secundario de
+            // editar cualquier otro dato del producto.
+            'visible_web' => $datos['visible_web'] ?? $producto->visible_web,
         ]);
 
         $this->auditoria->registrarCambio(

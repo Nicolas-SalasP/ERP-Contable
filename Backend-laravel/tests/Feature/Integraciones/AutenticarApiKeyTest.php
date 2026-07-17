@@ -49,6 +49,20 @@ class AutenticarApiKeyTest extends TestCase
         $this->getJson('/api/integraciones/v1/ping')->assertUnauthorized();
     }
 
+    public function test_token_invalido_consume_cupo_de_rate_limit(): void
+    {
+        // El throttle corre ANTES del middleware de auth (fix H-medio de la auditoria): un token
+        // invalido debe seguir contando contra el limite (evita enumeracion sin freno). Se
+        // verifica por la presencia del header X-RateLimit-Remaining, que solo el middleware
+        // 'throttle' agrega -> si volviera a correr despues de un 401 que no llama next(), no
+        // apareceria.
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer tnri_noexiste_secreto'])
+            ->getJson('/api/integraciones/v1/ping');
+
+        $respuesta->assertUnauthorized();
+        $this->assertNotNull($respuesta->headers->get('X-RateLimit-Remaining'));
+    }
+
     public function test_token_invalido_es_rechazado(): void
     {
         $this->withHeaders(['Authorization' => 'Bearer tnri_noexiste_secreto'])

@@ -85,7 +85,18 @@ Detalle / toggle:
 | `stock_actual_total` | decimal | Suma de stock en todas las bodegas de la empresa. |
 | `activo` | boolean | |
 | `visible_web` | boolean | Flag de intención de publicación — el ERP es la fuente de verdad; el consumidor decide si además la respeta localmente. |
+| `activo` | boolean | Producto activo/desactivado en el ERP. Un producto `activo=false` debe considerarse NO publicable aunque `visible_web` sea `true` — no son independientes en la práctica: desactivar un producto en el ERP debe apagar su venta en cualquier consumidor. |
 | `actualizado_at` | string\|null (ISO 8601) | Para sincronización incremental vía `updated_since`. |
+
+> **`visible_web` (ERP) vs "visibilidad local" de cada consumidor — no son el mismo concepto,
+> pero deben mantenerse sincronizados.** El `visible_web` de este contrato es la intención de
+> publicación en el ERP, fuente de verdad. Cada consumidor (ej. Tenri-Web-Page tiene su propio
+> `products.is_visible`) puede tener un flag de visibilidad local equivalente — si el consumidor
+> expone un endpoint propio para togglearlo desde su panel, ese endpoint debe propagar el cambio
+> de vuelta hacia acá (`PATCH .../visible-web`, scope `inventario:escribir`) para que no queden
+> desincronizados. Ver `Tenri-Web-Page/backend/app/Http/Controllers/Api/Admin/AdminProductController.php`
+> (`toggleVisibility`) como implementación de referencia del write-back (best-effort: si el ERP no
+> responde, el toggle local igual se confirma y se loguea el intento fallido).
 
 **Campos que nunca aparecen y no se deben esperar**: `costo_promedio`, `metodo_valorizacion`,
 `bodega_defecto_id`, ni ningún otro campo interno/contable. Si una integración necesita un campo
@@ -111,17 +122,16 @@ Sigue el mismo contrato HTTP general del proyecto (`docs/CONTRATO-HTTP.md`):
   funcionando mientras tenga consumidores activos.
 - Agregar un campo nuevo al Resource, o un filtro/endpoint nuevo, **no** requiere versión nueva.
 
-## Roadmap (fuera de alcance de v1)
+## Roadmap
 
-- **Fase 2** (siguiente): Tenri-Web-Page/Tenri-Admin consumiendo este contrato para reemplazar su
-  catálogo local `products`/`categories` (hoy sin ningún vínculo al ERP) por datos reales de
-  Inventario, mapeando por `sku`. Evaluar si conviene reusar el canal HMAC bidireccional ya
-  existente (`VerifyErpApiKey` en `Tenri-Web-Page/backend`) para que el ERP empuje cambios en vez
-  de que Web haga polling.
-- **Fase 3**: plugin WordPress u otros terceros — mismo mecanismo de API-key, sin código nuevo en
-  el ERP salvo, eventualmente, nuevos scopes si se exponen otros dominios además de inventario.
-  Implementación de referencia (no probada contra un WordPress real, no había ninguno disponible):
-  `wordpress-plugin/` en esta misma carpeta.
+- **Fase 2 — hecha:** Tenri-Web-Page consume este contrato (pull) y sincroniza hacia su catálogo
+  local `products`, mapeando por `sku` (`ProductErpSyncService`). El toggle de visibilidad de su
+  panel admin propaga el cambio de vuelta al ERP vía `PATCH .../visible-web` (write-back
+  best-effort, ver nota de `visible_web` arriba) — el ERP sigue siendo la fuente de verdad.
+- **Fase 3 — plugin de referencia hecho, no probado contra un WordPress real** (no había ninguno
+  disponible): mismo mecanismo de API-key, sin código nuevo en el ERP salvo, eventualmente, nuevos
+  scopes si se exponen otros dominios además de inventario. Ver `wordpress-plugin/` en esta misma
+  carpeta.
 - Webhooks push desde el ERP: no existen en v1 (solo lectura/escritura por request del
   consumidor). Si se necesitan a futuro, el punto de partida es el bus de eventos interno ya
   existente (`InventarioEventoIntegracionService`), hoy solo usado para integraciones internas

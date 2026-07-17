@@ -23,7 +23,7 @@ class ProductoIntegracionResource extends JsonResource
             'sku' => $producto->sku,
             'nombre' => $producto->nombre,
             'descripcion' => $producto->descripcion,
-            'precio_venta_neto' => $producto->precio_venta_neto,
+            'precio_venta_neto' => (float) $producto->precio_venta_neto,
             'afecto_iva' => $producto->afecto_iva,
             'codigo_barra' => $producto->codigo_barra,
             'stock_actual_total' => (float) ($producto->getAttribute('stock_actual_total') ?? 0),

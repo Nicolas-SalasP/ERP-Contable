@@ -20,11 +20,19 @@ class IntegracionApiKeyController
 
     public function index(Request $request): JsonResponse
     {
-        $keys = IntegracionApiKey::where('empresa_id', $this->empresaActivaId($request))
+        $paginador = IntegracionApiKey::where('empresa_id', $this->empresaActivaId($request))
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate((int) $request->query('limit', 15));
 
-        return response()->json(['success' => true, 'data' => $keys]);
+        return response()->json([
+            'success' => true,
+            'data' => $paginador->items(),
+            'pagination' => [
+                'total' => $paginador->total(),
+                'total_pages' => $paginador->lastPage(),
+                'page' => $paginador->currentPage(),
+            ],
+        ]);
     }
 
     public function store(Request $request): JsonResponse

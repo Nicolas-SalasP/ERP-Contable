@@ -47,7 +47,10 @@ class Tenri_Inventario_Sync_Woocommerce_Adapter
         $wc->set_regular_price((string) ($producto['precio_venta_neto'] ?? 0));
         $wc->set_manage_stock(true);
         $wc->set_stock_quantity((int) round((float) ($producto['stock_actual_total'] ?? 0)));
-        $wc->set_status('publish');
+        // El endpoint del ERP ya filtra visible_web=1, pero `activo` es un concepto aparte (ver
+        // CONTRATO-V1.md): un producto desactivado en el ERP NUNCA debe quedar publicado aca.
+        $activo = !array_key_exists('activo', $producto) || $producto['activo'];
+        $wc->set_status($activo ? 'publish' : 'draft');
         $wc->update_meta_data('_tenri_synced_at', current_time('mysql'));
     }
 }

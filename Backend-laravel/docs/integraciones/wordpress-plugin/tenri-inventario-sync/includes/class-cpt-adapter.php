@@ -23,7 +23,7 @@ class Tenri_Inventario_Sync_Cpt_Adapter
             'post_type' => Tenri_Inventario_Sync_Post_Type::SLUG,
             'post_title' => $producto['nombre'] ?? $producto['sku'],
             'post_content' => $producto['descripcion'] ?? '',
-            'post_status' => 'publish',
+            'post_status' => $this->estado_post($producto),
         ]);
 
         if (is_wp_error($postId) || $postId === 0) {
@@ -39,9 +39,20 @@ class Tenri_Inventario_Sync_Cpt_Adapter
             'ID' => $postId,
             'post_title' => $producto['nombre'] ?? get_the_title($postId),
             'post_content' => $producto['descripcion'] ?? '',
+            'post_status' => $this->estado_post($producto),
         ]);
 
         $this->guardar_meta($postId, $producto);
+    }
+
+    /**
+     * El endpoint del ERP ya filtra visible_web=1, pero `activo` es un concepto aparte (ver
+     * CONTRATO-V1.md): un producto desactivado en el ERP NUNCA debe quedar publicado aca, aunque
+     * siga llegando con visible_web=true. Default true si el campo faltara (defensivo).
+     */
+    private function estado_post(array $producto): string
+    {
+        return (!array_key_exists('activo', $producto) || $producto['activo']) ? 'publish' : 'draft';
     }
 
     private function guardar_meta(int $postId, array $producto): void

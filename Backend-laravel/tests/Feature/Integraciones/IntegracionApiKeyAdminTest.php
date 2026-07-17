@@ -124,4 +124,61 @@ class IntegracionApiKeyAdminTest extends TestCase
             'scopes' => ['scope-inventado'],
         ])->assertUnprocessable();
     }
+
+    public function test_index_devuelve_paginacion(): void
+    {
+        $empresa = $this->crearEmpresa();
+        Sanctum::actingAs($this->usuarioConModulo($empresa));
+
+        app(IntegracionApiKeyService::class)->emitir($empresa->id, 'Key 1', ['inventario:leer']);
+        app(IntegracionApiKeyService::class)->emitir($empresa->id, 'Key 2', ['inventario:leer']);
+
+        $respuesta = $this->getJson('/api/integraciones/admin/keys');
+
+        $respuesta->assertOk()->assertJsonStructure(['data', 'pagination' => ['total', 'total_pages', 'page']]);
+        $this->assertSame(2, $respuesta->json('pagination.total'));
+    }
+
+    public function test_suscripcion_en_solo_lectura_no_puede_emitir_keys(): void
+    {
+        $empresa = $this->crearEmpresa();
+        $usuario = $this->crearUsuario($empresa, $this->rolAdministrador, [
+            'module_keys' => ['integraciones.api'],
+            'subscription_status' => 'expired',
+        ]);
+        Sanctum::actingAs($usuario);
+
+        $this->postJson('/api/integraciones/admin/keys', [
+            'nombre' => 'Key',
+            'scopes' => ['inventario:leer'],
+        ])->assertStatus(403);
+    }
+
+    public function test_suscripcion_en_solo_lectura_no_puede_rotar_ni_revocar(): void
+    {
+        $empresa = $this->crearEmpresa();
+        $usuario = $this->crearUsuario($empresa, $this->rolAdministrador, [
+            'module_keys' => ['integraciones.api'],
+        ]);
+        Sanctum::actingAs($usuario);
+
+        $emitida = app(IntegracionApiKeyService::class)->emitir($empresa->id, 'Key', ['inventario:leer']);
+
+        $usuario->update(['subscription_status' => 'read_only']);
+
+        $this->postJson("/api/integraciones/admin/keys/{$emitida['key']->id}/rotar")->assertStatus(403);
+        $this->deleteJson("/api/integraciones/admin/keys/{$emitida['key']->id}")->assertStatus(403);
+    }
+
+    public function test_suscripcion_en_solo_lectura_igual_puede_listar_keys(): void
+    {
+        $empresa = $this->crearEmpresa();
+        $usuario = $this->crearUsuario($empresa, $this->rolAdministrador, [
+            'module_keys' => ['integraciones.api'],
+            'subscription_status' => 'expired',
+        ]);
+        Sanctum::actingAs($usuario);
+
+        $this->getJson('/api/integraciones/admin/keys')->assertOk();
+    }
 }

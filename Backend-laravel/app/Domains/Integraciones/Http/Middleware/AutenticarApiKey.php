@@ -66,13 +66,17 @@ class AutenticarApiKey
      * module_keys de al menos un usuario. A diferencia del RBAC normal, este modulo nunca
      * puede estar en MODULOS_SIEMPRE_DISPONIBLES (es opt-in premium por diseno) -> no hace
      * falta esa excepcion aca.
+     *
+     * whereJsonContains + exists() empuja el chequeo a SQL (compatible SQLite y MySQL): antes
+     * traia TODAS las filas de usuarios de la empresa a PHP solo para revisar un booleano, en
+     * cada request de una API pensada para alto volumen (sync de inventario).
      */
     private function empresaTieneModuloHabilitado(int $empresaId): bool
     {
         return User::query()
             ->where('empresa_id', $empresaId)
-            ->get(['module_keys'])
-            ->contains(fn (User $usuario) => in_array('integraciones.api', $usuario->module_keys ?? [], true));
+            ->whereJsonContains('module_keys', 'integraciones.api')
+            ->exists();
     }
 
     private function noAutorizado(string $mensaje): Response
