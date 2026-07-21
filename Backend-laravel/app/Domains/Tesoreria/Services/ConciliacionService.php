@@ -156,12 +156,15 @@ class ConciliacionService
         return DB::transaction(function () use ($empresaId, $usuarioId, $movimientoId, $facturasIds, $entidadId) {
             // Bloquea el movimiento y rechaza si ya esta conciliado (evita doble cargo a banco).
             $movimiento = $this->bancoService->obtenerMovimientoParaConciliar($empresaId, $movimientoId);
-            
-            $facturas = count($facturasIds) > 0 
-                ? $this->facturaService->obtenerFacturasPorIds($empresaId, $facturasIds) 
-                : collect([]);
-
             $esIngreso = $movimiento->abono > 0;
+
+            // tipo forzado segun direccion del movimiento (ingreso=cobro de VENTA, egreso=pago de
+            // COMPRA): sin esto, una factura de venta con el mismo proveedor_id "espejo" (RUT
+            // compartido con un Cliente, ver ProveedorAislamientoVentaCompraTest) podia colarse en
+            // facturasIds y quedar marcada PAGADA por un egreso a proveedor, o viceversa.
+            $facturas = count($facturasIds) > 0
+                ? $this->facturaService->obtenerFacturasPorIds($empresaId, $facturasIds, $esIngreso ? 'VENTA' : 'COMPRA')
+                : collect([]);
             $montoMovimiento = $esIngreso ? (float) $movimiento->abono : (float) $movimiento->cargo;
             $totalFacturas = (float) $facturas->sum('monto_bruto');
             

@@ -8,8 +8,10 @@ use Tests\TestCase;
 use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Tesoreria\Services\BancoService;
+use App\Domains\Tesoreria\Services\ConciliacionService;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use Exception;
@@ -389,5 +391,55 @@ class IntegridadBancoConciliacionAsientoTest extends TestCase
         $totalDebe  = $asiento->detalles()->sum('debe');
         $totalHaber = $asiento->detalles()->sum('haber');
         $this->assertEquals($totalDebe, $totalHaber);
+    }
+
+    // ─── Fix 5: procesarPagoFacturas no cruza tipo VENTA/COMPRA ───────────────
+
+    /**
+     * Regresión (auditoría 2026-07-21): un egreso (pago a proveedor) que incluyera en
+     * facturasIds el id de una factura de VENTA (con proveedor_id "espejo" compartido por
+     * RUT con el Cliente real, ver ProveedorAislamientoVentaCompraTest) la marcaba PAGADA
+     * pese a ser un documento de venta que ese pago nunca debió tocar.
+     */
+    public function test_procesar_pago_facturas_egreso_ignora_factura_de_venta_colada()
+    {
+        $this->crearPlanCuentas();
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+
+        $facturaCompra = $this->crearFactura('REGISTRADA', 'FAC-EGR-001');
+
+        $cliente = Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '9.9.9.9-9',
+            'razon_social' => 'Cliente Espejo',
+            'estado'       => 'ACTIVO',
+        ]);
+        $facturaVenta = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'cliente_id'     => $cliente->id,
+            'proveedor_id'   => $this->proveedor->id, // espejo: mismo id de proveedor por RUT compartido
+            'numero_factura' => 'FAC-VTA-COLADA-001',
+            'tipo'           => 'VENTA',
+            'codigo_unico'   => Factura::generarCodigoUnico(),
+            'fecha_emision'  => '2026-06-01',
+            'monto_neto'     => 100000,
+            'monto_iva'      => 19000,
+            'monto_bruto'    => 119000,
+            'estado'         => 'REGISTRADA',
+        ]);
+
+        $movId = $this->crearMovimientoBancario($cuenta->id, 'PENDIENTE');
+
+        $service = app(ConciliacionService::class);
+        $service->procesarPagoFacturas(
+            $this->empresa->id,
+            $this->usuario->id,
+            $movId,
+            [$facturaCompra->id, $facturaVenta->id]
+        );
+
+        $this->assertEquals('PAGADA', $facturaCompra->fresh()->estado);
+        $this->assertEquals('REGISTRADA', $facturaVenta->fresh()->estado,
+            'La factura de VENTA no debe verse afectada por un egreso (pago a proveedor).');
     }
 }

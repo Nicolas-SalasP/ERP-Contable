@@ -21,7 +21,12 @@ class Dj1835Service implements DeclaracionJuradaContract
     {
         $empresa = Empresa::findOrFail($empresaId);
 
+        // tipo='COMPRA' explicito como defensa en profundidad: hoy solo registrarFacturaCompra
+        // puebla retencion_art59, pero si a futuro una VENTA de exportacion llegara a poblarlo,
+        // esta DJ de retenciones a PROVEEDORES no debe incluir documentos de venta por error
+        // (mismo patron de bug ya visto en historial()/ProveedorService).
         $facturas = Factura::where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
             ->where('es_documento_exterior', true)
             ->whereNotNull('retencion_art59')
             ->where('retencion_art59', '>', 0)

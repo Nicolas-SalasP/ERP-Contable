@@ -397,11 +397,12 @@ class FacturaService
         return DB::transaction(function () use ($empresaId, $facturaVentaId, $datos) {
             /** @var Factura|null $origen */
             $origen = Factura::where('empresa_id', $empresaId)
+                ->where('tipo', 'VENTA')
                 ->with(['dteEmitido'])
                 ->find($facturaVentaId);
 
             if (! $origen) {
-                throw ComercialException::noEncontrado('La factura de origen no existe o no pertenece a esta empresa.');
+                throw ComercialException::noEncontrado('La factura de origen no existe, no pertenece a esta empresa, o no es una factura de venta.');
             }
 
             if ($origen->estado === 'ANULADA') {
@@ -571,10 +572,12 @@ class FacturaService
     {
         return DB::transaction(function () use ($empresaId, $facturaVentaId, $datos) {
             /** @var Factura|null $origen */
-            $origen = Factura::where('empresa_id', $empresaId)->find($facturaVentaId);
+            $origen = Factura::where('empresa_id', $empresaId)
+                ->where('tipo', 'VENTA')
+                ->find($facturaVentaId);
 
             if (! $origen) {
-                throw ComercialException::noEncontrado('La factura de origen no existe o no pertenece a esta empresa.');
+                throw ComercialException::noEncontrado('La factura de origen no existe, no pertenece a esta empresa, o no es una factura de venta.');
             }
 
             if ($origen->estado === 'ANULADA') {
@@ -890,12 +893,18 @@ class FacturaService
         );
     }
 
-    public function obtenerFacturasPorIds(int $empresaId, array $ids)
+    /**
+     * @param string|null $tipo Si se pasa ('VENTA'/'COMPRA'), descarta silenciosamente cualquier
+     * id que no matchee: evita que un pago/cobro de conciliacion bancaria arrastre por error una
+     * factura del tipo contrario (ej. un egreso a proveedor marcando PAGADA una factura de venta).
+     */
+    public function obtenerFacturasPorIds(int $empresaId, array $ids, ?string $tipo = null)
     {
         // Excluye facturas PAGADAS/ANULADAS para evitar doble pago o excedente mal registrado como anticipo; lockForUpdate evita doble pago en conciliaciones paralelas.
         return Factura::where('empresa_id', $empresaId)
             ->whereIn('id', $ids)
             ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->when($tipo !== null, fn ($query) => $query->where('tipo', $tipo))
             ->lockForUpdate()
             ->get();
     }
