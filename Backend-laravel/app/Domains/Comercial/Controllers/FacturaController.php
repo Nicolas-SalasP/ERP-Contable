@@ -46,6 +46,10 @@ class FacturaController
     public function historial(Request $request)
     {
         $filtros = $request->only(['estado', 'search', 'num', 'limit', 'fecha_desde', 'fecha_hasta']);
+        // Esta ruta es "Historial de Compras" exclusivamente -> se fuerza el tipo server-side,
+        // no se confia en que el frontend lo mande (bug real: sin esto, facturas de VENTA
+        // aparecian mezcladas con las de COMPRA en este listado).
+        $filtros['tipo'] = 'COMPRA';
         $paginador = $this->service->obtenerFacturasPaginadas($request->user()->empresa_activa_id, $filtros);
 
         return response()->json([

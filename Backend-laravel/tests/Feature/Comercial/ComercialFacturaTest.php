@@ -243,6 +243,54 @@ class ComercialFacturaTest extends TestCase
      * campo viene undefined y la celda PROVEEDOR en "Atencion Requerida"
      * del dashboard queda vacia.
      */
+    public function test_historial_de_compras_no_muestra_facturas_de_venta(): void
+    {
+        $proveedor = Proveedor::create([
+            'empresa_id' => $this->empresa->id,
+            'rut' => '1.111.111-1',
+            'razon_social' => 'Proveedor Compra',
+            'codigo_interno' => 'PROV-HIST',
+            'pais_iso' => 'CL',
+            'moneda_defecto' => 'CLP',
+        ]);
+
+        $facturaCompra = Factura::create([
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $proveedor->id,
+            'numero_factura' => 'F-COMPRA-HIST',
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'fecha_emision' => now(),
+            'monto_bruto' => 119000,
+            'monto_neto' => 100000,
+            'monto_iva' => 19000,
+            'tipo' => 'COMPRA',
+            'estado' => 'REGISTRADA',
+        ]);
+
+        // Espejo del flujo real: una factura de VENTA tambien tiene proveedor_id (apunta a una
+        // entidad "espejo" autogenerada por RUT, no al Cliente real -- ver CotizacionService).
+        $facturaVenta = Factura::create([
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $proveedor->id,
+            'numero_factura' => 'F-VENTA-HIST',
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'fecha_emision' => now(),
+            'monto_bruto' => 119000,
+            'monto_neto' => 100000,
+            'monto_iva' => 19000,
+            'tipo' => 'VENTA',
+            'estado' => 'REGISTRADA',
+        ]);
+
+        $response = $this->actingAs($this->usuario)
+            ->getJson('/api/facturas/historial?estado=REGISTRADA');
+
+        $response->assertStatus(200);
+        $numeros = collect($response->json('data'))->pluck('numero_factura');
+        $this->assertTrue($numeros->contains('F-COMPRA-HIST'));
+        $this->assertFalse($numeros->contains('F-VENTA-HIST'));
+    }
+
     public function test_factura_expone_nombre_proveedor_en_json()
     {
         $prov = Proveedor::create([
