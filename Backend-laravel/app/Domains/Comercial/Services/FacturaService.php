@@ -61,7 +61,13 @@ class FacturaService
             // en VENTA apunta a la entidad "espejo" Proveedor autogenerada por RUT (ver
             // CotizacionService::facturar), no al id real de Cliente -- por eso existe el filtro
             // 'cliente_id' aparte para quien ya tiene el Cliente.id real (ej. Mesa de Conciliación).
+            // Defensa en profundidad: si no viene 'tipo' explícito junto a proveedor_id, se asume
+            // COMPRA (el uso real de este filtro), para no devolver por error la factura VENTA
+            // espejo del mismo proveedor_id.
             $query->where('proveedor_id', $filtros['proveedor_id']);
+            if (empty($filtros['tipo'])) {
+                $query->where('tipo', 'COMPRA');
+            }
         }
 
         if (! empty($filtros['cliente_id'])) {
