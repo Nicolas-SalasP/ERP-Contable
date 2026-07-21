@@ -237,6 +237,9 @@ jobs:
           # CIPHERSWEET_KEY vacia en .env.example -> "Invalid key size" al primer campo cifrado
           # (Cliente.rut) que toque el seeder. Misma key de prueba que phpunit.xml, no es secreto real.
           sed -i 's/CIPHERSWEET_KEY=.*/CIPHERSWEET_KEY=c9c7b3652d3375952a5f7c845f001f11c1271d3d633741562b543dad136d368e/' .env
+          # .env.example trae APP_ENV=production a proposito (deploy accidental sin configurar
+          # queda seguro), pero aqui bloquea tenri:e2e-setup (guard app()->isProduction()).
+          sed -i 's/APP_ENV=.*/APP_ENV=local/' .env
 
       - name: ⚙️ Instalar OpenSSL dev
         run: sudo apt-get update -qq && sudo apt-get install -y openssl libssl-dev
@@ -336,6 +339,9 @@ jobs:
           # CIPHERSWEET_KEY vacia en .env.example -> "Invalid key size" al primer campo cifrado
           # (Cliente.rut) que toque el seeder. Misma key de prueba que phpunit.xml, no es secreto real.
           sed -i 's/CIPHERSWEET_KEY=.*/CIPHERSWEET_KEY=c9c7b3652d3375952a5f7c845f001f11c1271d3d633741562b543dad136d368e/' .env
+          # .env.example trae APP_ENV=production a proposito (deploy accidental sin configurar
+          # queda seguro), pero aqui bloquea tenri:e2e-setup (guard app()->isProduction()).
+          sed -i 's/APP_ENV=.*/APP_ENV=local/' .env
 
       - name: ⚙️ Instalar OpenSSL dev
         run: sudo apt-get update -qq && sudo apt-get install -y openssl libssl-dev
