@@ -1,4 +1,5 @@
-﻿import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +30,7 @@ const HistorialFacturas = () => {
     const [loadingAsiento, setLoadingAsiento] = useState(false);
 
     const [menuAbiertoId, setMenuAbiertoId] = useState(null);
+    const [menuPos, setMenuPos] = useState(null);
     const [vistaActual, setVistaActual] = useState(1);
 
     const [facturaActiva, setFacturaActiva] = useState(null);
@@ -53,6 +55,42 @@ const HistorialFacturas = () => {
     const handleMenuClickOutside = useCallback((event) => {
         if (!event.target.closest('.menu-acciones-container')) setMenuAbiertoId(null);
     }, []);
+
+    // El menu se renderiza en un portal (fuera del contenedor con overflow-x-auto de la tabla,
+    // que si no lo clipea verticalmente y queda invisible/cortado en filas cerca del borde) -
+    // por eso la posicion se calcula en pantalla (fixed) a partir del boton que lo abre, en vez
+    // de "absolute" relativo a la celda.
+    const alternarMenu = (fac, event) => {
+        if (menuAbiertoId === fac.id) {
+            setMenuAbiertoId(null);
+            setMenuPos(null);
+            return;
+        }
+        const rect = event.currentTarget.getBoundingClientRect();
+        const ANCHO_MENU = 208; // w-52
+        setMenuPos({
+            top: rect.bottom + 4,
+            left: Math.max(8, rect.right - ANCHO_MENU),
+        });
+        setMenuAbiertoId(fac.id);
+    };
+
+    // Reposicionar/cerrar en scroll o resize para no dejar el menu flotando en un lugar viejo.
+    useEffect(() => {
+        if (menuAbiertoId === null) return undefined;
+
+        const cerrar = () => {
+            setMenuAbiertoId(null);
+            setMenuPos(null);
+        };
+
+        window.addEventListener('scroll', cerrar, true);
+        window.addEventListener('resize', cerrar);
+        return () => {
+            window.removeEventListener('scroll', cerrar, true);
+            window.removeEventListener('resize', cerrar);
+        };
+    }, [menuAbiertoId]);
 
     // Hook con toda la logica de filtros + paginacion + fetching
     const {
@@ -491,15 +529,18 @@ const HistorialFacturas = () => {
 
                                                         <td className="px-6 py-4 whitespace-nowrap text-right relative menu-acciones-container">
                                                             <button
-                                                                onClick={() => setMenuAbiertoId(menuAbiertoId === fac.id ? null : fac.id)}
+                                                                onClick={(event) => alternarMenu(fac, event)}
                                                                 className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
                                                                 title="Opciones"
                                                             >
                                                                 <MoreVertical size={20} strokeWidth={1.75} />
                                                             </button>
 
-                                                            {menuAbiertoId === fac.id && (
-                                                                <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden z-[100] animate-fade-in text-left">
+                                                            {menuAbiertoId === fac.id && menuPos && createPortal(
+                                                                <div
+                                                                    className="menu-acciones-container fixed w-52 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden z-[100] animate-fade-in text-left"
+                                                                    style={{ top: menuPos.top, left: menuPos.left }}
+                                                                >
                                                                     <ul className="text-sm font-medium text-slate-700 dark:text-slate-300 py-1">
                                                                         {fac.estado === 'REGISTRADA' && !isNotaCredito && (
                                                                             <li>
@@ -568,7 +609,8 @@ const HistorialFacturas = () => {
                                                                             </button>
                                                                         </li>
                                                                     </ul>
-                                                                </div>
+                                                                </div>,
+                                                                document.body
                                                             )}
                                                         </td>
                                                     </tr>
