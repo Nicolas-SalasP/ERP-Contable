@@ -92,8 +92,13 @@ class ProveedorService
             throw ComercialException::noEncontrado('El proveedor solicitado no existe.');
         }
 
+        // tipo=COMPRA es obligatorio: si esta empresa Proveedor tambien es Cliente (mismo RUT),
+        // CotizacionService::facturar reusa el mismo proveedor_id "espejo" para sus facturas de
+        // VENTA -> sin este filtro, la ficha mezclaria facturas de venta con el historial real
+        // de compras del proveedor (mismo patron de bug que FacturaController::historial()).
         $facturas = Factura::where('empresa_id', $empresaId)
             ->where('proveedor_id', $id)
+            ->where('tipo', 'COMPRA')
             ->withCount('documentosAdjuntos')
             ->orderBy('fecha_emision', 'desc')
             ->get();
@@ -175,10 +180,16 @@ class ProveedorService
                 throw ComercialException::regla('Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.');
             }
 
+            // tipo=COMPRA obligatorio en las 4 queries de facturas de este metodo: si el proveedor
+            // tambien es Cliente (mismo RUT), CotizacionService::facturar reusa el mismo
+            // proveedor_id "espejo" en sus facturas de VENTA -> sin este filtro, se podria
+            // compensar/marcar PAGADA una factura de venta a un cliente real como si fuera deuda
+            // de compra (mismo patron de bug que FacturaController::historial()).
             // Lock pesimista: evita que dos compensaciones concurrentes lean el mismo saldo disponible y lo apliquen dos veces.
             $totalDeuda = DB::table('facturas')
                 ->where('empresa_id', $empresaId)
                 ->where('proveedor_id', $proveedorId)
+                ->where('tipo', 'COMPRA')
                 ->whereIn('id', $facturasIds)
                 ->lockForUpdate()
                 ->sum('monto_bruto');
@@ -186,6 +197,7 @@ class ProveedorService
             $totalNC = DB::table('facturas')
                 ->where('empresa_id', $empresaId)
                 ->where('proveedor_id', $proveedorId)
+                ->where('tipo', 'COMPRA')
                 ->whereIn('id', $ncIds)
                 ->where('estado', '!=', 'APLICADA')
                 ->lockForUpdate()
@@ -210,6 +222,7 @@ class ProveedorService
             DB::table('facturas')
                 ->where('empresa_id', $empresaId)
                 ->where('proveedor_id', $proveedorId)
+                ->where('tipo', 'COMPRA')
                 ->whereIn('id', $facturasIds)
                 ->update(['estado' => $nuevoEstadoFactura]);
 
@@ -217,6 +230,7 @@ class ProveedorService
                 DB::table('facturas')
                     ->where('empresa_id', $empresaId)
                     ->where('proveedor_id', $proveedorId)
+                    ->where('tipo', 'COMPRA')
                     ->whereIn('id', $ncIds)
                     ->update(['estado' => 'APLICADA']);
             }
@@ -266,6 +280,7 @@ class ProveedorService
                 DB::table('facturas')
                     ->where('empresa_id', $empresaId)
                     ->where('proveedor_id', $proveedorId)
+                    ->where('tipo', 'COMPRA')
                     ->whereIn('id', $facturasIds)
                     ->update(['asiento_pago_id' => $asiento->id]);
             }

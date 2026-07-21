@@ -134,6 +134,7 @@ class FacturaService
 
         return Factura::where('empresa_id', $empresaId)
             ->where('proveedor_id', $proveedorId)
+            ->where('tipo', 'COMPRA')
             ->where('numero_factura', $numero)
             ->exists();
     }
