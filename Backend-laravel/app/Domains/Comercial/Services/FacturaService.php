@@ -57,8 +57,21 @@ class FacturaService
         }
 
         if (! empty($filtros['proveedor_id'])) {
-            // proveedor_id identifica tanto al proveedor (COMPRA) como al cliente (VENTA).
+            // proveedor_id identifica tanto al proveedor (COMPRA) como al cliente (VENTA), pero
+            // en VENTA apunta a la entidad "espejo" Proveedor autogenerada por RUT (ver
+            // CotizacionService::facturar), no al id real de Cliente -- por eso existe el filtro
+            // 'cliente_id' aparte para quien ya tiene el Cliente.id real (ej. Mesa de Conciliación).
+            // Defensa en profundidad: si no viene 'tipo' explícito junto a proveedor_id, se asume
+            // COMPRA (el uso real de este filtro), para no devolver por error la factura VENTA
+            // espejo del mismo proveedor_id.
             $query->where('proveedor_id', $filtros['proveedor_id']);
+            if (empty($filtros['tipo'])) {
+                $query->where('tipo', 'COMPRA');
+            }
+        }
+
+        if (! empty($filtros['cliente_id'])) {
+            $query->where('cliente_id', $filtros['cliente_id']);
         }
 
         if (! empty($filtros['num'])) {
@@ -66,9 +79,29 @@ class FacturaService
         }
 
         if (! empty($filtros['search'])) {
-            $query->whereHas('proveedor', function ($q) use ($filtros) {
+            // rut cifrado (Ley 21.719): la busqueda por RUT ya no puede ser parcial (LIKE no
+            // funciona sobre ciphertext), solo match exacto via blind index. Proveedor.rut no
+            // se normaliza al guardarse (ver ProveedorService), asi que la comparacion aqui
+            // usa el mismo valor crudo para no introducir un desajuste de formato.
+            //
+            // No se usa el scope whereBlind() dentro de la closure de whereHas() porque
+            // Larastan tipa esa closure como Builder<Model> generico (no Proveedor), y
+            // whereBlind() solo existe en el builder de modelos con UsesCipherSweet -- se
+            // arma el mismo whereExists a mano con metodos base del Builder.
+            $rutIndexado = Proveedor::getCipherSweetEncryptedRow()
+                ->getBlindIndex('proveedor_rut_index', ['rut' => $filtros['search']]);
+            $proveedorMorphClass = (new Proveedor)->getMorphClass();
+
+            $query->whereHas('proveedor', function ($q) use ($filtros, $rutIndexado, $proveedorMorphClass) {
                 $q->where('razon_social', 'like', "%{$filtros['search']}%")
-                    ->orWhere('rut', 'like', "%{$filtros['search']}%");
+                    ->orWhereExists(function ($sub) use ($rutIndexado, $proveedorMorphClass) {
+                        $sub->select(DB::raw(1))
+                            ->from('blind_indexes')
+                            ->where('indexable_type', $proveedorMorphClass)
+                            ->whereColumn('indexable_id', 'proveedores.id')
+                            ->where('name', 'proveedor_rut_index')
+                            ->where('value', $rutIndexado);
+                    });
             });
         }
 
@@ -107,6 +140,7 @@ class FacturaService
 
         return Factura::where('empresa_id', $empresaId)
             ->where('proveedor_id', $proveedorId)
+            ->where('tipo', 'COMPRA')
             ->where('numero_factura', $numero)
             ->exists();
     }
@@ -369,11 +403,12 @@ class FacturaService
         return DB::transaction(function () use ($empresaId, $facturaVentaId, $datos) {
             /** @var Factura|null $origen */
             $origen = Factura::where('empresa_id', $empresaId)
+                ->where('tipo', 'VENTA')
                 ->with(['dteEmitido'])
                 ->find($facturaVentaId);
 
             if (! $origen) {
-                throw ComercialException::noEncontrado('La factura de origen no existe o no pertenece a esta empresa.');
+                throw ComercialException::noEncontrado('La factura de origen no existe, no pertenece a esta empresa, o no es una factura de venta.');
             }
 
             if ($origen->estado === 'ANULADA') {
@@ -543,10 +578,12 @@ class FacturaService
     {
         return DB::transaction(function () use ($empresaId, $facturaVentaId, $datos) {
             /** @var Factura|null $origen */
-            $origen = Factura::where('empresa_id', $empresaId)->find($facturaVentaId);
+            $origen = Factura::where('empresa_id', $empresaId)
+                ->where('tipo', 'VENTA')
+                ->find($facturaVentaId);
 
             if (! $origen) {
-                throw ComercialException::noEncontrado('La factura de origen no existe o no pertenece a esta empresa.');
+                throw ComercialException::noEncontrado('La factura de origen no existe, no pertenece a esta empresa, o no es una factura de venta.');
             }
 
             if ($origen->estado === 'ANULADA') {
@@ -777,9 +814,12 @@ class FacturaService
 
     public function vincularAProyecto(int $empresaId, int $facturaId, int $proyectoId): Factura
     {
-        $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
+        // tipo='COMPRA' explicito: un proyecto de activo fijo solo capitaliza gasto de compras;
+        // sin esto, una factura de VENTA (proveedor_id "espejo" compartido por RUT con un
+        // Cliente) podia imputarse por error como costo de adquisicion de un activo.
+        $factura = Factura::where('empresa_id', $empresaId)->where('tipo', 'COMPRA')->find($facturaId);
         if (! $factura) {
-            throw ComercialException::noEncontrado('Factura no encontrada.');
+            throw ComercialException::noEncontrado('Factura no encontrada o no es una factura de compra.');
         }
         $factura->update(['proyecto_activo_id' => $proyectoId]);
 
@@ -862,12 +902,18 @@ class FacturaService
         );
     }
 
-    public function obtenerFacturasPorIds(int $empresaId, array $ids)
+    /**
+     * @param string|null $tipo Si se pasa ('VENTA'/'COMPRA'), descarta silenciosamente cualquier
+     * id que no matchee: evita que un pago/cobro de conciliacion bancaria arrastre por error una
+     * factura del tipo contrario (ej. un egreso a proveedor marcando PAGADA una factura de venta).
+     */
+    public function obtenerFacturasPorIds(int $empresaId, array $ids, ?string $tipo = null)
     {
         // Excluye facturas PAGADAS/ANULADAS para evitar doble pago o excedente mal registrado como anticipo; lockForUpdate evita doble pago en conciliaciones paralelas.
         return Factura::where('empresa_id', $empresaId)
             ->whereIn('id', $ids)
             ->whereNotIn('estado', ['PAGADA', 'ANULADA'])
+            ->when($tipo !== null, fn ($query) => $query->where('tipo', $tipo))
             ->lockForUpdate()
             ->get();
     }
@@ -889,7 +935,7 @@ class FacturaService
             throw ComercialException::regla('No se puede cambiar el estado de una factura anulada.');
         }
 
-        if (!in_array($estado, self::ESTADOS_FACTURA_VALIDOS, true)) {
+        if (! in_array($estado, self::ESTADOS_FACTURA_VALIDOS, true)) {
             throw ComercialException::regla("Estado '{$estado}' no es una transición válida. Use el flujo de anulación para anular una factura.");
         }
 

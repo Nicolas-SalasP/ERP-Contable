@@ -137,8 +137,8 @@ const ContratosRrhh = () => {
             <EstadoCarga cargando={cargandoEmpleados} mensajeCargando="Cargando empleados..." color="emerald" tamano="compacto">
                 <div className="flex flex-wrap items-end gap-3 mb-5">
                     <div className="flex-1 min-w-full sm:min-w-[260px]">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado</label>
-                        <select value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)} className={inputCls}>
+                        <label htmlFor="contratos-empleado" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado</label>
+                        <select id="contratos-empleado" value={empleadoId} onChange={(e) => setEmpleadoId(e.target.value)} className={inputCls}>
                             <option value="">Selecciona un empleado...</option>
                             {empleados.map((emp) => (
                                 <option key={emp.id} value={emp.id}>
@@ -211,47 +211,47 @@ const ContratosRrhh = () => {
             <PanelModal abierto={modalAbierto} titulo="Nuevo contrato" icono="fas fa-file-signature" onClose={() => setModalAbierto(false)}>
                 <form onSubmit={crear} className="grid sm:grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tipo de contrato *</label>
-                        <select required value={form.tipo} onChange={(e) => setCampo('tipo', e.target.value)} className={inputCls}>
+                        <label htmlFor="contrato-tipo" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tipo de contrato *</label>
+                        <select id="contrato-tipo" required value={form.tipo} onChange={(e) => setCampo('tipo', e.target.value)} className={inputCls}>
                             {TIPOS.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Sueldo base *</label>
-                        <input required type="number" min="0" value={form.sueldo_base} onChange={(e) => setCampo('sueldo_base', e.target.value)} className={inputCls} />
+                        <label htmlFor="contrato-sueldo-base" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Sueldo base *</label>
+                        <input id="contrato-sueldo-base" required type="number" min="0" value={form.sueldo_base} onChange={(e) => setCampo('sueldo_base', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha inicio *</label>
-                        <input required type="date" value={form.fecha_inicio} onChange={(e) => setCampo('fecha_inicio', e.target.value)} className={inputCls} />
+                        <label htmlFor="contrato-fecha-inicio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha inicio *</label>
+                        <input id="contrato-fecha-inicio" required type="date" value={form.fecha_inicio} onChange={(e) => setCampo('fecha_inicio', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha término {form.tipo !== 'INDEFINIDO' && '*'}</label>
-                        <input type="date" value={form.fecha_termino} onChange={(e) => setCampo('fecha_termino', e.target.value)}
+                        <label htmlFor="contrato-fecha-termino" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha término {form.tipo !== 'INDEFINIDO' && '*'}</label>
+                        <input id="contrato-fecha-termino" type="date" value={form.fecha_termino} onChange={(e) => setCampo('fecha_termino', e.target.value)}
                             required={form.tipo !== 'INDEFINIDO'} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Cargo</label>
-                        <input value={form.cargo} onChange={(e) => setCampo('cargo', e.target.value)} className={inputCls} />
+                        <label htmlFor="contrato-cargo" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Cargo</label>
+                        <input id="contrato-cargo" value={form.cargo} onChange={(e) => setCampo('cargo', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Departamento</label>
-                        <input value={form.departamento} onChange={(e) => setCampo('departamento', e.target.value)} className={inputCls} />
+                        <label htmlFor="contrato-departamento" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Departamento</label>
+                        <input id="contrato-departamento" value={form.departamento} onChange={(e) => setCampo('departamento', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Horas semanales</label>
-                        <input type="number" min="1" max="60" value={form.horas_semana} onChange={(e) => setCampo('horas_semana', e.target.value)} className={inputCls} />
+                        <label htmlFor="contrato-horas-semana" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Horas semanales</label>
+                        <input id="contrato-horas-semana" type="number" min="1" max="60" value={form.horas_semana} onChange={(e) => setCampo('horas_semana', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Jornada</label>
-                        <select value={form.tipo_jornada} onChange={(e) => setCampo('tipo_jornada', e.target.value)} className={inputCls}>
+                        <label htmlFor="contrato-tipo-jornada" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Jornada</label>
+                        <select id="contrato-tipo-jornada" value={form.tipo_jornada} onChange={(e) => setCampo('tipo_jornada', e.target.value)} className={inputCls}>
                             <option value="COMPLETA">Completa</option>
                             <option value="PARCIAL">Parcial</option>
                             <option value="TURNO">Por turno</option>
                         </select>
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Observaciones</label>
-                        <textarea rows={2} value={form.observaciones} onChange={(e) => setCampo('observaciones', e.target.value)} className={inputCls} />
+                        <label htmlFor="contrato-observaciones" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Observaciones</label>
+                        <textarea id="contrato-observaciones" rows={2} value={form.observaciones} onChange={(e) => setCampo('observaciones', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                         <button type="button" onClick={() => setModalAbierto(false)}

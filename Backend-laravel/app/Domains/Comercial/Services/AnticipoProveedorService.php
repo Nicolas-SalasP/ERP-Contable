@@ -43,6 +43,14 @@ class AnticipoProveedorService
                 throw ComercialException::noEncontrado("Anticipo no encontrado.");
             }
 
+            $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
+            if (!$factura) {
+                throw ComercialException::noEncontrado("Factura no encontrada.");
+            }
+            if ($factura->tipo !== 'COMPRA') {
+                throw ComercialException::regla("Un anticipo de proveedor solo puede aplicarse a una factura de compra.");
+            }
+
             $saldoActual = (float) $anticipo->getRawOriginal('saldo_disponible');
             if ($anticipo->getRawOriginal('saldo_disponible') === null) {
                 $saldoActual = (float) $anticipo->monto;

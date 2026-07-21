@@ -3,10 +3,9 @@
 namespace App\Domains\Comercial\Services;
 
 use App\Domains\Comercial\Exceptions\ComercialException;
-
+use App\Domains\Comercial\Models\AnticipoCliente;
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Factura;
-use App\Domains\Comercial\Models\AnticipoCliente;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use Illuminate\Support\Facades\DB;
 
@@ -23,8 +22,8 @@ class ClienteService
     {
         $cliente = Cliente::where('empresa_id', $empresaId)->find($id);
 
-        if (!$cliente) {
-            throw ComercialException::noEncontrado("El cliente solicitado no existe.");
+        if (! $cliente) {
+            throw ComercialException::noEncontrado('El cliente solicitado no existe.');
         }
 
         $facturas = Factura::where('empresa_id', $empresaId)
@@ -49,9 +48,14 @@ class ClienteService
     {
         $query = Cliente::where('empresa_id', $empresaId);
 
-        if (!empty($search)) {
+        if (! empty($search)) {
+            // rut cifrado (Ley 21.719): la busqueda por RUT ya no puede ser parcial (LIKE no
+            // funciona sobre ciphertext), solo match exacto via blind index. Cliente.rut no
+            // se normaliza al guardarse, asi que la comparacion usa el mismo valor crudo
+            // (normalizar aqui rompería el match si el dato guardado tiene otro formato).
+            // razon_social/codigo_cliente siguen en texto plano, la busqueda parcial intacta.
             $query->where(function ($q) use ($search) {
-                $q->where('rut', 'like', "%{$search}%")
+                $q->orWhereBlind('rut', 'cliente_rut_index', $search)
                     ->orWhere('razon_social', 'like', "%{$search}%")
                     ->orWhere('codigo_cliente', 'like', "%{$search}%");
             });
@@ -63,7 +67,7 @@ class ClienteService
     public function registrarCliente(array $datos): Cliente
     {
         $existe = Cliente::where('empresa_id', $datos['empresa_id'])
-            ->where('rut', $datos['rut'])
+            ->whereBlind('rut', 'cliente_rut_index', $datos['rut'])
             ->exists();
 
         if ($existe) {
@@ -77,32 +81,36 @@ class ClienteService
     {
         $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($id);
         $cliente->update(['estado' => 'INACTIVO']);
+
         return $cliente;
     }
+
     public function actualizarCliente(int $empresaId, $id, array $datos)
     {
         $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($id);
 
         if (isset($datos['rut']) && $datos['rut'] !== $cliente->rut) {
             $existe = Cliente::where('empresa_id', $cliente->empresa_id)
-                ->where('rut', $datos['rut'])
+                ->whereBlind('rut', 'cliente_rut_index', $datos['rut'])
                 ->exists();
 
             if ($existe) {
-                throw ComercialException::regla("El RUT ingresado ya está registrado para otro cliente en esta empresa.");
+                throw ComercialException::regla('El RUT ingresado ya está registrado para otro cliente en esta empresa.');
             }
         }
 
         return DB::transaction(function () use ($cliente, $datos) {
             $cliente->update($datos);
+
             return $cliente;
         });
     }
-    
+
     public function activarCliente(int $empresaId, int $id): Cliente
     {
         $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($id);
         $cliente->update(['estado' => 'ACTIVO']);
+
         return $cliente;
     }
 
@@ -111,7 +119,7 @@ class ClienteService
         $cliente = Cliente::where('empresa_id', $empresaId)->findOrFail($clienteId);
 
         if ($cliente->estado === 'ACTIVO') {
-            throw ComercialException::regla("El cliente ya se encuentra activo.");
+            throw ComercialException::regla('El cliente ya se encuentra activo.');
         }
 
         $cliente->estado = 'ACTIVO';
@@ -135,7 +143,7 @@ class ClienteService
             $anticiposIds = $datos['anticipos_ids'] ?? [];
 
             if (empty($facturasIds) || (empty($ncIds) && empty($anticiposIds))) {
-                throw ComercialException::regla("Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.");
+                throw ComercialException::regla('Debe seleccionar al menos una deuda y un saldo a favor para ejecutar la compensación.');
             }
 
             // Lock pesimista: evita que dos compensaciones concurrentes lean el mismo saldo disponible y lo apliquen dos veces.
@@ -167,7 +175,7 @@ class ClienteService
             $totalAFavor = $totalNC + $totalAnticipos;
 
             if ($totalAFavor > $totalDeuda) {
-                throw ComercialException::regla("El monto a favor seleccionado ($" . number_format($totalAFavor, 0, ',', '.') . ") excede la deuda a compensar ($" . number_format($totalDeuda, 0, ',', '.') . "). Por favor deseleccione algunos documentos a favor.");
+                throw ComercialException::regla('El monto a favor seleccionado ($'.number_format($totalAFavor, 0, ',', '.').') excede la deuda a compensar ($'.number_format($totalDeuda, 0, ',', '.').'). Por favor deseleccione algunos documentos a favor.');
             }
 
             $nuevoEstadoFactura = ($totalAFavor == $totalDeuda) ? 'PAGADA' : 'ABONADA';
@@ -179,7 +187,7 @@ class ClienteService
                 ->whereIn('id', $facturasIds)
                 ->update(['estado' => $nuevoEstadoFactura]);
 
-            if (!empty($ncIds)) {
+            if (! empty($ncIds)) {
                 DB::table('facturas')
                     ->where('empresa_id', $empresaId)
                     ->where('cliente_id', $clienteId)
@@ -188,7 +196,7 @@ class ClienteService
                     ->update(['estado' => 'APLICADA']);
             }
 
-            if (!empty($anticiposIds)) {
+            if (! empty($anticiposIds)) {
                 DB::table('anticipos_clientes')
                     ->where('empresa_id', $empresaId)
                     ->where('cliente_id', $clienteId)
@@ -200,21 +208,21 @@ class ClienteService
 
             if ($totalAnticipos > 0) {
                 $cliente = DB::table('clientes')->where('id', $clienteId)->first();
-                $glosa = "Compensación de Anticipos con Facturas de Venta - " . ($cliente->razon_social ?? 'Cliente');
+                $glosa = 'Compensación de Anticipos con Facturas de Venta - '.($cliente->razon_social ?? 'Cliente');
 
                 $detallesAsiento = [
                     [
                         'cuenta_contable' => '210205', // Anticipos de Clientes (Pasivo disminuye al Debe)
                         'debe' => $totalAnticipos,
                         'haber' => 0,
-                        'glosa_detalle' => 'Aplicación de Anticipo'
+                        'glosa_detalle' => 'Aplicación de Anticipo',
                     ],
                     [
                         'cuenta_contable' => '152005', // Cuentas por Cobrar Clientes (Activo disminuye al Haber)
                         'debe' => 0,
                         'haber' => $totalAnticipos,
-                        'glosa_detalle' => 'Rebaja de Cuenta por Cobrar'
-                    ]
+                        'glosa_detalle' => 'Rebaja de Cuenta por Cobrar',
+                    ],
                 ];
 
                 $asiento = $this->asientoService->registrarAsiento([
@@ -224,7 +232,7 @@ class ClienteService
                     'glosa' => substr($glosa, 0, 250),
                     'tipo_asiento' => 'traspaso',
                     'origen_modulo' => 'ventas',
-                    'estado' => 'MAYORIZADO'
+                    'estado' => 'MAYORIZADO',
                 ], $detallesAsiento);
 
                 // Vincula el asiento de traspaso a las facturas compensadas: sin esto, al
@@ -242,7 +250,7 @@ class ClienteService
                 'facturas_afectadas' => count($facturasIds),
                 'anticipos_consumidos' => count($anticiposIds),
                 'notas_credito_aplicadas' => count($ncIds),
-                'comprobante_traspaso' => $asiento ? $asiento->numero_comprobante : null
+                'comprobante_traspaso' => $asiento ? $asiento->numero_comprobante : null,
             ];
         });
     }

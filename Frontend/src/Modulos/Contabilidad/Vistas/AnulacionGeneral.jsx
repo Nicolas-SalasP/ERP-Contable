@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import BotonAccion from '../../../Componentes/BotonAccion';
 import Swal from 'sweetalert2';
@@ -21,6 +21,11 @@ const AnulacionGeneral = () => {
     const [fechaAnulacion, setFechaAnulacion] = useState(new Date().toISOString().split('T')[0]);
     const [error, setError] = useState(null);
     const [exito, setExito] = useState(null);
+    const codigoInputRef = useRef(null);
+
+    useEffect(() => {
+        codigoInputRef.current?.focus();
+    }, []);
 
     const buscarDocumento = async (e) => {
         e.preventDefault();
@@ -157,17 +162,18 @@ const AnulacionGeneral = () => {
             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
                 <form onSubmit={buscarDocumento} className="flex flex-col md:flex-row gap-4 items-end">
                     <div className="flex-1 w-full">
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+                        <label htmlFor="anulacion-codigo-documento" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                             Código Único del Documento
                         </label>
                         <div className="relative group">
                             <input
+                                id="anulacion-codigo-documento"
+                                ref={codigoInputRef}
                                 type="text"
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-lg font-bold text-slate-700 dark:text-slate-300 placeholder-slate-300"
                                 placeholder="Ej: 2626000001"
                                 value={codigo}
                                 onChange={(e) => setCodigo(e.target.value)}
-                                autoFocus
                             />
                         </div>
                     </div>
@@ -308,10 +314,11 @@ const AnulacionGeneral = () => {
                                 ) : (
                                     <>
                                         <div className="mb-4">
-                                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
+                                            <label htmlFor="anulacion-fecha-contable" className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
                                                 Fecha Contable del Reverso <span className="text-red-500">*</span>
                                             </label>
                                             <input
+                                                id="anulacion-fecha-contable"
                                                 type="date"
                                                 className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300"
                                                 value={fechaAnulacion}
@@ -325,10 +332,11 @@ const AnulacionGeneral = () => {
                                         </div>
 
                                         <div className="mb-4">
-                                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
+                                            <label htmlFor="anulacion-motivo" className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
                                                 Motivo de la Anulación <span className="text-red-500">*</span>
                                             </label>
                                             <textarea
+                                                id="anulacion-motivo"
                                                 className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm min-h-[100px] bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-700 transition-colors text-slate-800 dark:text-slate-200"
                                                 placeholder="Describa claramente por qué se está anulando este documento (error de digitación, devolución, etc.)"
                                                 value={motivo}

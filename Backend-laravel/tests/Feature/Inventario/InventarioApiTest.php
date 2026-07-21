@@ -152,6 +152,105 @@ class InventarioApiTest extends TestCase
         ]);
     }
 
+    public function test_crear_producto_acepta_y_persiste_visible_web(): void
+    {
+        [, $usuario] = $this->crearUsuarioConPermisos([
+            'inventario.productos.ver',
+            'inventario.productos.crear',
+        ]);
+
+        $unidad = $this->obtenerUnidadBase();
+
+        Sanctum::actingAs($usuario);
+
+        $response = $this->postJson('/api/inventario/productos', $this->payloadProducto($unidad, [
+            'sku' => 'PROD-VISIBLE-001',
+            'visible_web' => true,
+        ]));
+
+        $response->assertCreated()->assertJsonPath('data.visible_web', true);
+
+        $this->assertDatabaseHas('inventario_productos', [
+            'sku' => 'PROD-VISIBLE-001',
+            'visible_web' => true,
+        ]);
+    }
+
+    public function test_crear_producto_sin_visible_web_lo_deja_en_false_por_defecto(): void
+    {
+        [, $usuario] = $this->crearUsuarioConPermisos([
+            'inventario.productos.ver',
+            'inventario.productos.crear',
+        ]);
+
+        $unidad = $this->obtenerUnidadBase();
+
+        Sanctum::actingAs($usuario);
+
+        $response = $this->postJson('/api/inventario/productos', $this->payloadProducto($unidad, [
+            'sku' => 'PROD-VISIBLE-002',
+        ]));
+
+        $response->assertCreated()->assertJsonPath('data.visible_web', false);
+    }
+
+    public function test_actualizar_producto_puede_activar_visible_web(): void
+    {
+        [$empresa, $usuario] = $this->crearUsuarioConPermisos([
+            'inventario.productos.ver',
+            'inventario.productos.crear',
+            'inventario.productos.editar',
+        ]);
+
+        $unidad = $this->obtenerUnidadBase();
+
+        Sanctum::actingAs($usuario);
+
+        $creado = $this->postJson('/api/inventario/productos', $this->payloadProducto($unidad, [
+            'sku' => 'PROD-VISIBLE-003',
+        ]))->json('data');
+
+        $response = $this->putJson("/api/inventario/productos/{$creado['id']}", $this->payloadProducto($unidad, [
+            'sku' => 'PROD-VISIBLE-003',
+            'visible_web' => true,
+        ]));
+
+        $response->assertOk()->assertJsonPath('data.visible_web', true);
+
+        $this->assertDatabaseHas('inventario_productos', [
+            'empresa_id' => $empresa->id,
+            'sku' => 'PROD-VISIBLE-003',
+            'visible_web' => true,
+        ]);
+    }
+
+    public function test_actualizar_producto_sin_mandar_visible_web_no_lo_resetea(): void
+    {
+        [, $usuario] = $this->crearUsuarioConPermisos([
+            'inventario.productos.ver',
+            'inventario.productos.crear',
+            'inventario.productos.editar',
+        ]);
+
+        $unidad = $this->obtenerUnidadBase();
+
+        Sanctum::actingAs($usuario);
+
+        $creado = $this->postJson('/api/inventario/productos', $this->payloadProducto($unidad, [
+            'sku' => 'PROD-VISIBLE-004',
+            'visible_web' => true,
+        ]))->json('data');
+
+        // El payload de este update NO manda 'visible_web' (payloadProducto() no lo incluye por
+        // defecto) -> simula al formulario actual del ERP, que todavia no expone el campo.
+        $response = $this->putJson("/api/inventario/productos/{$creado['id']}", $this->payloadProducto($unidad, [
+            'sku' => 'PROD-VISIBLE-004',
+            'nombre' => 'Nombre editado',
+        ]));
+
+        $response->assertOk()->assertJsonPath('data.visible_web', true);
+    }
+
     public function test_auditor_no_puede_crear_producto(): void
     {
         [$empresa, $usuario] = $this->crearUsuarioConPermisos([

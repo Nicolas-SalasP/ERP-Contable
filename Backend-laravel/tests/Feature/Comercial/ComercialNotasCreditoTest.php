@@ -544,4 +544,39 @@ class ComercialNotasCreditoTest extends TestCase
             'estado_id' => $estadoAceptada->id,
         ]);
     }
+
+    /**
+     * Regresión (auditoría 2026-07-21): el endpoint de NC de venta cargaba la factura de origen
+     * SOLO por id + empresa_id, sin exigir tipo='VENTA'. Con el proveedor_id "espejo" compartido
+     * por RUT entre Cliente/Proveedor, un id de factura de COMPRA podia colarse aca y generar una
+     * NC de venta reversando cuentas (Ingresos/CxC) que la compra nunca toco.
+     */
+    public function test_nc_venta_rechaza_id_de_una_factura_de_compra(): void
+    {
+        $facturaCompra = Factura::create([
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $this->prov->id,
+            'numero_factura' => 'F-COMPRA-NC',
+            'tipo_documento' => 'FACTURA',
+            'tipo' => 'COMPRA',
+            'monto_bruto' => 1190,
+            'monto_neto' => 1000,
+            'monto_iva' => 190,
+            'fecha_emision' => now(),
+            'estado' => 'REGISTRADA',
+            'codigo_unico' => Factura::generarCodigoUnico(),
+        ]);
+
+        $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$facturaCompra->id}/nota-credito", [
+            'numero_nc' => 'NC-CROSS-001',
+            'monto_neto' => 1000,
+            'monto_iva' => 190,
+            'monto_bruto' => 1190,
+            'razon' => 'Intento cruzado',
+        ]);
+
+        $response->assertStatus(404);
+        $facturaCompra->refresh();
+        $this->assertSame('REGISTRADA', $facturaCompra->estado, 'La factura de compra no debe verse afectada por un intento de NC de venta.');
+    }
 }

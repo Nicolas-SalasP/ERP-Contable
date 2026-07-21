@@ -261,7 +261,8 @@ class CotizacionController
             $factura = $this->service->convertirEnFactura(
                 $request->user()->empresa_activa_id,
                 (int) $id,
-                $request->fecha_emision
+                $request->fecha_emision,
+                $request->user()->id
             );
 
             return response()->json([
@@ -278,6 +279,30 @@ class CotizacionController
                 'success' => false,
                 'message' => MensajeErrorGenerico::desde($e),
             ], $status);
+        }
+    }
+
+    /** Envia la cotizacion por correo (PDF + adjuntos) al equipo interno. Accion explicita del usuario. POST /cotizaciones/{id}/enviar */
+    public function enviar(Request $request, $id)
+    {
+        try {
+            $this->service->enviarCotizacion(
+                $request->user()->empresa_activa_id,
+                (int) $id,
+                $request->user()->id
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'La cotización quedó en cola de envío.',
+            ]);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => MensajeErrorGenerico::desde($e),
+            ], 400);
         }
     }
 }

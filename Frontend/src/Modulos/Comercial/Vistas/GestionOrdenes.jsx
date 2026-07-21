@@ -241,8 +241,9 @@ const GestionOrdenes = () => {
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
                 <div className="flex flex-wrap gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Estado</label>
+                        <label htmlFor="oc-filtro-estado" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Estado</label>
                         <select
+                            id="oc-filtro-estado"
                             value={filtroEstado}
                             onChange={(e) => setFiltroEstado(e.target.value)}
                             className={inputCls + ' w-auto min-w-[140px]'}
@@ -254,8 +255,9 @@ const GestionOrdenes = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Proveedor</label>
+                        <label htmlFor="oc-filtro-proveedor" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Proveedor</label>
                         <input
+                            id="oc-filtro-proveedor"
                             type="text"
                             value={filtroProveedor}
                             onChange={(e) => setFiltroProveedor(e.target.value)}
@@ -349,10 +351,11 @@ const GestionOrdenes = () => {
                         <form onSubmit={handleCrear} className="p-6 space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                    <label htmlFor="oc-fecha-emision" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Fecha emisión <span className="text-red-500">*</span>
                                     </label>
                                     <input
+                                        id="oc-fecha-emision"
                                         type="date"
                                         value={form.fecha_emision}
                                         onChange={(e) => setForm((p) => ({ ...p, fecha_emision: e.target.value }))}
@@ -361,10 +364,11 @@ const GestionOrdenes = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                    <label htmlFor="oc-fecha-entrega" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Fecha entrega esperada
                                     </label>
                                     <input
+                                        id="oc-fecha-entrega"
                                         type="date"
                                         value={form.fecha_entrega_esperada}
                                         onChange={(e) => setForm((p) => ({ ...p, fecha_entrega_esperada: e.target.value }))}
@@ -372,10 +376,11 @@ const GestionOrdenes = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                    <label htmlFor="oc-proveedor-id" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         ID Proveedor (opcional)
                                     </label>
                                     <input
+                                        id="oc-proveedor-id"
                                         type="number"
                                         value={form.proveedor_id}
                                         onChange={(e) => setForm((p) => ({ ...p, proveedor_id: e.target.value }))}
@@ -385,8 +390,9 @@ const GestionOrdenes = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Notas</label>
+                                    <label htmlFor="oc-notas" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Notas</label>
                                     <input
+                                        id="oc-notas"
                                         type="text"
                                         value={form.notas}
                                         onChange={(e) => setForm((p) => ({ ...p, notas: e.target.value }))}
@@ -411,8 +417,9 @@ const GestionOrdenes = () => {
                                     {form.detalles.map((d, idx) => (
                                         <div key={idx} className="grid grid-cols-12 gap-2 items-end p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                                             <div className="col-span-4">
-                                                <label className="block text-xs font-semibold text-slate-500 mb-0.5">Descripción *</label>
+                                                <label htmlFor={`oc-detalle-descripcion-${idx}`} className="block text-xs font-semibold text-slate-500 mb-0.5">Descripción *</label>
                                                 <input
+                                                    id={`oc-detalle-descripcion-${idx}`}
                                                     type="text"
                                                     value={d.producto_descripcion}
                                                     onChange={(e) => actualizarDetalle(idx, 'producto_descripcion', e.target.value)}
@@ -421,8 +428,9 @@ const GestionOrdenes = () => {
                                                 />
                                             </div>
                                             <div className="col-span-2">
-                                                <label className="block text-xs font-semibold text-slate-500 mb-0.5">Código</label>
+                                                <label htmlFor={`oc-detalle-codigo-${idx}`} className="block text-xs font-semibold text-slate-500 mb-0.5">Código</label>
                                                 <input
+                                                    id={`oc-detalle-codigo-${idx}`}
                                                     type="text"
                                                     value={d.codigo_producto}
                                                     onChange={(e) => actualizarDetalle(idx, 'codigo_producto', e.target.value)}
@@ -430,8 +438,9 @@ const GestionOrdenes = () => {
                                                 />
                                             </div>
                                             <div className="col-span-1">
-                                                <label className="block text-xs font-semibold text-slate-500 mb-0.5">Cant. *</label>
+                                                <label htmlFor={`oc-detalle-cantidad-${idx}`} className="block text-xs font-semibold text-slate-500 mb-0.5">Cant. *</label>
                                                 <input
+                                                    id={`oc-detalle-cantidad-${idx}`}
                                                     type="number"
                                                     value={d.cantidad}
                                                     onChange={(e) => actualizarDetalle(idx, 'cantidad', e.target.value)}
@@ -442,8 +451,9 @@ const GestionOrdenes = () => {
                                                 />
                                             </div>
                                             <div className="col-span-1">
-                                                <label className="block text-xs font-semibold text-slate-500 mb-0.5">Unidad</label>
+                                                <label htmlFor={`oc-detalle-unidad-${idx}`} className="block text-xs font-semibold text-slate-500 mb-0.5">Unidad</label>
                                                 <input
+                                                    id={`oc-detalle-unidad-${idx}`}
                                                     type="text"
                                                     value={d.unidad}
                                                     onChange={(e) => actualizarDetalle(idx, 'unidad', e.target.value)}
@@ -451,8 +461,9 @@ const GestionOrdenes = () => {
                                                 />
                                             </div>
                                             <div className="col-span-2">
-                                                <label className="block text-xs font-semibold text-slate-500 mb-0.5">P. Unitario *</label>
+                                                <label htmlFor={`oc-detalle-preciounitario-${idx}`} className="block text-xs font-semibold text-slate-500 mb-0.5">P. Unitario *</label>
                                                 <input
+                                                    id={`oc-detalle-preciounitario-${idx}`}
                                                     type="number"
                                                     value={d.precio_unitario}
                                                     onChange={(e) => actualizarDetalle(idx, 'precio_unitario', e.target.value)}
@@ -462,7 +473,7 @@ const GestionOrdenes = () => {
                                                 />
                                             </div>
                                             <div className="col-span-1">
-                                                <label className="block text-xs font-semibold text-slate-500 mb-0.5">Subtotal</label>
+                                                <span className="block text-xs font-semibold text-slate-500 mb-0.5">Subtotal</span>
                                                 <div className="px-3 py-2 text-sm font-mono text-slate-700 dark:text-slate-300">
                                                     {d.subtotal ? clpFmt.format(parseFloat(d.subtotal)) : '—'}
                                                 </div>

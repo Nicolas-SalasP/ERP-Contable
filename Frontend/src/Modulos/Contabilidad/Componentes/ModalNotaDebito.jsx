@@ -83,8 +83,9 @@ const ModalNotaDebito = ({ isOpen, onClose, factura, onNdEmitida }) => {
                 <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">N° Nota de Débito <span className="text-red-500">*</span></label>
+                            <label htmlFor="nd-numero" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">N° Nota de Débito <span className="text-red-500">*</span></label>
                             <input
+                                id="nd-numero"
                                 type="text"
                                 value={form.numeroNd}
                                 onChange={set('numeroNd')}
@@ -94,8 +95,9 @@ const ModalNotaDebito = ({ isOpen, onClose, factura, onNdEmitida }) => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Fecha Emisión</label>
+                            <label htmlFor="nd-fecha-emision" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Fecha Emisión</label>
                             <input
+                                id="nd-fecha-emision"
                                 type="date"
                                 value={form.fechaEmision}
                                 onChange={set('fechaEmision')}
@@ -106,8 +108,9 @@ const ModalNotaDebito = ({ isOpen, onClose, factura, onNdEmitida }) => {
 
                     <div className="grid grid-cols-3 gap-3">
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Monto Neto <span className="text-red-500">*</span></label>
+                            <label htmlFor="nd-monto-neto" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Monto Neto <span className="text-red-500">*</span></label>
                             <input
+                                id="nd-monto-neto"
                                 type="number"
                                 min="1"
                                 step="1"
@@ -119,8 +122,9 @@ const ModalNotaDebito = ({ isOpen, onClose, factura, onNdEmitida }) => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">IVA</label>
+                            <label htmlFor="nd-monto-iva" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">IVA</label>
                             <input
+                                id="nd-monto-iva"
                                 type="number"
                                 min="0"
                                 step="1"
@@ -131,8 +135,9 @@ const ModalNotaDebito = ({ isOpen, onClose, factura, onNdEmitida }) => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Total ND <span className="text-red-500">*</span></label>
+                            <label htmlFor="nd-monto-bruto" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Total ND <span className="text-red-500">*</span></label>
                             <input
+                                id="nd-monto-bruto"
                                 type="number"
                                 min="1"
                                 step="1"
@@ -145,8 +150,9 @@ const ModalNotaDebito = ({ isOpen, onClose, factura, onNdEmitida }) => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Razón de la ND <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">(min. 5 caracteres)</span></label>
+                        <label htmlFor="nd-razon" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Razón de la ND <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">(min. 5 caracteres)</span></label>
                         <textarea
+                            id="nd-razon"
                             value={form.razon}
                             onChange={set('razon')}
                             rows={2}
@@ -158,7 +164,7 @@ const ModalNotaDebito = ({ isOpen, onClose, factura, onNdEmitida }) => {
                     </div>
 
                     <label className="flex items-center gap-3 cursor-pointer select-none">
-                        <input type="checkbox" checked={form.emitirDte} onChange={set('emitirDte')} className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4" />
+                        <input type="checkbox" checked={form.emitirDte} onChange={set('emitirDte')} aria-label="Emitir DTE al SII (tipo 56)" className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4" />
                         <div>
                             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Emitir DTE al SII (tipo 56)</span>
                             <p className="text-[11px] text-slate-400">Solo si la factura original ya tiene folio electrónico SII.</p>

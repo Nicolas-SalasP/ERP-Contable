@@ -41,8 +41,11 @@ export default defineConfig({
         ? []
         : [
             {
-                command: 'pnpm dev',
-                url: 'http://localhost:3000',
+                // El puerto seguia hardcodeado en 3000 aunque E2E_BASE_URL fuera configurable --
+                // rompia correr E2E contra un puerto distinto (ej. con un `pnpm dev` de otra
+                // sesion ya ocupando el 3000).
+                command: `pnpm dev --port ${new URL(process.env.E2E_BASE_URL || 'http://localhost:3000').port}`,
+                url: process.env.E2E_BASE_URL || 'http://localhost:3000',
                 reuseExistingServer: true,
                 timeout: 120_000,
             },

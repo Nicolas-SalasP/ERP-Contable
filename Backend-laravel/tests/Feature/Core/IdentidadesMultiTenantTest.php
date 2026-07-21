@@ -2,21 +2,24 @@
 
 namespace Tests\Feature\Core;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Tests\Concerns\PreparaEntornoBase;
+use App\Domains\Comercial\Exceptions\ComercialException;
 use App\Domains\Comercial\Models\Cliente;
-use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Comercial\Models\Factura;
-use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
-use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Comercial\Models\Proveedor;
+use App\Domains\Comercial\Services\ClienteService;
 use App\Domains\Contabilidad\Models\CentroCosto;
+use App\Domains\Contabilidad\Models\PlanCuenta;
+use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PreparaEntornoBase;
+use Tests\TestCase;
 
 class IdentidadesMultiTenantTest extends TestCase
 {
-    use RefreshDatabase, PreparaEntornoBase;
+    use PreparaEntornoBase, RefreshDatabase;
 
     protected $empresaA;
+
     protected $empresaB;
 
     protected function setUp(): void
@@ -29,7 +32,7 @@ class IdentidadesMultiTenantTest extends TestCase
 
     private function generarCodigoUnico(): int
     {
-        return (int) (time() . rand(100000, 999999));
+        return (int) (time().rand(100000, 999999));
     }
 
     public function test_dos_empresas_pueden_registrar_el_mismo_rut_de_cliente()
@@ -213,15 +216,21 @@ class IdentidadesMultiTenantTest extends TestCase
 
     public function test_dentro_de_la_misma_empresa_no_se_permite_rut_cliente_duplicado()
     {
-        Cliente::create([
+        // rut cifrado (Ley 21.719): la unicidad ya no la garantiza un UNIQUE de BD (no
+        // aplica sobre ciphertext), se delega al blind index vía ClienteService, igual que
+        // EmpleadoService::crear() para Empleado.rut (ver EmpleadoContratoTest).
+        $clientes = app(ClienteService::class);
+
+        $clientes->registrarCliente([
             'empresa_id' => $this->empresaA->id,
             'rut' => '11.111.111-1',
             'razon_social' => 'Original',
         ]);
 
-        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->expectException(ComercialException::class);
+        $this->expectExceptionMessage('ya se encuentra registrado');
 
-        Cliente::create([
+        $clientes->registrarCliente([
             'empresa_id' => $this->empresaA->id,
             'rut' => '11.111.111-1',
             'razon_social' => 'Duplicado en A',

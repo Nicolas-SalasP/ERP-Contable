@@ -216,51 +216,51 @@ const FiniquitosRrhh = () => {
             <PanelModal abierto={modalCalc} titulo="Calcular finiquito" icono="fas fa-calculator" onClose={() => setModalCalc(false)}>
                 <form onSubmit={calcular} className="grid sm:grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado *</label>
-                        <select required value={form.empleado_id} onChange={(e) => onEmpleado(e.target.value)} className={inputCls}>
+                        <label htmlFor="finiquito-empleado" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Empleado *</label>
+                        <select id="finiquito-empleado" required value={form.empleado_id} onChange={(e) => onEmpleado(e.target.value)} className={inputCls}>
                             <option value="">Selecciona...</option>
                             {empleados.map((emp) => <option key={emp.id} value={emp.id}>{emp.rut} — {emp.nombres} {emp.apellido_paterno}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Contrato vigente *</label>
-                        <select required value={form.contrato_id} onChange={(e) => setCampo('contrato_id', e.target.value)} className={inputCls} disabled={!form.empleado_id}>
+                        <label htmlFor="finiquito-contrato" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Contrato vigente *</label>
+                        <select id="finiquito-contrato" required value={form.contrato_id} onChange={(e) => setCampo('contrato_id', e.target.value)} className={inputCls} disabled={!form.empleado_id}>
                             <option value="">{form.empleado_id ? 'Selecciona...' : 'Elige empleado primero'}</option>
                             {contratos.map((c) => <option key={c.id} value={c.id}>{c.cargo || c.tipo} — desde {formatFecha(c.fecha_inicio)}</option>)}
                         </select>
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Causal de término *</label>
-                        <select required value={form.causal} onChange={(e) => setCampo('causal', e.target.value)} className={inputCls}>
+                        <label htmlFor="finiquito-causal" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Causal de término *</label>
+                        <select id="finiquito-causal" required value={form.causal} onChange={(e) => setCampo('causal', e.target.value)} className={inputCls}>
                             {CAUSALES.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha de término *</label>
-                        <input required type="date" value={form.fecha_termino} onChange={(e) => setCampo('fecha_termino', e.target.value)} className={inputCls} />
+                        <label htmlFor="finiquito-fecha-termino" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Fecha de término *</label>
+                        <input id="finiquito-fecha-termino" required type="date" value={form.fecha_termino} onChange={(e) => setCampo('fecha_termino', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Promedio remuneraciones variables</label>
-                        <input type="number" min="0" value={form.promedio_variables} onChange={(e) => setCampo('promedio_variables', e.target.value)} className={inputCls} />
+                        <label htmlFor="finiquito-promedio-variables" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Promedio remuneraciones variables</label>
+                        <input id="finiquito-promedio-variables" type="number" min="0" value={form.promedio_variables} onChange={(e) => setCampo('promedio_variables', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Haberes pendientes</label>
-                        <input type="number" min="0" value={form.haberes_pendientes} onChange={(e) => setCampo('haberes_pendientes', e.target.value)} className={inputCls} />
+                        <label htmlFor="finiquito-haberes-pendientes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Haberes pendientes</label>
+                        <input id="finiquito-haberes-pendientes" type="number" min="0" value={form.haberes_pendientes} onChange={(e) => setCampo('haberes_pendientes', e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Descuentos pendientes</label>
-                        <input type="number" min="0" value={form.descuentos_pendientes} onChange={(e) => setCampo('descuentos_pendientes', e.target.value)} className={inputCls} />
+                        <label htmlFor="finiquito-descuentos-pendientes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Descuentos pendientes</label>
+                        <input id="finiquito-descuentos-pendientes" type="number" min="0" value={form.descuentos_pendientes} onChange={(e) => setCampo('descuentos_pendientes', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                            <input type="checkbox" checked={form.aviso_previo} onChange={(e) => setCampo('aviso_previo', e.target.checked)}
+                        <label htmlFor="finiquito-aviso-previo" className="inline-flex items-center gap-2 text-sm text-slate-700">
+                            <input id="finiquito-aviso-previo" type="checkbox" checked={form.aviso_previo} onChange={(e) => setCampo('aviso_previo', e.target.checked)}
                                 className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                             Se dio aviso previo de 30 días (no se paga mes sustitutivo)
                         </label>
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Observaciones</label>
-                        <textarea rows={2} value={form.observaciones} onChange={(e) => setCampo('observaciones', e.target.value)} className={inputCls} />
+                        <label htmlFor="finiquito-observaciones" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Observaciones</label>
+                        <textarea id="finiquito-observaciones" rows={2} value={form.observaciones} onChange={(e) => setCampo('observaciones', e.target.value)} className={inputCls} />
                     </div>
                     <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                         <button type="button" onClick={() => setModalCalc(false)} className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Cancelar</button>

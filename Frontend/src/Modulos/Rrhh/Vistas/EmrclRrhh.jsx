@@ -100,8 +100,9 @@ const EmrclRrhh = () => {
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
+                        <label htmlFor="emrcl-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
                         <select
+                            id="emrcl-anio"
                             value={filtros.anio}
                             onChange={(e) => setFiltros((f) => ({ ...f, anio: Number(e.target.value) }))}
                             className={inputCls}
@@ -110,8 +111,9 @@ const EmrclRrhh = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
+                        <label htmlFor="emrcl-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
                         <select
+                            id="emrcl-mes"
                             value={filtros.mes}
                             onChange={(e) => setFiltros((f) => ({ ...f, mes: Number(e.target.value) }))}
                             className={inputCls}

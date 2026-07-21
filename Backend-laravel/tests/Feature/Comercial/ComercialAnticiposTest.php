@@ -87,6 +87,20 @@ class ComercialAnticiposTest extends TestCase
 
     public function test_aplicar_anticipo_a_factura_disminuye_el_saldo_disponible()
     {
+        $factura = Factura::create([
+            'empresa_id' => $this->empresa->id,
+            'codigo_unico' => Factura::generarCodigoUnico(),
+            'proveedor_id' => $this->prov->id,
+            'numero_factura' => 'F-ANTICIPO-APLICAR',
+            'tipo' => 'COMPRA',
+            'tipo_documento' => 'FACTURA',
+            'fecha_emision' => now(),
+            'monto_neto' => 40000,
+            'monto_iva' => 0,
+            'monto_bruto' => 40000,
+            'estado' => 'REGISTRADA',
+        ]);
+
         $anticipo = AnticipoProveedor::create([
             'empresa_id' => $this->empresa->id,
             'proveedor_id' => $this->prov->id,
@@ -97,7 +111,7 @@ class ComercialAnticiposTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->usuario)->postJson("/api/anticipos-proveedores/{$anticipo->id}/aplicar", [
-            'factura_id' => 1,
+            'factura_id' => $factura->id,
             'monto_a_aplicar' => 40000
         ]);
 
@@ -107,6 +121,54 @@ class ComercialAnticiposTest extends TestCase
             $response->assertStatus(200);
             $this->assertEquals(60000, $anticipo->fresh()->saldo_disponible);
         }
+    }
+
+    /**
+     * Regresión (auditoría 2026-07-21): aplicarAFactura no validaba en absoluto que la factura
+     * existiera, perteneciera a la empresa, ni fuera tipo COMPRA -- a diferencia de su espejo
+     * AnticipoClienteService::aplicarAFactura. Permitía aplicar un anticipo de proveedor sobre
+     * una factura de VENTA (proveedor_id "espejo" compartido por RUT con un Cliente).
+     */
+    public function test_aplicar_anticipo_proveedor_rechaza_factura_de_venta()
+    {
+        $cliente = \App\Domains\Comercial\Models\Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '5.5.5.5-5',
+            'razon_social' => 'Cliente Espejo Anticipo',
+            'estado'       => 'ACTIVO',
+        ]);
+        $facturaVenta = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'codigo_unico'   => Factura::generarCodigoUnico(),
+            'cliente_id'     => $cliente->id,
+            'proveedor_id'   => $this->prov->id,
+            'numero_factura' => 'FV-ANTICIPO-COLADA',
+            'tipo'           => 'VENTA',
+            'tipo_documento' => 'FACTURA',
+            'fecha_emision'  => now(),
+            'monto_neto'     => 40000,
+            'monto_iva'      => 0,
+            'monto_bruto'    => 40000,
+            'estado'         => 'REGISTRADA',
+        ]);
+
+        $anticipo = AnticipoProveedor::create([
+            'empresa_id' => $this->empresa->id,
+            'proveedor_id' => $this->prov->id,
+            'monto' => 100000,
+            'saldo_disponible' => 100000,
+            'fecha' => now(),
+            'estado' => 'DISPONIBLE'
+        ]);
+
+        $response = $this->actingAs($this->usuario)->postJson("/api/anticipos-proveedores/{$anticipo->id}/aplicar", [
+            'factura_id' => $facturaVenta->id,
+            'monto_a_aplicar' => 40000
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertEquals(100000, (float) $anticipo->fresh()->saldo_disponible);
+        $this->assertDatabaseMissing('anticipo_aplicaciones', ['factura_id' => $facturaVenta->id]);
     }
 
     public function test_anular_factura_libera_el_anticipo_aplicado()

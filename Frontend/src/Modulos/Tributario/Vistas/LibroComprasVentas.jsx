@@ -246,8 +246,9 @@ const LibroComprasVentas = () => {
                 </h2>
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
+                        <label htmlFor="libro-compras-ventas-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
                         <select
+                            id="libro-compras-ventas-mes"
                             value={mes}
                             onChange={(e) => setMes(Number(e.target.value))}
                             className={selectCls}
@@ -258,8 +259,9 @@ const LibroComprasVentas = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
+                        <label htmlFor="libro-compras-ventas-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
                         <select
+                            id="libro-compras-ventas-anio"
                             value={anio}
                             onChange={(e) => setAnio(Number(e.target.value))}
                             className={selectCls}

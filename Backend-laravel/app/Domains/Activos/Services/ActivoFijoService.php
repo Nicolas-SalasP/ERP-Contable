@@ -4,20 +4,23 @@ namespace App\Domains\Activos\Services;
 
 use App\Domains\Activos\Models\ActivoFijo;
 use App\Domains\Activos\Models\ProyectoActivo;
+use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Contabilidad\Models\CentroCosto;
 use App\Domains\Contabilidad\Services\AsientoContableService;
-use App\Domains\Comercial\Services\FacturaService;
 use App\Domains\Contabilidad\Services\PlanCuentaService;
 use App\Domains\Core\Services\ContadorEmpresaService;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class ActivoFijoService
 {
     protected $facturaService;
+
     protected $planCuentaService;
+
     protected ContadorEmpresaService $contadorService;
 
     public function __construct(
@@ -74,10 +77,10 @@ class ActivoFijoService
             ->where('activo', true)
             ->exists();
 
-        if (!$valido) {
+        if (! $valido) {
             throw new Exception(
-                "Centro de costo {$centroCostoId} invalido. " .
-                "Debe pertenecer a la empresa y estar activo."
+                "Centro de costo {$centroCostoId} invalido. ".
+                'Debe pertenecer a la empresa y estar activo.'
             );
         }
     }
@@ -95,10 +98,11 @@ class ActivoFijoService
                     $datos['empresa_id'],
                     'activo_codigo'
                 );
-                $datos['codigo'] = 'AF-' . str_pad((string) $correlativo, 5, '0', STR_PAD_LEFT);
+                $datos['codigo'] = 'AF-'.str_pad((string) $correlativo, 5, '0', STR_PAD_LEFT);
             }
 
             $datos['estado'] = $datos['estado'] ?? 'ACTIVO';
+
             return ActivoFijo::create($datos);
         });
     }
@@ -107,12 +111,12 @@ class ActivoFijoService
     {
         $activo = ActivoFijo::where('empresa_id', $empresaId)->find($activoId);
 
-        if (!$activo) {
-            throw new Exception("Activo no encontrado.", 404);
+        if (! $activo) {
+            throw new Exception('Activo no encontrado.', 404);
         }
 
         if ($activo->estado === 'DADO_DE_BAJA') {
-            throw new Exception("No se puede editar un activo dado de baja.", 400);
+            throw new Exception('No se puede editar un activo dado de baja.', 400);
         }
 
         if (array_key_exists('centro_costo_id', $datos)) {
@@ -123,6 +127,7 @@ class ActivoFijoService
         $datosFiltrados = array_intersect_key($datos, array_flip($camposPermitidos));
 
         $activo->update($datosFiltrados);
+
         return $activo->fresh();
     }
 
@@ -137,6 +142,7 @@ class ActivoFijoService
     {
         $datos['estado'] = 'EN_CONSTRUCCION';
         $datos['valor_total_original'] = 0;
+
         return ProyectoActivo::create($datos);
     }
 
@@ -148,7 +154,7 @@ class ActivoFijoService
             // La unique de BD (defensa final contra la carrera que el exists() de mas
             // abajo no cubre) salta aqui como codigo 23000/1062.
             if ((int) $e->getCode() === 23000 || str_contains($e->getMessage(), 'dep_ejec_activos_periodo_unique')) {
-                throw new Exception("El proceso de depreciación para este período ya fue ejecutado y contabilizado.");
+                throw new Exception('El proceso de depreciación para este período ya fue ejecutado y contabilizado.');
             }
             throw $e;
         }
@@ -156,7 +162,7 @@ class ActivoFijoService
 
     private function depreciarMesSinGuard(int $empresaId, int $usuarioId, string $mesAnio)
     {
-        $periodo = Carbon::createFromFormat('Y-m-d', $mesAnio . '-01');
+        $periodo = Carbon::createFromFormat('Y-m-d', $mesAnio.'-01');
         $fechaCalculo = $periodo->copy()->endOfMonth();
 
         if ($periodo->isSameMonth(now())) {
@@ -164,7 +170,7 @@ class ActivoFijoService
         }
 
         $fechaCalculoFecha = $fechaCalculo->toDateString();
-        $glosaMes = "Centralización Depreciación Activos Fijos - " . $periodo->format('m/Y');
+        $glosaMes = 'Centralización Depreciación Activos Fijos - '.$periodo->format('m/Y');
         $periodoMes = $periodo->month;
         $periodoAnio = $periodo->year;
 
@@ -180,7 +186,7 @@ class ActivoFijoService
                 ->exists();
 
             if ($yaEjecutado) {
-                throw new Exception("El proceso de depreciación para este período ya fue ejecutado y contabilizado.");
+                throw new Exception('El proceso de depreciación para este período ya fue ejecutado y contabilizado.');
             }
 
             $activosOperativos = ActivoFijo::where('empresa_id', $empresaId)
@@ -188,7 +194,7 @@ class ActivoFijoService
                 ->count();
 
             if ($activosOperativos === 0) {
-                throw new Exception("No hay activos fijos operativos.");
+                throw new Exception('No hay activos fijos operativos.');
             }
 
             $activos = ActivoFijo::where('empresa_id', $empresaId)
@@ -224,7 +230,7 @@ class ActivoFijoService
                         throw new Exception("El activo {$activo->codigo} ({$activo->nombre}) no tiene sus cuentas de depreciación configuradas. Edite su ficha contable antes de depreciar el mes.");
                     }
 
-                    $sqlCases[] = "WHEN ? THEN depreciacion_acumulada + ?";
+                    $sqlCases[] = 'WHEN ? THEN depreciacion_acumulada + ?';
                     $sqlBindings[] = $activo->id;
                     $sqlBindings[] = $cuotaMensual;
                     $idsActivos[] = $activo->id;
@@ -234,13 +240,13 @@ class ActivoFijoService
                         'cuenta_contable' => $activo->cuenta_gasto_codigo,
                         'debe' => $cuotaMensual,
                         'haber' => 0,
-                        'glosa_detalle' => "Depreciación {$activo->codigo} - {$activo->nombre}"
+                        'glosa_detalle' => "Depreciación {$activo->codigo} - {$activo->nombre}",
                     ];
                     $detallesAsiento[] = [
                         'cuenta_contable' => $activo->cuenta_depreciacion_codigo,
                         'debe' => 0,
                         'haber' => $cuotaMensual,
-                        'glosa_detalle' => "Depreciación Acum. {$activo->codigo}"
+                        'glosa_detalle' => "Depreciación Acum. {$activo->codigo}",
                     ];
 
                     $totalDepreciacionMes += $cuotaMensual;
@@ -251,7 +257,10 @@ class ActivoFijoService
                 return ['mensaje' => 'Los activos ya han alcanzado su valor residual mínimo.', 'asiento_comprobante' => null];
             }
 
-            if (!empty($idsActivos)) {
+            if (! empty($idsActivos)) {
+                // Los unicos fragmentos interpolados en el string son '?' (placeholders) y palabras
+                // clave SQL fijas (CASE/WHEN/THEN/ELSE): ningun valor de negocio entra al string,
+                // todos van bindeados en $sqlBindings. No usar interpolacion directa de valores aqui.
                 $casesStr = implode(' ', $sqlCases);
                 $placeholders = implode(',', array_fill(0, count($idsActivos), '?'));
                 $sqlBindings = array_merge($sqlBindings, $idsActivos);
@@ -267,12 +276,12 @@ class ActivoFijoService
                 'glosa' => $glosaMes,
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'activos_depreciacion',
-                'estado' => 'MAYORIZADO'
+                'estado' => 'MAYORIZADO',
             ];
 
             $asiento = $asientoService->registrarAsiento($cabecera, $detallesAsiento);
             $comprobante = $asiento->numero_comprobante;
-            $mensaje = "Depreciación calculada correctamente. Total mes: $" . number_format($totalDepreciacionMes, 0, ',', '.');
+            $mensaje = 'Depreciación calculada correctamente. Total mes: $'.number_format($totalDepreciacionMes, 0, ',', '.');
 
             // Guarda la cuota exacta por activo -- permite al reversor restarla con precisión
             // si este asiento se anula (ver AnulacionService/AsientoContableService).
@@ -291,7 +300,7 @@ class ActivoFijoService
 
             return [
                 'mensaje' => $mensaje,
-                'asiento_comprobante' => $comprobante
+                'asiento_comprobante' => $comprobante,
             ];
         });
     }
@@ -312,7 +321,7 @@ class ActivoFijoService
             'anio_fabricacion' => $proyecto->anio_fabricacion,
             'tipo_activo_id' => $proyecto->tipo_activo_id,
             'cuenta_depreciacion_id' => $proyecto->cuenta_depreciacion_id,
-            'cuenta_gasto_id' => $proyecto->cuenta_gasto_id
+            'cuenta_gasto_id' => $proyecto->cuenta_gasto_id,
         ];
     }
 
@@ -325,22 +334,22 @@ class ActivoFijoService
     {
         $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->find($proyectoId);
 
-        if (!$proyecto) {
-            throw new Exception("Proyecto no encontrado.", 404);
+        if (! $proyecto) {
+            throw new Exception('Proyecto no encontrado.', 404);
         }
 
         if ($proyecto->estado !== 'EN_CONSTRUCCION') {
-            throw new Exception("Solo se pueden eliminar proyectos en construccion.", 400);
+            throw new Exception('Solo se pueden eliminar proyectos en construccion.', 400);
         }
 
-        $facturasVinculadas = \App\Domains\Comercial\Models\Factura::where('empresa_id', $empresaId)
+        $facturasVinculadas = Factura::where('empresa_id', $empresaId)
             ->where('proyecto_activo_id', $proyectoId)
             ->count();
 
         if ($facturasVinculadas > 0) {
             throw new Exception(
-                "No se puede eliminar: el proyecto tiene {$facturasVinculadas} factura(s) vinculada(s). " .
-                "Desvincule las facturas primero.",
+                "No se puede eliminar: el proyecto tiene {$facturasVinculadas} factura(s) vinculada(s). ".
+                'Desvincule las facturas primero.',
                 400
             );
         }
@@ -355,21 +364,21 @@ class ActivoFijoService
                 ->lockForUpdate()
                 ->find($proyectoId);
 
-            if (!$proyecto) {
-                throw new Exception("Proyecto no encontrado.", 404);
+            if (! $proyecto) {
+                throw new Exception('Proyecto no encontrado.', 404);
             }
 
             if ($proyecto->estado !== 'EN_CONSTRUCCION') {
-                throw new Exception("No se pueden desvincular facturas de un proyecto cerrado.", 400);
+                throw new Exception('No se pueden desvincular facturas de un proyecto cerrado.', 400);
             }
 
-            $factura = \App\Domains\Comercial\Models\Factura::where('empresa_id', $empresaId)
+            $factura = Factura::where('empresa_id', $empresaId)
                 ->where('id', $facturaId)
                 ->where('proyecto_activo_id', $proyectoId)
                 ->first();
 
-            if (!$factura) {
-                throw new Exception("Factura no encontrada o no esta vinculada a este proyecto.", 404);
+            if (! $factura) {
+                throw new Exception('Factura no encontrada o no esta vinculada a este proyecto.', 404);
             }
 
             $monto = round((float) $factura->monto_neto, 2);
@@ -386,7 +395,7 @@ class ActivoFijoService
             $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($proyectoId);
 
             if ($proyecto->estado !== 'EN_CONSTRUCCION') {
-                throw new Exception("El proyecto está cerrado. No se pueden imputar más costos.");
+                throw new Exception('El proyecto está cerrado. No se pueden imputar más costos.');
             }
 
             $factura = $this->facturaService->obtenerFacturaPorId($empresaId, $datos['factura_id']);
@@ -399,7 +408,7 @@ class ActivoFijoService
             $netoReal = round((float) $factura->monto_neto, 2);
 
             if (abs($montoImputar - $netoReal) > 0.01) {
-                throw new Exception("Monto Incorrecto: Para capitalizar este activo, debe imputar el 100% del valor neto ($" . number_format($netoReal, 0, ',', '.') . "). El IVA no es capitalizable.");
+                throw new Exception('Monto Incorrecto: Para capitalizar este activo, debe imputar el 100% del valor neto ($'.number_format($netoReal, 0, ',', '.').'). El IVA no es capitalizable.');
             }
 
             $this->facturaService->vincularAProyecto($empresaId, $datos['factura_id'], $proyectoId);
@@ -411,24 +420,24 @@ class ActivoFijoService
     {
         return DB::transaction(function () use ($empresaId, $proyectoId, $fechaAdquisicion) {
             $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($proyectoId);
-            if (!$proyecto->tipo_activo_id || !$proyecto->cuenta_depreciacion_id || !$proyecto->cuenta_gasto_id) {
-                throw new Exception("Configuración Incompleta: El proyecto requiere asignar las 3 cuentas contables (Activo, Depreciación y Gasto) antes de ser capitalizado.");
+            if (! $proyecto->tipo_activo_id || ! $proyecto->cuenta_depreciacion_id || ! $proyecto->cuenta_gasto_id) {
+                throw new Exception('Configuración Incompleta: El proyecto requiere asignar las 3 cuentas contables (Activo, Depreciación y Gasto) antes de ser capitalizado.');
             }
 
             if ($proyecto->estado !== 'EN_CONSTRUCCION') {
-                throw new Exception("Este proyecto ya se encuentra activo u operativo.");
+                throw new Exception('Este proyecto ya se encuentra activo u operativo.');
             }
 
             if ($proyecto->valor_total_original <= 0) {
-                throw new Exception("No se puede activar un proyecto sin costos imputados. Agregue facturas primero.");
+                throw new Exception('No se puede activar un proyecto sin costos imputados. Agregue facturas primero.');
             }
 
             $cuentaActivo = $this->planCuentaService->obtenerCuentaPorId($empresaId, (int) $proyecto->tipo_activo_id);
             $cuentaDepre = $this->planCuentaService->obtenerCuentaPorId($empresaId, (int) $proyecto->cuenta_depreciacion_id);
             $cuentaGasto = $this->planCuentaService->obtenerCuentaPorId($empresaId, (int) $proyecto->cuenta_gasto_id);
 
-            if (!$cuentaActivo || !$cuentaDepre || !$cuentaGasto) {
-                throw new Exception("Error de Integridad: Una o más cuentas configuradas en el proyecto ya no existen en el plan de cuentas.");
+            if (! $cuentaActivo || ! $cuentaDepre || ! $cuentaGasto) {
+                throw new Exception('Error de Integridad: Una o más cuentas configuradas en el proyecto ya no existen en el plan de cuentas.');
             }
 
             $proyecto->update(['estado' => 'ACTIVO_OPERATIVO']);
@@ -443,7 +452,7 @@ class ActivoFijoService
                 'fecha_adquisicion' => $fechaAdquisicion ?? now()->toDateString(),
                 'vida_util_meses' => $proyecto->vida_util_meses,
                 'valor_residual' => 1,
-                'estado' => 'ACTIVO'
+                'estado' => 'ACTIVO',
             ]);
 
             return [
@@ -452,7 +461,7 @@ class ActivoFijoService
                 'nombre' => $activo->nombre,
                 'valor_capitalizado' => (float) $activo->valor_adquisicion,
                 'fecha_activacion' => $activo->fecha_adquisicion,
-                'estado' => $activo->estado
+                'estado' => $activo->estado,
             ];
         });
     }
@@ -462,7 +471,7 @@ class ActivoFijoService
         $proyecto = ProyectoActivo::where('empresa_id', $empresaId)->findOrFail($proyectoId);
 
         if ($proyecto->estado !== 'EN_CONSTRUCCION') {
-            throw new Exception("No se puede editar un proyecto que ya ha sido activado o capitalizado.");
+            throw new Exception('No se puede editar un proyecto que ya ha sido activado o capitalizado.');
         }
 
         $proyecto->update($datos);
@@ -475,8 +484,8 @@ class ActivoFijoService
         return DB::transaction(function () use ($empresaId, $usuarioId, $activoId, $datos) {
             $activo = ActivoFijo::where('empresa_id', $empresaId)->lockForUpdate()->findOrFail($activoId);
 
-            if (!in_array($activo->estado, ['ACTIVO', 'REACTIVADO'], true)) {
-                throw new Exception("Solo se pueden dar de baja activos que se encuentren operativos.");
+            if (! in_array($activo->estado, ['ACTIVO', 'REACTIVADO'], true)) {
+                throw new Exception('Solo se pueden dar de baja activos que se encuentren operativos.');
             }
 
             $valorAdquisicion = (float) $activo->valor_adquisicion;
@@ -485,7 +494,7 @@ class ActivoFijoService
 
             $cuentaPerdida = $this->planCuentaService->obtenerCuentaPorCodigo($empresaId, '999999');
 
-            if (!$cuentaPerdida) {
+            if (! $cuentaPerdida) {
                 throw new Exception("Falta configuración: No se encontró la cuenta '999999 - Cancelaciones / Ajustes' para reconocer la pérdida del valor libro.");
             }
 
@@ -496,7 +505,7 @@ class ActivoFijoService
                     'cuenta_contable' => $activo->cuenta_depreciacion_codigo,
                     'debe' => $depreciacionAcumulada,
                     'haber' => 0,
-                    'glosa_detalle' => "Reverso Deprec. Acum. por Baja Activo {$activo->codigo}"
+                    'glosa_detalle' => "Reverso Deprec. Acum. por Baja Activo {$activo->codigo}",
                 ];
             }
 
@@ -505,7 +514,7 @@ class ActivoFijoService
                     'cuenta_contable' => $cuentaPerdida->codigo,
                     'debe' => $valorLibro,
                     'haber' => 0,
-                    'glosa_detalle' => "Pérdida por Baja de Activo {$activo->codigo}"
+                    'glosa_detalle' => "Pérdida por Baja de Activo {$activo->codigo}",
                 ];
             }
 
@@ -513,7 +522,7 @@ class ActivoFijoService
                 'cuenta_contable' => $activo->cuenta_activo_codigo,
                 'debe' => 0,
                 'haber' => $valorAdquisicion,
-                'glosa_detalle' => "Baja Activo {$activo->codigo} - " . ($datos['motivo'] ?? 'Obsolescencia/Retiro')
+                'glosa_detalle' => "Baja Activo {$activo->codigo} - ".($datos['motivo'] ?? 'Obsolescencia/Retiro'),
             ];
 
             $asientoService = app(AsientoContableService::class);
@@ -525,19 +534,19 @@ class ActivoFijoService
                 'tipo_asiento' => 'traspaso',
                 'origen_modulo' => 'activos',
                 'origen_id' => $activo->id,
-                'estado' => 'MAYORIZADO'
+                'estado' => 'MAYORIZADO',
             ];
 
             $asiento = $asientoService->registrarAsiento($cabecera, $detallesAsiento);
 
             $activo->update([
                 'estado' => 'DADO_DE_BAJA',
-                'descripcion' => ($activo->descripcion ? $activo->descripcion . " | " : "") . "BAJA: " . ($datos['motivo'] ?? 'Sin especificar')
+                'descripcion' => ($activo->descripcion ? $activo->descripcion.' | ' : '').'BAJA: '.($datos['motivo'] ?? 'Sin especificar'),
             ]);
 
             return [
                 'mensaje' => "Activo dado de baja exitosamente. (Asiento N°{$asiento->numero_comprobante})",
-                'activo' => $activo
+                'activo' => $activo,
             ];
         });
     }
@@ -546,54 +555,54 @@ class ActivoFijoService
     {
         $activo = ActivoFijo::where('empresa_id', $empresaId)->find($activoId);
 
-        if (!$activo) {
-            throw new Exception("Activo no encontrado.", 404);
+        if (! $activo) {
+            throw new Exception('Activo no encontrado.', 404);
         }
 
         $valorAdquisicion = (int) $activo->valor_adquisicion;
-        $valorResidual    = (int) $activo->valor_residual;
-        $vidaUtilMeses    = (int) $activo->vida_util_meses;
+        $valorResidual = (int) $activo->valor_residual;
+        $vidaUtilMeses = (int) $activo->vida_util_meses;
         $depreciacionReal = (int) $activo->depreciacion_acumulada;
 
         $montoDepreciable = $valorAdquisicion - $valorResidual;
-        $cuotaBase        = $vidaUtilMeses > 0 ? (int) round($montoDepreciable / $vidaUtilMeses, 0) : 0;
+        $cuotaBase = $vidaUtilMeses > 0 ? (int) round($montoDepreciable / $vidaUtilMeses, 0) : 0;
 
         $fechaInicio = Carbon::parse($activo->fecha_adquisicion)->addMonth()->startOfMonth();
 
-        $filas                = [];
-        $depreciacionAcum     = 0;
+        $filas = [];
+        $depreciacionAcum = 0;
 
         for ($i = 0; $i < $vidaUtilMeses; $i++) {
             $esUltimo = ($i === $vidaUtilMeses - 1);
-            $cuota    = $esUltimo ? ($montoDepreciable - $depreciacionAcum) : $cuotaBase;
+            $cuota = $esUltimo ? ($montoDepreciable - $depreciacionAcum) : $cuotaBase;
 
             $depreciacionAcum += $cuota;
-            $valorLibro        = $valorAdquisicion - $depreciacionAcum;
-            $yaEjecutado       = $depreciacionReal >= $depreciacionAcum;
+            $valorLibro = $valorAdquisicion - $depreciacionAcum;
+            $yaEjecutado = $depreciacionReal >= $depreciacionAcum;
 
             $filas[] = [
-                'numero_mes'             => $i + 1,
-                'periodo'                => $fechaInicio->copy()->addMonths($i)->format('Y-m'),
-                'cuota'                  => $cuota,
+                'numero_mes' => $i + 1,
+                'periodo' => $fechaInicio->copy()->addMonths($i)->format('Y-m'),
+                'cuota' => $cuota,
                 'depreciacion_acumulada' => $depreciacionAcum,
-                'valor_libro'            => $valorLibro,
-                'ya_ejecutado'           => $yaEjecutado,
+                'valor_libro' => $valorLibro,
+                'ya_ejecutado' => $yaEjecutado,
             ];
         }
 
-        $valorLibroActual   = $valorAdquisicion - $depreciacionReal;
-        $porcentajeDeprec   = $montoDepreciable > 0
+        $valorLibroActual = $valorAdquisicion - $depreciacionReal;
+        $porcentajeDeprec = $montoDepreciable > 0
             ? round(($depreciacionReal / $montoDepreciable) * 100, 1)
             : 0.0;
 
         return [
             'resumen' => [
-                'total_meses'                => $vidaUtilMeses,
-                'valor_adquisicion'          => $valorAdquisicion,
-                'valor_residual'             => $valorResidual,
+                'total_meses' => $vidaUtilMeses,
+                'valor_adquisicion' => $valorAdquisicion,
+                'valor_residual' => $valorResidual,
                 'depreciacion_acumulada_real' => $depreciacionReal,
-                'valor_libro_actual'         => $valorLibroActual,
-                'porcentaje_depreciado'      => $porcentajeDeprec,
+                'valor_libro_actual' => $valorLibroActual,
+                'porcentaje_depreciado' => $porcentajeDeprec,
             ],
             'filas' => $filas,
         ];

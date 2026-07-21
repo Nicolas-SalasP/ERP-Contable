@@ -78,10 +78,15 @@ const ModalDetalleAsiento = ({ isOpen, asientoId, onClose }) => {
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             onClick={onClose}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}
+            role="button"
+            tabIndex={0}
         >
             <div
                 className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-3xl max-h-[90vh] flex flex-col animate-fade-in"
                 onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                role="presentation"
             >
                 <div className="bg-slate-50 dark:bg-slate-900 p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-start rounded-t-xl">
                     <div>

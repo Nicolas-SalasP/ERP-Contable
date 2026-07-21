@@ -105,8 +105,8 @@ const ModalDocumentosFactura = ({ facturaId, etiqueta, onCerrar, onCambio }) => 
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/80 z-[110] flex items-center justify-center p-4 animate-fade-in" onClick={onCerrar}>
-            <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[85vh] border border-slate-300 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/80 z-[110] flex items-center justify-center p-4 animate-fade-in" onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }} role="presentation">
+            <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[85vh] border border-slate-300 dark:border-slate-700">
                 <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white shrink-0 border-b border-slate-800">
                     <div>
                         <h2 className="text-base font-bold">Documentos Adjuntos</h2>
@@ -169,8 +169,8 @@ const ModalDocumentosFactura = ({ facturaId, etiqueta, onCerrar, onCambio }) => 
             </div>
 
             {imagenZoom && (
-                <div className="fixed inset-0 bg-black/90 z-[120] flex flex-col items-center justify-center" onClick={cerrarZoom}>
-                    <div className="absolute top-4 right-4 flex gap-2 z-10" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/90 z-[120] flex flex-col items-center justify-center" onClick={(e) => { if (e.target === e.currentTarget) cerrarZoom(); }} role="presentation">
+                    <div className="absolute top-4 right-4 flex gap-2 z-10">
                         <button onClick={() => ajustarZoom(-0.5)} className="bg-white/10 hover:bg-white/20 text-white w-9 h-9 rounded-full flex items-center justify-center">
                             <i className="fas fa-search-minus"></i>
                         </button>
@@ -181,7 +181,7 @@ const ModalDocumentosFactura = ({ facturaId, etiqueta, onCerrar, onCambio }) => 
                             <i className="fas fa-times"></i>
                         </button>
                     </div>
-                    <div className="overflow-auto max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+                    <div className="overflow-auto max-w-full max-h-full">
                         <img
                             src={imagenZoom.url}
                             alt={imagenZoom.nombre}

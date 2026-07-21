@@ -90,8 +90,9 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
                 <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">N° Nota de Crédito <span className="text-red-500">*</span></label>
+                            <label htmlFor="nc-numero" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">N° Nota de Crédito <span className="text-red-500">*</span></label>
                             <input
+                                id="nc-numero"
                                 type="text"
                                 value={form.numeroNc}
                                 onChange={set('numeroNc')}
@@ -101,8 +102,9 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Fecha Emisión</label>
+                            <label htmlFor="nc-fecha-emision" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Fecha Emisión</label>
                             <input
+                                id="nc-fecha-emision"
                                 type="date"
                                 value={form.fechaEmision}
                                 onChange={set('fechaEmision')}
@@ -113,8 +115,9 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
 
                     <div className="grid grid-cols-3 gap-3">
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Monto Neto <span className="text-red-500">*</span></label>
+                            <label htmlFor="nc-monto-neto" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Monto Neto <span className="text-red-500">*</span></label>
                             <input
+                                id="nc-monto-neto"
                                 type="number"
                                 min="1"
                                 step="1"
@@ -126,8 +129,9 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">IVA</label>
+                            <label htmlFor="nc-monto-iva" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">IVA</label>
                             <input
+                                id="nc-monto-iva"
                                 type="number"
                                 min="0"
                                 step="1"
@@ -138,8 +142,9 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Total NC <span className="text-red-500">*</span></label>
+                            <label htmlFor="nc-monto-bruto" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Total NC <span className="text-red-500">*</span></label>
                             <input
+                                id="nc-monto-bruto"
                                 type="number"
                                 min="1"
                                 max={montoOrig}
@@ -154,8 +159,9 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Razón de la NC <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">(min. 5 caracteres)</span></label>
+                        <label htmlFor="nc-razon" className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Razón de la NC <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">(min. 5 caracteres)</span></label>
                         <textarea
+                            id="nc-razon"
                             value={form.razon}
                             onChange={set('razon')}
                             rows={2}
@@ -167,7 +173,7 @@ const ModalNotaCredito = ({ isOpen, onClose, factura, onNcEmitida }) => {
                     </div>
 
                     <label className="flex items-center gap-3 cursor-pointer select-none">
-                        <input type="checkbox" checked={form.emitirDte} onChange={set('emitirDte')} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                        <input type="checkbox" checked={form.emitirDte} onChange={set('emitirDte')} aria-label="Emitir DTE al SII (tipo 61)" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
                         <div>
                             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Emitir DTE al SII (tipo 61)</span>
                             <p className="text-[11px] text-slate-400">Solo si la factura original ya tiene folio electrónico SII.</p>

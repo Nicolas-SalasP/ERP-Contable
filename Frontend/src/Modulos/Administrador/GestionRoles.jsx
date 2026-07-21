@@ -67,6 +67,10 @@ const listaPermisos = [
             'sii.auditoria.ver',
         ],
     },
+    {
+        categoria: 'Integraciones',
+        keys: ['integraciones.api.ver', 'integraciones.api.gestionar'],
+    },
 ];
 
 const GestionRoles = () => {

@@ -84,14 +84,34 @@ const VisorCliente = () => {
 
     const [facturaDocumentos, setFacturaDocumentos] = useState(null);
 
+    const descargarComprobanteFactura = async (facturaId, etiqueta, esCopia) => {
+        try {
+            const nombreArchivo = `${etiqueta.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim()}${esCopia ? '-COPIA' : ''}.pdf`;
+            await api.download(`/facturas/${facturaId}/comprobante${esCopia ? '?copia=1' : ''}`, nombreArchivo, { silent: true });
+        } catch (error) {
+            Swal.fire('Error', error.message || 'No se pudo descargar el comprobante.', 'error');
+        }
+    };
+
     const clientesFiltrados = listaClientes.filter(c => {
         const b = terminoBusqueda.toLowerCase();
         return c.razon_social?.toLowerCase().includes(b) || (c.rut && c.rut.toLowerCase().includes(b)) || (c.codigo_cliente && c.codigo_cliente.toLowerCase().includes(b));
     });
 
     const modalSpotlightJSX = modalAbierto && (
-        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex items-start justify-center pt-[10vh] p-4 animate-fade-in" onClick={() => setModalAbierto(false)}>
-            <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] border border-slate-300 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+        <div
+            className="fixed inset-0 bg-slate-900/80 z-[100] flex items-start justify-center pt-[10vh] p-4 animate-fade-in"
+            onClick={() => setModalAbierto(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModalAbierto(false); } }}
+            role="button"
+            tabIndex={0}
+        >
+            <div
+                className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] border border-slate-300 dark:border-slate-700"
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => e.stopPropagation()}
+                role="presentation"
+            >
                 <div className="flex items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <i className="fas fa-search text-slate-500 text-xl mr-4"></i>
                     <input ref={inputBusquedaRef} type="text" className="flex-1 bg-transparent border-none outline-none text-lg font-bold text-slate-800 dark:text-slate-200 placeholder-slate-400" placeholder="Buscar por RUT, Nombre o Código..." value={terminoBusqueda} onChange={(e) => setTerminoBusqueda(e.target.value)} />
@@ -99,7 +119,15 @@ const VisorCliente = () => {
                 </div>
                 <div className="overflow-y-auto p-2">
                     {clientesFiltrados.map(cli => (
-                        <div key={cli.id} onClick={() => seleccionarCliente(cli.id)} className="flex items-center justify-between p-4 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-50 dark:border-slate-700 transition-colors">
+                        <div
+                            key={cli.id}
+                            onClick={() => seleccionarCliente(cli.id)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); seleccionarCliente(cli.id); } }}
+                            role="option"
+                            aria-selected="false"
+                            tabIndex={0}
+                            className="flex items-center justify-between p-4 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-50 dark:border-slate-700 transition-colors"
+                        >
                             <div className="flex items-center gap-4">
                                 <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600"><i className="fas fa-user"></i></div>
                                 <div>
@@ -375,15 +403,37 @@ const VisorCliente = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-3 text-center">
-                                            {item._tipo !== 'ANTICIPO' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFacturaDocumentos(item)}
-                                                    className="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors"
-                                                >
-                                                    Documentos{item._cantidadDocumentos > 0 ? ` (${item._cantidadDocumentos})` : ''}
-                                                </button>
-                                            )}
+                                            <div className="flex items-center justify-center gap-3">
+                                                {item._tipo === 'FACTURA' && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => descargarComprobanteFactura(item.id, item._documento, false)}
+                                                            className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold text-xs transition-colors"
+                                                            title="Descargar comprobante (original)"
+                                                        >
+                                                            Imprimir
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => descargarComprobanteFactura(item.id, item._documento, true)}
+                                                            className="text-amber-600 hover:text-amber-800 font-bold text-xs transition-colors"
+                                                            title="Reimprimir como copia (marca de agua COPIA, para no confundir con el original)"
+                                                        >
+                                                            Reimprimir
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {item._tipo !== 'ANTICIPO' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFacturaDocumentos(item)}
+                                                        className="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors"
+                                                    >
+                                                        Documentos{item._cantidadDocumentos > 0 ? ` (${item._cantidadDocumentos})` : ''}
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

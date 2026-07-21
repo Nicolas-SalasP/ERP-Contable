@@ -472,6 +472,37 @@ class DashboardResumenTest extends TestCase
         $this->assertEquals(100.0, (float) $response->json('data.comparacion_anio_anterior.variacion_pct'));
     }
 
+    public function test_periodo_anio_no_compara_contra_calendario_completo_del_anio_anterior(): void
+    {
+        // Fija "hoy" a mitad de año: sin el clamp a Carbon::now(), rangoPeriodo('año')
+        // devolvia Dic31 como fin, y la comparacion interanual restaba un año a esa fecha
+        // teorica en vez de a "hoy" -- el año actual (con 5 meses futuros sin facturas,
+        // porque no existen facturas futuras) quedaba comparado contra el año anterior
+        // COMPLETO, mostrando una caida de ventas falsa solo por el calendario.
+        Carbon::setTestNow(Carbon::parse('2026-07-14'));
+
+        try {
+            [$empresa, $usuario] = $this->crearEmpresaConAdmin();
+            $proveedor = $this->crearProveedor($empresa->id);
+
+            // Mismo monto en el mismo dia-a-la-fecha de cada año: variacion deberia ser ~0%.
+            $this->crearFacturaVenta($empresa->id, $proveedor->id, 100000, '2026-07-10');
+            $this->crearFacturaVenta($empresa->id, $proveedor->id, 100000, '2025-07-10');
+
+            $response = $this->actingAs($usuario)->getJson(
+                '/api/dashboard/resumen?periodo=año&comparar_anio_anterior=1'
+            );
+
+            $response->assertOk();
+            // El rango del año anterior debe cortar en el mismo dia-a-la-fecha (14 de julio),
+            // no en Dic31 del año anterior.
+            $this->assertEquals('2025-07-14', $response->json('data.comparacion_anio_anterior.periodo.hasta'));
+            $this->assertEquals(0.0, (float) $response->json('data.comparacion_anio_anterior.variacion_pct'));
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_sin_comparar_anio_anterior_no_incluye_la_clave(): void
     {
         [, $usuario] = $this->crearEmpresaConAdmin();

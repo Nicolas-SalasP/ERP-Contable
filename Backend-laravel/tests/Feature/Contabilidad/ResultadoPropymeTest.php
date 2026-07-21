@@ -184,4 +184,39 @@ class ResultadoPropymeTest extends TestCase
         $this->assertEquals(0.125, $resultado['tasa_ppm']);
         $this->assertEquals(1_250, $resultado['ppm_total']); // 1.000.000 * 0.00125 = 1.250
     }
+
+    /**
+     * Regresión (auditoría 2026-07-21): gastos_totales sumaba TODA la tabla facturas sin
+     * filtrar tipo='COMPRA'. Una factura de VENTA (proveedor_id "espejo" compartido por RUT
+     * con un Cliente, ver ProveedorAislamientoVentaCompraTest) inflaba silenciosamente los
+     * gastos deducibles y reducía la base imponible tributaria.
+     */
+    public function test_gastos_totales_ignora_factura_de_venta(): void
+    {
+        $empresa = $this->crearEmpresa14D8();
+
+        $this->insertarDte($empresa->id, 33, 1, '2026-03-15', 1_000_000.0);
+        $this->insertarFactura($empresa->id, 400_000.0, '2026-05-10', 1);
+
+        // Factura de VENTA colada en la misma tabla: no debe contarse como gasto.
+        DB::table('facturas')->insert([
+            'empresa_id'     => $empresa->id,
+            'codigo_unico'   => 999000 + $empresa->id,
+            'tipo'           => 'VENTA',
+            'numero_factura' => 'FV-COLADA',
+            'fecha_emision'  => '2026-05-11',
+            'monto_bruto'    => 238_000,
+            'monto_neto'     => 200_000,
+            'monto_iva'      => 38_000,
+            'estado'         => 'REGISTRADA',
+            'created_at'     => now(),
+        ]);
+
+        $this->crearPropietario($empresa->id, '12345678-9', 'Socio Único', 100.0);
+
+        $resultado = $this->service->calcular($empresa->id, 2026);
+
+        $this->assertEquals(400_000, $resultado['gastos_totales']);
+        $this->assertEquals(600_000, $resultado['base_imponible']);
+    }
 }

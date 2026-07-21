@@ -2,9 +2,8 @@
 
 namespace App\Domains\Inventario\Services;
 
-use App\Domains\Inventario\Exceptions\InventarioException;
-
 use App\Domains\Core\Models\User;
+use App\Domains\Inventario\Exceptions\InventarioException;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\InventarioEventoIntegracion;
 use App\Domains\Inventario\Models\InventarioPickingAsignacion;
@@ -28,8 +27,7 @@ class InventarioPickingService
         private readonly InventarioPickingAsignacionService $asignacionService,
         private readonly InventarioStockUbicacionService $stockUbicacionService,
         private readonly InventarioEventoIntegracionService $eventosIntegracion
-    ) {
-    }
+    ) {}
 
     public function listar(User $usuario, array $filtros = []): LengthAwarePaginator
     {
@@ -48,11 +46,11 @@ class InventarioPickingService
                 'detalles.asignaciones.lote:id,empresa_id,producto_id,codigo_lote,fecha_vencimiento,estado_operativo,activo',
                 'packing:id,empresa_id,picking_orden_id,codigo,estado',
             ])
-            ->when(!empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
-            ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
-            ->when(!empty($filtros['referencia']), fn (Builder $query) => $query->where('referencia', 'like', '%' . trim((string) $filtros['referencia']) . '%'))
-            ->when(!empty($filtros['search']), function (Builder $query) use ($filtros) {
-                $term = '%' . trim((string) $filtros['search']) . '%';
+            ->when(! empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
+            ->when(! empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
+            ->when(! empty($filtros['referencia']), fn (Builder $query) => $query->where('referencia', 'like', '%'.trim((string) $filtros['referencia']).'%'))
+            ->when(! empty($filtros['search']), function (Builder $query) use ($filtros) {
+                $term = '%'.trim((string) $filtros['search']).'%';
                 $query->where(function (Builder $subQuery) use ($term) {
                     $subQuery->where('codigo', 'like', $term)
                         ->orWhere('referencia', 'like', $term)
@@ -73,7 +71,7 @@ class InventarioPickingService
             ->where('empresa_id', $usuario->empresa_activa_id)
             ->find($id);
 
-        if (!$orden) {
+        if (! $orden) {
             throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
         }
 
@@ -139,11 +137,11 @@ class InventarioPickingService
             $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
-            if (!$orden) {
+            if (! $orden) {
                 throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
             }
 
-            if (!$orden->puedeAsignarse()) {
+            if (! $orden->puedeAsignarse()) {
                 throw InventarioException::regla('La orden de picking no puede asignarse en su estado actual o ya tiene reserva interna.');
             }
 
@@ -162,7 +160,7 @@ class InventarioPickingService
                 'estado' => ReservaInventario::ESTADO_ACTIVA,
                 'referencia' => $orden->referencia ?? $orden->codigo,
                 'motivo' => 'picking_interno',
-                'observacion' => 'Reserva interna generada por orden de picking ' . $orden->codigo . '. No genera DTE/SII ni asiento contable.',
+                'observacion' => 'Reserva interna generada por orden de picking '.$orden->codigo.'. No genera DTE/SII ni asiento contable.',
                 'origen_modulo' => 'INVENTARIO_PICKING',
                 'origen_id' => $orden->id,
                 'reservado_por' => $usuario->id,
@@ -274,11 +272,11 @@ class InventarioPickingService
         return DB::transaction(function () use ($usuario, $id) {
             $orden = InventarioPickingOrden::where('empresa_id', $usuario->empresa_activa_id)->lockForUpdate()->find($id);
 
-            if (!$orden) {
+            if (! $orden) {
                 throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
             }
 
-            if (!$orden->puedeIniciarse()) {
+            if (! $orden->puedeIniciarse()) {
                 throw InventarioException::regla('La orden debe estar asignada y pendiente para iniciar picking.');
             }
 
@@ -300,11 +298,11 @@ class InventarioPickingService
             $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
-            if (!$orden) {
+            if (! $orden) {
                 throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
             }
 
-            if (!$orden->puedeConfirmarse()) {
+            if (! $orden->puedeConfirmarse()) {
                 throw InventarioException::regla('La orden de picking no puede confirmarse en su estado actual.');
             }
 
@@ -407,11 +405,11 @@ class InventarioPickingService
             $empresaId = (int) $usuario->empresa_activa_id;
             $orden = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->find($id);
 
-            if (!$orden) {
+            if (! $orden) {
                 throw InventarioException::noEncontrado('La orden de picking no existe o no pertenece a la empresa.');
             }
 
-            if (!$orden->puedeCancelarse()) {
+            if (! $orden->puedeCancelarse()) {
                 throw InventarioException::regla('La orden de picking no puede cancelarse en su estado actual.');
             }
 
@@ -443,9 +441,7 @@ class InventarioPickingService
                 if ($asignacion->reserva_detalle_id) {
                     ReservaDetalleInventario::where('empresa_id', $empresaId)
                         ->where('id', $asignacion->reserva_detalle_id)
-                        ->update([
-                            'cantidad_liberada' => DB::raw('cantidad_liberada + ' . $pendienteLiberar),
-                        ]);
+                        ->increment('cantidad_liberada', $pendienteLiberar);
                 }
 
                 $asignacion->update([
@@ -493,7 +489,7 @@ class InventarioPickingService
 
         $query = InventarioPickingOrden::query()->where('empresa_id', $usuario->empresa_activa_id);
 
-        if (!empty($filtros['bodega_id'])) {
+        if (! empty($filtros['bodega_id'])) {
             $query->where('bodega_id', (int) $filtros['bodega_id']);
         }
 
@@ -530,11 +526,11 @@ class InventarioPickingService
             $producto = $this->obtenerProductoActivoEmpresa((int) ($detalle['producto_id'] ?? 0), $empresaId, "detalles.{$indice}.producto_id");
             $ubicacion = null;
 
-            if (!empty($detalle['bodega_id']) && (int) $detalle['bodega_id'] !== $bodegaId) {
+            if (! empty($detalle['bodega_id']) && (int) $detalle['bodega_id'] !== $bodegaId) {
                 throw ValidationException::withMessages(["detalles.{$indice}.bodega_id" => 'El detalle debe pertenecer a la misma bodega de la orden.']);
             }
 
-            if (!empty($detalle['ubicacion_origen_id'])) {
+            if (! empty($detalle['ubicacion_origen_id'])) {
                 $ubicacion = $this->obtenerUbicacionActivaEmpresaBodega((int) $detalle['ubicacion_origen_id'], $empresaId, $bodegaId, "detalles.{$indice}.ubicacion_origen_id");
             }
 
@@ -558,7 +554,7 @@ class InventarioPickingService
             ])->values()->all();
         }
 
-        if (!is_array($payload) || empty($payload)) {
+        if (! is_array($payload) || empty($payload)) {
             throw ValidationException::withMessages(['detalles' => 'Debe informar detalles válidos para confirmar picking.']);
         }
 
@@ -568,7 +564,7 @@ class InventarioPickingService
             $detalleId = (int) ($item['id'] ?? $item['detalle_id'] ?? 0);
             $detalle = $detalles->get($detalleId);
 
-            if (!$detalle) {
+            if (! $detalle) {
                 throw ValidationException::withMessages(["detalles.{$indice}.id" => 'El detalle informado no pertenece a la orden de picking.']);
             }
 
@@ -577,13 +573,13 @@ class InventarioPickingService
                     $asignacionId = (int) ($subItem['id'] ?? $subItem['asignacion_id'] ?? 0);
                     $asignacion = $asignaciones->get($asignacionId);
 
-                    if (!$asignacion || (int) $asignacion->picking_detalle_id !== (int) $detalle->id) {
+                    if (! $asignacion || (int) $asignacion->picking_detalle_id !== (int) $detalle->id) {
                         throw ValidationException::withMessages(["detalles.{$indice}.asignaciones.{$subIndice}.id" => 'La asignación informada no pertenece al detalle de picking.']);
                     }
 
                     $cantidad = $subItem['cantidad_pickeada'] ?? null;
 
-                    if (!is_numeric($cantidad) || (float) $cantidad < 0) {
+                    if (! is_numeric($cantidad) || (float) $cantidad < 0) {
                         throw ValidationException::withMessages(["detalles.{$indice}.asignaciones.{$subIndice}.cantidad_pickeada" => 'La cantidad pickeada debe ser numérica y no negativa.']);
                     }
 
@@ -599,7 +595,7 @@ class InventarioPickingService
 
             $cantidad = $item['cantidad_pickeada'] ?? null;
 
-            if (!is_numeric($cantidad) || (float) $cantidad < 0) {
+            if (! is_numeric($cantidad) || (float) $cantidad < 0) {
                 throw ValidationException::withMessages(["detalles.{$indice}.cantidad_pickeada" => 'La cantidad pickeada debe ser numérica y no negativa.']);
             }
 
@@ -674,11 +670,11 @@ class InventarioPickingService
     {
         $producto = Producto::query()->where('empresa_id', $empresaId)->find($productoId);
 
-        if (!$producto) {
+        if (! $producto) {
             throw ValidationException::withMessages([$campo => 'El producto informado no existe o no pertenece a la empresa.']);
         }
 
-        if (!$producto->activo) {
+        if (! $producto->activo) {
             throw ValidationException::withMessages([$campo => 'El producto informado está inactivo.']);
         }
 
@@ -689,7 +685,7 @@ class InventarioPickingService
     {
         $bodega = Bodega::query()->where('empresa_id', $empresaId)->find($bodegaId);
 
-        if (!$bodega) {
+        if (! $bodega) {
             throw ValidationException::withMessages([$campo => 'La bodega informada no existe o no pertenece a la empresa.']);
         }
 
@@ -707,11 +703,11 @@ class InventarioPickingService
             ->where('bodega_id', $bodegaId)
             ->find($ubicacionId);
 
-        if (!$ubicacion) {
+        if (! $ubicacion) {
             throw ValidationException::withMessages([$campo => 'La ubicación no existe, no pertenece a la empresa o no pertenece a la bodega.']);
         }
 
-        if (!$ubicacion->activo) {
+        if (! $ubicacion->activo) {
             throw ValidationException::withMessages([$campo => 'La ubicación informada está inactiva.']);
         }
 
@@ -720,11 +716,11 @@ class InventarioPickingService
 
     private function normalizarLote(Producto $producto, mixed $loteId, int $empresaId, string $campo): ?LoteInventario
     {
-        if (!$producto->maneja_lotes && $loteId === null) {
+        if (! $producto->maneja_lotes && $loteId === null) {
             return null;
         }
 
-        if (!$producto->maneja_lotes) {
+        if (! $producto->maneja_lotes) {
             throw ValidationException::withMessages([$campo => 'El producto no maneja lotes, por lo tanto no debe informar lote_id.']);
         }
 
@@ -737,7 +733,7 @@ class InventarioPickingService
             ->where('producto_id', $producto->id)
             ->find((int) $loteId);
 
-        if (!$lote || !$lote->activo) {
+        if (! $lote || ! $lote->activo) {
             throw ValidationException::withMessages([$campo => 'El lote informado no existe, está inactivo o no pertenece al producto/empresa.']);
         }
 
@@ -750,7 +746,7 @@ class InventarioPickingService
 
     private function validarCantidadPositiva(mixed $cantidad, string $campo): float
     {
-        if (!is_numeric($cantidad)) {
+        if (! is_numeric($cantidad)) {
             throw ValidationException::withMessages([$campo => 'La cantidad debe ser numérica.']);
         }
 
@@ -797,17 +793,18 @@ class InventarioPickingService
     private function generarCodigo(int $empresaId): string
     {
         $correlativo = InventarioPickingOrden::where('empresa_id', $empresaId)->lockForUpdate()->count() + 1;
-        return 'PICK-' . now()->format('Ymd') . '-' . str_pad((string) $correlativo, 5, '0', STR_PAD_LEFT);
+
+        return 'PICK-'.now()->format('Ymd').'-'.str_pad((string) $correlativo, 5, '0', STR_PAD_LEFT);
     }
 
     private function generarCodigoReservaPicking(int $empresaId, string $codigoPicking): string
     {
-        $base = 'RES-' . $codigoPicking;
+        $base = 'RES-'.$codigoPicking;
         $codigo = $base;
         $i = 1;
 
         while (ReservaInventario::where('empresa_id', $empresaId)->where('codigo_reserva', $codigo)->exists()) {
-            $codigo = $base . '-' . $i++;
+            $codigo = $base.'-'.$i++;
         }
 
         return $codigo;
@@ -825,6 +822,7 @@ class InventarioPickingService
     private function normalizarPerPage(mixed $perPage): int
     {
         $perPage = (int) $perPage;
+
         return $perPage <= 0 ? 15 : min($perPage, 100);
     }
 

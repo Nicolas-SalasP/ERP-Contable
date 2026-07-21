@@ -2,17 +2,18 @@
 
 namespace App\Domains\Core\Controllers;
 
-use App\Domains\Core\Services\UsuarioService;
-use App\Support\MensajeErrorGenerico;
-use App\Domains\Core\Models\User;
 use App\Domains\Core\Models\Rol;
+use App\Domains\Core\Models\User;
+use App\Domains\Core\Services\UsuarioService;
 use App\Domains\Core\Support\ModuloPermisos;
 use App\Http\Middleware\EnsureUserHasPermission;
+use App\Support\MensajeErrorGenerico;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Exception;
 
 class UsuarioController
 {
@@ -27,6 +28,7 @@ class UsuarioController
     {
         try {
             $usuarios = $this->service->listarUsuarios($request->user()->empresa_activa_id);
+
             return response()->json(['success' => true, 'data' => $usuarios]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al cargar usuarios'], 500);
@@ -37,6 +39,7 @@ class UsuarioController
     {
         try {
             $roles = $this->service->listarRoles($request->user()->empresa_activa_id);
+
             return response()->json(['success' => true, 'data' => $roles]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al cargar roles'], 500);
@@ -48,16 +51,16 @@ class UsuarioController
         try {
             $miRol = $request->user()->load('rol')->rol;
 
-            if (!$miRol || $miRol->jerarquia < 100) {
+            if (! $miRol || $miRol->jerarquia < 100) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No tienes permisos para invitar usuarios.'
+                    'message' => 'No tienes permisos para invitar usuarios.',
                 ], 403);
             }
 
             $datos = $request->validate([
                 'email' => 'required|email',
-                'rol_id' => 'required|integer|exists:roles,id'
+                'rol_id' => 'required|integer|exists:roles,id',
             ]);
 
             $passwordTemporal = $this->service->invitarUsuario(
@@ -81,7 +84,7 @@ class UsuarioController
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], 422);
@@ -92,7 +95,7 @@ class UsuarioController
     {
         try {
             $datos = $request->validate([
-                'rol_id' => 'required|integer|exists:roles,id'
+                'rol_id' => 'required|integer|exists:roles,id',
             ]);
 
             $miRol = $request->user()->load('rol')->rol;
@@ -123,7 +126,7 @@ class UsuarioController
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (ModelNotFoundException $e) {
             // Usuario o rol fuera del alcance de la empresa del solicitante.
@@ -150,8 +153,9 @@ class UsuarioController
             }
 
             $this->service->desvincularUsuario($request->user()->empresa_activa_id, $id);
+
             return response()->json(['success' => true, 'message' => 'Usuario desvinculado.']);
-            
+
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
         } catch (Exception $e) {
@@ -174,6 +178,7 @@ class UsuarioController
             }
 
             $rol = $this->service->guardarRol($request->user()->empresa_activa_id, $datos);
+
             return response()->json(['success' => true, 'data' => $rol]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Errores de validación', 'errors' => $e->errors()], 422);
@@ -198,6 +203,17 @@ class UsuarioController
 
             // El servicio solo permite editar roles propios de la empresa (nunca de sistema ni de otra empresa).
             $rol = $this->service->actualizarRolPermisos($request->user()->empresa_activa_id, $id, $datos);
+
+            // Invalidar cache de permisos de TODOS los usuarios con este rol: sin esto, recortar
+            // permisos a un rol (ej. para cortar acceso de emergencia) tardaba hasta 5 minutos en
+            // surtir efecto porque la cache es por usuario, no por rol.
+            User::where('rol_id', $rol->id)->get(['id', 'empresa_activa_id'])->each(function (User $usuario) {
+                Cache::forget(EnsureUserHasPermission::cacheKeyPermisos(
+                    (int) $usuario->id,
+                    (int) ($usuario->empresa_activa_id ?? 0)
+                ));
+            });
+
             return response()->json(['success' => true, 'data' => $rol]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Errores de validación', 'errors' => $e->errors()], 422);
@@ -211,7 +227,7 @@ class UsuarioController
     /**
      * Evita escalada de privilegios al crear/editar un rol: no permite jerarquia >= la propia ni permisos que el solicitante no posea (salvo Super Admin).
      *
-     * @return \Illuminate\Http\JsonResponse|null  Respuesta 403 si no autorizado, null si OK.
+     * @return JsonResponse|null Respuesta 403 si no autorizado, null si OK.
      */
     private function validarRolEditable(User $solicitante, array $datos)
     {
@@ -220,19 +236,19 @@ class UsuarioController
         $esSuperAdmin = $miJerarquia >= 100;
 
         $nuevaJerarquia = (int) ($datos['jerarquia'] ?? 10);
-        if (!$esSuperAdmin && $nuevaJerarquia >= $miJerarquia) {
+        if (! $esSuperAdmin && $nuevaJerarquia >= $miJerarquia) {
             return response()->json([
                 'success' => false,
                 'message' => 'No puedes crear o editar un rol de jerarquía igual o superior a la tuya.',
             ], 403);
         }
 
-        if (!$esSuperAdmin) {
+        if (! $esSuperAdmin) {
             $misPermisos = ModuloPermisos::permisosUsuario($solicitante);
             $solicitados = ModuloPermisos::normalizarLista($datos['permisos'] ?? []);
             $excedentes = array_values(array_diff($solicitados, $misPermisos));
 
-            if (!empty($excedentes)) {
+            if (! empty($excedentes)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No puedes asignar permisos que tú no posees.',

@@ -96,8 +96,9 @@ const LibroRemuneraciones = () => {
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Período</h2>
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
+                        <label htmlFor="libro-remuneraciones-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
                         <select
+                            id="libro-remuneraciones-anio"
                             value={periodo.anio}
                             onChange={(e) => setPeriodo((p) => ({ ...p, anio: Number(e.target.value) }))}
                             className={inputCls}
@@ -106,8 +107,9 @@ const LibroRemuneraciones = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
+                        <label htmlFor="libro-remuneraciones-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
                         <select
+                            id="libro-remuneraciones-mes"
                             value={periodo.mes}
                             onChange={(e) => setPeriodo((p) => ({ ...p, mes: Number(e.target.value) }))}
                             className={inputCls}
