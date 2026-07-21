@@ -104,6 +104,33 @@ const MesaConciliacion = () => {
         }
     };
 
+    const descartarMovimiento = async (mov) => {
+        const confirmacion = await Swal.fire({
+            icon: 'warning',
+            title: '¿Descartar movimiento?',
+            text: `"${mov.descripcion}" no volverá a aparecer en pendientes. Úsalo solo si es una línea de cartola duplicada o irrelevante.`,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, descartar',
+            cancelButtonText: 'Cancelar',
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: 'bg-rose-600 text-white font-bold py-2 px-6 rounded-lg mx-2',
+                cancelButton: 'bg-slate-200 text-slate-700 font-bold py-2 px-6 rounded-lg mx-2'
+            }
+        });
+        if (!confirmacion.isConfirmed) return;
+
+        try {
+            const res = await api.post(`/banco/movimientos/${mov.id}/descartar`);
+            if (res.success) {
+                Swal.fire({ icon: 'success', title: 'Descartado', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                cargarMovimientos(cuentaActiva);
+            }
+        } catch (error) {
+            Swal.fire('Error', error.response?.data?.message || error.response?.data?.mensaje || 'No se pudo descartar el movimiento.', 'error');
+        }
+    };
+
     const abrirModalConciliacion = async (mov) => {
         setMovSeleccionado(mov);
         setGlosa(mov.descripcion); 
@@ -393,9 +420,14 @@ const MesaConciliacion = () => {
                                         <td className="px-6 py-4 font-black text-rose-500 text-right">{mov.cargo > 0 ? formatCurrency(mov.cargo) : ''}</td>
                                         <td className="px-6 py-4 font-black text-emerald-500 text-right">{mov.abono > 0 ? formatCurrency(mov.abono) : ''}</td>
                                         <td className="px-6 py-4 text-center">
-                                            <button onClick={() => abrirModalConciliacion(mov)} className="bg-white text-blue-600 hover:bg-blue-600 hover:text-white font-bold py-2.5 px-5 rounded-xl transition-all text-xs border border-blue-200 shadow-sm opacity-90 group-hover:opacity-100">
-                                                Conciliar
-                                            </button>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button onClick={() => abrirModalConciliacion(mov)} className="bg-white text-blue-600 hover:bg-blue-600 hover:text-white font-bold py-2.5 px-5 rounded-xl transition-all text-xs border border-blue-200 shadow-sm opacity-90 group-hover:opacity-100">
+                                                    Conciliar
+                                                </button>
+                                                <button onClick={() => descartarMovimiento(mov)} title="Descartar (línea duplicada o irrelevante)" className="bg-white text-rose-500 hover:bg-rose-500 hover:text-white font-bold py-2.5 px-3 rounded-xl transition-all text-xs border border-rose-200 shadow-sm opacity-90 group-hover:opacity-100">
+                                                    <X size={14} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

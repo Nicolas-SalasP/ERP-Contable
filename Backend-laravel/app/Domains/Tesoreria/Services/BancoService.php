@@ -61,7 +61,11 @@ class BancoService
             }
 
             // Lock pesimista sobre las facturas solicitadas para evitar doble pago concurrente.
+            // tipo='COMPRA' explicito: sin esto, una factura de VENTA con proveedor_id "espejo"
+            // (RUT compartido con un Cliente, ver ProveedorAislamientoVentaCompraTest) podia
+            // colarse en facturasIds y quedar marcada PAGADA por un pago de nómina a proveedores.
             $facturas = Factura::where('empresa_id', $empresaId)
+                ->where('tipo', 'COMPRA')
                 ->whereIn('id', $facturasIds)
                 ->lockForUpdate()
                 ->get();

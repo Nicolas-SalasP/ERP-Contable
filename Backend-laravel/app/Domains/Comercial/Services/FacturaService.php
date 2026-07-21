@@ -808,9 +808,12 @@ class FacturaService
 
     public function vincularAProyecto(int $empresaId, int $facturaId, int $proyectoId): Factura
     {
-        $factura = Factura::where('empresa_id', $empresaId)->find($facturaId);
+        // tipo='COMPRA' explicito: un proyecto de activo fijo solo capitaliza gasto de compras;
+        // sin esto, una factura de VENTA (proveedor_id "espejo" compartido por RUT con un
+        // Cliente) podia imputarse por error como costo de adquisicion de un activo.
+        $factura = Factura::where('empresa_id', $empresaId)->where('tipo', 'COMPRA')->find($facturaId);
         if (! $factura) {
-            throw ComercialException::noEncontrado('Factura no encontrada.');
+            throw ComercialException::noEncontrado('Factura no encontrada o no es una factura de compra.');
         }
         $factura->update(['proyecto_activo_id' => $proyectoId]);
 
