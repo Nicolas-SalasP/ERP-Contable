@@ -83,4 +83,42 @@ describe('MesaConciliacion', () => {
         await waitFor(() => expect(conciliarSpy).toHaveBeenCalled());
         expect(await screen.findByText(/Banco 100% Cuadrado/i)).toBeDefined();
     });
+
+    it('descartar un movimiento (tras confirmar) lo quita de pendientes', async () => {
+        let llamadasPendientes = 0;
+        const pendientesHandler = () => {
+            llamadasPendientes += 1;
+            return mockJsonResponse(200, { success: true, data: llamadasPendientes === 1 ? [movimiento] : [] });
+        };
+
+        const descartarSpy = vi.fn(() => mockJsonResponse(200, { success: true, mensaje: 'Movimiento descartado.' }));
+
+        setupFetchRouter(rutasBase(pendientesHandler, {
+            'POST /banco/movimientos/10/descartar': descartarSpy,
+        }));
+
+        render(<MesaConciliacion />);
+
+        fireEvent.click(await screen.findByTitle(/Descartar/i));
+
+        await waitFor(() => expect(descartarSpy).toHaveBeenCalled());
+        expect(await screen.findByText(/Banco 100% Cuadrado/i)).toBeDefined();
+    });
+
+    it('descartar cancelado en el confirm no llama al backend', async () => {
+        swalMock.fire.mockResolvedValueOnce({ isConfirmed: false });
+
+        const descartarSpy = vi.fn(() => mockJsonResponse(200, { success: true }));
+
+        setupFetchRouter(rutasBase(() => mockJsonResponse(200, { success: true, data: [movimiento] }), {
+            'POST /banco/movimientos/10/descartar': descartarSpy,
+        }));
+
+        render(<MesaConciliacion />);
+
+        fireEvent.click(await screen.findByTitle(/Descartar/i));
+
+        await waitFor(() => expect(swalMock.fire).toHaveBeenCalled());
+        expect(descartarSpy).not.toHaveBeenCalled();
+    });
 });

@@ -48,7 +48,12 @@ class SiiDteEmitidoFactory extends Factory
 
     public function boleta(): static
     {
-        return $this->state(fn () => ['tipo_dte' => SiiDteEmitido::TIPO_BOLETA]);
+        return $this->state(fn () => [
+            'tipo_dte' => SiiDteEmitido::TIPO_BOLETA,
+            // IndServicio es requerido por BOLETADefType (ver DteXmlBuilder::buildIdDoc); 3 =
+            // Otros (venta y otros servicios).
+            'indicador_servicio' => 3,
+        ]);
     }
 
     public function notaCredito(): static

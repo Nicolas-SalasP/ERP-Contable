@@ -137,14 +137,14 @@ const CentralizacionRrhh = () => {
                     )}
                     <div className="flex flex-wrap items-end gap-3">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
-                            <select value={periodo.anio} onChange={(e) => setPeriodo((p) => ({ ...p, anio: Number(e.target.value) }))} className={inputCls}>
+                            <label htmlFor="centralizacion-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
+                            <select id="centralizacion-anio" value={periodo.anio} onChange={(e) => setPeriodo((p) => ({ ...p, anio: Number(e.target.value) }))} className={inputCls}>
                                 {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
-                            <select value={periodo.mes} onChange={(e) => setPeriodo((p) => ({ ...p, mes: Number(e.target.value) }))} className={inputCls}>
+                            <label htmlFor="centralizacion-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
+                            <select id="centralizacion-mes" value={periodo.mes} onChange={(e) => setPeriodo((p) => ({ ...p, mes: Number(e.target.value) }))} className={inputCls}>
                                 {MESES.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
                             </select>
                         </div>

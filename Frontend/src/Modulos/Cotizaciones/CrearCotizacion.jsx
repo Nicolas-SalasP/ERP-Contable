@@ -153,7 +153,15 @@ const CrearCotizacion = () => {
                             <div className="absolute z-50 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 mt-1 rounded-lg shadow-2xl max-h-60 overflow-y-auto">
                                 {clientesFiltrados.length > 0 ? (
                                     clientesFiltrados.map(c => (
-                                        <div key={c.id} className="p-3 hover:bg-emerald-50 dark:hover:bg-slate-700 cursor-pointer border-b last:border-0 transition-colors" onClick={() => seleccionarCliente(c)}>
+                                        <div
+                                            key={c.id}
+                                            role="option"
+                                            aria-selected="false"
+                                            tabIndex={0}
+                                            className="p-3 hover:bg-emerald-50 dark:hover:bg-slate-700 cursor-pointer border-b last:border-0 transition-colors"
+                                            onClick={() => seleccionarCliente(c)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); seleccionarCliente(c); } }}
+                                        >
                                             <div className="font-bold text-slate-800 dark:text-slate-200 text-sm">{c.razon_social}</div>
                                             <div className="text-xs text-slate-500 dark:text-slate-400">{c.rut}</div>
                                         </div>

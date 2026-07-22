@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../../Configuracion/api';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
@@ -40,6 +40,11 @@ const GestionActivos = () => {
     const [formEditar, setFormEditar] = useState({ nombre: '', descripcion: '' });
     const [guardandoEdicion, setGuardandoEdicion] = useState(false);
     const [activoAmortizacion, setActivoAmortizacion] = useState(null);
+    const nombreEditarRef = useRef(null);
+
+    useEffect(() => {
+        if (modalEditarAbierto) nombreEditarRef.current?.focus();
+    }, [modalEditarAbierto]);
 
     const mostrarNotificacion = (tipo, mensaje) => {
         setNotificacion({ tipo, mensaje });
@@ -403,6 +408,7 @@ const GestionActivos = () => {
                                     Nombre del activo
                                 </label>
                                 <input
+                                    ref={nombreEditarRef}
                                     type="text"
                                     value={formEditar.nombre}
                                     onChange={(e) => setFormEditar({ ...formEditar, nombre: e.target.value })}
@@ -410,7 +416,6 @@ const GestionActivos = () => {
                                     placeholder="Ej: Notebook Lenovo T14"
                                     maxLength={255}
                                     required
-                                    autoFocus
                                 />
                             </div>
 

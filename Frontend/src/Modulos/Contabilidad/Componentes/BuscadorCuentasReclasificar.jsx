@@ -59,10 +59,21 @@ const BuscadorCuentasReclasificar = ({ cuentas, valor, onChange }) => {
                             <div
                                 key={c.codigo}
                                 className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors flex flex-col"
+                                role="option"
+                                aria-selected="false"
+                                tabIndex={0}
                                 onClick={() => {
                                     onChange(c.codigo);
                                     setBusqueda(`${c.codigo} - ${c.nombre}`);
                                     setAbierto(false);
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        onChange(c.codigo);
+                                        setBusqueda(`${c.codigo} - ${c.nombre}`);
+                                        setAbierto(false);
+                                    }
                                 }}
                             >
                                 <span className="font-mono font-bold text-blue-600">{c.codigo}</span>

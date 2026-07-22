@@ -8,8 +8,10 @@ use Tests\TestCase;
 use Tests\Concerns\PreparaEntornoBase;
 use App\Domains\Tesoreria\Models\CuentaBancariaEmpresa;
 use App\Domains\Tesoreria\Services\BancoService;
+use App\Domains\Tesoreria\Services\ConciliacionService;
 use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use Exception;
@@ -389,5 +391,170 @@ class IntegridadBancoConciliacionAsientoTest extends TestCase
         $totalDebe  = $asiento->detalles()->sum('debe');
         $totalHaber = $asiento->detalles()->sum('haber');
         $this->assertEquals($totalDebe, $totalHaber);
+    }
+
+    // ─── Fix 5: procesarPagoFacturas no cruza tipo VENTA/COMPRA ───────────────
+
+    /**
+     * Regresión (auditoría 2026-07-21): un egreso (pago a proveedor) que incluyera en
+     * facturasIds el id de una factura de VENTA (con proveedor_id "espejo" compartido por
+     * RUT con el Cliente real, ver ProveedorAislamientoVentaCompraTest) la marcaba PAGADA
+     * pese a ser un documento de venta que ese pago nunca debió tocar.
+     */
+    public function test_procesar_pago_facturas_egreso_ignora_factura_de_venta_colada()
+    {
+        $this->crearPlanCuentas();
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+
+        $facturaCompra = $this->crearFactura('REGISTRADA', 'FAC-EGR-001');
+
+        $cliente = Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '9.9.9.9-9',
+            'razon_social' => 'Cliente Espejo',
+            'estado'       => 'ACTIVO',
+        ]);
+        $facturaVenta = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'cliente_id'     => $cliente->id,
+            'proveedor_id'   => $this->proveedor->id, // espejo: mismo id de proveedor por RUT compartido
+            'numero_factura' => 'FAC-VTA-COLADA-001',
+            'tipo'           => 'VENTA',
+            'codigo_unico'   => Factura::generarCodigoUnico(),
+            'fecha_emision'  => '2026-06-01',
+            'monto_neto'     => 100000,
+            'monto_iva'      => 19000,
+            'monto_bruto'    => 119000,
+            'estado'         => 'REGISTRADA',
+        ]);
+
+        $movId = $this->crearMovimientoBancario($cuenta->id, 'PENDIENTE');
+
+        $service = app(ConciliacionService::class);
+        $service->procesarPagoFacturas(
+            $this->empresa->id,
+            $this->usuario->id,
+            $movId,
+            [$facturaCompra->id, $facturaVenta->id]
+        );
+
+        $this->assertEquals('PAGADA', $facturaCompra->fresh()->estado);
+        $this->assertEquals('REGISTRADA', $facturaVenta->fresh()->estado,
+            'La factura de VENTA no debe verse afectada por un egreso (pago a proveedor).');
+    }
+
+    /**
+     * Regresión (auditoría 2026-07-21): pagarNominaMasiva no filtraba tipo='COMPRA' al buscar
+     * las facturas por id, permitiendo colar una factura de VENTA (proveedor_id "espejo") y
+     * marcarla PAGADA con un pago de nómina a proveedores.
+     */
+    public function test_pagar_nomina_masiva_rechaza_id_de_una_factura_de_venta()
+    {
+        $this->crearPlanCuentas();
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+
+        $cliente = Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '8.8.8.8-8',
+            'razon_social' => 'Cliente Espejo Nomina',
+            'estado'       => 'ACTIVO',
+        ]);
+        $facturaVenta = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'cliente_id'     => $cliente->id,
+            'proveedor_id'   => $this->proveedor->id,
+            'numero_factura' => 'FAC-VTA-NOM-001',
+            'tipo'           => 'VENTA',
+            'codigo_unico'   => Factura::generarCodigoUnico(),
+            'fecha_emision'  => '2026-06-01',
+            'monto_neto'     => 100000,
+            'monto_iva'      => 19000,
+            'monto_bruto'    => 119000,
+            'estado'         => 'REGISTRADA',
+        ]);
+
+        $service = app(BancoService::class);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageMatches('/no se encontraron facturas/i');
+
+        $service->pagarNominaMasiva(
+            $this->empresa->id,
+            $this->usuario->id,
+            [$facturaVenta->id],
+            $cuenta->id
+        );
+    }
+
+    /**
+     * Regresión (auditoría 2026-07-21): conciliarPagoFacturaCompra no filtraba tipo='COMPRA',
+     * permitiendo pagar (marcar PAGADA + generar asiento de egreso) una factura de VENTA.
+     */
+    public function test_conciliar_pago_factura_compra_rechaza_una_factura_de_venta()
+    {
+        $this->crearPlanCuentas();
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+
+        $cliente = Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '7.7.7.7-7',
+            'razon_social' => 'Cliente Espejo Conciliacion',
+            'estado'       => 'ACTIVO',
+        ]);
+        $facturaVenta = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'cliente_id'     => $cliente->id,
+            'proveedor_id'   => $this->proveedor->id,
+            'numero_factura' => 'FAC-VTA-CONC-001',
+            'tipo'           => 'VENTA',
+            'codigo_unico'   => Factura::generarCodigoUnico(),
+            'fecha_emision'  => '2026-06-01',
+            'monto_neto'     => 100000,
+            'monto_iva'      => 19000,
+            'monto_bruto'    => 119000,
+            'estado'         => 'REGISTRADA',
+        ]);
+
+        $service = app(ConciliacionService::class);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageMatches('/no existe|no es una factura de compra/i');
+
+        $service->conciliarPagoFacturaCompra([
+            'empresa_id'         => $this->empresa->id,
+            'cuenta_bancaria_id' => $cuenta->id,
+            'factura_id'         => $facturaVenta->id,
+            'fecha_pago'         => '2026-06-01',
+        ]);
+    }
+
+    // ─── Descartar movimiento pendiente ────────────────────────────────────────
+
+    public function test_descartar_movimiento_lo_saca_de_pendientes()
+    {
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+        $movId  = $this->crearMovimientoBancario($cuenta->id, 'PENDIENTE');
+
+        $service = app(ConciliacionService::class);
+        $service->descartarMovimiento($this->empresa->id, $movId);
+
+        $mov = DB::table('movimientos_bancarios')->where('id', $movId)->first();
+        $this->assertEquals('DESCARTADO', $mov->estado);
+
+        $pendientes = $service->obtenerMovimientosPendientes($this->empresa->id, $cuenta->id);
+        $this->assertCount(0, $pendientes);
+    }
+
+    public function test_descartar_movimiento_ya_conciliado_es_rechazado()
+    {
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+        $movId  = $this->crearMovimientoBancario($cuenta->id, 'CONCILIADO');
+
+        $service = app(ConciliacionService::class);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageMatches('/ya fue conciliado/i');
+
+        $service->descartarMovimiento($this->empresa->id, $movId);
     }
 }

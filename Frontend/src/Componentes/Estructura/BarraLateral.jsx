@@ -414,6 +414,7 @@ const BarraLateral = ({ isOpen, toggleSidebar, closeSidebar = toggleSidebar, col
             <div
                 className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 transition-opacity lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={closeSidebar}
+                role="presentation"
             ></div>
             <div className={`fixed top-0 left-0 z-30 h-full bg-slate-950 border-r border-slate-800 text-slate-300 transform transition-all duration-300 ease-in-out flex flex-col lg:translate-x-0 lg:static w-64 overflow-hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${colapsado ? 'lg:w-16' : 'lg:w-64'}`}>
 

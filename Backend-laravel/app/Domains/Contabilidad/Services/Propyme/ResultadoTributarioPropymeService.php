@@ -46,6 +46,7 @@ class ResultadoTributarioPropymeService
         // Gastos pagados: facturas de compras del año
         $gastosTotales = (float) DB::table('facturas')
             ->where('empresa_id', $empresaId)
+            ->where('tipo', 'COMPRA')
             ->whereYear('fecha_emision', $anio)
             ->where('estado', '!=', 'ANULADA')
             ->sum('monto_neto');

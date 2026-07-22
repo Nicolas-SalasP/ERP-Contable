@@ -34,13 +34,17 @@ class ConciliacionService
             $cuentaBanco = $this->bancoService->obtenerCuentaBancaria($datos['empresa_id'], $datos['cuenta_bancaria_id']);
 
             // Lock pesimista: evita que dos conciliaciones casi simultáneas dupliquen el asiento de egreso.
+            // tipo='COMPRA' explicito: mismo patron de bug del proveedor_id "espejo" (ver
+            // ProveedorAislamientoVentaCompraTest) — sin esto, un factura_id de VENTA podia
+            // colarse aca y quedar marcada PAGADA por un pago a proveedor.
             $factura = Factura::where('empresa_id', $datos['empresa_id'])
                 ->where('id', $datos['factura_id'])
+                ->where('tipo', 'COMPRA')
                 ->lockForUpdate()
                 ->first();
 
             if (!$factura) {
-                throw ComercialException::noEncontrado("La factura solicitada no existe o no pertenece a su empresa.");
+                throw ComercialException::noEncontrado("La factura solicitada no existe, no pertenece a su empresa, o no es una factura de compra.");
             }
 
             if ($factura->estado === 'PAGADA') {
@@ -72,6 +76,24 @@ class ConciliacionService
             $factura->update(['asiento_pago_id' => $asientoPago->id]);
 
             return $factura;
+        });
+    }
+
+    /**
+     * Descarta un movimiento bancario pendiente (ej. línea de cartola duplicada o irrelevante
+     * que no corresponde conciliar). No lo borra: queda en estado DESCARTADO para no perder
+     * el registro de la cartola importada.
+     */
+    public function descartarMovimiento(int $empresaId, int $movimientoId): void
+    {
+        DB::transaction(function () use ($empresaId, $movimientoId) {
+            // obtenerMovimientoParaConciliar ya bloquea y exige estado PENDIENTE.
+            $movimiento = $this->bancoService->obtenerMovimientoParaConciliar($empresaId, $movimientoId);
+
+            DB::table('movimientos_bancarios')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $movimiento->id)
+                ->update(['estado' => 'DESCARTADO']);
         });
     }
 
@@ -156,12 +178,15 @@ class ConciliacionService
         return DB::transaction(function () use ($empresaId, $usuarioId, $movimientoId, $facturasIds, $entidadId) {
             // Bloquea el movimiento y rechaza si ya esta conciliado (evita doble cargo a banco).
             $movimiento = $this->bancoService->obtenerMovimientoParaConciliar($empresaId, $movimientoId);
-            
-            $facturas = count($facturasIds) > 0 
-                ? $this->facturaService->obtenerFacturasPorIds($empresaId, $facturasIds) 
-                : collect([]);
-
             $esIngreso = $movimiento->abono > 0;
+
+            // tipo forzado segun direccion del movimiento (ingreso=cobro de VENTA, egreso=pago de
+            // COMPRA): sin esto, una factura de venta con el mismo proveedor_id "espejo" (RUT
+            // compartido con un Cliente, ver ProveedorAislamientoVentaCompraTest) podia colarse en
+            // facturasIds y quedar marcada PAGADA por un egreso a proveedor, o viceversa.
+            $facturas = count($facturasIds) > 0
+                ? $this->facturaService->obtenerFacturasPorIds($empresaId, $facturasIds, $esIngreso ? 'VENTA' : 'COMPRA')
+                : collect([]);
             $montoMovimiento = $esIngreso ? (float) $movimiento->abono : (float) $movimiento->cargo;
             $totalFacturas = (float) $facturas->sum('monto_bruto');
             

@@ -13,6 +13,7 @@ use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\StockProducto;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\QueryException;
+use Illuminate\Pagination\LengthAwarePaginator as ConcreteLengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -434,7 +435,7 @@ class InventarioMovimientoService
     {
         $perPage = $this->normalizarPerPage($filtros['per_page'] ?? 15);
 
-        return MovimientoInventario::query()
+        $paginador = MovimientoInventario::query()
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
                 'bodegaOrigen:id,empresa_id,codigo,nombre,estado',
@@ -473,6 +474,8 @@ class InventarioMovimientoService
             })
             ->masRecientes()
             ->paginate($perPage);
+
+        return $this->aplicarContextoBodega($paginador, $filtros['bodega_id'] ?? null);
     }
 
     public function kardexProducto(int $productoId, array $filtros, int $empresaId): LengthAwarePaginator
@@ -481,7 +484,7 @@ class InventarioMovimientoService
 
         $perPage = $this->normalizarPerPage($filtros['per_page'] ?? 15);
 
-        return MovimientoInventario::query()
+        $paginador = MovimientoInventario::query()
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
                 'bodegaOrigen:id,empresa_id,codigo,nombre,estado',
@@ -518,13 +521,15 @@ class InventarioMovimientoService
             })
             ->ordenKardex()
             ->paginate($perPage);
+
+        return $this->aplicarContextoBodega($paginador, $filtros['bodega_id'] ?? null);
     }
 
     public function kardexGeneral(array $filtros, int $empresaId): LengthAwarePaginator
     {
         $perPage = $this->normalizarPerPage($filtros['per_page'] ?? 15);
 
-        return MovimientoInventario::query()
+        $paginador = MovimientoInventario::query()
             ->with([
                 'producto:id,empresa_id,sku,nombre,activo,maneja_lotes,requiere_fecha_vencimiento',
                 'bodegaOrigen:id,empresa_id,codigo,nombre,estado',
@@ -563,6 +568,27 @@ class InventarioMovimientoService
             })
             ->ordenKardex()
             ->paginate($perPage);
+
+        return $this->aplicarContextoBodega($paginador, $filtros['bodega_id'] ?? null);
+    }
+
+    /**
+     * En un traspaso el movimiento tiene stock_origen_despues Y stock_destino_despues a la vez;
+     * sin saber por que bodega esta filtrado el Kardex, MovimientoInventario::getSaldoAttribute()
+     * siempre devolvia el snapshot de origen, mostrando "saldo 0" en el Kardex de la bodega destino
+     * si la bodega origen quedaba vacia tras el traspaso.
+     */
+    private function aplicarContextoBodega(ConcreteLengthAwarePaginator $paginador, mixed $bodegaId): ConcreteLengthAwarePaginator
+    {
+        if (empty($bodegaId)) {
+            return $paginador;
+        }
+
+        $paginador->getCollection()->each(function (MovimientoInventario $movimiento) use ($bodegaId) {
+            $movimiento->bodegaFiltroId = (int) $bodegaId;
+        });
+
+        return $paginador;
     }
 
     private function obtenerProductoEmpresa(int $productoId, int $empresaId): Producto

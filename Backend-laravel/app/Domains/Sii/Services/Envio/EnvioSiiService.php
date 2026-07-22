@@ -26,13 +26,15 @@ class EnvioSiiService
     /** ERROR=0 del SII indica recepcion exitosa del envio. */
     private const ERROR_SII_OK = 0;
 
+    /** Boletas (39/41) van por EnvioBoletaService (endpoint/protocolo distinto) -- rechazarlas aqui evita enviarlas por error al WS de Factura. */
+    private const TIPOS_BOLETA = [39, 41];
+
     public function __construct(
         private readonly XmlDteIntegrityService $integrityService,
         private readonly SiiTokenService $tokenService,
         private readonly SiiUploadService $uploadService,
         private readonly CertificadoService $certificadoService
-    ) {
-    }
+    ) {}
 
     /**
      * @throws EnvioSiiException si el DTE no se puede enviar o el SII rechaza.
@@ -45,13 +47,14 @@ class EnvioSiiService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $this->validarNoEsBoleta($dte);
             $this->validarDtePuedeEnviarse($dte);
 
             return SiiEnvioDte::create([
-                'empresa_id'     => $dte->empresa_id,
+                'empresa_id' => $dte->empresa_id,
                 'dte_emitido_id' => $dte->id,
-                'ambiente_sii'   => $dte->empresa->ambiente_sii,
-                'estado_envio'   => SiiEnvioDte::ESTADO_ENVIANDO,
+                'ambiente_sii' => $dte->empresa->ambiente_sii,
+                'estado_envio' => SiiEnvioDte::ESTADO_ENVIANDO,
                 'intentos_envio' => 0,
             ]);
         });
@@ -59,7 +62,7 @@ class EnvioSiiService
         try {
             $envio = $envio->fresh(['dteEmitido.empresa']);
             /** @var SiiDteEmitido $dte */
-            $dte   = $envio->dteEmitido;
+            $dte = $envio->dteEmitido;
             /** @var Empresa $empresa */
             $empresa = $dte->empresa;
 
@@ -68,7 +71,7 @@ class EnvioSiiService
             $sesion = $this->tokenService->obtenerSesionActiva($empresa);
             $envio->update(['token_sesion_id' => $sesion->id]);
 
-            [$rutSender,  $dvSender]  = $this->extraerRutSender($empresa);
+            [$rutSender,  $dvSender] = $this->extraerRutSender($empresa);
             [$rutCompany, $dvCompany] = $this->extraerRutCompany($empresa);
 
             $resultado = $this->postConReintentoSesionExpirada(
@@ -85,7 +88,7 @@ class EnvioSiiService
             return $this->marcarErrorTransporte(
                 $envio,
                 0,
-                $e::class . ': ' . $e->getMessage(),
+                $e::class.': '.$e->getMessage(),
                 'Excepcion no manejada al enviar al SII'
             );
         }
@@ -105,13 +108,13 @@ class EnvioSiiService
 
         return DB::transaction(function () use ($envio, $resultado) {
             $envio->update([
-                'estado_envio'                    => SiiEnvioDte::ESTADO_ENVIADO,
-                'track_id'                        => $resultado['track_id'],
-                'glosa_sii'                       => $resultado['glosa'],
-                'request_body_completo_cifrado'   => Crypt::encryptString($resultado['request_body']),
+                'estado_envio' => SiiEnvioDte::ESTADO_ENVIADO,
+                'track_id' => $resultado['track_id'],
+                'glosa_sii' => $resultado['glosa'],
+                'request_body_completo_cifrado' => Crypt::encryptString($resultado['request_body']),
                 'respuesta_body_completo_cifrado' => Crypt::encryptString($resultado['response_body']),
-                'http_status_ultimo_envio'        => $resultado['http_status'],
-                'fecha_envio'                     => now(),
+                'http_status_ultimo_envio' => $resultado['http_status'],
+                'fecha_envio' => now(),
             ]);
 
             /** @var SiiDteEmitido $dte */
@@ -121,24 +124,24 @@ class EnvioSiiService
                 ->firstOrFail();
 
             $dte->update([
-                'estado'          => SiiDteEmitido::ESTADO_ENVIADO_SII,
-                'track_id'        => $resultado['track_id'],
+                'estado' => SiiDteEmitido::ESTADO_ENVIADO_SII,
+                'track_id' => $resultado['track_id'],
                 'fecha_envio_sii' => now(),
             ]);
 
             SiiDteEmitidoEvento::registrarEnvio($dte, $resultado['track_id'], [
-                'envio_id'       => $envio->id,
-                'ambiente'       => $envio->ambiente_sii,
-                'sesion_id'      => $envio->token_sesion_id,
+                'envio_id' => $envio->id,
+                'ambiente' => $envio->ambiente_sii,
+                'sesion_id' => $envio->token_sesion_id,
                 'intentos_envio' => $envio->intentos_envio,
             ]);
 
             Log::channel('sii')->info('DTE enviado al SII', [
-                'dte_id'    => $dte->id,
-                'envio_id'  => $envio->id,
-                'track_id'  => $resultado['track_id'],
-                'ambiente'  => $envio->ambiente_sii,
-                'intentos'  => $envio->intentos_envio,
+                'dte_id' => $dte->id,
+                'envio_id' => $envio->id,
+                'track_id' => $resultado['track_id'],
+                'ambiente' => $envio->ambiente_sii,
+                'intentos' => $envio->intentos_envio,
             ]);
 
             return $envio->fresh();
@@ -154,6 +157,13 @@ class EnvioSiiService
         SiiEnvioDte::ESTADO_ERROR_TIMEOUT,
         SiiEnvioDte::ESTADO_ERROR_PERMANENTE,
     ];
+
+    private function validarNoEsBoleta(SiiDteEmitido $dte): void
+    {
+        if (in_array((int) $dte->tipo_dte, self::TIPOS_BOLETA, true)) {
+            throw EnvioSiiException::tipoDteInvalido($dte->id, (int) $dte->tipo_dte, self::class);
+        }
+    }
 
     private function validarDtePuedeEnviarse(SiiDteEmitido $dte): void
     {
@@ -231,12 +241,13 @@ class EnvioSiiService
             // Solo reintentamos UNA vez en caso de token expirado (intentoToken=0).
             if ($intentoToken === 0 && $resultado['error_code'] === self::ERROR_SII_TOKEN_EXPIRADO) {
                 Log::channel('sii')->warning('Token SII expirado; regenerando sesion y reintentando.', [
-                    'envio_id'   => $envio->id,
+                    'envio_id' => $envio->id,
                     'empresa_id' => $empresa->id,
                 ]);
                 $sesionNueva = $this->tokenService->generarSesionNueva($empresa);
                 $envio->update(['token_sesion_id' => $sesionNueva->id]);
                 $token = $sesionNueva->token;
+
                 continue;
             }
 
@@ -254,18 +265,18 @@ class EnvioSiiService
         string $glosa
     ): SiiEnvioDte {
         $envio->update([
-            'estado_envio'                    => SiiEnvioDte::ESTADO_ERROR_TRANSPORTE,
-            'glosa_sii'                       => $glosa,
+            'estado_envio' => SiiEnvioDte::ESTADO_ERROR_TRANSPORTE,
+            'glosa_sii' => $glosa,
             'respuesta_body_completo_cifrado' => $responseBody !== ''
                 ? Crypt::encryptString($responseBody)
                 : null,
-            'http_status_ultimo_envio'        => $httpStatus,
+            'http_status_ultimo_envio' => $httpStatus,
         ]);
 
         Log::channel('sii')->error('Envio DTE marcado como ERROR_TRANSPORTE.', [
-            'envio_id'    => $envio->id,
+            'envio_id' => $envio->id,
             'http_status' => $httpStatus,
-            'glosa'       => $glosa,
+            'glosa' => $glosa,
         ]);
 
         return $envio->fresh();
@@ -281,17 +292,17 @@ class EnvioSiiService
     private function marcarErrorPermanente(SiiEnvioDte $envio, array $resultado): SiiEnvioDte
     {
         $envio->update([
-            'estado_envio'                    => SiiEnvioDte::ESTADO_ERROR_PERMANENTE,
-            'glosa_sii'                       => $resultado['glosa'] ?? "SII respondio ERROR={$resultado['error_code']}",
-            'request_body_completo_cifrado'   => Crypt::encryptString($resultado['request_body']),
+            'estado_envio' => SiiEnvioDte::ESTADO_ERROR_PERMANENTE,
+            'glosa_sii' => $resultado['glosa'] ?? "SII respondio ERROR={$resultado['error_code']}",
+            'request_body_completo_cifrado' => Crypt::encryptString($resultado['request_body']),
             'respuesta_body_completo_cifrado' => Crypt::encryptString($resultado['response_body']),
-            'http_status_ultimo_envio'        => $resultado['http_status'],
+            'http_status_ultimo_envio' => $resultado['http_status'],
         ]);
 
         Log::channel('sii')->error('Envio DTE marcado como ERROR_PERMANENTE (SII rechazo).', [
-            'envio_id'    => $envio->id,
-            'error_code'  => $resultado['error_code'],
-            'glosa'       => $resultado['glosa'],
+            'envio_id' => $envio->id,
+            'error_code' => $resultado['error_code'],
+            'glosa' => $resultado['glosa'],
             'http_status' => $resultado['http_status'],
         ]);
 
@@ -306,6 +317,7 @@ class EnvioSiiService
     private function extraerRutSender(Empresa $empresa): array
     {
         $rutNormalizado = $this->certificadoService->extraerRutDelSujeto($empresa);
+
         return [
             (string) RutHelper::extraerNumero($rutNormalizado),
             RutHelper::extraerDv($rutNormalizado),
@@ -314,6 +326,7 @@ class EnvioSiiService
 
     /**
      * RUT de la EMPRESA emisora (company), separado en numero + DV.
+     *
      * @return array{0: string, 1: string} [rutSinDv, dv]
      */
     private function extraerRutCompany(Empresa $empresa): array

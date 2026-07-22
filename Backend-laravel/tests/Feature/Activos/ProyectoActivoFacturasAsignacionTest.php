@@ -55,4 +55,26 @@ class ProyectoActivoFacturasAsignacionTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonFragment(['proveedor' => 'Constructora Legal SPA']);
     }
+
+    /**
+     * Regresión (auditoría 2026-07-21): vincularAProyecto no filtraba tipo='COMPRA', permitiendo
+     * capitalizar como costo de adquisición una factura de VENTA (proveedor_id "espejo" compartido
+     * por RUT con un Cliente, ver ProveedorAislamientoVentaCompraTest).
+     */
+    public function test_factura_de_venta_no_se_puede_capitalizar_a_proyecto()
+    {
+        $proyecto = ProyectoActivo::create(['empresa_id' => $this->empresa->id, 'nombre' => 'Planta', 'estado' => 'EN_CONSTRUCCION', 'valor_total_original' => 0, 'vida_util_meses' => 60]);
+        $prov = Proveedor::create(['empresa_id' => $this->empresa->id, 'codigo_interno' => 'P1', 'razon_social' => 'P1', 'pais_iso' => 'CL', 'moneda_defecto' => 'CLP']);
+
+        $facturaVenta = Factura::create(['empresa_id' => $this->empresa->id, 'codigo_unico' => 12, 'proveedor_id' => $prov->id, 'numero_factura' => 'FV-COLADA', 'monto_neto' => 50000, 'monto_iva' => 0, 'monto_bruto' => 50000, 'tipo' => 'VENTA', 'estado' => 'REGISTRADA', 'fecha_emision' => now()]);
+
+        $response = $this->actingAs($this->usuario)->postJson("/api/activos/proyectos/{$proyecto->id_proyecto}/facturas", [
+            'factura_id' => $facturaVenta->id,
+            'monto' => 50000
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertEquals(0, $proyecto->fresh()->valor_total_original);
+        $this->assertNull($facturaVenta->fresh()->proyecto_activo_id);
+    }
 }

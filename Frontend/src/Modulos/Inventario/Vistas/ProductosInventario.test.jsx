@@ -43,6 +43,7 @@ vi.mock('../Servicios/inventarioApi', () => ({
         productos: {
             listar: vi.fn().mockResolvedValue({ data: [] }),
             crear: vi.fn().mockResolvedValue({ success: true, data: {} }),
+            actualizar: vi.fn().mockResolvedValue({ success: true, data: {} }),
         },
         catalogos: vi.fn().mockResolvedValue({ data: {} }),
     },
@@ -50,6 +51,7 @@ vi.mock('../Servicios/inventarioApi', () => ({
         productos: {
             listar: vi.fn().mockResolvedValue({ data: [] }),
             crear: vi.fn().mockResolvedValue({ success: true, data: {} }),
+            actualizar: vi.fn().mockResolvedValue({ success: true, data: {} }),
         },
         catalogos: vi.fn().mockResolvedValue({ data: {} }),
     },
@@ -66,7 +68,7 @@ const productosMock = [
         sku: 'SKU-001',
         nombre: 'Tornillo Hex 1/4',
         descripcion: 'Tornillo hexagonal galvanizado',
-        unidad_medida: { nombre: 'Unidad' },
+        unidad_medida: { id: 1, nombre: 'Unidad' },
         costo_promedio: 150,
         stock_minimo: 100,
         maneja_lotes: false,
@@ -78,7 +80,7 @@ const productosMock = [
         sku: 'SKU-002',
         nombre: 'Pintura Blanca 1L',
         descripcion: null,
-        unidad_medida: { nombre: 'Litro' },
+        unidad_medida: { id: 2, nombre: 'Litro' },
         costo_promedio: 4500,
         stock_minimo: 50,
         maneja_lotes: true,
@@ -248,5 +250,86 @@ describe('ProductosInventario — formulario de alta', () => {
         await waitFor(() => {
             expect(inventarioApi.productos.crear).toHaveBeenCalledTimes(1);
         });
+    });
+
+    it('el payload de creación incluye visible_web', async () => {
+        inventarioApi.productos.crear.mockResolvedValue({ success: true, data: { id: 99 } });
+
+        render(<ProductosInventario />);
+        await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull());
+
+        fireEvent.click(screen.getByText('Nuevo producto'));
+        fireEvent.change(screen.getByPlaceholderText('SKU-001'), { target: { value: 'SKU-TEST' } });
+        fireEvent.change(screen.getByPlaceholderText('Producto demo'), { target: { value: 'Producto Test' } });
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: '1' } });
+        fireEvent.click(screen.getByText('Publicar en la web'));
+        fireEvent.click(screen.getByText('Guardar producto'));
+
+        await waitFor(() => {
+            expect(inventarioApi.productos.crear).toHaveBeenCalledWith(
+                expect.objectContaining({ visible_web: true }),
+            );
+        });
+    });
+});
+
+describe('ProductosInventario — edición', () => {
+    it('muestra el botón "Editar" por cada producto', async () => {
+        render(<ProductosInventario />);
+        await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull());
+
+        expect(screen.getAllByText('Editar').length).toBe(productosMock.length);
+    });
+
+    it('abre el formulario precargado con los datos del producto al pulsar "Editar"', async () => {
+        render(<ProductosInventario />);
+        await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull());
+
+        fireEvent.click(screen.getAllByText('Editar')[0]);
+
+        expect(screen.getByText('Editar producto')).toBeDefined();
+        expect(screen.getByDisplayValue('SKU-001')).toBeDefined();
+        expect(screen.getByDisplayValue('Tornillo Hex 1/4')).toBeDefined();
+    });
+
+    it('llama a inventarioApi.productos.actualizar (no crear) al guardar una edición', async () => {
+        inventarioApi.productos.actualizar.mockResolvedValue({ success: true, data: {} });
+
+        render(<ProductosInventario />);
+        await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull());
+
+        fireEvent.click(screen.getAllByText('Editar')[0]);
+        fireEvent.click(screen.getByText('Guardar cambios'));
+
+        await waitFor(() => {
+            expect(inventarioApi.productos.actualizar).toHaveBeenCalledTimes(1);
+            expect(inventarioApi.productos.actualizar).toHaveBeenCalledWith(1, expect.any(Object));
+        });
+        expect(inventarioApi.productos.crear).not.toHaveBeenCalled();
+    });
+
+    it('"Cancelar edición" limpia el formulario y vuelve a modo creación', async () => {
+        render(<ProductosInventario />);
+        await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull());
+
+        fireEvent.click(screen.getAllByText('Editar')[0]);
+        expect(screen.getByText('Editar producto')).toBeDefined();
+
+        fireEvent.click(screen.getByText('Cancelar edición'));
+        expect(screen.queryByDisplayValue('SKU-001')).toBeNull();
+    });
+
+    it('muestra badge Publicado / Oculto según visible_web', async () => {
+        contextMock.productos = [
+            { ...productosMock[0], visible_web: true },
+            { ...productosMock[1], visible_web: false },
+        ];
+        contextMock.cargarProductosCache.mockResolvedValue({ data: contextMock.productos });
+
+        render(<ProductosInventario />);
+        await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull());
+
+        expect(screen.getByText('Publicado')).toBeDefined();
+        expect(screen.getByText('Oculto')).toBeDefined();
     });
 });

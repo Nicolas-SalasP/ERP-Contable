@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import * as jestDomMatchers from '@testing-library/jest-dom/matchers';
 expect.extend(jestDomMatchers);
 
@@ -138,5 +138,68 @@ describe('HistorialFacturas (vista)', () => {
         render(<HistorialFacturas />);
         expect(screen.getByText('Historial de Compras')).toBeInTheDocument();
         expect(screen.queryByText('Cancelar Reclasificación')).not.toBeInTheDocument();
+    });
+
+    describe('menú de opciones (3 puntos)', () => {
+        it('abre el menú de opciones al hacer click y muestra "Ver Asiento" (renderizado vía portal, fuera de la tabla con overflow-x-auto)', () => {
+            useFacturasHistorial.mockReturnValue({ ...hookBase, searched: true, facturas: [facturaBase] });
+            render(<HistorialFacturas />);
+
+            expect(screen.queryByText('Ver Asiento')).not.toBeInTheDocument();
+
+            fireEvent.click(screen.getByTitle('Opciones'));
+
+            expect(screen.getByText('Ver Asiento')).toBeInTheDocument();
+            // Portal: el contenido no debe quedar como descendiente del <table> (que es donde
+            // vivía antes, clippeado por el overflow-x-auto del contenedor de la tabla).
+            const menu = screen.getByText('Ver Asiento').closest('.menu-acciones-container.fixed');
+            expect(menu).not.toBeNull();
+            expect(menu.closest('table')).toBeNull();
+        });
+
+        it('cierra el menú al volver a hacer click en el botón "Opciones"', () => {
+            useFacturasHistorial.mockReturnValue({ ...hookBase, searched: true, facturas: [facturaBase] });
+            render(<HistorialFacturas />);
+
+            const boton = screen.getByTitle('Opciones');
+            fireEvent.click(boton);
+            expect(screen.getByText('Ver Asiento')).toBeInTheDocument();
+
+            fireEvent.click(boton);
+            expect(screen.queryByText('Ver Asiento')).not.toBeInTheDocument();
+        });
+
+        it('cierra el menú al hacer scroll en la ventana (evita queda flotando en una posición vieja)', () => {
+            useFacturasHistorial.mockReturnValue({ ...hookBase, searched: true, facturas: [facturaBase] });
+            render(<HistorialFacturas />);
+
+            fireEvent.click(screen.getByTitle('Opciones'));
+            expect(screen.getByText('Ver Asiento')).toBeInTheDocument();
+
+            fireEvent.scroll(window);
+            expect(screen.queryByText('Ver Asiento')).not.toBeInTheDocument();
+        });
+
+        it('solo muestra Nota de Crédito/Débito para facturas tipo VENTA', () => {
+            const facturaVenta = { ...facturaBase, tipo: 'VENTA' };
+            useFacturasHistorial.mockReturnValue({ ...hookBase, searched: true, facturas: [facturaVenta] });
+            render(<HistorialFacturas />);
+
+            fireEvent.click(screen.getByTitle('Opciones'));
+
+            expect(screen.getByText('Nota de Crédito')).toBeInTheDocument();
+            expect(screen.getByText('Nota de Débito')).toBeInTheDocument();
+        });
+
+        it('NO muestra Nota de Crédito/Débito para facturas tipo COMPRA', () => {
+            const facturaCompra = { ...facturaBase, tipo: 'COMPRA' };
+            useFacturasHistorial.mockReturnValue({ ...hookBase, searched: true, facturas: [facturaCompra] });
+            render(<HistorialFacturas />);
+
+            fireEvent.click(screen.getByTitle('Opciones'));
+
+            expect(screen.queryByText('Nota de Crédito')).not.toBeInTheDocument();
+            expect(screen.queryByText('Nota de Débito')).not.toBeInTheDocument();
+        });
     });
 });

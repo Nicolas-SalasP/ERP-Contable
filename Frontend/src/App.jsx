@@ -6,6 +6,7 @@ import { ToastProvider } from './Contextos/ToastContext';
 import { usePermisos } from './Contextos/Permisos';
 import LayoutPrincipal from './Componentes/Estructura/LayoutPrincipal';
 import ErrorBoundary from './Componentes/ErrorBoundary';
+import ActualizacionDisponible from './Componentes/ActualizacionDisponible';
 
 import Login from './Modulos/Autenticacion/Login';
 import RecuperarPassword from './Modulos/Autenticacion/RecuperarPassword';
@@ -188,6 +189,7 @@ function App() {
     <ErrorBoundary>
       <TemaProvider>
       <ToastProvider>
+      <ActualizacionDisponible />
       <AuthProvider>
         <BrowserRouter>
         <Suspense fallback={<div>Cargando...</div>}>

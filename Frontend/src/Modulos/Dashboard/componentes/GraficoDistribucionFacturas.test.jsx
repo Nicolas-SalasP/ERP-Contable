@@ -5,7 +5,13 @@ import { render, screen, cleanup } from '@testing-library/react';
 vi.mock('recharts', () => ({
     PieChart: ({ children }) => <div data-testid="pie-chart">{children}</div>,
     Pie: ({ children, data, onClick }) => (
-        <div data-testid="pie" onClick={() => onClick?.(data[0])}>
+        <div
+            data-testid="pie"
+            role="button"
+            tabIndex={0}
+            onClick={() => onClick?.(data[0])}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(data[0]); } }}
+        >
             {children}
         </div>
     ),

@@ -209,4 +209,39 @@ class ComercialNotasDebitoTest extends TestCase
         $response->assertStatus(422);
         $this->assertDatabaseMissing('facturas', ['numero_factura' => 'ND-CERO']);
     }
+
+    /**
+     * Regresión (auditoría 2026-07-21): el endpoint de ND de venta cargaba la factura de origen
+     * SOLO por id + empresa_id, sin exigir tipo='VENTA'. Con el proveedor_id "espejo" compartido
+     * por RUT entre Cliente/Proveedor, un id de factura de COMPRA podia colarse aca y generar una
+     * ND de venta cargando cuentas (Ingresos/CxC) que la compra nunca toco.
+     */
+    public function test_nd_venta_rechaza_id_de_una_factura_de_compra(): void
+    {
+        $facturaCompra = Factura::create([
+            'empresa_id'     => $this->empresa->id,
+            'proveedor_id'   => $this->prov->id,
+            'numero_factura' => 'F-COMPRA-ND',
+            'tipo_documento' => 'FACTURA',
+            'tipo'           => 'COMPRA',
+            'monto_bruto'    => 1190,
+            'monto_neto'     => 1000,
+            'monto_iva'      => 190,
+            'fecha_emision'  => now(),
+            'estado'         => 'REGISTRADA',
+            'codigo_unico'   => Factura::generarCodigoUnico(),
+        ]);
+
+        $response = $this->actingAs($this->usuario)->postJson("/api/facturas/{$facturaCompra->id}/nota-debito", [
+            'numero_nd'   => 'ND-CROSS-001',
+            'monto_neto'  => 1000,
+            'monto_iva'   => 190,
+            'monto_bruto' => 1190,
+            'razon'       => 'Intento cruzado',
+        ]);
+
+        $response->assertStatus(404);
+        $facturaCompra->refresh();
+        $this->assertSame('REGISTRADA', $facturaCompra->estado, 'La factura de compra no debe verse afectada por un intento de ND de venta.');
+    }
 }

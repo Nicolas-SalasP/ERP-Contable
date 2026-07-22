@@ -116,8 +116,26 @@ class MovimientoInventario extends Model
     /** Saldo resultante del movimiento (bodega principal, ver stockDespuesPrincipal()); expuesto en JSON para el Kardex. */
     protected $appends = ['saldo'];
 
+    /**
+     * Bodega por la que el Kardex esta filtrado (seteada por InventarioMovimientoService
+     * cuando hay filtro bodega_id). En un traspaso, el movimiento afecta DOS bodegas a la vez
+     * (origen y destino) con snapshots de stock distintos; sin este contexto, getSaldoAttribute()
+     * siempre devolvia el snapshot de origen aunque el usuario estuviera viendo el Kardex de la
+     * bodega destino, mostrando "saldo 0" ahi si la bodega origen habia quedado vacia.
+     */
+    public ?int $bodegaFiltroId = null;
+
     public function getSaldoAttribute(): ?string
     {
+        if ($this->bodegaFiltroId !== null) {
+            if ($this->bodega_destino_id === $this->bodegaFiltroId) {
+                return $this->stock_destino_despues;
+            }
+            if ($this->bodega_origen_id === $this->bodegaFiltroId) {
+                return $this->stock_origen_despues;
+            }
+        }
+
         return $this->stockDespuesPrincipal();
     }
 

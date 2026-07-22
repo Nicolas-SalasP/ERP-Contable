@@ -2,9 +2,14 @@
 
 namespace App\Domains\CorreccionMonetaria\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Domains\Core\Models\Empresa;
+use Illuminate\Database\Eloquent\Model;
 
+// NO agregar HasEmpresaScope aqui (ya se intento y se revirtio): EmpresaObserver::created()
+// crea la config para la EMPRESA NUEVA que se esta onboardeando, mientras el actor autenticado
+// (quien dispara la creacion, ej. un staff o el propio signup) tiene su propia empresa_activa_id
+// distinta. El scope global filtraria por la empresa del actor, no la nueva, rompiendo el
+// onboarding. Todas las queries actuales (Service + Observer) ya filtran empresa_id a mano.
 class CmConfiguracionEmpresa extends Model
 {
     protected $table = 'cm_configuracion_empresa';
@@ -43,6 +48,7 @@ class CmConfiguracionEmpresa extends Model
         if ($this->modalidad === 'mensual') {
             return true;
         }
+
         return $mes === $this->mes_cierre;
     }
 
@@ -62,6 +68,7 @@ class CmConfiguracionEmpresa extends Model
             11 => 'Noviembre',
             12 => 'Diciembre',
         ];
+
         return $meses[$this->mes_cierre] ?? "Mes {$this->mes_cierre}";
     }
 }

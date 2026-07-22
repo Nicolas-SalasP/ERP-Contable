@@ -174,8 +174,8 @@ const Dj1926 = () => {
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Generar DJ 1926</h2>
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año tributario</label>
-                        <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={inputCls}>
+                        <label htmlFor="dj1926-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año tributario</label>
+                        <select id="dj1926-anio" value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={inputCls}>
                             {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                         </select>
                     </div>
@@ -258,8 +258,9 @@ const Dj1926 = () => {
                             </p>
                             <div className="flex flex-wrap items-end gap-3">
                                 <div className="flex-1 min-w-[200px]">
-                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Folio de presentación SII (opcional)</label>
+                                    <label htmlFor="dj1926-folio-confirmacion" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Folio de presentación SII (opcional)</label>
                                     <input
+                                        id="dj1926-folio-confirmacion"
                                         type="text"
                                         value={folioConfirmacion}
                                         onChange={(e) => setFolioConf(e.target.value)}

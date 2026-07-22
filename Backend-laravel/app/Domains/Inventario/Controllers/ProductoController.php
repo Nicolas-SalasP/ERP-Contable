@@ -73,6 +73,7 @@ class ProductoController
                 'maneja_lotes' => 'nullable|boolean',
                 'requiere_fecha_vencimiento' => 'nullable|boolean',
                 'activo' => 'nullable|boolean',
+                'visible_web' => 'nullable|boolean',
             ]);
 
             return response()->json([
@@ -109,6 +110,7 @@ class ProductoController
                 'maneja_lotes' => 'nullable|boolean',
                 'requiere_fecha_vencimiento' => 'nullable|boolean',
                 'activo' => 'nullable|boolean',
+                'visible_web' => 'nullable|boolean',
             ]);
 
             return response()->json([

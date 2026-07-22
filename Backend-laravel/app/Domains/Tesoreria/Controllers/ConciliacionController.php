@@ -114,6 +114,20 @@ class ConciliacionController
         }
     }
 
+    public function descartar(Request $request, $id)
+    {
+        try {
+            $this->service->descartarMovimiento($request->user()->empresa_activa_id, (int) $id);
+
+            return response()->json(['success' => true, 'mensaje' => 'Movimiento descartado.']);
+        } catch (TesoreriaException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
+        }
+    }
+
     public function sugerencias(Request $request, $id)
     {
         try {

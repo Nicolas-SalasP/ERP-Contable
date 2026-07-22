@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import AyudaModulo from '../../Componentes/AyudaModulo';
 import EstadoCarga from '../../Componentes/EstadoCarga';
 import { logger } from '../../Configuracion/logger';
-import { Search, Calendar, FileText, Check, X, ReceiptText } from 'lucide-react';
+import { Search, Calendar, FileText, Check, X, ReceiptText, Send } from 'lucide-react';
 import { TablaSkeleton } from '../../Componentes/Skeleton';
 import { EstadoVacio } from '../../Componentes/EstadoVacio';
 import { useToast } from '../../Contextos/ToastContext';
@@ -69,24 +69,53 @@ const GestionCotizaciones = () => {
     };
 
     const handleFacturar = async (id) => {
-        const { isConfirmed } = await Swal.fire({
+        const hoy = new Date().toISOString().slice(0, 10);
+        const { isConfirmed, value: fechaEmision } = await Swal.fire({
             title: '¿Generar factura?',
-            text: `Se creará una factura de venta a partir de la cotización #${String(id).padStart(5, '0')} y se registrará el asiento contable.`,
+            html: `Se creará una factura de venta a partir de la cotización #${String(id).padStart(5, '0')} y se registrará el asiento contable.`,
             icon: 'question',
+            input: 'date',
+            inputLabel: 'Fecha de la factura',
+            inputValue: hoy,
+            inputAttributes: { max: hoy },
             showCancelButton: true,
             confirmButtonText: 'Facturar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#0f172a',
+            buttonsStyling: true,
+            customClass: { popup: 'rounded-2xl', input: '!mt-2' },
+            inputValidator: (valor) => !valor ? 'Selecciona una fecha.' : undefined,
         });
         if (!isConfirmed) return;
         try {
-            const res = await api.post(`/cotizaciones/${id}/facturar`);
+            const res = await api.post(`/cotizaciones/${id}/facturar`, { fecha_emision: fechaEmision });
             if (res.success) {
                 toast(`Factura ${res.data?.numero_factura || ''} generada correctamente.`, 'success');
                 fetchCotizaciones();
             }
         } catch (error) {
             Swal.fire('Error', error.response?.data?.message || 'No se pudo generar la factura.', 'error');
+        }
+    };
+
+    const handleEnviar = async (id) => {
+        const { isConfirmed } = await Swal.fire({
+            title: '¿Enviar cotización?',
+            text: `Se genera el PDF y se envía por correo al equipo interno de tu empresa (envío directo al cliente aún no está habilitado).`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Enviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0f172a',
+        });
+        if (!isConfirmed) return;
+        try {
+            const res = await api.post(`/cotizaciones/${id}/enviar`);
+            if (res.success) {
+                toast('La cotización quedó en cola de envío.', 'success');
+            }
+        } catch (error) {
+            Swal.fire('Error', error.response?.data?.message || 'No se pudo enviar la cotización.', 'error');
         }
     };
 
@@ -121,6 +150,7 @@ const GestionCotizaciones = () => {
 
     const getEstadoStyle = (estado) => {
         switch (estado?.toUpperCase()) {
+            case 'FACTURADA': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
             case 'ACEPTADA': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
             case 'RECHAZADA': return 'bg-rose-50 text-rose-700 border-rose-200';
             case 'ENVIADA': return 'bg-blue-50 text-blue-700 border-blue-200';
@@ -210,7 +240,7 @@ const GestionCotizaciones = () => {
                             const nombreEstado = c.estado?.nombre || 'Borrador';
                             return (
                             <div key={c.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm relative overflow-hidden">
-                                <div className={`absolute top-0 left-0 w-1.5 h-full ${nombreEstado === 'ACEPTADA' ? 'bg-emerald-500' : nombreEstado === 'Rechazada' ? 'bg-rose-400' : 'bg-amber-400'}`}></div>
+                                <div className={`absolute top-0 left-0 w-1.5 h-full ${nombreEstado === 'Facturada' ? 'bg-indigo-500' : nombreEstado === 'Aceptada' ? 'bg-emerald-500' : nombreEstado === 'Rechazada' ? 'bg-rose-400' : 'bg-amber-400'}`}></div>
 
                                 <div className="flex justify-between items-start mb-2 pl-2">
                                     <div>
@@ -250,6 +280,10 @@ const GestionCotizaciones = () => {
                                             Facturar
                                         </button>
                                     )}
+                                    <button onClick={() => handleEnviar(c.id)} className={`flex-1 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 font-bold text-xs py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-600 flex items-center justify-center gap-2`}>
+                                        <Send size={16} strokeWidth={1.75} />
+                                        Enviar
+                                    </button>
                                     <button onClick={() => descargarPDF(c.id, c.nombre_cliente)} className={`flex-1 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 font-bold text-xs py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-600 flex items-center justify-center gap-2`}>
                                         <FileText size={16} strokeWidth={1.75} />
                                         PDF
@@ -319,6 +353,13 @@ const GestionCotizaciones = () => {
                                                             Facturar
                                                         </button>
                                                     )}
+                                                    <button
+                                                        onClick={() => handleEnviar(c.id)}
+                                                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all font-bold text-xs"
+                                                        title="Enviar cotización por correo"
+                                                    >
+                                                        <Send size={16} strokeWidth={1.75} />
+                                                    </button>
                                                     <button
                                                         onClick={() => descargarPDF(c.id, c.nombre_cliente)}
                                                         className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-all font-bold text-xs"

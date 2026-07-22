@@ -161,8 +161,8 @@ const CierreF29 = () => {
 
                 <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3 w-full md:w-auto">
                     <div className="flex flex-col">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Mes</label>
-                        <select value={mes} onChange={e => setMes(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border-none font-bold text-slate-700 dark:text-slate-300 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500">
+                        <label htmlFor="f29-mes" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Mes</label>
+                        <select id="f29-mes" value={mes} onChange={e => setMes(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border-none font-bold text-slate-700 dark:text-slate-300 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500">
                             {nombresMeses.map((nombre, i) => {
                                 const mesNum = (i + 1).toString().padStart(2, '0');
                                 return <option key={mesNum} value={mesNum}>{nombre}</option>;
@@ -171,8 +171,8 @@ const CierreF29 = () => {
                     </div>
                     <div className="w-px h-10 bg-slate-200"></div>
                     <div className="flex flex-col">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Año</label>
-                        <select value={anio} onChange={e => setAnio(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border-none font-bold text-slate-700 dark:text-slate-300 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500">
+                        <label htmlFor="f29-anio" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Año</label>
+                        <select id="f29-anio" value={anio} onChange={e => setAnio(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border-none font-bold text-slate-700 dark:text-slate-300 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500">
                             {[anioActual - 1, anioActual, anioActual + 1].map(y => (
                                 <option key={y} value={y}>{y}</option>
                             ))}

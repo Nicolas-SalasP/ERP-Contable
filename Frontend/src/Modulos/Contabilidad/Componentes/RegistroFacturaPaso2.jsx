@@ -10,10 +10,11 @@ const RegistroFacturaPaso2 = ({
     return (
         <div className="max-w-3xl mx-auto animate-fade-in-up">
             <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-2">
+                <label htmlFor="factura-fecha-vencimiento" className="block font-bold text-slate-700 dark:text-slate-300 mb-2">
                     Fecha Vencimiento Factura
                 </label>
                 <input
+                    id="factura-fecha-vencimiento"
                     type="date"
                     name="fechaVencimiento"
                     value={formData.fechaVencimiento}
@@ -40,7 +41,10 @@ const RegistroFacturaPaso2 = ({
                     cuentasDisponibles.map(cta => (
                         <div
                             key={cta.id}
+                            role="button"
+                            tabIndex={0}
                             onClick={() => onSeleccionarCuenta(cta.id)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeleccionarCuenta(cta.id); } }}
                             className={`p-5 border rounded-xl cursor-pointer flex justify-between items-center transition-all ${
                                 formData.cuentaBancariaId === cta.id
                                     ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 shadow-md'

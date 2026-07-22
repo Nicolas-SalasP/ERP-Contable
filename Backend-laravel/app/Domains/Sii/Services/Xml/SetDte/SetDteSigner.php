@@ -3,24 +3,24 @@
 namespace App\Domains\Sii\Services\Xml\SetDte;
 
 use App\Domains\Core\Models\Empresa;
+use App\Domains\Sii\Exceptions\CertificadoInvalidoException;
 use App\Domains\Sii\Exceptions\DteXmlInvalidException;
 use App\Domains\Sii\Services\Certificado\CertificadoService;
 use App\Domains\Sii\Services\Xml\XmlDsigSigner;
 use DOMDocument;
 use DOMElement;
 
-/** Firma el <SetDTE ID="SetDocDTE"> dentro del <EnvioDTE> producido por SetDteBuilder; la <ds:Signature> resultante se inserta como hermano de <SetDTE> dentro de <EnvioDTE>, cumpliendo el XSD oficial EnvioDTE_v10.xsd (sequence: SetDTE, ds:Signature). Estructuralmente analogo a DteSigner pero opera sobre SetDTE y no necesita eliminar placeholders previos (SetDteBuilder no inserta firmas placeholder). */
+/** Firma el <SetDTE ID="SetDocDTE"> dentro del <EnvioDTE> (o <EnvioBOLETA> para boletas 39/41) producido por SetDteBuilder; la <ds:Signature> resultante se inserta como hermano de <SetDTE> dentro del sobre, cumpliendo el XSD oficial (sequence: SetDTE, ds:Signature en ambos EnvioDTE_v10.xsd y EnvioBOLETA_v11.xsd). Estructuralmente analogo a DteSigner pero opera sobre SetDTE y no necesita eliminar placeholders previos (SetDteBuilder no inserta firmas placeholder). */
 class SetDteSigner
 {
     public function __construct(
         private readonly XmlDsigSigner $xmlDsigSigner,
         private readonly CertificadoService $certificadoService
-    ) {
-    }
+    ) {}
 
     /**
      * @throws DteXmlInvalidException si el parseo o la verificacion fallan.
-     * @throws \App\Domains\Sii\Exceptions\CertificadoInvalidoException
+     * @throws CertificadoInvalidoException
      */
     public function firmar(string $xmlSetDte, Empresa $empresa): string
     {
@@ -28,7 +28,7 @@ class SetDteSigner
 
         $dom = new DOMDocument('1.0', 'ISO-8859-1');
         $dom->preserveWhiteSpace = true;
-        $dom->formatOutput       = false;
+        $dom->formatOutput = false;
 
         if (! @$dom->loadXML($xmlSetDte)) {
             throw DteXmlInvalidException::estructuraIncoherente('XML del SetDTE no se pudo parsear.');
@@ -43,9 +43,9 @@ class SetDteSigner
         }
 
         $envio = $setDte->parentNode;
-        if (! $envio instanceof DOMElement || $envio->localName !== 'EnvioDTE') {
+        if (! $envio instanceof DOMElement || ! in_array($envio->localName, ['EnvioDTE', 'EnvioBOLETA'], true)) {
             throw DteXmlInvalidException::estructuraIncoherente(
-                'El padre de <SetDTE> no es <EnvioDTE>.'
+                'El padre de <SetDTE> no es <EnvioDTE> ni <EnvioBOLETA>.'
             );
         }
 

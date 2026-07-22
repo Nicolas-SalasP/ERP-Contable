@@ -18,24 +18,24 @@ use LogicException;
 /** Construye el XML del DTE (bloque <DTE>) conforme al XSD oficial DTE_v10.xsd. */
 class DteXmlBuilder
 {
-    private const NS_SII   = 'http://www.sii.cl/SiiDte';
-    private const NS_DSIG  = 'http://www.w3.org/2000/09/xmldsig#';
+    private const NS_SII = 'http://www.sii.cl/SiiDte';
+
+    private const NS_DSIG = 'http://www.w3.org/2000/09/xmldsig#';
 
     /** Valor base64-valido para campos de firma que F4.2 reemplazara. */
     private const PLACEHOLDER_BASE64 = 'UExBQ0VIT0xERVJfRjRfMl9GSVJNQQ=='; // "PLACEHOLDER_F4_2_FIRMA"
 
     /**
-     * @param ?TedBuilder $tedBuilder requerido solo cuando se invoca build() con un CAF (TED firmado).
+     * @param  ?TedBuilder  $tedBuilder  requerido solo cuando se invoca build() con un CAF (TED firmado).
      */
     public function __construct(
         private readonly DteXsdValidator $validator,
         private readonly ?TedBuilder $tedBuilder = null
-    ) {
-    }
+    ) {}
 
     /**
-     * @throws DteIncompletoException  precondiciones por tipo no satisfechas
-     * @throws \App\Domains\Sii\Exceptions\DteXmlInvalidException si el XML no valida contra XSD
+     * @throws DteIncompletoException precondiciones por tipo no satisfechas
+     * @throws DteXmlInvalidException si el XML no valida contra XSD
      * @throws LogicException si $caf provisto pero TedBuilder no inyectado
      */
     public function build(SiiDteEmitido $dte, ?SiiCaf $caf = null): string
@@ -46,13 +46,13 @@ class DteXmlBuilder
             if ($caf !== null && $this->tedBuilder === null) {
                 throw new LogicException(
                     'DteXmlBuilder fue construido sin TedBuilder; no puede generar TED firmado. '
-                    . 'Use app(DteXmlBuilder::class) o inyecte TedBuilder manualmente.'
+                    .'Use app(DteXmlBuilder::class) o inyecte TedBuilder manualmente.'
                 );
             }
 
             $dom = new DOMDocument('1.0', 'ISO-8859-1');
             $dom->preserveWhiteSpace = false;
-            $dom->formatOutput       = false;
+            $dom->formatOutput = false;
 
             $root = $dom->createElementNS(self::NS_SII, 'DTE');
             $root->setAttribute('version', '1.0');
@@ -60,7 +60,7 @@ class DteXmlBuilder
             $dom->appendChild($root);
 
             $documento = $dom->createElement('Documento');
-            $documento->setAttribute('ID', 'D' . $dte->folio);
+            $documento->setAttribute('ID', 'D'.$dte->folio);
             $root->appendChild($documento);
 
             $documento->appendChild($this->buildEncabezado($dom, $dte));
@@ -82,7 +82,7 @@ class DteXmlBuilder
             // Estrategia para preservar bit-exactitud del TED firmado: sin $caf insertamos el TED estructural completo (F4.1) con DOM; con $caf insertamos un placeholder con marcador unico y luego reemplazamos a nivel string para que el TED real (construido por TedBuilder como bytes ISO-8859-1) llegue inalterado al XML final.
             $placeholderMarker = null;
             if ($caf !== null) {
-                $placeholderMarker = '__TED_PLACEHOLDER_' . bin2hex(random_bytes(8)) . '__';
+                $placeholderMarker = '__TED_PLACEHOLDER_'.bin2hex(random_bytes(8)).'__';
                 $tedNode = $dom->createElement('TED', $placeholderMarker);
                 $documento->appendChild($tedNode);
             } else {
@@ -102,21 +102,24 @@ class DteXmlBuilder
 
             // Reemplazo del TED placeholder por el TED real firmado, a nivel de bytes: esto preserva exactamente lo que TedBuilder firmo.
             if ($caf !== null) {
-                $tedReal  = $this->tedBuilder->buildFirmado($dte, $caf);
-                $busqueda = '<TED>' . $placeholderMarker . '</TED>';
-                $xml      = str_replace($busqueda, $tedReal, $xml);
+                $tedReal = $this->tedBuilder->buildFirmado($dte, $caf);
+                $busqueda = '<TED>'.$placeholderMarker.'</TED>';
+                $xml = str_replace($busqueda, $tedReal, $xml);
             }
 
-            // Boletas (39/41) usan EnvioBOLETA_v11.xsd, no DTE_v10.xsd — omitir validación XSD.
+            // Boletas (39/41) usan EnvioBOLETA_v11.xsd, no DTE_v10.xsd — omitir esta validacion del
+            // <Documento> suelto aqui. Igual quedan validadas: EnvioDteXsdValidator valida el sobre
+            // completo (EnvioBOLETA, con BOLETADefType incluyendo el Documento) mas adelante en
+            // EmitirDteService, ahora que sabe elegir el XSD correcto segun la raiz real del XML.
             if (! in_array($dte->tipo_dte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true)) {
                 $this->validator->validar($xml);
             }
 
             return $xml;
-        } catch (DteIncompletoException | DteXmlInvalidException | \LogicException $e) {
+        } catch (DteIncompletoException|DteXmlInvalidException|LogicException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            throw new \RuntimeException('Error al construir XML del DTE: ' . $e->getMessage(), 0, $e);
+            throw new \RuntimeException('Error al construir XML del DTE: '.$e->getMessage(), 0, $e);
         }
     }
 
@@ -187,13 +190,25 @@ class DteXmlBuilder
             $idDoc->appendChild($dom->createElement('IndTraslado', (string) $traslado->indicador_traslado));
         }
 
-        // Boleta: IndServicio
-        if ($dte->indicador_servicio !== null && in_array($dte->tipo_dte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true)) {
+        $esBoleta = in_array($dte->tipo_dte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true);
+
+        // IndServicio es REQUERIDO por BOLETADefType (EnvioBOLETA_v11.xsd), sin minOccurs="0" -- a
+        // diferencia de factura, donde no aplica. Debe ir justo despues de FchEmis (orden de
+        // xs:sequence), antes de FmaPago/FchVenc.
+        if ($esBoleta) {
+            if ($dte->indicador_servicio === null) {
+                throw DteIncompletoException::campoFaltante(
+                    'indicador_servicio (IndServicio) es requerido por BOLETADefType para tipo_dte 39/41.'
+                );
+            }
             $idDoc->appendChild($dom->createElement('IndServicio', (string) $dte->indicador_servicio));
         }
 
-        // Forma de pago
-        if ($dte->forma_pago_codigo !== null) {
+        // Forma de pago: BOLETADefType no tiene <FmaPago> en su IdDoc (tiene <MedioPago> al final
+        // del sequence, con un dominio de valores distinto) -- omitir aqui para boleta en vez de
+        // emitir un elemento que el XSD de boleta rechaza. Mapear forma_pago_codigo a MedioPago
+        // queda pendiente (no es 1:1 con los codigos de FmaPago).
+        if ($dte->forma_pago_codigo !== null && ! $esBoleta) {
             $idDoc->appendChild($dom->createElement('FmaPago', (string) $dte->forma_pago_codigo));
         }
 
@@ -208,16 +223,34 @@ class DteXmlBuilder
     private function buildEmisor(DOMDocument $dom, SiiDteEmitido $dte): DOMElement
     {
         $em = $dom->createElement('Emisor');
+        $esBoleta = in_array($dte->tipo_dte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true);
 
         $em->appendChild($dom->createElement('RUTEmisor', $dte->emisor_rut));
-        $em->appendChild($this->createSanitizedElement($dom, 'RznSoc', $dte->emisor_razon_social, 100));
-        $em->appendChild($this->createSanitizedElement($dom, 'GiroEmis', $dte->emisor_giro ?? 'No declarado', 80));
 
-        if ($dte->emisor_acteco !== null) {
-            $em->appendChild($dom->createElement('Acteco', (string) $dte->emisor_acteco));
-        } else {
-            // Acteco es REQUIRED en XSD. Si el snapshot no lo tiene, fallar duro.
-            throw DteIncompletoException::campoFaltante('emisor_acteco (Acteco) es requerido por XSD');
+        // BOLETADefType usa RznSocEmisor/GiroEmisor (no RznSoc/GiroEmis como el Emisor de
+        // factura/NC/ND) -- mismo dato, nombre de elemento distinto segun el XSD real.
+        $em->appendChild($this->createSanitizedElement(
+            $dom,
+            $esBoleta ? 'RznSocEmisor' : 'RznSoc',
+            $dte->emisor_razon_social,
+            100
+        ));
+        $em->appendChild($this->createSanitizedElement(
+            $dom,
+            $esBoleta ? 'GiroEmisor' : 'GiroEmis',
+            $dte->emisor_giro ?? 'No declarado',
+            80
+        ));
+
+        if (! $esBoleta) {
+            // Acteco no existe en el Emisor de BOLETADefType (confirmado contra EnvioBOLETA_v11.xsd:
+            // RUTEmisor, RznSocEmisor, GiroEmisor, CdgSIISucur, DirOrigen, CmnaOrigen, CiudadOrigen).
+            if ($dte->emisor_acteco !== null) {
+                $em->appendChild($dom->createElement('Acteco', (string) $dte->emisor_acteco));
+            } else {
+                // Acteco es REQUIRED en XSD de factura. Si el snapshot no lo tiene, fallar duro.
+                throw DteIncompletoException::campoFaltante('emisor_acteco (Acteco) es requerido por XSD');
+            }
         }
 
         if ($dte->emisor_cdg_sii_sucursal !== null && $dte->emisor_cdg_sii_sucursal !== '') {
@@ -236,12 +269,15 @@ class DteXmlBuilder
     private function buildReceptor(DOMDocument $dom, SiiDteEmitido $dte): DOMElement
     {
         $rec = $dom->createElement('Receptor');
+        $esBoleta = in_array($dte->tipo_dte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true);
 
         $rec->appendChild($dom->createElement('RUTRecep', $dte->receptor_rut));
         $rec->appendChild($this->createSanitizedElement($dom, 'RznSocRecep', $dte->receptor_razon_social, 100));
 
-        // Boletas (39/41): giro y direccion del receptor son opcionales segun normativa.
-        if ($dte->receptor_giro !== null && $dte->receptor_giro !== '') {
+        // BOLETADefType.Receptor no tiene GiroRecep (confirmado contra EnvioBOLETA_v11.xsd:
+        // RUTRecep, CdgIntRecep, RznSocRecep, Contacto, CorreoRecep, TelefonoRecep, DirRecep,
+        // CmnaRecep, CiudadRecep, DirPostal, CmnaPostal, CiudadPostal) -- omitir para boleta.
+        if (! $esBoleta && $dte->receptor_giro !== null && $dte->receptor_giro !== '') {
             $rec->appendChild($this->createSanitizedElement($dom, 'GiroRecep', $dte->receptor_giro, 40));
         }
         if ($dte->receptor_contacto !== null && $dte->receptor_contacto !== '') {
@@ -301,6 +337,7 @@ class DteXmlBuilder
         $tot = $dom->createElement('Totales');
 
         $esExenta = in_array($dte->tipo_dte, [SiiDteEmitido::TIPO_FACTURA_EXENTA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true);
+        $esBoleta = in_array($dte->tipo_dte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true);
 
         if (! $esExenta && ((float) $dte->monto_neto) > 0.0) {
             $tot->appendChild($dom->createElement('MntNeto', (string) (int) round((float) $dte->monto_neto)));
@@ -311,7 +348,11 @@ class DteXmlBuilder
         }
 
         if (! $esExenta) {
-            $tot->appendChild($dom->createElement('TasaIVA', number_format((float) $dte->tasa_iva, 2, '.', '')));
+            // BOLETADefType.Totales no tiene <TasaIVA> (confirmado contra EnvioBOLETA_v11.xsd:
+            // MntNeto, MntExe, IVA, MntTotal, ...) -- solo factura/NC/ND lo llevan.
+            if (! $esBoleta) {
+                $tot->appendChild($dom->createElement('TasaIVA', number_format((float) $dte->tasa_iva, 2, '.', '')));
+            }
             $tot->appendChild($dom->createElement('IVA', (string) (int) round((float) $dte->iva)));
         }
 
@@ -483,7 +524,7 @@ class DteXmlBuilder
         $signedInfo->appendChild($sigMethod);
 
         $reference = $dom->createElementNS(self::NS_DSIG, 'ds:Reference');
-        $reference->setAttribute('URI', '#D' . $dte->folio);
+        $reference->setAttribute('URI', '#D'.$dte->folio);
 
         $digestMethod = $dom->createElementNS(self::NS_DSIG, 'ds:DigestMethod');
         $digestMethod->setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#sha1');

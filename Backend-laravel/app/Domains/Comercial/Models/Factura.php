@@ -2,31 +2,39 @@
 
 namespace App\Domains\Comercial\Models;
 
+use App\Domains\Core\Models\Empresa;
+use App\Domains\Core\Traits\HasEmpresaScope;
+use App\Domains\Sii\Concerns\HasSiiAttributesFactura;
+use App\Domains\Sii\Models\SiiDteEmitido;
+use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Domains\Core\Models\Empresa;
-use App\Domains\Core\Traits\HasEmpresaScope;
-use App\Domains\Tesoreria\Models\CuentaBancariaProveedor;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int|null $sii_dte_emitido_id
  * @property int|null $tipo_dte
  * @property int|null $cliente_id
- * @property \Illuminate\Support\Carbon $fecha_emision
- * @property-read \App\Domains\Sii\Models\SiiDteEmitido|null $dteEmitido
- * @property-read \App\Domains\Comercial\Models\Cliente|null $cliente
- * @property-read \App\Domains\Comercial\Models\Proveedor|null $proveedor
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Comercial\Models\FacturaDetalle> $detalles
+ * @property Carbon $fecha_emision
+ * @property string|null $emisor_razon_social
+ * @property string|null $emisor_rut
+ * @property string|null $emisor_logo_path
+ * @property-read SiiDteEmitido|null $dteEmitido
+ * @property-read Cliente|null $cliente
+ * @property-read Proveedor|null $proveedor
+ * @property-read Collection<int, FacturaDetalle> $detalles
  */
 class Factura extends Model
 {
-    use SoftDeletes;
     use HasEmpresaScope;
-    use \App\Domains\Sii\Concerns\HasSiiAttributesFactura;
+    use HasSiiAttributesFactura;
+    use SoftDeletes;
 
     protected $table = 'facturas';
+
     const UPDATED_AT = null;
 
     protected $fillable = [
@@ -62,11 +70,17 @@ class Factura extends Model
         'factura_referencia_id',
         'razon_nota_credito',
         'razon_nota_debito',
+        'notificada_at',
+        'usuario_notificacion_id',
+        'emisor_razon_social',
+        'emisor_rut',
+        'emisor_logo_path',
     ];
 
     protected $casts = [
         'fecha_emision' => 'date',
         'fecha_vencimiento' => 'date',
+        'notificada_at' => 'datetime',
         'monto_bruto' => 'decimal:2',
         'monto_neto' => 'decimal:2',
         'monto_iva' => 'decimal:2',
@@ -78,19 +92,52 @@ class Factura extends Model
 
     protected $appends = ['nombre_proveedor'];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Factura $factura) {
+            if ($factura->tipo !== 'VENTA' || $factura->emisor_razon_social !== null) {
+                return;
+            }
+
+            $empresa = Empresa::find($factura->empresa_id);
+            if (! $empresa) {
+                return;
+            }
+
+            $factura->emisor_razon_social = $empresa->razon_social;
+            $factura->emisor_rut = $empresa->rut;
+            $factura->emisor_logo_path = $empresa->logo_path;
+        });
+    }
+
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
 
+    /** @return BelongsTo<Proveedor, $this> */
     public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
     }
 
+    /** @return BelongsTo<Cliente, $this> */
+    public function cliente(): BelongsTo
+    {
+        return $this->belongsTo(Cliente::class);
+    }
+
+    /** @return BelongsTo<Cotizacion, $this> */
+    public function cotizacion(): BelongsTo
+    {
+        return $this->belongsTo(Cotizacion::class);
+    }
+
     public function getNombreProveedorAttribute(): string
     {
-        if (!$this->relationLoaded('proveedor') && $this->proveedor_id) {
+        if (! $this->relationLoaded('proveedor') && $this->proveedor_id) {
             $this->load('proveedor');
         }
 
@@ -120,9 +167,9 @@ class Factura extends Model
     public static function generarCodigoUnico(): int
     {
         for ($intento = 0; $intento < 5; $intento++) {
-            $codigo = (int) (time() . str_pad((string) random_int(0, 99999), 5, '0', STR_PAD_LEFT));
+            $codigo = (int) (time().str_pad((string) random_int(0, 99999), 5, '0', STR_PAD_LEFT));
             $existeFactura = self::where('codigo_unico', $codigo)->exists();
-            if (!$existeFactura) {
+            if (! $existeFactura) {
                 return $codigo;
             }
 
@@ -130,7 +177,7 @@ class Factura extends Model
         }
 
         throw new \RuntimeException(
-            'No se pudo generar un codigo_unico despues de 5 intentos. ' .
+            'No se pudo generar un codigo_unico despues de 5 intentos. '.
             'Esto indica un problema grave en la generacion de codigos.'
         );
     }

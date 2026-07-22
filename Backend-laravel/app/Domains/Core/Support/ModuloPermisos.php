@@ -6,6 +6,12 @@ use App\Domains\Core\Models\User;
 
 final class ModuloPermisos
 {
+    /**
+     * Modulos de sistema/cumplimiento que no dependen del catalogo de planes de tenri.cl.
+     * Un plan viejo (creado antes de que el modulo existiera) no debe poder ocultarlo.
+     */
+    public const MODULOS_SIEMPRE_DISPONIBLES = ['alertas'];
+
     public const MAP = [
         'dashboard' => ['dashboard.ver'],
         'alertas' => ['alertas.ver', 'alertas.gestionar'],
@@ -71,7 +77,7 @@ final class ModuloPermisos
         'contabilidad.dj' => ['contabilidad.dj.ver', 'contabilidad.dj.procesar'],
         'empresa.perfil' => [],
         'glosario' => [],
-        'integraciones.api' => [],
+        'integraciones.api' => ['integraciones.api.ver', 'integraciones.api.gestionar'],
         'dashboard.ejecutivo' => ['contabilidad.ver', 'tesoreria.ver', 'ventas.ver'],
         'white_label' => [],
         'modulos.custom' => [],
@@ -185,7 +191,11 @@ final class ModuloPermisos
 
         // Plan como techo: si el usuario viene de un plan (module_keys no vacio), sus permisos se limitan a los del plan sin importar lo que conceda el rol.
         if (! empty($moduleKeys)) {
-            $base = array_values(array_intersect($base, $permisosModulos));
+            $permisosSiempre = self::permisosDesdeModulos(self::MODULOS_SIEMPRE_DISPONIBLES);
+            $base = array_values(array_unique(array_merge(
+                array_intersect($base, $permisosModulos),
+                array_intersect($base, $permisosSiempre)
+            )));
         }
 
         return self::normalizarLista($base);

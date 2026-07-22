@@ -18,8 +18,37 @@ php artisan backup:list           # estado y tamaño de los backups
 php artisan backup:clean          # aplica la política de retención
 ```
 
-Programación recomendada (en `routes/console.php` o el scheduler): `backup:run` diario y
-`backup:clean` semanal. Requiere el cron de Laravel (`schedule:run`) activo en el host.
+Programado en `routes/console.php` (desde 2026-07-14): `backup:run` diario a las 03:00,
+`backup:clean` a las 03:30, `backup:monitor` a las 04:00 (avisa por mail si el backup del
+día no existe o supera el tamaño esperado — `config/backup.php:monitor_backups`).
+
+**Esto no hace nada solo: requiere una entrada de cron real en el servidor de hosting**
+apuntando al scheduler de Laravel. Sin eso, ni este backup ni ninguna otra tarea programada
+del proyecto (alertas de inventario, monitoreo de certificados SII, polling de envíos SII)
+corre en producción — Laravel no tiene su propio daemon, `Schedule::` solo define QUÉ correr,
+algo externo tiene que ejecutar `schedule:run` cada minuto.
+
+### Activar el cron en el hosting (DirectAdmin/cPanel)
+
+1. Entrar al panel de hosting (DirectAdmin) → sección **Cron Jobs**.
+2. Agregar una tarea nueva con esta configuración:
+   - **Minuto**: `*` (cada minuto)
+   - **Hora / día / mes / día de semana**: `*` (todos)
+   - **Comando**:
+     ```bash
+     cd /ruta/real/al/proyecto && php artisan schedule:run >> /dev/null 2>&1
+     ```
+     (reemplazar `/ruta/real/al/proyecto` por el path del symlink `$APP_LINK` del deploy
+     atómico — ver `docs/deploy-atomico.md` — NO el path de una release versionada
+     especifica, porque esa cambia en cada deploy).
+3. Guardar. Confirmar que corre: esperar 1-2 minutos y revisar
+   `storage/logs/laravel.log`, o correr `php artisan schedule:list` por SSH para ver los
+   próximos horarios, y `php artisan backup:run` a mano una vez para confirmar que el zip
+   aparece en el disco destino.
+4. Si el hosting no da acceso a un panel de cron (algunos planes compartidos no lo
+   incluyen), alternativa: pedir soporte del hosting que agregue la línea de crontab
+   directamente, o migrar a un plan/VPS que sí lo permita — no hay forma de que Laravel
+   se auto-programe sin un cron del sistema operativo por debajo.
 
 ## Prueba de restauración (obligatoria)
 

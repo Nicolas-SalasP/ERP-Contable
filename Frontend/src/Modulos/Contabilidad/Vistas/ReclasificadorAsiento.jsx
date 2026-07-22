@@ -130,8 +130,9 @@ const ReclasificadorAsiento = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Glosa de Auditoría (Motivo del cambio)</label>
+                        <label htmlFor="reclasificacion-glosa-auditoria" className="block text-xs font-bold text-slate-400 uppercase mb-2">Glosa de Auditoría (Motivo del cambio)</label>
                         <textarea
+                            id="reclasificacion-glosa-auditoria"
                             className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
                             rows="2"
                             value={form.glosa_auditoria}
@@ -139,8 +140,9 @@ const ReclasificadorAsiento = () => {
                         />
                     </div>
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Fecha del Ajuste</label>
+                        <label htmlFor="reclasificacion-fecha-ajuste-2" className="block text-xs font-bold text-slate-400 uppercase mb-2">Fecha del Ajuste</label>
                         <input
+                            id="reclasificacion-fecha-ajuste-2"
                             type="date"
                             className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-100"
                             value={form.fecha_ajuste}

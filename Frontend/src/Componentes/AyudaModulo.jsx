@@ -51,7 +51,7 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
             {abierto && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
-                    onClick={cerrar}
+                    onClick={(e) => { if (e.target === e.currentTarget) cerrar(); }}
                     role="presentation"
                     data-testid="ayuda-modulo-overlay"
                 >
@@ -61,7 +61,6 @@ const AyudaModulo = ({ moduloId, size = 24, className = '' }) => {
                         aria-modal="true"
                         aria-labelledby={`ayuda-titulo-${modulo.id}`}
                         className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
-                        onClick={(e) => e.stopPropagation()}
                         data-testid="ayuda-modulo-modal"
                     >
                         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white px-6 py-5 flex items-start justify-between gap-4">

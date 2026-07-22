@@ -27,8 +27,6 @@ class SiiServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/Database/Migrations');
-
         $this->mergeConfigFrom(__DIR__ . '/../../../config/sii.php', 'sii');
 
         // HARDENING-1 R6: throttle por empresa (60 req/min) en todas las rutas SII; el throttle 'sii-uploads-pesados' (10/h) se aplica ademas a endpoints especificos en Routes/api.php (cert + caf store).

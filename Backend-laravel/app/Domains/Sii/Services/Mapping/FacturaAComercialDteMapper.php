@@ -4,12 +4,14 @@ namespace App\Domains\Sii\Services\Mapping;
 
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\Proveedor;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Sii\Exceptions\DteIncompletoException;
 use App\Domains\Sii\Exceptions\FacturaIncompletaParaSii;
 use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Models\SiiDteEmitidoDetalle;
 use App\Domains\Sii\Models\SiiDteEmitidoReferencia;
+use App\Domains\Sii\Models\SiiDteEmitidoTraslado;
 use App\Domains\Sii\Services\Validators\CuadraturaMontosValidator;
 use App\Domains\Sii\Support\Iso88591Helper;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -18,8 +20,8 @@ use Illuminate\Support\Facades\DB;
 /** Mapper Factura (Comercial) → SiiDteEmitido (Sii) en BORRADOR; snapshot inmutable, lockForUpdate sobre la factura previene doble emision concurrente. */
 class FacturaAComercialDteMapper
 {
-    /** Tipos DTE nacionales soportados en F6.1. */
-    private const TIPOS_DTE_VALIDOS = [33, 34, 39, 41, 56, 61];
+    /** Tipos DTE nacionales soportados. */
+    private const TIPOS_DTE_VALIDOS = [33, 34, 39, 41, 46, 52, 56, 61];
 
     /** Tipos que requieren al menos 1 referencia (NC/ND). */
     private const TIPOS_DTE_REQUIEREN_REFERENCIAS = [56, 61];
@@ -27,10 +29,22 @@ class FacturaAComercialDteMapper
     /** Tipos exentos: monto_neto=iva=0; el total va en monto_exento. */
     private const TIPOS_DTE_EXENTOS = [34, 41];
 
+    /**
+     * Factura de Compra (46): autofacturacion -- el emisor es SIEMPRE el comprador (esta
+     * empresa); el receptor del DTE es el vendedor/proveedor, no un Cliente. Unico tipo de
+     * este set cuyo receptor se resuelve desde Proveedor en vez de Cliente.
+     */
+    private const TIPOS_DTE_RECEPTOR_PROVEEDOR = [46];
+
+    /** Guia de Despacho (52): requiere el bloque Transporte/IndTraslado (SiiDteEmitidoTraslado). */
+    private const TIPOS_DTE_REQUIEREN_TRASLADO = [52];
+
     /** Coherencia tipo_documento (Comercial) ↔ tipo_dte (SII); el default del modelo Factura es 'FACTURA' (migracion 130005). */
     private const COHERENCIA_TIPO_DOCUMENTO_DTE = [
         'FACTURA' => [33, 34],
         'BOLETA' => [39, 41],
+        'FACTURA_COMPRA' => [46],
+        'GUIA_DESPACHO' => [52],
         'NOTA_CREDITO' => [61],
         'NOTA_DEBITO' => [56],
     ];
@@ -57,7 +71,7 @@ class FacturaAComercialDteMapper
             $facturaLock = Factura::query()
                 ->lockForUpdate()
                 ->findOrFail($factura->id);
-            $facturaLock->load(['cliente', 'empresa', 'detalles']);
+            $facturaLock->load(['cliente', 'proveedor', 'empresa', 'detalles']);
 
             $this->validarFactura($facturaLock);
             $this->validarReferencias($facturaLock, $referencias);
@@ -70,11 +84,15 @@ class FacturaAComercialDteMapper
                 $this->construirReferencias($dte, $referencias);
             }
 
+            if (in_array((int) $facturaLock->tipo_dte, self::TIPOS_DTE_REQUIEREN_TRASLADO, true)) {
+                $this->construirTraslado($dte);
+            }
+
             // Vincular la factura al DTE recien creado (cierra el ciclo F6.0).
             $facturaLock->sii_dte_emitido_id = $dte->id;
             $facturaLock->save();
 
-            return $dte->fresh(['detalles', 'referencias']);
+            return $dte->fresh(['detalles', 'referencias', 'traslado']);
         });
     }
 
@@ -93,7 +111,11 @@ class FacturaAComercialDteMapper
             );
         }
 
-        if (! $factura->cliente_id) {
+        if (in_array($tipoDte, self::TIPOS_DTE_RECEPTOR_PROVEEDOR, true)) {
+            if (! $factura->proveedor_id) {
+                throw FacturaIncompletaParaSii::proveedorFaltante((int) $factura->id);
+            }
+        } elseif (! $factura->cliente_id) {
             throw FacturaIncompletaParaSii::clienteFaltante((int) $factura->id);
         }
 
@@ -165,16 +187,20 @@ class FacturaAComercialDteMapper
     {
         /** @var Empresa $empresa */
         $empresa = $factura->empresa;
-        /** @var Cliente $cliente */
-        $cliente = $factura->cliente;
+        $receptor = $this->resolverReceptorSnapshot($factura);
         $tipoDte = (int) $factura->tipo_dte;
         $esExento = in_array($tipoDte, self::TIPOS_DTE_EXENTOS, true);
+        $esBoleta = in_array($tipoDte, [SiiDteEmitido::TIPO_BOLETA, SiiDteEmitido::TIPO_BOLETA_EXENTA], true);
 
         return SiiDteEmitido::create([
             'empresa_id' => $factura->empresa_id,
             'factura_id' => $factura->id,
             'estado' => SiiDteEmitido::ESTADO_BORRADOR,
             'tipo_dte' => $tipoDte,
+            // IndServicio es requerido por BOLETADefType (ver DteXmlBuilder::buildIdDoc); el
+            // Comercial no modela este campo aun, asi que se usa 3 (Otros - venta y otros
+            // servicios), el valor correcto para el unico flujo que este ERP emite (VENTA).
+            'indicador_servicio' => $esBoleta ? 3 : null,
             // folio se asigna en F4.4 (EmitirDteService->reservarSiguienteFolio).
             'folio' => 0,
             'fecha_emision' => $factura->fecha_emision,
@@ -186,7 +212,7 @@ class FacturaAComercialDteMapper
             'moneda' => $factura->moneda ?? 'CLP',
 
             // EMISOR — snapshot completo desde Empresa.
-            'emisor_rut' => Iso88591Helper::sanitize((string) $empresa->rut, 12),
+            'emisor_rut' => Iso88591Helper::sanitize((string) $empresa->rut, 20),
             'emisor_razon_social' => Iso88591Helper::sanitize((string) $empresa->razon_social, 100),
             'emisor_giro' => $empresa->giro_emisor
                 ? Iso88591Helper::sanitize((string) $empresa->giro_emisor, 80)
@@ -202,25 +228,27 @@ class FacturaAComercialDteMapper
                 ? Iso88591Helper::sanitize((string) $empresa->ciudad, 20)
                 : null,
 
-            // RECEPTOR — snapshot desde Cliente.
-            'receptor_rut' => Iso88591Helper::sanitize((string) $cliente->rut, 12),
-            'receptor_razon_social' => Iso88591Helper::sanitize((string) $cliente->razon_social, 100),
-            'receptor_giro' => $cliente->giro
-                ? Iso88591Helper::sanitize((string) $cliente->giro, 40)
+            // RECEPTOR — snapshot desde Cliente, o desde Proveedor si es Factura de Compra (46).
+            'receptor_rut' => Iso88591Helper::sanitize($receptor['rut'], 20),
+            'receptor_razon_social' => Iso88591Helper::sanitize($receptor['razon_social'], 100),
+            'receptor_giro' => $receptor['giro'] !== null
+                ? Iso88591Helper::sanitize($receptor['giro'], 40)
                 : null,
-            'receptor_direccion' => $cliente->direccion
-                ? Iso88591Helper::sanitize((string) $cliente->direccion, 70)
+            'receptor_direccion' => $receptor['direccion'] !== null
+                ? Iso88591Helper::sanitize($receptor['direccion'], 70)
                 : null,
-            'receptor_comuna' => $cliente->comuna
-                ? Iso88591Helper::sanitize((string) $cliente->comuna, 20)
+            'receptor_comuna' => $receptor['comuna'] !== null
+                ? Iso88591Helper::sanitize($receptor['comuna'], 20)
                 : null,
-            'receptor_ciudad' => $cliente->ciudad
-                ? Iso88591Helper::sanitize((string) $cliente->ciudad, 20)
+            'receptor_ciudad' => $receptor['ciudad'] !== null
+                ? Iso88591Helper::sanitize($receptor['ciudad'], 20)
                 : null,
-            'receptor_contacto' => $cliente->contacto_nombre
-                ? Iso88591Helper::sanitize((string) $cliente->contacto_nombre, 80)
+            'receptor_contacto' => $receptor['contacto'] !== null
+                ? Iso88591Helper::sanitize($receptor['contacto'], 80)
                 : null,
-            'receptor_correo' => $this->resolverCorreoReceptor($cliente),
+            'receptor_correo' => $receptor['correo'] !== null
+                ? Iso88591Helper::sanitize($receptor['correo'], 80)
+                : null,
 
             // TOTALES — para tipos exentos, neto/iva quedan en 0 y monto_exento=total.
             'monto_neto' => $esExento ? 0 : (float) $factura->monto_neto,
@@ -299,6 +327,21 @@ class FacturaAComercialDteMapper
         }
     }
 
+    /**
+     * Guia de Despacho (52): crea el bloque Transporte/IndTraslado. Este ERP solo modela guias
+     * emitidas junto a una venta real (no traslados internos/consignacion/otros), por eso el
+     * indicador se fija en 1 (Operacion constituye venta) -- mismo patron que
+     * indicador_servicio=3 para boleta: valor correcto para el unico flujo que el ERP emite,
+     * datos de transporte (chofer/patente/destino) quedan sin capturar por ahora.
+     */
+    private function construirTraslado(SiiDteEmitido $dte): void
+    {
+        SiiDteEmitidoTraslado::create([
+            'dte_emitido_id' => $dte->id,
+            'indicador_traslado' => 1,
+        ]);
+    }
+
     /** Resolucion del correo del receptor: prioriza contacto_email, fallback a email general, null si el cliente no tiene ninguno. */
     private function resolverCorreoReceptor(Cliente $cliente): ?string
     {
@@ -308,5 +351,46 @@ class FacturaAComercialDteMapper
         }
 
         return Iso88591Helper::sanitize((string) $correo, 80);
+    }
+
+    /**
+     * Snapshot del receptor del DTE: viene de Cliente en todos los tipos, salvo Factura de
+     * Compra (46) -- autofacturacion, donde el receptor del DTE es el Proveedor (el vendedor
+     * real de la operacion). Proveedor no modela giro/ciudad/contacto_nombre, por eso esos
+     * campos quedan null para 46 (son opcionales en el XSD).
+     *
+     * @return array{rut: string, razon_social: string, giro: ?string, direccion: ?string, comuna: ?string, ciudad: ?string, contacto: ?string, correo: ?string}
+     */
+    private function resolverReceptorSnapshot(Factura $factura): array
+    {
+        if (in_array((int) $factura->tipo_dte, self::TIPOS_DTE_RECEPTOR_PROVEEDOR, true)) {
+            /** @var Proveedor $proveedor */
+            $proveedor = $factura->proveedor;
+
+            return [
+                'rut' => (string) $proveedor->rut,
+                'razon_social' => (string) $proveedor->razon_social,
+                'giro' => null,
+                'direccion' => $proveedor->direccion ? (string) $proveedor->direccion : null,
+                'comuna' => $proveedor->comuna ? (string) $proveedor->comuna : null,
+                'ciudad' => null,
+                'contacto' => $proveedor->nombre_contacto ? (string) $proveedor->nombre_contacto : null,
+                'correo' => $proveedor->email_contacto ? (string) $proveedor->email_contacto : null,
+            ];
+        }
+
+        /** @var Cliente $cliente */
+        $cliente = $factura->cliente;
+
+        return [
+            'rut' => (string) $cliente->rut,
+            'razon_social' => (string) $cliente->razon_social,
+            'giro' => $cliente->giro ? (string) $cliente->giro : null,
+            'direccion' => $cliente->direccion ? (string) $cliente->direccion : null,
+            'comuna' => $cliente->comuna ? (string) $cliente->comuna : null,
+            'ciudad' => $cliente->ciudad ? (string) $cliente->ciudad : null,
+            'contacto' => $cliente->contacto_nombre ? (string) $cliente->contacto_nombre : null,
+            'correo' => $this->resolverCorreoReceptor($cliente),
+        ];
     }
 }

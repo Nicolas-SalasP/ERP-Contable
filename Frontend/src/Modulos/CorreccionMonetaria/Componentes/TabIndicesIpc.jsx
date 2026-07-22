@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { api } from '../../../Configuracion/api';
 
@@ -12,10 +12,15 @@ const TabIndicesIpc = ({ anioInicial }) => {
     const [editando, setEditando] = useState(null);
     const [formValues, setFormValues] = useState({ variacion: '', observacion: '' });
     const anioActual = new Date().getFullYear();
+    const variacionInputRef = useRef(null);
 
     useEffect(() => {
         cargar();
     }, [anio]);
+
+    useEffect(() => {
+        if (editando !== null) variacionInputRef.current?.focus();
+    }, [editando]);
 
     const cargar = async () => {
         setLoading(true);
@@ -143,13 +148,13 @@ const TabIndicesIpc = ({ anioInicial }) => {
                                                 <div className="flex items-center justify-end gap-3 flex-wrap">
                                                     <div className="flex items-center gap-1.5">
                                                         <input
+                                                            ref={variacionInputRef}
                                                             type="number"
                                                             step="0.0001"
                                                             value={formValues.variacion}
                                                             onChange={e => setFormValues(v => ({ ...v, variacion: e.target.value }))}
                                                             placeholder="0.4200"
                                                             className="w-28 border border-violet-300 dark:border-violet-500 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-1.5 text-right font-mono text-sm focus:ring-2 focus:ring-violet-500 outline-none"
-                                                            autoFocus
                                                         />
                                                         <span className="text-slate-500 font-bold text-sm">%</span>
                                                     </div>

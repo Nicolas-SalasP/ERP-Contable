@@ -166,8 +166,8 @@ const Dj1837 = () => {
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">Generar DJ 1837</h2>
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año tributario</label>
-                        <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={inputCls}>
+                        <label htmlFor="dj1837-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año tributario</label>
+                        <select id="dj1837-anio" value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={inputCls}>
                             {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                         </select>
                     </div>
@@ -237,8 +237,8 @@ const Dj1837 = () => {
                             <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Confirmar presentación ante el SII</h3>
                             <div className="flex flex-wrap items-end gap-3">
                                 <div className="flex-1 min-w-[200px]">
-                                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Folio de presentación SII (opcional)</label>
-                                    <input type="text" value={folioConfirmacion} onChange={(e) => setFolioConf(e.target.value)}
+                                    <label htmlFor="dj1837-folio-confirmacion" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Folio de presentación SII (opcional)</label>
+                                    <input id="dj1837-folio-confirmacion" type="text" value={folioConfirmacion} onChange={(e) => setFolioConf(e.target.value)}
                                         maxLength={100} placeholder="Ej: 2026-DJ1837-000001" className={inputCls} />
                                 </div>
                                 <button onClick={handleConfirmarPresentacion} disabled={confirmando}

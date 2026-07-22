@@ -19,6 +19,21 @@
   }
 }
 
+/* SweetAlert2 trae su propio CSS con mas especificidad que los inputs base de Tailwind, por eso el date-picker de dialogos como "Facturar" se veia sin estilo */
+.swal2-popup .swal2-input {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.6rem 0.9rem !important;
+  font-size: 0.95rem !important;
+  box-shadow: none !important;
+  height: auto !important;
+}
+
+.swal2-popup .swal2-input:focus {
+  border-color: #0f172a !important;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1) !important;
+}
+
 ::-webkit-scrollbar {
   width: 14px;
   height: 14px;

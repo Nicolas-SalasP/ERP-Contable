@@ -60,14 +60,14 @@ const PreviredRrhh = () => {
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
-                        <select value={periodo.anio} onChange={(e) => { setPeriodo((p) => ({ ...p, anio: Number(e.target.value) })); setPreview(null); }} className={inputCls}>
+                        <label htmlFor="previred-anio" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Año</label>
+                        <select id="previred-anio" value={periodo.anio} onChange={(e) => { setPeriodo((p) => ({ ...p, anio: Number(e.target.value) })); setPreview(null); }} className={inputCls}>
                             {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
-                        <select value={periodo.mes} onChange={(e) => { setPeriodo((p) => ({ ...p, mes: Number(e.target.value) })); setPreview(null); }} className={inputCls}>
+                        <label htmlFor="previred-mes" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Mes</label>
+                        <select id="previred-mes" value={periodo.mes} onChange={(e) => { setPeriodo((p) => ({ ...p, mes: Number(e.target.value) })); setPreview(null); }} className={inputCls}>
                             {MESES.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
                         </select>
                     </div>

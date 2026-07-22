@@ -24,7 +24,7 @@ const HistorialFiltros = ({
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div className="relative sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+                    <label htmlFor="historial-filtro-proveedor" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                         Proveedor
                     </label>
                     <div className="relative">
@@ -32,6 +32,7 @@ const HistorialFiltros = ({
                             <Search size={20} strokeWidth={1.75} className="text-slate-400" />
                         </div>
                         <input
+                            id="historial-filtro-proveedor"
                             type="text"
                             className="w-full !pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 text-sm"
                             placeholder="RUT o Razón Social..."
@@ -48,6 +49,10 @@ const HistorialFiltros = ({
                                 <div
                                     key={p.id}
                                     onClick={() => onSeleccionarProveedor(p)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeleccionarProveedor(p); } }}
+                                    role="option"
+                                    aria-selected="false"
+                                    tabIndex={0}
                                     className="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-0 border-slate-100 dark:border-slate-700 transition-colors group"
                                 >
                                     <p className="font-bold text-slate-800 dark:text-slate-200 text-sm group-hover:text-blue-700">
@@ -61,10 +66,11 @@ const HistorialFiltros = ({
                 </div>
 
                 <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+                    <label htmlFor="historial-filtro-numero" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                         N° Documento
                     </label>
                     <input
+                        id="historial-filtro-numero"
                         type="text"
                         className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 text-sm"
                         placeholder="Ej: 12345"
@@ -76,10 +82,11 @@ const HistorialFiltros = ({
 
                 <div className="flex gap-2">
                     <div className="flex-1">
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+                        <label htmlFor="historial-filtro-estado" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                             Estado
                         </label>
                         <select
+                            id="historial-filtro-estado"
                             className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 text-sm"
                             value={filtroEstado}
                             onChange={(e) => onFiltroEstadoChange(e.target.value)}

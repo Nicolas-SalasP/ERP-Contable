@@ -46,10 +46,11 @@ const WorkbenchReclasificacion = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-white dark:bg-slate-800 p-4 md:p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+                        <label htmlFor="reclasificacion-fecha-ajuste" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                             Fecha del Ajuste
                         </label>
                         <input
+                            id="reclasificacion-fecha-ajuste"
                             type="date"
                             className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 dark:text-slate-300 transition-all text-sm bg-white dark:bg-slate-700"
                             value={formCambio.fechaContableCambio}
@@ -61,10 +62,11 @@ const WorkbenchReclasificacion = ({
                         </span>
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+                        <label htmlFor="reclasificacion-glosa" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                             Glosa de Auditoría
                         </label>
                         <input
+                            id="reclasificacion-glosa"
                             type="text"
                             className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-medium text-slate-700 dark:text-slate-300 transition-all text-sm bg-white dark:bg-slate-700"
                             value={formCambio.nuevaGlosa}
@@ -124,7 +126,10 @@ const WorkbenchReclasificacion = ({
                                                 <td className="p-4">
                                                     {isBloqueada ? (
                                                         <div
+                                                            role="button"
+                                                            tabIndex={0}
                                                             onClick={onIntentarBloqueada}
+                                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onIntentarBloqueada(); } }}
                                                             className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer hover:text-red-500 transition-colors bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 w-fit px-3 py-2 rounded-lg"
                                                         >
                                                             <Lock size={16} strokeWidth={1.75} />
@@ -172,7 +177,10 @@ const WorkbenchReclasificacion = ({
                                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Mover a cuenta:</p>
                                             {isBloqueada ? (
                                                 <div
+                                                    role="button"
+                                                    tabIndex={0}
                                                     onClick={onIntentarBloqueada}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onIntentarBloqueada(); } }}
                                                     className="flex items-center justify-center gap-2 text-slate-400 text-xs font-bold uppercase cursor-pointer bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 w-full py-2.5 rounded-lg"
                                                 >
                                                     <Lock size={16} strokeWidth={1.75} />

@@ -31,6 +31,10 @@ const ModalRevocarCaf = ({ abierto, caf, onCerrar, onConfirmar, revocando = fals
                 <div
                     className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
                     onClick={revocando ? undefined : onCerrar}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Cerrar"
+                    onKeyDown={(e) => { if (!revocando && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onCerrar(); } }}
                 />
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 

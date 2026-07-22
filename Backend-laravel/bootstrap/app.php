@@ -1,5 +1,7 @@
 <?php
 
+use App\Domains\Integraciones\Http\Middleware\AutenticarApiKey;
+use App\Domains\Integraciones\Http\Middleware\ExigirScope;
 use App\Http\Middleware\AgregarRequestId;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureSubscriptionWritable;
@@ -41,6 +43,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscription.writable' => EnsureSubscriptionWritable::class,
             'permiso' => EnsureUserHasPermission::class,
             'track.ultimo.acceso' => TrackUltimoAcceso::class,
+            'integracion.api.key' => AutenticarApiKey::class,
+            'integracion.scope' => ExigirScope::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

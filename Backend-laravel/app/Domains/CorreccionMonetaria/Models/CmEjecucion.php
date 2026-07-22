@@ -2,17 +2,20 @@
 
 namespace App\Domains\CorreccionMonetaria\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Domains\Contabilidad\Models\AsientoContable;
 use App\Domains\Core\Models\User;
+use App\Domains\Core\Traits\HasEmpresaScope;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property-read \App\Domains\Contabilidad\Models\AsientoContable|null $asiento
- * @property-read \App\Domains\Core\Models\User|null $usuario
+ * @property-read AsientoContable|null $asiento
+ * @property-read User|null $usuario
  */
 class CmEjecucion extends Model
 {
+    use HasEmpresaScope;
+
     protected $table = 'cm_ejecuciones';
 
     protected $fillable = [
@@ -73,12 +76,13 @@ class CmEjecucion extends Model
             11 => 'Noviembre',
             12 => 'Diciembre',
         ];
+
         return $meses[$this->periodo_mes] ?? "Mes {$this->periodo_mes}";
     }
 
     public function getLabelPeriodoAttribute(): string
     {
-        return $this->nombre_mes . ' ' . $this->periodo_anio;
+        return $this->nombre_mes.' '.$this->periodo_anio;
     }
 
     public function scopeEjecutadas($query)

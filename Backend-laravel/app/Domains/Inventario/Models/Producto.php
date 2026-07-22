@@ -38,6 +38,7 @@ class Producto extends Model
         'maneja_lotes',
         'requiere_fecha_vencimiento',
         'activo',
+        'visible_web',
     ];
 
     protected $casts = [
@@ -54,6 +55,7 @@ class Producto extends Model
         'maneja_lotes' => 'boolean',
         'requiere_fecha_vencimiento' => 'boolean',
         'activo' => 'boolean',
+        'visible_web' => 'boolean',
     ];
 
     /** @return BelongsTo<Empresa, $this> */
