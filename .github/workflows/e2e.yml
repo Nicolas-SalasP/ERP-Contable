@@ -86,8 +86,11 @@ jobs:
           sed -i '/^#\? *DB_DATABASE=/d' .env
           sed -i '/^#\? *DB_USERNAME=/d' .env
           sed -i '/^#\? *DB_PASSWORD=/d' .env
+          sed -i '/^#\? *CIPHERSWEET_KEY=/d' .env
 
           # Appendear configuracion correcta para el MySQL del runner
+          # CIPHERSWEET_KEY: misma clave de prueba que phpunit.xml, no es secreto real -- sin
+          # ella migrate --seed rompe con "Invalid key size" en el primer campo cifrado.
           cat >> .env <<'ENVEOF'
           APP_ENV=testing
           DB_CONNECTION=mysql
@@ -96,6 +99,7 @@ jobs:
           DB_DATABASE=sistema_contable_e2e
           DB_USERNAME=root
           DB_PASSWORD=root
+          CIPHERSWEET_KEY=c9c7b3652d3375952a5f7c845f001f11c1271d3d633741562b543dad136d368e
           ENVEOF
 
           # Debug: mostrar las lineas DB efectivas (sin exponer secrets en prod)
