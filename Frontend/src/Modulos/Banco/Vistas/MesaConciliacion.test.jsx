@@ -23,6 +23,7 @@ const rutasBase = (pendientesHandler, overrides = {}) => ({
     'GET /banco/cuentas': () => mockJsonResponse(200, { success: true, data: [cuentaBanco] }),
     'GET /empresas/centros-costo': () => mockJsonResponse(200, { success: true, data: [] }),
     'GET /banco/movimientos/pendientes': pendientesHandler,
+    'GET /banco/movimientos/descartados': () => mockJsonResponse(200, { success: true, data: [] }),
     ...overrides,
 });
 
@@ -120,5 +121,64 @@ describe('MesaConciliacion', () => {
 
         await waitFor(() => expect(swalMock.fire).toHaveBeenCalled());
         expect(descartarSpy).not.toHaveBeenCalled();
+    });
+
+    it('conciliar un movimiento contra un anticipo de proveedor pendiente', async () => {
+        let llamadasPendientes = 0;
+        const pendientesHandler = () => {
+            llamadasPendientes += 1;
+            return mockJsonResponse(200, { success: true, data: llamadasPendientes === 1 ? [movimiento] : [] });
+        };
+
+        const conciliarAnticipoSpy = vi.fn(() => mockJsonResponse(200, { success: true, mensaje: 'Anticipo conciliado correctamente.' }));
+
+        setupFetchRouter(rutasBase(pendientesHandler, {
+            'GET /banco/anticipos-pendientes': () => mockJsonResponse(200, {
+                success: true,
+                data: [{ id: 7, monto: 119000, referencia: 'OC-8821', tipo: 'proveedor', entidad_nombre: 'Proveedor Anticipo Test' }],
+            }),
+            'POST /banco/movimientos/conciliar-anticipo': conciliarAnticipoSpy,
+        }));
+
+        render(<MesaConciliacion />);
+
+        fireEvent.click(await screen.findByRole('button', { name: /Conciliar/i }));
+        fireEvent.click(await screen.findByRole('button', { name: /^Anticipo$/i }));
+
+        const placeholder = await screen.findByText(/Busca la solicitud de anticipo/i);
+        const input = placeholder.closest('div').parentElement.querySelector('input');
+        fireEvent.keyDown(input, { key: 'ArrowDown', code: 'ArrowDown' });
+        fireEvent.click(await screen.findByText(/Proveedor Anticipo Test/i));
+
+        const aprobar = await screen.findByRole('button', { name: /Vincular Anticipo/i });
+        fireEvent.click(aprobar);
+
+        await waitFor(() => expect(conciliarAnticipoSpy).toHaveBeenCalled());
+        const [body] = conciliarAnticipoSpy.mock.calls[0];
+        expect(body).toMatchObject({ movimiento_id: 10, anticipo_id: 7, tipo: 'proveedor' });
+
+        expect(await screen.findByText(/Banco 100% Cuadrado/i)).toBeDefined();
+    });
+
+    it('pestaña Descartados muestra los movimientos descartados y permite restaurar', async () => {
+        const movDescartado = { id: 20, fecha: '2026-05-02', descripcion: 'LINEA DUPLICADA CARTOLA', cargo: 5000, abono: 0 };
+        const restaurarSpy = vi.fn(() => mockJsonResponse(200, { success: true, mensaje: 'Movimiento restaurado a pendientes.' }));
+
+        setupFetchRouter(rutasBase(() => mockJsonResponse(200, { success: true, data: [] }), {
+            'GET /banco/movimientos/descartados': () => mockJsonResponse(200, { success: true, data: [movDescartado] }),
+            'POST /banco/movimientos/20/restaurar': restaurarSpy,
+        }));
+
+        render(<MesaConciliacion />);
+
+        await screen.findByText(/Banco 100% Cuadrado/i);
+
+        fireEvent.click(screen.getByRole('button', { name: /Descartados/i }));
+
+        expect(await screen.findByText('LINEA DUPLICADA CARTOLA')).toBeDefined();
+
+        fireEvent.click(screen.getByRole('button', { name: /Restaurar/i }));
+
+        await waitFor(() => expect(restaurarSpy).toHaveBeenCalled());
     });
 });

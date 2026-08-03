@@ -219,6 +219,7 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::put('/clientes/{id}/activar', [ClienteController::class, 'activar'])->middleware('permiso:clientes.crear');
     Route::patch('/clientes/{id}/reactivar', [ClienteController::class, 'reactivar'])->middleware('permiso:clientes.crear');
     Route::post('/clientes/{id}/cruzar-documentos', [ClienteController::class, 'cruzarDocumentos'])->middleware('permiso:clientes.crear');
+    Route::post('/clientes/anticipos', [ClienteController::class, 'guardarAnticipo'])->middleware('permiso:clientes.crear,ventas.crear');
 
     // Endpoints dedicados de anticipos de clientes (con saldo disponible) -- mirror de anticipos-proveedores
     Route::get('/anticipos-clientes', [AnticipoClienteController::class, 'index'])->middleware('permiso:clientes.ver,ventas.ver');
@@ -340,12 +341,14 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
 
     // Tesoreria - Movimientos
     Route::get('/banco/movimientos/pendientes/{idCuenta}', [ConciliacionController::class, 'movimientosPendientes'])->middleware('permiso:tesoreria.ver');
+    Route::get('/banco/movimientos/descartados/{idCuenta}', [ConciliacionController::class, 'movimientosDescartados'])->middleware('permiso:tesoreria.ver');
     Route::get('/banco/movimientos/{id}/sugerencias', [ConciliacionController::class, 'sugerencias'])->middleware('permiso:tesoreria.ver');
     Route::get('/banco/movimientos/{idCuenta}', [BancoController::class, 'movimientos'])->middleware('permiso:tesoreria.ver');
 
     // Tesoreria - Mesa de Conciliacion
     Route::get('/banco/anticipos-pendientes', [ConciliacionController::class, 'anticiposPendientes'])->middleware('permiso:tesoreria.ver');
     Route::post('/banco/movimientos/{id}/descartar', [ConciliacionController::class, 'descartar'])->middleware('permiso:tesoreria.crear');
+    Route::post('/banco/movimientos/{id}/restaurar', [ConciliacionController::class, 'restaurar'])->middleware('permiso:tesoreria.crear');
     Route::post('/banco/movimientos/conciliar', [ConciliacionController::class, 'conciliar'])->middleware('permiso:tesoreria.crear');
     Route::post('/banco/movimientos/conciliar-anticipo', [ConciliacionController::class, 'conciliarAnticipo'])->middleware('permiso:tesoreria.crear');
     Route::post('/banco/movimientos/conciliar-facturas', [ConciliacionController::class, 'conciliarFacturas'])->middleware('permiso:tesoreria.crear');

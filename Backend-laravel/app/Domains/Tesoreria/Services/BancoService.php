@@ -426,22 +426,49 @@ class BancoService
             ->get();
     }
 
-    public function obtenerAnticiposPendientes(int $empresaId)
+    public function obtenerMovimientosDescartados(int $empresaId, int $cuentaBancariaId)
     {
-        return DB::table('anticipos_proveedores')
+        $this->obtenerCuentaBancaria($empresaId, $cuentaBancariaId);
+        return DB::table('movimientos_bancarios')
             ->where('empresa_id', $empresaId)
-            ->where('estado', 'PENDIENTE')
+            ->where('cuenta_bancaria_id', $cuentaBancariaId)
+            ->where('estado', 'DESCARTADO')
+            ->orderBy('fecha', 'desc')
             ->get();
     }
 
-    public function vincularMovimientoAAnticipo(int $empresaId, int $movimientoId, int $anticipoId)
+    /**
+     * Anticipos PENDIENTE de proveedor (egreso a pagar) y de cliente (ingreso a cobrar) en
+     * una sola lista, cada fila tageada con 'tipo' para que el caller sepa a que tabla
+     * pertenece (anticipos_proveedores/anticipos_clientes comparten estados pero no tabla).
+     */
+    public function obtenerAnticiposPendientes(int $empresaId)
     {
-        DB::transaction(function () use ($empresaId, $movimientoId, $anticipoId) {
+        $proveedores = DB::table('anticipos_proveedores as a')
+            ->join('proveedores as p', 'p.id', '=', 'a.proveedor_id')
+            ->where('a.empresa_id', $empresaId)
+            ->where('a.estado', 'PENDIENTE')
+            ->selectRaw("a.id, a.monto, a.referencia, a.created_at, 'proveedor' as tipo, p.razon_social as entidad_nombre");
+
+        $clientes = DB::table('anticipos_clientes as a')
+            ->join('clientes as c', 'c.id', '=', 'a.cliente_id')
+            ->where('a.empresa_id', $empresaId)
+            ->where('a.estado', 'PENDIENTE')
+            ->selectRaw("a.id, a.monto, a.referencia, a.created_at, 'cliente' as tipo, c.razon_social as entidad_nombre");
+
+        return $proveedores->unionAll($clientes)->orderBy('created_at')->get();
+    }
+
+    public function vincularMovimientoAAnticipo(int $empresaId, int $movimientoId, int $anticipoId, string $tipo = 'proveedor')
+    {
+        $tabla = $tipo === 'cliente' ? 'anticipos_clientes' : 'anticipos_proveedores';
+
+        DB::transaction(function () use ($empresaId, $movimientoId, $anticipoId, $tabla) {
             // Lock pesimista + guard de estado para evitar doble conciliación en carrera.
             $movimiento = $this->obtenerMovimientoParaConciliar($empresaId, $movimientoId);
 
             // obtenerMovimientoParaConciliar ya rechaza CONCILIADO; validamos también el estado anticipo.
-            $anticipo = DB::table('anticipos_proveedores')
+            $anticipo = DB::table($tabla)
                 ->where('empresa_id', $empresaId)
                 ->where('id', $anticipoId)
                 ->lockForUpdate()
@@ -460,7 +487,7 @@ class BancoService
                 ->where('id', $movimientoId)
                 ->update(['estado' => 'CONCILIADO_ANTICIPO']);
 
-            DB::table('anticipos_proveedores')
+            DB::table($tabla)
                 ->where('empresa_id', $empresaId)
                 ->where('id', $anticipoId)
                 ->update(['estado' => 'PAGADO', 'movimiento_id' => $movimientoId]);

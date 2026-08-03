@@ -288,4 +288,42 @@ class ClienteController
             ], 400);
         }
     }
+
+    /** Registra una solicitud de anticipo de cliente pendiente de cobro via banco. Espejo de ProveedorController::guardarAnticipo. */
+    public function guardarAnticipo(Request $request)
+    {
+        try {
+            $datosValidados = $request->validate([
+                'cliente_id' => 'required|integer',
+                'fecha' => 'required|date',
+                'monto' => 'required|numeric|min:1',
+                'referencia' => 'nullable|string|max:255',
+            ]);
+
+            $anticipo = $this->service->registrarAnticipo(
+                $request->user()->empresa_activa_id,
+                $datosValidados
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Anticipo registrado correctamente.',
+                'data' => $anticipo,
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Faltan datos obligatorios',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (ComercialException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => MensajeErrorGenerico::desde($e),
+            ], 400);
+        }
+    }
 }
