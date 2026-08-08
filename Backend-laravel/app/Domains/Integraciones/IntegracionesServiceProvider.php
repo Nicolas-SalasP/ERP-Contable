@@ -19,6 +19,13 @@ class IntegracionesServiceProvider extends ServiceProvider
             ->prefix('api/integraciones/v1')
             ->group(__DIR__ . '/Routes/v1.php');
 
+        // v2: mismo mecanismo de auth/scopes/throttle que v1, contrato incompatible aparte
+        // (precio_venta_bruto y stock_disponible calculados por el ERP, ver CONTRATO-V2.md).
+        // v1 sigue vivo e inalterado mientras tenga consumidores.
+        Route::middleware(['api', 'throttle:integraciones-empresa', 'integracion.api.key'])
+            ->prefix('api/integraciones/v2')
+            ->group(__DIR__ . '/Routes/v2.php');
+
         // Administracion de keys: dentro del ERP, requiere sesion Sanctum + permiso + suscripcion
         // escribible (emitir/rotar/revocar keys son escrituras, igual que el resto del proyecto).
         Route::middleware(['api', 'auth:sanctum', 'check.subscription'])
