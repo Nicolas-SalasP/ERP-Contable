@@ -40,7 +40,7 @@ class IntegracionApiKeyController
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:100'],
             'scopes' => ['required', 'array', 'min:1'],
-            'scopes.*' => ['string', 'in:inventario:leer,inventario:escribir'],
+            'scopes.*' => ['string', 'in:'.implode(',', IntegracionApiKey::SCOPES_VALIDOS)],
             'expira_at' => ['nullable', 'date', 'after:now'],
         ]);
 

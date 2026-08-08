@@ -11,6 +11,18 @@ class IntegracionApiKey extends Model
 {
     use HasEmpresaScope;
 
+    /**
+     * Scopes emitibles hoy. `ventas:escribir` es opt-in explicito (ninguna key existente lo
+     * tiene salvo que se re-emita/edite): habilita POST/DELETE /reservas y POST /ventas, que
+     * mueven inventario real y crean facturas -- mucho mas sensible que inventario:escribir
+     * (que solo togglea visible_web).
+     */
+    public const SCOPES_VALIDOS = [
+        'inventario:leer',
+        'inventario:escribir',
+        'ventas:escribir',
+    ];
+
     protected $table = 'integracion_api_keys';
 
     protected $fillable = [
