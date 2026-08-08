@@ -10,15 +10,17 @@ use App\Domains\Contabilidad\Services\AsientoContableService;
 use App\Domains\Core\Models\Rol;
 use App\Domains\Core\Models\User;
 use App\Domains\Core\Services\ContadorEmpresaService;
+use App\Domains\Integraciones\Exceptions\VentaIntegracionException;
+use App\Domains\Integraciones\Models\IntegracionVentaIdempotencia;
 use App\Domains\Inventario\Exceptions\InventarioException;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\Producto;
+use App\Domains\Inventario\Models\ReservaConsumoInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Services\InventarioReservaService;
-use App\Domains\Integraciones\Exceptions\VentaIntegracionException;
-use App\Domains\Integraciones\Models\IntegracionVentaIdempotencia;
 use App\Domains\Sii\Exceptions\FacturaNoEmisibleException;
 use App\Domains\Sii\Services\Integracion\EmitirDteDesdeFacturaService;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -55,8 +57,7 @@ class VentaIntegracionService
         private readonly InventarioReservaService $reservaService,
         private readonly ContadorEmpresaService $contadorService,
         private readonly EmitirDteDesdeFacturaService $emitirDte,
-    ) {
-    }
+    ) {}
 
     /** @return array{reserva_id: int, expira_en: string} */
     public function reservar(int $empresaId, array $datos): array
@@ -164,7 +165,7 @@ class VentaIntegracionService
                     'respuesta_status' => 201,
                     'respuesta_json' => $respuesta,
                 ]);
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 // Carrera: otra request con la misma clave gano el insert primero -> esta
                 // transaccion completa (factura, asiento, movimiento, consumo de reserva) se
                 // revierte al relanzar, y el caller debe reintentar para recibir la respuesta
@@ -255,7 +256,7 @@ class VentaIntegracionService
         ]);
 
         $costoVenta = (float) $reserva->consumos->sum(
-            fn (\App\Domains\Inventario\Models\ReservaConsumoInventario $consumo) => (float) ($consumo->movimiento->costo_total ?? 0)
+            fn (ReservaConsumoInventario $consumo) => (float) ($consumo->movimiento->costo_total ?? 0)
         );
 
         $this->registrarAsientoVenta($empresaId, $factura, $montoNeto, $montoIva, $montoBruto, $costoVenta);
@@ -394,13 +395,13 @@ class VentaIntegracionService
      */
     private function actorSistema(int $empresaId): User
     {
-        $usuario = new User();
+        $usuario = new User;
         $usuario->forceFill([
             'empresa_id' => $empresaId,
             'empresa_activa_id' => $empresaId,
         ]);
 
-        $rol = new Rol();
+        $rol = new Rol;
         $rol->forceFill([
             'nombre' => 'Integración API (sistema)',
             'jerarquia' => 100,
