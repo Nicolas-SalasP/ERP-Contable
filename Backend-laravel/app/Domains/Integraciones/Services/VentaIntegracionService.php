@@ -215,7 +215,10 @@ class VentaIntegracionService
             throw ValidationException::withMessages(['reserva_id' => 'La reserva no tiene un detalle de producto valido.']);
         }
 
-        $producto = $detalle->producto;
+        // ReservaInventario::detalles.producto viene con select() acotado (cargarRelacionesReserva
+        // en InventarioReservaService solo trae id/sku/nombre/activo/...), sin precio_venta_neto
+        // ni afecto_iva -> hay que recargar el Producto completo, no reusar esa relacion.
+        $producto = Producto::findOrFail($detalle->producto_id);
         $cantidad = (float) $detalle->cantidad_reservada;
         $precioNeto = (float) $producto->precio_venta_neto;
         $montoNeto = round($precioNeto * $cantidad, 2);
