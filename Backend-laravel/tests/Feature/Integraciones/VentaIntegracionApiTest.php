@@ -3,6 +3,7 @@
 namespace Tests\Feature\Integraciones;
 
 use App\Domains\Comercial\Models\Factura;
+use App\Domains\Comercial\Models\FacturaDetalle;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Inventario\Models\Bodega;
@@ -274,4 +275,87 @@ class VentaIntegracionApiTest extends TestCase
         $this->assertEquals(33, $respuesta->json('data.tipo_dte'));
     }
 
+    public function test_confirmar_venta_con_precio_unitario_neto_menor_al_de_lista_lo_usa(): void
+    {
+        Event::fake([FacturaListaParaEmitirEvent::class]);
+
+        // Producto con precio de lista 1000: el canal externo cobro 800 (descuento B2B propio).
+        [$token, $producto, , $reservaId] = $this->prepararEmpresaConReserva();
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/ventas', [
+                'reserva_id' => $reservaId,
+                'cliente' => ['rut' => '11222333-4', 'nombre' => 'Cliente Web'],
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3, 'precio_unitario_neto' => 800]],
+            ]);
+
+        $respuesta->assertCreated();
+        $factura = Factura::findOrFail($respuesta->json('data.factura_id'));
+        $this->assertEquals(2400.0, (float) $factura->monto_neto);
+        $lineaProducto = FacturaDetalle::where('factura_id', $factura->id)->where('numero_linea', 1)->firstOrFail();
+        $this->assertEquals(800.0, (float) $lineaProducto->precio_unitario);
+    }
+
+    public function test_confirmar_venta_con_precio_unitario_neto_mayor_al_de_lista_es_rechazado(): void
+    {
+        [$token, $producto, , $reservaId] = $this->prepararEmpresaConReserva();
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/ventas', [
+                'reserva_id' => $reservaId,
+                'cliente' => ['rut' => '11222333-4', 'nombre' => 'Cliente Web'],
+                // Precio de lista del producto es 1000; 1500 intenta inflar el monto del DTE.
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3, 'precio_unitario_neto' => 1500]],
+            ]);
+
+        $respuesta->assertStatus(422);
+        $this->assertSame(0, Factura::count());
+    }
+
+    public function test_confirmar_venta_sin_precio_unitario_neto_usa_precio_de_lista(): void
+    {
+        Event::fake([FacturaListaParaEmitirEvent::class]);
+
+        [$token, $producto, , $reservaId] = $this->prepararEmpresaConReserva();
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/ventas', [
+                'reserva_id' => $reservaId,
+                'cliente' => ['rut' => '11222333-4', 'nombre' => 'Cliente Web'],
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3]],
+            ]);
+
+        $respuesta->assertCreated();
+        $factura = Factura::findOrFail($respuesta->json('data.factura_id'));
+        $this->assertEquals(3000.0, (float) $factura->monto_neto);
+    }
+
+    public function test_confirmar_venta_con_despacho_agrega_linea_de_detalle_extra(): void
+    {
+        Event::fake([FacturaListaParaEmitirEvent::class]);
+
+        [$token, $producto, , $reservaId] = $this->prepararEmpresaConReserva();
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/ventas', [
+                'reserva_id' => $reservaId,
+                'cliente' => ['rut' => '11222333-4', 'nombre' => 'Cliente Web'],
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3]],
+                'despacho' => ['monto_neto' => 2000],
+            ]);
+
+        $respuesta->assertCreated();
+        $factura = Factura::findOrFail($respuesta->json('data.factura_id'));
+
+        // Neto total = 3000 (producto) + 2000 (despacho); IVA sobre ambos igual que el resto.
+        $this->assertEquals(5000.0, (float) $factura->monto_neto);
+        $this->assertEqualsWithDelta(5000 * (float) config('fiscal.tasa_iva'), (float) $factura->monto_iva, 0.5);
+        $this->assertEquals(2, FacturaDetalle::where('factura_id', $factura->id)->count());
+
+        $lineaDespacho = FacturaDetalle::where('factura_id', $factura->id)->where('numero_linea', 2)->first();
+        $this->assertNotNull($lineaDespacho);
+        $this->assertEquals('Despacho', $lineaDespacho->nombre_item);
+        $this->assertEquals(2000.0, (float) $lineaDespacho->monto_item);
+        $this->assertNull($lineaDespacho->producto_id);
+    }
 }

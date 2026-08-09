@@ -156,9 +156,12 @@ class VentaIntegracionService
 
             [$cliente, $tipoDte] = $this->resolverCliente($empresaId, $datos['cliente'] ?? []);
 
-            $factura = $this->crearFacturaConAsiento($empresaId, $reservaConsumida, $cliente, $tipoDte);
+            $items = $datos['items'] ?? [];
+            $despacho = $datos['despacho'] ?? null;
 
-            $this->registrarSeriesVendidas($empresaId, $reservaConsumida, $datos['items'] ?? [], $factura->id);
+            $factura = $this->crearFacturaConAsiento($empresaId, $reservaConsumida, $cliente, $tipoDte, $items[0] ?? null, $despacho);
+
+            $this->registrarSeriesVendidas($empresaId, $reservaConsumida, $items, $factura->id);
 
             $dteEstado = $this->intentarEmitirDte($factura);
 
@@ -268,7 +271,11 @@ class VentaIntegracionService
         }
     }
 
-    private function crearFacturaConAsiento(int $empresaId, ReservaInventario $reserva, Cliente $cliente, int $tipoDte): Factura
+    /**
+     * @param array{sku?: string, cantidad?: float|string, numero_serie?: string, precio_unitario_neto?: float|string|null}|null $itemDatos
+     * @param array{monto_neto?: float|string|null}|null $despachoDatos
+     */
+    private function crearFacturaConAsiento(int $empresaId, ReservaInventario $reserva, Cliente $cliente, int $tipoDte, ?array $itemDatos, ?array $despachoDatos): Factura
     {
         $detalle = $reserva->detalles->first();
 
@@ -281,11 +288,23 @@ class VentaIntegracionService
         // ni afecto_iva -> hay que recargar el Producto completo, no reusar esa relacion.
         $producto = Producto::findOrFail($detalle->producto_id);
         $cantidad = (float) $detalle->cantidad_reservada;
-        $precioNeto = (float) $producto->precio_venta_neto;
+        $precioListaNeto = (float) $producto->precio_venta_neto;
+        $precioNeto = $this->resolverPrecioUnitario($itemDatos, $precioListaNeto);
         $montoNeto = round($precioNeto * $cantidad, 2);
         $afecta = (bool) $producto->afecto_iva;
         $montoIva = $afecta ? round($montoNeto * (float) config('fiscal.tasa_iva'), 2) : 0.0;
-        $montoBruto = $montoNeto + $montoIva;
+
+        // Despacho: linea de detalle extra, opcional, con el mismo tratamiento de IVA que el
+        // resto de la factura (sigue el afecto_iva del producto, no tiene uno propio).
+        $montoNetoDespacho = 0.0;
+        if (is_array($despachoDatos) && isset($despachoDatos['monto_neto']) && (float) $despachoDatos['monto_neto'] > 0) {
+            $montoNetoDespacho = round((float) $despachoDatos['monto_neto'], 2);
+        }
+        $montoIvaDespacho = $afecta ? round($montoNetoDespacho * (float) config('fiscal.tasa_iva'), 2) : 0.0;
+
+        $montoNetoTotal = $montoNeto + $montoNetoDespacho;
+        $montoIvaTotal = $montoIva + $montoIvaDespacho;
+        $montoBrutoTotal = $montoNetoTotal + $montoIvaTotal;
 
         $numeroFactura = sprintf('FV-INT-%06d', $this->contadorService->siguienteNumero($empresaId, 'venta_integracion'));
 
@@ -298,9 +317,9 @@ class VentaIntegracionService
             'tipo_documento' => $tipoDte === self::TIPO_DTE_BOLETA ? 'BOLETA' : 'FACTURA',
             'tipo_dte' => $tipoDte,
             'fecha_emision' => now()->toDateString(),
-            'monto_neto' => $montoNeto,
-            'monto_iva' => $montoIva,
-            'monto_bruto' => $montoBruto,
+            'monto_neto' => $montoNetoTotal,
+            'monto_iva' => $montoIvaTotal,
+            'monto_bruto' => $montoBrutoTotal,
             'estado' => 'REGISTRADA',
         ]);
 
@@ -315,13 +334,49 @@ class VentaIntegracionService
             'exento' => ! $afecta,
         ]);
 
+        if ($montoNetoDespacho > 0) {
+            FacturaDetalle::create([
+                'factura_id' => $factura->id,
+                'numero_linea' => 2,
+                'producto_id' => null,
+                'nombre_item' => 'Despacho',
+                'cantidad' => 1,
+                'precio_unitario' => $montoNetoDespacho,
+                'monto_item' => $montoNetoDespacho,
+                'exento' => ! $afecta,
+            ]);
+        }
+
         $costoVenta = (float) $reserva->consumos->sum(
             fn (ReservaConsumoInventario $consumo) => (float) ($consumo->movimiento->costo_total ?? 0)
         );
 
-        $this->registrarAsientoVenta($empresaId, $factura, $montoNeto, $montoIva, $montoBruto, $costoVenta);
+        $this->registrarAsientoVenta($empresaId, $factura, $montoNetoTotal, $montoIvaTotal, $montoBrutoTotal, $costoVenta);
 
         return $factura->fresh();
+    }
+
+    /**
+     * Precio realmente cobrado por el canal externo, con tope de seguridad: nunca puede superar
+     * el precio de lista del producto (evita que un canal comprometido/con bug infle el monto
+     * del DTE y habilite una nota de credito fraudulenta despues). Si no viene, se usa el precio
+     * de lista (comportamiento historico, compatibilidad hacia atras).
+     */
+    private function resolverPrecioUnitario(?array $itemDatos, float $precioListaNeto): float
+    {
+        if ($itemDatos === null || ! array_key_exists('precio_unitario_neto', $itemDatos) || $itemDatos['precio_unitario_neto'] === null) {
+            return $precioListaNeto;
+        }
+
+        $precioSolicitado = (float) $itemDatos['precio_unitario_neto'];
+
+        if ($precioSolicitado > $precioListaNeto) {
+            throw ValidationException::withMessages([
+                'items.0.precio_unitario_neto' => "El precio unitario informado ({$precioSolicitado}) no puede superar el precio de lista del producto ({$precioListaNeto}).",
+            ]);
+        }
+
+        return $precioSolicitado;
     }
 
     /**
