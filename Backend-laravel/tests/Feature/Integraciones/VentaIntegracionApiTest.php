@@ -256,4 +256,22 @@ class VentaIntegracionApiTest extends TestCase
             ->postJson('/api/integraciones/v2/ventas', ['reserva_id' => 1])
             ->assertForbidden();
     }
+
+    public function test_confirmar_venta_incluye_tipo_dte_en_la_respuesta(): void
+    {
+        Event::fake([FacturaListaParaEmitirEvent::class]);
+
+        [$token, $producto, , $reservaId] = $this->prepararEmpresaConReserva();
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/ventas', [
+                'reserva_id' => $reservaId,
+                'cliente' => ['rut' => '11222333-4', 'nombre' => 'Cliente Web'],
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3]],
+            ]);
+
+        $respuesta->assertCreated();
+        $this->assertEquals(33, $respuesta->json('data.tipo_dte'));
+    }
+
 }

@@ -20,10 +20,13 @@ use App\Domains\Inventario\Models\ReservaConsumoInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Services\InventarioReservaService;
 use App\Domains\Sii\Exceptions\FacturaNoEmisibleException;
+use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Integracion\EmitirDteDesdeFacturaService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -118,7 +121,7 @@ class VentaIntegracionService
         $this->reservaService->cancelarReserva($actor, $reservaId);
     }
 
-    /** @return array{factura_id: int, numero_factura: string, estado: string, dte_estado: string, monto_neto: float, monto_iva: float, monto_bruto: float} */
+    /** @return array{factura_id: int, numero_factura: string, estado: string, tipo_dte: int, dte_estado: string, monto_neto: float, monto_iva: float, monto_bruto: float} */
     public function confirmar(int $empresaId, array $datos, ?string $idempotencyKey): array
     {
         $clave = $this->resolverClaveIdempotencia($idempotencyKey, $datos, (int) ($datos['reserva_id'] ?? 0));
@@ -163,6 +166,7 @@ class VentaIntegracionService
                 'factura_id' => $factura->id,
                 'numero_factura' => $factura->numero_factura,
                 'estado' => $factura->estado,
+                'tipo_dte' => (int) $factura->tipo_dte,
                 'dte_estado' => $dteEstado,
                 'monto_neto' => (float) $factura->monto_neto,
                 'monto_iva' => (float) $factura->monto_iva,
@@ -187,6 +191,50 @@ class VentaIntegracionService
 
             return $respuesta;
         });
+    }
+
+    /**
+     * Estado actual de la factura/DTE, para que el canal externo haga polling: al confirmar() el
+     * DTE recien se encola (folio/pdf_url todavia no existen porque el SII no respondio), aca se
+     * exponen ni bien SiiDteEmitido los tenga.
+     *
+     * @return array{factura_id: int, numero_factura: string, estado: string, tipo_dte: int|null, dte_estado: string, folio: int|null, pdf_url: string|null, monto_neto: float, monto_iva: float, monto_bruto: float}
+     */
+    public function obtenerEstado(int $empresaId, int $facturaId): array
+    {
+        $factura = Factura::where('empresa_id', $empresaId)
+            ->where('id', $facturaId)
+            ->firstOrFail();
+
+        $dte = $factura->dteEmitido;
+
+        return [
+            'factura_id' => $factura->id,
+            'numero_factura' => $factura->numero_factura,
+            'estado' => $factura->estado,
+            'tipo_dte' => $factura->tipo_dte !== null ? (int) $factura->tipo_dte : null,
+            'dte_estado' => $dte !== null ? $dte->estado : 'pendiente',
+            'folio' => $dte?->folio,
+            'pdf_url' => $this->pdfUrl($dte),
+            'monto_neto' => (float) $factura->monto_neto,
+            'monto_iva' => (float) $factura->monto_iva,
+            'monto_bruto' => (float) $factura->monto_bruto,
+        ];
+    }
+
+    /**
+     * pdf_path (F7, representacion impresa con timbre) todavia no lo genera ningun proceso del
+     * ERP -- si algun dia se completa, esto ya queda cableado: URL firmada temporal (7 dias)
+     * contra la ruta local.serve de Laravel (disco 'local' es privado, `serve => true` en
+     * config/filesystems.php), sin exponer el storage completo.
+     */
+    private function pdfUrl(?SiiDteEmitido $dte): ?string
+    {
+        if ($dte === null || $dte->pdf_path === null || ! Storage::disk('local')->exists($dte->pdf_path)) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute('storage.local', now()->addDays(7), ['path' => $dte->pdf_path]);
     }
 
     private function validarItemsContraReserva(ReservaInventario $reserva, array $items): void
