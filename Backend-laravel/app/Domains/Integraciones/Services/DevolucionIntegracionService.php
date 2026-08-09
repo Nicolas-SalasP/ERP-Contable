@@ -45,6 +45,14 @@ use Illuminate\Validation\ValidationException;
  * Consumidor, obliga a restituir todo lo pagado incluido el despacho) o una garantia (solo el
  * producto). Solo `retracto` con devolucion TOTAL de la factura suma la linea de despacho a la
  * Nota de Credito -- ver el bloque que la calcula mas abajo para el detalle del caso parcial.
+ *
+ * `incluir_despacho` (bool, opcional): un pedido web de N productos genera N facturas separadas
+ * (una por SKU, ver Fase 2 de VentaIntegracionService), asi que este servicio no puede saber por
+ * si solo si la factura que recibe es todo el pedido original o solo una parte -- el canal
+ * externo (Tenri-Web-Page) es quien conoce el pedido completo y decide explicitamente si el
+ * despacho corresponde. Si viene informado, reemplaza la decision de "incluir despacho" pero
+ * SIEMPRE sujeta a que la factura se devuelva completa (ver bloque mas abajo); si no viene, se
+ * mantiene el comportamiento historico (retracto + devolucion total de la factura => incluye).
  */
 class DevolucionIntegracionService
 {
@@ -95,6 +103,9 @@ class DevolucionIntegracionService
             }
 
             $tipo = $datos['tipo'] ?? null;
+            $incluirDespachoSolicitado = array_key_exists('incluir_despacho', $datos) && $datos['incluir_despacho'] !== null
+                ? (bool) $datos['incluir_despacho']
+                : null;
 
             $detallesFactura = FacturaDetalle::where('factura_id', $factura->id)
                 ->whereNotNull('producto_id')
@@ -206,7 +217,11 @@ class DevolucionIntegracionService
                 $productosFactura = $detallesFactura->keys()->map(fn ($id) => (int) $id)->all();
                 $esDevolucionTotalDeLaFactura = empty(array_diff($productosFactura, $productosEnEstaDevolucion));
 
-                if ($esDevolucionTotalDeLaFactura) {
+                // incluir_despacho es una señal del canal externo, no una orden -- la factura
+                // siempre debe estar completamente devuelta para que el despacho pueda
+                // incluirse, sin importar lo que pida el caller. Si no viene informado se
+                // preserva el comportamiento historico (retracto + devolucion total => incluye).
+                if ($esDevolucionTotalDeLaFactura && ($incluirDespachoSolicitado ?? true)) {
                     $detalleDespacho = FacturaDetalle::where('factura_id', $factura->id)
                         ->whereNull('producto_id')
                         ->first();

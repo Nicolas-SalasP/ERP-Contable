@@ -22,6 +22,7 @@ class DevolucionIntegracionController
             'items.*.cantidad' => ['required', 'numeric', 'gt:0'],
             'items.*.numero_serie' => ['nullable', 'string', 'max:120'],
             'items.*.motivo' => ['nullable', 'string', 'max:120'],
+            'incluir_despacho' => ['nullable', 'boolean'],
         ]);
 
         $resultado = $this->servicio->crear(

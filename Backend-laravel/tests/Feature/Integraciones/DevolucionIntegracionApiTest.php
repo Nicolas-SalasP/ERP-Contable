@@ -307,6 +307,79 @@ class DevolucionIntegracionApiTest extends TestCase
         $this->assertEqualsWithDelta(1000.0, (float) $nc->monto_neto, 0.01);
     }
 
+    public function test_incluir_despacho_true_con_devolucion_total_incluye_el_despacho(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'incluir_despacho' => true,
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        // Neto = 3000 (todo el producto) + 2000 (despacho): incluir_despacho=true coincide con
+        // que la factura efectivamente se devuelve entera.
+        $this->assertEqualsWithDelta(5000.0, (float) $nc->monto_neto, 0.01);
+    }
+
+    public function test_incluir_despacho_false_con_devolucion_total_no_incluye_el_despacho(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'incluir_despacho' => false,
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        // Neto = 3000 (solo el producto): la web decidio explicitamente que el despacho no
+        // corresponde (ej. porque hay otras facturas del mismo pedido sin devolver), aunque
+        // esta factura se devuelva entera.
+        $this->assertEqualsWithDelta(3000.0, (float) $nc->monto_neto, 0.01);
+    }
+
+    public function test_incluir_despacho_true_con_devolucion_parcial_no_incluye_el_despacho(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'incluir_despacho' => true,
+                'items' => [['sku' => $producto->sku, 'cantidad' => 1]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        // Neto = 1000 (1 de 3 unidades) SIN despacho: la red de seguridad ignora
+        // incluir_despacho=true porque la factura no se devuelve entera.
+        $this->assertEqualsWithDelta(1000.0, (float) $nc->monto_neto, 0.01);
+    }
+
     public function test_garantia_nunca_incluye_el_despacho_aunque_la_devolucion_sea_completa(): void
     {
         [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
