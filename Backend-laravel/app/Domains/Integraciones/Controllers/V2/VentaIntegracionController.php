@@ -47,6 +47,7 @@ class VentaIntegracionController
             'items' => ['nullable', 'array'],
             'items.*.sku' => ['required_with:items', 'string', 'max:100'],
             'items.*.cantidad' => ['required_with:items', 'numeric', 'gt:0'],
+            'items.*.numero_serie' => ['nullable', 'string', 'max:120'],
         ]);
 
         $resultado = $this->servicio->confirmar(

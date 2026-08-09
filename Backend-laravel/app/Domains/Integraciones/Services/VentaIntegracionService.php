@@ -15,6 +15,7 @@ use App\Domains\Integraciones\Models\IntegracionVentaIdempotencia;
 use App\Domains\Inventario\Exceptions\InventarioException;
 use App\Domains\Inventario\Models\Bodega;
 use App\Domains\Inventario\Models\Producto;
+use App\Domains\Inventario\Models\ProductoSerie;
 use App\Domains\Inventario\Models\ReservaConsumoInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Services\InventarioReservaService;
@@ -42,6 +43,15 @@ use Illuminate\Validation\ValidationException;
  * atajo que ya usa InventarioPermisoService::esAdministradorInventario para Super Admin, sin
  * crear una fila de usuario "fantasma" en la empresa. La key ya fue autorizada por su scope;
  * este actor solo satisface la firma de los servicios internos, no es una autorizacion nueva.
+ *
+ * Serie por unidad (Fase 4, RMA): `items[].numero_serie` es opcional y best-effort. Decision
+ * explicita de diseno: capturar la serie de forma obligatoria/validada en el momento de la venta
+ * hubiera significado tocar el flujo de checkout ya cerrado y verificado (reserva -> consumo ->
+ * factura) para algo que solo importa si el producto se devuelve -- demasiado invasivo para el
+ * beneficio. Si el producto `requiere_serie` y no llega ninguna, se registra un warning (no se
+ * bloquea la venta); si llega, se guarda como "vendido". La devolucion
+ * (DevolucionIntegracionService) es quien realmente exige la serie y, si nunca se registro aca,
+ * la crea recien ahi en el momento del RMA.
  */
 class VentaIntegracionService
 {
@@ -144,6 +154,8 @@ class VentaIntegracionService
             [$cliente, $tipoDte] = $this->resolverCliente($empresaId, $datos['cliente'] ?? []);
 
             $factura = $this->crearFacturaConAsiento($empresaId, $reservaConsumida, $cliente, $tipoDte);
+
+            $this->registrarSeriesVendidas($empresaId, $reservaConsumida, $datos['items'] ?? [], $factura->id);
 
             $dteEstado = $this->intentarEmitirDte($factura);
 
@@ -262,6 +274,48 @@ class VentaIntegracionService
         $this->registrarAsientoVenta($empresaId, $factura, $montoNeto, $montoIva, $montoBruto, $costoVenta);
 
         return $factura->fresh();
+    }
+
+    /**
+     * Best-effort, ver docblock de la clase: no bloquea la venta si falta la serie de un
+     * producto que la requiere, solo lo deja en el log para seguimiento operativo.
+     */
+    private function registrarSeriesVendidas(int $empresaId, ReservaInventario $reserva, array $items, int $facturaId): void
+    {
+        $detalle = $reserva->detalles->first();
+
+        if ($detalle === null) {
+            return;
+        }
+
+        $producto = Producto::find($detalle->producto_id);
+
+        if ($producto === null) {
+            return;
+        }
+
+        $numeroSerie = null;
+        if (! empty($items) && isset($items[0]['numero_serie'])) {
+            $numeroSerie = trim((string) $items[0]['numero_serie']);
+            $numeroSerie = $numeroSerie !== '' ? $numeroSerie : null;
+        }
+
+        if ($numeroSerie === null) {
+            if ($producto->requiereSerie()) {
+                Log::warning('Venta de integración de un producto que requiere número de serie, pero no se informó ninguna. Queda pendiente de asociarse en la devolución si corresponde.', [
+                    'empresa_id' => $empresaId,
+                    'producto_id' => $producto->id,
+                    'factura_id' => $facturaId,
+                ]);
+            }
+
+            return;
+        }
+
+        ProductoSerie::updateOrCreate(
+            ['empresa_id' => $empresaId, 'producto_id' => $producto->id, 'numero_serie' => $numeroSerie],
+            ['estado' => ProductoSerie::ESTADO_VENDIDO, 'lote_id' => $detalle->lote_id, 'venta_referencia' => (string) $facturaId]
+        );
     }
 
     private function registrarAsientoVenta(int $empresaId, Factura $factura, float $montoNeto, float $montoIva, float $montoBruto, float $costoVenta): void
