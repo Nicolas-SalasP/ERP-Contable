@@ -10,6 +10,7 @@ use App\Domains\Comercial\Controllers\DocumentoAdjuntoController;
 use App\Domains\Comercial\Controllers\FacturaController;
 use App\Domains\Comercial\Controllers\HonorariosController;
 use App\Domains\Comercial\Controllers\OrdenCompraController;
+use App\Domains\Comercial\Controllers\PricingController;
 use App\Domains\Comercial\Controllers\ProveedorController;
 use App\Domains\Contabilidad\Controllers\ApAgingController;
 use App\Domains\Contabilidad\Controllers\ArAgingController;
@@ -316,6 +317,10 @@ Route::middleware(['auth:sanctum', 'track.ultimo.acceso', 'check.subscription', 
     Route::put('/comercial/ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'update'])->middleware('permiso:compras.crear');
     Route::delete('/comercial/ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'destroy'])->middleware('permiso:compras.crear');
     Route::post('/comercial/ordenes-compra/{ordenCompra}/recibir', [OrdenCompraController::class, 'recibirMercaderia'])->middleware('permiso:compras.crear');
+
+    // Comercial - Pricing (sugerencia de precio de venta a partir del costo de reposicion)
+    Route::get('/comercial/pricing/productos/{producto}/sugerencia', [PricingController::class, 'sugerir'])->middleware('permiso:inventario.productos.ver,compras.ver');
+    Route::post('/comercial/pricing/productos/{producto}/aplicar', [PricingController::class, 'aplicar'])->middleware('permiso:inventario.productos.editar,compras.crear');
 
     // ---------------------------------------------------------------------
     // Tesoreria - Cuentas de Proveedores
