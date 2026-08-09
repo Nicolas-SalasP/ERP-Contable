@@ -4,10 +4,10 @@ namespace Tests\Feature\Comercial;
 
 use App\Domains\Comercial\Models\Cliente;
 use App\Domains\Comercial\Models\Cotizacion;
-use App\Domains\Comercial\Models\EstadoCotizacion;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Concerns\PreparaEntornoBase;
 use Tests\TestCase;
 
@@ -63,7 +63,16 @@ class CotizacionCorrelativoTest extends TestCase
     {
         parent::setUp();
         $this->prepararEntornoBase();
-        EstadoCotizacion::firstOrCreate(['id' => 1], ['nombre' => 'Borrador']);
+
+        // EstadoCotizacion::firstOrCreate(['id' => 1], [...]) no sirve aca: 'id' no es
+        // fillable en el modelo, asi que Eloquent lo descarta silenciosamente al crear y el
+        // registro nace con el auto_increment que toque -- en MySQL/InnoDB ese contador no
+        // se resetea entre tests con RefreshDatabase (rollback no revierte auto_increment),
+        // asi que puede no ser 1. insertOrIgnore vía query builder fuerza el id real.
+        DB::table('estado_cotizaciones')->insertOrIgnore([
+            'id' => 1,
+            'nombre' => 'Borrador',
+        ]);
     }
 
     public function test_correlativo_no_salta_cuando_otra_empresa_crea_cotizaciones_en_el_medio(): void

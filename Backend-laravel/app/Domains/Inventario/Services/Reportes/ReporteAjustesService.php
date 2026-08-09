@@ -34,7 +34,7 @@ class ReporteAjustesService
                 'bodega:id,empresa_id,codigo,nombre,estado',
                 'lote:id,empresa_id,producto_id,codigo_lote,fecha_vencimiento,activo',
                 'tipo:id,codigo,nombre,tipo_movimiento,activo',
-                'registradoPor:id,name,email',
+                'registradoPor:id,nombre,email',
             ])
             ->when(!empty($filtros['producto_id']), fn (Builder $query) => $query->where('producto_id', (int) $filtros['producto_id']))
             ->when(!empty($filtros['bodega_id']), fn (Builder $query) => $query->where('bodega_id', (int) $filtros['bodega_id']))
