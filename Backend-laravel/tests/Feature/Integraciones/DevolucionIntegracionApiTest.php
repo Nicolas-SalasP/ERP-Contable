@@ -156,6 +156,71 @@ class DevolucionIntegracionApiTest extends TestCase
         return [$token, $producto->fresh(), $empresa, $facturaId];
     }
 
+    /**
+     * Empresa lista + venta confirmada con el neto de linea del producto forzado exactamente vía
+     * `monto_neto_linea` (para poder verificar redondeo sin depender de si precio_venta_neto x
+     * cantidad divide limpio). Devuelve [token, producto, empresa, factura_id].
+     *
+     * @return array{0: string, 1: Producto, 2: Empresa, 3: int}
+     */
+    private function prepararEmpresaConVentaConMontoNetoExacto(
+        float $cantidadVendida,
+        float $montoNetoLinea,
+        float $stock = 10,
+    ): array {
+        Event::fake([FacturaListaParaEmitirEvent::class]);
+
+        $empresa = $this->crearEmpresa();
+        $this->crearPlanCuentasVenta($empresa);
+        // precio_venta_neto sirve de tope (debe ser >= monto_neto_linea / cantidad).
+        $producto = $this->crearProducto($empresa, [
+            'sku' => 'RMA-'.strtoupper(substr(uniqid(), -6)),
+            'precio_venta_neto' => $montoNetoLinea,
+        ]);
+        $bodega = $this->crearBodega($empresa);
+        $this->crearStock($empresa, $producto, $bodega, $stock);
+        $token = $this->habilitarModuloYEmitirKey($empresa, ['ventas:escribir', 'devoluciones:escribir']);
+
+        $reservaId = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/reservas', ['sku' => $producto->sku, 'cantidad' => $cantidadVendida])
+            ->json('data.reserva_id');
+
+        $respuestaVenta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/ventas', [
+                'reserva_id' => $reservaId,
+                'cliente' => ['rut' => '11222333-4', 'nombre' => 'Cliente Web'],
+                'items' => [['sku' => $producto->sku, 'cantidad' => $cantidadVendida, 'monto_neto_linea' => $montoNetoLinea]],
+            ]);
+
+        $respuestaVenta->assertCreated();
+        $facturaId = $respuestaVenta->json('data.factura_id');
+
+        return [$token, $producto->fresh(), $empresa, $facturaId];
+    }
+
+    public function test_devolucion_parcial_de_linea_no_divisible_no_arrastra_deriva_de_redondeo(): void
+    {
+        // Linea de $25.210 neto vendida en 3 unidades: precio unitario real es periodico
+        // (8403.3333...). Se devuelve 1 unidad; el monto de la NC debe ser exactamente el mismo
+        // que calcular directamente 25210/3 redondeado una sola vez, sin deriva de centavos.
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConMontoNetoExacto(
+            cantidadVendida: 3,
+            montoNetoLinea: 25210,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'items' => [['sku' => $producto->sku, 'cantidad' => 1]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        $montoEsperado = round(25210 / 3, 2);
+        $this->assertEqualsWithDelta($montoEsperado, (float) $nc->monto_neto, 0.0001);
+    }
+
     public function test_devolucion_feliz_con_serie_reingresa_stock_marca_serie_y_genera_nc(): void
     {
         [$token, $producto, $empresa, $facturaId] = $this->prepararEmpresaConVentaConfirmada(

@@ -162,11 +162,17 @@ class DevolucionIntegracionService
                     'cantidad_ya_devuelta' => $yaDevuelta,
                 ];
 
-                $proporcion = $vendida > 0 ? $cantidad / $vendida : 0.0;
-                $montoNetoTotal += round((float) $detalleFactura->monto_item * $proporcion, 2);
+                // Precio unitario derivado UNA sola vez del monto de linea real (no de un
+                // "proporcion" recalculado por separado para neto e iva): mismo criterio que
+                // VentaIntegracionService::resolverMontoNetoLinea, el monto de la devolucion se
+                // redondea una sola vez sobre el total de esta linea, sin arrastrar redondeos
+                // intermedios independientes entre el neto y el iva de la misma linea.
+                $precioUnitarioNeto = $vendida > 0 ? (float) $detalleFactura->monto_item / $vendida : 0.0;
+                $montoNetoLinea = round($precioUnitarioNeto * $cantidad, 2);
+                $montoNetoTotal += $montoNetoLinea;
 
                 if (! $detalleFactura->exento) {
-                    $montoIvaTotal += round((float) $detalleFactura->monto_item * $proporcion * (float) config('fiscal.tasa_iva'), 2);
+                    $montoIvaTotal += round($montoNetoLinea * (float) config('fiscal.tasa_iva'), 2);
                 }
 
                 if ($numeroSerie !== null) {
