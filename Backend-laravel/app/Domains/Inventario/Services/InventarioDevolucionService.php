@@ -221,6 +221,109 @@ class InventarioDevolucionService
         });
     }
 
+    /**
+     * Crea y confirma en un solo paso una devolucion SIN despacho de origen (despacho_orden_id
+     * queda null): variante para origenes externos que no pasan por el modulo de picking/packing
+     * -- hoy solo Integraciones (Fase 4 RMA, ver DevolucionIntegracionService). A diferencia de
+     * crear()+confirmar(), que reversan un despacho fisico paso a paso, esta reingresa el stock
+     * de inmediato via InventarioMovimientoService (mismo servicio que registrarMovimientoEntrada
+     * usa internamente), sin exigir ubicacion_destino_id (queda null, dato que el modulo de
+     * picking no aplica fuera del flujo de despachos).
+     *
+     * @param  array{
+     *   bodega_id: int,
+     *   motivo?: string,
+     *   referencia?: string,
+     *   observacion?: string,
+     *   origen_modulo?: string,
+     *   origen_id?: int,
+     *   codigo?: string,
+     *   items: array<int, array{producto_id: int, cantidad: float, lote_id?: int, costo_unitario?: float, motivo?: string, observacion?: string, cantidad_vendida?: float, cantidad_ya_devuelta?: float}>,
+     * }  $datos
+     */
+    public function crearDesdeOrigenExterno(User $usuario, array $datos): InventarioDevolucionOrden
+    {
+        $this->permisos->exigir($usuario, 'inventario.devoluciones.crear');
+
+        if (empty($datos['items'])) {
+            throw ValidationException::withMessages(['items' => 'Debe informar al menos un item a devolver.']);
+        }
+
+        return DB::transaction(function () use ($usuario, $datos) {
+            $empresaId = (int) $usuario->empresa_activa_id;
+            $bodegaId = (int) $datos['bodega_id'];
+            $usuarioId = $usuario->exists ? (int) $usuario->id : null;
+
+            $orden = InventarioDevolucionOrden::create([
+                'empresa_id' => $empresaId,
+                'despacho_orden_id' => null,
+                'bodega_id' => $bodegaId,
+                'codigo' => $datos['codigo'] ?? $this->generarCodigo($empresaId),
+                'tipo' => InventarioDevolucionOrden::TIPO_DEVOLUCION,
+                'estado' => InventarioDevolucionOrden::ESTADO_CONFIRMADA,
+                'motivo' => $this->textoOpcional($datos['motivo'] ?? null, 120) ?? $this->motivoDefault(InventarioDevolucionOrden::TIPO_DEVOLUCION),
+                'referencia' => $this->textoOpcional($datos['referencia'] ?? null, 120),
+                'observacion' => $this->textoOpcional($datos['observacion'] ?? null, 2000),
+                'origen_modulo' => $this->textoOpcional($datos['origen_modulo'] ?? null, 80),
+                'origen_id' => $datos['origen_id'] ?? null,
+                'usuario_creador_id' => $usuarioId,
+                'usuario_confirmador_id' => $usuarioId,
+                'fecha_creacion' => now(),
+                'fecha_confirmacion' => now(),
+            ]);
+
+            foreach ($datos['items'] as $item) {
+                $cantidad = $this->redondearCantidad((float) $item['cantidad']);
+
+                if ($cantidad <= 0) {
+                    throw ValidationException::withMessages(['items' => 'La cantidad a devolver debe ser mayor a cero.']);
+                }
+
+                $movimiento = $this->movimientoService->registrarMovimiento([
+                    'tipo' => MovimientoInventario::TIPO_ENTRADA,
+                    'producto_id' => $item['producto_id'],
+                    'bodega_destino_id' => $bodegaId,
+                    'lote_id' => $item['lote_id'] ?? null,
+                    'cantidad' => $cantidad,
+                    'costo_unitario' => $item['costo_unitario'] ?? 0,
+                    'costo_cero_confirmado' => true,
+                    'referencia' => $orden->codigo,
+                    'motivo' => MovimientoInventario::MOTIVO_DEVOLUCION,
+                    'observacion' => $this->textoOpcional($item['observacion'] ?? null, 2000) ?? $orden->observacion,
+                    'fecha_movimiento' => now(),
+                    '_origen_operativo' => 'inventario_devolucion',
+                ], $empresaId, $usuarioId);
+
+                InventarioDevolucionDetalle::create([
+                    'empresa_id' => $empresaId,
+                    'devolucion_orden_id' => $orden->id,
+                    'despacho_detalle_id' => null,
+                    'producto_id' => $item['producto_id'],
+                    'bodega_id' => $bodegaId,
+                    'ubicacion_destino_id' => null,
+                    'lote_id' => $item['lote_id'] ?? null,
+                    'cantidad_despachada_original' => $this->redondearCantidad((float) ($item['cantidad_vendida'] ?? $cantidad)),
+                    'cantidad_ya_reversada' => $this->redondearCantidad((float) ($item['cantidad_ya_devuelta'] ?? 0)),
+                    'cantidad_devolver' => $cantidad,
+                    'cantidad_aceptada' => $cantidad,
+                    'cantidad_rechazada' => 0,
+                    'estado' => InventarioDevolucionDetalle::ESTADO_ACEPTADO,
+                    'motivo' => $this->textoOpcional($item['motivo'] ?? null, 120),
+                    'observacion' => $this->textoOpcional($item['observacion'] ?? null, 2000),
+                    'movimiento_inventario_id' => $movimiento->id,
+                ]);
+            }
+
+            $this->auditarDevolucion($usuario, InventarioAuditoriaEvento::ACCION_DEVOLUCION_CONFIRMADA, $orden, 'Devolución creada y confirmada desde canal externo (Integraciones).', [
+                'origen_modulo' => $orden->origen_modulo,
+                'origen_id' => $orden->origen_id,
+                'total_items' => count($datos['items']),
+            ], InventarioAuditoriaEvento::SEVERIDAD_CRITICAL);
+
+            return $this->cargarOrden($orden->refresh());
+        });
+    }
+
     public function confirmar(User $usuario, int $id, array $datos = []): InventarioDevolucionOrden
     {
         $this->permisos->exigir($usuario, 'inventario.devoluciones.confirmar');
