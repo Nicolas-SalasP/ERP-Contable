@@ -40,6 +40,11 @@ use Illuminate\Validation\ValidationException;
  *
  * Mismo patron de actor no persistido que VentaIntegracionService::actorSistema() -- ver ese
  * docblock para el detalle de por que existe.
+ *
+ * `tipo` (`retracto`|`garantia`, opcional): distingue si la devolucion es un retracto (Ley del
+ * Consumidor, obliga a restituir todo lo pagado incluido el despacho) o una garantia (solo el
+ * producto). Solo `retracto` con devolucion TOTAL de la factura suma la linea de despacho a la
+ * Nota de Credito -- ver el bloque que la calcula mas abajo para el detalle del caso parcial.
  */
 class DevolucionIntegracionService
 {
@@ -89,6 +94,8 @@ class DevolucionIntegracionService
                 throw ValidationException::withMessages(['items' => 'Debe informar al menos un item a devolver.']);
             }
 
+            $tipo = $datos['tipo'] ?? null;
+
             $detallesFactura = FacturaDetalle::where('factura_id', $factura->id)
                 ->whereNotNull('producto_id')
                 ->get()
@@ -100,6 +107,8 @@ class DevolucionIntegracionService
             $montoNetoTotal = 0.0;
             $montoIvaTotal = 0.0;
             $seriesAConfirmar = [];
+            $productosEnEstaDevolucion = [];
+            $todasLasLineasDevueltasCompletas = true;
 
             foreach ($items as $indice => $item) {
                 $sku = trim((string) ($item['sku'] ?? ''));
@@ -177,6 +186,39 @@ class DevolucionIntegracionService
 
                 if ($numeroSerie !== null) {
                     $seriesAConfirmar[] = ['producto_id' => (int) $producto->id, 'numero_serie' => $numeroSerie];
+                }
+
+                $productosEnEstaDevolucion[] = (int) $producto->id;
+                if (round($cantidad, 4) < $pendiente - 0.0001) {
+                    $todasLasLineasDevueltasCompletas = false;
+                }
+            }
+
+            // Retracto (Ley del Consumidor: restituir todo lo pagado sin retener gastos, incluido
+            // el despacho) solo suma la linea de despacho si esta devolucion es TOTAL: cubre todos
+            // los productos vendidos en la factura y cada uno se devuelve completo. Para un
+            // retracto PARCIAL (ej. 2 de 3 productos distintos, no solo cantidad parcial de un
+            // mismo producto) la ley no define con claridad si el despacho se prorratea, se
+            // devuelve completo o no se devuelve -- se deja deliberadamente afuera (politica
+            // conservadora) hasta que exista una decision de negocio explicita. Garantia nunca
+            // incluye despacho, sea completa o parcial.
+            if ($tipo === 'retracto' && $todasLasLineasDevueltasCompletas) {
+                $productosFactura = $detallesFactura->keys()->map(fn ($id) => (int) $id)->all();
+                $esDevolucionTotalDeLaFactura = empty(array_diff($productosFactura, $productosEnEstaDevolucion));
+
+                if ($esDevolucionTotalDeLaFactura) {
+                    $detalleDespacho = FacturaDetalle::where('factura_id', $factura->id)
+                        ->whereNull('producto_id')
+                        ->first();
+
+                    if ($detalleDespacho !== null) {
+                        $montoNetoDespacho = round((float) $detalleDespacho->monto_item, 2);
+                        $montoNetoTotal += $montoNetoDespacho;
+
+                        if (! $detalleDespacho->exento) {
+                            $montoIvaTotal += round($montoNetoDespacho * (float) config('fiscal.tasa_iva'), 2);
+                        }
+                    }
                 }
             }
 

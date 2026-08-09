@@ -221,6 +221,151 @@ class DevolucionIntegracionApiTest extends TestCase
         $this->assertEqualsWithDelta($montoEsperado, (float) $nc->monto_neto, 0.0001);
     }
 
+    /**
+     * Misma venta que prepararEmpresaConVentaConfirmada, pero con linea de despacho. Devuelve
+     * [token, producto, empresa, factura_id].
+     *
+     * @return array{0: string, 1: Producto, 2: Empresa, 3: int}
+     */
+    private function prepararEmpresaConVentaConDespacho(
+        float $cantidadVendida,
+        float $montoNetoLineaProducto,
+        float $montoNetoDespacho,
+        float $stock = 10,
+    ): array {
+        Event::fake([FacturaListaParaEmitirEvent::class]);
+
+        $empresa = $this->crearEmpresa();
+        $this->crearPlanCuentasVenta($empresa);
+        $producto = $this->crearProducto($empresa, [
+            'sku' => 'RMA-'.strtoupper(substr(uniqid(), -6)),
+            'precio_venta_neto' => $montoNetoLineaProducto,
+        ]);
+        $bodega = $this->crearBodega($empresa);
+        $this->crearStock($empresa, $producto, $bodega, $stock);
+        $token = $this->habilitarModuloYEmitirKey($empresa, ['ventas:escribir', 'devoluciones:escribir']);
+
+        $reservaId = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/reservas', ['sku' => $producto->sku, 'cantidad' => $cantidadVendida])
+            ->json('data.reserva_id');
+
+        $respuestaVenta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/ventas', [
+                'reserva_id' => $reservaId,
+                'cliente' => ['rut' => '11222333-4', 'nombre' => 'Cliente Web'],
+                'items' => [['sku' => $producto->sku, 'cantidad' => $cantidadVendida, 'monto_neto_linea' => $montoNetoLineaProducto]],
+                'despacho' => ['monto_neto' => $montoNetoDespacho],
+            ]);
+
+        $respuestaVenta->assertCreated();
+        $facturaId = $respuestaVenta->json('data.factura_id');
+
+        return [$token, $producto->fresh(), $empresa, $facturaId];
+    }
+
+    public function test_retracto_completo_incluye_el_despacho_en_la_nota_de_credito(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        // Neto = 3000 (todo el producto) + 2000 (despacho, porque es retracto TOTAL).
+        $this->assertEqualsWithDelta(5000.0, (float) $nc->monto_neto, 0.01);
+    }
+
+    public function test_retracto_parcial_no_incluye_el_despacho_en_la_nota_de_credito(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'items' => [['sku' => $producto->sku, 'cantidad' => 1]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        // Neto = 1000 (1 de 3 unidades) SIN despacho: retracto parcial, politica conservadora.
+        $this->assertEqualsWithDelta(1000.0, (float) $nc->monto_neto, 0.01);
+    }
+
+    public function test_garantia_nunca_incluye_el_despacho_aunque_la_devolucion_sea_completa(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'garantia',
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        // Neto = 3000 (todo el producto), sin despacho: es garantia, nunca lo incluye.
+        $this->assertEqualsWithDelta(3000.0, (float) $nc->monto_neto, 0.01);
+    }
+
+    public function test_devolucion_sin_tipo_informado_no_incluye_el_despacho(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'items' => [['sku' => $producto->sku, 'cantidad' => 3]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        $this->assertEqualsWithDelta(3000.0, (float) $nc->monto_neto, 0.01);
+    }
+
+    public function test_devolucion_con_tipo_invalido_es_rechazada(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConfirmada(
+            stock: 10,
+            cantidadVendida: 1,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'cualquier-cosa',
+                'items' => [['sku' => $producto->sku, 'cantidad' => 1]],
+            ]);
+
+        $respuesta->assertStatus(422);
+    }
+
     public function test_devolucion_feliz_con_serie_reingresa_stock_marca_serie_y_genera_nc(): void
     {
         [$token, $producto, $empresa, $facturaId] = $this->prepararEmpresaConVentaConfirmada(

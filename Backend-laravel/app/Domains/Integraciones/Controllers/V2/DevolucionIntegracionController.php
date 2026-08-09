@@ -16,6 +16,7 @@ class DevolucionIntegracionController
     {
         $datos = $request->validate([
             'factura_id' => ['required', 'integer'],
+            'tipo' => ['nullable', 'string', 'in:retracto,garantia'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.sku' => ['required', 'string', 'max:100'],
             'items.*.cantidad' => ['required', 'numeric', 'gt:0'],
