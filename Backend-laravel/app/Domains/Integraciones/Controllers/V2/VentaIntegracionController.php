@@ -49,6 +49,7 @@ class VentaIntegracionController
             'items.*.cantidad' => ['required_with:items', 'numeric', 'gt:0'],
             'items.*.numero_serie' => ['nullable', 'string', 'max:120'],
             'items.*.precio_unitario_neto' => ['nullable', 'numeric', 'min:0'],
+            'items.*.monto_neto_linea' => ['nullable', 'numeric', 'min:0'],
             'despacho' => ['nullable', 'array'],
             'despacho.monto_neto' => ['nullable', 'numeric', 'min:0'],
         ]);

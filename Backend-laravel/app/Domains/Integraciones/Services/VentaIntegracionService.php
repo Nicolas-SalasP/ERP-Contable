@@ -272,7 +272,7 @@ class VentaIntegracionService
     }
 
     /**
-     * @param array{sku?: string, cantidad?: float|string, numero_serie?: string, precio_unitario_neto?: float|string|null}|null $itemDatos
+     * @param array{sku?: string, cantidad?: float|string, numero_serie?: string, precio_unitario_neto?: float|string|null, monto_neto_linea?: float|string|null}|null $itemDatos
      * @param array{monto_neto?: float|string|null}|null $despachoDatos
      */
     private function crearFacturaConAsiento(int $empresaId, ReservaInventario $reserva, Cliente $cliente, int $tipoDte, ?array $itemDatos, ?array $despachoDatos): Factura
@@ -289,8 +289,10 @@ class VentaIntegracionService
         $producto = Producto::findOrFail($detalle->producto_id);
         $cantidad = (float) $detalle->cantidad_reservada;
         $precioListaNeto = (float) $producto->precio_venta_neto;
-        $precioNeto = $this->resolverPrecioUnitario($itemDatos, $precioListaNeto);
-        $montoNeto = round($precioNeto * $cantidad, 2);
+        $montoNeto = $this->resolverMontoNetoLinea($itemDatos, $precioListaNeto, $cantidad);
+        // Unitario derivado solo para mostrar en el detalle: el monto que realmente importa para
+        // el total facturado (y para el asiento) es $montoNeto, ya redondeado una sola vez.
+        $precioNeto = $cantidad > 0.0 ? round($montoNeto / $cantidad, 2) : $precioListaNeto;
         $afecta = (bool) $producto->afecto_iva;
         $montoIva = $afecta ? round($montoNeto * (float) config('fiscal.tasa_iva'), 2) : 0.0;
 
@@ -357,15 +359,36 @@ class VentaIntegracionService
     }
 
     /**
-     * Precio realmente cobrado por el canal externo, con tope de seguridad: nunca puede superar
-     * el precio de lista del producto (evita que un canal comprometido/con bug infle el monto
-     * del DTE y habilite una nota de credito fraudulenta despues). Si no viene, se usa el precio
-     * de lista (comportamiento historico, compatibilidad hacia atras).
+     * Monto neto realmente cobrado por el canal externo para TODA la linea, con tope de
+     * seguridad: nunca puede superar el precio de lista x cantidad (evita que un canal
+     * comprometido/con bug infle el monto del DTE y habilite una nota de credito fraudulenta
+     * despues). Si no viene ninguno de los dos campos, se usa el precio de lista (comportamiento
+     * historico, compatibilidad hacia atras).
+     *
+     * `monto_neto_linea` tiene prioridad sobre `precio_unitario_neto`: es el neto de la linea
+     * completa ya redondeado una sola vez del lado que conoce el total efectivamente cobrado
+     * (la web), evitando la deriva de redondeo de multiplicar un unitario ya redondeado por la
+     * cantidad. Si solo viene `precio_unitario_neto` (contrato anterior), se preserva el
+     * comportamiento previo: unitario x cantidad, redondeado aca.
      */
-    private function resolverPrecioUnitario(?array $itemDatos, float $precioListaNeto): float
+    private function resolverMontoNetoLinea(?array $itemDatos, float $precioListaNeto, float $cantidad): float
     {
+        $topeLinea = round($precioListaNeto * $cantidad, 2);
+
+        if ($itemDatos !== null && array_key_exists('monto_neto_linea', $itemDatos) && $itemDatos['monto_neto_linea'] !== null) {
+            $montoSolicitado = round((float) $itemDatos['monto_neto_linea'], 2);
+
+            if ($montoSolicitado > $topeLinea) {
+                throw ValidationException::withMessages([
+                    'items.0.monto_neto_linea' => "El monto neto de línea informado ({$montoSolicitado}) no puede superar el precio de lista del producto multiplicado por la cantidad ({$topeLinea}).",
+                ]);
+            }
+
+            return $montoSolicitado;
+        }
+
         if ($itemDatos === null || ! array_key_exists('precio_unitario_neto', $itemDatos) || $itemDatos['precio_unitario_neto'] === null) {
-            return $precioListaNeto;
+            return $topeLinea;
         }
 
         $precioSolicitado = (float) $itemDatos['precio_unitario_neto'];
@@ -376,7 +399,7 @@ class VentaIntegracionService
             ]);
         }
 
-        return $precioSolicitado;
+        return round($precioSolicitado * $cantidad, 2);
     }
 
     /**
