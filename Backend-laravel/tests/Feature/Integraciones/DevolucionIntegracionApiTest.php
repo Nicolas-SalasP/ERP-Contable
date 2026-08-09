@@ -6,6 +6,7 @@ use App\Domains\Comercial\Models\Factura;
 use App\Domains\Contabilidad\Models\PlanCuenta;
 use App\Domains\Core\Models\Empresa;
 use App\Domains\Inventario\Models\Bodega;
+use App\Domains\Inventario\Models\InventarioDevolucionOrden;
 use App\Domains\Inventario\Models\Producto;
 use App\Domains\Inventario\Models\ProductoSerie;
 use App\Domains\Inventario\Models\StockProducto;
@@ -598,15 +599,41 @@ class DevolucionIntegracionApiTest extends TestCase
             ->assertForbidden();
     }
 
+    /**
+     * solo_despacho exige que ESTA factura ya tenga una devolucion de productos confirmada. Se
+     * registra el mismo tipo de fila que crea InventarioDevolucionService::crearDesdeOrigenExterno
+     * en el flujo normal (origen_modulo/origen_id/estado CONFIRMADA) directo por Eloquent, para no
+     * arrastrar el efecto colateral de que esa devolucion de productos tambien emita su propia
+     * Nota de Credito (regla ya existente y no relacionada: una factura solo admite una NC activa
+     * a la vez) y así poder aislar la validacion nueva bajo prueba.
+     */
+    private function confirmarDevolucionDeProductosConfirmada(Empresa $empresa, int $facturaId): void
+    {
+        InventarioDevolucionOrden::create([
+            'empresa_id' => $empresa->id,
+            'despacho_orden_id' => null,
+            'bodega_id' => $this->crearBodega($empresa)->id,
+            'codigo' => 'RMA-TEST-'.strtoupper(substr(uniqid(), -8)),
+            'tipo' => InventarioDevolucionOrden::TIPO_DEVOLUCION,
+            'estado' => InventarioDevolucionOrden::ESTADO_CONFIRMADA,
+            'motivo' => 'devolucion_integraciones',
+            'origen_modulo' => 'integraciones_devolucion',
+            'origen_id' => $facturaId,
+            'fecha_creacion' => now(),
+            'fecha_confirmacion' => now(),
+        ]);
+    }
+
     public function test_solo_despacho_true_contra_factura_con_despacho_genera_nc_solo_por_el_despacho_sin_tocar_stock(): void
     {
-        [$token, , $empresa, $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+        [$token, $producto, $empresa, $facturaId] = $this->prepararEmpresaConVentaConDespacho(
             cantidadVendida: 3,
             montoNetoLineaProducto: 3000,
             montoNetoDespacho: 2000,
         );
 
-        $producto = Producto::where('empresa_id', $empresa->id)->first();
+        $this->confirmarDevolucionDeProductosConfirmada($empresa, $facturaId);
+
         $stockAntes = StockProducto::where('empresa_id', $empresa->id)->where('producto_id', $producto->id)->first();
 
         $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
@@ -622,7 +649,7 @@ class DevolucionIntegracionApiTest extends TestCase
         $this->assertNotNull($notaCreditoId);
 
         $nc = Factura::findOrFail($notaCreditoId);
-        // Neto = 2000 (solo el despacho): no toca el monto del producto.
+        // Neto = 2000 (solo el despacho): no toca el monto del producto (ya devuelto aparte).
         $this->assertEqualsWithDelta(2000.0, (float) $nc->monto_neto, 0.01);
 
         $stockDespues = StockProducto::where('empresa_id', $empresa->id)->where('producto_id', $producto->id)->first();
@@ -649,13 +676,39 @@ class DevolucionIntegracionApiTest extends TestCase
         );
     }
 
-    public function test_solo_despacho_es_idempotente_con_el_mismo_header(): void
+    public function test_solo_despacho_true_contra_factura_intacta_sin_devolucion_de_productos_es_rechazado(): void
     {
+        // Misma factura con despacho que el caso feliz, pero SIN devolver nunca los productos:
+        // solo_despacho no puede generar una NC de despacho sobre una factura que en realidad
+        // nunca se retracto.
         [$token, , , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
             cantidadVendida: 3,
             montoNetoLineaProducto: 3000,
             montoNetoDespacho: 2000,
         );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'solo_despacho' => true,
+            ]);
+
+        $respuesta->assertStatus(422);
+        $this->assertNull(
+            Factura::where('factura_referencia_id', $facturaId)->where('tipo_documento', 'NOTA_CREDITO')->first()
+        );
+    }
+
+    public function test_solo_despacho_es_idempotente_con_el_mismo_header(): void
+    {
+        [$token, , $empresa, $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $this->confirmarDevolucionDeProductosConfirmada($empresa, $facturaId);
 
         $payload = [
             'factura_id' => $facturaId,
@@ -685,11 +738,13 @@ class DevolucionIntegracionApiTest extends TestCase
 
     public function test_solo_despacho_dos_veces_sin_mismo_idempotency_key_es_rechazado_y_no_duplica_la_nc(): void
     {
-        [$token, , , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+        [$token, , $empresa, $facturaId] = $this->prepararEmpresaConVentaConDespacho(
             cantidadVendida: 3,
             montoNetoLineaProducto: 3000,
             montoNetoDespacho: 2000,
         );
+
+        $this->confirmarDevolucionDeProductosConfirmada($empresa, $facturaId);
 
         $payload = [
             'factura_id' => $facturaId,

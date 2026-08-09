@@ -336,6 +336,24 @@ class DevolucionIntegracionService
             ]);
         }
 
+        // Misma disciplina que incluir_despacho en el flujo normal: solo_despacho es una senal
+        // del canal externo, no una orden -- sin al menos una devolucion de productos ya
+        // confirmada sobre ESTA factura (via el flujo normal, mismo criterio de
+        // origen_modulo/origen_id que cantidadYaDevuelta) no hay retracto real que justifique
+        // emitir una NC por el despacho.
+        $tieneDevolucionDeProductosConfirmada = InventarioDevolucionOrden::query()
+            ->where('empresa_id', $empresaId)
+            ->where('origen_modulo', 'integraciones_devolucion')
+            ->where('origen_id', $factura->id)
+            ->where('estado', InventarioDevolucionOrden::ESTADO_CONFIRMADA)
+            ->exists();
+
+        if (! $tieneDevolucionDeProductosConfirmada) {
+            throw ValidationException::withMessages([
+                'factura_id' => 'No se puede devolver el despacho de una factura sin devolución de productos confirmada.',
+            ]);
+        }
+
         $detalleDespacho = FacturaDetalle::where('factura_id', $factura->id)
             ->whereNull('producto_id')
             ->first();
