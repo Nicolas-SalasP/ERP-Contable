@@ -53,6 +53,14 @@ use Illuminate\Validation\ValidationException;
  * despacho corresponde. Si viene informado, reemplaza la decision de "incluir despacho" pero
  * SIEMPRE sujeta a que la factura se devuelva completa (ver bloque mas abajo); si no viene, se
  * mantiene el comportamiento historico (retracto + devolucion total de la factura => incluye).
+ *
+ * `solo_despacho` (bool, opcional): la linea de despacho de un pedido multi-linea vive SIEMPRE en
+ * la factura de la PRIMERA linea confirmada del pedido (ver Fase 2), pero el mecanismo de arriba
+ * (`incluir_despacho`) solo puede sumar el despacho cuando la devolucion es TOTAL sobre esa MISMA
+ * factura -- si el retracto se completa devolviendo productos de OTRAS facturas del mismo pedido,
+ * la factura #1 nunca recibe items propios y su despacho queda sin devolver. Este modo permite al
+ * canal externo (que si conoce el pedido completo) pedir una devolucion "solo despacho" contra esa
+ * factura especifica, sin items ni movimiento de inventario -- ver `crearSoloDespacho()`.
  */
 class DevolucionIntegracionService
 {
@@ -62,10 +70,14 @@ class DevolucionIntegracionService
         private readonly ContadorEmpresaService $contadorService,
     ) {}
 
-    /** @return array{devolucion_id: int, nota_credito_id: int|null, estado: string} */
+    /** @return array{devolucion_id: int|null, nota_credito_id: int|null, estado: string} */
     public function crear(int $empresaId, array $datos, ?string $idempotencyKey): array
     {
-        $clave = $this->resolverClaveIdempotencia($idempotencyKey, $datos);
+        $soloDespacho = array_key_exists('solo_despacho', $datos) && $datos['solo_despacho'] !== null
+            ? (bool) $datos['solo_despacho']
+            : false;
+
+        $clave = $this->resolverClaveIdempotencia($idempotencyKey, $datos, $soloDespacho);
 
         $existente = IntegracionDevolucionIdempotencia::where('empresa_id', $empresaId)
             ->where('clave', $clave)
@@ -75,7 +87,7 @@ class DevolucionIntegracionService
             return array_merge($existente->respuesta_json, ['idempotente' => true]);
         }
 
-        return DB::transaction(function () use ($empresaId, $datos, $clave) {
+        return DB::transaction(function () use ($empresaId, $datos, $clave, $soloDespacho) {
             $facturaId = (int) ($datos['factura_id'] ?? 0);
 
             /** @var Factura|null $factura */
@@ -95,6 +107,10 @@ class DevolucionIntegracionService
                 throw ValidationException::withMessages([
                     'factura_id' => 'No se puede devolver sobre una factura ya anulada.',
                 ]);
+            }
+
+            if ($soloDespacho) {
+                return $this->crearSoloDespacho($empresaId, $factura, $datos, $clave);
             }
 
             $items = $datos['items'] ?? [];
@@ -297,6 +313,86 @@ class DevolucionIntegracionService
         });
     }
 
+    /**
+     * Devolucion "solo despacho": ninguna interaccion con Inventario (no hay items, no se toca
+     * stock/series/lotes), solo emite una NC por el monto exacto de la linea de despacho de ESTA
+     * factura. Solo aplica a retracto, mismo espiritu que `incluir_despacho`.
+     *
+     * Deduplicacion sin flag nuevo: se reutiliza la regla ya existente de
+     * FacturaService::emitirNotaCreditoVenta de que una factura solo puede tener una Nota de
+     * Credito activa a la vez. Un segundo intento de devolver el despacho de la misma factura
+     * (sin el mismo Idempotency-Key que el primero) choca con esa regla y se rechaza con un
+     * mensaje claro -- no genera una segunda NC.
+     *
+     * @return array{devolucion_id: null, nota_credito_id: int, estado: string}
+     */
+    private function crearSoloDespacho(int $empresaId, Factura $factura, array $datos, string $clave): array
+    {
+        $tipo = $datos['tipo'] ?? null;
+
+        if ($tipo !== 'retracto') {
+            throw ValidationException::withMessages([
+                'tipo' => 'El modo solo_despacho requiere tipo=retracto.',
+            ]);
+        }
+
+        $detalleDespacho = FacturaDetalle::where('factura_id', $factura->id)
+            ->whereNull('producto_id')
+            ->first();
+
+        if ($detalleDespacho === null) {
+            throw ValidationException::withMessages([
+                'factura_id' => 'Esta factura no tiene una línea de despacho para devolver.',
+            ]);
+        }
+
+        $montoNetoDespacho = round((float) $detalleDespacho->monto_item, 2);
+
+        if ($montoNetoDespacho <= 0) {
+            throw ValidationException::withMessages([
+                'factura_id' => 'La línea de despacho de esta factura no tiene un monto válido para devolver.',
+            ]);
+        }
+
+        $montoIvaDespacho = $detalleDespacho->exento
+            ? 0.0
+            : round($montoNetoDespacho * (float) config('fiscal.tasa_iva'), 2);
+        $montoBrutoDespacho = round($montoNetoDespacho + $montoIvaDespacho, 2);
+
+        $numeroNc = sprintf('NC-INT-%06d', $this->contadorService->siguienteNumero($empresaId, 'nota_credito_integracion'));
+
+        $nc = $this->facturaService->emitirNotaCreditoVenta($empresaId, (int) $factura->id, [
+            'numero_nc' => $numeroNc,
+            'monto_neto' => $montoNetoDespacho,
+            'monto_iva' => $montoIvaDespacho,
+            'monto_bruto' => $montoBrutoDespacho,
+            'razon' => 'Devolución de despacho vía integración (retracto multi-línea) - factura '.$factura->numero_factura,
+            'emitir_dte' => true,
+        ]);
+
+        $respuesta = [
+            'devolucion_id' => null,
+            'nota_credito_id' => (int) $nc->id,
+            'estado' => InventarioDevolucionOrden::ESTADO_CONFIRMADA,
+        ];
+
+        try {
+            IntegracionDevolucionIdempotencia::create([
+                'empresa_id' => $empresaId,
+                'clave' => $clave,
+                'devolucion_orden_id' => null,
+                'respuesta_status' => 201,
+                'respuesta_json' => $respuesta,
+            ]);
+        } catch (QueryException $e) {
+            // Misma carrera que en el flujo normal: si otra request con la misma clave gano el
+            // insert primero, la NC recien creada se revierte y el caller debe reintentar.
+            throw DevolucionIntegracionException::idempotenciaEnCarrera($e);
+        }
+
+        return $respuesta;
+    }
+
     private function cantidadYaDevuelta(int $empresaId, int $facturaId, int $productoId): float
     {
         $cantidad = InventarioDevolucionDetalle::query()
@@ -374,12 +470,16 @@ class DevolucionIntegracionService
         return $bodega;
     }
 
-    private function resolverClaveIdempotencia(?string $idempotencyKey, array $datos): string
+    private function resolverClaveIdempotencia(?string $idempotencyKey, array $datos, bool $soloDespacho = false): string
     {
         $clave = is_string($idempotencyKey) ? trim($idempotencyKey) : null;
 
         if ($clave !== null && $clave !== '') {
             return $clave;
+        }
+
+        if ($soloDespacho) {
+            return 'devolucion-despacho-'.($datos['factura_id'] ?? '0');
         }
 
         return 'devolucion-'.($datos['factura_id'] ?? '0').'-'.md5(json_encode($datos['items'] ?? []) ?: '');

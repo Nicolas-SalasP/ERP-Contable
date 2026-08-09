@@ -598,6 +598,149 @@ class DevolucionIntegracionApiTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_solo_despacho_true_contra_factura_con_despacho_genera_nc_solo_por_el_despacho_sin_tocar_stock(): void
+    {
+        [$token, , $empresa, $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $producto = Producto::where('empresa_id', $empresa->id)->first();
+        $stockAntes = StockProducto::where('empresa_id', $empresa->id)->where('producto_id', $producto->id)->first();
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'solo_despacho' => true,
+            ]);
+
+        $respuesta->assertCreated();
+        $this->assertNull($respuesta->json('data.devolucion_id'));
+        $notaCreditoId = $respuesta->json('data.nota_credito_id');
+        $this->assertNotNull($notaCreditoId);
+
+        $nc = Factura::findOrFail($notaCreditoId);
+        // Neto = 2000 (solo el despacho): no toca el monto del producto.
+        $this->assertEqualsWithDelta(2000.0, (float) $nc->monto_neto, 0.01);
+
+        $stockDespues = StockProducto::where('empresa_id', $empresa->id)->where('producto_id', $producto->id)->first();
+        $this->assertEquals((float) $stockAntes->stock_actual, (float) $stockDespues->stock_actual);
+    }
+
+    public function test_solo_despacho_true_contra_factura_sin_despacho_no_crea_nc_y_responde_error_claro(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConfirmada(
+            stock: 10,
+            cantidadVendida: 2,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'solo_despacho' => true,
+            ]);
+
+        $respuesta->assertStatus(422);
+        $this->assertNull(
+            Factura::where('factura_referencia_id', $facturaId)->where('tipo_documento', 'NOTA_CREDITO')->first()
+        );
+    }
+
+    public function test_solo_despacho_es_idempotente_con_el_mismo_header(): void
+    {
+        [$token, , , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $payload = [
+            'factura_id' => $facturaId,
+            'tipo' => 'retracto',
+            'solo_despacho' => true,
+        ];
+
+        $primera = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'Idempotency-Key' => 'reintento-solo-despacho-1',
+        ])->postJson('/api/integraciones/v2/devoluciones', $payload);
+        $primera->assertCreated();
+
+        $segunda = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'Idempotency-Key' => 'reintento-solo-despacho-1',
+        ])->postJson('/api/integraciones/v2/devoluciones', $payload);
+        $segunda->assertCreated();
+
+        $this->assertEquals($primera->json('data.nota_credito_id'), $segunda->json('data.nota_credito_id'));
+
+        $this->assertEquals(
+            1,
+            Factura::where('factura_referencia_id', $facturaId)->where('tipo_documento', 'NOTA_CREDITO')->count()
+        );
+    }
+
+    public function test_solo_despacho_dos_veces_sin_mismo_idempotency_key_es_rechazado_y_no_duplica_la_nc(): void
+    {
+        [$token, , , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $payload = [
+            'factura_id' => $facturaId,
+            'tipo' => 'retracto',
+            'solo_despacho' => true,
+        ];
+
+        // Idempotency-Key distinta en cada request (simula dos intentos "genuinamente
+        // distintos" del canal externo, no un reintento del mismo request): la proteccion
+        // real contra duplicar la NC no depende de la clave de idempotencia sino de la regla
+        // de FacturaService::emitirNotaCreditoVenta de que la factura solo admite una NC activa.
+        $primera = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'Idempotency-Key' => 'intento-solo-despacho-A',
+        ])->postJson('/api/integraciones/v2/devoluciones', $payload);
+        $primera->assertCreated();
+
+        $segunda = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'Idempotency-Key' => 'intento-solo-despacho-B',
+        ])->postJson('/api/integraciones/v2/devoluciones', $payload);
+        $segunda->assertStatus(422);
+
+        $this->assertEquals(
+            1,
+            Factura::where('factura_referencia_id', $facturaId)->where('tipo_documento', 'NOTA_CREDITO')->count()
+        );
+    }
+
+    public function test_incluir_despacho_pedido_de_una_sola_linea_sigue_funcionando_sin_solo_despacho(): void
+    {
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 2,
+            montoNetoLineaProducto: 4000,
+            montoNetoDespacho: 1500,
+        );
+
+        $respuesta = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'items' => [['sku' => $producto->sku, 'cantidad' => 2]],
+            ]);
+
+        $respuesta->assertCreated();
+        $nc = Factura::findOrFail($respuesta->json('data.nota_credito_id'));
+
+        // Neto = 4000 (producto) + 1500 (despacho): pedido de 1 sola linea, mecanismo historico.
+        $this->assertEqualsWithDelta(5500.0, (float) $nc->monto_neto, 0.01);
+    }
+
     public function test_venta_de_producto_que_requiere_serie_sin_informarla_no_bloquea_la_venta(): void
     {
         Event::fake([FacturaListaParaEmitirEvent::class]);

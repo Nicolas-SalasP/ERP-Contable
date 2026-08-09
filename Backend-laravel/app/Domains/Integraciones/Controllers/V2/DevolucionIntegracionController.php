@@ -14,10 +14,15 @@ class DevolucionIntegracionController
 
     public function crear(Request $request): JsonResponse
     {
+        // solo_despacho=true: devolucion "solo despacho" contra una factura especifica, sin
+        // productos (ver DevolucionIntegracionService::crearSoloDespacho) -- items no aplica.
+        $soloDespacho = $request->boolean('solo_despacho');
+
         $datos = $request->validate([
             'factura_id' => ['required', 'integer'],
             'tipo' => ['nullable', 'string', 'in:retracto,garantia'],
-            'items' => ['required', 'array', 'min:1'],
+            'solo_despacho' => ['nullable', 'boolean'],
+            'items' => array_filter([$soloDespacho ? 'nullable' : 'required', 'array', $soloDespacho ? null : 'min:1']),
             'items.*.sku' => ['required', 'string', 'max:100'],
             'items.*.cantidad' => ['required', 'numeric', 'gt:0'],
             'items.*.numero_serie' => ['nullable', 'string', 'max:120'],
