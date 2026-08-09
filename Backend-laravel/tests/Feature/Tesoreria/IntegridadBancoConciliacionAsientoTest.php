@@ -557,4 +557,113 @@ class IntegridadBancoConciliacionAsientoTest extends TestCase
 
         $service->descartarMovimiento($this->empresa->id, $movId);
     }
+
+    // ─── Restaurar movimiento descartado ───────────────────────────────────────
+
+    public function test_restaurar_movimiento_descartado_lo_vuelve_a_pendientes()
+    {
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+        $movId  = $this->crearMovimientoBancario($cuenta->id, 'PENDIENTE');
+
+        $service = app(ConciliacionService::class);
+        $service->descartarMovimiento($this->empresa->id, $movId);
+
+        $descartados = $service->obtenerMovimientosDescartados($this->empresa->id, $cuenta->id);
+        $this->assertCount(1, $descartados);
+
+        $service->restaurarMovimiento($this->empresa->id, $movId);
+
+        $mov = DB::table('movimientos_bancarios')->where('id', $movId)->first();
+        $this->assertEquals('PENDIENTE', $mov->estado);
+
+        $pendientes = $service->obtenerMovimientosPendientes($this->empresa->id, $cuenta->id);
+        $this->assertCount(1, $pendientes);
+
+        $descartados = $service->obtenerMovimientosDescartados($this->empresa->id, $cuenta->id);
+        $this->assertCount(0, $descartados);
+    }
+
+    public function test_restaurar_movimiento_no_descartado_es_rechazado()
+    {
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+        $movId  = $this->crearMovimientoBancario($cuenta->id, 'PENDIENTE');
+
+        $service = app(ConciliacionService::class);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageMatches('/no está descartado/i');
+
+        $service->restaurarMovimiento($this->empresa->id, $movId);
+    }
+
+    // ─── Anticipos de cliente pendientes (espejo de anticipos de proveedor) ────
+
+    public function test_obtener_anticipos_pendientes_incluye_proveedor_y_cliente()
+    {
+        DB::table('anticipos_proveedores')->insert([
+            'empresa_id'   => $this->empresa->id,
+            'proveedor_id' => $this->proveedor->id,
+            'monto'        => 50000,
+            'estado'       => 'PENDIENTE',
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ]);
+
+        $cliente = \App\Domains\Comercial\Models\Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '4.4.4.4-4',
+            'razon_social' => 'Cliente Anticipo Pendiente',
+            'estado'       => 'ACTIVO',
+        ]);
+        $anticipoClienteId = DB::table('anticipos_clientes')->insertGetId([
+            'empresa_id' => $this->empresa->id,
+            'cliente_id' => $cliente->id,
+            'monto'      => 70000,
+            'estado'     => 'PENDIENTE',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = app(BancoService::class);
+        $pendientes = $service->obtenerAnticiposPendientes($this->empresa->id);
+
+        $this->assertCount(2, $pendientes);
+        $tipos = collect($pendientes)->pluck('tipo')->sort()->values()->all();
+        $this->assertEquals(['cliente', 'proveedor'], $tipos);
+
+        $filaCliente = collect($pendientes)->firstWhere('tipo', 'cliente');
+        $this->assertEquals($anticipoClienteId, $filaCliente->id);
+        $this->assertEquals('Cliente Anticipo Pendiente', $filaCliente->entidad_nombre);
+    }
+
+    public function test_vincular_movimiento_anticipo_cliente_actualiza_tabla_correcta()
+    {
+        $cuenta = $this->crearCuentaBancariaConCuenta('110101');
+        $movId  = $this->crearMovimientoBancario($cuenta->id, 'PENDIENTE');
+
+        $cliente = \App\Domains\Comercial\Models\Cliente::create([
+            'empresa_id'   => $this->empresa->id,
+            'rut'          => '3.3.3.3-3',
+            'razon_social' => 'Cliente Vincular Anticipo',
+            'estado'       => 'ACTIVO',
+        ]);
+        $anticipoClienteId = DB::table('anticipos_clientes')->insertGetId([
+            'empresa_id' => $this->empresa->id,
+            'cliente_id' => $cliente->id,
+            'monto'      => 119000,
+            'estado'     => 'PENDIENTE',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = app(BancoService::class);
+        $service->vincularMovimientoAAnticipo($this->empresa->id, $movId, $anticipoClienteId, 'cliente');
+
+        $mov = DB::table('movimientos_bancarios')->where('id', $movId)->first();
+        $this->assertEquals('CONCILIADO_ANTICIPO', $mov->estado);
+
+        $anticipo = DB::table('anticipos_clientes')->where('id', $anticipoClienteId)->first();
+        $this->assertEquals('PAGADO', $anticipo->estado);
+        $this->assertEquals($movId, (int) $anticipo->movimiento_id);
+    }
 }

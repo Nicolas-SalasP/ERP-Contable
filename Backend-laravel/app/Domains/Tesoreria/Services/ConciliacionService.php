@@ -97,6 +97,38 @@ class ConciliacionService
         });
     }
 
+    /**
+     * Vuelve un movimiento DESCARTADO a PENDIENTE (deshacer un descarte por error).
+     */
+    public function restaurarMovimiento(int $empresaId, int $movimientoId): void
+    {
+        DB::transaction(function () use ($empresaId, $movimientoId) {
+            $movimiento = DB::table('movimientos_bancarios')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $movimientoId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$movimiento) {
+                throw TesoreriaException::noEncontrado("Movimiento bancario no encontrado.");
+            }
+
+            if ($movimiento->estado !== 'DESCARTADO') {
+                throw TesoreriaException::regla("El movimiento no está descartado (estado actual: {$movimiento->estado}).");
+            }
+
+            DB::table('movimientos_bancarios')
+                ->where('empresa_id', $empresaId)
+                ->where('id', $movimientoId)
+                ->update(['estado' => 'PENDIENTE']);
+        });
+    }
+
+    public function obtenerMovimientosDescartados(int $empresaId, int $cuentaBancariaId)
+    {
+        return $this->bancoService->obtenerMovimientosDescartados($empresaId, $cuentaBancariaId);
+    }
+
     public function obtenerMovimientosPendientes(int $empresaId, int $cuentaBancariaId)
     {
         return $this->bancoService->obtenerMovimientosPendientes($empresaId, $cuentaBancariaId);
@@ -376,7 +408,12 @@ class ConciliacionService
     public function conciliarAnticipo(int $empresaId, array $datos, int $usuarioId)
     {
         return DB::transaction(function () use ($empresaId, $datos) {
-            $this->bancoService->vincularMovimientoAAnticipo($empresaId, $datos['movimiento_id'], $datos['anticipo_id']);
+            $this->bancoService->vincularMovimientoAAnticipo(
+                $empresaId,
+                $datos['movimiento_id'],
+                $datos['anticipo_id'],
+                $datos['tipo'] ?? 'proveedor'
+            );
             return true;
         });
     }

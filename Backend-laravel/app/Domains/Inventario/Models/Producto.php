@@ -39,6 +39,7 @@ class Producto extends Model
         'requiere_fecha_vencimiento',
         'activo',
         'visible_web',
+        'requiere_serie',
     ];
 
     protected $casts = [
@@ -56,6 +57,7 @@ class Producto extends Model
         'requiere_fecha_vencimiento' => 'boolean',
         'activo' => 'boolean',
         'visible_web' => 'boolean',
+        'requiere_serie' => 'boolean',
     ];
 
     /** @return BelongsTo<Empresa, $this> */
@@ -92,6 +94,12 @@ class Producto extends Model
     public function stockLotes(): HasMany
     {
         return $this->hasMany(StockLoteInventario::class, 'producto_id');
+    }
+
+    /** @return HasMany<ProductoSerie, $this> */
+    public function series(): HasMany
+    {
+        return $this->hasMany(ProductoSerie::class, 'producto_id');
     }
 
     /** @return HasMany<MovimientoLoteInventario, $this> */
@@ -131,6 +139,11 @@ class Producto extends Model
     public function manejaLotes(): bool
     {
         return $this->maneja_lotes === true;
+    }
+
+    public function requiereSerie(): bool
+    {
+        return $this->requiere_serie === true;
     }
 
     public function requiereFechaVencimiento(): bool

@@ -3,6 +3,7 @@
 namespace App\Domains\Comercial;
 
 use App\Domains\Comercial\Console\Commands\CorregirFechaFacturaCommand;
+use App\Domains\Comercial\Console\Commands\ImportarListaPreciosCommand;
 use App\Domains\Comercial\Console\Commands\ReporteCotizacionesSinFacturaCommand;
 use App\Domains\Comercial\Console\Commands\VincularCotizacionFacturaCommand;
 use Illuminate\Support\ServiceProvider;
@@ -16,6 +17,7 @@ class ComercialServiceProvider extends ServiceProvider
                 VincularCotizacionFacturaCommand::class,
                 ReporteCotizacionesSinFacturaCommand::class,
                 CorregirFechaFacturaCommand::class,
+                ImportarListaPreciosCommand::class,
             ]);
         }
     }

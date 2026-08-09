@@ -254,4 +254,25 @@ class ClienteService
             ];
         });
     }
+
+    /**
+     * Registra una solicitud de anticipo de cliente PENDIENTE de cobro via banco (Mesa de
+     * Conciliación la vincula a un movimiento real cuando llega). Espejo de
+     * ProveedorService::registrarAnticipo.
+     */
+    public function registrarAnticipo(int $empresaId, array $datos)
+    {
+        $cliente = Cliente::where('empresa_id', $empresaId)
+            ->findOrFail($datos['cliente_id']);
+
+        return AnticipoCliente::create([
+            'empresa_id' => $empresaId,
+            'cliente_id' => $cliente->id,
+            // No se envía 'fecha': Laravel usa created_at automáticamente.
+            'monto' => $datos['monto'],
+            'saldo_disponible' => $datos['monto'],
+            'referencia' => $datos['referencia'] ?? null,
+            'estado' => 'PENDIENTE',
+        ]);
+    }
 }

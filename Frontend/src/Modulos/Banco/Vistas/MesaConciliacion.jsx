@@ -4,9 +4,9 @@ import Swal from 'sweetalert2';
 import AyudaModulo from '../../../Componentes/AyudaModulo';
 import EstadoCarga from '../../../Componentes/EstadoCarga';
 import { TablaSkeleton } from '../../../Componentes/Skeleton';
-import { EstadoVacio } from '../../../Componentes/EstadoVacio';
+import { EstadoVacioDiv } from '../../../Componentes/EstadoVacio';
 import Select from 'react-select';
-import { CreditCard, X, Check } from 'lucide-react';
+import { CreditCard, X, Check, RotateCcw } from 'lucide-react';
 import { formatearMoneda, formatFecha } from '../../../Utilidades/formato';
 
 const formatCurrency = formatearMoneda;
@@ -15,9 +15,12 @@ const MesaConciliacion = () => {
     const [cuentasBanco, setCuentasBanco] = useState([]);
     const [cuentaActiva, setCuentaActiva] = useState('');
     const [movimientos, setMovimientos] = useState([]);
+    const [vistaActiva, setVistaActiva] = useState('PENDIENTES');
+    const [movimientosDescartados, setMovimientosDescartados] = useState([]);
+    const [cargandoDescartados, setCargandoDescartados] = useState(false);
     const [planCuentas, setPlanCuentas] = useState([]);
     const [centrosCosto, setCentrosCosto] = useState([]); 
-    const [_anticiposPendientes, setAnticiposPendientes] = useState([]);
+    const [anticiposPendientes, setAnticiposPendientes] = useState([]);
 
     const [sugerenciasFacturas, setSugerenciasFacturas] = useState([]);
     const [cargandoSugerencias, setCargandoSugerencias] = useState(false);
@@ -38,7 +41,7 @@ const MesaConciliacion = () => {
     const [centroSel, setCentroSel] = useState(null);
     const [empleadoNombre, setEmpleadoNombre] = useState(''); 
     const [glosa, setGlosa] = useState('');
-    const [anticipoSelId, setAnticipoSelId] = useState('');
+    const [anticipoSel, setAnticipoSel] = useState(null);
 
     useEffect(() => {
         cargarDatosBase();
@@ -48,6 +51,35 @@ const MesaConciliacion = () => {
         if (cuentaActiva) cargarMovimientos(cuentaActiva);
         return () => { if (abortMovimientosRef.current) abortMovimientosRef.current.abort(); };
     }, [cuentaActiva]);
+
+    useEffect(() => {
+        if (cuentaActiva && vistaActiva === 'DESCARTADOS') cargarDescartados(cuentaActiva);
+    }, [cuentaActiva, vistaActiva]);
+
+    const cargarDescartados = async (idCuenta) => {
+        setCargandoDescartados(true);
+        try {
+            const res = await api.get(`/banco/movimientos/descartados/${idCuenta}`);
+            if (res.success) setMovimientosDescartados(res.data);
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'No se pudieron cargar los movimientos descartados', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+        } finally {
+            setCargandoDescartados(false);
+        }
+    };
+
+    const restaurarMovimiento = async (mov) => {
+        try {
+            const res = await api.post(`/banco/movimientos/${mov.id}/restaurar`);
+            if (res.success) {
+                Swal.fire({ icon: 'success', title: 'Restaurado a pendientes', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                cargarDescartados(cuentaActiva);
+                cargarMovimientos(cuentaActiva);
+            }
+        } catch (error) {
+            Swal.fire('Error', error.response?.data?.message || error.response?.data?.mensaje || 'No se pudo restaurar el movimiento.', 'error');
+        }
+    };
 
     const cargarDatosBase = async () => {
         try {
@@ -137,7 +169,7 @@ const MesaConciliacion = () => {
         setCuentaSel(null);
         setCentroSel(null);
         setEmpleadoNombre('');
-        setAnticipoSelId('');
+        setAnticipoSel(null);
         setTipoConciliacion('FACTURAS'); 
         setModoFacturas('SUGERENCIAS');
         setModalActivo(true);
@@ -296,13 +328,14 @@ const MesaConciliacion = () => {
             }
         } 
         else if (tipoConciliacion === 'ANTICIPO') {
-            if (!anticipoSelId) return Swal.fire('Atención', 'Selecciona una solicitud de anticipo.', 'warning');
+            if (!anticipoSel) return Swal.fire('Atención', 'Selecciona una solicitud de anticipo.', 'warning');
 
             try {
                 Swal.fire({ title: 'Enlazando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const res = await api.post('/banco/movimientos/conciliar-anticipo', { 
-                    movimiento_id: movSeleccionado.id, 
-                    anticipo_id: anticipoSelId 
+                const res = await api.post('/banco/movimientos/conciliar-anticipo', {
+                    movimiento_id: movSeleccionado.id,
+                    anticipo_id: anticipoSel.value,
+                    tipo: anticipoSel.tipo
                 });
                 
                 if (res.success) {
@@ -346,9 +379,19 @@ const MesaConciliacion = () => {
     const montoMovimiento = movSeleccionado ? (movSeleccionado.cargo > 0 ? movSeleccionado.cargo : movSeleccionado.abono) : 0;
     const esMatchPerfecto = totalSugerido === montoMovimiento;
 
+    // Egreso (cargo>0) = anticipo a pagar a proveedor; ingreso (abono>0) = anticipo a cobrar de cliente.
+    const anticiposPendientesDeLaDireccion = movSeleccionado
+        ? anticiposPendientes
+            .filter(a => a.tipo === (movSeleccionado.cargo > 0 ? 'proveedor' : 'cliente'))
+            .map(a => ({ value: a.id, label: `${a.entidad_nombre} — ${formatCurrency(a.monto)}${a.referencia ? ` (${a.referencia})` : ''}`, tipo: a.tipo, monto: a.monto }))
+        : [];
+
     let textoBotonFactura = "Seleccione Información";
     let iconBotonFactura = "fa-check";
-    if (modoFacturas === 'MANUAL' && facturasAProcesar.length === 0 && entidadSel) {
+    if (tipoConciliacion === 'ANTICIPO') {
+        textoBotonFactura = anticipoSel ? "Vincular Anticipo" : "Seleccione un anticipo";
+        iconBotonFactura = "fa-hand-holding-usd";
+    } else if (modoFacturas === 'MANUAL' && facturasAProcesar.length === 0 && entidadSel) {
         textoBotonFactura = "Registrar como Anticipo Directo";
         iconBotonFactura = "fa-forward";
     } else if (facturasAProcesar.length > 0) {
@@ -378,7 +421,64 @@ const MesaConciliacion = () => {
                 </div>
             </div>
 
-            {loading ? (
+            <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl w-full max-w-sm mb-6 shadow-inner">
+                <button onClick={() => setVistaActiva('PENDIENTES')} className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wide rounded-lg transition-all ${vistaActiva === 'PENDIENTES' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow border border-slate-200 dark:border-slate-600' : 'text-slate-400 hover:text-slate-600'}`}>
+                    Pendientes
+                </button>
+                <button onClick={() => setVistaActiva('DESCARTADOS')} className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wide rounded-lg transition-all ${vistaActiva === 'DESCARTADOS' ? 'bg-white dark:bg-slate-700 text-rose-600 shadow border border-slate-200 dark:border-slate-600' : 'text-slate-400 hover:text-slate-600'}`}>
+                    Descartados
+                </button>
+            </div>
+
+            {vistaActiva === 'DESCARTADOS' ? (
+                cargandoDescartados ? (
+                    <EstadoCarga cargando={true} mensajeCargando="Cargando movimientos descartados..." tamano="completo" color="blue" />
+                ) : movimientosDescartados.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <EstadoVacioDiv
+                            mensaje="Sin movimientos descartados"
+                            detalle="Los movimientos que descartes desde Pendientes aparecerán aquí, con opción de restaurarlos."
+                        />
+                    </div>
+                ) : (
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden">
+                        <div className="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <h3 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-full text-xs shadow-inner">{movimientosDescartados.length}</span>
+                                Movimientos Descartados
+                            </h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-left text-sm">
+                                <thead className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                                    <tr>
+                                        <th className="px-6 py-4 font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-xs">Fecha</th>
+                                        <th className="px-6 py-4 font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-xs">Descripción</th>
+                                        <th className="px-6 py-4 font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-xs text-right">Cargo</th>
+                                        <th className="px-6 py-4 font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-xs text-right">Abono</th>
+                                        <th className="px-6 py-4 font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-xs text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
+                                    {movimientosDescartados.map(mov => (
+                                        <tr key={mov.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700 transition-colors group">
+                                            <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-700 dark:text-slate-300">{formatFecha(mov.fecha)}</td>
+                                            <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{mov.descripcion}</td>
+                                            <td className="px-6 py-4 font-black text-rose-500 text-right">{mov.cargo > 0 ? formatCurrency(mov.cargo) : ''}</td>
+                                            <td className="px-6 py-4 font-black text-emerald-500 text-right">{mov.abono > 0 ? formatCurrency(mov.abono) : ''}</td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button onClick={() => restaurarMovimiento(mov)} className="bg-white text-blue-600 hover:bg-blue-600 hover:text-white font-bold py-2.5 px-4 rounded-xl transition-all text-xs border border-blue-200 shadow-sm inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
+                                                    <RotateCcw size={13} strokeWidth={2.5} /> Restaurar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )
+            ) : loading ? (
                 <EstadoCarga
                     cargando={true}
                     mensajeCargando="Cargando movimientos bancarios..."
@@ -460,6 +560,11 @@ const MesaConciliacion = () => {
                             <button onClick={() => setTipoConciliacion('DIRECTA')} className={`flex-1 py-4 px-4 text-xs font-black uppercase tracking-widest transition-all ${tipoConciliacion === 'DIRECTA' ? 'text-indigo-600 bg-white dark:bg-slate-800 border-b-2 border-indigo-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                                 <i className="fas fa-project-diagram mr-2"></i> Imputación Directa
                             </button>
+                            {anticiposPendientesDeLaDireccion.length > 0 && (
+                                <button onClick={() => setTipoConciliacion('ANTICIPO')} className={`flex-1 py-4 px-4 text-xs font-black uppercase tracking-widest transition-all ${tipoConciliacion === 'ANTICIPO' ? 'text-emerald-600 bg-white dark:bg-slate-800 border-b-2 border-emerald-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+                                    <i className="fas fa-hand-holding-usd mr-2"></i> Anticipo
+                                </button>
+                            )}
                         </div>
 
                         <div className="p-8 space-y-8 overflow-y-auto bg-slate-50/30 dark:bg-slate-800">
@@ -690,10 +795,32 @@ const MesaConciliacion = () => {
                                 </div>
                             )}
 
+                            {tipoConciliacion === 'ANTICIPO' && (
+                                <div className="bg-white dark:bg-slate-800 p-6 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm animate-fade-in">
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 tracking-wide">
+                                        Solicitud de anticipo a {movSeleccionado.cargo > 0 ? 'pagar (proveedor)' : 'cobrar (cliente)'}
+                                    </label>
+                                    <Select
+                                        options={anticiposPendientesDeLaDireccion}
+                                        value={anticipoSel}
+                                        onChange={setAnticipoSel}
+                                        placeholder="Busca la solicitud de anticipo..."
+                                        styles={selectStyles}
+                                        menuPortalTarget={document.body}
+                                        menuPosition="fixed"
+                                    />
+                                    {anticipoSel && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                                            Al confirmar, este movimiento queda vinculado a la solicitud por {formatCurrency(anticipoSel.monto)}.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="pt-2">
                                 <button 
                                     onClick={ejecutarConciliacion}
-                                    disabled={tipoConciliacion === 'FACTURAS' && facturasAProcesar.length === 0 && !entidadSel}
+                                    disabled={(tipoConciliacion === 'FACTURAS' && facturasAProcesar.length === 0 && !entidadSel) || (tipoConciliacion === 'ANTICIPO' && !anticipoSel)}
                                     className={`w-full text-white font-black py-4 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 flex justify-center items-center gap-3 text-sm tracking-wide disabled:opacity-50 disabled:transform-none ${!esMatchPerfecto && tipoConciliacion === 'FACTURAS' ? 'bg-gradient-to-r from-amber-500 to-amber-600 shadow-amber-500/30' : (tipoConciliacion === 'DIRECTA' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 shadow-indigo-500/30' : 'bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-emerald-500/30')}`}
                                 >
                                     <i className={`fas ${iconBotonFactura} text-lg`}></i> 
