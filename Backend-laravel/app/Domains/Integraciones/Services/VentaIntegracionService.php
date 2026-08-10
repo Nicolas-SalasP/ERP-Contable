@@ -20,10 +20,13 @@ use App\Domains\Inventario\Models\ReservaConsumoInventario;
 use App\Domains\Inventario\Models\ReservaInventario;
 use App\Domains\Inventario\Services\InventarioReservaService;
 use App\Domains\Sii\Exceptions\FacturaNoEmisibleException;
+use App\Domains\Sii\Models\SiiDteEmitido;
 use App\Domains\Sii\Services\Integracion\EmitirDteDesdeFacturaService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -118,7 +121,7 @@ class VentaIntegracionService
         $this->reservaService->cancelarReserva($actor, $reservaId);
     }
 
-    /** @return array{factura_id: int, numero_factura: string, estado: string, dte_estado: string, monto_neto: float, monto_iva: float, monto_bruto: float} */
+    /** @return array{factura_id: int, numero_factura: string, estado: string, tipo_dte: int, dte_estado: string, monto_neto: float, monto_iva: float, monto_bruto: float} */
     public function confirmar(int $empresaId, array $datos, ?string $idempotencyKey): array
     {
         $clave = $this->resolverClaveIdempotencia($idempotencyKey, $datos, (int) ($datos['reserva_id'] ?? 0));
@@ -153,9 +156,12 @@ class VentaIntegracionService
 
             [$cliente, $tipoDte] = $this->resolverCliente($empresaId, $datos['cliente'] ?? []);
 
-            $factura = $this->crearFacturaConAsiento($empresaId, $reservaConsumida, $cliente, $tipoDte);
+            $items = $datos['items'] ?? [];
+            $despacho = $datos['despacho'] ?? null;
 
-            $this->registrarSeriesVendidas($empresaId, $reservaConsumida, $datos['items'] ?? [], $factura->id);
+            $factura = $this->crearFacturaConAsiento($empresaId, $reservaConsumida, $cliente, $tipoDte, $items[0] ?? null, $despacho);
+
+            $this->registrarSeriesVendidas($empresaId, $reservaConsumida, $items, $factura->id);
 
             $dteEstado = $this->intentarEmitirDte($factura);
 
@@ -163,6 +169,7 @@ class VentaIntegracionService
                 'factura_id' => $factura->id,
                 'numero_factura' => $factura->numero_factura,
                 'estado' => $factura->estado,
+                'tipo_dte' => (int) $factura->tipo_dte,
                 'dte_estado' => $dteEstado,
                 'monto_neto' => (float) $factura->monto_neto,
                 'monto_iva' => (float) $factura->monto_iva,
@@ -187,6 +194,50 @@ class VentaIntegracionService
 
             return $respuesta;
         });
+    }
+
+    /**
+     * Estado actual de la factura/DTE, para que el canal externo haga polling: al confirmar() el
+     * DTE recien se encola (folio/pdf_url todavia no existen porque el SII no respondio), aca se
+     * exponen ni bien SiiDteEmitido los tenga.
+     *
+     * @return array{factura_id: int, numero_factura: string, estado: string, tipo_dte: int|null, dte_estado: string, folio: int|null, pdf_url: string|null, monto_neto: float, monto_iva: float, monto_bruto: float}
+     */
+    public function obtenerEstado(int $empresaId, int $facturaId): array
+    {
+        $factura = Factura::where('empresa_id', $empresaId)
+            ->where('id', $facturaId)
+            ->firstOrFail();
+
+        $dte = $factura->dteEmitido;
+
+        return [
+            'factura_id' => $factura->id,
+            'numero_factura' => $factura->numero_factura,
+            'estado' => $factura->estado,
+            'tipo_dte' => $factura->tipo_dte !== null ? (int) $factura->tipo_dte : null,
+            'dte_estado' => $dte !== null ? $dte->estado : 'pendiente',
+            'folio' => $dte?->folio,
+            'pdf_url' => $this->pdfUrl($dte),
+            'monto_neto' => (float) $factura->monto_neto,
+            'monto_iva' => (float) $factura->monto_iva,
+            'monto_bruto' => (float) $factura->monto_bruto,
+        ];
+    }
+
+    /**
+     * pdf_path (F7, representacion impresa con timbre) todavia no lo genera ningun proceso del
+     * ERP -- si algun dia se completa, esto ya queda cableado: URL firmada temporal (7 dias)
+     * contra la ruta local.serve de Laravel (disco 'local' es privado, `serve => true` en
+     * config/filesystems.php), sin exponer el storage completo.
+     */
+    private function pdfUrl(?SiiDteEmitido $dte): ?string
+    {
+        if ($dte === null || $dte->pdf_path === null || ! Storage::disk('local')->exists($dte->pdf_path)) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute('storage.local', now()->addDays(7), ['path' => $dte->pdf_path]);
     }
 
     private function validarItemsContraReserva(ReservaInventario $reserva, array $items): void
@@ -220,7 +271,11 @@ class VentaIntegracionService
         }
     }
 
-    private function crearFacturaConAsiento(int $empresaId, ReservaInventario $reserva, Cliente $cliente, int $tipoDte): Factura
+    /**
+     * @param array{sku?: string, cantidad?: float|string, numero_serie?: string, precio_unitario_neto?: float|string|null, monto_neto_linea?: float|string|null}|null $itemDatos
+     * @param array{monto_neto?: float|string|null}|null $despachoDatos
+     */
+    private function crearFacturaConAsiento(int $empresaId, ReservaInventario $reserva, Cliente $cliente, int $tipoDte, ?array $itemDatos, ?array $despachoDatos): Factura
     {
         $detalle = $reserva->detalles->first();
 
@@ -233,11 +288,25 @@ class VentaIntegracionService
         // ni afecto_iva -> hay que recargar el Producto completo, no reusar esa relacion.
         $producto = Producto::findOrFail($detalle->producto_id);
         $cantidad = (float) $detalle->cantidad_reservada;
-        $precioNeto = (float) $producto->precio_venta_neto;
-        $montoNeto = round($precioNeto * $cantidad, 2);
+        $precioListaNeto = (float) $producto->precio_venta_neto;
+        $montoNeto = $this->resolverMontoNetoLinea($itemDatos, $precioListaNeto, $cantidad);
+        // Unitario derivado solo para mostrar en el detalle: el monto que realmente importa para
+        // el total facturado (y para el asiento) es $montoNeto, ya redondeado una sola vez.
+        $precioNeto = $cantidad > 0.0 ? round($montoNeto / $cantidad, 2) : $precioListaNeto;
         $afecta = (bool) $producto->afecto_iva;
         $montoIva = $afecta ? round($montoNeto * (float) config('fiscal.tasa_iva'), 2) : 0.0;
-        $montoBruto = $montoNeto + $montoIva;
+
+        // Despacho: linea de detalle extra, opcional, con el mismo tratamiento de IVA que el
+        // resto de la factura (sigue el afecto_iva del producto, no tiene uno propio).
+        $montoNetoDespacho = 0.0;
+        if (is_array($despachoDatos) && isset($despachoDatos['monto_neto']) && (float) $despachoDatos['monto_neto'] > 0) {
+            $montoNetoDespacho = round((float) $despachoDatos['monto_neto'], 2);
+        }
+        $montoIvaDespacho = $afecta ? round($montoNetoDespacho * (float) config('fiscal.tasa_iva'), 2) : 0.0;
+
+        $montoNetoTotal = $montoNeto + $montoNetoDespacho;
+        $montoIvaTotal = $montoIva + $montoIvaDespacho;
+        $montoBrutoTotal = $montoNetoTotal + $montoIvaTotal;
 
         $numeroFactura = sprintf('FV-INT-%06d', $this->contadorService->siguienteNumero($empresaId, 'venta_integracion'));
 
@@ -250,9 +319,9 @@ class VentaIntegracionService
             'tipo_documento' => $tipoDte === self::TIPO_DTE_BOLETA ? 'BOLETA' : 'FACTURA',
             'tipo_dte' => $tipoDte,
             'fecha_emision' => now()->toDateString(),
-            'monto_neto' => $montoNeto,
-            'monto_iva' => $montoIva,
-            'monto_bruto' => $montoBruto,
+            'monto_neto' => $montoNetoTotal,
+            'monto_iva' => $montoIvaTotal,
+            'monto_bruto' => $montoBrutoTotal,
             'estado' => 'REGISTRADA',
         ]);
 
@@ -267,13 +336,70 @@ class VentaIntegracionService
             'exento' => ! $afecta,
         ]);
 
+        if ($montoNetoDespacho > 0) {
+            FacturaDetalle::create([
+                'factura_id' => $factura->id,
+                'numero_linea' => 2,
+                'producto_id' => null,
+                'nombre_item' => 'Despacho',
+                'cantidad' => 1,
+                'precio_unitario' => $montoNetoDespacho,
+                'monto_item' => $montoNetoDespacho,
+                'exento' => ! $afecta,
+            ]);
+        }
+
         $costoVenta = (float) $reserva->consumos->sum(
             fn (ReservaConsumoInventario $consumo) => (float) ($consumo->movimiento->costo_total ?? 0)
         );
 
-        $this->registrarAsientoVenta($empresaId, $factura, $montoNeto, $montoIva, $montoBruto, $costoVenta);
+        $this->registrarAsientoVenta($empresaId, $factura, $montoNetoTotal, $montoIvaTotal, $montoBrutoTotal, $costoVenta);
 
         return $factura->fresh();
+    }
+
+    /**
+     * Monto neto realmente cobrado por el canal externo para TODA la linea, con tope de
+     * seguridad: nunca puede superar el precio de lista x cantidad (evita que un canal
+     * comprometido/con bug infle el monto del DTE y habilite una nota de credito fraudulenta
+     * despues). Si no viene ninguno de los dos campos, se usa el precio de lista (comportamiento
+     * historico, compatibilidad hacia atras).
+     *
+     * `monto_neto_linea` tiene prioridad sobre `precio_unitario_neto`: es el neto de la linea
+     * completa ya redondeado una sola vez del lado que conoce el total efectivamente cobrado
+     * (la web), evitando la deriva de redondeo de multiplicar un unitario ya redondeado por la
+     * cantidad. Si solo viene `precio_unitario_neto` (contrato anterior), se preserva el
+     * comportamiento previo: unitario x cantidad, redondeado aca.
+     */
+    private function resolverMontoNetoLinea(?array $itemDatos, float $precioListaNeto, float $cantidad): float
+    {
+        $topeLinea = round($precioListaNeto * $cantidad, 2);
+
+        if ($itemDatos !== null && array_key_exists('monto_neto_linea', $itemDatos) && $itemDatos['monto_neto_linea'] !== null) {
+            $montoSolicitado = round((float) $itemDatos['monto_neto_linea'], 2);
+
+            if ($montoSolicitado > $topeLinea) {
+                throw ValidationException::withMessages([
+                    'items.0.monto_neto_linea' => "El monto neto de línea informado ({$montoSolicitado}) no puede superar el precio de lista del producto multiplicado por la cantidad ({$topeLinea}).",
+                ]);
+            }
+
+            return $montoSolicitado;
+        }
+
+        if ($itemDatos === null || ! array_key_exists('precio_unitario_neto', $itemDatos) || $itemDatos['precio_unitario_neto'] === null) {
+            return $topeLinea;
+        }
+
+        $precioSolicitado = (float) $itemDatos['precio_unitario_neto'];
+
+        if ($precioSolicitado > $precioListaNeto) {
+            throw ValidationException::withMessages([
+                'items.0.precio_unitario_neto' => "El precio unitario informado ({$precioSolicitado}) no puede superar el precio de lista del producto ({$precioListaNeto}).",
+            ]);
+        }
+
+        return round($precioSolicitado * $cantidad, 2);
     }
 
     /**

@@ -40,6 +40,27 @@ use Illuminate\Validation\ValidationException;
  *
  * Mismo patron de actor no persistido que VentaIntegracionService::actorSistema() -- ver ese
  * docblock para el detalle de por que existe.
+ *
+ * `tipo` (`retracto`|`garantia`, opcional): distingue si la devolucion es un retracto (Ley del
+ * Consumidor, obliga a restituir todo lo pagado incluido el despacho) o una garantia (solo el
+ * producto). Solo `retracto` con devolucion TOTAL de la factura suma la linea de despacho a la
+ * Nota de Credito -- ver el bloque que la calcula mas abajo para el detalle del caso parcial.
+ *
+ * `incluir_despacho` (bool, opcional): un pedido web de N productos genera N facturas separadas
+ * (una por SKU, ver Fase 2 de VentaIntegracionService), asi que este servicio no puede saber por
+ * si solo si la factura que recibe es todo el pedido original o solo una parte -- el canal
+ * externo (Tenri-Web-Page) es quien conoce el pedido completo y decide explicitamente si el
+ * despacho corresponde. Si viene informado, reemplaza la decision de "incluir despacho" pero
+ * SIEMPRE sujeta a que la factura se devuelva completa (ver bloque mas abajo); si no viene, se
+ * mantiene el comportamiento historico (retracto + devolucion total de la factura => incluye).
+ *
+ * `solo_despacho` (bool, opcional): la linea de despacho de un pedido multi-linea vive SIEMPRE en
+ * la factura de la PRIMERA linea confirmada del pedido (ver Fase 2), pero el mecanismo de arriba
+ * (`incluir_despacho`) solo puede sumar el despacho cuando la devolucion es TOTAL sobre esa MISMA
+ * factura -- si el retracto se completa devolviendo productos de OTRAS facturas del mismo pedido,
+ * la factura #1 nunca recibe items propios y su despacho queda sin devolver. Este modo permite al
+ * canal externo (que si conoce el pedido completo) pedir una devolucion "solo despacho" contra esa
+ * factura especifica, sin items ni movimiento de inventario -- ver `crearSoloDespacho()`.
  */
 class DevolucionIntegracionService
 {
@@ -49,10 +70,14 @@ class DevolucionIntegracionService
         private readonly ContadorEmpresaService $contadorService,
     ) {}
 
-    /** @return array{devolucion_id: int, nota_credito_id: int|null, estado: string} */
+    /** @return array{devolucion_id: int|null, nota_credito_id: int|null, estado: string} */
     public function crear(int $empresaId, array $datos, ?string $idempotencyKey): array
     {
-        $clave = $this->resolverClaveIdempotencia($idempotencyKey, $datos);
+        $soloDespacho = array_key_exists('solo_despacho', $datos) && $datos['solo_despacho'] !== null
+            ? (bool) $datos['solo_despacho']
+            : false;
+
+        $clave = $this->resolverClaveIdempotencia($idempotencyKey, $datos, $soloDespacho);
 
         $existente = IntegracionDevolucionIdempotencia::where('empresa_id', $empresaId)
             ->where('clave', $clave)
@@ -62,7 +87,7 @@ class DevolucionIntegracionService
             return array_merge($existente->respuesta_json, ['idempotente' => true]);
         }
 
-        return DB::transaction(function () use ($empresaId, $datos, $clave) {
+        return DB::transaction(function () use ($empresaId, $datos, $clave, $soloDespacho) {
             $facturaId = (int) ($datos['factura_id'] ?? 0);
 
             /** @var Factura|null $factura */
@@ -84,10 +109,19 @@ class DevolucionIntegracionService
                 ]);
             }
 
+            if ($soloDespacho) {
+                return $this->crearSoloDespacho($empresaId, $factura, $datos, $clave);
+            }
+
             $items = $datos['items'] ?? [];
             if (empty($items)) {
                 throw ValidationException::withMessages(['items' => 'Debe informar al menos un item a devolver.']);
             }
+
+            $tipo = $datos['tipo'] ?? null;
+            $incluirDespachoSolicitado = array_key_exists('incluir_despacho', $datos) && $datos['incluir_despacho'] !== null
+                ? (bool) $datos['incluir_despacho']
+                : null;
 
             $detallesFactura = FacturaDetalle::where('factura_id', $factura->id)
                 ->whereNotNull('producto_id')
@@ -100,6 +134,8 @@ class DevolucionIntegracionService
             $montoNetoTotal = 0.0;
             $montoIvaTotal = 0.0;
             $seriesAConfirmar = [];
+            $productosEnEstaDevolucion = [];
+            $todasLasLineasDevueltasCompletas = true;
 
             foreach ($items as $indice => $item) {
                 $sku = trim((string) ($item['sku'] ?? ''));
@@ -162,15 +198,58 @@ class DevolucionIntegracionService
                     'cantidad_ya_devuelta' => $yaDevuelta,
                 ];
 
-                $proporcion = $vendida > 0 ? $cantidad / $vendida : 0.0;
-                $montoNetoTotal += round((float) $detalleFactura->monto_item * $proporcion, 2);
+                // Precio unitario derivado UNA sola vez del monto de linea real (no de un
+                // "proporcion" recalculado por separado para neto e iva): mismo criterio que
+                // VentaIntegracionService::resolverMontoNetoLinea, el monto de la devolucion se
+                // redondea una sola vez sobre el total de esta linea, sin arrastrar redondeos
+                // intermedios independientes entre el neto y el iva de la misma linea.
+                $precioUnitarioNeto = $vendida > 0 ? (float) $detalleFactura->monto_item / $vendida : 0.0;
+                $montoNetoLinea = round($precioUnitarioNeto * $cantidad, 2);
+                $montoNetoTotal += $montoNetoLinea;
 
                 if (! $detalleFactura->exento) {
-                    $montoIvaTotal += round((float) $detalleFactura->monto_item * $proporcion * (float) config('fiscal.tasa_iva'), 2);
+                    $montoIvaTotal += round($montoNetoLinea * (float) config('fiscal.tasa_iva'), 2);
                 }
 
                 if ($numeroSerie !== null) {
                     $seriesAConfirmar[] = ['producto_id' => (int) $producto->id, 'numero_serie' => $numeroSerie];
+                }
+
+                $productosEnEstaDevolucion[] = (int) $producto->id;
+                if (round($cantidad, 4) < $pendiente - 0.0001) {
+                    $todasLasLineasDevueltasCompletas = false;
+                }
+            }
+
+            // Retracto (Ley del Consumidor: restituir todo lo pagado sin retener gastos, incluido
+            // el despacho) solo suma la linea de despacho si esta devolucion es TOTAL: cubre todos
+            // los productos vendidos en la factura y cada uno se devuelve completo. Para un
+            // retracto PARCIAL (ej. 2 de 3 productos distintos, no solo cantidad parcial de un
+            // mismo producto) la ley no define con claridad si el despacho se prorratea, se
+            // devuelve completo o no se devuelve -- se deja deliberadamente afuera (politica
+            // conservadora) hasta que exista una decision de negocio explicita. Garantia nunca
+            // incluye despacho, sea completa o parcial.
+            if ($tipo === 'retracto' && $todasLasLineasDevueltasCompletas) {
+                $productosFactura = $detallesFactura->keys()->map(fn ($id) => (int) $id)->all();
+                $esDevolucionTotalDeLaFactura = empty(array_diff($productosFactura, $productosEnEstaDevolucion));
+
+                // incluir_despacho es una señal del canal externo, no una orden -- la factura
+                // siempre debe estar completamente devuelta para que el despacho pueda
+                // incluirse, sin importar lo que pida el caller. Si no viene informado se
+                // preserva el comportamiento historico (retracto + devolucion total => incluye).
+                if ($esDevolucionTotalDeLaFactura && ($incluirDespachoSolicitado ?? true)) {
+                    $detalleDespacho = FacturaDetalle::where('factura_id', $factura->id)
+                        ->whereNull('producto_id')
+                        ->first();
+
+                    if ($detalleDespacho !== null) {
+                        $montoNetoDespacho = round((float) $detalleDespacho->monto_item, 2);
+                        $montoNetoTotal += $montoNetoDespacho;
+
+                        if (! $detalleDespacho->exento) {
+                            $montoIvaTotal += round($montoNetoDespacho * (float) config('fiscal.tasa_iva'), 2);
+                        }
+                    }
                 }
             }
 
@@ -232,6 +311,104 @@ class DevolucionIntegracionService
 
             return $respuesta;
         });
+    }
+
+    /**
+     * Devolucion "solo despacho": ninguna interaccion con Inventario (no hay items, no se toca
+     * stock/series/lotes), solo emite una NC por el monto exacto de la linea de despacho de ESTA
+     * factura. Solo aplica a retracto, mismo espiritu que `incluir_despacho`.
+     *
+     * Deduplicacion sin flag nuevo: se reutiliza la regla ya existente de
+     * FacturaService::emitirNotaCreditoVenta de que una factura solo puede tener una Nota de
+     * Credito activa a la vez. Un segundo intento de devolver el despacho de la misma factura
+     * (sin el mismo Idempotency-Key que el primero) choca con esa regla y se rechaza con un
+     * mensaje claro -- no genera una segunda NC.
+     *
+     * @return array{devolucion_id: null, nota_credito_id: int, estado: string}
+     */
+    private function crearSoloDespacho(int $empresaId, Factura $factura, array $datos, string $clave): array
+    {
+        $tipo = $datos['tipo'] ?? null;
+
+        if ($tipo !== 'retracto') {
+            throw ValidationException::withMessages([
+                'tipo' => 'El modo solo_despacho requiere tipo=retracto.',
+            ]);
+        }
+
+        // Misma disciplina que incluir_despacho en el flujo normal: solo_despacho es una senal
+        // del canal externo, no una orden -- sin al menos una devolucion de productos ya
+        // confirmada sobre ESTA factura (via el flujo normal, mismo criterio de
+        // origen_modulo/origen_id que cantidadYaDevuelta) no hay retracto real que justifique
+        // emitir una NC por el despacho.
+        $tieneDevolucionDeProductosConfirmada = InventarioDevolucionOrden::query()
+            ->where('empresa_id', $empresaId)
+            ->where('origen_modulo', 'integraciones_devolucion')
+            ->where('origen_id', $factura->id)
+            ->where('estado', InventarioDevolucionOrden::ESTADO_CONFIRMADA)
+            ->exists();
+
+        if (! $tieneDevolucionDeProductosConfirmada) {
+            throw ValidationException::withMessages([
+                'factura_id' => 'No se puede devolver el despacho de una factura sin devolución de productos confirmada.',
+            ]);
+        }
+
+        $detalleDespacho = FacturaDetalle::where('factura_id', $factura->id)
+            ->whereNull('producto_id')
+            ->first();
+
+        if ($detalleDespacho === null) {
+            throw ValidationException::withMessages([
+                'factura_id' => 'Esta factura no tiene una línea de despacho para devolver.',
+            ]);
+        }
+
+        $montoNetoDespacho = round((float) $detalleDespacho->monto_item, 2);
+
+        if ($montoNetoDespacho <= 0) {
+            throw ValidationException::withMessages([
+                'factura_id' => 'La línea de despacho de esta factura no tiene un monto válido para devolver.',
+            ]);
+        }
+
+        $montoIvaDespacho = $detalleDespacho->exento
+            ? 0.0
+            : round($montoNetoDespacho * (float) config('fiscal.tasa_iva'), 2);
+        $montoBrutoDespacho = round($montoNetoDespacho + $montoIvaDespacho, 2);
+
+        $numeroNc = sprintf('NC-INT-%06d', $this->contadorService->siguienteNumero($empresaId, 'nota_credito_integracion'));
+
+        $nc = $this->facturaService->emitirNotaCreditoVenta($empresaId, (int) $factura->id, [
+            'numero_nc' => $numeroNc,
+            'monto_neto' => $montoNetoDespacho,
+            'monto_iva' => $montoIvaDespacho,
+            'monto_bruto' => $montoBrutoDespacho,
+            'razon' => 'Devolución de despacho vía integración (retracto multi-línea) - factura '.$factura->numero_factura,
+            'emitir_dte' => true,
+        ]);
+
+        $respuesta = [
+            'devolucion_id' => null,
+            'nota_credito_id' => (int) $nc->id,
+            'estado' => InventarioDevolucionOrden::ESTADO_CONFIRMADA,
+        ];
+
+        try {
+            IntegracionDevolucionIdempotencia::create([
+                'empresa_id' => $empresaId,
+                'clave' => $clave,
+                'devolucion_orden_id' => null,
+                'respuesta_status' => 201,
+                'respuesta_json' => $respuesta,
+            ]);
+        } catch (QueryException $e) {
+            // Misma carrera que en el flujo normal: si otra request con la misma clave gano el
+            // insert primero, la NC recien creada se revierte y el caller debe reintentar.
+            throw DevolucionIntegracionException::idempotenciaEnCarrera($e);
+        }
+
+        return $respuesta;
     }
 
     private function cantidadYaDevuelta(int $empresaId, int $facturaId, int $productoId): float
@@ -311,12 +488,16 @@ class DevolucionIntegracionService
         return $bodega;
     }
 
-    private function resolverClaveIdempotencia(?string $idempotencyKey, array $datos): string
+    private function resolverClaveIdempotencia(?string $idempotencyKey, array $datos, bool $soloDespacho = false): string
     {
         $clave = is_string($idempotencyKey) ? trim($idempotencyKey) : null;
 
         if ($clave !== null && $clave !== '') {
             return $clave;
+        }
+
+        if ($soloDespacho) {
+            return 'devolucion-despacho-'.($datos['factura_id'] ?? '0');
         }
 
         return 'devolucion-'.($datos['factura_id'] ?? '0').'-'.md5(json_encode($datos['items'] ?? []) ?: '');

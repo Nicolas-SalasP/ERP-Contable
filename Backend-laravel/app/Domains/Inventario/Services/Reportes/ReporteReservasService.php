@@ -34,7 +34,7 @@ class ReporteReservasService
                 'detalles.producto:id,empresa_id,sku,nombre,activo',
                 'detalles.bodega:id,empresa_id,codigo,nombre,estado',
                 'detalles.lote:id,empresa_id,producto_id,codigo_lote,fecha_vencimiento,activo',
-                'reservadoPor:id,name,email',
+                'reservadoPor:id,nombre,email',
             ])
             ->withCount('detalles')
             ->when(!empty($filtros['estado']), fn (Builder $query) => $query->where('estado', $filtros['estado']))
