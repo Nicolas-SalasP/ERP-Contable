@@ -656,6 +656,64 @@ class DevolucionIntegracionApiTest extends TestCase
         $this->assertEquals((float) $stockAntes->stock_actual, (float) $stockDespues->stock_actual);
     }
 
+    public function test_solo_despacho_true_funciona_aunque_la_factura_ya_tenga_otra_nc_activa_de_producto(): void
+    {
+        // Regresion bug real: retracto linea por linea donde la RMA que cierra el pedido comparte
+        // factura con el despacho. Antes del fix, la NC de producto (creada por el retracto
+        // parcial de mas abajo) dejaba la factura con "una NC activa" y el intento posterior de
+        // solo_despacho se rechazaba, perdiendo el despacho ($2000) para siempre.
+        [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConDespacho(
+            cantidadVendida: 3,
+            montoNetoLineaProducto: 3000,
+            montoNetoDespacho: 2000,
+        );
+
+        $respuestaRetractoParcial = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson('/api/integraciones/v2/devoluciones', [
+                'factura_id' => $facturaId,
+                'tipo' => 'retracto',
+                'items' => [['sku' => $producto->sku, 'cantidad' => 1]],
+            ]);
+
+        $respuestaRetractoParcial->assertCreated();
+        $ncProducto = Factura::findOrFail($respuestaRetractoParcial->json('data.nota_credito_id'));
+        $this->assertEqualsWithDelta(1000.0, (float) $ncProducto->monto_neto, 0.01);
+        $this->assertNotEquals('ANULADA', $ncProducto->estado);
+
+        $respuestaSoloDespacho = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'Idempotency-Key' => 'solo-despacho-intento-1',
+        ])->postJson('/api/integraciones/v2/devoluciones', [
+            'factura_id' => $facturaId,
+            'tipo' => 'retracto',
+            'solo_despacho' => true,
+        ]);
+
+        $respuestaSoloDespacho->assertCreated();
+        $ncDespacho = Factura::findOrFail($respuestaSoloDespacho->json('data.nota_credito_id'));
+        $this->assertEqualsWithDelta(2000.0, (float) $ncDespacho->monto_neto, 0.01);
+
+        $totalNcActivas = Factura::where('factura_referencia_id', $facturaId)
+            ->where('tipo_documento', 'NOTA_CREDITO')
+            ->where('estado', '!=', 'ANULADA')
+            ->count();
+        $this->assertEquals(2, $totalNcActivas);
+
+        // Un tercer intento de devolver el despacho de la misma factura, con una Idempotency-Key
+        // distinta (no un reintento del mismo request), sigue rechazado por el chequeo explicito
+        // de NC de despacho ya existente -- no depende de la idempotencia.
+        $respuestaDuplicada = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'Idempotency-Key' => 'solo-despacho-intento-2',
+        ])->postJson('/api/integraciones/v2/devoluciones', [
+            'factura_id' => $facturaId,
+            'tipo' => 'retracto',
+            'solo_despacho' => true,
+        ]);
+
+        $respuestaDuplicada->assertStatus(422);
+    }
+
     public function test_solo_despacho_true_contra_factura_sin_despacho_no_crea_nc_y_responde_error_claro(): void
     {
         [$token, $producto, , $facturaId] = $this->prepararEmpresaConVentaConfirmada(
@@ -754,8 +812,9 @@ class DevolucionIntegracionApiTest extends TestCase
 
         // Idempotency-Key distinta en cada request (simula dos intentos "genuinamente
         // distintos" del canal externo, no un reintento del mismo request): la proteccion
-        // real contra duplicar la NC no depende de la clave de idempotencia sino de la regla
-        // de FacturaService::emitirNotaCreditoVenta de que la factura solo admite una NC activa.
+        // real contra duplicar la NC no depende de la clave de idempotencia sino del chequeo
+        // explicito en DevolucionIntegracionService::crearSoloDespacho de que la factura ya
+        // tiene una NC de despacho activa.
         $primera = $this->withHeaders([
             'Authorization' => 'Bearer '.$token,
             'Idempotency-Key' => 'intento-solo-despacho-A',

@@ -64,6 +64,8 @@ use Illuminate\Validation\ValidationException;
  */
 class DevolucionIntegracionService
 {
+    private const RAZON_NC_DESPACHO = 'Devolución de despacho vía integración (retracto multi-línea)';
+
     public function __construct(
         private readonly InventarioDevolucionService $devolucionService,
         private readonly FacturaService $facturaService,
@@ -318,11 +320,10 @@ class DevolucionIntegracionService
      * stock/series/lotes), solo emite una NC por el monto exacto de la linea de despacho de ESTA
      * factura. Solo aplica a retracto, mismo espiritu que `incluir_despacho`.
      *
-     * Deduplicacion sin flag nuevo: se reutiliza la regla ya existente de
-     * FacturaService::emitirNotaCreditoVenta de que una factura solo puede tener una Nota de
-     * Credito activa a la vez. Un segundo intento de devolver el despacho de la misma factura
-     * (sin el mismo Idempotency-Key que el primero) choca con esa regla y se rechaza con un
-     * mensaje claro -- no genera una segunda NC.
+     * Deduplicacion: FacturaService::emitirNotaCreditoVenta ahora permite varias NC parciales
+     * sobre la misma factura (devoluciones sucesivas de items + despacho aparte), asi que ya no
+     * bloquea un segundo intento por si solo. Este metodo chequea explicitamente si ya existe una
+     * NC de despacho para esta factura antes de emitir otra.
      *
      * @return array{devolucion_id: null, nota_credito_id: int, estado: string}
      */
@@ -351,6 +352,19 @@ class DevolucionIntegracionService
         if (! $tieneDevolucionDeProductosConfirmada) {
             throw ValidationException::withMessages([
                 'factura_id' => 'No se puede devolver el despacho de una factura sin devolución de productos confirmada.',
+            ]);
+        }
+
+        $yaTieneNcDeDespacho = Factura::where('empresa_id', $empresaId)
+            ->where('factura_referencia_id', $factura->id)
+            ->where('tipo_documento', 'NOTA_CREDITO')
+            ->where('estado', '!=', 'ANULADA')
+            ->where('razon_nota_credito', 'like', self::RAZON_NC_DESPACHO.'%')
+            ->exists();
+
+        if ($yaTieneNcDeDespacho) {
+            throw ValidationException::withMessages([
+                'factura_id' => 'El despacho de esta factura ya fue devuelto.',
             ]);
         }
 
@@ -384,7 +398,7 @@ class DevolucionIntegracionService
             'monto_neto' => $montoNetoDespacho,
             'monto_iva' => $montoIvaDespacho,
             'monto_bruto' => $montoBrutoDespacho,
-            'razon' => 'Devolución de despacho vía integración (retracto multi-línea) - factura '.$factura->numero_factura,
+            'razon' => self::RAZON_NC_DESPACHO.' - factura '.$factura->numero_factura,
             'emitir_dte' => true,
         ]);
 
