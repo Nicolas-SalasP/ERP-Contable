@@ -31,6 +31,25 @@ class E2eSetupCommand extends Command
             return self::FAILURE;
         }
 
+        // No asumir rol_id=1: en un entorno de test con RefreshDatabase transaccional sobre
+        // MySQL, el auto_increment de "roles" no se resetea entre tests (InnoDB no revierte el
+        // contador en rollback), asi que el id real de "Super Admin" varia segun el orden de
+        // ejecucion. Buscar por nombre es correcto en cualquier entorno (test o real).
+        $rolSuperAdminId = DB::table('roles')->where('nombre', 'Super Admin')->value('id');
+        if (! $rolSuperAdminId) {
+            $this->error('No existe el rol "Super Admin". Ejecuta db:seed primero.');
+
+            return self::FAILURE;
+        }
+
+        // Mismo motivo que rol_id: no asumir estado_suscripcion_id=1.
+        $estadoSuscripcionActivaId = DB::table('estados_suscripcion')->where('nombre', 'Activa')->value('id');
+        if (! $estadoSuscripcionActivaId) {
+            $this->error('No existe el estado de suscripcion "Activa". Ejecuta db:seed primero.');
+
+            return self::FAILURE;
+        }
+
         $email = 'e2e_runner@tenri.cl';
         $password = 'E2ePassword_2026';
 
@@ -40,8 +59,8 @@ class E2eSetupCommand extends Command
                 'nombre' => 'E2E Test Runner',
                 'password' => Hash::make($password),
                 'empresa_id' => $empresaId,
-                'rol_id' => 1,
-                'estado_suscripcion_id' => 1,
+                'rol_id' => $rolSuperAdminId,
+                'estado_suscripcion_id' => $estadoSuscripcionActivaId,
             ]
         );
 

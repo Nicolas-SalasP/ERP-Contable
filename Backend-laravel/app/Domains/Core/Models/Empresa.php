@@ -32,6 +32,8 @@ class Empresa extends Model
         'regimen_tributario',
         'tasa_impuesto',
         'ppm_pct',
+        'margen_venta_pct',
+        'margen_minimo_pct',
         'activa',
         'mutualidad_id',
         'mutual_tasa_adicional_pct',

@@ -99,7 +99,8 @@ class ConciliacionController
         try {
             $datos = $request->validate([
                 'movimiento_id' => 'required|integer',
-                'anticipo_id' => 'required|integer'
+                'anticipo_id' => 'required|integer',
+                'tipo' => 'nullable|in:proveedor,cliente',
             ]);
             $this->service->conciliarAnticipo($request->user()->empresa_activa_id, $datos, $request->user()->id);
 
@@ -124,6 +125,35 @@ class ConciliacionController
             throw $e;
         } catch (Exception $e) {
             $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
+        }
+    }
+
+    public function restaurar(Request $request, $id)
+    {
+        try {
+            $this->service->restaurarMovimiento($request->user()->empresa_activa_id, (int) $id);
+
+            return response()->json(['success' => true, 'mensaje' => 'Movimiento restaurado a pendientes.']);
+        } catch (TesoreriaException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            $status = $e->getCode() === 403 ? 403 : 422;
+            return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
+        }
+    }
+
+    public function movimientosDescartados(Request $request, $idCuenta)
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => $this->service->obtenerMovimientosDescartados($request->user()->empresa_activa_id, $idCuenta)
+            ]);
+        } catch (TesoreriaException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            $status = $e->getCode() === 403 ? 403 : 400;
             return response()->json(['success' => false, 'message' => MensajeErrorGenerico::desde($e)], $status);
         }
     }

@@ -421,14 +421,20 @@ class FacturaService
                 );
             }
 
-            $ncExistente = Factura::where('empresa_id', $empresaId)
+            // Una factura puede acumular varias NC parciales (devoluciones sucesivas de items,
+            // despacho aparte, etc.) -- lo que no puede pasar es que la suma de NC activas exceda
+            // el monto original. Antes esto bloqueaba directamente la segunda NC (exists() binario);
+            // ahora se valida por saldo acumulado.
+            $totalNcActivo = (float) Factura::where('empresa_id', $empresaId)
                 ->where('factura_referencia_id', $origen->id)
                 ->where('tipo_documento', 'NOTA_CREDITO')
                 ->where('estado', '!=', 'ANULADA')
-                ->exists();
+                ->sum('monto_bruto');
 
-            if ($ncExistente) {
-                throw ComercialException::regla('Esta factura ya tiene una Nota de Crédito activa. Anule la NC anterior antes de emitir una nueva.');
+            if ($totalNcActivo + (float) $datos['monto_bruto'] > (float) $origen->monto_bruto + 0.01) {
+                throw ComercialException::regla(
+                    "El monto de la NC ($datos[monto_bruto]) sumado a las NC ya emitidas sobre esta factura ($totalNcActivo) supera el monto original ({$origen->monto_bruto})."
+                );
             }
 
             $neto = round((float) $datos['monto_neto'], 2);
@@ -513,7 +519,7 @@ class FacturaService
 
             $nc->update(['comprobante_contable' => $asiento->numero_comprobante]);
 
-            if (abs($bruto - (float) $origen->monto_bruto) < 0.01) {
+            if (abs(($totalNcActivo + $bruto) - (float) $origen->monto_bruto) < 0.01) {
                 $origen->estado = 'ANULADA';
                 $origen->save();
 

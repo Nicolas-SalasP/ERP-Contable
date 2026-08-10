@@ -42,6 +42,20 @@ class IntegracionApiKeyAdminTest extends TestCase
         $this->assertStringStartsWith('tnri_', $respuesta->json('data.token'));
     }
 
+    public function test_usuario_con_modulo_puede_emitir_una_key_con_scope_ventas_escribir(): void
+    {
+        $empresa = $this->crearEmpresa();
+        Sanctum::actingAs($this->usuarioConModulo($empresa));
+
+        $respuesta = $this->postJson('/api/integraciones/admin/keys', [
+            'nombre' => 'Tenri Web (checkout)',
+            'scopes' => ['inventario:leer', 'ventas:escribir'],
+        ]);
+
+        $respuesta->assertCreated();
+        $this->assertEquals(['inventario:leer', 'ventas:escribir'], $respuesta->json('data.key.scopes'));
+    }
+
     public function test_usuario_sin_modulo_no_puede_gestionar_keys(): void
     {
         $empresa = $this->crearEmpresa();
