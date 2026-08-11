@@ -3,6 +3,7 @@
 namespace App\Domains\Integraciones\Controllers;
 
 use App\Domains\Core\Models\User;
+use App\Domains\Integraciones\Http\Resources\IntegracionApiKeyResource;
 use App\Domains\Integraciones\Models\IntegracionApiKey;
 use App\Domains\Integraciones\Services\IntegracionApiKeyService;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +27,7 @@ class IntegracionApiKeyController
 
         return response()->json([
             'success' => true,
-            'data' => $paginador->items(),
+            'data' => IntegracionApiKeyResource::collection($paginador->items()),
             'pagination' => [
                 'total' => $paginador->total(),
                 'total_pages' => $paginador->lastPage(),
