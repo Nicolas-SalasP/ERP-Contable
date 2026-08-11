@@ -35,6 +35,7 @@ use App\Domains\Core\Controllers\EmpresaController;
 use App\Domains\Core\Controllers\HealthController;
 use App\Domains\Core\Controllers\IncidenteSeguridadController;
 use App\Domains\Core\Controllers\Internal\AdminEmpresasController;
+use App\Domains\Core\Controllers\Internal\AdminIntegracionesController;
 use App\Domains\Core\Controllers\Internal\WebProvisioningController;
 use App\Domains\Core\Controllers\PaisController;
 use App\Domains\Core\Controllers\PrivacidadController;
@@ -762,4 +763,11 @@ Route::prefix('internal/web')->middleware(['web.api.key', 'throttle:60,1'])->gro
     Route::put('/empresas/{id}/plan', [AdminEmpresasController::class, 'cambiarPlan']);
     Route::post('/usuarios/{id}/bloquear', [AdminEmpresasController::class, 'bloquearUsuario']);
     Route::post('/usuarios/{id}/desbloquear', [AdminEmpresasController::class, 'desbloquearUsuario']);
+
+    Route::get('/integraciones/resumen', [AdminIntegracionesController::class, 'resumen']);
+    Route::get('/empresas/{id}/integraciones/sii', [AdminIntegracionesController::class, 'sii']);
+    Route::get('/empresas/{id}/integraciones/api-keys', [AdminIntegracionesController::class, 'apiKeys']);
+    Route::post('/empresas/{id}/integraciones/api-keys', [AdminIntegracionesController::class, 'crearApiKey']);
+    Route::post('/empresas/{id}/integraciones/api-keys/{keyId}/rotar', [AdminIntegracionesController::class, 'rotarApiKey']);
+    Route::delete('/empresas/{id}/integraciones/api-keys/{keyId}', [AdminIntegracionesController::class, 'revocarApiKey']);
 });
