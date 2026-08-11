@@ -1,0 +1,19 @@
+name: Guard - Main solo desde dev
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  verificar-origen:
+    name: Verificar que el PR viene de dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chequear rama de origen
+        run: |
+          if [ "${{ github.head_ref }}" != "dev" ]; then
+            echo "❌ Los PRs a main solo se aceptan desde 'dev'. Origen detectado: ${{ github.head_ref }}"
+            echo "Flujo correcto: NSalas-dev -> dev -> main"
+            exit 1
+          fi
+          echo "✅ PR viene de dev, ok"
