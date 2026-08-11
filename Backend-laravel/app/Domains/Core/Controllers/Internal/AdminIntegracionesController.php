@@ -2,6 +2,7 @@
 
 namespace App\Domains\Core\Controllers\Internal;
 
+use App\Domains\Integraciones\Http\Resources\IntegracionApiKeyResource;
 use App\Domains\Integraciones\Models\IntegracionApiKey;
 use App\Domains\Integraciones\Services\IntegracionApiKeyService;
 use App\Domains\Sii\Models\SiiCertificadoEmpresa;
@@ -88,7 +89,7 @@ class AdminIntegracionesController
 
         $keys = IntegracionApiKey::where('empresa_id', $id)->orderByDesc('created_at')->get();
 
-        return response()->json(['api_keys' => $keys]);
+        return response()->json(['api_keys' => IntegracionApiKeyResource::collection($keys)]);
     }
 
     public function crearApiKey(Request $request, int $id): JsonResponse
